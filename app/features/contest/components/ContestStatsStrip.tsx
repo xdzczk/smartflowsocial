@@ -31,7 +31,7 @@ export function ContestStatsStrip({
         : aggregates.totalSatsZapped;
 
   return (
-    <div className="border-border bg-muted/20 grid grid-cols-2 gap-3 rounded-lg border p-4 text-sm sm:grid-cols-4">
+    <div className="border-border bg-muted/30 grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm shadow-sm sm:grid-cols-4">
       <div>
         <p className="text-muted-foreground">Total entries</p>
         <p className="text-lg font-semibold tabular-nums">{totalEntries}</p>

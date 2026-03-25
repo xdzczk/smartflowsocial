@@ -46,6 +46,36 @@ export {
 
 const OWNER_NWC_MISSING = "Owner NWC credentials not configured";
 
+/**
+ * Owner NWC `requestPayment` can hang if relays or the wallet never respond.
+ * Without a bound, the HTTP request outlives Cloudflare/proxy limits → 520 and no access-log line.
+ */
+const OWNER_WALLET_INVOICE_REQUEST_MS = 55_000;
+
+async function withOwnerWalletInvoiceRequestTimeout<T>(
+  promise: Promise<T>
+): Promise<T> {
+  const timeoutError = new ExternalServiceError(
+    "Creating the Lightning invoice took too long. Please try again.",
+    504,
+    { reason: "owner_wallet_invoice_request" }
+  );
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(timeoutError),
+      OWNER_WALLET_INVOICE_REQUEST_MS
+    );
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 /** Minimal free plan data so dashboard can assign new users even if seed wasn't run. */
 const FREE_PLAN_SEED = {
   id: FREE_PLAN_ID,
@@ -192,8 +222,8 @@ export async function createPlanInvoice({
     }>;
   };
   try {
-    const request = (await ln.requestPayment(
-      USD(amountUsd) as unknown as { amount: number }
+    const request = (await withOwnerWalletInvoiceRequestTimeout(
+      ln.requestPayment(USD(amountUsd) as unknown as { amount: number })
     )) as unknown as {
       onPaid: (callback: () => void) => {
         onTimeout: (seconds: number, callback: () => void) => void;
@@ -269,6 +299,16 @@ export async function createPlanInvoice({
       planId: plan.id,
     };
   } catch (error) {
+    if (error instanceof ExternalServiceError) {
+      logError(error, {
+        planId,
+        userId,
+        ownerRelays,
+        message: "Failed to create invoice",
+      });
+      throw error;
+    }
+
     const err = error instanceof Error ? error : new Error(String(error));
     logError(err, {
       planId,
@@ -378,8 +418,8 @@ export async function createGiveawayFinalizationInvoice(params: {
   try {
     await expireStaleFinalizationPaymentsForGiveaway(giveawayId);
 
-    const request = (await ln.requestPayment(
-      SATS(quote.feeSats) as unknown as { amount: number }
+    const request = (await withOwnerWalletInvoiceRequestTimeout(
+      ln.requestPayment(SATS(quote.feeSats) as unknown as { amount: number })
     )) as unknown as {
       onPaid: (callback: () => void) => {
         onTimeout: (seconds: number, callback: () => void) => void;
@@ -479,6 +519,16 @@ export async function createGiveawayFinalizationInvoice(params: {
       lockConfigHash: quote.lockConfigHash,
     };
   } catch (error) {
+    if (error instanceof ExternalServiceError) {
+      logError(error, {
+        giveawayId,
+        userId,
+        ownerRelays,
+        message: "Failed to create giveaway finalization invoice",
+      });
+      throw error;
+    }
+
     const err = error instanceof Error ? error : new Error(String(error));
     logError(err, {
       giveawayId,
@@ -498,10 +548,6 @@ export async function createGiveawayFinalizationInvoice(params: {
           originalError: err.message,
         }
       );
-    }
-
-    if (error instanceof ExternalServiceError) {
-      throw error;
     }
 
     throw new ExternalServiceError(

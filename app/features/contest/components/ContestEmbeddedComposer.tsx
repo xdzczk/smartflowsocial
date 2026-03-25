@@ -46,6 +46,7 @@ export function ContestEmbeddedComposer({
         formAction="/dashboard/newpost"
         localDraftStorageKey="composer-contest-embedded-draft"
         embedContext="contest"
+        embeddedDensity="contest-lite"
         onEmbedPublishSuccess={onEmbedPublishSuccess}
         skipLocalDraftRestore={false}
       />

@@ -16,6 +16,7 @@ import type { ContestDetailPageData } from "./contest-detail.types";
 import { quoteContestFinalization } from "./contest-finalization-fee.server";
 import { normalizeContestPayoutState } from "./contest-payout.server";
 import {
+  buildContestFairnessProofLines,
   buildContestPublicSummaryLines,
   buildContestReceiptSummaryLine,
 } from "./contest-proof-share.server";
@@ -444,6 +445,42 @@ export async function getContestPublicPageData(contestId: string) {
     }));
   }
 
+  const snap =
+    contest.status !== "LIVE"
+      ? await findLatestContestSnapshot(contest.id)
+      : null;
+  const eligibleEntries = snap?.eligibleEntries ?? null;
+
+  const durationLabel = contestDurationLabel(contest);
+  const completedAt = contest.completedAt ?? contest.updatedAt;
+  const completedAtLabel = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(completedAt);
+
+  const publicSummaryLines =
+    contest.status === "COMPLETED"
+      ? buildContestPublicSummaryLines({
+          title: contest.title ?? `Contest ${contest.id.slice(0, 8)}`,
+          rankingMetric: contest.rankingMetric,
+          winnerCount: contest.winnerCount,
+          plannedPayoutSats: contest.plannedPayoutSats ?? 0,
+          durationLabel,
+          completedAtLabel,
+        })
+      : null;
+
+  const fairnessProofLines =
+    contest.status === "COMPLETED"
+      ? buildContestFairnessProofLines({
+          title: contest.title ?? `Contest ${contest.id.slice(0, 8)}`,
+          eligibleEntries,
+          tieBreakRule: contest.tieBreakRule,
+          entryType: contest.entryType,
+          lockedOrCompletedAt: completedAtLabel,
+        })
+      : null;
+
   return {
     id: contest.id,
     title: contest.title ?? `Contest ${contest.id.slice(0, 8)}`,
@@ -454,5 +491,8 @@ export async function getContestPublicPageData(contestId: string) {
     plannedPayoutSats: contest.plannedPayoutSats ?? 0,
     sourceNoteId: contest.sourceNoteId,
     rows,
+    eligibleEntries,
+    publicSummaryLines,
+    fairnessProofLines,
   };
 }

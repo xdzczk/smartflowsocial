@@ -12,7 +12,13 @@ import {
   useNavigation,
   useRevalidator,
 } from "@remix-run/react";
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import { requireUserId } from "~/features/auth";
 import { PublishedPostPickerGrid } from "~/features/campaign-ui";
@@ -273,6 +279,329 @@ function fairnessInitialFromPreset(
   };
 }
 
+function ContestNewFormSetupSteps({
+  rankingMetric,
+  setRankingMetric,
+  contestEndAt,
+  setContestEndAt,
+  tieBreakPreview,
+  stepIssuesRanking,
+  prizeMode,
+  setPrizeMode,
+  winnerCount,
+  setWinnerCount,
+  equalRewardSats,
+  setEqualRewardSats,
+  rankRewards,
+  setRankRewards,
+  prizeSummary,
+  stepIssuesRewards,
+  excludeMuted,
+  setExcludeMuted,
+  excludeBlocked,
+  setExcludeBlocked,
+  excludeLowTrust,
+  setExcludeLowTrust,
+  excludeNonFollowers,
+  setExcludeNonFollowers,
+  minAccountAgeDays,
+  setMinAccountAgeDays,
+  minFollowers,
+  setMinFollowers,
+  contestEndRequired,
+}: {
+  rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  setRankingMetric: (v: "REACTIONS" | "ZAPS" | "SATS_ZAPPED") => void;
+  contestEndAt: string;
+  setContestEndAt: (v: string) => void;
+  tieBreakPreview: string;
+  stepIssuesRanking: string | null;
+  prizeMode: "EQUAL" | "RANKED";
+  setPrizeMode: (v: "EQUAL" | "RANKED") => void;
+  winnerCount: number;
+  setWinnerCount: (v: number) => void;
+  equalRewardSats: number;
+  setEqualRewardSats: (v: number) => void;
+  rankRewards: number[];
+  setRankRewards: Dispatch<SetStateAction<number[]>>;
+  prizeSummary: string;
+  stepIssuesRewards: string | null;
+  excludeMuted: boolean;
+  setExcludeMuted: (v: boolean) => void;
+  excludeBlocked: boolean;
+  setExcludeBlocked: (v: boolean) => void;
+  excludeLowTrust: boolean;
+  setExcludeLowTrust: (v: boolean) => void;
+  excludeNonFollowers: boolean;
+  setExcludeNonFollowers: (v: boolean) => void;
+  minAccountAgeDays: number;
+  setMinAccountAgeDays: (v: number) => void;
+  minFollowers: number;
+  setMinFollowers: (v: number) => void;
+  contestEndRequired: boolean;
+}) {
+  return (
+    <div className="space-y-8">
+      <section className="space-y-3">
+        <h2 className="text-foreground text-lg font-semibold">
+          2. Ranking rules
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="rankingMetric">
+              Ranking metric
+            </label>
+            <select
+              id="rankingMetric"
+              name="rankingMetric"
+              value={rankingMetric}
+              onChange={(e) => {
+                setRankingMetric(
+                  e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
+                );
+              }}
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="REACTIONS">Most reactions</option>
+              <option value="ZAPS">Most zaps</option>
+              <option value="SATS_ZAPPED">Most sats zapped</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="contestEndAt">
+              Contest end time
+            </label>
+            <input
+              id="contestEndAt"
+              name="contestEndAt"
+              type="datetime-local"
+              required={contestEndRequired}
+              value={contestEndAt}
+              onChange={(e) => {
+                setContestEndAt(e.target.value);
+              }}
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+      </section>
+      <div className="border-border bg-muted/25 space-y-2 rounded-lg border p-3 text-xs">
+        <p className="text-foreground font-medium">Eligibility filters</p>
+        <p className="text-muted-foreground">
+          Low-trust uses your account trust rules. Muted/blocked/non-followers
+          are checked at freeze.
+        </p>
+        <p className="text-muted-foreground">Tie-break: {tieBreakPreview}</p>
+        {stepIssuesRanking ? (
+          <p className="text-destructive">{stepIssuesRanking}</p>
+        ) : null}
+      </div>
+
+      <section className="space-y-3">
+        <h2 className="text-foreground text-lg font-semibold">
+          3. Prize structure
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
+            <input
+              type="radio"
+              name="prizeMode"
+              value="EQUAL"
+              checked={prizeMode === "EQUAL"}
+              onChange={() => {
+                setPrizeMode("EQUAL");
+              }}
+            />
+            Equal rewards
+          </label>
+          <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
+            <input
+              type="radio"
+              name="prizeMode"
+              value="RANKED"
+              checked={prizeMode === "RANKED"}
+              onChange={() => {
+                setPrizeMode("RANKED");
+              }}
+            />
+            Rank-based rewards
+          </label>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm" htmlFor="winnerCount">
+              Number of winners
+            </label>
+            <input
+              id="winnerCount"
+              name="winnerCount"
+              type="number"
+              min={1}
+              max={50}
+              value={winnerCount}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                const next = Number.isFinite(n)
+                  ? Math.min(50, Math.max(1, n))
+                  : winnerCount;
+                setWinnerCount(next);
+                setRankRewards((prev) => {
+                  const arr = [...prev];
+                  while (arr.length < next) arr.push(0);
+                  return arr.slice(0, next);
+                });
+              }}
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm" htmlFor="equalRewardSats">
+              Sats per winner (equal mode)
+            </label>
+            <input
+              id="equalRewardSats"
+              name="equalRewardSats"
+              type="number"
+              min={0}
+              value={equalRewardSats}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                setEqualRewardSats(Number.isFinite(n) ? Math.max(0, n) : 0);
+              }}
+              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        {prizeMode === "RANKED" ? (
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-xs">
+              Set sats for each rank from 1 through {winnerCount}. Unused ranks
+              can be 0.
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: winnerCount }, (_, i) => {
+                const rank = i + 1;
+                return (
+                  <div key={rank} className="space-y-1">
+                    <label
+                      className="text-muted-foreground text-xs"
+                      htmlFor={`rankReward_${rank}`}
+                    >
+                      Rank {rank} (sats)
+                    </label>
+                    <input
+                      id={`rankReward_${rank}`}
+                      name={`rankReward_${rank}`}
+                      type="number"
+                      min={0}
+                      value={rankRewards[i] ?? 0}
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value, 10);
+                        const v = Number.isFinite(n) ? Math.max(0, n) : 0;
+                        setRankRewards((prev) => {
+                          const next = [...prev];
+                          next[i] = v;
+                          return next;
+                        });
+                      }}
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </section>
+      <div className="border-border bg-muted/25 space-y-2 rounded-lg border p-3 text-xs">
+        <p className="text-foreground font-medium">Reward summary</p>
+        <p className="text-muted-foreground">{prizeSummary}</p>
+        {stepIssuesRewards ? (
+          <p className="text-destructive">{stepIssuesRewards}</p>
+        ) : null}
+      </div>
+
+      <section className="space-y-2">
+        <h2 className="text-foreground text-lg font-semibold">
+          4. Eligibility filters
+        </h2>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <label>
+            <input
+              type="checkbox"
+              name="excludeMuted"
+              checked={excludeMuted}
+              onChange={(e) => {
+                setExcludeMuted(e.target.checked);
+              }}
+            />{" "}
+            Exclude muted
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="excludeBlocked"
+              checked={excludeBlocked}
+              onChange={(e) => {
+                setExcludeBlocked(e.target.checked);
+              }}
+            />{" "}
+            Exclude blocked
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="excludeLowTrust"
+              checked={excludeLowTrust}
+              onChange={(e) => {
+                setExcludeLowTrust(e.target.checked);
+              }}
+            />{" "}
+            Exclude low trust
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              name="excludeNonFollowers"
+              checked={excludeNonFollowers}
+              onChange={(e) => {
+                setExcludeNonFollowers(e.target.checked);
+              }}
+            />{" "}
+            Exclude non-followers
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minAccountAgeDays"
+            type="number"
+            min={0}
+            placeholder="Min account age (days)"
+            value={minAccountAgeDays}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10);
+              setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
+            }}
+            className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+          />
+          <input
+            name="minFollowers"
+            type="number"
+            min={0}
+            placeholder="Min followers"
+            value={minFollowers}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10);
+              setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
+            }}
+            className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function NewContestRoute() {
   const loaderData = useLoaderData<typeof loader>();
   const presetKey = loaderData.presetDefaults?.id ?? "no-preset";
@@ -325,6 +654,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     preset?.title?.trim() ? preset.title : ""
   );
   const [now] = useState(() => Date.now());
+  const [createSetupStepsOpen, setCreateSetupStepsOpen] = useState(false);
 
   const { posts, planType, planLabel, presetDefaults } = loaderData;
 
@@ -452,7 +782,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         method="post"
         className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
       >
-        <div className="min-w-0 space-y-10">
+        <div className="min-w-0 space-y-8">
           <input
             type="hidden"
             name="sourcePostId"
@@ -526,264 +856,94 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
             ) : null}
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-foreground text-lg font-semibold">
-              2. Ranking rules
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="rankingMetric">
-                  Ranking metric
-                </label>
-                <select
-                  id="rankingMetric"
-                  name="rankingMetric"
-                  value={rankingMetric}
-                  onChange={(e) => {
-                    setRankingMetric(
-                      e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-                    );
-                  }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="REACTIONS">Most reactions</option>
-                  <option value="ZAPS">Most zaps</option>
-                  <option value="SATS_ZAPPED">Most sats zapped</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="contestEndAt">
-                  Contest end time
-                </label>
-                <input
-                  id="contestEndAt"
-                  name="contestEndAt"
-                  type="datetime-local"
-                  required
-                  value={contestEndAt}
-                  onChange={(e) => {
-                    setContestEndAt(e.target.value);
-                  }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+          {sourceMode === "create" ? (
+            <details
+              open={createSetupStepsOpen}
+              onToggle={(e) => {
+                setCreateSetupStepsOpen(e.currentTarget.open);
+              }}
+              className="border-border bg-card/30 group rounded-lg border"
+            >
+              <summary className="text-foreground cursor-pointer list-none px-4 py-3 text-base font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center justify-between gap-2">
+                  <span>
+                    Steps 2–4: Ranking, prizes, and eligibility
+                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                      (expand to configure)
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {createSetupStepsOpen ? "Hide" : "Show"}
+                  </span>
+                </span>
+              </summary>
+              <div className="border-border space-y-10 border-t px-4 pt-6 pb-4">
+                <ContestNewFormSetupSteps
+                  rankingMetric={rankingMetric}
+                  setRankingMetric={setRankingMetric}
+                  contestEndAt={contestEndAt}
+                  setContestEndAt={setContestEndAt}
+                  tieBreakPreview={tieBreakPreview}
+                  stepIssuesRanking={stepIssues.ranking}
+                  prizeMode={prizeMode}
+                  setPrizeMode={setPrizeMode}
+                  winnerCount={winnerCount}
+                  setWinnerCount={setWinnerCount}
+                  equalRewardSats={equalRewardSats}
+                  setEqualRewardSats={setEqualRewardSats}
+                  rankRewards={rankRewards}
+                  setRankRewards={setRankRewards}
+                  prizeSummary={prizeSummary}
+                  stepIssuesRewards={stepIssues.rewards}
+                  excludeMuted={excludeMuted}
+                  setExcludeMuted={setExcludeMuted}
+                  excludeBlocked={excludeBlocked}
+                  setExcludeBlocked={setExcludeBlocked}
+                  excludeLowTrust={excludeLowTrust}
+                  setExcludeLowTrust={setExcludeLowTrust}
+                  excludeNonFollowers={excludeNonFollowers}
+                  setExcludeNonFollowers={setExcludeNonFollowers}
+                  minAccountAgeDays={minAccountAgeDays}
+                  setMinAccountAgeDays={setMinAccountAgeDays}
+                  minFollowers={minFollowers}
+                  setMinFollowers={setMinFollowers}
+                  contestEndRequired={false}
                 />
               </div>
-            </div>
-          </section>
-          <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
-            <p className="font-medium">Eligibility filters</p>
-            <p className="text-muted-foreground">
-              Low-trust uses your account trust rules.
-              Muted/blocked/non-followers are checked at freeze.
-            </p>
-            <p className="text-muted-foreground">
-              Tie-break: {tieBreakPreview}
-            </p>
-            {stepIssues.ranking ? (
-              <p className="text-destructive">{stepIssues.ranking}</p>
-            ) : null}
-          </div>
-
-          <section className="space-y-3">
-            <h2 className="text-foreground text-lg font-semibold">
-              3. Prize structure
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-                <input
-                  type="radio"
-                  name="prizeMode"
-                  value="EQUAL"
-                  checked={prizeMode === "EQUAL"}
-                  onChange={() => {
-                    setPrizeMode("EQUAL");
-                  }}
-                />
-                Equal rewards
-              </label>
-              <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-                <input
-                  type="radio"
-                  name="prizeMode"
-                  value="RANKED"
-                  checked={prizeMode === "RANKED"}
-                  onChange={() => {
-                    setPrizeMode("RANKED");
-                  }}
-                />
-                Rank-based rewards
-              </label>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm" htmlFor="winnerCount">
-                  Number of winners
-                </label>
-                <input
-                  id="winnerCount"
-                  name="winnerCount"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={winnerCount}
-                  onChange={(e) => {
-                    const n = parseInt(e.target.value, 10);
-                    const next = Number.isFinite(n)
-                      ? Math.min(50, Math.max(1, n))
-                      : winnerCount;
-                    setWinnerCount(next);
-                    setRankRewards((prev) => {
-                      const arr = [...prev];
-                      while (arr.length < next) arr.push(0);
-                      return arr.slice(0, next);
-                    });
-                  }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm" htmlFor="equalRewardSats">
-                  Sats per winner (equal mode)
-                </label>
-                <input
-                  id="equalRewardSats"
-                  name="equalRewardSats"
-                  type="number"
-                  min={0}
-                  value={equalRewardSats}
-                  onChange={(e) => {
-                    const n = parseInt(e.target.value, 10);
-                    setEqualRewardSats(Number.isFinite(n) ? Math.max(0, n) : 0);
-                  }}
-                  className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-            {prizeMode === "RANKED" ? (
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-xs">
-                  Set sats for each rank from 1 through {winnerCount}. Unused
-                  ranks can be 0.
-                </p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: winnerCount }, (_, i) => {
-                    const rank = i + 1;
-                    return (
-                      <div key={rank} className="space-y-1">
-                        <label
-                          className="text-muted-foreground text-xs"
-                          htmlFor={`rankReward_${rank}`}
-                        >
-                          Rank {rank} (sats)
-                        </label>
-                        <input
-                          id={`rankReward_${rank}`}
-                          name={`rankReward_${rank}`}
-                          type="number"
-                          min={0}
-                          value={rankRewards[i] ?? 0}
-                          onChange={(e) => {
-                            const n = parseInt(e.target.value, 10);
-                            const v = Number.isFinite(n) ? Math.max(0, n) : 0;
-                            setRankRewards((prev) => {
-                              const next = [...prev];
-                              next[i] = v;
-                              return next;
-                            });
-                          }}
-                          className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-          </section>
-          <div className="border-border bg-muted/20 space-y-2 rounded-md border p-3 text-xs">
-            <p className="font-medium">Reward summary</p>
-            <p className="text-muted-foreground">{prizeSummary}</p>
-            {stepIssues.rewards ? (
-              <p className="text-destructive">{stepIssues.rewards}</p>
-            ) : null}
-          </div>
-
-          <section className="space-y-2">
-            <h2 className="text-foreground text-lg font-semibold">
-              4. Eligibility filters
-            </h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <label>
-                <input
-                  type="checkbox"
-                  name="excludeMuted"
-                  checked={excludeMuted}
-                  onChange={(e) => {
-                    setExcludeMuted(e.target.checked);
-                  }}
-                />{" "}
-                Exclude muted
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="excludeBlocked"
-                  checked={excludeBlocked}
-                  onChange={(e) => {
-                    setExcludeBlocked(e.target.checked);
-                  }}
-                />{" "}
-                Exclude blocked
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="excludeLowTrust"
-                  checked={excludeLowTrust}
-                  onChange={(e) => {
-                    setExcludeLowTrust(e.target.checked);
-                  }}
-                />{" "}
-                Exclude low trust
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="excludeNonFollowers"
-                  checked={excludeNonFollowers}
-                  onChange={(e) => {
-                    setExcludeNonFollowers(e.target.checked);
-                  }}
-                />{" "}
-                Exclude non-followers
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                name="minAccountAgeDays"
-                type="number"
-                min={0}
-                placeholder="Min account age (days)"
-                value={minAccountAgeDays}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10);
-                  setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
-                }}
-                className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-              />
-              <input
-                name="minFollowers"
-                type="number"
-                min={0}
-                placeholder="Min followers"
-                value={minFollowers}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10);
-                  setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
-                }}
-                className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-              />
-            </div>
-          </section>
+            </details>
+          ) : (
+            <ContestNewFormSetupSteps
+              rankingMetric={rankingMetric}
+              setRankingMetric={setRankingMetric}
+              contestEndAt={contestEndAt}
+              setContestEndAt={setContestEndAt}
+              tieBreakPreview={tieBreakPreview}
+              stepIssuesRanking={stepIssues.ranking}
+              prizeMode={prizeMode}
+              setPrizeMode={setPrizeMode}
+              winnerCount={winnerCount}
+              setWinnerCount={setWinnerCount}
+              equalRewardSats={equalRewardSats}
+              setEqualRewardSats={setEqualRewardSats}
+              rankRewards={rankRewards}
+              setRankRewards={setRankRewards}
+              prizeSummary={prizeSummary}
+              stepIssuesRewards={stepIssues.rewards}
+              excludeMuted={excludeMuted}
+              setExcludeMuted={setExcludeMuted}
+              excludeBlocked={excludeBlocked}
+              setExcludeBlocked={setExcludeBlocked}
+              excludeLowTrust={excludeLowTrust}
+              setExcludeLowTrust={setExcludeLowTrust}
+              excludeNonFollowers={excludeNonFollowers}
+              setExcludeNonFollowers={setExcludeNonFollowers}
+              minAccountAgeDays={minAccountAgeDays}
+              setMinAccountAgeDays={setMinAccountAgeDays}
+              minFollowers={minFollowers}
+              setMinFollowers={setMinFollowers}
+              contestEndRequired
+            />
+          )}
         </div>
 
         <div className="mt-10 w-full min-w-0 self-start lg:mt-0">

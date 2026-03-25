@@ -25,6 +25,7 @@ import {
   ContestDetailHeroHeader,
   ContestDetailLiveSection,
   ContestDetailSourceSection,
+  ContestPublicShareRow,
 } from "./ContestDetailSections";
 import { ContestStateBanner } from "./ContestStateBanner";
 
@@ -181,6 +182,8 @@ export function ContestDetailView({
         stateSummary={stateSummary}
         statusTimestamp={statusTimestamp}
       />
+
+      {!isDraft ? <ContestPublicShareRow contestId={contest.id} /> : null}
 
       <div className="min-w-0 space-y-6">
         <ContestStateBanner status={contest.status} />

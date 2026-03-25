@@ -1,6 +1,7 @@
 import type { SerializeFrom } from "@remix-run/node";
 import { Form, Link } from "@remix-run/react";
 
+import { Button } from "~/components/ui/button";
 import { CampaignReceiptProofShell } from "~/features/campaign-ui";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
 
@@ -68,6 +69,36 @@ export function ContestDetailBackLink() {
       >
         ← Back to Contests
       </Link>
+    </div>
+  );
+}
+
+export function ContestPublicShareRow({ contestId }: { contestId: string }) {
+  const publicPath = `/contest/${contestId}`;
+  return (
+    <div className="border-border bg-muted/15 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
+      <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        Public results
+      </span>
+      <Button variant="outline" size="sm" asChild>
+        <a href={publicPath} target="_blank" rel="noreferrer">
+          Open public page
+        </a>
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          const url =
+            typeof window !== "undefined"
+              ? `${window.location.origin}${publicPath}`
+              : publicPath;
+          void navigator.clipboard.writeText(url);
+        }}
+      >
+        Copy public link
+      </Button>
     </div>
   );
 }
@@ -163,27 +194,14 @@ export function ContestDetailLiveSection({
     return null;
   }
   return (
-    <>
-      <div className="border-border bg-card rounded-lg border p-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="rounded bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
-            Live
-          </span>
-          <span className="text-muted-foreground text-xs">
-            Winner slots: {contest.winnerCount}
-          </span>
-        </div>
-        <p className="text-sm font-medium">
-          Reply to the source post before the deadline. Winners are ranked by{" "}
-          {metric.toLowerCase()}.
-        </p>
-      </div>
+    <div className="space-y-5">
       <ContestLiveHeader
         contestEndAtIso={contest.contestEndAt}
         rankingMetric={metric}
         winnerCount={contest.winnerCount}
         plannedPayoutSats={data.quote.plannedPayoutSats}
         totalEntries={data.liveStats.totalEntries}
+        intro={`Reply to the source post before the deadline. Winners are ranked by ${metric.toLowerCase()}.`}
       />
       <ContestStatsStrip
         metric={metric}
@@ -192,8 +210,8 @@ export function ContestDetailLiveSection({
         leadingScore={data.liveStats.leadingScore}
         aggregates={data.aggregates}
       />
-      <div>
-        <p className="text-muted-foreground mb-2 text-xs font-medium">
+      <div className="border-border bg-muted/15 rounded-lg border p-3">
+        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
           {contestCopy.shareActions}
         </p>
         <ContestShareActions
@@ -211,13 +229,6 @@ export function ContestDetailLiveSection({
             {contestCopy.freezeLeaderboard}
           </button>
         </Form>
-        <button
-          type="button"
-          className="border-border bg-background rounded-md border px-4 py-2 text-sm"
-          onClick={() => void navigator.clipboard.writeText(updateText)}
-        >
-          {contestCopy.copyUpdate}
-        </button>
       </div>
       <ContestLeaderboard
         metric={metric}
@@ -227,7 +238,7 @@ export function ContestDetailLiveSection({
         rows={liveRows}
         mode="live"
       />
-    </>
+    </div>
   );
 }
 

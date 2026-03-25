@@ -5,6 +5,7 @@
  */
 
 import { useFetcher, useNavigate } from "@remix-run/react";
+import { ChevronDown } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -18,13 +19,17 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
+import {
+  ConfidencePanel,
+  PanelContent,
+} from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { DraftPickerModal } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
@@ -114,6 +119,11 @@ export interface UnifiedComposerProps {
   embedContext?: "contest";
   /** Called after a successful publish when `embedContext` is set (JSON response from server). */
   onEmbedPublishSuccess?: (payload: ContestEmbedPublishPayload) => void;
+  /**
+   * When `embedContext` is `contest`, controls UI density. Defaults to `contest-lite`
+   * (queue/tags/advanced schedule behind a collapsible).
+   */
+  embeddedDensity?: "full" | "contest-lite";
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -139,12 +149,17 @@ export function UnifiedComposer({
   draftPickerNavigateBase = "/dashboard/newpost",
   embedContext,
   onEmbedPublishSuccess,
+  embeddedDensity,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
+  const [advancedPostingOpen, setAdvancedPostingOpen] = React.useState(false);
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
+  const isContestLite =
+    embedContext === "contest" &&
+    (embeddedDensity ?? "contest-lite") === "contest-lite";
   const initialAttachmentsFromDraft = React.useMemo(() => {
     const meta = initialDraft?.draftMeta?.attachmentMeta;
     if (!meta?.length) return [];
@@ -869,9 +884,287 @@ export function UnifiedComposer({
             />
           </div>
         ) : null}
-        <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-3">
-            {!isTemplateMode ? (
+        {!isTemplateMode && isContestLite ? (
+          <div className="mt-6 space-y-4">
+            <ComposerScheduleField
+              layout="minimal"
+              value={
+                /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
+                formScheduledFor ?? schedulingScheduledFor ?? ""
+              }
+              onValueChange={(v) => {
+                form.setValue("scheduledFor", v);
+                setSchedulingScheduledFor(v);
+              }}
+              scheduleIntervals={scheduleIntervals}
+              queueTypes={queueTypes}
+              selectedQueue={selectedQueue}
+              onScheduleIntervalClick={handleScheduleIntervalClick}
+              onCalculateNextSlot={() =>
+                void calculateQueueScheduleTime(selectedQueue)
+              }
+              scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+              onScheduleRandomWindowMinutesChange={
+                setScheduleRandomWindowMinutes
+              }
+              postOptionsOpen={postOptionsOpen}
+              onPostOptionsOpenChange={setPostOptionsOpen}
+              isThreadMode={isThreadMode}
+              onThreadModeChange={setIsThreadMode}
+              isRecyclable={!!form.watch("isRecyclable")}
+              onRecyclableChange={(v) => form.setValue("isRecyclable", v)}
+              control={form.control}
+              alsoScheduleRepost={alsoScheduleRepost}
+              onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+              repostDelayList={repostDelayList}
+              onRepostDelayListChange={setRepostDelayList}
+              repostConditions={repostConditions}
+              onRepostConditionsChange={setRepostConditions}
+              alsoScheduleQuote={alsoScheduleQuote}
+              onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+              quoteEntries={quoteEntries}
+              onQuoteEntriesChange={setQuoteEntries}
+              disabled={disabled}
+              userTimezone={user?.timezone ?? "UTC"}
+            />
+            <div className="border-border bg-muted/20 rounded-lg border px-3 py-2 text-xs">
+              <p className="text-muted-foreground font-medium">
+                Ready to publish
+              </p>
+              <p className="text-foreground mt-1">
+                {signerReady === false
+                  ? "Connect a signer to publish."
+                  : `${signerLabel ?? "Signer"} · ${relayCount} relay${relayCount !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+            <div className="border-border rounded-lg border">
+              <button
+                type="button"
+                onClick={() => {
+                  setAdvancedPostingOpen((o) => !o);
+                }}
+                aria-expanded={advancedPostingOpen}
+                className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors"
+              >
+                <span>Advanced posting settings</span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 transition-transform ${advancedPostingOpen ? "rotate-180" : ""}`}
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+              </button>
+              {advancedPostingOpen ? (
+                <div className="border-border space-y-4 border-t px-3 pt-2 pb-3">
+                  <ComposerQueueField
+                    queueTypes={queueTypes}
+                    value={selectedQueue}
+                    onChange={setSelectedQueue}
+                    disabled={disabled}
+                    className="mb-2"
+                    nextSlot={
+                      selectedQueueType &&
+                      typeof selectedQueueType === "object" &&
+                      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                        ? getQueueNextSlotLabel(
+                            formScheduledFor ?? schedulingScheduledFor
+                          )
+                        : undefined
+                    }
+                  />
+                  <TagsChipRow
+                    tags={selectedHashtags}
+                    onTagsChange={(newTags) => {
+                      setSelectedHashtags(newTags);
+                      if (!newTags.trim()) {
+                        form.setValue("useHashtagPresets", false);
+                        form.setValue("hashTagPresetId", undefined);
+                        onHashtagPresetChange?.(null, "");
+                      }
+                    }}
+                    presets={hashTagPresets}
+                    selectedPresetId={formSelectedHashtagPresetId}
+                    onPresetSelect={(presetId, mergedTags) => {
+                      setSelectedHashtags(mergedTags);
+                      form.setValue("useHashtagPresets", true);
+                      form.setValue("hashTagPresetId", presetId ?? undefined);
+                      onHashtagPresetChange?.(presetId, mergedTags);
+                    }}
+                    disabled={fetcher.state !== "idle"}
+                    queuePresetName={
+                      selectedQueue !== "unassigned"
+                        ? ((
+                            queueTypes.find(
+                              (q) =>
+                                (typeof q === "string" ? q : q.name) ===
+                                selectedQueue
+                            ) as
+                              | (QueueType & {
+                                  hashTagPreset?: { name: string } | null;
+                                })
+                              | undefined
+                          )?.hashTagPreset?.name ?? undefined)
+                        : undefined
+                    }
+                  />
+                  <ComposerScheduleField
+                    layout="full"
+                    omitScheduleInput
+                    value={
+                      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
+                      formScheduledFor ?? schedulingScheduledFor ?? ""
+                    }
+                    onValueChange={(v) => {
+                      form.setValue("scheduledFor", v);
+                      setSchedulingScheduledFor(v);
+                    }}
+                    scheduleIntervals={scheduleIntervals}
+                    queueTypes={queueTypes}
+                    selectedQueue={selectedQueue}
+                    onScheduleIntervalClick={handleScheduleIntervalClick}
+                    onCalculateNextSlot={() =>
+                      void calculateQueueScheduleTime(selectedQueue)
+                    }
+                    scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+                    onScheduleRandomWindowMinutesChange={
+                      setScheduleRandomWindowMinutes
+                    }
+                    postOptionsOpen={postOptionsOpen}
+                    onPostOptionsOpenChange={setPostOptionsOpen}
+                    isThreadMode={isThreadMode}
+                    onThreadModeChange={setIsThreadMode}
+                    isRecyclable={!!form.watch("isRecyclable")}
+                    onRecyclableChange={(v) => form.setValue("isRecyclable", v)}
+                    control={form.control}
+                    alsoScheduleRepost={alsoScheduleRepost}
+                    onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+                    repostDelayList={repostDelayList}
+                    onRepostDelayListChange={setRepostDelayList}
+                    repostConditions={repostConditions}
+                    onRepostConditionsChange={setRepostConditions}
+                    alsoScheduleQuote={alsoScheduleQuote}
+                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                    quoteEntries={quoteEntries}
+                    onQuoteEntriesChange={setQuoteEntries}
+                    disabled={disabled}
+                    userTimezone={user?.timezone ?? "UTC"}
+                    postOptionsSummary={
+                      !postOptionsOpen &&
+                      (isThreadMode ||
+                        form.watch("isRecyclable") ||
+                        alsoScheduleRepost ||
+                        alsoScheduleQuote)
+                        ? [
+                            isThreadMode &&
+                              `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
+                            form.watch("isRecyclable") && "Recyclable",
+                            (alsoScheduleRepost || alsoScheduleQuote) &&
+                              [
+                                alsoScheduleRepost &&
+                                  `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
+                                alsoScheduleQuote &&
+                                  `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · "),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        : undefined
+                    }
+                  />
+                  <div className="border-border space-y-2 border-t pt-3">
+                    <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                      Execution summary
+                    </h4>
+                    <PanelContent
+                      queueName={selectedQueue}
+                      nextSlot={
+                        selectedQueueType &&
+                        typeof selectedQueueType === "object" &&
+                        (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                          selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                          ? (
+                              formScheduledFor ?? schedulingScheduledFor
+                            ).trim() || undefined
+                          : undefined
+                      }
+                      scheduledFor={
+                        (formScheduledFor ?? schedulingScheduledFor).trim() ||
+                        undefined
+                      }
+                      timezone={user?.timezone ?? undefined}
+                      relativeTime={getRelativeTime(
+                        formScheduledFor ?? schedulingScheduledFor
+                      )}
+                      charCount={
+                        isThreadMode
+                          ? threadSegments.reduce(
+                              (acc, s) => acc + s.content.length,
+                              0
+                            )
+                          : content.length
+                      }
+                      attachmentCount={
+                        isThreadMode
+                          ? threadSegments.reduce(
+                              (acc, s) => acc + s.attachments.length,
+                              0
+                            )
+                          : attachments.length
+                      }
+                      signerType={signerLabel ?? undefined}
+                      relayCount={relayCount}
+                      summaryLine={getSummaryLine(
+                        selectedQueue,
+                        formScheduledFor ?? schedulingScheduledFor,
+                        isThreadMode,
+                        threadSegments.length,
+                        threadDelayMinutes
+                      )}
+                      threadSummary={
+                        isThreadMode
+                          ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
+                          : undefined
+                      }
+                      warnings={undefined}
+                      usesQueueSlot={
+                        !!(
+                          selectedQueueType &&
+                          typeof selectedQueueType === "object" &&
+                          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                            selectedQueueType.scheduleType ===
+                              "WEEKLY_SLOTS") &&
+                          (formScheduledFor ?? schedulingScheduledFor).trim()
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center sm:justify-end">
+              <ComposerActionButtons
+                isTemplateMode={isTemplateMode}
+                primarySubmitRef={primarySubmitRef}
+                draftSubmitRef={draftSubmitRef}
+                disabled={disabled}
+                signerReady={signerReady}
+                hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
+                scheduleTimeLabel={scheduleTimeLabel}
+                isThreadMode={isThreadMode}
+                segmentCount={threadSegments.length}
+                threadDelayMinutes={threadDelayMinutes}
+                isSigning={isSigning}
+                fetcherState={fetcher.state}
+                templateName={templateName}
+                editTemplateContext={editTemplateContext}
+              />
+            </div>
+          </div>
+        ) : !isTemplateMode ? (
+          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-3">
               <ComposerQueueField
                 queueTypes={queueTypes}
                 value={selectedQueue}
@@ -889,42 +1182,41 @@ export function UnifiedComposer({
                     : undefined
                 }
               />
-            ) : null}
-            <TagsChipRow
-              tags={selectedHashtags}
-              onTagsChange={(newTags) => {
-                setSelectedHashtags(newTags);
-                if (!newTags.trim()) {
-                  form.setValue("useHashtagPresets", false);
-                  form.setValue("hashTagPresetId", undefined);
-                  onHashtagPresetChange?.(null, "");
+              <TagsChipRow
+                tags={selectedHashtags}
+                onTagsChange={(newTags) => {
+                  setSelectedHashtags(newTags);
+                  if (!newTags.trim()) {
+                    form.setValue("useHashtagPresets", false);
+                    form.setValue("hashTagPresetId", undefined);
+                    onHashtagPresetChange?.(null, "");
+                  }
+                }}
+                presets={hashTagPresets}
+                selectedPresetId={formSelectedHashtagPresetId}
+                onPresetSelect={(presetId, mergedTags) => {
+                  setSelectedHashtags(mergedTags);
+                  form.setValue("useHashtagPresets", true);
+                  form.setValue("hashTagPresetId", presetId ?? undefined);
+                  onHashtagPresetChange?.(presetId, mergedTags);
+                }}
+                disabled={fetcher.state !== "idle"}
+                queuePresetName={
+                  selectedQueue !== "unassigned"
+                    ? ((
+                        queueTypes.find(
+                          (q) =>
+                            (typeof q === "string" ? q : q.name) ===
+                            selectedQueue
+                        ) as
+                          | (QueueType & {
+                              hashTagPreset?: { name: string } | null;
+                            })
+                          | undefined
+                      )?.hashTagPreset?.name ?? undefined)
+                    : undefined
                 }
-              }}
-              presets={hashTagPresets}
-              selectedPresetId={formSelectedHashtagPresetId}
-              onPresetSelect={(presetId, mergedTags) => {
-                setSelectedHashtags(mergedTags);
-                form.setValue("useHashtagPresets", true);
-                form.setValue("hashTagPresetId", presetId ?? undefined);
-                onHashtagPresetChange?.(presetId, mergedTags);
-              }}
-              disabled={fetcher.state !== "idle"}
-              queuePresetName={
-                selectedQueue !== "unassigned"
-                  ? ((
-                      queueTypes.find(
-                        (q) =>
-                          (typeof q === "string" ? q : q.name) === selectedQueue
-                      ) as
-                        | (QueueType & {
-                            hashTagPreset?: { name: string } | null;
-                          })
-                        | undefined
-                    )?.hashTagPreset?.name ?? undefined)
-                  : undefined
-              }
-            />
-            {!isTemplateMode ? (
+              />
               <ComposerScheduleField
                 value={
                   /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
@@ -989,80 +1281,82 @@ export function UnifiedComposer({
                     : undefined
                 }
               />
-            ) : null}
+            </div>
+            <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
+              <ComposerActionButtons
+                isTemplateMode={isTemplateMode}
+                primarySubmitRef={primarySubmitRef}
+                draftSubmitRef={draftSubmitRef}
+                disabled={disabled}
+                signerReady={signerReady}
+                hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
+                scheduleTimeLabel={scheduleTimeLabel}
+                isThreadMode={isThreadMode}
+                segmentCount={threadSegments.length}
+                threadDelayMinutes={threadDelayMinutes}
+                isSigning={isSigning}
+                fetcherState={fetcher.state}
+                templateName={templateName}
+                editTemplateContext={editTemplateContext}
+              />
+            </div>
           </div>
-          <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
-            <ComposerActionButtons
-              isTemplateMode={isTemplateMode}
-              primarySubmitRef={primarySubmitRef}
-              draftSubmitRef={draftSubmitRef}
-              disabled={disabled}
-              signerReady={signerReady}
-              hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
-              scheduleTimeLabel={scheduleTimeLabel}
-              isThreadMode={isThreadMode}
-              segmentCount={threadSegments.length}
-              threadDelayMinutes={threadDelayMinutes}
-              isSigning={isSigning}
-              fetcherState={fetcher.state}
-              templateName={templateName}
-              editTemplateContext={editTemplateContext}
-            />
-          </div>
-        </div>
+        ) : null}
       </fetcher.Form>
-      <ConfidencePanel
-        queueName={selectedQueue}
-        nextSlot={
-          selectedQueueType &&
-          typeof selectedQueueType === "object" &&
-          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-            selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-            ? (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
-            : undefined
-        }
-        scheduledFor={
-          (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
-        }
-        timezone={user?.timezone ?? undefined}
-        relativeTime={getRelativeTime(
-          formScheduledFor ?? schedulingScheduledFor
-        )}
-        charCount={
-          isThreadMode
-            ? threadSegments.reduce((acc, s) => acc + s.content.length, 0)
-            : content.length
-        }
-        attachmentCount={
-          isThreadMode
-            ? threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)
-            : attachments.length
-        }
-        signerType={signerLabel ?? undefined}
-        relayCount={relayCount}
-        summaryLine={getSummaryLine(
-          selectedQueue,
-          formScheduledFor ?? schedulingScheduledFor,
-          isThreadMode,
-          threadSegments.length,
-          threadDelayMinutes
-        )}
-        threadSummary={
-          isThreadMode
-            ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
-            : undefined
-        }
-        warnings={undefined}
-        usesQueueSlot={
-          !!(
+      {!isContestLite ? (
+        <ConfidencePanel
+          queueName={selectedQueue}
+          nextSlot={
             selectedQueueType &&
             typeof selectedQueueType === "object" &&
             (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-              selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
-            (formScheduledFor ?? schedulingScheduledFor).trim()
-          )
-        }
-      />
+              selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+              ? (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
+              : undefined
+          }
+          scheduledFor={
+            (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
+          }
+          timezone={user?.timezone ?? undefined}
+          relativeTime={getRelativeTime(
+            formScheduledFor ?? schedulingScheduledFor
+          )}
+          charCount={
+            isThreadMode
+              ? threadSegments.reduce((acc, s) => acc + s.content.length, 0)
+              : content.length
+          }
+          attachmentCount={
+            isThreadMode
+              ? threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)
+              : attachments.length
+          }
+          signerType={signerLabel ?? undefined}
+          relayCount={relayCount}
+          summaryLine={getSummaryLine(
+            selectedQueue,
+            formScheduledFor ?? schedulingScheduledFor,
+            isThreadMode,
+            threadSegments.length,
+            threadDelayMinutes
+          )}
+          threadSummary={
+            isThreadMode
+              ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
+              : undefined
+          }
+          warnings={undefined}
+          usesQueueSlot={
+            !!(
+              selectedQueueType &&
+              typeof selectedQueueType === "object" &&
+              (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
+              (formScheduledFor ?? schedulingScheduledFor).trim()
+            )
+          }
+        />
+      ) : null}
       <DraftPickerModal
         open={draftPickerOpen}
         onClose={() => setDraftPickerOpen(false)}

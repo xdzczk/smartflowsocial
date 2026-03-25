@@ -23,6 +23,7 @@ import {
   getContestEntryCounts,
   formatContestStatusLabel,
   getContestKpiCounts,
+  getContestSourcePostThumbnails,
   listContestsFiltered,
 } from "~/features/contest";
 import {
@@ -66,6 +67,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     0
   );
 
+  const sourcePostIds = [
+    ...new Set(
+      filteredByQ
+        .map((c) => c.sourcePostId)
+        .filter(
+          (id): id is string => typeof id === "string" && id.trim() !== ""
+        )
+    ),
+  ];
+  const sourceThumbByPostId = await getContestSourcePostThumbnails(
+    userId,
+    sourcePostIds
+  );
+
   return json({
     contests: filteredByQ.map((c) => ({
       id: c.id,
@@ -78,6 +93,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       plannedPayoutSats: c.plannedPayoutSats ?? 0,
       entries: entryCounts[c.id] ?? 0,
       updatedAt: c.updatedAt.toISOString(),
+      sourceThumbUrl: c.sourcePostId
+        ? (sourceThumbByPostId[c.sourcePostId] ?? null)
+        : null,
     })),
     totals: { totalSatsPlanned, totalEntries },
     kpiCounts,
@@ -135,6 +153,20 @@ function contestStatusPillClass(status: string): string {
     CANCELLED: "bg-destructive/15 text-destructive",
   };
   return map[status] ?? "bg-muted text-muted-foreground";
+}
+
+function contestStatusDotClass(status: string): string {
+  const amber = "bg-amber-500";
+  const map: Record<string, string> = {
+    DRAFT: "bg-muted-foreground",
+    LIVE: "bg-blue-500",
+    ENDED_REVIEW: amber,
+    LOCKED: amber,
+    PAYOUT_IN_PROGRESS: amber,
+    COMPLETED: "bg-emerald-500",
+    CANCELLED: "bg-destructive",
+  };
+  return map[status] ?? "bg-muted-foreground";
 }
 
 function contestRowTitle(title: string | null | undefined, id: string): string {
@@ -347,6 +379,9 @@ export default function ContestsIndexRoute() {
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/40 border-border text-muted-foreground border-b text-xs uppercase">
                 <tr>
+                  <th className="w-12 px-2 py-3 font-medium" aria-hidden>
+                    <span className="sr-only">Source</span>
+                  </th>
                   <th className="px-4 py-3 font-medium">Contest</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Metric</th>
@@ -358,14 +393,32 @@ export default function ContestsIndexRoute() {
               </thead>
               <tbody className="divide-border divide-y">
                 {data.contests.map((contest) => (
-                  <tr key={contest.id} className="hover:bg-muted/30">
+                  <tr
+                    key={contest.id}
+                    className="hover:bg-muted/40 cursor-pointer transition-colors"
+                    onClick={() => {
+                      navigate(`/dashboard/contests/detail/${contest.id}`);
+                    }}
+                  >
+                    <td className="w-12 px-2 py-2 align-middle">
+                      <div className="border-border bg-muted/50 size-9 overflow-hidden rounded-md border">
+                        {contest.sourceThumbUrl ? (
+                          <img
+                            src={contest.sourceThumbUrl}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-muted-foreground flex size-full items-center justify-center text-[10px]">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
-                      <Link
-                        to={`/dashboard/contests/detail/${contest.id}`}
-                        className="text-foreground font-medium hover:underline"
-                      >
+                      <span className="text-foreground font-medium">
                         {contestRowTitle(contest.title, contest.id)}
-                      </Link>
+                      </span>
                       <p className="text-muted-foreground text-xs">
                         Ends{" "}
                         {new Date(contest.endAt).toLocaleDateString(undefined, {
@@ -376,8 +429,12 @@ export default function ContestsIndexRoute() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
                       >
+                        <span
+                          className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
+                          aria-hidden
+                        />
                         {contest.statusLabel}
                       </span>
                     </td>
@@ -404,7 +461,12 @@ export default function ContestsIndexRoute() {
                         }
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td
+                      className="px-4 py-3 text-right"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
                       <div className="flex flex-wrap justify-end gap-1">
                         <Button variant="ghost" size="sm" asChild>
                           <Link to={`/dashboard/contests/detail/${contest.id}`}>
@@ -451,62 +513,99 @@ export default function ContestsIndexRoute() {
           </div>
 
           <ul className="border-border bg-card divide-border divide-y rounded-lg border md:hidden">
-            {data.contests.map((contest) => (
-              <li key={contest.id} className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <Link
-                      to={`/dashboard/contests/detail/${contest.id}`}
-                      className="text-foreground font-medium hover:underline"
-                    >
-                      {contestRowTitle(contest.title, contest.id)}
-                    </Link>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
-                      >
-                        {contest.statusLabel}
-                      </span>
+            {data.contests.map((contest) => {
+              return (
+                /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- whole card opens detail; action strip stops propagation */
+                <li
+                  key={contest.id}
+                  className="hover:bg-muted/30 cursor-pointer p-4 transition-colors"
+                  onClick={() => {
+                    navigate(`/dashboard/contests/detail/${contest.id}`);
+                  }}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="border-border bg-muted/50 size-12 shrink-0 overflow-hidden rounded-full border">
+                      {contest.sourceThumbUrl ? (
+                        <img
+                          src={contest.sourceThumbUrl}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-muted-foreground flex size-full items-center justify-center text-xs">
+                          —
+                        </div>
+                      )}
                     </div>
-                    <p className="text-muted-foreground mt-2 text-xs">
-                      {contest.metric.toLowerCase()} · Ends{" "}
-                      {new Date(contest.endAt).toLocaleDateString()}
-                    </p>
-                    <p className="text-muted-foreground mt-2 text-xs">
-                      {contest.winners} winners ·{" "}
-                      {contest.plannedPayoutSats.toLocaleString()} sats planned
-                      · {contest.entries.toLocaleString()} entries
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-foreground font-medium">
+                        {contestRowTitle(contest.title, contest.id)}
+                      </span>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                        >
+                          <span
+                            className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
+                            aria-hidden
+                          />
+                          {contest.statusLabel}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        {contest.metric.toLowerCase()} · Ends{" "}
+                        {new Date(contest.endAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        {contest.winners} winners ·{" "}
+                        {contest.plannedPayoutSats.toLocaleString()} sats
+                        planned · {contest.entries.toLocaleString()} entries
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" variant="secondary" asChild>
-                    <Link to={`/dashboard/contests/detail/${contest.id}`}>
-                      Open
-                    </Link>
-                  </Button>
-                  <Form method="post" className="inline">
-                    <input type="hidden" name="intent" value="duplicate" />
-                    <input type="hidden" name="contestId" value={contest.id} />
-                    <Button type="submit" size="sm" variant="outline">
-                      {contestCopy.duplicate}
+                  {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- stop propagation to parent li */}
+                  <div
+                    className="mt-3 flex flex-wrap gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Button size="sm" variant="secondary" asChild>
+                      <Link to={`/dashboard/contests/detail/${contest.id}`}>
+                        Open
+                      </Link>
                     </Button>
-                  </Form>
-                  <Form method="post" className="inline">
-                    <input type="hidden" name="intent" value="delete" />
-                    <input type="hidden" name="contestId" value={contest.id} />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant="outline"
-                      className="text-destructive"
-                    >
-                      Delete
-                    </Button>
-                  </Form>
-                </div>
-              </li>
-            ))}
+                    <Form method="post" className="inline">
+                      <input type="hidden" name="intent" value="duplicate" />
+                      <input
+                        type="hidden"
+                        name="contestId"
+                        value={contest.id}
+                      />
+                      <Button type="submit" size="sm" variant="outline">
+                        {contestCopy.duplicate}
+                      </Button>
+                    </Form>
+                    <Form method="post" className="inline">
+                      <input type="hidden" name="intent" value="delete" />
+                      <input
+                        type="hidden"
+                        name="contestId"
+                        value={contest.id}
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                      >
+                        Delete
+                      </Button>
+                    </Form>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </>
       ) : (

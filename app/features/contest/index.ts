@@ -31,6 +31,7 @@ export {
   deleteContest,
   duplicateContest,
   appendContestEventLog,
+  getContestSourcePostThumbnails,
 } from "./contest-actions.server";
 export { formatContestStatusLabel } from "./contest-status-ui";
 export {

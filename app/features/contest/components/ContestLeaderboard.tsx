@@ -46,10 +46,21 @@ export function ContestLeaderboard({
 }) {
   const winnerByEvent = new Map(winners.map((w) => [w.entryEventId, w]));
 
+  const liveLeaderboardTitle =
+    mode === "live" ? `${title} — top ${winnerCount} in the money` : title;
+
   return (
-    <div className="border-border bg-card overflow-hidden rounded-lg border">
+    <div
+      className={`border-border bg-card overflow-hidden rounded-lg border ${mode === "live" ? "shadow-md shadow-blue-500/5" : ""}`}
+    >
       <div className="border-border border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className="text-sm font-semibold">{liveLeaderboardTitle}</h2>
+        {mode === "live" ? (
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Positions update live; prize row highlights follow your winner
+            count.
+          </p>
+        ) : null}
       </div>
       {rows.length === 0 ? (
         <p className="text-muted-foreground px-4 py-6 text-sm">
@@ -65,6 +76,15 @@ export function ContestLeaderboard({
               ? `${prof.npub.slice(0, 12)}…`
               : `${row.authorPubkey.slice(0, 8)}…`;
             const isTop3 = rank <= 3;
+            const medal =
+              mode === "live" && rank === 1
+                ? "🥇"
+                : mode === "live" && rank === 2
+                  ? "🥈"
+                  : mode === "live" && rank === 3
+                    ? "🥉"
+                    : null;
+            const inPrizeZone = mode === "live" && rank <= winnerCount;
             const isWinnerSlot = Boolean(w && !w.isAlternate);
             const showCutoff =
               mode === "frozen" && rank === winnerCount + 1 && winnerCount > 0;
@@ -77,10 +97,25 @@ export function ContestLeaderboard({
                   </div>
                 ) : null}
                 <div
-                  className={`flex gap-3 px-4 py-3 ${isTop3 ? "bg-primary/5" : ""}`}
+                  className={`flex gap-3 px-4 py-3 ${
+                    mode === "live" && inPrizeZone
+                      ? "border-l-primary/50 from-primary/10 bg-gradient-to-r to-transparent"
+                      : isTop3
+                        ? "bg-primary/5"
+                        : ""
+                  }`}
                 >
-                  <div className="text-muted-foreground w-8 shrink-0 text-center text-sm font-bold">
-                    {rank}
+                  <div
+                    className="w-9 shrink-0 text-center text-sm font-bold"
+                    title={medal ? `Rank ${rank}` : undefined}
+                  >
+                    {medal ? (
+                      <span className="text-lg leading-none" aria-hidden>
+                        {medal}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">{rank}</span>
+                    )}
                   </div>
                   <div className="bg-muted h-10 w-10 shrink-0 overflow-hidden rounded-full">
                     {prof?.picture ? (

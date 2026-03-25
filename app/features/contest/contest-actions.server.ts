@@ -571,4 +571,22 @@ export async function appendContestEventLog(
     },
   });
 }
+
+/** First image URL per post id for contest index thumbnails. */
+export async function getContestSourcePostThumbnails(
+  userId: string,
+  postIds: string[]
+): Promise<Record<string, string | null>> {
+  if (postIds.length === 0) return {};
+  const posts = await prisma.post.findMany({
+    where: { userId, id: { in: postIds } },
+    select: { id: true, fileUrl: true },
+  });
+  const out: Record<string, string | null> = {};
+  for (const p of posts) {
+    const first = p.fileUrl[0]?.trim();
+    out[p.id] = first && first.length > 0 ? first : null;
+  }
+  return out;
+}
 /* eslint-enable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/consistent-type-assertions */

@@ -45,7 +45,7 @@ interface ConfidencePanelProps {
   children?: React.ReactNode;
 }
 
-function PanelContent({
+export function PanelContent({
   queueName,
   nextSlot,
   scheduledFor,

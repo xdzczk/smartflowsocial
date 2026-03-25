@@ -78,6 +78,10 @@ export interface ComposerScheduleFieldProps<
   userTimezone?: string;
   /** Summary line for post options button (e.g. "Thread · 2 segments") */
   postOptionsSummary?: string;
+  /** minimal: datetime input only. full: entire schedule UI (default). */
+  layout?: "full" | "minimal";
+  /** When layout is full, skip the datetime block (use when minimal schedule is shown above). */
+  omitScheduleInput?: boolean;
 }
 
 export function ComposerScheduleField<T extends FieldValues = FieldValues>({
@@ -110,26 +114,58 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
   disabled = false,
   userTimezone = "UTC",
   postOptionsSummary,
+  layout = "full",
+  omitScheduleInput = false,
 }: ComposerScheduleFieldProps<T>) {
   const minDatetime = getNowForDateTimeLocal(userTimezone);
 
+  if (layout === "minimal") {
+    return (
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="scheduledFor">Schedule for later</Label>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            type="datetime-local"
+            id="scheduledFor"
+            value={value}
+            onChange={(e) => {
+              const v = e.target.value;
+              const clamped = v && v < minDatetime ? minDatetime : v;
+              onValueChange(clamped);
+            }}
+            min={minDatetime}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Leave empty to publish immediately. Queue, tags, slot helpers, and
+          threads are in Advanced posting settings.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor="scheduledFor">Schedule for later</Label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Input
-          type="datetime-local"
-          id="scheduledFor"
-          value={value}
-          onChange={(e) => {
-            const v = e.target.value;
-            const clamped = v && v < minDatetime ? minDatetime : v;
-            onValueChange(clamped);
-          }}
-          min={minDatetime}
-          disabled={disabled}
-        />
-      </div>
+      {!omitScheduleInput ? (
+        <>
+          <Label htmlFor="scheduledFor">Schedule for later</Label>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              type="datetime-local"
+              id="scheduledFor"
+              value={value}
+              onChange={(e) => {
+                const v = e.target.value;
+                const clamped = v && v < minDatetime ? minDatetime : v;
+                onValueChange(clamped);
+              }}
+              min={minDatetime}
+              disabled={disabled}
+            />
+          </div>
+        </>
+      ) : null}
       <SchedulingSection
         scheduledFor={value}
         onScheduledForChange={onValueChange}
