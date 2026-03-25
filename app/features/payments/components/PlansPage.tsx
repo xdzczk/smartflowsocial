@@ -1,5 +1,11 @@
-import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+} from "@remix-run/react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
@@ -9,6 +15,7 @@ import {
   InvoiceModal,
   PaymentSuccessModal,
   PricingCard,
+  SubscriptionCheckoutModal,
   usePlansState,
 } from "~/features/payments";
 import type {
@@ -103,13 +110,26 @@ function parseActionData(typedActionData: Record<string, unknown> | null): {
 }
 
 export function PlansPage(): ReactNode {
-  const { plans, user, currentSubscription } =
-    useLoaderData<typeof plansLoader>();
+  const {
+    plans,
+    user,
+    currentSubscription,
+    nwc,
+    subscriptionCheckoutV2Enabled,
+    manualDurationsByCadence,
+  } = useLoaderData<typeof plansLoader>();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
   const actionData = useActionData<typeof plansAction>();
   const navigation = useNavigation();
+  const submit = useSubmit();
+
+  type BillingCadence = "monthly" | "yearly";
 
   const isLoading = navigation.state === "submitting";
+  const [nwcString, setNwcString] = useState("");
+  const [billingCadence, setBillingCadence] =
+    useState<BillingCadence>("monthly");
+  const [manualDurationMonths, setManualDurationMonths] = useState(1);
 
   // Type guard for actionData
   const typedActionData =
@@ -119,12 +139,15 @@ export function PlansPage(): ReactNode {
 
   const {
     showInvoice,
+    showCheckout,
     invoiceData,
     paymentComplete,
     selectedPlan,
     timeRemaining,
     isPolling,
-    handlePlanSelection,
+    setSelectedPlan,
+    handleOpenCheckout,
+    handleCloseCheckout,
     copyToClipboard,
     checkPaymentStatusNow,
     handleCloseModal,
@@ -132,6 +155,10 @@ export function PlansPage(): ReactNode {
     user,
     actionData: parseActionData(typedActionData),
   });
+
+  const selectedPlanObj = selectedPlan
+    ? (plans.find((p) => p.id === selectedPlan) ?? null)
+    : null;
 
   return (
     <>
@@ -154,6 +181,34 @@ export function PlansPage(): ReactNode {
             </p>
           </div>
 
+          {/* Monthly / Yearly toggle */}
+          <div className="mb-10 flex items-center justify-center">
+            <div className="border-border bg-muted/30 inline-flex rounded-lg border p-1">
+              <button
+                type="button"
+                onClick={() => setBillingCadence("monthly")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  billingCadence === "monthly"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCadence("yearly")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  billingCadence === "yearly"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
+
           {/* Pricing Cards */}
           <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
             {plans.map((plan) => (
@@ -164,7 +219,15 @@ export function PlansPage(): ReactNode {
                 isCurrentPlanExpired={currentSubscription?.isExpired ?? false}
                 isLoading={isLoading}
                 selectedPlan={selectedPlan}
-                onPlanSelect={handlePlanSelection}
+                useCheckoutModal={Boolean(subscriptionCheckoutV2Enabled)}
+                billingCadence={billingCadence}
+                onPlanSelect={(planId) => {
+                  if (subscriptionCheckoutV2Enabled) {
+                    handleOpenCheckout(planId);
+                    return;
+                  }
+                  setSelectedPlan(planId);
+                }}
               />
             ))}
           </div>
@@ -216,6 +279,69 @@ export function PlansPage(): ReactNode {
           onClose={handleCloseModal}
         />
       ) : null}
+
+      {/* Checkout Modal (dual lane) */}
+      <SubscriptionCheckoutModal
+        isOpen={subscriptionCheckoutV2Enabled ? showCheckout : false}
+        plan={
+          selectedPlanObj
+            ? {
+                id: selectedPlanObj.id,
+                name: selectedPlanObj.name,
+                price:
+                  billingCadence === "yearly"
+                    ? selectedPlanObj.yearlyPriceUsd
+                    : selectedPlanObj.monthlyPriceUsd,
+                period: billingCadence === "yearly" ? "per year" : "per month",
+              }
+            : null
+        }
+        isSubmitting={isLoading}
+        billingCadence={billingCadence}
+        manualDurations={manualDurationsByCadence[billingCadence]}
+        selectedManualDurationMonths={
+          billingCadence === "yearly" ? 12 : manualDurationMonths
+        }
+        onSelectedManualDurationMonthsChange={(months) => {
+          setManualDurationMonths(months);
+        }}
+        nwcEnabled={Boolean(nwc?.enabled)}
+        maskedNwcString={nwc?.maskedString}
+        nwcString={nwcString}
+        onNwcStringChange={setNwcString}
+        onSelectManual={() => {
+          if (!selectedPlanObj) return;
+          const formData = new FormData();
+          formData.set("intent", "select_plan");
+          formData.set("planId", selectedPlanObj.id);
+          formData.set("paymentMode", "manual");
+          formData.set("billingCadence", billingCadence);
+          formData.set(
+            "accessDurationMonths",
+            String(billingCadence === "yearly" ? 12 : manualDurationMonths)
+          );
+          submit(formData, { method: "post" });
+          handleCloseCheckout();
+        }}
+        onSelectAutoRenew={() => {
+          if (!selectedPlanObj) return;
+          const formData = new FormData();
+          formData.set("intent", "select_plan");
+          formData.set("planId", selectedPlanObj.id);
+          formData.set("paymentMode", "auto_renew");
+          formData.set("billingCadence", billingCadence);
+          formData.set(
+            "accessDurationMonths",
+            String(billingCadence === "yearly" ? 12 : 1)
+          );
+          if (nwcString.trim().length > 0) {
+            formData.set("nwcString", nwcString.trim());
+          }
+          submit(formData, { method: "post" });
+          handleCloseCheckout();
+        }}
+        onClose={handleCloseCheckout}
+      />
 
       {/* Error Message */}
       <ErrorMessage

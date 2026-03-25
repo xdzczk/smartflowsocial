@@ -39,7 +39,10 @@ import {
 } from "./payment.handlers.server";
 import { getUserSubscription } from "./payment.queries.server";
 
-export { updateUserSubscription } from "./payment-subscription.server";
+export {
+  updateUserSubscription,
+  extendUserSubscriptionFromPayment,
+} from "./payment-subscription.server";
 
 const OWNER_NWC_MISSING = "Owner NWC credentials not configured";
 
@@ -148,6 +151,10 @@ export async function createPlanInvoice({
   planId,
   userId,
   description,
+  amountUsdOverride,
+  billingCadence,
+  accessDurationMonths,
+  billingPaymentMethod,
 }: CreateInvoiceParams): Promise<InvoiceResponse> {
   const plan = await prisma.plan.findUnique({
     where: { id: planId },
@@ -170,7 +177,10 @@ export async function createPlanInvoice({
     throw new Error(OWNER_NWC_MISSING);
   }
 
-  const amountUsd = Number(plan.price);
+  const amountUsd =
+    typeof amountUsdOverride === "number"
+      ? amountUsdOverride
+      : Number(plan.price);
   const { credentials: ownerNwcCredentials, relays: ownerRelays } =
     getOwnerNwcWithRelayOverrides(credentials);
   const ln = new LN(ownerNwcCredentials) as unknown as {
@@ -227,6 +237,9 @@ export async function createPlanInvoice({
         userId,
         amount: amountSats,
         amountUsd,
+        billingCadence,
+        accessDurationMonths,
+        billingPaymentMethod,
         invoice: invoiceString,
         paymentHash: paymentHashString,
         status: "PENDING",

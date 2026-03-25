@@ -980,6 +980,9 @@ model Payment {
   userId         String
   amount         Int
   amountUsd      Decimal?
+  billingCadence BillingCadence?
+  accessDurationMonths Int?
+  billingPaymentMethod BillingPaymentMethod?
   invoice        String
   paymentHash    String
   preimage       String?
@@ -1032,6 +1035,34 @@ model Plan {
   enableVisualPerks            Boolean        @default(false)
   enableWolfFilteringAndVortex Boolean        @default(false)
   Subscription                 Subscription[]
+  PlanPrice                    PlanPrice[]
+}
+
+enum BillingCadence {
+  monthly
+  yearly
+}
+
+enum BillingPaymentMethod {
+  nwc_auto_renew
+  lightning_one_time
+}
+
+model PlanPrice {
+  id                  String              @id @default(cuid())
+  planId              String
+  billingCadence      BillingCadence
+  accessDurationMonths Int
+  paymentMethod       BillingPaymentMethod
+  priceUsd            Decimal
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  Plan                Plan                @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, billingCadence, accessDurationMonths, paymentMethod])
+  @@index([planId, billingCadence, paymentMethod, isActive])
 }
 
 model Subscription {
@@ -1039,6 +1070,16 @@ model Subscription {
   userId             String             @unique
   planId             String?
   status             SubscriptionStatus @default(INACTIVE)
+  /** How this subscription is expected to renew: manual invoices or NWC auto-renew. */
+  renewalMode        String             @default("manual")
+  billingCadence     BillingCadence     @default(monthly)
+  accessDurationMonths Int              @default(1)
+  paymentMethod      BillingPaymentMethod @default(lightning_one_time)
+  /** Dunning metadata for auto-renew/manual grace handling. */
+  renewalFailureCount Int              @default(0)
+  lastRenewalAttemptAt DateTime?
+  nextRenewalAttemptAt DateTime?
+  gracePeriodEndsAt   DateTime?
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
   cancelAtPeriodEnd  Boolean            @default(false)

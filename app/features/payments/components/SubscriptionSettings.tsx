@@ -1,4 +1,4 @@
-import { Form, Link } from "@remix-run/react";
+import { Form, Link, useFetcher } from "@remix-run/react";
 import { format } from "date-fns";
 import {
   Crown,
@@ -30,6 +30,14 @@ interface Subscription {
   id: string;
   planId: string | null;
   status: string;
+  renewalMode?: string;
+  billingCadence?: string;
+  accessDurationMonths?: number;
+  billingPaymentMethod?: string;
+  renewalFailureCount?: number;
+  lastRenewalAttemptAt?: Date | null;
+  nextRenewalAttemptAt?: Date | null;
+  gracePeriodEndsAt?: Date | null;
   startDate: Date;
   currentPeriodEnd: Date | null;
   nextPaymentDue: Date | null;
@@ -53,6 +61,7 @@ interface SubscriptionSettingsProps {
   subscription: Subscription | null;
   availablePlans: Plan[];
   paymentHistory: PaymentHistory[];
+  nwcEnabled: boolean;
 }
 
 /**
@@ -102,6 +111,24 @@ function formatSubscriptionDate(date: Date | null) {
 function formatSubscriptionDateTime(date: Date | null) {
   if (!date) return "N/A";
   return format(new Date(date), "dd MMM yyyy 'at' h:mm a");
+}
+
+function formatRenewalMode(mode: string | undefined) {
+  if (mode === "auto_renew") return "Auto-renew";
+  if (mode === "manual") return "Manual";
+  return "Manual";
+}
+
+function formatCadence(cadence: string | undefined) {
+  if (cadence === "yearly") return "Yearly";
+  if (cadence === "monthly") return "Monthly";
+  return "Monthly";
+}
+
+function formatBillingPaymentMethod(method: string | undefined) {
+  if (method === "nwc_auto_renew") return "Connected wallet (auto-renew)";
+  if (method === "lightning_one_time") return "Manual Lightning invoice";
+  return "Manual Lightning invoice";
 }
 
 function formatSubscriptionCurrency(
@@ -179,8 +206,92 @@ export function SubscriptionSettings({
   subscription,
   availablePlans,
   paymentHistory,
+  nwcEnabled,
 }: SubscriptionSettingsProps) {
   const [copyToClipboard, copiedHash] = useCopyToClipboard();
+  const topUpFetcher = useFetcher<{
+    success?: boolean;
+    paid?: boolean;
+    message?: string;
+    error?: string;
+    invoice?: string;
+    paymentId?: string;
+    expiresAt?: string;
+    planName?: string;
+    planId?: string;
+    amount?: number;
+    amountUsd?: number;
+    billingCadence?: "monthly" | "yearly";
+    accessDurationMonths?: number;
+    billingPaymentMethod?: "nwc_auto_renew" | "lightning_one_time";
+  }>();
+  const pollFetcher = useFetcher<{
+    success?: boolean;
+    paid?: boolean;
+    status?: string;
+    paidAt?: string;
+    error?: string;
+  }>();
+
+  const initialPlanId = subscription?.planId ?? subscription?.plan?.id ?? "";
+  const [topUpPlanId, setTopUpPlanId] = React.useState(initialPlanId);
+  const [topUpCadence, setTopUpCadence] = React.useState<"monthly" | "yearly">(
+    subscription?.billingCadence === "yearly" ? "yearly" : "monthly"
+  );
+  const [topUpMonths, setTopUpMonths] = React.useState<number>(
+    topUpCadence === "yearly" ? 12 : 1
+  );
+  const [topUpLane, setTopUpLane] = React.useState<
+    "lightning_one_time" | "nwc_auto_renew"
+  >(nwcEnabled ? "nwc_auto_renew" : "lightning_one_time");
+
+  React.useEffect(() => {
+    // Keep duration valid when cadence changes.
+    if (topUpCadence === "yearly") {
+      setTopUpMonths(12);
+      return;
+    }
+    if (![1, 3, 6].includes(topUpMonths)) {
+      setTopUpMonths(1);
+    }
+  }, [topUpCadence, topUpMonths]);
+
+  React.useEffect(() => {
+    // If NWC isn't enabled, force manual lane.
+    if (!nwcEnabled && topUpLane === "nwc_auto_renew") {
+      setTopUpLane("lightning_one_time");
+    }
+  }, [nwcEnabled, topUpLane]);
+
+  const invoicePaymentId =
+    topUpFetcher.data?.paymentId && topUpFetcher.data.invoice
+      ? topUpFetcher.data.paymentId
+      : null;
+  const invoiceIsPaid =
+    topUpFetcher.data?.paid === true || pollFetcher.data?.paid === true;
+
+  React.useEffect(() => {
+    if (!invoicePaymentId || invoiceIsPaid) return;
+
+    const fd = new FormData();
+    fd.set("intent", "check_payment");
+    fd.set("paymentId", invoicePaymentId);
+
+    const interval = setInterval(() => {
+      pollFetcher.submit(fd, { method: "post", action: "/plans" });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [invoicePaymentId, invoiceIsPaid, pollFetcher]);
+
+  React.useEffect(() => {
+    if (!invoiceIsPaid) return;
+    // Give a moment for server-side settlement + subscription update, then reload settings data.
+    const t = setTimeout(() => {
+      window.location.reload();
+    }, 750);
+    return () => clearTimeout(t);
+  }, [invoiceIsPaid]);
 
   return (
     <div className="bg-card rounded-lg border p-6">
@@ -276,7 +387,7 @@ export function SubscriptionSettings({
                   <div className="flex items-center gap-3 rounded-lg border p-4">
                     <CreditCard className="text-primary h-5 w-5" />
                     <div>
-                      <p className="font-medium">Next Billing Date</p>
+                      <p className="font-medium">Next renewal</p>
                       <p className="text-muted-foreground text-sm">
                         {formatSubscriptionDate(
                           subscription.currentPeriodEnd ??
@@ -286,6 +397,73 @@ export function SubscriptionSettings({
                     </div>
                   </div>
                 ) : null}
+
+                {/* Payment method */}
+                {!subscription.plan.enableLifetimeAccess ? (
+                  <div className="flex items-center gap-3 rounded-lg border p-4">
+                    <CreditCard className="text-muted-foreground h-5 w-5" />
+                    <div>
+                      <p className="font-medium">Billing</p>
+                      <p className="text-muted-foreground text-sm">
+                        {formatCadence(subscription.billingCadence)} ·{" "}
+                        {formatRenewalMode(subscription.renewalMode)}
+                        {typeof subscription.accessDurationMonths ===
+                          "number" &&
+                        subscription.billingPaymentMethod ===
+                          "lightning_one_time" ? (
+                          <> · {subscription.accessDurationMonths}m upfront</>
+                        ) : null}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatBillingPaymentMethod(
+                          subscription.billingPaymentMethod
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Dunning / grace surface */}
+            {subscription.status === "PAST_DUE" ||
+            subscription.status === "UNPAID" ? (
+              <div className="dark:border-border dark:bg-muted rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="dark:text-foreground h-5 w-5 text-amber-600" />
+                  <div className="space-y-1">
+                    <p className="dark:text-foreground text-sm font-medium text-amber-800">
+                      Renewal issue detected
+                    </p>
+                    {subscription.nextRenewalAttemptAt ? (
+                      <p className="text-muted-foreground text-xs">
+                        Next retry:{" "}
+                        {formatSubscriptionDateTime(
+                          subscription.nextRenewalAttemptAt
+                        )}
+                      </p>
+                    ) : null}
+                    {subscription.gracePeriodEndsAt ? (
+                      <p className="text-muted-foreground text-xs">
+                        Grace until:{" "}
+                        {formatSubscriptionDateTime(
+                          subscription.gracePeriodEndsAt
+                        )}
+                      </p>
+                    ) : null}
+                    {typeof subscription.renewalFailureCount === "number" ? (
+                      <p className="text-muted-foreground text-xs">
+                        Failed attempts: {subscription.renewalFailureCount}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <Link
+                  to="/plans"
+                  className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
+                >
+                  Renew now
+                </Link>
               </div>
             ) : null}
 
@@ -407,6 +585,175 @@ export function SubscriptionSettings({
                 ) : null}
               </div>
             ) : null}
+
+            {/* Top up */}
+            {subscription.plan?.enableLifetimeAccess ? null : (
+              <div className="border-border space-y-4 rounded-lg border p-4">
+                <div>
+                  <p className="font-medium">Top up</p>
+                  <p className="text-muted-foreground text-sm">
+                    Add time to your subscription. Your paid-through date will
+                    be extended (no time lost).
+                  </p>
+                </div>
+
+                <topUpFetcher.Form method="post" className="space-y-3">
+                  <input
+                    type="hidden"
+                    name="_action"
+                    value="top_up_subscription"
+                  />
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm font-medium">Plan</span>
+                      <select
+                        name="targetPlanId"
+                        value={topUpPlanId}
+                        onChange={(e) => setTopUpPlanId(e.target.value)}
+                        className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                        required
+                      >
+                        {availablePlans
+                          .filter((p) => !p.enableLifetimeAccess)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                              {p.price === 0 ? " (Free)" : ""}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-sm font-medium">Cadence</span>
+                      <select
+                        name="billingCadence"
+                        value={topUpCadence}
+                        onChange={(e) =>
+                          setTopUpCadence(
+                            e.target.value === "yearly" ? "yearly" : "monthly"
+                          )
+                        }
+                        className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm font-medium">
+                        Upfront months
+                      </span>
+                      <select
+                        name="accessDurationMonths"
+                        value={topUpMonths}
+                        onChange={(e) => setTopUpMonths(Number(e.target.value))}
+                        className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        {topUpCadence === "yearly" ? (
+                          <option value={12}>12 months</option>
+                        ) : (
+                          <>
+                            <option value={1}>1 month</option>
+                            <option value={3}>3 months</option>
+                            <option value={6}>6 months</option>
+                          </>
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-sm font-medium">Payment</span>
+                      <select
+                        name="paymentLane"
+                        value={topUpLane}
+                        onChange={(e) =>
+                          setTopUpLane(
+                            e.target.value === "nwc_auto_renew"
+                              ? "nwc_auto_renew"
+                              : "lightning_one_time"
+                          )
+                        }
+                        className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        {nwcEnabled ? (
+                          <option value="nwc_auto_renew">
+                            Pay via connected wallet (NWC)
+                          </option>
+                        ) : null}
+                        <option value="lightning_one_time">
+                          Lightning invoice
+                        </option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={topUpFetcher.state !== "idle"}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  >
+                    {topUpFetcher.state === "idle"
+                      ? "Create top-up"
+                      : "Working..."}
+                  </button>
+                </topUpFetcher.Form>
+
+                {topUpFetcher.data?.error ? (
+                  <div className="text-destructive text-sm">
+                    {topUpFetcher.data.error}
+                  </div>
+                ) : null}
+
+                {topUpFetcher.data?.message ? (
+                  <div className="text-sm">{topUpFetcher.data.message}</div>
+                ) : null}
+
+                {topUpFetcher.data &&
+                topUpFetcher.data.invoice &&
+                topUpFetcher.data.paymentId ? (
+                  <div className="bg-muted/30 space-y-2 rounded-lg border p-3">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Invoice for {topUpFetcher.data.planName ?? "top-up"}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {typeof topUpFetcher.data.amountUsd === "number"
+                            ? `$${topUpFetcher.data.amountUsd.toFixed(2)}`
+                            : null}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const invoice = topUpFetcher.data?.invoice;
+                          const paymentId = topUpFetcher.data?.paymentId;
+                          if (!invoice || !paymentId) return;
+                          void copyToClipboard(invoice, paymentId);
+                        }}
+                        className="border-border bg-background hover:bg-muted inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+                      >
+                        <Copy className={SMALL_ICON_SIZE_CLASS} />
+                        Copy invoice
+                      </button>
+                    </div>
+                    <p className="text-muted-foreground font-mono text-xs break-all">
+                      {topUpFetcher.data.invoice}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      Status:{" "}
+                      {invoiceIsPaid
+                        ? "Paid"
+                        : (pollFetcher.data?.status ?? "Awaiting payment")}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* View All Plans Option */}
             <div className="text-center">

@@ -36,6 +36,7 @@ const { mockPrisma } = vi.hoisted(() => {
       upsert: vi.fn(),
     },
     user: {
+      findUnique: vi.fn(),
       update: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
@@ -66,6 +67,10 @@ describe("updateUserSubscription", () => {
     setupPaymentTestEnvironment();
     // Ensure mockPrisma is initialized before resetting transaction
     resetMockPaymentPrismaTransaction(mockPrisma);
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
+    });
   });
 
   it("should create new subscription for user", async () => {
@@ -118,7 +123,9 @@ describe("updateUserSubscription", () => {
       mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
     ).toHaveBeenCalledWith({
       where: { id: TEST_PAYMENT_ID },
-      select: { amount: true },
+      // keep loose: schema evolved to include term fields
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest matcher types
+      select: expect.objectContaining({ amount: true }),
     });
     expect(mockPrisma.$transaction).toHaveBeenCalled();
   });
@@ -151,6 +158,10 @@ describe("updateUserSubscription", () => {
     (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
       isEnabled: true,
+    });
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
     });
 
     vi.resetModules();
@@ -212,6 +223,10 @@ describe("updateUserSubscription", () => {
       id: TEST_USER_ID,
       isEnabled: true,
     });
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
+    });
 
     vi.resetModules();
     const paymentModule = await import("~/features/payments/data");
@@ -253,6 +268,10 @@ describe("updateUserSubscription", () => {
     (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
       isEnabled: true,
+    });
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
     });
 
     // Free plan payment ID starts with "free_"
@@ -310,6 +329,10 @@ describe("updateUserSubscription", () => {
       id: TEST_USER_ID,
       isEnabled: true,
     });
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
+    });
 
     vi.resetModules();
     const paymentModule = await import("~/features/payments/data");
@@ -358,5 +381,85 @@ describe("updateUserSubscription", () => {
         TEST_PAYMENT_ID
       )
     ).rejects.toThrow("Database error");
+  });
+});
+
+describe("extendUserSubscriptionFromPayment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupPaymentTestEnvironment();
+    resetMockPaymentPrismaTransaction(mockPrisma);
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      nwcEnabled: false,
+      encryptedNwc: null,
+    });
+  });
+
+  it("should extend from future currentPeriodEnd (no time lost)", async () => {
+    vi.useFakeTimers();
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    vi.setSystemTime(now);
+
+    const mockPlan = createMockPlan({ name: "Basic Plan", price: 10 });
+    (
+      mockPlan as unknown as { enableLifetimeAccess: boolean }
+    ).enableLifetimeAccess = false;
+
+    const futureEnd = new Date("2026-02-01T00:00:00.000Z");
+    (
+      mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      currentPeriodEnd: futureEnd,
+      startDate: new Date("2025-12-01T00:00:00.000Z"),
+    });
+
+    const mockPayment = {
+      ...createMockPayment({ amount: 25000 }),
+      amountUsd: 10,
+      billingCadence: "monthly",
+      accessDurationMonths: 3,
+      billingPaymentMethod: "lightning_one_time",
+    };
+
+    (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPlan
+    );
+    (
+      mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(mockPayment);
+    (
+      mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: "sub-123",
+    });
+    (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_PAYMENT_ID,
+    });
+    (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+      isEnabled: true,
+    });
+
+    vi.resetModules();
+    const paymentModule = await import("~/features/payments/data");
+    expect(paymentModule.extendUserSubscriptionFromPayment).toBeDefined();
+
+    await paymentModule.extendUserSubscriptionFromPayment(
+      TEST_USER_ID,
+      TEST_PLAN_ID,
+      TEST_PAYMENT_ID
+    );
+
+    const expectedEnd = new Date(futureEnd);
+    expectedEnd.setMonth(expectedEnd.getMonth() + 3);
+
+    expect(mockPrisma.subscription.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest matcher types
+        update: expect.objectContaining({ currentPeriodEnd: expectedEnd }),
+      })
+    );
+
+    vi.useRealTimers();
   });
 });

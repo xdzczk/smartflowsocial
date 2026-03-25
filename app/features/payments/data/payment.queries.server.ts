@@ -23,6 +23,54 @@ export async function getAllPlans() {
   });
 }
 
+export async function listActivePlanPricesForPlans(planIds: string[]): Promise<
+  Array<{
+    planId: string;
+    billingCadence: "monthly" | "yearly";
+    accessDurationMonths: number;
+    paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+    priceUsd: number;
+  }>
+> {
+  if (planIds.length === 0) return [];
+  const rows = await prisma.planPrice.findMany({
+    where: { planId: { in: planIds }, isActive: true },
+    select: {
+      planId: true,
+      billingCadence: true,
+      accessDurationMonths: true,
+      paymentMethod: true,
+      priceUsd: true,
+    },
+  });
+  return rows.map((r) => ({
+    planId: r.planId,
+    billingCadence: r.billingCadence,
+    accessDurationMonths: r.accessDurationMonths,
+    paymentMethod: r.paymentMethod,
+    priceUsd: Number(r.priceUsd),
+  }));
+}
+
+export async function getPlanPriceUsd(params: {
+  planId: string;
+  billingCadence: "monthly" | "yearly";
+  accessDurationMonths: number;
+  paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+}): Promise<number | null> {
+  const row = await prisma.planPrice.findFirst({
+    where: {
+      planId: params.planId,
+      billingCadence: params.billingCadence,
+      accessDurationMonths: params.accessDurationMonths,
+      paymentMethod: params.paymentMethod,
+      isActive: true,
+    },
+    select: { priceUsd: true },
+  });
+  return row ? Number(row.priceUsd) : null;
+}
+
 /**
  * Gets user's current subscription info
  */

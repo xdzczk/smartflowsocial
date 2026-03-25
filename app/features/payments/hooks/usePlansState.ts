@@ -39,6 +39,7 @@ interface UsePlansStateProps {
 export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const navigate = useNavigate();
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -181,8 +182,25 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     processedPaymentIdRef.current = null;
   }, []);
 
+  const handleOpenCheckout = useCallback(
+    (planId: string) => {
+      if (!user) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setSelectedPlan(planId);
+      setShowCheckout(true);
+    },
+    [navigate, user]
+  );
+
+  const handleCloseCheckout = useCallback(() => {
+    setShowCheckout(false);
+  }, []);
+
   return {
     showInvoice,
+    showCheckout,
     invoiceData,
     paymentComplete,
     selectedPlan,
@@ -190,6 +208,8 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     isPolling,
     setSelectedPlan,
     handlePlanSelection,
+    handleOpenCheckout,
+    handleCloseCheckout,
     copyToClipboard,
     checkPaymentStatusNow,
     handleCloseModal,

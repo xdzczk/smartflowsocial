@@ -404,6 +404,11 @@ export interface CreateInvoiceParams {
   planId: string;
   userId: string;
   description?: string;
+  /** Override amount (USD) for priced SKUs (yearly/prepay). Defaults to Plan.price. */
+  amountUsdOverride?: number;
+  billingCadence?: "monthly" | "yearly";
+  accessDurationMonths?: number;
+  billingPaymentMethod?: "nwc_auto_renew" | "lightning_one_time";
 }
 
 /**

@@ -72,6 +72,8 @@ interface EnvConfig {
   NIP88_POLLS_ENABLED?: string;
   /** When true, Contests v1 UI and server routes are enabled. */
   CONTESTS_V1_ENABLED?: string;
+  /** When true, use dual-lane subscription checkout (auto-renew + one-time). */
+  SUBSCRIPTION_CHECKOUT_V2_ENABLED?: string;
 
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
@@ -215,6 +217,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "NOSTR_DM_NIP17_ENABLED",
     "NIP88_POLLS_ENABLED",
     "CONTESTS_V1_ENABLED",
+    "SUBSCRIPTION_CHECKOUT_V2_ENABLED",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",

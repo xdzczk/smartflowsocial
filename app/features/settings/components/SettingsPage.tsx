@@ -720,6 +720,7 @@ export default function SettingsPage() {
                 subscription={subscription}
                 availablePlans={availablePlans}
                 paymentHistory={paymentHistory}
+                nwcEnabled={nwcEnabledValue}
               />
               <NWCSettings
                 nwcEnabled={nwcEnabledValue}

@@ -30,6 +30,7 @@ const ERROR_NOSTRCONNECT_URI_REQUIRED =
   "nostrconnect URI is required for URI primary signer";
 const ERROR_PRIMARY_RELAYS_REQUIRED =
   "At least one relay is required for URI primary signer";
+const ERROR_PLAN_ID_REQUIRED = "Plan ID is required";
 
 // Form value constants
 const FORM_VALUE_ON = "on";
@@ -644,7 +645,7 @@ export const updateTagsSchema = z.object({
  * Subscription action schemas
  */
 export const switchToFreePlanSchema = z.object({
-  planId: z.string().min(1, "Plan ID is required"),
+  planId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
 });
 
 /** No body required; intent is cancel_at_period_end */
@@ -652,5 +653,37 @@ export const cancelAtPeriodEndSchema = z.object({});
 
 /** Schedule downgrade to a plan at period end */
 export const scheduleDowngradeSchema = z.object({
-  planId: z.string().min(1, "Plan ID is required"),
+  planId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
 });
+
+export const topUpSubscriptionSchema = z
+  .object({
+    targetPlanId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
+    paymentLane: z.enum(["lightning_one_time", "nwc_auto_renew"]),
+    billingCadence: z.enum(["monthly", "yearly"]).optional().default("monthly"),
+    accessDurationMonths: z
+      .union([z.string(), z.number()])
+      .transform((v) => Number(v))
+      .pipe(z.number().int().positive()),
+  })
+  .superRefine((data, ctx) => {
+    if (data.billingCadence === "yearly") {
+      if (data.accessDurationMonths !== 12) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["accessDurationMonths"],
+          message: "Yearly top-ups must be 12 months",
+        });
+      }
+      return;
+    }
+
+    // monthly
+    if (![1, 3, 6].includes(data.accessDurationMonths)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["accessDurationMonths"],
+        message: "Monthly top-ups must be 1, 3, or 6 months",
+      });
+    }
+  });

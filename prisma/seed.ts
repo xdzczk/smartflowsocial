@@ -7,6 +7,7 @@ async function main() {
 
   // Clear existing plans first to avoid duplicates
   console.log("🧹 Clearing existing plans...");
+  await prisma.planPrice.deleteMany({});
   await prisma.plan.deleteMany({});
   console.log("✅ Existing plans cleared");
 
@@ -191,6 +192,106 @@ async function main() {
         ...plan,
         isActive: true, // Explicitly set to true to ensure all plans are active
         updatedAt: new Date(),
+      },
+    });
+  }
+
+  console.log("💵 Seeding plan prices (v1.5 SKUs)...");
+  // Explicit pricing matrix (USD is source of truth).
+  // Allowed combinations:
+  // - NWC auto-renew: monthly(1), yearly(12)
+  // - Manual Lightning: monthly(1/3/6), yearly(12)
+  //
+  // IMPORTANT: Update these numbers to match your intended discount ladder.
+  const priceMatrix: Array<{
+    planId: string;
+    billingCadence: "monthly" | "yearly";
+    accessDurationMonths: number;
+    paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+    priceUsd: number;
+  }> = [];
+
+  for (const plan of plans) {
+    // Skip free plan SKUs (no invoicing)
+    if (plan.id === "free" || Number(plan.price) === 0) continue;
+
+    // Base monthly price comes from Plan.price
+    const monthly = Number(plan.price);
+    // Default yearly anchor: 12 months (no discount unless adjusted below)
+    const yearly = monthly * 12;
+
+    // NWC recurring SKUs
+    priceMatrix.push(
+      {
+        planId: plan.id,
+        billingCadence: "monthly",
+        accessDurationMonths: 1,
+        paymentMethod: "nwc_auto_renew",
+        priceUsd: monthly,
+      },
+      {
+        planId: plan.id,
+        billingCadence: "yearly",
+        accessDurationMonths: 12,
+        paymentMethod: "nwc_auto_renew",
+        priceUsd: yearly,
+      }
+    );
+
+    // Manual monthly prepay SKUs (edit these totals as desired)
+    priceMatrix.push(
+      {
+        planId: plan.id,
+        billingCadence: "monthly",
+        accessDurationMonths: 1,
+        paymentMethod: "lightning_one_time",
+        priceUsd: monthly,
+      },
+      {
+        planId: plan.id,
+        billingCadence: "monthly",
+        accessDurationMonths: 3,
+        paymentMethod: "lightning_one_time",
+        priceUsd: monthly * 3,
+      },
+      {
+        planId: plan.id,
+        billingCadence: "monthly",
+        accessDurationMonths: 6,
+        paymentMethod: "lightning_one_time",
+        priceUsd: monthly * 6,
+      },
+      {
+        planId: plan.id,
+        billingCadence: "yearly",
+        accessDurationMonths: 12,
+        paymentMethod: "lightning_one_time",
+        priceUsd: yearly,
+      }
+    );
+  }
+
+  for (const row of priceMatrix) {
+    await prisma.planPrice.upsert({
+      where: {
+        planId_billingCadence_accessDurationMonths_paymentMethod: {
+          planId: row.planId,
+          billingCadence: row.billingCadence,
+          accessDurationMonths: row.accessDurationMonths,
+          paymentMethod: row.paymentMethod,
+        },
+      },
+      create: {
+        planId: row.planId,
+        billingCadence: row.billingCadence,
+        accessDurationMonths: row.accessDurationMonths,
+        paymentMethod: row.paymentMethod,
+        priceUsd: row.priceUsd,
+        isActive: true,
+      },
+      update: {
+        priceUsd: row.priceUsd,
+        isActive: true,
       },
     });
   }

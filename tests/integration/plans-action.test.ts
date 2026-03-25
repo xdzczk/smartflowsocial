@@ -14,6 +14,21 @@ vi.mock("~/features/auth/session.server", () => ({
 vi.mock("~/features/payments/data", () => ({
   createPlanInvoice: vi.fn(),
   checkPaymentStatus: vi.fn(),
+  manuallyVerifyPayment: vi.fn(),
+  getPlanPriceUsd: vi.fn(),
+}));
+
+vi.mock("~/features/user", () => ({
+  updateUserNWC: vi.fn(),
+  getDecryptedUserNWC: vi.fn(),
+}));
+
+vi.mock("@getalby/sdk", () => ({
+  NWCClient: class {
+    payInvoice = vi.fn().mockResolvedValue({ preimage: "preimage" });
+    close = vi.fn();
+    constructor(_opts: unknown) {}
+  },
 }));
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
@@ -22,8 +37,11 @@ import { requireUser } from "~/features/auth/session.server";
 import {
   createPlanInvoice,
   checkPaymentStatus,
+  manuallyVerifyPayment,
+  getPlanPriceUsd,
 } from "~/features/payments/data";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
+import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
 
 describe("Plans Action Handler", () => {
   beforeEach(() => {
@@ -139,10 +157,13 @@ describe("Plans Action Handler", () => {
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockInvoice
       );
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",
         planId: "basic",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
       });
 
       const request = new Request("http://localhost:3000/plans");
@@ -153,13 +174,115 @@ describe("Plans Action Handler", () => {
         planId: "basic",
         userId: TEST_USER_ID,
         description: "SmartFlow Social - Plan subscription",
+        amountUsdOverride: expect.any(Number) as unknown as number,
+        billingCadence: "monthly",
+        accessDurationMonths: 1,
+        billingPaymentMethod: "lightning_one_time",
       });
       expect(result).toEqual({
         success: true,
+        paymentMode: "manual",
         invoice: "lnbc123...",
         paymentHash: "hash123",
         amount: 1000,
         amountUsd: 10.0,
+        paymentId: "payment-123",
+        expiresAt: mockInvoice.expiresAt.toISOString(),
+        planName: "Basic Plan",
+        planId: "basic",
+      });
+    });
+
+    it("should attempt auto-renew payment via NWC when selected", async () => {
+      const mockInvoice = {
+        invoice: "lnbc123...",
+        paymentHash: "hash123",
+        amount: 1000,
+        amountUsd: 10.0,
+        paymentId: "payment-123",
+        expiresAt: new Date("2024-12-31"),
+        planName: "Basic Plan",
+        planId: "basic",
+      };
+
+      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockInvoice
+      );
+      (getDecryptedUserNWC as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "nostr+walletconnect://saved"
+      );
+      (manuallyVerifyPayment as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: true,
+        paid: true,
+        message: "ok",
+      });
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(120);
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "basic",
+        paymentMode: "auto_renew",
+        billingCadence: "yearly",
+        accessDurationMonths: "12",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(updateUserNWC).not.toHaveBeenCalled();
+      expect(getDecryptedUserNWC).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(manuallyVerifyPayment).toHaveBeenCalledWith("payment-123");
+      expect(result).toEqual({
+        success: true,
+        paid: true,
+        message: "Subscription started with auto-renew enabled.",
+      });
+    });
+
+    it("should create manual invoice for monthly 6-month prepay", async () => {
+      const mockInvoice = {
+        invoice: "lnbc123...",
+        paymentHash: "hash123",
+        amount: 1000,
+        amountUsd: 60.0,
+        paymentId: "payment-123",
+        expiresAt: new Date("2024-12-31"),
+        planName: "Basic Plan",
+        planId: "basic",
+      };
+
+      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockInvoice
+      );
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(60);
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "basic",
+        paymentMode: "manual",
+        billingCadence: "monthly",
+        accessDurationMonths: "6",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(createPlanInvoice).toHaveBeenCalledWith({
+        planId: "basic",
+        userId: TEST_USER_ID,
+        description: "SmartFlow Social - Plan subscription",
+        amountUsdOverride: expect.any(Number) as unknown as number,
+        billingCadence: "monthly",
+        accessDurationMonths: 6,
+        billingPaymentMethod: "lightning_one_time",
+      });
+      expect(result).toEqual({
+        success: true,
+        paymentMode: "manual",
+        invoice: "lnbc123...",
+        paymentHash: "hash123",
+        amount: 1000,
+        amountUsd: 60.0,
         paymentId: "payment-123",
         expiresAt: mockInvoice.expiresAt.toISOString(),
         planName: "Basic Plan",
@@ -178,6 +301,7 @@ describe("Plans Action Handler", () => {
         planName: "Free Plan",
         planId: "free",
       });
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -217,6 +341,7 @@ describe("Plans Action Handler", () => {
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Plan not found")
       );
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -236,6 +361,7 @@ describe("Plans Action Handler", () => {
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
         "Unknown error"
       );
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",

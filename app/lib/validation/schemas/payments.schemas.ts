@@ -18,6 +18,17 @@ export const checkPaymentStatusSchema = z.object({
 export const selectPlanSchema = z.object({
   intent: z.literal("select_plan"),
   planId: z.string().min(1, "Plan ID is required"),
+  paymentMode: z.enum(["manual", "auto_renew"]).optional().default("manual"),
+  billingCadence: z.enum(["monthly", "yearly"]).optional().default("monthly"),
+  accessDurationMonths: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : Number(v)))
+    .pipe(z.number().int().positive().optional()),
+  nwcString: z
+    .string()
+    .optional()
+    .transform((val) => (typeof val === "string" ? val.trim() : val)),
 });
 
 /**

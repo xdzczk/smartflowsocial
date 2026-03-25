@@ -60,4 +60,12 @@ export const featureFlags = {
    * Contests v1 ranked campaigns.
    */
   contestsV1Enabled: parseBooleanEnv(env.CONTESTS_V1_ENABLED, true),
+
+  /**
+   * Dual-lane subscription checkout (auto-renew + one-time).
+   */
+  subscriptionCheckoutV2Enabled: parseBooleanEnv(
+    env.SUBSCRIPTION_CHECKOUT_V2_ENABLED,
+    true
+  ),
 } as const;

@@ -9,6 +9,7 @@ import { LN, USD } from "@getalby/sdk/lnclient";
 import {
   createRenewalPayment,
   getOwnerNwcWithRelayOverrides,
+  getPlanPriceUsd,
   updateUserSubscription,
 } from "~/features/payments/data";
 import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
@@ -23,11 +24,13 @@ import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
+import { trackProductEvent } from "~/lib/product-events.server";
 
 import { getBitcoinRate } from "../btc.rate";
 import {
   findPlanById,
   updateSubscriptionCancelAtPeriodEndAndMetadata,
+  updateSubscriptionDunningState,
   updateSubscriptionToCanceled,
 } from "../repositories/subscription-renewal-data.server";
 
@@ -294,6 +297,9 @@ interface RenewalResults {
   errors: string[];
 }
 
+const GRACE_PERIOD_DAYS = 7;
+const RETRY_DELAYS_HOURS = [0, 12, 24, 72];
+
 // ============================================================================
 // Subscription Renewal Helper Functions
 // ============================================================================
@@ -318,6 +324,10 @@ async function handleRenewalWithNWC(
     planId: string | null;
     plan: string | null;
     currentPeriodEnd: Date | null;
+    renewalFailureCount?: number;
+    gracePeriodEndsAt?: Date | null;
+    nextRenewalAttemptAt?: Date | null;
+    billingCadence?: "monthly" | "yearly" | null;
     Plan?: {
       name: string;
       price: string;
@@ -326,7 +336,17 @@ async function handleRenewalWithNWC(
   },
   results: RenewalResults
 ): Promise<void> {
+  const now = new Date();
+  const nextAttemptAt = subscription.nextRenewalAttemptAt ?? null;
+  if (nextAttemptAt && nextAttemptAt > now) {
+    return;
+  }
+
   results.renewalAttempted++;
+  trackProductEvent("renewal_attempted", {
+    userId: user.id,
+    planId: subscription.planId,
+  });
 
   try {
     if (!user.encryptedNwc) {
@@ -346,11 +366,24 @@ async function handleRenewalWithNWC(
                 price: String(subscription.Plan.price),
               }
             : null,
+        billingCadence: subscription.billingCadence ?? "monthly",
       }
     );
     results.renewalSuccess++;
+    trackProductEvent("renewal_succeeded", {
+      userId: user.id,
+      planId: subscription.planId,
+    });
   } catch (renewalError: unknown) {
     results.renewalFailed++;
+    trackProductEvent("renewal_failed", {
+      userId: user.id,
+      planId: subscription.planId,
+      error:
+        renewalError instanceof Error
+          ? renewalError.message
+          : String(renewalError),
+    });
     const errorMsg = `Failed to renew subscription for user ${user.id}: ${
       renewalError instanceof Error
         ? renewalError.message
@@ -367,16 +400,40 @@ async function handleRenewalWithNWC(
       }
     );
 
-    await disableUserAccount(user.id);
-    await afterSubscriptionUpdated(user.id);
-    results.disabled++;
+    const currentFailures = Number(subscription.renewalFailureCount ?? 0);
+    const newFailures = currentFailures + 1;
+    const delayHours =
+      RETRY_DELAYS_HOURS[
+        Math.min(newFailures - 1, RETRY_DELAYS_HOURS.length - 1)
+      ] ?? 0;
+    const computedNextAttemptAt = new Date(
+      now.getTime() + delayHours * 60 * 60 * 1000
+    );
+    const graceEndsAt =
+      subscription.gracePeriodEndsAt ??
+      new Date(now.getTime() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
+    await updateSubscriptionDunningState(user.id, {
+      status: "PAST_DUE",
+      renewalFailureCount: newFailures,
+      lastRenewalAttemptAt: now,
+      nextRenewalAttemptAt: computedNextAttemptAt,
+      gracePeriodEndsAt: graceEndsAt,
+    });
+
+    // Only disable once grace period has elapsed.
+    if (graceEndsAt <= now) {
+      await disableUserAccount(user.id);
+      await afterSubscriptionUpdated(user.id);
+      results.disabled++;
+    }
 
     const planName = getPlanName(subscription);
     await sendRenewalNotification(
       user.npub,
       false,
       planName,
-      `Your ${planName} subscription renewal failed. Please update your payment method to continue using the service.`
+      `Your ${planName} subscription renewal failed. Please update your wallet or pay manually to continue.`
     );
   }
 }
@@ -385,12 +442,28 @@ async function handleRenewalWithoutNWC(
   user: { id: string; npub: string },
   subscription: {
     Plan?: { name: string } | null;
+    gracePeriodEndsAt?: Date | null;
   },
   results: RenewalResults
 ): Promise<void> {
-  await disableUserAccount(user.id);
-  await afterSubscriptionUpdated(user.id);
-  results.disabled++;
+  const now = new Date();
+  const graceEndsAt =
+    subscription.gracePeriodEndsAt ??
+    new Date(now.getTime() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
+  await updateSubscriptionDunningState(user.id, {
+    status: "UNPAID",
+    renewalFailureCount: 0,
+    lastRenewalAttemptAt: now,
+    nextRenewalAttemptAt: null,
+    gracePeriodEndsAt: graceEndsAt,
+  });
+
+  if (graceEndsAt <= now) {
+    await disableUserAccount(user.id);
+    await afterSubscriptionUpdated(user.id);
+    results.disabled++;
+  }
 
   const planName = getPlanName(subscription);
   await sendRenewalNotification(
@@ -423,6 +496,10 @@ async function processUserSubscription(
       currentPeriodEnd: Date | null;
       cancelAtPeriodEnd?: boolean;
       metadata?: unknown;
+      renewalFailureCount?: number;
+      gracePeriodEndsAt?: Date | null;
+      nextRenewalAttemptAt?: Date | null;
+      billingCadence?: "monthly" | "yearly" | null;
       Plan?: {
         name: string;
         price: string;
@@ -574,6 +651,7 @@ async function attemptRenewal(
     planId: string | null;
     plan: string | null;
     Plan: { name: string; price: string } | null;
+    billingCadence?: "monthly" | "yearly" | null;
   }
 ): Promise<void> {
   // Decrypt user's NWC credentials
@@ -605,7 +683,15 @@ async function attemptRenewal(
     throw new Error("Owner NWC credentials not configured");
   }
 
-  const amountUsd = Number(plan.price);
+  const cadence = subscription.billingCadence ?? "monthly";
+  const durationMonths = cadence === "yearly" ? 12 : 1;
+  const skuUsd = await getPlanPriceUsd({
+    planId,
+    billingCadence: cadence,
+    accessDurationMonths: durationMonths,
+    paymentMethod: "nwc_auto_renew",
+  });
+  const amountUsd = typeof skuUsd === "number" ? skuUsd : Number(plan.price);
   const invoiceRequest = await createInvoice(ownerNwc, amountUsd);
 
   if (!invoiceRequest) {

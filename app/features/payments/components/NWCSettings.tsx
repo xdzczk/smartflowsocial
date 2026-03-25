@@ -82,9 +82,9 @@ export function NWCSettings({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nostr Wallet Connect (NWC)</CardTitle>
+        <CardTitle>Auto-renew wallet</CardTitle>
         <CardDescription>
-          Connect your lightning wallet for automated payments and transactions
+          Connect a Lightning wallet for automatic subscription renewals.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,9 +97,10 @@ export function NWCSettings({
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 space-y-0.5">
-              <Label htmlFor="nwc-enabled">Enable NWC</Label>
+              <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
               <p className="text-muted-foreground text-sm">
-                Allow automated lightning payments through your wallet
+                SmartFlow never holds your funds. You can revoke wallet access
+                at any time.
               </p>
             </div>
             <Switch
@@ -116,7 +117,7 @@ export function NWCSettings({
             <div className="space-y-4">
               {maskedNwcString && !showInput ? (
                 <div className="space-y-2">
-                  <Label>Current NWC Connection</Label>
+                  <Label>Connected wallet</Label>
                   <div className="bg-muted space-y-2 rounded-md p-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="min-w-0 font-mono text-sm break-all">
@@ -148,7 +149,7 @@ export function NWCSettings({
                       onClick={() => setShowInput(true)}
                       disabled={isSubmitting}
                     >
-                      Update Connection
+                      Update wallet
                     </Button>
                     <Button
                       type="button"
@@ -157,7 +158,7 @@ export function NWCSettings({
                       onClick={handleClear}
                       disabled={isSubmitting}
                     >
-                      Clear Connection
+                      Disconnect
                     </Button>
                   </div>
                 </div>
@@ -165,7 +166,7 @@ export function NWCSettings({
 
               {showInput ? (
                 <div className="space-y-2">
-                  <Label htmlFor="nwc-string">NWC Connection String</Label>
+                  <Label htmlFor="nwc-string">NWC connection string</Label>
                   <Input
                     id="nwc-string"
                     type="text"
@@ -178,15 +179,14 @@ export function NWCSettings({
                     spellCheck="false"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Enter your Nostr Wallet Connect connection string. This will
-                    be encrypted and stored securely.
+                    This will be encrypted and stored securely.
                   </p>
                 </div>
               ) : null}
 
               {!maskedNwcString && !showInput ? (
                 <div className="space-y-2">
-                  <Label htmlFor="nwc-string">NWC Connection String</Label>
+                  <Label htmlFor="nwc-string">NWC connection string</Label>
                   <Input
                     id="nwc-string"
                     type="text"
@@ -199,8 +199,7 @@ export function NWCSettings({
                     spellCheck="false"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Enter your Nostr Wallet Connect connection string. This will
-                    be encrypted and stored securely.
+                    This will be encrypted and stored securely.
                   </p>
                 </div>
               ) : null}
@@ -212,7 +211,7 @@ export function NWCSettings({
             disabled={isSubmitting || !hasChanged}
             className="w-full"
           >
-            {isSubmitting ? "Saving..." : "Save NWC Settings"}
+            {isSubmitting ? "Saving..." : "Save wallet settings"}
           </Button>
 
           {fetcher.data?.success ? (

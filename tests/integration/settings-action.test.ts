@@ -21,10 +21,20 @@ vi.mock("~/features/user", () => ({
   updateHashTagPreset: vi.fn(),
   deleteHashTagPreset: vi.fn(),
   hashTagPresetExistsForUser: vi.fn(),
+  getUserBasicInfo: vi.fn().mockResolvedValue({
+    npub: "npub1test",
+    isChild: false,
+    parentNpub: null,
+  }),
 }));
 
 vi.mock("~/features/payments/data", () => ({
   getUserSubscription: vi.fn(),
+  getPlanById: vi.fn(),
+  getPlanPriceUsd: vi.fn(),
+  createPlanInvoice: vi.fn(),
+  manuallyVerifyPayment: vi.fn(),
+  updateUserSubscription: vi.fn(),
 }));
 
 vi.mock("~/features/user/services/user-cache.server", () => ({
@@ -34,7 +44,12 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
-import { getUserSubscription } from "~/features/payments/data";
+import {
+  createPlanInvoice,
+  getPlanById,
+  getPlanPriceUsd,
+  getUserSubscription,
+} from "~/features/payments/data";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import {
   updateUserTimezone,
@@ -611,6 +626,59 @@ describe("Settings Action Handler", () => {
 
         expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
         expect(data).toMatchObject({ success: true });
+      });
+    });
+  });
+
+  describe("Subscription Actions", () => {
+    it("should create a Lightning invoice for top-up", async () => {
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        Plan: { price: 1000, enableLifetimeAccess: false },
+        planId: "current-plan",
+      });
+      (getPlanById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "premium",
+        name: "Premium",
+        price: 20,
+        isActive: true,
+        enableLifetimeAccess: false,
+      });
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(60);
+      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
+        invoice: "lnbc1testinvoice",
+        paymentHash: "hash-123",
+        amount: 12345,
+        amountUsd: 60,
+        expiresAt: new Date("2026-01-01T00:30:00.000Z"),
+        paymentId: "pay_123",
+        planName: "Premium",
+        planId: "premium",
+      });
+
+      const formData = createFormData({
+        _action: "top_up_subscription",
+        targetPlanId: "premium",
+        paymentLane: "lightning_one_time",
+        billingCadence: "monthly",
+        accessDurationMonths: "3",
+      });
+
+      const res = await handleSettingsAction(TEST_USER_ID, formData);
+      const data = (await res.json()) as Record<string, unknown>;
+
+      expect(res.status).toBe(200);
+      expect(getPlanPriceUsd).toHaveBeenCalledWith({
+        planId: "premium",
+        billingCadence: "monthly",
+        accessDurationMonths: 3,
+        paymentMethod: "lightning_one_time",
+      });
+      expect(createPlanInvoice).toHaveBeenCalled();
+      expect(data).toMatchObject({
+        success: true,
+        invoice: "lnbc1testinvoice",
+        paymentId: "pay_123",
+        planId: "premium",
       });
     });
   });

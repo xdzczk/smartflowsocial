@@ -104,6 +104,14 @@ export interface SettingsLoaderData {
     id: string;
     planId: string | null;
     status: string;
+    renewalMode?: string;
+    billingCadence?: string;
+    accessDurationMonths?: number;
+    billingPaymentMethod?: string;
+    renewalFailureCount?: number;
+    lastRenewalAttemptAt?: Date | null;
+    nextRenewalAttemptAt?: Date | null;
+    gracePeriodEndsAt?: Date | null;
     startDate: Date;
     currentPeriodEnd: Date | null;
     nextPaymentDue: Date | null;
@@ -174,6 +182,46 @@ export interface SettingsLoaderData {
     failedSats: number;
     payoutDestination: string | null;
     payoutDestinationType: string | null;
+  };
+}
+
+async function buildAccountsData(params: {
+  userRecord: { isChild?: boolean | null; parentNpub?: string | null };
+  myNpub: string;
+}): Promise<SettingsLoaderData["accounts"]> {
+  const isChild = !!params.userRecord.isChild;
+  if (isChild) {
+    const parentUser = params.userRecord.parentNpub
+      ? await getUserByNpubWithProfile(params.userRecord.parentNpub)
+      : null;
+    return {
+      isChild: true,
+      parentNpub: parentUser?.npub ?? null,
+      parentUser: parentUser
+        ? {
+            ...parentUser,
+            id: parentUser.npub,
+            nostrProfile: parentUser.nostrProfile,
+          }
+        : null,
+      confirmedChildren: [],
+      pendingChildren: [],
+    };
+  }
+
+  const parentNpub = params.myNpub;
+  const [confirmedChildren, pendingChildren] = await Promise.all([
+    parentNpub
+      ? getConfirmedChildrenForParent(parentNpub)
+      : Promise.resolve([]),
+    parentNpub ? getPendingChildrenForParent(parentNpub) : Promise.resolve([]),
+  ]);
+  return {
+    isChild: false,
+    parentNpub,
+    parentUser: null,
+    confirmedChildren,
+    pendingChildren,
   };
 }
 
@@ -270,43 +318,10 @@ export async function loadSettingsData(
     ])
   );
 
-  // Accounts data
-  let accounts: SettingsLoaderData["accounts"];
-  if (isChild) {
-    const parentUser = userRecord.parentNpub
-      ? await getUserByNpubWithProfile(userRecord.parentNpub)
-      : null;
-    accounts = {
-      isChild: true,
-      parentNpub: parentUser?.npub ?? null,
-      parentUser: parentUser
-        ? {
-            ...parentUser,
-            id: parentUser.npub, // Add required id field
-            nostrProfile: parentUser.nostrProfile,
-          }
-        : null,
-      confirmedChildren: [],
-      pendingChildren: [],
-    };
-  } else {
-    const parentNpub = myNpub;
-    const [confirmedChildren, pendingChildren] = await Promise.all([
-      parentNpub
-        ? getConfirmedChildrenForParent(parentNpub)
-        : Promise.resolve([]),
-      parentNpub
-        ? getPendingChildrenForParent(parentNpub)
-        : Promise.resolve([]),
-    ]);
-    accounts = {
-      isChild: false,
-      parentNpub,
-      parentUser: null,
-      confirmedChildren,
-      pendingChildren,
-    };
-  }
+  const accounts = await buildAccountsData({
+    userRecord: userRecord ?? { isChild: false, parentNpub: null },
+    myNpub,
+  });
 
   // Get subscription and referral information
   const [subscription, allPlans, paymentHistory, referral] = await Promise.all([
@@ -371,6 +386,46 @@ export async function loadSettingsData(
           id: subscription.id,
           planId: subscription.planId ?? null,
           status: subscription.status as string,
+          renewalMode:
+            typeof (subscription as unknown as { renewalMode?: unknown })
+              .renewalMode === "string"
+              ? (subscription as unknown as { renewalMode: string }).renewalMode
+              : undefined,
+          billingCadence:
+            typeof (subscription as unknown as { billingCadence?: unknown })
+              .billingCadence === "string"
+              ? (subscription as unknown as { billingCadence: string })
+                  .billingCadence
+              : undefined,
+          accessDurationMonths:
+            typeof (
+              subscription as unknown as { accessDurationMonths?: unknown }
+            ).accessDurationMonths === "number"
+              ? (subscription as unknown as { accessDurationMonths: number })
+                  .accessDurationMonths
+              : undefined,
+          billingPaymentMethod:
+            typeof (subscription as unknown as { paymentMethod?: unknown })
+              .paymentMethod === "string"
+              ? (subscription as unknown as { paymentMethod: string })
+                  .paymentMethod
+              : undefined,
+          renewalFailureCount:
+            typeof (
+              subscription as unknown as { renewalFailureCount?: unknown }
+            ).renewalFailureCount === "number"
+              ? (subscription as unknown as { renewalFailureCount: number })
+                  .renewalFailureCount
+              : undefined,
+          lastRenewalAttemptAt:
+            (subscription as unknown as { lastRenewalAttemptAt?: Date | null })
+              .lastRenewalAttemptAt ?? null,
+          nextRenewalAttemptAt:
+            (subscription as unknown as { nextRenewalAttemptAt?: Date | null })
+              .nextRenewalAttemptAt ?? null,
+          gracePeriodEndsAt:
+            (subscription as unknown as { gracePeriodEndsAt?: Date | null })
+              .gracePeriodEndsAt ?? null,
           startDate: subscription.startDate,
           currentPeriodEnd: subscription.currentPeriodEnd,
           nextPaymentDue: subscription.nextPaymentDue,

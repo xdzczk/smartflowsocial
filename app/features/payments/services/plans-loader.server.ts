@@ -4,8 +4,14 @@
  */
 
 import { requireUser } from "~/features/auth/session.server";
-import { getAllPlans, getUserSubscription } from "~/features/payments/data";
+import {
+  getAllPlans,
+  getUserSubscription,
+  listActivePlanPricesForPlans,
+} from "~/features/payments/data";
 import { isSubscriptionPeriodExpired } from "~/features/payments/types";
+import { getUserNWC } from "~/features/user";
+import { featureFlags } from "~/lib/feature-flags.server";
 
 /**
  * Load plans data
@@ -14,33 +20,48 @@ export async function loadPlansData(request: Request) {
   // Get user if logged in (optional for viewing plans)
   let user = null;
   let currentSubscription = null;
+  let nwc: {
+    enabled: boolean;
+    maskedString?: string;
+    lastUsed?: Date | null;
+  } | null = null;
 
   try {
     user = await requireUser(request);
     currentSubscription = await getUserSubscription(user.id);
+    nwc = await getUserNWC(user.id);
   } catch {
     // User not logged in - that's okay for viewing plans
   }
 
   // Fetch plans from database
   const dbPlans = await getAllPlans();
+  const planIds = dbPlans.map((p) => p.id);
+  const planPrices = await listActivePlanPricesForPlans(planIds);
+
+  const priceIndex = new Map<string, number>();
+  for (const row of planPrices) {
+    const key = `${row.planId}:${row.billingCadence}:${row.accessDurationMonths}:${row.paymentMethod}`;
+    priceIndex.set(key, row.priceUsd);
+  }
 
   // Transform database plans to match the frontend format
   const plans = dbPlans.map((plan) => {
     const features = plan.features as Record<string, boolean> | null;
-    const price = Number(plan.price);
-    const period =
-      price === 0
-        ? ""
-        : plan.enableLifetimeAccess
-          ? "one payment"
-          : "per month";
+    const monthlyAutoRenewUsd =
+      priceIndex.get(`${plan.id}:monthly:1:nwc_auto_renew`) ??
+      Number(plan.price);
+    const yearlyAutoRenewUsd =
+      priceIndex.get(`${plan.id}:yearly:12:nwc_auto_renew`) ??
+      (plan.enableLifetimeAccess
+        ? Number(plan.price)
+        : monthlyAutoRenewUsd * 12);
 
     return {
       id: plan.id,
       name: plan.name,
-      price,
-      period,
+      monthlyPriceUsd: monthlyAutoRenewUsd,
+      yearlyPriceUsd: yearlyAutoRenewUsd,
       description: plan.description ?? "",
       features: {
         basicScheduling:
@@ -98,6 +119,13 @@ export async function loadPlansData(request: Request) {
   return {
     plans,
     user: user ? { id: user.id, isEnabled: user.isEnabled } : null,
+    nwc: user ? nwc : null,
+    subscriptionCheckoutV2Enabled: featureFlags.subscriptionCheckoutV2Enabled,
+    billingCadences: ["monthly", "yearly"] as const,
+    manualDurationsByCadence: {
+      monthly: [1, 3, 6],
+      yearly: [12],
+    } as const,
     currentSubscription: currentSubscription
       ? {
           planId: currentSubscription.planId,

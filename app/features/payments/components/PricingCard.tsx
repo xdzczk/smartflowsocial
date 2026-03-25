@@ -7,8 +7,8 @@ import { Loader2 } from "lucide-react";
 interface Plan {
   id: string;
   name: string;
-  price: number;
-  period: string;
+  monthlyPriceUsd: number;
+  yearlyPriceUsd: number;
   description: string;
   isPopular: boolean;
 }
@@ -20,10 +20,9 @@ interface PricingCardProps {
   isCurrentPlanExpired: boolean;
   isLoading: boolean;
   selectedPlan: string | null;
-  onPlanSelect: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    planId: string
-  ) => boolean;
+  useCheckoutModal: boolean;
+  billingCadence: "monthly" | "yearly";
+  onPlanSelect: (planId: string) => void;
 }
 
 export function PricingCard({
@@ -32,8 +31,30 @@ export function PricingCard({
   isCurrentPlanExpired,
   isLoading,
   selectedPlan,
+  useCheckoutModal,
+  billingCadence,
   onPlanSelect,
 }: PricingCardProps) {
+  const isFree = plan.monthlyPriceUsd === 0;
+  const displayPriceUsd =
+    billingCadence === "yearly" ? plan.yearlyPriceUsd : plan.monthlyPriceUsd;
+  const cadenceLabel = isFree
+    ? ""
+    : billingCadence === "yearly"
+      ? "/yr"
+      : "/mo";
+  const primaryButtonClass =
+    "bg-primary text-primary-foreground hover:bg-primary/90";
+
+  const buttonLabel =
+    isCurrentPlan && isCurrentPlanExpired
+      ? "Renew"
+      : isFree
+        ? "Get Started"
+        : "Choose Plan";
+
+  const isButtonDisabled = isLoading ? selectedPlan === plan.id : false;
+
   return (
     <div
       className={`border-border bg-card relative rounded-lg border p-6 shadow-lg ${
@@ -52,10 +73,10 @@ export function PricingCard({
         <h3 className="text-foreground mb-2 text-2xl font-bold">{plan.name}</h3>
         <div className="mb-2">
           <span className="text-foreground text-4xl font-bold">
-            {plan.price === 0 ? "Free" : `$${plan.price}`}
+            {isFree ? "Free" : `$${displayPriceUsd}`}
           </span>
-          {plan.period ? (
-            <span className="text-muted-foreground ml-2">{plan.period}</span>
+          {cadenceLabel ? (
+            <span className="text-muted-foreground ml-2">{cadenceLabel}</span>
           ) : null}
         </div>
         <p className="text-muted-foreground text-sm">{plan.description}</p>
@@ -64,40 +85,51 @@ export function PricingCard({
       {isCurrentPlan && !isCurrentPlanExpired ? (
         <Link
           to="/dashboard"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center rounded-lg px-4 py-3 font-medium transition-colors"
+          className={`${primaryButtonClass} flex w-full items-center justify-center rounded-lg px-4 py-3 font-medium transition-colors`}
         >
           Continue with Current Plan
         </Link>
       ) : (
-        <Form method="post">
-          <input type="hidden" name="intent" value="select_plan" />
-          <input type="hidden" name="planId" value={plan.id} />
-          <button
-            type="submit"
-            disabled={isLoading ? selectedPlan === plan.id : false}
-            onClick={(event) => onPlanSelect(event, plan.id)}
-            className={`w-full rounded-lg px-4 py-3 font-medium transition-colors disabled:opacity-50 ${
-              plan.isPopular
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
-            }`}
-          >
-            {isLoading && selectedPlan === plan.id ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </div>
-            ) : (
-              <>
-                {isCurrentPlan && isCurrentPlanExpired
-                  ? "Renew"
-                  : plan.price === 0
-                    ? "Get Started"
-                    : "Choose Plan"}
-              </>
-            )}
-          </button>
-        </Form>
+        <>
+          {useCheckoutModal ? (
+            <button
+              type="button"
+              disabled={isButtonDisabled}
+              onClick={() => onPlanSelect(plan.id)}
+              className={`${primaryButtonClass} w-full rounded-lg px-4 py-3 font-medium transition-colors disabled:opacity-50`}
+            >
+              {isLoading && selectedPlan === plan.id ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </div>
+              ) : (
+                buttonLabel
+              )}
+            </button>
+          ) : (
+            <Form method="post">
+              <input type="hidden" name="intent" value="select_plan" />
+              <input type="hidden" name="planId" value={plan.id} />
+              <input type="hidden" name="paymentMode" value="manual" />
+              <button
+                type="submit"
+                disabled={isButtonDisabled}
+                onClick={() => onPlanSelect(plan.id)}
+                className={`${primaryButtonClass} w-full rounded-lg px-4 py-3 font-medium transition-colors disabled:opacity-50`}
+              >
+                {isLoading && selectedPlan === plan.id ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </div>
+                ) : (
+                  buttonLabel
+                )}
+              </button>
+            </Form>
+          )}
+        </>
       )}
     </div>
   );

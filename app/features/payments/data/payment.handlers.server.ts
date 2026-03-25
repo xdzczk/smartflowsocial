@@ -7,7 +7,7 @@ import { recordReferralEarningIfAny } from "~/features/referral/record-referral-
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
-import { updateUserSubscription } from "./payment-subscription.server";
+import { extendUserSubscriptionFromPayment } from "./payment-subscription.server";
 
 /**
  * Handles completed payments and updates user subscription.
@@ -40,7 +40,7 @@ export async function handlePaymentCompleted(
       },
     });
 
-    await updateUserSubscription(userId, planId, paymentId);
+    await extendUserSubscriptionFromPayment(userId, planId, paymentId);
 
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
