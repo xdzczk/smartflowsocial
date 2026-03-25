@@ -78,6 +78,8 @@ export interface ComposerScheduleFieldProps<
   userTimezone?: string;
   /** Summary line for post options button (e.g. "Thread · 2 segments") */
   postOptionsSummary?: string;
+  /** When false, thread mode is controlled elsewhere (e.g. new post tabs). */
+  showThreadModeToggle?: boolean;
   /** minimal: datetime input only. full: entire schedule UI (default). */
   layout?: "full" | "minimal";
   /** When layout is full, skip the datetime block (use when minimal schedule is shown above). */
@@ -114,6 +116,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
   disabled = false,
   userTimezone = "UTC",
   postOptionsSummary,
+  showThreadModeToggle = true,
   layout = "full",
   omitScheduleInput = false,
 }: ComposerScheduleFieldProps<T>) {
@@ -218,17 +221,19 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
           <>
             <Separator className="my-2" />
             <div className="border-border space-y-3 px-3 pb-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="thread-mode"
-                  checked={isThreadMode}
-                  onCheckedChange={(c) => onThreadModeChange(c === true)}
-                  disabled={disabled}
-                />
-                <Label htmlFor="thread-mode" className="text-sm">
-                  Thread (multiple posts in sequence)
-                </Label>
-              </div>
+              {showThreadModeToggle ? (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="thread-mode"
+                    checked={isThreadMode}
+                    onCheckedChange={(c) => onThreadModeChange(c === true)}
+                    disabled={disabled}
+                  />
+                  <Label htmlFor="thread-mode" className="text-sm">
+                    Thread (multiple posts in sequence)
+                  </Label>
+                </div>
+              ) : null}
               {control ? (
                 <div className="flex items-center gap-2">
                   <Controller

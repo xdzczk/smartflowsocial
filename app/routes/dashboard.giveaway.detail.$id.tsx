@@ -17,6 +17,8 @@ import {
   markGiveawayPaidOut,
   resetGiveawayToDraft,
   setGiveawayWinnerPayoutStatus,
+  runGiveawayPayoutBatchWithNwc,
+  updateGiveawayPayoutSettings,
   updateGiveaway,
 } from "~/features/giveaway";
 import {
@@ -48,6 +50,7 @@ import {
   getPlanDisplayName,
   getUserPlanType,
 } from "~/features/payments/types";
+import { getUserNWC } from "~/features/user";
 import { ExternalServiceError } from "~/lib/errors";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -60,9 +63,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Not found", { status: 404 });
   }
 
-  const [giveaway, subscriptionData] = await Promise.all([
+  const [giveaway, subscriptionData, nwc] = await Promise.all([
     getGiveawayById(id, userId),
     getSubscriptionData(userId),
+    getUserNWC(userId),
   ]);
   if (!giveaway) {
     throw new Response("Not found", { status: 404 });
@@ -173,6 +177,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null;
 
   return json({
+    nwc: {
+      enabled: nwc.enabled,
+      maskedString: nwc.maskedString ?? null,
+      lastUsed: nwc.lastUsed ? nwc.lastUsed.toISOString() : null,
+    },
     giveaway: {
       id: giveaway.id,
       name: giveaway.name ?? null,
@@ -187,6 +196,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       updatedAt: giveaway.updatedAt.toISOString(),
       engagementConfig: giveaway.engagementConfig,
       payoutState: payoutStateNormalized,
+      payoutWalletMode: giveaway.payoutWalletMode,
+      payoutAutoRunEnabled: giveaway.payoutAutoRunEnabled,
+      payoutAutoRunSpendCapSats: giveaway.payoutAutoRunSpendCapSats ?? null,
       payoutProgress,
       lastPreviewMeta: giveaway.lastPreviewMeta,
       rerollCount: giveaway.rerollCount,
@@ -318,6 +330,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (result.error) return json(result);
       return redirect("/dashboard/giveaway");
     }
+    case "runBatchPayout": {
+      const spendCapSatsRaw = String(formData.get("spendCapSats") ?? "").trim();
+      const spendCapSats =
+        spendCapSatsRaw !== "" ? Number(spendCapSatsRaw) : undefined;
+      const result = await runGiveawayPayoutBatchWithNwc(userId, id, {
+        trigger: "manual_trigger",
+        spendCapSats: Number.isFinite(spendCapSats)
+          ? Math.max(0, Math.floor(spendCapSats as number))
+          : undefined,
+      });
+      if (!result.success) return json(result, { status: 400 });
+      return redirectBack();
+    }
     case "markPaidOut": {
       const overrideRaw = formData.get("completeOverrideReason");
       const result = await markGiveawayPaidOut(userId, id, {
@@ -356,6 +381,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         payoutStatus as (typeof allowed)[number],
         typeof noteRaw === "string" ? noteRaw : null
       );
+      if (!result.success) return json(result, { status: 400 });
+      return redirectBack();
+    }
+    case "updatePayoutSettings": {
+      const mode = String(formData.get("payoutWalletMode") ?? "manual");
+      const payoutWalletMode =
+        mode === "nwc_creator" ? "nwc_creator" : "manual";
+      const autoRaw = String(formData.get("payoutAutoRunEnabled") ?? "");
+      const payoutAutoRunEnabled = autoRaw === "on" || autoRaw === "true";
+      const capRaw = String(
+        formData.get("payoutAutoRunSpendCapSats") ?? ""
+      ).trim();
+      const cap =
+        capRaw !== "" && Number.isFinite(Number(capRaw))
+          ? Math.max(0, Math.floor(Number(capRaw)))
+          : null;
+      const result = await updateGiveawayPayoutSettings(userId, id, {
+        payoutWalletMode,
+        payoutAutoRunEnabled,
+        payoutAutoRunSpendCapSats: cap,
+      });
       if (!result.success) return json(result, { status: 400 });
       return redirectBack();
     }
@@ -413,6 +459,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function DashboardGiveawayDetailPage() {
   const {
+    nwc,
     giveaway,
     giveawaysLimits,
     winnerProfiles,
@@ -424,6 +471,7 @@ export default function DashboardGiveawayDetailPage() {
   } = useLoaderData<typeof loader>();
   return (
     <GiveawayDetailPage
+      nwc={nwc}
       winnerProfiles={winnerProfiles}
       planType={planType}
       planDisplayName={planDisplayName}

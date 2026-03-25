@@ -26,6 +26,16 @@ const DEFAULT_WEIGHTS: Record<GiveawayEngagementType, number> = {
   ZAP: 1,
 };
 
+export function countEligibleAccountsForEngagementTypes(
+  relatedEvents: RelatedEvent[],
+  engagementTypes: GiveawayEngagementType[]
+): number {
+  const filtered = filterByEngagementTypes(relatedEvents, engagementTypes);
+  const pubkeys = new Set<string>();
+  for (const e of filtered) pubkeys.add(e.pubkey);
+  return pubkeys.size;
+}
+
 export interface SelectionInput {
   relatedEvents: RelatedEvent[];
   engagementTypes: GiveawayEngagementType[];
@@ -243,7 +253,9 @@ export function runGiveawaySelectionPerEngagement(
     if (!config || config.winnerCount <= 0) continue;
     const filtered = filterByEngagementTypes(relatedEvents, [engagementType]);
     const userEntries = buildUserEntries(filtered, weights);
-    const entries = Array.from(userEntries.values());
+    const entries = Array.from(userEntries.values()).filter(
+      (e) => !byPubkey.has(e.pubkey)
+    );
     if (entries.length === 0) continue;
     const k = Math.min(config.winnerCount, entries.length);
     const selected =

@@ -138,8 +138,9 @@ function contentEmbedsQuotedEvent(
  * nostr:note / nevent for the parent in the body — that is a thread reply, not a quote.
  * Only treat as quote when the e-tag uses the NIP-10-style "mention" marker for the cited post,
  * plus a nostr reference in content (substring or NIP-27 parse).
+ * Exported for Primal global-notification quote detection (must match this heuristic).
  */
-function isQuotePost(
+export function isQuotePost(
   event: ParsedEvent,
   targetETag: string[] | undefined
 ): boolean {

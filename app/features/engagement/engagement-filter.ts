@@ -6,7 +6,18 @@ import type { GroupedNotification } from "./types";
 
 export type EngagementItemStateMap = Record<
   string,
-  { state: "handled"; repliedFromApp: boolean }
+  {
+    state:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED";
+    repliedFromApp: boolean;
+    snoozedUntil?: string | null;
+  }
 >;
 
 /**
@@ -92,4 +103,50 @@ export function applySort(
       const maxB = Math.max(...gb.notifications.map((n) => score(n)), 0);
       return maxB - maxA;
     });
+}
+
+export function applyWorkflowFilters(
+  groups: GroupedNotification[],
+  engagementItemStates: EngagementItemStateMap,
+  engagementLinkedActions: Record<string, Array<{ kind: string }>>,
+  options: {
+    unhandledOnly: boolean;
+    hasDraft: boolean;
+    hasScheduledAction: boolean;
+    needsResponse: boolean;
+    includeScheduledInNeedsResponse: boolean;
+  }
+): GroupedNotification[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      notifications: group.notifications.filter((n) => {
+        const state = engagementItemStates[n.eventId];
+        const links = engagementLinkedActions[n.eventId] ?? [];
+        const hasDraft = links.some((l) => l.kind === "DRAFT");
+        const hasScheduled = links.some((l) => l.kind.startsWith("SCHEDULED_"));
+        if (options.unhandledOnly) {
+          if (
+            state &&
+            state.state !== "UNHANDLED" &&
+            state.state !== "DRAFTED" &&
+            state.state !== "SCHEDULED"
+          ) {
+            return false;
+          }
+        }
+        if (options.hasDraft && !hasDraft) return false;
+        if (options.hasScheduledAction && !hasScheduled) return false;
+        if (options.needsResponse) {
+          if (state?.state === "IGNORED" || state?.state === "SNOOZED")
+            return false;
+          if (state?.state === "REPLIED" || state?.state === "HANDLED")
+            return false;
+          if (!options.includeScheduledInNeedsResponse && hasScheduled)
+            return false;
+        }
+        return true;
+      }),
+    }))
+    .filter((group) => group.notifications.length > 0);
 }

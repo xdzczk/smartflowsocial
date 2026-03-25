@@ -1,5 +1,11 @@
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  Await,
+  useFetcher,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { Search } from "lucide-react";
+import { Suspense } from "react";
 
 import {
   validateSearchResultData,
@@ -12,14 +18,77 @@ import { useSearchState } from "../hooks/useSearchState";
 import { SearchResult } from "./SearchResult";
 import { SearchToast } from "./SearchToast";
 
+/** Shape of `searchResultPromise` from deferred search loader (Remix `Await` does not infer this). */
+interface DeferredSearchResult {
+  event?: unknown;
+  stats?: unknown;
+  error?: string;
+}
+
 export default function SearchPostsPage() {
+  const navigation = useNavigation();
   const loaderData = useLoaderData<{
     user: { timezone?: string | null } | null;
     searchResult?: { event?: unknown; stats?: unknown; error?: string };
+    searchResultPromise?: Promise<DeferredSearchResult>;
   }>();
-  const { user, searchResult: loaderSearchResult } = loaderData;
+  const {
+    user,
+    searchResult: loaderSearchResult,
+    searchResultPromise,
+  } = loaderData;
   const fetcher = useFetcher();
 
+  const isNavigatingToSearchResult =
+    navigation.state === "loading" &&
+    navigation.location.pathname === "/dashboard/search/posts" &&
+    new URLSearchParams(navigation.location.search).get("q") !== null;
+
+  if (searchResultPromise) {
+    const deferred = searchResultPromise as Promise<DeferredSearchResult>;
+    return (
+      <Suspense fallback={<SearchPostSkeleton />}>
+        <Await resolve={deferred}>
+          {(resolvedSearchResult) => (
+            <SearchPostsPageContent
+              user={user}
+              fetcherData={fetcher.data}
+              loaderSearchResult={resolvedSearchResult}
+              forceShowSkeleton={isNavigatingToSearchResult}
+            />
+          )}
+        </Await>
+      </Suspense>
+    );
+  }
+
+  return (
+    <SearchPostsPageContent
+      user={user}
+      fetcherData={fetcher.data}
+      loaderSearchResult={loaderSearchResult ?? null}
+      forceShowSkeleton={isNavigatingToSearchResult}
+    />
+  );
+}
+
+interface SearchPostsPageContentProps {
+  user: { timezone?: string | null } | null;
+  fetcherData: unknown;
+  loaderSearchResult: {
+    event?: unknown;
+    stats?: unknown;
+    error?: string;
+  } | null;
+  forceShowSkeleton: boolean;
+}
+
+function SearchPostsPageContent({
+  user,
+  fetcherData,
+  loaderSearchResult,
+  forceShowSkeleton,
+}: SearchPostsPageContentProps) {
   const {
     toast,
     isSearching,
@@ -31,9 +100,13 @@ export default function SearchPostsPage() {
     clearSearch,
   } = useSearchState({
     user,
-    fetcherData: validateSearchResultData(fetcher.data),
+    fetcherData: validateSearchResultData(fetcherData),
     loaderSearchResult: validateSearchResultData(loaderSearchResult ?? null),
   });
+
+  if (forceShowSkeleton) {
+    return <SearchPostSkeleton />;
+  }
 
   return (
     <div className="p-6">
@@ -83,6 +156,37 @@ export default function SearchPostsPage() {
       ) : null}
 
       <SearchToast toast={toast} onClose={() => setToast(null)} />
+    </div>
+  );
+}
+
+function SearchPostSkeleton() {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <div className="bg-muted mb-2 h-8 w-20 animate-pulse rounded" />
+        <div className="bg-muted h-4 w-80 max-w-full animate-pulse rounded" />
+      </div>
+
+      <div className="dark:border-border dark:bg-card border-border bg-card space-y-4 rounded-lg border p-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-muted h-10 w-10 animate-pulse rounded-full" />
+          <div className="space-y-2">
+            <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+            <div className="bg-muted h-3 w-24 animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="bg-muted h-4 w-full animate-pulse rounded" />
+          <div className="bg-muted h-4 w-11/12 animate-pulse rounded" />
+          <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-muted h-8 animate-pulse rounded" />
+          <div className="bg-muted h-8 animate-pulse rounded" />
+          <div className="bg-muted h-8 animate-pulse rounded" />
+        </div>
+      </div>
     </div>
   );
 }

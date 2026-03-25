@@ -13,7 +13,9 @@ import {
   getContestDetailPageData,
   launchContest,
   lockContest,
+  runContestPayoutBatchWithNwc,
   setContestWinnerPayoutStatus,
+  updateContestPayoutSettings,
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import {
@@ -21,6 +23,158 @@ import {
   requireFeatureAccess,
 } from "~/features/payments";
 import { featureFlags } from "~/lib/feature-flags.server";
+
+type ContestIntentResponse = Response;
+
+function parseSpendCapSats(formData: FormData): number | undefined {
+  const spendCapSatsRaw = String(formData.get("spendCapSats") ?? "").trim();
+  const spendCapSats =
+    spendCapSatsRaw !== "" ? Number(spendCapSatsRaw) : undefined;
+  if (spendCapSats === undefined || !Number.isFinite(spendCapSats)) {
+    return undefined;
+  }
+  return Math.max(0, Math.floor(spendCapSats));
+}
+
+function parsePayoutSettings(formData: FormData): {
+  payoutWalletMode: "manual" | "nwc_creator";
+  payoutAutoRunEnabled: boolean;
+  payoutAutoRunSpendCapSats: number | null;
+} {
+  const mode = String(formData.get("payoutWalletMode") ?? "manual");
+  const payoutWalletMode = mode === "nwc_creator" ? "nwc_creator" : "manual";
+  const autoRaw = String(formData.get("payoutAutoRunEnabled") ?? "");
+  const payoutAutoRunEnabled = autoRaw === "on" || autoRaw === "true";
+  const capRaw = String(formData.get("payoutAutoRunSpendCapSats") ?? "").trim();
+  const payoutAutoRunSpendCapSats =
+    capRaw !== "" && Number.isFinite(Number(capRaw))
+      ? Math.max(0, Math.floor(Number(capRaw)))
+      : null;
+
+  return {
+    payoutWalletMode,
+    payoutAutoRunEnabled,
+    payoutAutoRunSpendCapSats,
+  };
+}
+
+async function handleContestDetailIntent(args: {
+  intent: FormDataEntryValue | null;
+  userId: string;
+  contestId: string;
+  formData: FormData;
+}): Promise<ContestIntentResponse> {
+  const { intent, userId, contestId, formData } = args;
+
+  switch (intent) {
+    case "exportCsv": {
+      const data = await getContestDetailPageData(userId, contestId);
+      if (!data) return json({ error: "Not found" }, { status: 404 });
+      await appendContestEventLog(
+        userId,
+        contestId,
+        "contest_export_csv",
+        "Contest entries CSV exported"
+      );
+      const csv = buildContestEntriesCsv(data);
+      return new Response(csv, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="contest-${contestId}-entries.csv"`,
+        },
+      });
+    }
+    case "savePreset": {
+      const result = await saveContestPresetFromDetailForm(
+        userId,
+        contestId,
+        formData
+      );
+      if (!result.success) {
+        return json({ error: result.error }, { status: result.status });
+      }
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "launch": {
+      const result = await launchContest(userId, contestId);
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "freeze": {
+      const result = await freezeContestAtDeadline(userId, contestId);
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "lock": {
+      const result = await lockContest(userId, contestId, {
+        lockConfigHash: String(formData.get("lockConfigHash") ?? ""),
+      });
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "payout": {
+      const winnerPubkey = String(formData.get("winnerPubkey") ?? "");
+      const payoutStatus = String(formData.get("payoutStatus") ?? "pending") as
+        | "pending"
+        | "sent"
+        | "failed"
+        | "marked_paid";
+      const result = await setContestWinnerPayoutStatus(
+        userId,
+        contestId,
+        winnerPubkey,
+        payoutStatus
+      );
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "runBatchPayout": {
+      const result = await runContestPayoutBatchWithNwc(userId, contestId, {
+        trigger: "manual_trigger",
+        spendCapSats: parseSpendCapSats(formData),
+      });
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "updatePayoutSettings": {
+      const result = await updateContestPayoutSettings(
+        userId,
+        contestId,
+        parsePayoutSettings(formData)
+      );
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "complete": {
+      const result = await completeContest(userId, contestId, {
+        completeOverrideReason: String(
+          formData.get("completeOverrideReason") ?? ""
+        ),
+      });
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "cancel": {
+      const result = await cancelContest(
+        userId,
+        contestId,
+        String(formData.get("reason") ?? "")
+      );
+      if (!result.success)
+        return json({ error: result.error }, { status: 400 });
+      return redirect("/dashboard/contests");
+    }
+    default:
+      return json({ error: "Unknown intent" }, { status: 400 });
+  }
+}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
@@ -48,85 +202,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) return json({ error: "Not found" }, { status: 404 });
   const formData = await request.formData();
   const intent = formData.get("intent");
-
-  if (intent === "exportCsv") {
-    const data = await getContestDetailPageData(userId, id);
-    if (!data) return json({ error: "Not found" }, { status: 404 });
-    await appendContestEventLog(
-      userId,
-      id,
-      "contest_export_csv",
-      "Contest entries CSV exported"
-    );
-    const csv = buildContestEntriesCsv(data);
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="contest-${id}-entries.csv"`,
-      },
-    });
-  }
-
-  if (intent === "savePreset") {
-    const result = await saveContestPresetFromDetailForm(userId, id, formData);
-    if (!result.success) {
-      return json({ error: result.error }, { status: result.status });
-    }
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-
-  if (intent === "launch") {
-    const result = await launchContest(userId, id);
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-  if (intent === "freeze") {
-    const result = await freezeContestAtDeadline(userId, id);
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-  if (intent === "lock") {
-    const result = await lockContest(userId, id, {
-      lockConfigHash: String(formData.get("lockConfigHash") ?? ""),
-    });
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-  if (intent === "payout") {
-    const winnerPubkey = String(formData.get("winnerPubkey") ?? "");
-    const payoutStatus = String(formData.get("payoutStatus") ?? "pending") as
-      | "pending"
-      | "sent"
-      | "failed"
-      | "marked_paid";
-    const result = await setContestWinnerPayoutStatus(
-      userId,
-      id,
-      winnerPubkey,
-      payoutStatus
-    );
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-  if (intent === "complete") {
-    const result = await completeContest(userId, id, {
-      completeOverrideReason: String(
-        formData.get("completeOverrideReason") ?? ""
-      ),
-    });
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect(`/dashboard/contests/detail/${id}`);
-  }
-  if (intent === "cancel") {
-    const result = await cancelContest(
-      userId,
-      id,
-      String(formData.get("reason") ?? "")
-    );
-    if (!result.success) return json({ error: result.error }, { status: 400 });
-    return redirect("/dashboard/contests");
-  }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return handleContestDetailIntent({
+    intent,
+    userId,
+    contestId: id,
+    formData,
+  });
 }
 
 export default function ContestDetailRoute() {

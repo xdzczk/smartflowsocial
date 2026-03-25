@@ -124,6 +124,11 @@ export interface UnifiedComposerProps {
    * (queue/tags/advanced schedule behind a collapsible).
    */
   embeddedDensity?: "full" | "contest-lite";
+  /**
+   * New Post page tabs: when set, thread mode follows the tab and the thread
+   * checkbox is omitted from Post options.
+   */
+  newPostContentTab?: "post" | "thread";
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -150,6 +155,7 @@ export function UnifiedComposer({
   embedContext,
   onEmbedPublishSuccess,
   embeddedDensity,
+  newPostContentTab,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -215,6 +221,15 @@ export function UnifiedComposer({
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
+
+  const threadModeFromNewPostTabs = newPostContentTab != null;
+  const showThreadModeToggle = !threadModeFromNewPostTabs;
+  const includeThreadInPostOptionsSummary = !threadModeFromNewPostTabs;
+
+  React.useEffect(() => {
+    if (!newPostContentTab) return;
+    setIsThreadMode(newPostContentTab === "thread");
+  }, [newPostContentTab, setIsThreadMode]);
 
   const tags: string[] = [];
 
@@ -926,6 +941,7 @@ export function UnifiedComposer({
               onQuoteEntriesChange={setQuoteEntries}
               disabled={disabled}
               userTimezone={user?.timezone ?? "UTC"}
+              showThreadModeToggle={showThreadModeToggle}
             />
             <div className="border-border bg-muted/20 rounded-lg border px-3 py-2 text-xs">
               <p className="text-muted-foreground font-medium">
@@ -1048,14 +1064,16 @@ export function UnifiedComposer({
                     onQuoteEntriesChange={setQuoteEntries}
                     disabled={disabled}
                     userTimezone={user?.timezone ?? "UTC"}
+                    showThreadModeToggle={showThreadModeToggle}
                     postOptionsSummary={
                       !postOptionsOpen &&
-                      (isThreadMode ||
+                      ((isThreadMode && includeThreadInPostOptionsSummary) ||
                         form.watch("isRecyclable") ||
                         alsoScheduleRepost ||
                         alsoScheduleQuote)
                         ? [
                             isThreadMode &&
+                              includeThreadInPostOptionsSummary &&
                               `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
                             form.watch("isRecyclable") && "Recyclable",
                             (alsoScheduleRepost || alsoScheduleQuote) &&
@@ -1256,14 +1274,16 @@ export function UnifiedComposer({
                 onQuoteEntriesChange={setQuoteEntries}
                 disabled={disabled}
                 userTimezone={user?.timezone ?? "UTC"}
+                showThreadModeToggle={showThreadModeToggle}
                 postOptionsSummary={
                   !postOptionsOpen &&
-                  (isThreadMode ||
+                  ((isThreadMode && includeThreadInPostOptionsSummary) ||
                     form.watch("isRecyclable") ||
                     alsoScheduleRepost ||
                     alsoScheduleQuote)
                     ? [
                         isThreadMode &&
+                          includeThreadInPostOptionsSummary &&
                           `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
                         form.watch("isRecyclable") && "Recyclable",
                         (alsoScheduleRepost || alsoScheduleQuote) &&

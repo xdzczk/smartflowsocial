@@ -3,6 +3,7 @@
  */
 
 import { getUserSubscription } from "~/features/payments/data";
+import { listPayoutItemsByRunId } from "~/features/payments/repositories/payout-ledger-data.server";
 import type { UserSubscription } from "~/features/payments/types";
 import {
   getGiveawayPlanLimits,
@@ -10,6 +11,8 @@ import {
   getUserPlanType,
 } from "~/features/payments/types";
 import { getUserById } from "~/features/user";
+
+import { executeCampaignPayoutBatch } from "../payments/services/payout-executor.server";
 
 import { Prisma } from "./data/giveaway-prisma-types.server";
 import type {
@@ -32,6 +35,7 @@ import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { getPostsInScope } from "./giveaway-scope.server";
 import {
   runGiveawayAccountPoolSelection,
+  countEligibleAccountsForEngagementTypes,
   runGiveawaySelection,
   runGiveawaySelectionPerEngagement,
 } from "./giveaway-selection.server";
@@ -435,8 +439,23 @@ export async function previewGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
+  const engagementConfig =
+    (g.engagementConfig as GiveawayEngagementConfig | null) ?? null;
+  const engagementTypes =
+    g.engagementTypes as string[] as GiveawayEngagementType[];
+  const types =
+    engagementTypes.length > 0 ? engagementTypes : DEFAULT_ENGAGEMENT_TYPES;
+  const typesFromConfig = engagementConfig
+    ? (Object.keys(engagementConfig) as GiveawayEngagementType[])
+    : [];
+  const eligibilityTypes = typesFromConfig.length > 0 ? typesFromConfig : types;
+
+  const eligibleAccountCount = scopeIsFollowGraphAccountPool(g.scopeType)
+    ? new Set(relatedEvents.map((e) => e.pubkey)).size
+    : countEligibleAccountsForEngagementTypes(relatedEvents, eligibilityTypes);
+
   const lastPreviewMeta = {
-    eligiblePoolSize: relatedEvents.length,
+    eligiblePoolSize: eligibleAccountCount,
     computedAt: new Date().toISOString(),
     selectionMode: g.selectionMode,
     filters: g.filters ?? null,
@@ -447,7 +466,7 @@ export async function previewGiveaway(
     winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
     lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
     activityLog: appendGiveawayActivityLog(g.activityLog, "preview_generated", {
-      eligiblePoolSize: relatedEvents.length,
+      eligiblePoolSize: eligibleAccountCount,
       winnersDrawn: winners.length,
     }),
   });
@@ -763,6 +782,124 @@ export async function setGiveawayWinnerPayoutStatus(
   state[winnerPubkey] = next;
   await updateGiveawayRow(giveawayId, {
     payoutState: state as unknown as Prisma.InputJsonValue,
+  });
+  return { success: true };
+}
+
+export async function runGiveawayPayoutBatchWithNwc(
+  userId: string,
+  giveawayId: string,
+  options?: { trigger?: "manual_trigger" | "autorun"; spendCapSats?: number }
+): Promise<{ success: boolean; error?: string; runId?: string | null }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status !== "LOCKED") {
+    return {
+      success: false,
+      error: "Giveaway must be locked to run payouts",
+    };
+  }
+  const snapshot = (g.winnerSnapshot as GiveawayWinnerEntry[] | null) ?? [];
+  if (snapshot.length === 0)
+    return { success: false, error: "No winners to pay" };
+
+  const exec = await executeCampaignPayoutBatch({
+    scope: "GIVEAWAY",
+    giveawayId,
+    creatorUserId: userId,
+    trigger: options?.trigger ?? "manual_trigger",
+    walletMode: "nwc_creator",
+    spendCapSats: options?.spendCapSats ?? null,
+    winners: snapshot.map((w) => ({
+      winnerPubkeyHex: w.pubkey,
+      amountSats: Math.max(0, Math.floor(w.satsPerWinner ?? 0)),
+      winnerNpub: w.npub,
+    })),
+  });
+
+  const items = exec.runId ? await listPayoutItemsByRunId(exec.runId) : [];
+  const itemByPubkey = new Map(items.map((i) => [i.winnerPubkey, i]));
+
+  const state = normalizePayoutState(g.payoutState, snapshot);
+  const now = new Date().toISOString();
+  for (const w of snapshot) {
+    const item = itemByPubkey.get(w.pubkey);
+    if (!item) continue;
+    if (item.status === "paid") {
+      state[w.pubkey] = { status: "sent", updatedAt: now };
+    } else if (item.status === "failed") {
+      state[w.pubkey] = {
+        status: "failed",
+        updatedAt: now,
+        note: item.errorMessage ?? undefined,
+      };
+    } else if (item.status === "claim_needed") {
+      state[w.pubkey] = {
+        status: "failed",
+        updatedAt: now,
+        note: item.errorMessage ?? "Winner needs claim",
+      };
+    }
+  }
+
+  await updateGiveawayRow(giveawayId, {
+    payoutState: state as unknown as Prisma.InputJsonValue,
+    activityLog: appendGiveawayActivityLog(
+      g.activityLog,
+      "payout_batch_executed",
+      {
+        runId: exec.runId,
+        eligible: exec.eligible,
+        walletMode: exec.walletMode,
+        totals: exec.totals,
+        eligibilityErrorCode: exec.eligibilityErrorCode,
+      }
+    ),
+  });
+
+  return { success: true, runId: exec.runId };
+}
+
+export async function updateGiveawayPayoutSettings(
+  userId: string,
+  giveawayId: string,
+  settings: {
+    payoutWalletMode?: "manual" | "nwc_creator";
+    payoutAutoRunEnabled?: boolean;
+    payoutAutoRunSpendCapSats?: number | null;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status === "PAID_OUT" || g.status === "CANCELLED") {
+    return {
+      success: false,
+      error: "Cannot change payout settings after completion/cancel",
+    };
+  }
+
+  const next: Prisma.GiveawayUpdateInput = {};
+  if (settings.payoutWalletMode) {
+    next.payoutWalletMode = settings.payoutWalletMode;
+    if (settings.payoutWalletMode === "manual") {
+      next.payoutAutoRunEnabled = false;
+    }
+  }
+  if (settings.payoutAutoRunEnabled !== undefined) {
+    next.payoutAutoRunEnabled = settings.payoutAutoRunEnabled;
+  }
+  if (settings.payoutAutoRunSpendCapSats !== undefined) {
+    next.payoutAutoRunSpendCapSats = settings.payoutAutoRunSpendCapSats;
+  }
+  if (Object.keys(next).length === 0) return { success: true };
+
+  await updateGiveawayRow(giveawayId, {
+    ...next,
+    activityLog: appendGiveawayActivityLog(
+      g.activityLog,
+      "payout_settings_updated",
+      {}
+    ),
   });
   return { success: true };
 }

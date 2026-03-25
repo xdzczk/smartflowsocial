@@ -240,7 +240,12 @@ When viewing search results or your own posts, you can see:
 - **Chronological View** - Latest interactions first
 - **Grouped by Post** - See all engagement for a post
 - **User Profiles** - View profile information
-- **Quick Actions** - Reply, like, or view thread
+- **Quick Actions** - Reply, quote, repost, ignore, snooze, or view thread
+- **Needs response tab** - Focus on items that still require action
+- **Workflow badges** - See Unhandled, Drafted, Scheduled, Replied, Ignored, or Snoozed state per
+  item
+- **Linked action badges** - See when a draft/scheduled/queued action is already tied to an item and
+  deep-link to manage it
 
 ---
 
@@ -356,9 +361,11 @@ only part of it may be loaded.
    - Write your message
    - Include relevant hashtags
 
-3. **Post or schedule:**
+3. **Post now or defer:**
    - **Post Now** - Immediate response
    - **Schedule** - Plan for later
+   - **Save Draft** - Keep response context for later triage
+   - **Add to Queue** - Queue response flow for scheduled operations
 
 ### Engaging with Mentions
 

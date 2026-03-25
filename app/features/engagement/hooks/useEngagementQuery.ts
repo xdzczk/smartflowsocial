@@ -19,6 +19,37 @@ import {
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
 import type { EventStats, GroupedNotification } from "../types";
 
+interface EngagementItemStateValue {
+  state:
+    | "UNHANDLED"
+    | "DRAFTED"
+    | "SCHEDULED"
+    | "REPLIED"
+    | "IGNORED"
+    | "SNOOZED"
+    | "HANDLED";
+  repliedFromApp: boolean;
+  snoozedUntil?: string | null;
+}
+
+interface EngagementLinkedAction {
+  kind:
+    | "DRAFT"
+    | "SCHEDULED_REPLY"
+    | "SCHEDULED_QUOTE"
+    | "SCHEDULED_REPOST"
+    | "QUEUED_REPLY"
+    | "QUEUED_QUOTE"
+    | "QUEUED_REPOST";
+  postId?: string | null;
+  draftId?: string | null;
+  queueTypeId?: string | null;
+  label?: string | null;
+  scheduledFor?: string | null;
+  isCanceled?: boolean;
+  isPublished?: boolean;
+}
+
 // EngagementLoaderData is now exported from schemas
 
 /** Fallback when loader returns invalid or error payload so the app does not throw. */
@@ -37,6 +68,8 @@ function getEmptyEngagementLoaderData(): EngagementLoaderData {
     groupedNotifications: { replies: [], quotes: [], mentions: [] },
     trustScores: {},
     engagementItemStates: {},
+    engagementLinkedActions: {},
+    groupSummaries: {},
     lastCheckedAt: null,
   };
 }
@@ -157,9 +190,21 @@ export function useEngagementData() {
       quotes: [],
     };
     const emptyTrustScores: Record<string, number> = {};
-    const emptyEngagementItemStates: Record<
+    const emptyEngagementItemStates: Record<string, EngagementItemStateValue> =
+      {};
+    const emptyEngagementLinkedActions: Record<
       string,
-      { state: "handled"; repliedFromApp: boolean }
+      EngagementLinkedAction[]
+    > = {};
+    const emptyGroupSummaries: Record<
+      string,
+      {
+        total: number;
+        needResponse: number;
+        drafted: number;
+        scheduled: number;
+        handled: number;
+      }
     > = {};
     return {
       posts: emptyPosts,
@@ -168,6 +213,8 @@ export function useEngagementData() {
       groupedNotifications: emptyGroupedNotifications,
       trustScores: emptyTrustScores,
       engagementItemStates: emptyEngagementItemStates,
+      engagementLinkedActions: emptyEngagementLinkedActions,
+      groupSummaries: emptyGroupSummaries,
       isLoading: query.isLoading,
       rawData: null,
     };
@@ -220,18 +267,27 @@ export function useEngagementData() {
       : null;
 
   // Type guard for engagementItemStates (defensive for loader response shape)
-  const engagementItemStates: Record<
-    string,
-    { state: "handled"; repliedFromApp: boolean }
-  > =
+  const engagementItemStates: Record<string, EngagementItemStateValue> =
     typeof rawData.engagementItemStates === "object" &&
     rawData.engagementItemStates !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- defensive guard for loader
     !Array.isArray(rawData.engagementItemStates)
       ? (rawData.engagementItemStates as Record<
           string,
-          { state: "handled"; repliedFromApp: boolean }
+          EngagementItemStateValue
         >)
       : {};
+  const engagementLinkedActions: Record<string, EngagementLinkedAction[]> =
+    rawData.engagementLinkedActions ?? {};
+  const groupSummaries: Record<
+    string,
+    {
+      total: number;
+      needResponse: number;
+      drafted: number;
+      scheduled: number;
+      handled: number;
+    }
+  > = rawData.groupSummaries ?? {};
 
   return {
     posts,
@@ -240,6 +296,8 @@ export function useEngagementData() {
     groupedNotifications,
     trustScores,
     engagementItemStates,
+    engagementLinkedActions,
+    groupSummaries,
     isLoading: query.isLoading,
     rawData,
   };
@@ -268,9 +326,21 @@ export function useEngagementInfiniteData() {
       mentions: [],
     };
     const emptyTrustScores: Record<string, number> = {};
-    const emptyEngagementItemStates: Record<
+    const emptyEngagementItemStates: Record<string, EngagementItemStateValue> =
+      {};
+    const emptyEngagementLinkedActions: Record<
       string,
-      { state: "handled"; repliedFromApp: boolean }
+      EngagementLinkedAction[]
+    > = {};
+    const emptyGroupSummaries: Record<
+      string,
+      {
+        total: number;
+        needResponse: number;
+        drafted: number;
+        scheduled: number;
+        handled: number;
+      }
     > = {};
     return {
       posts: emptyPosts,
@@ -279,6 +349,8 @@ export function useEngagementInfiniteData() {
       groupedNotifications: emptyGroupedNotifications,
       trustScores: emptyTrustScores,
       engagementItemStates: emptyEngagementItemStates,
+      engagementLinkedActions: emptyEngagementLinkedActions,
+      groupSummaries: emptyGroupSummaries,
       lastCheckedAt: null,
       followedPubkeys: [] as string[],
       isLoading,
@@ -297,9 +369,18 @@ export function useEngagementInfiniteData() {
   const allQuotes: GroupedNotification[] = [];
   const allMentions: GroupedNotification[] = [];
   const allTrustScores: Record<string, number> = {};
-  const allEngagementItemStates: Record<
+  const allEngagementItemStates: Record<string, EngagementItemStateValue> = {};
+  const allEngagementLinkedActions: Record<string, EngagementLinkedAction[]> =
+    {};
+  const allGroupSummaries: Record<
     string,
-    { state: "handled"; repliedFromApp: boolean }
+    {
+      total: number;
+      needResponse: number;
+      drafted: number;
+      scheduled: number;
+      handled: number;
+    }
   > = {};
 
   // Process each page
@@ -356,6 +437,15 @@ export function useEngagementInfiniteData() {
     ) {
       Object.assign(allEngagementItemStates, pageData.engagementItemStates);
     }
+    if (pageData.engagementLinkedActions) {
+      Object.assign(
+        allEngagementLinkedActions,
+        pageData.engagementLinkedActions
+      );
+    }
+    if (pageData.groupSummaries) {
+      Object.assign(allGroupSummaries, pageData.groupSummaries);
+    }
   }
 
   // Get user from last page
@@ -381,6 +471,8 @@ export function useEngagementInfiniteData() {
       },
       trustScores: allTrustScores,
       engagementItemStates: allEngagementItemStates,
+      engagementLinkedActions: allEngagementLinkedActions,
+      groupSummaries: allGroupSummaries,
       lastCheckedAt: null,
       followedPubkeys,
       isLoading,
@@ -409,6 +501,8 @@ export function useEngagementInfiniteData() {
     },
     trustScores: allTrustScores,
     engagementItemStates: allEngagementItemStates,
+    engagementLinkedActions: allEngagementLinkedActions,
+    groupSummaries: allGroupSummaries,
     lastCheckedAt,
     followedPubkeys,
     isLoading,
@@ -420,10 +514,7 @@ export function useEngagementInfiniteData() {
 }
 
 /** Engagement item state per eventId */
-export type EngagementItemStateMap = Record<
-  string,
-  { state: "handled"; repliedFromApp: boolean }
->;
+export type EngagementItemStateMap = Record<string, EngagementItemStateValue>;
 
 /**
  * Hook to mark an engagement item as done (or replied from app).
@@ -432,11 +523,23 @@ export type EngagementItemStateMap = Record<
 export function useMarkEngagementDone() {
   const queryClient = useQueryClient();
 
-  const markDone = async (eventId: string, repliedFromApp = false) => {
+  const markDone = async (
+    eventId: string,
+    repliedFromApp = false,
+    state:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED" = repliedFromApp ? "REPLIED" : "HANDLED",
+    snoozedUntil?: string | null
+  ) => {
     const res = await fetch("/api/engagement/mark-state", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId, repliedFromApp }),
+      body: JSON.stringify({ eventId, repliedFromApp, state, snoozedUntil }),
     });
     const data = (await res.json()) as { success?: boolean; error?: string };
     if (!res.ok || !data.success) {
@@ -445,5 +548,41 @@ export function useMarkEngagementDone() {
     await queryClient.invalidateQueries({ queryKey: engagementKeys.lists() });
   };
 
-  return { markDone };
+  const linkAction = async (payload: {
+    eventId: string;
+    kind:
+      | "DRAFT"
+      | "SCHEDULED_REPLY"
+      | "SCHEDULED_QUOTE"
+      | "SCHEDULED_REPOST"
+      | "QUEUED_REPLY"
+      | "QUEUED_QUOTE"
+      | "QUEUED_REPOST";
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED";
+    postId?: string | null;
+    draftId?: string | null;
+    queueTypeId?: string | null;
+    label?: string | null;
+    scheduledFor?: string | null;
+  }) => {
+    const res = await fetch("/api/engagement/linked-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok || !data.success) {
+      throw new Error(data.error ?? "Failed to update linked action");
+    }
+    await queryClient.invalidateQueries({ queryKey: engagementKeys.lists() });
+  };
+
+  return { markDone, linkAction };
 }

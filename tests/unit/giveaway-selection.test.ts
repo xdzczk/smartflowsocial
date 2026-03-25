@@ -13,6 +13,7 @@ vi.mock("nostr-tools", () => ({
 import {
   runGiveawayAccountPoolSelection,
   runGiveawaySelection,
+  runGiveawaySelectionPerEngagement,
 } from "~/features/giveaway/giveaway-selection.server";
 import type { RelatedEvent } from "~/features/giveaway/types";
 
@@ -107,5 +108,26 @@ describe("runGiveawaySelection", () => {
       winnerCount: 2,
     });
     expect(result.length).toBeLessThanOrEqual(2);
+  });
+
+  it("runGiveawaySelectionPerEngagement avoids the same pubkey winning multiple types", () => {
+    vi.spyOn(global.Math, "random").mockReturnValue(0);
+    const events = [
+      // COMMENT events: pk1 then pk2 (pk1 will be chosen first)
+      makeEvent("c1", "pk1", 1),
+      makeEvent("c2", "pk2", 1),
+      // REACTION events: pk1 then pk3 (pk1 would overlap without exclusion)
+      makeEvent("r1", "pk1", 7),
+      makeEvent("r2", "pk3", 7),
+    ];
+    const result = runGiveawaySelectionPerEngagement({
+      relatedEvents: events as RelatedEvent[],
+      engagementConfig: {
+        COMMENT: { winnerCount: 1, satsPerWinner: 0 },
+        REACTION: { winnerCount: 1, satsPerWinner: 0 },
+      },
+      selectionMode: "WEIGHTED_BY_ENGAGEMENT",
+    });
+    expect(result.map((w) => w.pubkey).sort()).toEqual(["pk1", "pk3"].sort());
   });
 });

@@ -7,6 +7,7 @@ import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 import {
   applyPowerFilters,
   applySort,
+  applyWorkflowFilters,
   getFlatItemCount,
 } from "../engagement-filter";
 import { useEngagementKeyboard } from "../hooks/useEngagementKeyboard";
@@ -31,6 +32,8 @@ export default function EngagementFeedPage() {
     groupedNotifications: safeGroupedNotifications,
     trustScores: safeTrustScores,
     engagementItemStates: safeEngagementItemStates,
+    engagementLinkedActions: safeEngagementLinkedActions,
+    groupSummaries: safeGroupSummaries,
     followedPubkeys: safeFollowedPubkeys,
     isFetchingNextPage,
     hasNextPage,
@@ -48,6 +51,14 @@ export default function EngagementFeedPage() {
     setFilterFollowingOnly,
     sortBy,
     setSortBy,
+    filterUnhandledOnly,
+    setFilterUnhandledOnly,
+    filterHasDraft,
+    setFilterHasDraft,
+    filterHasScheduledAction,
+    setFilterHasScheduledAction,
+    includeScheduledInNeedsResponse,
+    setIncludeScheduledInNeedsResponse,
   } = useEngagementState();
   const { markDone } = useMarkEngagementDone();
   const { templates: replyTemplates, load: loadReplyTemplates } =
@@ -70,6 +81,10 @@ export default function EngagementFeedPage() {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- safeFollowedPubkeys can be undefined before load
       new Set(safeFollowedPubkeys ?? []),
     [safeFollowedPubkeys]
+  );
+  const engagementLinkedActions = useMemo(
+    () => safeEngagementLinkedActions,
+    [safeEngagementLinkedActions]
   );
 
   const safeReplies = useMemo(
@@ -144,13 +159,96 @@ export default function EngagementFeedPage() {
       sortBy,
     ]
   );
+  const afterWorkflowReplies = useMemo(
+    () =>
+      applyWorkflowFilters(
+        afterPowerReplies,
+        engagementStates,
+        engagementLinkedActions,
+        {
+          unhandledOnly: filterUnhandledOnly,
+          hasDraft: filterHasDraft,
+          hasScheduledAction: filterHasScheduledAction,
+          needsResponse: activeTab === "needs-response",
+          includeScheduledInNeedsResponse,
+        }
+      ),
+    [
+      afterPowerReplies,
+      engagementStates,
+      engagementLinkedActions,
+      filterUnhandledOnly,
+      filterHasDraft,
+      filterHasScheduledAction,
+      activeTab,
+      includeScheduledInNeedsResponse,
+    ]
+  );
+  const afterWorkflowMentions = useMemo(
+    () =>
+      applyWorkflowFilters(
+        afterPowerMentionsTab,
+        engagementStates,
+        engagementLinkedActions,
+        {
+          unhandledOnly: filterUnhandledOnly,
+          hasDraft: filterHasDraft,
+          hasScheduledAction: filterHasScheduledAction,
+          needsResponse: activeTab === "needs-response",
+          includeScheduledInNeedsResponse,
+        }
+      ),
+    [
+      afterPowerMentionsTab,
+      engagementStates,
+      engagementLinkedActions,
+      filterUnhandledOnly,
+      filterHasDraft,
+      filterHasScheduledAction,
+      activeTab,
+      includeScheduledInNeedsResponse,
+    ]
+  );
+  const needsResponseCount = useMemo(() => {
+    const replies = applyWorkflowFilters(
+      afterPowerReplies,
+      engagementStates,
+      engagementLinkedActions,
+      {
+        unhandledOnly: false,
+        hasDraft: false,
+        hasScheduledAction: false,
+        needsResponse: true,
+        includeScheduledInNeedsResponse,
+      }
+    );
+    const mentions = applyWorkflowFilters(
+      afterPowerMentionsTab,
+      engagementStates,
+      engagementLinkedActions,
+      {
+        unhandledOnly: false,
+        hasDraft: false,
+        hasScheduledAction: false,
+        needsResponse: true,
+        includeScheduledInNeedsResponse,
+      }
+    );
+    return getFlatItemCount(replies) + getFlatItemCount(mentions);
+  }, [
+    afterPowerReplies,
+    afterPowerMentionsTab,
+    engagementStates,
+    engagementLinkedActions,
+    includeScheduledInNeedsResponse,
+  ]);
   const flatItemCount =
     activeTab === "replies"
-      ? getFlatItemCount(afterPowerReplies)
+      ? getFlatItemCount(afterWorkflowReplies)
       : activeTab === "mentions"
-        ? getFlatItemCount(afterPowerMentionsTab)
-        : getFlatItemCount(afterPowerReplies) +
-          getFlatItemCount(afterPowerMentionsTab);
+        ? getFlatItemCount(afterWorkflowMentions)
+        : getFlatItemCount(afterWorkflowReplies) +
+          getFlatItemCount(afterWorkflowMentions);
 
   const { focusedIndex, registerHandlers: registerKeyboardHandlers } =
     useEngagementKeyboard(
@@ -222,6 +320,7 @@ export default function EngagementFeedPage() {
             getFlatItemCount(safeGroupedNotifications.quotes) +
             getFlatItemCount(safeGroupedNotifications.mentions)
           }
+          needsResponseCount={needsResponseCount}
         />
         <EngagementFilterBar
           filterHighReputation={filterHighReputation}
@@ -230,13 +329,23 @@ export default function EngagementFeedPage() {
           setFilterFollowingOnly={setFilterFollowingOnly}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          filterUnhandledOnly={filterUnhandledOnly}
+          setFilterUnhandledOnly={setFilterUnhandledOnly}
+          filterHasDraft={filterHasDraft}
+          setFilterHasDraft={setFilterHasDraft}
+          filterHasScheduledAction={filterHasScheduledAction}
+          setFilterHasScheduledAction={setFilterHasScheduledAction}
+          includeScheduledInNeedsResponse={includeScheduledInNeedsResponse}
+          setIncludeScheduledInNeedsResponse={
+            setIncludeScheduledInNeedsResponse
+          }
         />
       </div>
 
       <EngagementContent
         activeTab={activeTab}
-        groupedReplies={afterPowerReplies}
-        groupedMentionsTab={afterPowerMentionsTab}
+        groupedReplies={afterWorkflowReplies}
+        groupedMentionsTab={afterWorkflowMentions}
         engagementItemStates={engagementStates}
         onMarkDone={markDone}
         userTimezone={userTimezone}
@@ -246,6 +355,8 @@ export default function EngagementFeedPage() {
         focusedIndex={focusedIndex}
         registerKeyboardHandlers={registerKeyboardHandlers}
         replyTemplates={replyTemplates}
+        engagementLinkedActions={engagementLinkedActions}
+        groupSummaries={safeGroupSummaries}
       />
 
       {/* Scroll sentinel for infinite scroll */}

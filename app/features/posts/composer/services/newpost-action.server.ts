@@ -14,7 +14,6 @@ import { resolveExecutionRelays } from "~/features/relays/relay-resolution.serve
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
 import { logWarning } from "~/lib/error-logger.server";
-import { featureFlags } from "~/lib/feature-flags.server";
 import {
   newPostActionSchema,
   validateFormDataOrRespond,
@@ -137,12 +136,6 @@ export async function handleNewPostAction(
   }
 
   if (_action === "post-poll" || _action === "schedule-poll") {
-    if (!featureFlags.nip88PollsEnabled) {
-      return json(
-        { success: false, error: "NIP-88 polls are disabled" },
-        { status: 403 }
-      );
-    }
     const queueTypePoll = String(formData.get("queueType") ?? "unassigned");
     const queueTypeIdPollRaw = formData.get("queueTypeId");
     const queueTypeIdPoll =

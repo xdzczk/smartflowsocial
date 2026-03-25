@@ -275,16 +275,36 @@ export async function handleSearchEvent(eventInput: string) {
   } else {
     eventIdNorm = decoded.eventId.toLowerCase();
     try {
-      responses = await connectToPrimalCache("events", {
-        event_ids: [decoded.eventId],
+      // Primal `events` only returns already-cached items; `thread_view` can trigger fetch
+      // for missing events (server-side auto_fetch_missing_events path), which makes
+      // external direct-ID lookups much more reliable for uncached posts.
+      responses = await connectToPrimalCache("thread_view", {
+        event_id: decoded.eventId,
       });
     } catch (error) {
-      const { ExternalServiceError } = await import("~/lib/errors");
-      throw new ExternalServiceError("Failed to fetch event from cache", 502, {
-        service: "PrimalCache",
-        eventId: decoded.eventId,
-        originalError: error instanceof Error ? error.message : String(error),
-      });
+      // Keep a compatibility fallback to `events` for deployments where thread_view may
+      // be restricted or unavailable.
+      try {
+        responses = await connectToPrimalCache("events", {
+          event_ids: [decoded.eventId],
+        });
+      } catch (fallbackError) {
+        const { ExternalServiceError } = await import("~/lib/errors");
+        throw new ExternalServiceError(
+          "Failed to fetch event from cache",
+          502,
+          {
+            service: "PrimalCache",
+            eventId: decoded.eventId,
+            originalError:
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : String(fallbackError),
+            threadViewError:
+              error instanceof Error ? error.message : String(error),
+          }
+        );
+      }
     }
   }
 

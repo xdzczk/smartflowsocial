@@ -165,6 +165,11 @@ export interface GiveawayPayoutProgress {
 }
 
 interface GiveawayDetailPageProps {
+  nwc: {
+    enabled: boolean;
+    maskedString?: string | null;
+    lastUsed?: string | null;
+  };
   giveaway: {
     id: string;
     name?: string | null;
@@ -232,6 +237,7 @@ function formatActivityTypeLabel(type: string): string {
 
 /* eslint-disable sonarjs/cognitive-complexity -- detail page has many fetchers and states */
 export function GiveawayDetailPage({
+  nwc,
   giveaway,
   winnerProfiles = {},
   canUsePresets = false,
@@ -704,6 +710,17 @@ export function GiveawayDetailPage({
                   {previewMeta.eligiblePoolSize?.toLocaleString() ?? "—"}{" "}
                   accounts (after filters)
                 </li>
+                {typeof previewMeta.eligiblePoolSize === "number" &&
+                previewMeta.eligiblePoolSize > 0 &&
+                previewMeta.eligiblePoolSize < giveaway.winnerCount ? (
+                  <li className="text-amber-700 dark:text-amber-400">
+                    Only {previewMeta.eligiblePoolSize} eligible account
+                    {previewMeta.eligiblePoolSize === 1 ? "" : "s"} found for
+                    the current rules, so preview will select{" "}
+                    {previewMeta.eligiblePoolSize} winner
+                    {previewMeta.eligiblePoolSize === 1 ? "" : "s"}.
+                  </li>
+                ) : null}
                 <li>
                   <span className="text-foreground font-medium">
                     Snapshot time:
@@ -1276,6 +1293,85 @@ export function GiveawayDetailPage({
               ) : null}
             </div>
           </div>
+          <form
+            method="post"
+            className="border-border bg-card space-y-3 rounded-lg border p-4"
+          >
+            <input type="hidden" name="intent" value="updatePayoutSettings" />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">Payout settings</p>
+                <p className="text-muted-foreground text-xs">
+                  Manual payouts always work. NWC enables batch execution and
+                  trusted auto-run.
+                </p>
+              </div>
+              <button
+                type="submit"
+                className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+              >
+                Save
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm">
+                Wallet mode{" "}
+                <select
+                  name="payoutWalletMode"
+                  defaultValue={
+                    (giveaway as { payoutWalletMode?: string })
+                      .payoutWalletMode ?? "manual"
+                  }
+                  className="border-border bg-background ml-2 rounded-md border px-2 py-1 text-sm"
+                >
+                  <option value="manual">manual</option>
+                  <option value="nwc_creator" disabled={!nwc.enabled}>
+                    nwc_creator
+                  </option>
+                </select>
+              </label>
+              {!nwc.enabled ? (
+                <span className="text-muted-foreground text-xs">
+                  Connect NWC in Settings to enable NWC mode.
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  name="payoutAutoRunEnabled"
+                  defaultChecked={Boolean(
+                    (giveaway as { payoutAutoRunEnabled?: unknown })
+                      .payoutAutoRunEnabled
+                  )}
+                  disabled={
+                    ((giveaway as { payoutWalletMode?: string })
+                      .payoutWalletMode ?? "manual") !== "nwc_creator" ||
+                    !nwc.enabled
+                  }
+                  className="mr-2 align-middle"
+                />
+                Trusted auto-run after lock
+              </label>
+              <label className="text-sm">
+                Spend cap (sats){" "}
+                <input
+                  type="number"
+                  name="payoutAutoRunSpendCapSats"
+                  defaultValue={
+                    (giveaway as { payoutAutoRunSpendCapSats?: number | null })
+                      .payoutAutoRunSpendCapSats ?? ""
+                  }
+                  min={0}
+                  step={1}
+                  className="border-border bg-background ml-2 w-40 rounded-md border px-2 py-1 text-sm"
+                />
+              </label>
+            </div>
+          </form>
           <BatchZapFlow
             giveawayId={giveaway.id}
             winners={winners}
@@ -1285,6 +1381,7 @@ export function GiveawayDetailPage({
             payoutState={giveaway.payoutState}
             paidFetcher={paidFetcher}
             getProfileUrl={nostrUrls.profileUrl}
+            nwcEnabled={nwc.enabled}
           />
         </div>
       ) : null}
@@ -1499,6 +1596,7 @@ function BatchZapFlow({
   payoutState = {},
   paidFetcher,
   getProfileUrl,
+  nwcEnabled,
 }: {
   giveawayId: string;
   winners: GiveawayWinnerEntry[];
@@ -1513,6 +1611,7 @@ function BatchZapFlow({
     typeof useFetcher<{ success?: boolean; error?: string }>
   >;
   getProfileUrl: (npub: string) => string;
+  nwcEnabled: boolean;
 }) {
   const payoutFetcher = useFetcher();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -1544,6 +1643,30 @@ function BatchZapFlow({
           {lockedAt ? new Date(lockedAt).toLocaleString() : "—"}. Zap each
           winner, then mark payouts as sent when done.
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={!nwcEnabled || payoutFetcher.state !== "idle"}
+            onClick={() => {
+              const fd = new FormData();
+              fd.set("intent", "runBatchPayout");
+              payoutFetcher.submit(fd, { method: "post" });
+            }}
+            className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-md px-3 py-1.5 text-sm font-medium"
+            title={
+              nwcEnabled
+                ? "Pay all winners using your connected wallet"
+                : "Connect NWC in Settings to enable auto payouts"
+            }
+          >
+            Batch payout (NWC)
+          </button>
+          {!nwcEnabled ? (
+            <span className="text-muted-foreground text-xs">
+              Auto payout requires NWC. Manual zaps still work.
+            </span>
+          ) : null}
+        </div>
         {payoutProgress ? (
           <div className="mt-3 space-y-2">
             <div className="flex flex-wrap justify-between gap-2 text-sm">

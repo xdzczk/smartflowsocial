@@ -28,6 +28,7 @@ export type {
 // ============================================================================
 
 export { getEngagementData } from "./engagement.server";
+export { createDeferredEngagementAction } from "./services/engagement-posts-bridge.server";
 
 // ============================================================================
 // Muted List

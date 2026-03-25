@@ -289,6 +289,51 @@ export function useNotificationActions({
     }
   };
 
+  const deferAction = async (params: {
+    actionType: "reply" | "quote" | "repost";
+    mode: "draft" | "schedule" | "queue";
+    content: string;
+    scheduledFor?: string | null;
+  }) => {
+    try {
+      const response = await fetch("/api/engagement/defer-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: notification.eventId,
+          actionType: params.actionType,
+          mode: params.mode,
+          content: params.content,
+          scheduledFor: params.scheduledFor ?? null,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to defer action");
+      showToast(
+        "success",
+        params.mode === "draft"
+          ? "Draft saved"
+          : params.mode === "schedule"
+            ? "Action scheduled"
+            : "Added to queue"
+      );
+    } catch (error) {
+      const { handleAsyncError, getErrorMessage } =
+        await import("~/lib/error-handler.client");
+      handleAsyncError(
+        error,
+        {
+          component: "useNotificationActions",
+          action: "deferAction",
+        },
+        false
+      );
+      showToast(
+        "error",
+        getErrorMessage(error) || "Failed to create deferred action"
+      );
+    }
+  };
+
   const fetchChildReplies = useCallback(async () => {
     if (isLoadingReplies || childReplies.length > 0) return;
 
@@ -369,6 +414,7 @@ export function useNotificationActions({
     handleRepost,
     handleLike,
     handleQuote,
+    deferAction,
     fetchChildReplies,
   };
 }

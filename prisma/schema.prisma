@@ -84,6 +84,7 @@ model User {
   giveawayPresets          GiveawayPreset[]
   contestPresets           ContestPreset[]
   contestFinalizationPayments ContestFinalizationPayment[]
+  payoutRuns               PayoutRun[]
   engagementItemStates     EngagementItemState[]
   engagementReplyTemplates EngagementReplyTemplate[]
   broadcastCampaigns       BroadcastCampaign[]
@@ -141,6 +142,12 @@ model SignerReconnectEvent {
 }
 
 enum EngagementItemStateKind {
+  UNHANDLED
+  DRAFTED
+  SCHEDULED
+  REPLIED
+  IGNORED
+  SNOOZED
   HANDLED
 }
 
@@ -148,13 +155,43 @@ model EngagementItemState {
   id              String                  @id @default(cuid())
   userId          String
   eventId         String
-  state           EngagementItemStateKind @default(HANDLED)
+  state           EngagementItemStateKind @default(UNHANDLED)
   repliedFromApp  Boolean                 @default(false)
+  snoozedUntil    DateTime?
+  linkedActions   EngagementLinkedAction[]
   updatedAt       DateTime                @updatedAt
   user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
-  @@index([userId])
+  @@index([userId, state])
+}
+
+enum EngagementLinkedActionKind {
+  DRAFT
+  SCHEDULED_REPLY
+  SCHEDULED_QUOTE
+  SCHEDULED_REPOST
+  QUEUED_REPLY
+  QUEUED_QUOTE
+  QUEUED_REPOST
+}
+
+model EngagementLinkedAction {
+  id                     String                     @id @default(cuid())
+  engagementItemStateId  String
+  kind                   EngagementLinkedActionKind
+  postId                 String?
+  draftId                String?
+  queueTypeId            String?
+  label                  String?
+  scheduledFor           DateTime?
+  isCanceled             Boolean                    @default(false)
+  isPublished            Boolean                    @default(false)
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  engagementItemState    EngagementItemState        @relation(fields: [engagementItemStateId], references: [id], onDelete: Cascade)
+
+  @@index([engagementItemStateId, kind])
 }
 
 model EngagementReplyTemplate {
@@ -548,6 +585,12 @@ model Giveaway {
   winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions, satsPerWinner?, engagementType? }] at lock
   /** Per-winner payout tracking: pubkey -> { status, updatedAt, note? } */
   payoutState        Json?
+  /** Payout execution mode for this giveaway (manual vs NWC batch). */
+  payoutWalletMode   PayoutWalletMode @default(manual)
+  /** Trusted autopay (cron) toggle; only meaningful when payoutWalletMode != manual. */
+  payoutAutoRunEnabled Boolean @default(false)
+  /** Optional spend cap for trusted autopay runs. */
+  payoutAutoRunSpendCapSats Int?
   /** Fairness/preview audit: pool size, filters, timestamps (updated on preview/reroll) */
   lastPreviewMeta    Json?
   rerollCount        Int                  @default(0)
@@ -559,6 +602,7 @@ model Giveaway {
   updatedAt          DateTime             @updatedAt
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   finalizationPayments GiveawayFinalizationPayment[]
+  payoutRuns          PayoutRun[]
 
   @@index([userId])
   @@index([userId, status])
@@ -654,6 +698,12 @@ model Contest {
   planAtFinalization    String?
   lockConfigHash        String?
   payoutState           Json?
+  /** Payout execution mode for this contest (manual vs NWC batch). */
+  payoutWalletMode      PayoutWalletMode @default(manual)
+  /** Trusted autopay (cron) toggle; only meaningful when payoutWalletMode != manual. */
+  payoutAutoRunEnabled  Boolean @default(false)
+  /** Optional spend cap for trusted autopay runs. */
+  payoutAutoRunSpendCapSats Int?
   lockedAt              DateTime?
   completedAt           DateTime?
   cancelledAt           DateTime?
@@ -667,6 +717,7 @@ model Contest {
   eventLogs             ContestEventLog[]
   finalizationPayments  ContestFinalizationPayment[]
   payments              Payment[]                 @relation("ContestPayoutPayment")
+  payoutRuns            PayoutRun[]
 
   @@index([userId])
   @@index([userId, status])
@@ -1537,4 +1588,166 @@ model ReferralPayoutAuditLog {
 
   @@index([createdAt])
   @@map("referral_payout_audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Contest/Giveaway payouts (non-custodial batch execution + ledger)
+// ---------------------------------------------------------------------------
+
+enum PayoutRunScope {
+  CONTEST
+  GIVEAWAY
+}
+
+enum PayoutWalletMode {
+  /** Manual payouts tracked only (no server-side execution). */
+  manual
+  /** Server executes payments using the creator's connected NWC wallet. */
+  nwc_creator
+}
+
+enum PayoutRunTrigger {
+  /** User clicked "Run batch payout" in UI. */
+  manual_trigger
+  /** Scheduled/automatic execution at campaign end (trusted autopay). */
+  autorun
+}
+
+enum PayoutRunStatus {
+  draft
+  running
+  partial
+  complete
+  failed
+  skipped
+}
+
+enum PayoutItemStatus {
+  pending
+  paid
+  failed
+  claim_needed
+  skipped
+}
+
+enum PayoutAttemptStatus {
+  started
+  succeeded
+  failed
+}
+
+model PayoutRun {
+  id        String        @id @default(cuid())
+  scope     PayoutRunScope
+  userId    String
+  walletMode PayoutWalletMode @default(manual)
+  trigger   PayoutRunTrigger
+  /** Stable idempotency key per campaign (e.g. contest:<id> or giveaway:<id>). */
+  idempotencyKey String @unique
+
+  /** Exactly one of contestId/giveawayId should be set (enforced in app logic). */
+  contestId  String?
+  giveawayId String?
+
+  /** Snapshot of run constraints/intent. */
+  spendCapSats Int?
+  totalSats    Int?
+  totalItems   Int?
+
+  status    PayoutRunStatus @default(draft)
+  startedAt DateTime?
+  completedAt DateTime?
+
+  /** When autorun is enabled but not eligible to execute (e.g. missing NWC). */
+  eligibilityErrorCode    String?
+  eligibilityErrorMessage String?
+
+  metadataJson Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest  Contest?  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  giveaway Giveaway? @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  items    PayoutItem[]
+  attempts PayoutAttempt[]
+
+  @@index([userId, createdAt])
+  @@index([scope, status, createdAt])
+  @@index([contestId])
+  @@index([giveawayId])
+}
+
+model PayoutItem {
+  id        String          @id @default(cuid())
+  runId     String
+
+  /** Recipient identity */
+  winnerPubkey String
+
+  /** Intended payout amount (sats) */
+  amountSats Int
+
+  /** Payout target snapshots for auditability/debugging */
+  lnAddressSnapshot String?
+  destinationSnapshot Json?
+
+  /** BOLT11 invoice used for payment (when available) */
+  invoice          String?
+  invoiceExpiresAt DateTime?
+
+  /** Wallet execution artifacts (if available) */
+  walletRequestId String?
+  paymentPreimage String?
+  paymentHash     String?
+
+  status       PayoutItemStatus @default(pending)
+  errorCode    String?
+  errorMessage String?
+
+  /** First-class idempotency: unique per payout item execution intent */
+  idempotencyKey String
+
+  attemptCount  Int      @default(0)
+  lastAttemptAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run      PayoutRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  attempts PayoutAttempt[]
+
+  @@unique([runId, winnerPubkey])
+  @@index([runId, status])
+  @@index([status, updatedAt])
+  @@index([winnerPubkey])
+}
+
+model PayoutAttempt {
+  id      String             @id @default(cuid())
+  runId   String
+  itemId  String
+
+  attemptNumber Int
+  status        PayoutAttemptStatus @default(started)
+
+  /** Duplicate protection for retries and concurrent runners */
+  idempotencyKey String @unique
+
+  walletRequestId String?
+  walletResponseJson Json?
+
+  errorCode    String?
+  errorMessage String?
+
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+
+  item PayoutItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  run  PayoutRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, startedAt])
+  @@index([itemId, startedAt])
+  @@unique([itemId, attemptNumber])
 }

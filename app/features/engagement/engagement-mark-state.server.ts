@@ -4,12 +4,15 @@
 
 import {
   findEngagementItemStatesByEventIds,
+  type EngagementWorkflowState,
   upsertEngagementItemState,
 } from "./repositories/engagement-item-state.server";
 
 export interface MarkEngagementStateInput {
   eventId: string;
   repliedFromApp?: boolean;
+  state?: EngagementWorkflowState;
+  snoozedUntil?: Date | null;
 }
 
 /**
@@ -27,7 +30,13 @@ export async function markEngagementItemState(
   }
 
   try {
-    await upsertEngagementItemState(userId, eventId.trim(), repliedFromApp);
+    await upsertEngagementItemState(
+      userId,
+      eventId.trim(),
+      repliedFromApp,
+      input.state ?? (repliedFromApp ? "REPLIED" : "HANDLED"),
+      input.snoozedUntil
+    );
     return { success: true };
   } catch (err) {
     return {
@@ -44,7 +53,16 @@ export async function markEngagementItemState(
 export async function getEngagementItemStates(
   userId: string,
   eventIds: string[]
-): Promise<Record<string, { state: "handled"; repliedFromApp: boolean }>> {
+): Promise<
+  Record<
+    string,
+    {
+      state: EngagementWorkflowState;
+      repliedFromApp: boolean;
+      snoozedUntil?: string | null;
+    }
+  >
+> {
   if (eventIds.length === 0) {
     return {};
   }
@@ -52,12 +70,19 @@ export async function getEngagementItemStates(
   const uniqueIds = [...new Set(eventIds)];
   const rows = await findEngagementItemStatesByEventIds(userId, uniqueIds);
 
-  const result: Record<string, { state: "handled"; repliedFromApp: boolean }> =
-    {};
+  const result: Record<
+    string,
+    {
+      state: EngagementWorkflowState;
+      repliedFromApp: boolean;
+      snoozedUntil?: string | null;
+    }
+  > = {};
   for (const row of rows) {
     result[row.eventId] = {
-      state: "handled",
+      state: row.state,
       repliedFromApp: row.repliedFromApp,
+      snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
     };
   }
   return result;

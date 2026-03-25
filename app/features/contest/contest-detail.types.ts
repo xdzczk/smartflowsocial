@@ -2,6 +2,11 @@ import type { ContestRankReward, ContestStatus } from "./types";
 
 /** JSON-serializable contest detail payload (loader + client UI). */
 export interface ContestDetailPageData {
+  nwc: {
+    enabled: boolean;
+    maskedString: string | null;
+    lastUsed: string | null;
+  };
   contest: {
     id: string;
     title: string;
@@ -28,6 +33,9 @@ export interface ContestDetailPageData {
       string,
       { status: string; updatedAt?: string; note?: string }
     > | null;
+    payoutWalletMode: "manual" | "nwc_creator";
+    payoutAutoRunEnabled: boolean;
+    payoutAutoRunSpendCapSats: number | null;
     fairnessConfig: Record<string, unknown> | null;
     tieBreakRule: string | null;
     entryType: string;

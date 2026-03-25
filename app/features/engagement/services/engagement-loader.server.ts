@@ -3,7 +3,6 @@
  * Centralized data fetching for engagement feed page
  */
 
-import { fetchFromCache } from "~/features/cache";
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import { getFollowedPubkeys } from "~/features/nostr/social-graph.server";
@@ -20,7 +19,7 @@ import {
   getEngagementLastCheckedAt,
   updateEngagementLastCheckedAt,
 } from "~/features/user/services/user-settings.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logWarning } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
@@ -35,9 +34,12 @@ import {
   shouldExcludeKind1FromGlobalMentionInbox,
   type Notification,
 } from "../engagement.server";
+import { findLinkedActionsByEventIds } from "../repositories/engagement-item-state.server";
 import { calculateTrustScore, type User } from "../trust-score";
 import type {
+  EngagementLinkedAction,
   EngagementProfile,
+  EngagementGroupSummary,
   EngagementStats,
   EventStats,
   GroupedNotification,
@@ -47,10 +49,18 @@ import type {
   PrimalEvent,
 } from "../types";
 
+import {
+  buildGlobalMentionNotificationsFromPrimal,
+  extractQuoteRepostEventsFromPrimal,
+  flattenPrimalNotificationItems,
+  loadPrimalGetNotificationsResult,
+} from "./engagement-primal-notifications.server";
 import { fetchKind1EventsMentioningPubkeyViaRelays } from "./relay-mentions-fallback.server";
 
 /** Primal `get_notifications` payload size (global mentions + quotes). */
 const PRIMAL_NOTIFICATIONS_LIMIT = 200;
+
+const PUBKEY_HEX64 = /^[0-9a-f]{64}$/i;
 
 /**
  * Fetches user profile data using cached version and converts to User type for trust scoring
@@ -326,77 +336,6 @@ function buildFallbackStatsFromPosts(
     }, {});
 }
 
-/** Extract kind-1 event from Primal response item (EVENT tuple, raw event, or { event } wrapper). */
-function getKind1EventFromItem(
-  item: unknown
-): { kind: number; tags?: NostrTag[]; [key: string]: unknown } | null {
-  // Unwrap { event: ... } (some Primal responses wrap the event)
-  let raw: unknown = item;
-  if (
-    typeof item === "object" &&
-    item !== null &&
-    !Array.isArray(item) &&
-    "event" in item
-  ) {
-    raw = (item as { event: unknown }).event;
-  }
-  if (
-    Array.isArray(raw) &&
-    raw[0] === "EVENT" &&
-    typeof raw[2] === "object" &&
-    raw[2] !== null &&
-    !Array.isArray(raw[2])
-  ) {
-    const ev = raw[2] as { kind?: number; tags?: NostrTag[] };
-    return ev.kind === 1
-      ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
-      : null;
-  }
-  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
-    const ev = raw as { kind?: number; tags?: NostrTag[] };
-    return ev.kind === 1
-      ? (ev as { kind: number; tags?: NostrTag[]; [key: string]: unknown })
-      : null;
-  }
-  return null;
-}
-
-/** Normalize Primal `get_notifications` payload to a list of row items. */
-function flattenPrimalNotificationItems(notificationsData: unknown): unknown[] {
-  let items: unknown[] = [];
-  if (Array.isArray(notificationsData)) {
-    if (notificationsData.length > 0) {
-      const first: unknown = notificationsData[0];
-      if (
-        typeof first === "object" &&
-        first !== null &&
-        !Array.isArray(first) &&
-        ("notifications" in first || "data" in first || "events" in first)
-      ) {
-        const obj = first as Record<string, unknown>;
-        const notifications: unknown = obj["notifications"];
-        const data: unknown = obj["data"];
-        const events: unknown = obj["events"];
-        if (Array.isArray(notifications)) items = notifications as unknown[];
-        else if (Array.isArray(data)) items = data as unknown[];
-        else if (Array.isArray(events)) items = events as unknown[];
-      } else {
-        items = notificationsData;
-      }
-    }
-  } else if (
-    notificationsData &&
-    typeof notificationsData === "object" &&
-    !Array.isArray(notificationsData)
-  ) {
-    const obj = notificationsData as Record<string, unknown>;
-    if (Array.isArray(obj["notifications"])) items = obj["notifications"];
-    else if (Array.isArray(obj["data"])) items = obj["data"];
-    else if (Array.isArray(obj["events"])) items = obj["events"];
-  }
-  return items;
-}
-
 /**
  * Merge grouped notifications by parent `eventId`, deduping child notifications by `eventId`.
  */
@@ -452,126 +391,6 @@ function publishedNostrEventIdsFromPosts(posts: PostData[]): Set<string> {
     }
   }
   return s;
-}
-
-function buildGlobalMentionNotificationsFromPrimal(
-  notificationsData: unknown,
-  userPubkeyHex: string,
-  excludeEventIds: Set<string>,
-  userPublishedEventIds: Set<string>
-): NotificationMention[] {
-  const items = flattenPrimalNotificationItems(notificationsData);
-  const userLower = userPubkeyHex.toLowerCase();
-  const result: NotificationMention[] = [];
-
-  for (const item of items) {
-    if (Array.isArray(item) && item[0] === "EOSE") continue;
-    const ev = getKind1EventFromItem(item);
-    if (!ev) continue;
-    const eventId = ev["id"];
-    const authorPk = ev["pubkey"];
-    if (typeof eventId !== "string" || typeof authorPk !== "string") {
-      continue;
-    }
-    if (authorPk.toLowerCase() === userLower) continue;
-    if (excludeEventIds.has(eventId)) continue;
-
-    const rawContent = ev["content"];
-    const content = typeof rawContent === "string" ? rawContent : "";
-    const tags = Array.isArray(ev.tags) ? ev.tags : [];
-    if (!doesEventMentionUser(content, tags, userPubkeyHex)) continue;
-    if (shouldExcludeKind1FromGlobalMentionInbox(tags, userPublishedEventIds)) {
-      continue;
-    }
-
-    const createdAtRaw = ev["created_at"];
-    const createdAt =
-      typeof createdAtRaw === "number"
-        ? createdAtRaw
-        : typeof createdAtRaw === "string"
-          ? parseInt(createdAtRaw, 10) || 0
-          : 0;
-
-    const originalEventId = inferThreadRootEventIdFromTags(tags, eventId);
-
-    result.push({
-      type: "mention",
-      id: eventId,
-      eventId,
-      content,
-      createdAt,
-      pubkey: authorPk,
-      originalEventId,
-    });
-  }
-
-  return result.sort((x, y) => y.createdAt - x.createdAt);
-}
-
-function isPrimalItemQuoteRepostMentioningUser(
-  item: PrimalEvent | Record<string, unknown>,
-  userPubkeyHex: string
-): boolean {
-  const event = getKind1EventFromItem(
-    "event" in item && typeof (item as { event: unknown }).event !== "undefined"
-      ? (item as { event: unknown }).event
-      : item
-  );
-  if (!event) return false;
-  const ev = event as {
-    id?: unknown;
-    pubkey?: unknown;
-    content?: unknown;
-    kind?: number;
-    tags?: NostrTag[];
-  };
-  if (
-    !ev.id ||
-    typeof ev.id !== "string" ||
-    !ev.pubkey ||
-    typeof ev.pubkey !== "string" ||
-    typeof ev.content !== "string"
-  )
-    return false;
-  const authorLower = (ev.pubkey ?? "").toLowerCase();
-  const userLower = userPubkeyHex.toLowerCase();
-  if (authorLower === userLower) return false;
-  const tags = Array.isArray(ev.tags) ? ev.tags : [];
-  const eTags = tags.filter((tag: NostrTag) => tag[0] === "e");
-  const pTagsWithUser = tags.filter(
-    (tag: NostrTag) =>
-      tag[0] === "p" && (tag[1] ?? "").toLowerCase() === userLower
-  );
-  if (pTagsWithUser.length === 0) return false;
-  return eTags.length > 0 || pTagsWithUser.length > 0;
-}
-
-function extractQuoteRepostEventsFromPrimal(
-  notificationsData: unknown,
-  userPubkeyHex: string
-): NotificationEvent[] {
-  const items = flattenPrimalNotificationItems(notificationsData);
-  if (items.length === 0) return [];
-  const result: NotificationEvent[] = [];
-  for (const item of items) {
-    if (Array.isArray(item) && item[0] === "EOSE") continue;
-    if (
-      !isPrimalItemQuoteRepostMentioningUser(
-        item as PrimalEvent | Record<string, unknown>,
-        userPubkeyHex
-      )
-    )
-      continue;
-    const event = getKind1EventFromItem(item);
-    if (
-      event &&
-      typeof event === "object" &&
-      "id" in event &&
-      "pubkey" in event
-    )
-      result.push(event as unknown as NotificationEvent);
-  }
-  return result;
 }
 
 async function processAndGroupQuoteReposts(
@@ -803,8 +622,75 @@ function mapPublishedPostsToPostData(
   });
 }
 
+function computeGroupSummaries(params: {
+  groups: GroupedNotification[];
+  states: Record<
+    string,
+    {
+      state:
+        | "UNHANDLED"
+        | "DRAFTED"
+        | "SCHEDULED"
+        | "REPLIED"
+        | "IGNORED"
+        | "SNOOZED"
+        | "HANDLED";
+      repliedFromApp: boolean;
+      snoozedUntil?: string | null;
+    }
+  >;
+  linked: Record<string, EngagementLinkedAction[]>;
+}): Record<string, EngagementGroupSummary> {
+  const { groups, states, linked } = params;
+  const summaries: Record<string, EngagementGroupSummary> = {};
+  for (const group of groups) {
+    let drafted = 0;
+    let scheduled = 0;
+    let handled = 0;
+    let needResponse = 0;
+    const total = group.notifications.length;
+    for (const notification of group.notifications) {
+      const eventId = notification.eventId;
+      const state = states[eventId];
+      const links = linked[eventId] ?? [];
+      const hasScheduled = links.some((action) =>
+        action.kind.startsWith("SCHEDULED_")
+      );
+      const hasDraft = links.some((action) => action.kind === "DRAFT");
+      if (hasDraft || state?.state === "DRAFTED") drafted += 1;
+      if (hasScheduled || state?.state === "SCHEDULED") scheduled += 1;
+      if (
+        state?.state === "REPLIED" ||
+        state?.state === "HANDLED" ||
+        state?.state === "IGNORED"
+      ) {
+        handled += 1;
+      }
+      const isSuppressed =
+        state?.state === "IGNORED" ||
+        state?.state === "SNOOZED" ||
+        hasScheduled ||
+        state?.state === "REPLIED" ||
+        state?.state === "HANDLED";
+      if (!isSuppressed) needResponse += 1;
+    }
+    summaries[group.parentPost.eventId] = {
+      total,
+      needResponse,
+      drafted,
+      scheduled,
+      handled,
+    };
+  }
+  return summaries;
+}
+
 async function loadPrimalSupplementalEngagementData(params: {
-  notificationsPromise: Promise<unknown>;
+  notificationsResultPromise: Promise<{
+    data: unknown;
+    getNotificationsFailed: boolean;
+    primalNotificationsSkipped: boolean;
+  }>;
   allNotifications: Notification[];
   user: UserWithHashTagPresets;
   userPubkeyHex: string;
@@ -819,7 +705,7 @@ async function loadPrimalSupplementalEngagementData(params: {
   globalMentionNotifications: NotificationMention[];
 }> {
   const {
-    notificationsPromise,
+    notificationsResultPromise,
     allNotifications,
     user,
     userPubkeyHex,
@@ -834,15 +720,11 @@ async function loadPrimalSupplementalEngagementData(params: {
   let groupedQuoteReposts: GroupedNotification[] = [];
   let globalMentionNotifications: NotificationMention[] = [];
 
-  let notificationsData: unknown = [];
-  try {
-    notificationsData = await notificationsPromise;
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message:
-        "Primal get_notifications request failed (relay fallback may be used)",
-    });
-  }
+  const {
+    data: notificationsData,
+    getNotificationsFailed,
+    primalNotificationsSkipped,
+  } = await notificationsResultPromise;
 
   try {
     const rawQuoteReposts = extractQuoteRepostEventsFromPrimal(
@@ -868,15 +750,16 @@ async function loadPrimalSupplementalEngagementData(params: {
       userPublishedEventIds
     );
 
-    const primalNotificationRows =
-      flattenPrimalNotificationItems(notificationsData);
     const relayFallbackEnabled =
       process.env["MENTIONS_RELAY_FALLBACK_ENABLED"] !== "false";
+    let relayFallbackRan = false;
+    const canQueryRelayForPubkey = PUBKEY_HEX64.test(userPubkeyHex);
     if (
       relayFallbackEnabled &&
       globalMentionNotifications.length === 0 &&
-      primalNotificationRows.length === 0
+      canQueryRelayForPubkey
     ) {
+      relayFallbackRan = true;
       const relayEvents = await fetchKind1EventsMentioningPubkeyViaRelays(
         userPubkeyHex,
         { userRelays: user.userRelays }
@@ -910,6 +793,17 @@ async function loadPrimalSupplementalEngagementData(params: {
       }
       fromRelay.sort((a, b) => b.createdAt - a.createdAt);
       globalMentionNotifications = fromRelay;
+    }
+
+    if (process.env["ENGAGEMENT_MENTIONS_DEBUG"] === "true") {
+      logWarning("Engagement mentions debug", {
+        primalNotificationsSkipped,
+        getNotificationsFailed,
+        primalRowCount:
+          flattenPrimalNotificationItems(notificationsData).length,
+        globalMentionCount: globalMentionNotifications.length,
+        relayFallbackRan,
+      });
     }
 
     if (user.filterMuted && mutedNpubs.length > 0) {
@@ -1007,15 +901,17 @@ export async function loadEngagementFeedData(
 
   if (!userResult) throw new Error("User not found");
   const user: UserWithHashTagPresets = userResult;
-  const userPubkeyHex = nostrAdapter.decodeNpub(user.npub) ?? user.npub;
+  const npub = user.npub;
+  const userPubkeyHex = nostrAdapter.decodeNpub(npub) ?? npub;
   const mutedNpubs = getMutedNpubsFromUser(user);
   const eventIds = getEventIdsFromPosts(posts);
 
   const followedPubkeysPromise = getFollowedPubkeys(userPubkeyHex);
 
-  // Global mentions + quotes from Primal (not scoped to SmartFlow-published roots)
-  // Primal public API; not listed in open-source `App.exposed_functions` (may 500 on self-hosted cache).
-  const notificationsPromise = fetchFromCache("get_notifications", {
+  // Global mentions + quotes from Primal (not scoped to SmartFlow-published roots).
+  // `get_notifications` is on Primal public caches; open-source app.jl may omit it — use
+  // MENTIONS_USE_PRIMAL_GET_NOTIFICATIONS=false or rely on relay fallback when empty/failed.
+  const notificationsResultPromise = loadPrimalGetNotificationsResult({
     pubkey: userPubkeyHex,
     limit: PRIMAL_NOTIFICATIONS_LIMIT,
   });
@@ -1067,7 +963,7 @@ export async function loadEngagementFeedData(
     groupedQuoteReposts,
     globalMentionNotifications,
   } = await loadPrimalSupplementalEngagementData({
-    notificationsPromise,
+    notificationsResultPromise,
     allNotifications,
     user,
     userPubkeyHex,
@@ -1119,6 +1015,27 @@ export async function loadEngagementFeedData(
     user.id,
     allEventIds
   );
+  const linkedActionsRows = await findLinkedActionsByEventIds(
+    user.id,
+    allEventIds
+  );
+  const engagementLinkedActions = linkedActionsRows.reduce<
+    Record<string, EngagementLinkedAction[]>
+  >((acc, row) => {
+    const key = row.eventId;
+    acc[key] ??= [];
+    acc[key].push({
+      kind: row.kind,
+      postId: row.postId,
+      draftId: row.draftId,
+      queueTypeId: row.queueTypeId,
+      label: row.label,
+      scheduledFor: row.scheduledFor?.toISOString() ?? null,
+      isCanceled: row.isCanceled,
+      isPublished: row.isPublished,
+    });
+    return acc;
+  }, {});
 
   const postsAsDTOs = toPostDTOArray(postsAsPostData);
   const serializedGroupedReplies = serializeGroupedForResponse(
@@ -1137,6 +1054,16 @@ export async function loadEngagementFeedData(
   const serializedGroupedMentions = serializeGroupedForResponse(
     mentionsExcludingSelf
   );
+  const allVisibleGroups = [
+    ...serializedGroupedReplies,
+    ...serializedGroupedQuotes,
+    ...serializedGroupedMentions,
+  ];
+  const groupSummaries = computeGroupSummaries({
+    groups: allVisibleGroups,
+    states: engagementItemStates,
+    linked: engagementLinkedActions,
+  });
 
   if (page === 1) {
     await updateEngagementLastCheckedAt(userId);
@@ -1166,6 +1093,8 @@ export async function loadEngagementFeedData(
     },
     trustScores,
     engagementItemStates,
+    engagementLinkedActions,
+    groupSummaries,
     lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
     followedPubkeys,
   };

@@ -14,6 +14,7 @@ interface EngagementTabsProps {
   onTabChange: (tab: EngagementTypeTab) => void;
   repliesCount: number;
   mentionsCount: number;
+  needsResponseCount: number;
 }
 
 export function EngagementTabs({
@@ -21,6 +22,7 @@ export function EngagementTabs({
   onTabChange,
   repliesCount,
   mentionsCount,
+  needsResponseCount,
 }: EngagementTabsProps) {
   return (
     <div className="flex-shrink-0">
@@ -42,6 +44,17 @@ export function EngagementTabs({
           }`}
         >
           Replies ({repliesCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => onTabChange("needs-response")}
+          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+            activeTab === "needs-response"
+              ? ACTIVE_TAB_CLASSES
+              : INACTIVE_TAB_CLASSES
+          }`}
+        >
+          Needs response ({needsResponseCount})
         </button>
         <button
           type="button"

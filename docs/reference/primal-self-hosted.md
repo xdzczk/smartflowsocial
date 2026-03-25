@@ -34,10 +34,16 @@ default list.
 
 ### Environment variables
 
-| Variable                          | Default         | Meaning                                                                                     |
-| --------------------------------- | --------------- | ------------------------------------------------------------------------------------------- |
-| `MENTIONS_RELAY_FALLBACK_ENABLED` | enabled         | Set to `false` to disable relay fallback.                                                   |
-| `MENTIONS_RELAY_FALLBACK_RELAYS`  | (built-in list) | Comma-separated `wss://` URLs used **only** when the user has no usable relays in settings. |
+| Variable                                | Default                                | Meaning                                                                                                                                                                                                                                   |
+| --------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MENTIONS_USE_PRIMAL_GET_NOTIFICATIONS` | enabled (`true` unless set to `false`) | Set to `false` to skip the Primal `get_notifications` call entirely (e.g. self-hosted cache with only open-source `App.exposed_functions`). Mentions then come from relay fallback when the global mention list would otherwise be empty. |
+| `MENTIONS_RELAY_FALLBACK_ENABLED`       | enabled                                | Set to `false` to disable relay fallback.                                                                                                                                                                                                 |
+| `MENTIONS_RELAY_FALLBACK_RELAYS`        | (built-in list)                        | Comma-separated `wss://` URLs used **only** when the user has no usable relays in settings.                                                                                                                                               |
+| `ENGAGEMENT_MENTIONS_DEBUG`             | unset                                  | Set to `true` for structured `logWarning` diagnostics (Primal row count, fallback used, etc.).                                                                                                                                            |
 
-Relay fallback only runs when Primal’s notification payload is **empty** (typical when the API is
-missing). It does not replace a full Primal notification index for every edge case.
+Relay fallback runs when the **parsed global mention list is empty** after processing Primal data
+(including when `get_notifications` fails, is skipped, or returns rows that yield no mentions). It
+only runs when the session resolves to a **64-character hex pubkey** (the `#p` relay filter requires
+hex); invalid or missing npub decoding skips the relay round-trip.
+
+It does not replace a full Primal notification index for every edge case.

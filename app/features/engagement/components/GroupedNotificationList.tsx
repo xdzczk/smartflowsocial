@@ -30,13 +30,30 @@ import { NotificationItem } from "./NotificationItem";
 
 type EngagementItemStateMap = Record<
   string,
-  { state: "handled"; repliedFromApp: boolean }
+  {
+    state:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED";
+    repliedFromApp: boolean;
+    snoozedUntil?: string | null;
+  }
 >;
 
 interface EngagementKeyboardHandlers {
   openReply: () => void;
+  openQuote?: () => void;
+  openRepost?: () => void;
   like: () => void;
   markDone: () => void;
+  ignore?: () => void;
+  snooze?: () => void;
+  publishNow?: () => void;
+  schedule?: () => void;
   expandThread: () => void;
 }
 
@@ -46,7 +63,19 @@ interface GroupedNotificationListProps {
   userRelays?: string[];
   trustScores?: Record<string, number>;
   engagementItemStates?: EngagementItemStateMap;
-  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  onMarkDone?: (
+    eventId: string,
+    repliedFromApp?: boolean,
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED",
+    snoozedUntil?: string | null
+  ) => Promise<void>;
   baseIndex?: number;
   focusedIndex?: number;
   registerKeyboardHandlers?: (
@@ -54,6 +83,26 @@ interface GroupedNotificationListProps {
     handlers: EngagementKeyboardHandlers | null
   ) => void;
   replyTemplates?: ReplyTemplate[];
+  engagementLinkedActions?: Record<
+    string,
+    Array<{
+      kind: string;
+      label?: string | null;
+      scheduledFor?: string | null;
+      postId?: string | null;
+      draftId?: string | null;
+    }>
+  >;
+  groupSummaries?: Record<
+    string,
+    {
+      total: number;
+      needResponse: number;
+      drafted: number;
+      scheduled: number;
+      handled: number;
+    }
+  >;
 }
 
 export default function GroupedNotificationList({
@@ -67,6 +116,8 @@ export default function GroupedNotificationList({
   focusedIndex = -1,
   registerKeyboardHandlers,
   replyTemplates = [],
+  engagementLinkedActions = {},
+  groupSummaries = {},
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -128,6 +179,8 @@ export default function GroupedNotificationList({
           focusedIndex={focusedIndex}
           registerKeyboardHandlers={registerKeyboardHandlers}
           replyTemplates={replyTemplates}
+          engagementLinkedActions={engagementLinkedActions}
+          summary={groupSummaries[group.parentPost.eventId]}
           nostrClientConfig={nostrClientConfig}
           viewEventLabel={viewEventLabel}
         />
@@ -147,6 +200,8 @@ function GroupedNotificationCard({
   focusedIndex = -1,
   registerKeyboardHandlers,
   replyTemplates = [],
+  engagementLinkedActions,
+  summary,
   nostrClientConfig,
   viewEventLabel,
 }: {
@@ -155,7 +210,19 @@ function GroupedNotificationCard({
   userRelays?: string[];
   trustScores?: Record<string, number>;
   engagementItemStates?: EngagementItemStateMap;
-  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  onMarkDone?: (
+    eventId: string,
+    repliedFromApp?: boolean,
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED",
+    snoozedUntil?: string | null
+  ) => Promise<void>;
   getNextIndex: () => number;
   focusedIndex?: number;
   registerKeyboardHandlers?: (
@@ -163,6 +230,23 @@ function GroupedNotificationCard({
     handlers: EngagementKeyboardHandlers | null
   ) => void;
   replyTemplates?: ReplyTemplate[];
+  engagementLinkedActions: Record<
+    string,
+    Array<{
+      kind: string;
+      label?: string | null;
+      scheduledFor?: string | null;
+      postId?: string | null;
+      draftId?: string | null;
+    }>
+  >;
+  summary?: {
+    total: number;
+    needResponse: number;
+    drafted: number;
+    scheduled: number;
+    handled: number;
+  };
   nostrClientConfig: NostrClientConfig;
   viewEventLabel: string;
 }) {
@@ -326,6 +410,13 @@ function GroupedNotificationCard({
           ) : null}
 
           {/* Parent Post Stats - slightly larger numbers for scanability */}
+          {summary ? (
+            <div className="text-muted-foreground mt-2 text-xs">
+              {summary.total} total · {summary.needResponse} need response ·{" "}
+              {summary.drafted} drafted · {summary.scheduled} scheduled ·{" "}
+              {summary.handled} handled
+            </div>
+          ) : null}
           {parentPost.stats ? (
             <>
               <Separator className="my-3" />
@@ -388,10 +479,16 @@ function GroupedNotificationCard({
                   trustScores={trustScores}
                   isHandled={isHandled}
                   onMarkDone={onMarkDone}
+                  workflowState={
+                    engagementItemStates[notification.eventId]?.state
+                  }
                   keyboardIndex={itemIndex}
                   isKeyboardFocused={itemIndex === focusedIndex}
                   registerKeyboardHandlers={registerKeyboardHandlers}
                   replyTemplates={replyTemplates}
+                  linkedActions={
+                    engagementLinkedActions[notification.eventId] ?? []
+                  }
                   viewEventUrl={eventUrl(
                     notification.eventId,
                     nostrClientConfig

@@ -1,7 +1,11 @@
 import { useState } from "react";
 
 /** Type filter: all, replies only, or mentions (quotes + mention-type) */
-export type EngagementTypeTab = "all" | "replies" | "mentions";
+export type EngagementTypeTab =
+  | "all"
+  | "replies"
+  | "mentions"
+  | "needs-response";
 
 /** Sort order for engagement list */
 export type EngagementSortBy = "newest" | "trust" | "zaps";
@@ -15,6 +19,12 @@ export function useEngagementState() {
   const [filterHighReputation, setFilterHighReputation] = useState(false);
   const [filterFollowingOnly, setFilterFollowingOnly] = useState(false);
   const [sortBy, setSortBy] = useState<EngagementSortBy>("newest");
+  const [filterUnhandledOnly, setFilterUnhandledOnly] = useState(false);
+  const [filterHasDraft, setFilterHasDraft] = useState(false);
+  const [filterHasScheduledAction, setFilterHasScheduledAction] =
+    useState(false);
+  const [includeScheduledInNeedsResponse, setIncludeScheduledInNeedsResponse] =
+    useState(false);
 
   return {
     selectedPost,
@@ -27,5 +37,13 @@ export function useEngagementState() {
     setFilterFollowingOnly,
     sortBy,
     setSortBy,
+    filterUnhandledOnly,
+    setFilterUnhandledOnly,
+    filterHasDraft,
+    setFilterHasDraft,
+    filterHasScheduledAction,
+    setFilterHasScheduledAction,
+    includeScheduledInNeedsResponse,
+    setIncludeScheduledInNeedsResponse,
   };
 }

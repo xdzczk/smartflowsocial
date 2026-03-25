@@ -22,6 +22,14 @@ interface EngagementFilterBarProps {
   setFilterFollowingOnly: (v: boolean) => void;
   sortBy: EngagementSortBy;
   setSortBy: (v: EngagementSortBy) => void;
+  filterUnhandledOnly: boolean;
+  setFilterUnhandledOnly: (v: boolean) => void;
+  filterHasDraft: boolean;
+  setFilterHasDraft: (v: boolean) => void;
+  filterHasScheduledAction: boolean;
+  setFilterHasScheduledAction: (v: boolean) => void;
+  includeScheduledInNeedsResponse: boolean;
+  setIncludeScheduledInNeedsResponse: (v: boolean) => void;
 }
 
 export function EngagementFilterBar({
@@ -31,12 +39,58 @@ export function EngagementFilterBar({
   setFilterFollowingOnly,
   sortBy,
   setSortBy,
+  filterUnhandledOnly,
+  setFilterUnhandledOnly,
+  filterHasDraft,
+  setFilterHasDraft,
+  filterHasScheduledAction,
+  setFilterHasScheduledAction,
+  includeScheduledInNeedsResponse,
+  setIncludeScheduledInNeedsResponse,
 }: EngagementFilterBarProps) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 md:ml-auto md:flex-shrink-0">
       <span className="text-muted-foreground mr-1 text-xs font-medium">
         Filters:
       </span>
+      <button
+        type="button"
+        onClick={() => setFilterUnhandledOnly(!filterUnhandledOnly)}
+        className={`${FILTER_BUTTON_BASE} ${
+          filterUnhandledOnly ? FILTER_ACTIVE : FILTER_INACTIVE
+        }`}
+      >
+        Unhandled only
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilterHasDraft(!filterHasDraft)}
+        className={`${FILTER_BUTTON_BASE} ${
+          filterHasDraft ? FILTER_ACTIVE : FILTER_INACTIVE
+        }`}
+      >
+        Has draft
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilterHasScheduledAction(!filterHasScheduledAction)}
+        className={`${FILTER_BUTTON_BASE} ${
+          filterHasScheduledAction ? FILTER_ACTIVE : FILTER_INACTIVE
+        }`}
+      >
+        Has scheduled
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          setIncludeScheduledInNeedsResponse(!includeScheduledInNeedsResponse)
+        }
+        className={`${FILTER_BUTTON_BASE} ${
+          includeScheduledInNeedsResponse ? FILTER_ACTIVE : FILTER_INACTIVE
+        }`}
+      >
+        Needs response incl. scheduled
+      </button>
       <button
         type="button"
         onClick={() => setFilterFollowingOnly(!filterFollowingOnly)}

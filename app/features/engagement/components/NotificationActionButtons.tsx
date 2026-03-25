@@ -34,6 +34,9 @@ interface NotificationActionButtonsProps {
   onToggleQuote: () => void;
   onCopyNevent: () => void;
   onToggleChildReplies: () => void;
+  onMarkHandled?: () => void;
+  onIgnore?: () => void;
+  onSnooze?: () => void;
   /** When set, show a Zap action that calls this with the reply author's npub */
   zapNpub?: string;
   onZapClick?: (npub: string) => void;
@@ -54,6 +57,9 @@ export function NotificationActionButtons({
   onToggleQuote,
   onCopyNevent,
   onToggleChildReplies,
+  onMarkHandled,
+  onIgnore,
+  onSnooze,
   zapNpub,
   onZapClick,
   viewEventUrl,
@@ -160,6 +166,30 @@ export function NotificationActionButtons({
         />
         Copy NEvent
       </button>
+      {onMarkHandled ? (
+        <button
+          onClick={onMarkHandled}
+          className="text-muted-foreground hover:bg-success/10 hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        >
+          Mark handled
+        </button>
+      ) : null}
+      {onIgnore ? (
+        <button
+          onClick={onIgnore}
+          className="text-muted-foreground hover:bg-muted inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        >
+          Ignore
+        </button>
+      ) : null}
+      {onSnooze ? (
+        <button
+          onClick={onSnooze}
+          className="text-muted-foreground hover:bg-primary/10 hover:text-primary inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+        >
+          Snooze
+        </button>
+      ) : null}
 
       {/* View Replies Button */}
       {stats?.replies ? (

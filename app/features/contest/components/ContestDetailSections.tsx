@@ -445,6 +445,95 @@ export function ContestDetailFormsSection({
 
       {isLocked ? (
         <div className="space-y-4">
+          <Form
+            method="post"
+            className="border-border bg-card space-y-3 rounded-lg border p-4"
+          >
+            <input type="hidden" name="intent" value="updatePayoutSettings" />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">Payout settings</p>
+                <p className="text-muted-foreground text-xs">
+                  Manual payouts always work. NWC enables batch execution and
+                  trusted auto-run.
+                </p>
+              </div>
+              <button
+                type="submit"
+                className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+              >
+                Save
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm">
+                Wallet mode{" "}
+                <select
+                  name="payoutWalletMode"
+                  defaultValue={contest.payoutWalletMode}
+                  className="border-border bg-background ml-2 rounded-md border px-2 py-1 text-sm"
+                >
+                  <option value="manual">manual</option>
+                  <option value="nwc_creator" disabled={!data.nwc.enabled}>
+                    nwc_creator
+                  </option>
+                </select>
+              </label>
+              {!data.nwc.enabled ? (
+                <span className="text-muted-foreground text-xs">
+                  Connect NWC in Settings to enable NWC mode.
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm">
+                <input
+                  type="checkbox"
+                  name="payoutAutoRunEnabled"
+                  defaultChecked={contest.payoutAutoRunEnabled}
+                  disabled={
+                    contest.payoutWalletMode !== "nwc_creator" ||
+                    !data.nwc.enabled
+                  }
+                  className="mr-2 align-middle"
+                />
+                Trusted auto-run at end
+              </label>
+              <label className="text-sm">
+                Spend cap (sats){" "}
+                <input
+                  type="number"
+                  name="payoutAutoRunSpendCapSats"
+                  defaultValue={contest.payoutAutoRunSpendCapSats ?? ""}
+                  min={0}
+                  step={1}
+                  className="border-border bg-background ml-2 w-40 rounded-md border px-2 py-1 text-sm"
+                />
+              </label>
+            </div>
+          </Form>
+          <Form method="post" className="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="intent" value="runBatchPayout" />
+            <button
+              type="submit"
+              disabled={!data.nwc.enabled}
+              className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-md px-4 py-2 text-sm font-medium"
+              title={
+                data.nwc.enabled
+                  ? "Pay all winners using your connected wallet"
+                  : "Connect NWC in Settings to enable auto payouts"
+              }
+            >
+              Batch payout (NWC)
+            </button>
+            {!data.nwc.enabled ? (
+              <p className="text-muted-foreground text-xs">
+                Auto payout requires NWC. Manual zaps still work.
+              </p>
+            ) : null}
+          </Form>
           <ContestPayoutOverview
             summary={data.payoutSummary}
             feeLabel={feeLabel}

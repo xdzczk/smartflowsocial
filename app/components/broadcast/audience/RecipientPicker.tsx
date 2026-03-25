@@ -1,4 +1,3 @@
-import { useFetcher } from "@remix-run/react";
 import { UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -130,7 +129,9 @@ export function RecipientPicker({
   );
   const [expandedMembers, setExpandedMembers] = useState<string[]>([]);
   const [expandedFailed, setExpandedFailed] = useState(false);
-  const poolFetcher = useFetcher<PoolResponse>();
+  const [poolLoadingTab, setPoolLoadingTab] = useState<
+    "followers" | "mutuals" | null
+  >(null);
   const [poolCache, setPoolCache] = useState<
     Partial<Record<"followers" | "mutuals", CachedPoolData>>
   >({});
@@ -173,30 +174,31 @@ export function RecipientPicker({
     void loadProfilesFor(selectedPubkeys);
   }, [loadProfilesFor, selectedPubkeys]);
 
-  useEffect(() => {
-    if (poolTab !== "followers" && poolTab !== "mutuals") return;
-    const cached = poolCache[poolTab];
-    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-      return;
-    }
-    poolFetcher.load(`/api/broadcast-eligible-pool?pool=${poolTab}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load when tab changes
-  }, [poolTab, poolCache]);
-
-  useEffect(() => {
-    if (poolTab !== "followers") return;
-    const cachedMutuals = poolCache["mutuals"];
-    if (cachedMutuals && Date.now() - cachedMutuals.fetchedAt < CACHE_TTL_MS) {
-      return;
-    }
-    void (async () => {
+  const loadPoolForTab = useCallback(
+    async (tab: "followers" | "mutuals") => {
+      const cached = poolCache[tab];
+      if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+        return;
+      }
+      setPoolLoadingTab(tab);
       try {
-        const res = await fetch("/api/broadcast-eligible-pool?pool=mutuals");
-        if (!res.ok) return;
+        const res = await fetch(`/api/broadcast-eligible-pool?pool=${tab}`);
+        if (!res.ok) {
+          setPoolCache((prev) => ({
+            ...prev,
+            [tab]: {
+              pubkeys: [],
+              fetchFailed: true,
+              truncatedNote: null,
+              fetchedAt: Date.now(),
+            },
+          }));
+          return;
+        }
         const data = (await res.json()) as PoolResponse;
         setPoolCache((prev) => ({
           ...prev,
-          mutuals: {
+          [tab]: {
             pubkeys: data.pubkeys,
             fetchFailed: data.fetchFailed,
             truncatedNote: data.truncatedNote,
@@ -204,32 +206,38 @@ export function RecipientPicker({
           },
         }));
       } catch {
-        // best-effort hint for chips; ignore failures
+        setPoolCache((prev) => ({
+          ...prev,
+          [tab]: {
+            pubkeys: [],
+            fetchFailed: true,
+            truncatedNote: null,
+            fetchedAt: Date.now(),
+          },
+        }));
+      } finally {
+        setPoolLoadingTab((prev) => (prev === tab ? null : prev));
       }
-    })();
-  }, [poolCache, poolTab]);
+    },
+    [poolCache]
+  );
 
   useEffect(() => {
     if (poolTab !== "followers" && poolTab !== "mutuals") return;
-    const d = poolFetcher.data;
-    if (!d) return;
-    setPoolCache((prev) => ({
-      ...prev,
-      [poolTab]: {
-        pubkeys: d.pubkeys,
-        fetchFailed: d.fetchFailed,
-        truncatedNote: d.truncatedNote,
-        fetchedAt: Date.now(),
-      },
-    }));
-  }, [poolFetcher.data, poolTab]);
+    void loadPoolForTab(poolTab);
+  }, [poolTab, loadPoolForTab]);
+
+  useEffect(() => {
+    if (poolTab !== "followers") return;
+    void loadPoolForTab("mutuals");
+  }, [poolTab, loadPoolForTab]);
 
   useEffect(() => {
     if (poolTab !== "followers" && poolTab !== "mutuals") return;
-    const keys = poolCache[poolTab]?.pubkeys ?? poolFetcher.data?.pubkeys;
+    const keys = poolCache[poolTab]?.pubkeys;
     if (!keys?.length) return;
     void loadProfilesFor(keys);
-  }, [poolCache, poolFetcher.data, poolTab, loadProfilesFor]);
+  }, [poolCache, poolTab, loadProfilesFor]);
 
   const fetchSavedAudienceMembers = useCallback(
     async (id: string): Promise<CachedSavedExpandData | null> => {
@@ -295,7 +303,7 @@ export function RecipientPicker({
   const filteredPoolRows = useMemo(() => {
     const poolPubkeys =
       poolTab === "followers" || poolTab === "mutuals"
-        ? (poolCache[poolTab]?.pubkeys ?? poolFetcher.data?.pubkeys ?? [])
+        ? (poolCache[poolTab]?.pubkeys ?? [])
         : [];
     const q = search.trim().toLowerCase();
     const list = poolPubkeys.map((pk) => pk.toLowerCase());
@@ -312,7 +320,7 @@ export function RecipientPicker({
         nip.includes(q)
       );
     });
-  }, [poolCache, poolFetcher.data, poolTab, profileMap, search]);
+  }, [poolCache, poolTab, profileMap, search]);
 
   const displayRows = useMemo(
     () => filteredPoolRows.slice(0, MAX_BROWSER_ROWS),
@@ -390,9 +398,8 @@ export function RecipientPicker({
     poolTab === "followers" || poolTab === "mutuals"
       ? (poolCache[poolTab] ?? null)
       : null;
-  const poolFailed =
-    poolState?.fetchFailed ?? poolFetcher.data?.fetchFailed ?? false;
-  const poolNote = poolState?.truncatedNote ?? poolFetcher.data?.truncatedNote;
+  const poolFailed = poolState?.fetchFailed ?? false;
+  const poolNote = poolState?.truncatedNote ?? null;
 
   return (
     <div className="border-border space-y-4 rounded-xl border p-4">
@@ -576,7 +583,7 @@ export function RecipientPicker({
         </div>
       ) : (
         <div className="space-y-2">
-          {poolFetcher.state === "loading" ? (
+          {poolLoadingTab === poolTab ? (
             <p className="text-muted-foreground text-sm">Loading pool…</p>
           ) : poolFailed ? (
             <p className="text-destructive text-sm">
@@ -598,7 +605,7 @@ export function RecipientPicker({
             </Button>
           ) : null}
           <div className="border-border max-h-80 space-y-0 overflow-y-auto rounded-md border">
-            {displayRows.length === 0 && poolFetcher.state !== "loading" ? (
+            {displayRows.length === 0 && poolLoadingTab !== poolTab ? (
               <p className="text-muted-foreground p-4 text-sm">
                 {search.trim()
                   ? "No matches. Try another search."

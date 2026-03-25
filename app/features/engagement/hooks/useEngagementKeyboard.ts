@@ -7,8 +7,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface EngagementItemHandlers {
   openReply: () => void;
+  openQuote?: () => void;
+  openRepost?: () => void;
   like: () => void;
   markDone: () => void;
+  ignore?: () => void;
+  snooze?: () => void;
+  publishNow?: () => void;
+  schedule?: () => void;
   expandThread: () => void;
 }
 
@@ -60,10 +66,40 @@ export function useEngagementKeyboard(itemCount: number, isActive = true) {
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.like();
           break;
+        case "q":
+        case "Q":
+          e.preventDefault();
+          handlersRef.current.get(safeIndex)?.openQuote?.();
+          break;
+        case "p":
+        case "P":
+          e.preventDefault();
+          handlersRef.current.get(safeIndex)?.openRepost?.();
+          break;
         case "m":
         case "M":
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.markDone();
+          break;
+        case "i":
+        case "I":
+          e.preventDefault();
+          handlersRef.current.get(safeIndex)?.ignore?.();
+          break;
+        case "z":
+        case "Z":
+          e.preventDefault();
+          handlersRef.current.get(safeIndex)?.snooze?.();
+          break;
+        case "Enter":
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              handlersRef.current.get(safeIndex)?.schedule?.();
+            } else {
+              handlersRef.current.get(safeIndex)?.publishNow?.();
+            }
+          }
           break;
         case "e":
         case "E":

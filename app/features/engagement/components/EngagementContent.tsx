@@ -15,7 +15,19 @@ interface EngagementContentProps {
   groupedReplies: GroupedNotification[];
   groupedMentionsTab: GroupedNotification[];
   engagementItemStates: EngagementItemStateMap;
-  onMarkDone: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  onMarkDone: (
+    eventId: string,
+    repliedFromApp?: boolean,
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED",
+    snoozedUntil?: string | null
+  ) => Promise<void>;
   userTimezone?: string | null;
   userRelays?: string[];
   trustScores: Record<string, number>;
@@ -27,13 +39,39 @@ interface EngagementContentProps {
     index: number,
     handlers: {
       openReply: () => void;
+      openQuote?: () => void;
+      openRepost?: () => void;
       like: () => void;
       markDone: () => void;
+      ignore?: () => void;
+      snooze?: () => void;
+      publishNow?: () => void;
+      schedule?: () => void;
       expandThread: () => void;
     } | null
   ) => void;
   /** Reply templates for slash-command / Insert template in reply panel */
   replyTemplates?: ReplyTemplate[];
+  engagementLinkedActions?: Record<
+    string,
+    Array<{
+      kind: string;
+      label?: string | null;
+      scheduledFor?: string | null;
+      postId?: string | null;
+      draftId?: string | null;
+    }>
+  >;
+  groupSummaries?: Record<
+    string,
+    {
+      total: number;
+      needResponse: number;
+      drafted: number;
+      scheduled: number;
+      handled: number;
+    }
+  >;
 }
 
 export function EngagementContent({
@@ -49,6 +87,8 @@ export function EngagementContent({
   focusedIndex = -1,
   registerKeyboardHandlers,
   replyTemplates = [],
+  engagementLinkedActions = {},
+  groupSummaries = {},
 }: EngagementContentProps) {
   const defaultRelays = ["wss://relay.primal.net"];
   const listProps = {
@@ -60,6 +100,8 @@ export function EngagementContent({
     focusedIndex,
     registerKeyboardHandlers,
     replyTemplates,
+    engagementLinkedActions,
+    groupSummaries,
   };
 
   const repliesFlatCount = groupedReplies.reduce(
@@ -117,6 +159,34 @@ export function EngagementContent({
           </div>
         )}
       </>
+    );
+  }
+
+  if (activeTab === "needs-response") {
+    return (
+      <div className="space-y-6">
+        {groupedReplies.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedReplies}
+            {...listProps}
+            baseIndex={0}
+          />
+        ) : null}
+        {groupedMentionsTab.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedMentionsTab}
+            {...listProps}
+            baseIndex={repliesFlatCount}
+          />
+        ) : null}
+        {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
+          <div className="border-border bg-card rounded-lg border p-8 text-center">
+            <p className="text-muted-foreground">
+              Nothing needs response right now.
+            </p>
+          </div>
+        ) : null}
+      </div>
     );
   }
 

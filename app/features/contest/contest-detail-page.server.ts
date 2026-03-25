@@ -10,6 +10,7 @@ import {
 } from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPostById } from "~/features/posts/server";
+import { getUserNWC } from "~/features/user";
 
 import { getContestById, getContestByIdPublic } from "./contest-actions.server";
 import type { ContestDetailPageData } from "./contest-detail.types";
@@ -60,6 +61,8 @@ export async function getContestDetailPageData(
 ): Promise<ContestDetailPageData | null> {
   const contest = await getContestById(contestId, userId);
   if (!contest) return null;
+
+  const nwc = await getUserNWC(userId);
 
   const subscription = await getUserSubscription(userId);
   const planType = getUserPlanType(subscription as UserSubscription | null);
@@ -304,6 +307,11 @@ export async function getContestDetailPageData(
       : null;
 
   return {
+    nwc: {
+      enabled: nwc.enabled,
+      maskedString: nwc.maskedString ?? null,
+      lastUsed: nwc.lastUsed ? nwc.lastUsed.toISOString() : null,
+    },
     contest: {
       id: contest.id,
       title,
@@ -328,6 +336,9 @@ export async function getContestDetailPageData(
       lockConfigHash: contest.lockConfigHash ?? quote.lockConfigHash,
       payoutState:
         payoutState as ContestDetailPageData["contest"]["payoutState"],
+      payoutWalletMode: contest.payoutWalletMode,
+      payoutAutoRunEnabled: contest.payoutAutoRunEnabled,
+      payoutAutoRunSpendCapSats: contest.payoutAutoRunSpendCapSats ?? null,
       fairnessConfig,
       tieBreakRule: contest.tieBreakRule,
       entryType: contest.entryType,

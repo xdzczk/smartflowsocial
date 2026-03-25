@@ -238,6 +238,9 @@ export interface EngagementData {
     quotes: GroupedNotification[];
   };
   trustScores: Record<string, number>;
+  engagementItemStates?: Record<string, EngagementWorkflowState>;
+  engagementLinkedActions?: Record<string, EngagementLinkedAction[]>;
+  groupSummaries?: Record<string, EngagementGroupSummary>;
 }
 
 /**
@@ -248,4 +251,45 @@ export interface NotificationItem {
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
+}
+
+export type EngagementWorkflowState =
+  | {
+      state:
+        | "UNHANDLED"
+        | "DRAFTED"
+        | "SCHEDULED"
+        | "REPLIED"
+        | "IGNORED"
+        | "SNOOZED"
+        | "HANDLED";
+      repliedFromApp: boolean;
+      snoozedUntil?: string | null;
+    }
+  | undefined;
+
+export interface EngagementLinkedAction {
+  kind:
+    | "DRAFT"
+    | "SCHEDULED_REPLY"
+    | "SCHEDULED_QUOTE"
+    | "SCHEDULED_REPOST"
+    | "QUEUED_REPLY"
+    | "QUEUED_QUOTE"
+    | "QUEUED_REPOST";
+  postId?: string | null;
+  draftId?: string | null;
+  queueTypeId?: string | null;
+  label?: string | null;
+  scheduledFor?: string | null;
+  isCanceled?: boolean;
+  isPublished?: boolean;
+}
+
+export interface EngagementGroupSummary {
+  total: number;
+  needResponse: number;
+  drafted: number;
+  scheduled: number;
+  handled: number;
 }

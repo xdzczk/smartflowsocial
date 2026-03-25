@@ -241,6 +241,14 @@ export function parseNewPostLoaderData(
   };
 }
 
+function newPostTabButtonClass(active: boolean): string {
+  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+    active
+      ? "bg-primary text-primary-foreground"
+      : "text-muted-foreground hover:bg-muted"
+  }`;
+}
+
 export default function NewPostPage() {
   const {
     typedQueueTypes,
@@ -250,7 +258,6 @@ export default function NewPostPage() {
     initialDraft,
     initialDraftId,
     templates,
-    nip88PollsEnabled,
   } = parseNewPostLoaderData(useLoaderData<unknown>());
 
   const {
@@ -283,7 +290,9 @@ export default function NewPostPage() {
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
 
-  const [composerTab, setComposerTab] = useState<"post" | "poll">("post");
+  const [composerTab, setComposerTab] = useState<"post" | "poll" | "thread">(
+    "post"
+  );
   /** Bumped on success modal "Create new post" so composers remount (poll has no localStorage draft like UnifiedComposer). */
   const [composerSessionKey, setComposerSessionKey] = useState(0);
 
@@ -320,32 +329,29 @@ export default function NewPostPage() {
         relayCount={relayCount}
         onRelayClick={() => setRelaySelectorOpen(true)}
       />
-      {nip88PollsEnabled ? (
-        <div className="mb-4 flex gap-2 border-b pb-2">
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              composerTab === "post"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-            onClick={() => setComposerTab("post")}
-          >
-            Post
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              composerTab === "poll"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-            onClick={() => setComposerTab("poll")}
-          >
-            Poll
-          </button>
-        </div>
-      ) : null}
+      <div className="mb-4 flex flex-wrap gap-2 border-b pb-2">
+        <button
+          type="button"
+          className={newPostTabButtonClass(composerTab === "post")}
+          onClick={() => setComposerTab("post")}
+        >
+          Post
+        </button>
+        <button
+          type="button"
+          className={newPostTabButtonClass(composerTab === "poll")}
+          onClick={() => setComposerTab("poll")}
+        >
+          Poll
+        </button>
+        <button
+          type="button"
+          className={newPostTabButtonClass(composerTab === "thread")}
+          onClick={() => setComposerTab("thread")}
+        >
+          Thread
+        </button>
+      </div>
       {relaySelectorOpen ? (
         <RelaySelectorModal
           defaultRelays={defaultRelays}
@@ -390,7 +396,28 @@ export default function NewPostPage() {
         </div>
       ) : null}
 
-      {composerTab === "post" || !nip88PollsEnabled ? (
+      {composerTab === "poll" ? (
+        <PollComposer
+          key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+          queueTypes={typedQueueTypes}
+          hashTagPresets={typedHashTagPresets}
+          scheduleIntervals={
+            scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+          }
+          onQueueTypeChange={handleQueueTypeChange}
+          selectedHashTagPresetId={selectedHashTagPresetId}
+          onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
+            handleHashtagPresetSelect(presetId ?? "", _hashtags)
+          }
+          relayOverride={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+          }
+          relayCount={relayCount}
+          onComposerStatusChange={setComposerStatus}
+          defaultRelays={defaultRelays}
+          initialScheduledFor={scheduledAt ?? undefined}
+        />
+      ) : (
         <UnifiedComposer
           key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
           queueTypes={typedQueueTypes}
@@ -412,27 +439,7 @@ export default function NewPostPage() {
           initialDraftId={initialDraftId}
           initialScheduledFor={scheduledAt ?? undefined}
           skipLocalDraftRestore={Boolean(publishResultToken)}
-        />
-      ) : (
-        <PollComposer
-          key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-          queueTypes={typedQueueTypes}
-          hashTagPresets={typedHashTagPresets}
-          scheduleIntervals={
-            scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-          }
-          onQueueTypeChange={handleQueueTypeChange}
-          selectedHashTagPresetId={selectedHashTagPresetId}
-          onHashtagPresetChange={(presetId: string | null, _hashtags: string) =>
-            handleHashtagPresetSelect(presetId ?? "", _hashtags)
-          }
-          relayOverride={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-          }
-          relayCount={relayCount}
-          onComposerStatusChange={setComposerStatus}
-          defaultRelays={defaultRelays}
-          initialScheduledFor={scheduledAt ?? undefined}
+          newPostContentTab={composerTab === "thread" ? "thread" : "post"}
         />
       )}
 

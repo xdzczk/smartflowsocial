@@ -49,6 +49,8 @@ export {
   deleteGiveaway,
   markGiveawayPaidOut,
   setGiveawayWinnerPayoutStatus,
+  runGiveawayPayoutBatchWithNwc,
+  updateGiveawayPayoutSettings,
   duplicateGiveaway,
   resetGiveawayToDraft,
   updateGiveaway,

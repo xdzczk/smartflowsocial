@@ -1,3 +1,4 @@
+import { Link } from "@remix-run/react";
 import { AtSign, MessageCircle, Quote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -25,7 +26,7 @@ import {
   NotificationActionButtons,
   type NotificationStats,
 } from "./NotificationActionButtons";
-import { QuoteInputPanel, ReplyInputPanel } from "./NotificationInputPanels";
+import { UnifiedEngagementComposer } from "./NotificationInputPanels";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -34,7 +35,19 @@ interface NotificationItemProps {
   trustScores?: Record<string, number>;
   isHandled?: boolean;
   /** Mark this item as done. (eventId, repliedFromApp). */
-  onMarkDone?: (eventId: string, repliedFromApp?: boolean) => Promise<void>;
+  onMarkDone?: (
+    eventId: string,
+    repliedFromApp?: boolean,
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED",
+    snoozedUntil?: string | null
+  ) => Promise<void>;
   /** Keyboard nav: flat list index for this item. */
   keyboardIndex?: number;
   /** Keyboard nav: whether this item is currently focused. */
@@ -44,8 +57,14 @@ interface NotificationItemProps {
     index: number,
     handlers: {
       openReply: () => void;
+      openQuote?: () => void;
+      openRepost?: () => void;
       like: () => void;
       markDone: () => void;
+      ignore?: () => void;
+      snooze?: () => void;
+      publishNow?: () => void;
+      schedule?: () => void;
       expandThread: () => void;
     } | null
   ) => void;
@@ -55,6 +74,21 @@ interface NotificationItemProps {
   viewEventUrl?: string;
   /** Label for "View on client" link (e.g. "View on Primal"). */
   viewEventLabel?: string;
+  workflowState?:
+    | "UNHANDLED"
+    | "DRAFTED"
+    | "SCHEDULED"
+    | "REPLIED"
+    | "IGNORED"
+    | "SNOOZED"
+    | "HANDLED";
+  linkedActions?: Array<{
+    kind: string;
+    label?: string | null;
+    scheduledFor?: string | null;
+    postId?: string | null;
+    draftId?: string | null;
+  }>;
 }
 
 // Type badge configuration for each notification type
@@ -113,9 +147,15 @@ export function NotificationItem({
   replyTemplates = [],
   viewEventUrl,
   viewEventLabel,
+  workflowState,
+  linkedActions = [],
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
   const [zapModalNpub, setZapModalNpub] = useState<string | null>(null);
+  const [composerMode, setComposerMode] = useState<
+    "reply" | "quote" | "repost-note"
+  >("reply");
+  const [repostWithNoteContent, setRepostWithNoteContent] = useState("");
   const zapNpub = nostrAdapter.encodeNpub(notification.pubkey) ?? undefined;
 
   const actions = useNotificationActions({
@@ -145,32 +185,172 @@ export function NotificationItem({
 
   // Keep handlers in a ref so we can register once and always call latest. Update in effect to avoid ref mutation during render.
   const handlersRef = useRef({
-    openReply: () => actions.setShowReplyInput(true),
+    openReply: () => {
+      setComposerMode("reply");
+      actions.setShowReplyInput(true);
+    },
+    openQuote: () => {
+      setComposerMode("quote");
+      actions.setShowReplyInput(true);
+    },
+    openRepost: () => {
+      setComposerMode("repost-note");
+      actions.setShowReplyInput(true);
+    },
     like: () => {
       void actions.handleLike();
     },
-    markDone: () => {}, // Mark as done action removed in favor of Zap
+    markDone: () => {
+      if (onMarkDone && notification.eventId) {
+        void onMarkDone(notification.eventId, false, "HANDLED");
+      }
+    },
+    ignore: () => {
+      if (onMarkDone && notification.eventId) {
+        void onMarkDone(notification.eventId, false, "IGNORED");
+      }
+    },
+    snooze: () => {
+      if (onMarkDone && notification.eventId) {
+        const nextDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        void onMarkDone(
+          notification.eventId,
+          false,
+          "SNOOZED",
+          nextDay.toISOString()
+        );
+      }
+    },
+    publishNow: () => {
+      void (async () => {
+        if (composerMode === "reply") await actions.handleReply();
+        else {
+          const nextContent =
+            composerMode === "quote"
+              ? actions.quoteContent
+              : repostWithNoteContent;
+          actions.setQuoteContent(nextContent);
+          await actions.handleQuote();
+        }
+      })();
+    },
+    schedule: () => {
+      const actionType =
+        composerMode === "reply"
+          ? "reply"
+          : composerMode === "quote"
+            ? "quote"
+            : "repost";
+      const content =
+        composerMode === "reply"
+          ? actions.replyContent
+          : composerMode === "quote"
+            ? actions.quoteContent
+            : repostWithNoteContent;
+      void actions.deferAction({
+        actionType,
+        mode: "schedule",
+        content,
+        scheduledFor: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      });
+    },
     expandThread: () => actions.setShowChildReplies(!actions.showChildReplies),
   });
   useEffect(() => {
     handlersRef.current = {
-      openReply: () => actions.setShowReplyInput(true),
+      openReply: () => {
+        setComposerMode("reply");
+        actions.setShowReplyInput(true);
+      },
+      openQuote: () => {
+        setComposerMode("quote");
+        actions.setShowReplyInput(true);
+      },
+      openRepost: () => {
+        setComposerMode("repost-note");
+        actions.setShowReplyInput(true);
+      },
       like: () => {
         void actions.handleLike();
       },
-      markDone: () => {},
+      markDone: () => {
+        if (onMarkDone && notification.eventId) {
+          void onMarkDone(notification.eventId, false, "HANDLED");
+        }
+      },
+      ignore: () => {
+        if (onMarkDone && notification.eventId) {
+          void onMarkDone(notification.eventId, false, "IGNORED");
+        }
+      },
+      snooze: () => {
+        if (onMarkDone && notification.eventId) {
+          const nextDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          void onMarkDone(
+            notification.eventId,
+            false,
+            "SNOOZED",
+            nextDay.toISOString()
+          );
+        }
+      },
+      publishNow: () => {
+        void (async () => {
+          if (composerMode === "reply") await actions.handleReply();
+          else {
+            const nextContent =
+              composerMode === "quote"
+                ? actions.quoteContent
+                : repostWithNoteContent;
+            actions.setQuoteContent(nextContent);
+            await actions.handleQuote();
+          }
+        })();
+      },
+      schedule: () => {
+        const actionType =
+          composerMode === "reply"
+            ? "reply"
+            : composerMode === "quote"
+              ? "quote"
+              : "repost";
+        const content =
+          composerMode === "reply"
+            ? actions.replyContent
+            : composerMode === "quote"
+              ? actions.quoteContent
+              : repostWithNoteContent;
+        void actions.deferAction({
+          actionType,
+          mode: "schedule",
+          content,
+          scheduledFor: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        });
+      },
       expandThread: () =>
         actions.setShowChildReplies(!actions.showChildReplies),
     };
-  }, [actions]);
+  }, [
+    actions,
+    composerMode,
+    notification.eventId,
+    onMarkDone,
+    repostWithNoteContent,
+  ]);
 
   // Register keyboard handlers for this item (R, L, M, E)
   useEffect(() => {
     if (keyboardIndex < 0 || !registerKeyboardHandlers) return;
     registerKeyboardHandlers(keyboardIndex, {
       openReply: () => handlersRef.current.openReply(),
+      openQuote: () => handlersRef.current.openQuote(),
+      openRepost: () => handlersRef.current.openRepost(),
       like: () => handlersRef.current.like(),
       markDone: () => handlersRef.current.markDone(),
+      ignore: () => handlersRef.current.ignore(),
+      snooze: () => handlersRef.current.snooze(),
+      publishNow: () => handlersRef.current.publishNow(),
+      schedule: () => handlersRef.current.schedule(),
       expandThread: () => handlersRef.current.expandThread(),
     });
     return () => registerKeyboardHandlers(keyboardIndex, null);
@@ -231,6 +411,42 @@ export function NotificationItem({
           <p className="text-foreground mb-2 text-sm break-words whitespace-pre-wrap">
             {notification.content}
           </p>
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+              {workflowState ?? (isHandled ? "HANDLED" : "UNHANDLED")}
+            </span>
+            {linkedActions.map((action) => {
+              const text =
+                action.label ??
+                action.kind
+                  .toLowerCase()
+                  .replaceAll("_", " ")
+                  .replace(/^./, (c) => c.toUpperCase());
+              const href = action.draftId
+                ? `/dashboard/drafts?draftId=${encodeURIComponent(action.draftId)}`
+                : action.postId
+                  ? `/dashboard/scheduled?postId=${encodeURIComponent(action.postId)}`
+                  : null;
+              return href ? (
+                <Link
+                  key={`${action.kind}-${action.postId ?? "nopost"}-${action.draftId ?? "nodraft"}-${action.scheduledFor ?? "noschedule"}-${action.label ?? "nolabel"}`}
+                  to={href}
+                  className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium hover:underline"
+                  title={action.scheduledFor ?? undefined}
+                >
+                  {text}
+                </Link>
+              ) : (
+                <span
+                  key={`${action.kind}-${action.postId ?? "nopost"}-${action.draftId ?? "nodraft"}-${action.scheduledFor ?? "noschedule"}-${action.label ?? "nolabel"}-static`}
+                  className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+                  title={action.scheduledFor ?? undefined}
+                >
+                  {text}
+                </span>
+              );
+            })}
+          </div>
 
           {/* Action Buttons */}
           <NotificationActionButtons
@@ -248,7 +464,7 @@ export function NotificationItem({
               void actions.handleRepost();
             }}
             onToggleQuote={() =>
-              actions.setShowQuoteInput(!actions.showQuoteInput)
+              actions.setShowReplyInput(!actions.showReplyInput)
             }
             onCopyNevent={() => {
               void actions.copyNevent();
@@ -256,55 +472,138 @@ export function NotificationItem({
             onToggleChildReplies={() =>
               actions.setShowChildReplies(!actions.showChildReplies)
             }
+            onMarkHandled={() => {
+              if (onMarkDone && notification.eventId) {
+                void onMarkDone(notification.eventId, false, "HANDLED");
+              }
+            }}
+            onIgnore={() => {
+              if (onMarkDone && notification.eventId) {
+                void onMarkDone(notification.eventId, false, "IGNORED");
+              }
+            }}
+            onSnooze={() => {
+              if (onMarkDone && notification.eventId) {
+                const nextDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                void onMarkDone(
+                  notification.eventId,
+                  false,
+                  "SNOOZED",
+                  nextDay.toISOString()
+                );
+              }
+            }}
             zapNpub={zapNpub}
             onZapClick={zapNpub ? (npub) => setZapModalNpub(npub) : undefined}
             viewEventUrl={viewEventUrl}
             viewEventLabel={viewEventLabel}
           />
 
-          {/* Reply Input */}
+          {/* Unified Composer */}
           {actions.showReplyInput ? (
-            <ReplyInputPanel
-              replyContent={actions.replyContent}
-              isReplying={actions.isReplying}
-              onContentChange={actions.setReplyContent}
-              onSubmit={() => {
+            <UnifiedEngagementComposer
+              mode={composerMode}
+              onModeChange={setComposerMode}
+              value={
+                composerMode === "reply"
+                  ? actions.replyContent
+                  : composerMode === "quote"
+                    ? actions.quoteContent
+                    : repostWithNoteContent
+              }
+              onValueChange={(value) => {
+                if (composerMode === "reply") actions.setReplyContent(value);
+                else if (composerMode === "quote")
+                  actions.setQuoteContent(value);
+                else setRepostWithNoteContent(value);
+              }}
+              isSubmitting={
+                actions.isReplying || actions.isQuoting || actions.isReposting
+              }
+              onSubmitNow={() => {
                 void (async () => {
-                  try {
+                  if (composerMode === "reply") {
                     await actions.handleReply();
-                    if (onMarkDone && notification.eventId) {
-                      await onMarkDone(notification.eventId, true);
-                    }
-                  } catch {
-                    // handleReply shows its own toast
+                  } else {
+                    const nextContent =
+                      composerMode === "quote"
+                        ? actions.quoteContent
+                        : repostWithNoteContent;
+                    actions.setQuoteContent(nextContent);
+                    await actions.handleQuote();
+                  }
+                  if (onMarkDone && notification.eventId) {
+                    await onMarkDone(notification.eventId, true, "REPLIED");
                   }
                 })();
+              }}
+              onSchedule={() => {
+                const actionType =
+                  composerMode === "reply"
+                    ? "reply"
+                    : composerMode === "quote"
+                      ? "quote"
+                      : "repost";
+                const content =
+                  composerMode === "reply"
+                    ? actions.replyContent
+                    : composerMode === "quote"
+                      ? actions.quoteContent
+                      : repostWithNoteContent;
+                void actions.deferAction({
+                  actionType,
+                  mode: "schedule",
+                  content,
+                  scheduledFor: new Date(
+                    Date.now() + 60 * 60 * 1000
+                  ).toISOString(),
+                });
+              }}
+              onSaveDraft={() => {
+                const actionType =
+                  composerMode === "reply"
+                    ? "reply"
+                    : composerMode === "quote"
+                      ? "quote"
+                      : "repost";
+                const content =
+                  composerMode === "reply"
+                    ? actions.replyContent
+                    : composerMode === "quote"
+                      ? actions.quoteContent
+                      : repostWithNoteContent;
+                void actions.deferAction({
+                  actionType,
+                  mode: "draft",
+                  content,
+                });
+              }}
+              onAddToQueue={() => {
+                const actionType =
+                  composerMode === "reply"
+                    ? "reply"
+                    : composerMode === "quote"
+                      ? "quote"
+                      : "repost";
+                const content =
+                  composerMode === "reply"
+                    ? actions.replyContent
+                    : composerMode === "quote"
+                      ? actions.quoteContent
+                      : repostWithNoteContent;
+                void actions.deferAction({
+                  actionType,
+                  mode: "queue",
+                  content,
+                });
               }}
               onCancel={() => {
                 actions.setShowReplyInput(false);
                 actions.setReplyContent("");
+                actions.setQuoteContent("");
+                setRepostWithNoteContent("");
               }}
               templates={replyTemplates}
-              onInsertTemplate={(body) =>
-                actions.setReplyContent(actions.replyContent + body)
-              }
-            />
-          ) : null}
-
-          {/* Quote Input */}
-          {actions.showQuoteInput ? (
-            <QuoteInputPanel
-              quoteContent={actions.quoteContent}
-              originalContent={notification.content}
-              isQuoting={actions.isQuoting}
-              onContentChange={actions.setQuoteContent}
-              onSubmit={() => {
-                void actions.handleQuote();
-              }}
-              onCancel={() => {
-                actions.setShowQuoteInput(false);
-                actions.setQuoteContent("");
-              }}
             />
           ) : null}
 

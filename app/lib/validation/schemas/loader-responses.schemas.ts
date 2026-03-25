@@ -402,8 +402,54 @@ export const engagementLoaderDataSchema = z.object({
     .record(
       z.string(),
       z.object({
-        state: z.literal("handled"),
+        state: z.enum([
+          "UNHANDLED",
+          "DRAFTED",
+          "SCHEDULED",
+          "REPLIED",
+          "IGNORED",
+          "SNOOZED",
+          "HANDLED",
+        ]),
         repliedFromApp: z.boolean(),
+        snoozedUntil: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
+  engagementLinkedActions: z
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          kind: z.enum([
+            "DRAFT",
+            "SCHEDULED_REPLY",
+            "SCHEDULED_QUOTE",
+            "SCHEDULED_REPOST",
+            "QUEUED_REPLY",
+            "QUEUED_QUOTE",
+            "QUEUED_REPOST",
+          ]),
+          postId: z.string().nullable().optional(),
+          draftId: z.string().nullable().optional(),
+          queueTypeId: z.string().nullable().optional(),
+          label: z.string().nullable().optional(),
+          scheduledFor: z.string().nullable().optional(),
+          isCanceled: z.boolean().optional(),
+          isPublished: z.boolean().optional(),
+        })
+      )
+    )
+    .optional(),
+  groupSummaries: z
+    .record(
+      z.string(),
+      z.object({
+        total: z.number(),
+        needResponse: z.number(),
+        drafted: z.number(),
+        scheduled: z.number(),
+        handled: z.number(),
       })
     )
     .optional(),

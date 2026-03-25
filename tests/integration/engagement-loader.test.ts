@@ -14,6 +14,23 @@ vi.mock("~/features/cache", () => ({
   fetchFromCache: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("~/lib/redis-cache.server", async (importOriginal) => {
+  const importOriginalTyped = importOriginal as () => Promise<
+    typeof RedisCacheServer
+  >;
+  const actual = await importOriginalTyped();
+  return {
+    ...actual,
+    getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
+    getOrSetJson: vi
+      .fn()
+      .mockImplementation(async <T>(opts: { compute: () => Promise<T> }) =>
+        opts.compute()
+      ),
+    setJsonInRedis: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 vi.mock("~/features/user/services/user-settings.server", () => ({
   getEngagementLastCheckedAt: vi.fn().mockResolvedValue(null),
   updateEngagementLastCheckedAt: vi.fn().mockResolvedValue(undefined),
@@ -25,6 +42,13 @@ vi.mock("~/features/engagement/engagement.server", () => ({
   groupNotificationsByParent: vi.fn(),
   processQuoteReposts: vi.fn(),
 }));
+
+vi.mock(
+  "~/features/engagement/services/relay-mentions-fallback.server",
+  () => ({
+    fetchKind1EventsMentioningPubkeyViaRelays: vi.fn().mockResolvedValue([]),
+  })
+);
 
 vi.mock("~/features/posts/server", () => ({
   getPublishedPosts: vi.fn(),
@@ -46,6 +70,7 @@ import {
 import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
 import { getPublishedPosts } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
+import type * as RedisCacheServer from "~/lib/redis-cache.server";
 
 describe("Engagement Loader", () => {
   beforeEach(() => {
@@ -161,6 +186,9 @@ describe("Engagement Loader", () => {
       expect(result).toHaveProperty("notifications");
       expect(result).toHaveProperty("groupedNotifications");
       expect(result).toHaveProperty("trustScores");
+      expect(result).toHaveProperty("engagementItemStates");
+      expect(result).toHaveProperty("engagementLinkedActions");
+      expect(result).toHaveProperty("groupSummaries");
       expect(result.posts).toHaveLength(2); // Loader returns all posts with stats
       expect(
         result.posts[0]?.signedEvent &&

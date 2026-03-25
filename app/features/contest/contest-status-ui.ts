@@ -6,10 +6,9 @@ export function formatContestStatusLabel(status: ContestStatus): string {
       return "Ended - review winners";
     case "PAYOUT_IN_PROGRESS":
       return "Payout in progress";
-    default:
-      return status
-        .replaceAll("_", " ")
-        .toLowerCase()
-        .replace(/\b\w/g, (m) => m.toUpperCase());
+    default: {
+      const label = String(status).replace(/_/g, " ").toLowerCase();
+      return label.replace(/\b\w/g, (m: string) => m.toUpperCase());
+    }
   }
 }

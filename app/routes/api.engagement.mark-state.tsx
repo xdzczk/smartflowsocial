@@ -4,9 +4,19 @@ import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { markEngagementItemState } from "~/features/engagement/engagement-mark-state.server";
 
-function parseBody(
-  value: unknown
-): { eventId: string; repliedFromApp?: boolean } | null {
+function parseBody(value: unknown): {
+  eventId: string;
+  repliedFromApp?: boolean;
+  state?:
+    | "UNHANDLED"
+    | "DRAFTED"
+    | "SCHEDULED"
+    | "REPLIED"
+    | "IGNORED"
+    | "SNOOZED"
+    | "HANDLED";
+  snoozedUntil?: string | null;
+} | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
   const eventId = body["eventId"];
@@ -15,7 +25,24 @@ function parseBody(
     typeof body["repliedFromApp"] === "boolean"
       ? body["repliedFromApp"]
       : undefined;
-  return { eventId, repliedFromApp };
+  const state =
+    typeof body["state"] === "string"
+      ? (body["state"] as
+          | "UNHANDLED"
+          | "DRAFTED"
+          | "SCHEDULED"
+          | "REPLIED"
+          | "IGNORED"
+          | "SNOOZED"
+          | "HANDLED")
+      : undefined;
+  const snoozedUntil =
+    typeof body["snoozedUntil"] === "string"
+      ? body["snoozedUntil"]
+      : body["snoozedUntil"] === null
+        ? null
+        : undefined;
+  return { eventId, repliedFromApp, state, snoozedUntil };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -39,6 +66,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const result = await markEngagementItemState(userId, {
       eventId: body.eventId,
       repliedFromApp: body.repliedFromApp,
+      state: body.state,
+      snoozedUntil: body.snoozedUntil ? new Date(body.snoozedUntil) : null,
     });
 
     if (!result.success) {

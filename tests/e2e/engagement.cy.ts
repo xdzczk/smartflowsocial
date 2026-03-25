@@ -54,5 +54,9 @@ describe("Engagement Feed", () => {
         expect(hasContent).to.be.true;
       });
     });
+
+    it("should show needs response tab", () => {
+      cy.contains("button", /Needs response/i).should("be.visible");
+    });
   });
 });

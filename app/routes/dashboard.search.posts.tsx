@@ -1,4 +1,5 @@
 import {
+  defer,
   json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
@@ -25,23 +26,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json(data);
   }
 
-  try {
-    const searchResult = await handleSearchAction(q);
-    return json({
-      ...data,
-      searchResult: {
+  const searchResultPromise = (async () => {
+    try {
+      const searchResult = await handleSearchAction(q);
+      return {
         event: searchResult.event,
         stats: searchResult.stats,
-      },
-    });
-  } catch (error) {
-    return json({
-      ...data,
-      searchResult: {
+      };
+    } catch (error: unknown) {
+      return {
         error: error instanceof Error ? error.message : "Failed to load post",
-      },
-    });
-  }
+      };
+    }
+  })();
+
+  return defer({
+    ...data,
+    searchResultPromise,
+  });
 }
 
 export const action = withCSRFProtection(
