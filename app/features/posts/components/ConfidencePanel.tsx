@@ -147,13 +147,13 @@ export function ConfidencePanel({
 
   return (
     <>
-      {/* Desktop: right rail */}
+      {/* Desktop: right rail — sticky on aside + flex parent items-start so it pins while scrolling the composer */}
       <aside
-        className="hidden lg:block lg:w-64 lg:shrink-0"
+        className="border-border bg-card hidden h-fit w-64 shrink-0 self-start rounded-lg border-2 p-4 shadow-md lg:sticky lg:top-20 lg:block"
         aria-label="Composer details"
       >
-        <div className="border-border bg-card sticky top-4 rounded-lg border-2 p-4 shadow-md">
-          <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+        <div className="space-y-3">
+          <h3 className="text-foreground text-xs font-semibold tracking-wider uppercase">
             Execution summary
           </h3>
           <PanelContent

@@ -730,7 +730,7 @@ export function UnifiedComposer({
         : relayCountProp;
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <fetcher.Form
         method="post"
         {...(formAction ? { action: formAction } : {})}

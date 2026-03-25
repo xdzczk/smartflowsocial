@@ -290,7 +290,7 @@ export function PollComposer({
         : "Post poll now";
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
         <div className="text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium">
           <BarChart3 className="h-4 w-4" aria-hidden />
