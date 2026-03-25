@@ -1,4 +1,8 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  SerializeFrom,
+} from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Form,
@@ -11,18 +15,26 @@ import {
 import { useCallback, useMemo, useState } from "react";
 
 import { requireUserId } from "~/features/auth";
+import { PublishedPostPickerGrid } from "~/features/campaign-ui";
 import {
   ContestBuilderSummaryRail,
   ContestEmbeddedComposer,
   createContest,
+  getContestPresetById,
   launchContest,
+  touchContestPresetLastUsed,
+  type ContestRankReward,
 } from "~/features/contest";
 import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments";
 import { getUserSubscription } from "~/features/payments/data";
-import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
+import {
+  getGiveawayPlanLimits,
+  getPlanDisplayName,
+  getUserPlanType,
+} from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getPostById, getRecentPublishedPosts } from "~/features/posts/server";
@@ -44,6 +56,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const planType = getUserPlanType(subscription as UserSubscription | null);
   const planLabel = getPlanDisplayName(subscription as UserSubscription | null);
+  const canUsePresets = getGiveawayPlanLimits(planType).canUsePresets;
+
+  const url = new URL(request.url);
+  const presetParam = url.searchParams.get("preset");
+  let presetDefaults: null | {
+    id: string;
+    title: string | null;
+    rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+    prizeMode: "EQUAL" | "RANKED";
+    winnerCount: number;
+    equalRewardSats: number;
+    rankRewards: ContestRankReward[] | null;
+    fairnessConfig: Record<string, unknown> | null;
+  } = null;
+  if (presetParam?.trim() && canUsePresets) {
+    const p = await getContestPresetById(userId, presetParam.trim());
+    if (p) {
+      presetDefaults = {
+        id: p.id,
+        title: p.title,
+        rankingMetric: p.rankingMetric,
+        prizeMode: p.prizeMode,
+        winnerCount: p.winnerCount,
+        equalRewardSats: p.equalRewardSats ?? 0,
+        rankRewards: (p.rankRewards as ContestRankReward[] | null) ?? null,
+        fairnessConfig:
+          (p.fairnessConfig as Record<string, unknown> | null) ?? null,
+      };
+    }
+  }
+
   const posts = rawPosts
     .filter((p) => p.nostrEventId != null && p.nostrEventId.trim() !== "")
     .slice(0, 50)
@@ -52,9 +95,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       caption: p.caption ?? null,
       publishedAt:
         p.publishedAt instanceof Date ? p.publishedAt.toISOString() : "",
+      fileUrl: p.fileUrl,
+      postType: p.postType,
     }));
 
-  return json({ ...composerLoader, posts, planType, planLabel });
+  return json({
+    ...composerLoader,
+    posts,
+    planType,
+    planLabel,
+    presetDefaults,
+    canUsePresets,
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -148,6 +200,14 @@ export async function action({ request }: ActionFunctionArgs) {
         parseInt(String(formData.get("minFollowers") ?? "0"), 10) || undefined,
     },
   });
+  const appliedPresetId = String(formData.get("appliedPresetId") ?? "").trim();
+  if (appliedPresetId) {
+    try {
+      await touchContestPresetLastUsed(userId, appliedPresetId);
+    } catch {
+      // ignore
+    }
+  }
   const launchNow = formData.get("launchNow") === "1";
   if (launchNow) {
     const launched = await launchContest(userId, contest.id);
@@ -168,7 +228,7 @@ function formatPostOptionLabel(p: {
 }): string {
   const caption = p.caption?.trim()
     ? `${p.caption.slice(0, 56)}${p.caption.length > 56 ? "…" : ""}`
-    : `Post ${p.id.slice(0, 8)}`;
+    : "No caption";
   const date = p.publishedAt.slice(0, 10);
   return `${caption} · ${date}`;
 }
@@ -176,44 +236,97 @@ function formatPostOptionLabel(p: {
 const STEP_ACTIVE_BUTTON_CLASSES = "border-primary bg-primary/10";
 const STEP_INACTIVE_BUTTON_CLASSES = "border-border bg-background";
 
+type ContestNewLoaderData = SerializeFrom<typeof loader>;
+
+function rankRewardsInitialFromPreset(
+  p: NonNullable<ContestNewLoaderData["presetDefaults"]>
+): number[] {
+  const n = p.winnerCount;
+  return Array.from({ length: n }, (_, i) => {
+    const row = p.rankRewards?.find((r) => r.rank === i + 1);
+    return row?.sats ?? 0;
+  });
+}
+
+function fairnessInitialFromPreset(
+  fc: Record<string, unknown> | null | undefined
+) {
+  if (!fc || typeof fc !== "object") {
+    return {
+      excludeMuted: false,
+      excludeBlocked: false,
+      excludeLowTrust: false,
+      excludeNonFollowers: false,
+      minAccountAgeDays: 0,
+      minFollowers: 0,
+    };
+  }
+  const ma = fc["minAccountAgeDays"];
+  const mf = fc["minFollowers"];
+  return {
+    excludeMuted: fc["excludeMuted"] === true,
+    excludeBlocked: fc["excludeBlocked"] === true,
+    excludeLowTrust: fc["excludeLowTrust"] === true,
+    excludeNonFollowers: fc["excludeNonFollowers"] === true,
+    minAccountAgeDays: typeof ma === "number" && Number.isFinite(ma) ? ma : 0,
+    minFollowers: typeof mf === "number" && Number.isFinite(mf) ? mf : 0,
+  };
+}
+
 export default function NewContestRoute() {
-  const actionData = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
+  const presetKey = loaderData.presetDefaults?.id ?? "no-preset";
+  return <NewContestForm key={presetKey} loaderData={loaderData} />;
+}
+
+function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
   const isSubmitting = navigation.state === "submitting";
-  const [prizeMode, setPrizeMode] = useState<"EQUAL" | "RANKED">("EQUAL");
-  const [winnerCount, setWinnerCount] = useState(3);
-  const [postSearch, setPostSearch] = useState("");
+
+  const preset = loaderData.presetDefaults;
+  const fairnessInit = fairnessInitialFromPreset(
+    preset?.fairnessConfig ?? null
+  );
+
+  const [prizeMode, setPrizeMode] = useState<"EQUAL" | "RANKED">(
+    preset?.prizeMode ?? "EQUAL"
+  );
+  const [winnerCount, setWinnerCount] = useState(preset?.winnerCount ?? 3);
   const [selectedSourcePostId, setSelectedSourcePostId] = useState("");
   const [composerSessionKey, setComposerSessionKey] = useState(0);
   const [sourceMode, setSourceMode] = useState<"create" | "existing">("create");
   const [contestEndAt, setContestEndAt] = useState("");
-  const [equalRewardSats, setEqualRewardSats] = useState(1000);
+  const [equalRewardSats, setEqualRewardSats] = useState(
+    preset?.equalRewardSats ?? 1000
+  );
   const [rankRewards, setRankRewards] = useState<number[]>(() =>
-    Array(3).fill(0)
+    preset?.id ? rankRewardsInitialFromPreset(preset) : Array(3).fill(0)
   );
   const [rankingMetric, setRankingMetric] = useState<
     "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-  >("ZAPS");
-  const [excludeMuted, setExcludeMuted] = useState(false);
-  const [excludeBlocked, setExcludeBlocked] = useState(false);
-  const [excludeLowTrust, setExcludeLowTrust] = useState(false);
-  const [excludeNonFollowers, setExcludeNonFollowers] = useState(false);
-  const [minAccountAgeDays, setMinAccountAgeDays] = useState(0);
-  const [minFollowers, setMinFollowers] = useState(0);
+  >(preset?.rankingMetric ?? "ZAPS");
+  const [excludeMuted, setExcludeMuted] = useState(fairnessInit.excludeMuted);
+  const [excludeBlocked, setExcludeBlocked] = useState(
+    fairnessInit.excludeBlocked
+  );
+  const [excludeLowTrust, setExcludeLowTrust] = useState(
+    fairnessInit.excludeLowTrust
+  );
+  const [excludeNonFollowers, setExcludeNonFollowers] = useState(
+    fairnessInit.excludeNonFollowers
+  );
+  const [minAccountAgeDays, setMinAccountAgeDays] = useState(
+    fairnessInit.minAccountAgeDays
+  );
+  const [minFollowers, setMinFollowers] = useState(fairnessInit.minFollowers);
+  const [formTitle, setFormTitle] = useState(
+    preset?.title?.trim() ? preset.title : ""
+  );
   const [now] = useState(() => Date.now());
 
-  const { posts, planType, planLabel } = loaderData;
-
-  const filteredPosts = useMemo(() => {
-    const q = postSearch.trim().toLowerCase();
-    if (!q) return posts;
-    return posts.filter((p) => {
-      const cap = (p.caption ?? "").toLowerCase();
-      return cap.includes(q) || p.id.toLowerCase().includes(q);
-    });
-  }, [postSearch, posts]);
+  const { posts, planType, planLabel, presetDefaults } = loaderData;
 
   const onContestComposerPublished = useCallback(
     (payload: ContestEmbedPublishPayload) => {
@@ -299,6 +412,13 @@ export default function NewContestRoute() {
         </div>
       ) : null}
 
+      {presetDefaults?.id ? (
+        <p className="text-muted-foreground border-border bg-muted/30 rounded-md border px-3 py-2 text-sm">
+          Loaded a saved preset — choose your source post and contest end time,
+          then save or launch.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -330,9 +450,19 @@ export default function NewContestRoute() {
 
       <Form
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-stretch lg:gap-8"
       >
         <div className="min-w-0 space-y-10">
+          <input
+            type="hidden"
+            name="sourcePostId"
+            value={selectedSourcePostId}
+          />
+          <input
+            type="hidden"
+            name="appliedPresetId"
+            value={presetDefaults?.id ?? ""}
+          />
           <section className="space-y-2">
             <label className="text-sm font-medium" htmlFor="title">
               Contest title
@@ -340,6 +470,10 @@ export default function NewContestRoute() {
             <input
               id="title"
               name="title"
+              value={formTitle}
+              onChange={(e) => {
+                setFormTitle(e.target.value);
+              }}
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <p className="text-muted-foreground text-xs">{entryRuleSummary}</p>
@@ -370,65 +504,14 @@ export default function NewContestRoute() {
               </p>
             ) : null}
             {sourceMode === "existing" ? (
-              <>
-                <label
-                  className="text-muted-foreground text-sm"
-                  htmlFor="postSearch"
-                >
-                  Search posts
-                </label>
-                <input
-                  id="postSearch"
-                  type="search"
-                  value={postSearch}
-                  onChange={(e) => {
-                    setPostSearch(e.target.value);
-                  }}
-                  placeholder="Filter by caption…"
-                  className="border-border bg-background mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
-                />
-                {filteredPosts.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    {posts.length === 0
-                      ? "No published posts with a Nostr id yet."
-                      : "No posts match your search."}
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {filteredPosts.map((p) => {
-                      const selected = p.id === selectedSourcePostId;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedSourcePostId(p.id);
-                          }}
-                          className={`border-border bg-background rounded-md border p-3 text-left ${selected ? "border-primary bg-primary/5" : ""}`}
-                        >
-                          <p className="truncate text-sm font-medium">
-                            {p.caption?.trim() ?? `Post ${p.id.slice(0, 8)}`}
-                          </p>
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            {new Date(p.publishedAt).toLocaleString()}
-                          </p>
-                          <p className="text-muted-foreground mt-1 font-mono text-xs">
-                            {p.id.slice(0, 12)}…
-                          </p>
-                          <input
-                            type="radio"
-                            name="sourcePostId"
-                            value={p.id}
-                            checked={selected}
-                            readOnly
-                            className="sr-only"
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
+              <PublishedPostPickerGrid
+                posts={posts}
+                value={selectedSourcePostId}
+                onValueChange={setSelectedSourcePostId}
+                searchInputId="contest-source-post-search"
+                emptyPostsMessage="No published posts with a Nostr id yet."
+                emptyFilterMessage="No posts match your search."
+              />
             ) : null}
             {selectedSourcePost ? (
               <div className="border-border bg-muted/30 rounded-md border p-3">
@@ -703,7 +786,7 @@ export default function NewContestRoute() {
           </section>
         </div>
 
-        <div className="mt-10 lg:mt-0 lg:self-start">
+        <div className="mt-10 lg:mt-0">
           <ContestBuilderSummaryRail
             planType={planType}
             planLabel={planLabel}

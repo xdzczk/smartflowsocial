@@ -57,7 +57,7 @@ export default function BroadcastSettingsRoute() {
   const { settings } = useLoaderData<typeof loader>();
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Broadcast settings
@@ -67,7 +67,7 @@ export default function BroadcastSettingsRoute() {
         </p>
       </div>
 
-      <Form method="post" className="space-y-4">
+      <Form method="post" className="max-w-xl space-y-4">
         <div>
           <label
             htmlFor="broadcast-default-delivery"

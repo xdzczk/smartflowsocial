@@ -233,7 +233,7 @@ export default function BroadcastNewReviewRoute() {
   ]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <div>
         <Link
           to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}

@@ -1,55 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="1.904715916">
-    <testsuite name="tests/unit/broadcast-unsubscribe-apply.test.ts" timestamp="2026-03-24T05:05:25.475Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="1.904715916">
-        <testcase classname="tests/unit/broadcast-unsubscribe-apply.test.ts" name="applyUnsubscribeFromRawToken &gt; returns false for malformed token without calling prisma" time="1.90133225">
-            <system-out>
-✅ Environment variables validated
-
-            </system-out>
-            <system-err>
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-[ioredis] Unhandled error event: AggregateError: 
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7)
-
-            </system-err>
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.003086833">
+    <testsuite name="tests/unit/giveaway-new.test.ts" timestamp="2026-03-25T04:52:34.296Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.003086833">
+        <testcase classname="tests/unit/giveaway-new.test.ts" name="giveaway-new &gt; getRecentPostsForGiveawaySelector &gt; returns posts mapped to id, caption, publishedAt, fileUrl, postType" time="0.002020167">
         </testcase>
-        <testcase classname="tests/unit/broadcast-unsubscribe-apply.test.ts" name="applyUnsubscribeFromRawToken &gt; returns false when token not found" time="0.000512417">
+        <testcase classname="tests/unit/giveaway-new.test.ts" name="giveaway-new &gt; getRecentPostsForGiveawaySelector &gt; limits to default 50 posts" time="0.00023425">
         </testcase>
-        <testcase classname="tests/unit/broadcast-unsubscribe-apply.test.ts" name="applyUnsubscribeFromRawToken &gt; calls addBroadcastSuppression and marks usedAt" time="0.001722208">
-            <system-out>
-ℹ️  Info: broadcast_unsubscribe_applied { tokenRowIdPrefix: &apos;tok_row&apos;, campaignIdPrefix: &apos;camp1&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/unit/broadcast-unsubscribe-apply.test.ts" name="applyUnsubscribeFromRawToken &gt; is idempotent when already used" time="0.000255583">
-            <system-out>
-ℹ️  Info: broadcast_unsubscribe_applied { tokenRowIdPrefix: &apos;tok_row&apos;, campaignIdPrefix: &apos;camp1&apos; }
-
-            </system-out>
+        <testcase classname="tests/unit/giveaway-new.test.ts" name="giveaway-new &gt; getRecentPostsForGiveawaySelector &gt; respects custom limit" time="0.000153208">
         </testcase>
     </testsuite>
 </testsuites>

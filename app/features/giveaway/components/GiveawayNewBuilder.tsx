@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { PublishedPostPickerGrid } from "~/features/campaign-ui";
 import {
   computeFinalizationFeeSats,
   getFinalizationFeeRateBps,
@@ -109,6 +110,8 @@ export interface GiveawayNewBuilderProps {
     id: string;
     caption: string | null;
     publishedAt: string;
+    fileUrl: string[];
+    postType: string;
   }>;
   planLimits: {
     maxWinnerCount: number;
@@ -162,7 +165,7 @@ function GiveawayNewBuilderStickySummary({
   isSubmitting: boolean;
 }) {
   return (
-    <aside className="mt-10 space-y-4 lg:mt-0 lg:self-start">
+    <aside className="mt-10 space-y-4 lg:mt-0">
       <Card className="sticky top-20">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Giveaway summary</CardTitle>
@@ -414,7 +417,7 @@ export function GiveawayNewBuilder({
     "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING"
   >("PERIOD");
   const [periodMode, setPeriodMode] = useState<"days" | "custom">("days");
-  const [postSearch, setPostSearch] = useState("");
+  const [selectedSinglePostId, setSelectedSinglePostId] = useState("");
   const [engagement, setEngagement] = useState<Record<string, boolean>>({
     REACTION: true,
     REPOST: true,
@@ -439,15 +442,6 @@ export function GiveawayNewBuilder({
   const effectiveEngagement = canPickEngagementEntryTypes
     ? engagement
     : DEFAULT_ENGAGEMENT_ALL;
-
-  const filteredPosts = useMemo(() => {
-    const q = postSearch.trim().toLowerCase();
-    if (!q) return recentPosts;
-    return recentPosts.filter((p) => {
-      const cap = (p.caption ?? "").toLowerCase();
-      return cap.includes(q) || p.id.toLowerCase().includes(q);
-    });
-  }, [recentPosts, postSearch]);
 
   const selectedTypes = ENGAGEMENT_META.filter(
     (m) => effectiveEngagement[m.value]
@@ -510,7 +504,7 @@ export function GiveawayNewBuilder({
 
       <form
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-stretch lg:gap-8"
       >
         <input type="hidden" name="intent" value="create" />
         <input type="hidden" name="rewardMode" value={effectiveRewardMode} />
@@ -700,44 +694,19 @@ export function GiveawayNewBuilder({
 
             {scopeType === "SINGLE_POST" ? (
               <div className="border-border bg-muted/20 space-y-2 rounded-lg border p-4">
-                <label
-                  htmlFor="postSearch"
-                  className="text-muted-foreground text-sm"
-                >
-                  Search posts
-                </label>
                 <input
-                  id="postSearch"
-                  type="search"
-                  value={postSearch}
-                  onChange={(e) => {
-                    setPostSearch(e.target.value);
-                  }}
-                  placeholder="Filter by caption…"
-                  className="border-border bg-background mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
-                />
-                <label
-                  htmlFor="postId"
-                  className="text-muted-foreground text-sm"
-                >
-                  Post
-                </label>
-                <select
-                  id="postId"
+                  type="hidden"
                   name="postId"
-                  className="border-border bg-background max-w-xl rounded-md border px-2 py-2 text-sm"
-                  size={Math.min(8, Math.max(3, filteredPosts.length))}
-                >
-                  <option value="">Select a post</option>
-                  {filteredPosts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {(p.caption
-                        ? `${p.caption.slice(0, 56)}${p.caption.length > 56 ? "…" : ""}`
-                        : `Post ${p.id.slice(0, 8)}`) +
-                        ` · ${p.publishedAt.slice(0, 10)}`}
-                    </option>
-                  ))}
-                </select>
+                  value={selectedSinglePostId}
+                />
+                <PublishedPostPickerGrid
+                  posts={recentPosts}
+                  value={selectedSinglePostId}
+                  onValueChange={setSelectedSinglePostId}
+                  searchInputId="giveaway-single-post-search"
+                  emptyPostsMessage="No published posts in the last 90 days."
+                  emptyFilterMessage="No posts match your search."
+                />
               </div>
             ) : null}
 

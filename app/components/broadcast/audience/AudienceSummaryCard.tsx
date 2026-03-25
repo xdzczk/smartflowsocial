@@ -1,6 +1,7 @@
 import type { BroadcastDeliveryMode } from "@prisma/client";
 import { Link } from "@remix-run/react";
 import { HelpCircle } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -41,6 +42,8 @@ export interface AudienceSummaryCardProps {
   scheduleSummary: string;
   excludeRecentDays: number;
   overlapWarning?: string | null;
+  /** Primary form actions (e.g. review / save draft), rendered inside the summary rail */
+  actions?: ReactNode;
 }
 
 function riskBadgeClass(level: AudienceRiskLevel): string {
@@ -74,7 +77,7 @@ export function AudienceSummaryCard(props: AudienceSummaryCardProps) {
   const audienceIsSelected = props.audienceHeadline === "Selected recipients";
 
   return (
-    <aside className="border-border bg-muted/20 h-fit space-y-3 rounded-xl border p-3 text-sm lg:sticky lg:top-4">
+    <aside className="border-border bg-muted/20 sticky top-20 h-fit space-y-3 self-start rounded-xl border p-3 text-sm">
       <h2 className="text-foreground px-0.5 text-sm font-semibold tracking-tight">
         Campaign summary
       </h2>
@@ -179,6 +182,10 @@ export function AudienceSummaryCard(props: AudienceSummaryCardProps) {
           </PopoverContent>
         </Popover>
       </div>
+
+      {props.actions != null ? (
+        <div className="flex flex-col gap-2">{props.actions}</div>
+      ) : null}
 
       <p className="text-muted-foreground px-0.5 text-[10px] leading-snug">
         Suppressed recipients are always excluded automatically.{" "}

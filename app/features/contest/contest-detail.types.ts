@@ -138,4 +138,6 @@ export interface ContestDetailPageData {
     failed: number;
     plannedSats: number;
   };
+  /** Same gate as giveaway presets (paid plans). */
+  canUsePresets: boolean;
 }

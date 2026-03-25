@@ -195,8 +195,14 @@ export default function BroadcastAudiencesRoute() {
     []
   );
 
+  /** Always boolean — never `null` (React `disabled` is boolean | undefined only). */
+  const disableEditAudienceSubmit: boolean =
+    editAudienceType === "CUSTOM" && editSelectedPubkeys.length === 0;
+  const disableCreateAudienceSubmit: boolean =
+    createAudienceType === "CUSTOM" && createSelectedPubkeys.length === 0;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Audiences</h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -306,11 +312,7 @@ export default function BroadcastAudiencesRoute() {
             </div>
             <button
               type="submit"
-              disabled={
-                editAudienceType === "CUSTOM"
-                  ? editSelectedPubkeys.length === 0
-                  : null
-              }
+              disabled={disableEditAudienceSubmit}
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
             >
               Save changes
@@ -388,11 +390,7 @@ export default function BroadcastAudiencesRoute() {
           </div>
           <button
             type="submit"
-            disabled={
-              createAudienceType === "CUSTOM"
-                ? createSelectedPubkeys.length === 0
-                : null
-            }
+            disabled={disableCreateAudienceSubmit}
             className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
           >
             Save audience

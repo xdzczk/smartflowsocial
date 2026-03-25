@@ -15,6 +15,7 @@ import {
   lockContest,
   setContestWinnerPayoutStatus,
 } from "~/features/contest";
+import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import {
   requireAnySubscription,
   requireFeatureAccess,
@@ -64,6 +65,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         "Content-Disposition": `attachment; filename="contest-${id}-entries.csv"`,
       },
     });
+  }
+
+  if (intent === "savePreset") {
+    const result = await saveContestPresetFromDetailForm(userId, id, formData);
+    if (!result.success) {
+      return json({ error: result.error }, { status: result.status });
+    }
+    return redirect(`/dashboard/contests/detail/${id}`);
   }
 
   if (intent === "launch") {

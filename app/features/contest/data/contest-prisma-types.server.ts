@@ -4,6 +4,7 @@
 
 export type {
   Contest,
+  ContestPreset,
   ContestStatus,
   ContestEntryType,
   ContestRankingMetric,

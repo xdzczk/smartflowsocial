@@ -443,7 +443,7 @@ export default function BroadcastNewRoute() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">New broadcast</h1>
         <p className="text-muted-foreground mt-1 text-sm">

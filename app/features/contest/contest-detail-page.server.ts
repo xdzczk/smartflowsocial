@@ -3,7 +3,11 @@
  */
 
 import { getUserSubscription } from "~/features/payments/data";
-import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
+import {
+  getGiveawayPlanLimits,
+  getPlanDisplayName,
+  getUserPlanType,
+} from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPostById } from "~/features/posts/server";
 
@@ -59,6 +63,7 @@ export async function getContestDetailPageData(
   const subscription = await getUserSubscription(userId);
   const planType = getUserPlanType(subscription as UserSubscription | null);
   const planLabel = getPlanDisplayName(subscription as UserSubscription | null);
+  const canUsePresets = getGiveawayPlanLimits(planType).canUsePresets;
 
   const rankRewards =
     (contest.rankRewards as ContestRankReward[] | null) ?? null;
@@ -113,6 +118,7 @@ export async function getContestDetailPageData(
           winnerCount: contest.winnerCount,
           plannedPayoutSats: contest.plannedPayoutSats ?? 0,
           durationLabel: contestDurationLabel(contest),
+          completedAtLabel: completedAtLabel ?? undefined,
         }).join("\n")
       : null;
 
@@ -382,6 +388,7 @@ export async function getContestDetailPageData(
       failed,
       plannedSats: contest.plannedPayoutSats ?? quote.plannedPayoutSats,
     },
+    canUsePresets,
   };
 }
 

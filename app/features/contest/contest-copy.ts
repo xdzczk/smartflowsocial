@@ -61,4 +61,8 @@ export const contestCopy = {
   copyFairnessProof: "Copy fairness proof",
   copyWinnerAnnouncement: "Copy winner announcement",
   copyFairnessProofJson: "Copy fairness proof (JSON)",
+  savePresetSectionTitle: "Save as preset",
+  savePresetHint:
+    "Save ranking metric, prize structure, and eligibility filters. Start a new contest from this preset and choose the source post there.",
+  presetNamePlaceholder: "Preset name",
 } as const;

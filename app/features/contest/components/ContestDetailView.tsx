@@ -238,6 +238,7 @@ export function ContestDetailView({
           metric={metric}
           winners={winners}
           nostr={nostr}
+          canUsePresets={data.canUsePresets}
         />
 
         <ContestDetailCancelSection

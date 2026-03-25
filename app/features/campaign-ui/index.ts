@@ -8,6 +8,12 @@ export { CampaignStateBanner } from "./components/CampaignStateBanner";
 export { CampaignSummaryRailShell } from "./components/CampaignSummaryRailShell";
 export type { CampaignSummaryRow } from "./components/CampaignSummaryRailShell";
 
+export {
+  PublishedPostPickerGrid,
+  PUBLISHED_POST_PICKER_PAGE_SIZE,
+} from "./components/PublishedPostPickerGrid";
+export type { PublishedPostPickerItem } from "./components/PublishedPostPickerGrid";
+
 export { CampaignPayoutOverviewShell } from "./components/CampaignPayoutOverviewShell";
 export type { CampaignPayoutStat } from "./components/CampaignPayoutOverviewShell";
 

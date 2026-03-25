@@ -345,6 +345,7 @@ export function ContestDetailFormsSection({
   metric,
   winners,
   nostr,
+  canUsePresets,
 }: {
   contest: ContestRow;
   data: DetailData;
@@ -356,6 +357,7 @@ export function ContestDetailFormsSection({
   metric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
   winners: ContestWinnerRow[];
   nostr: ContestDetailNostrUrls;
+  canUsePresets: boolean;
 }) {
   return (
     <>
@@ -369,6 +371,32 @@ export function ContestDetailFormsSection({
             {contestCopy.launchContest}
           </button>
         </Form>
+      ) : null}
+
+      {isDraft && canUsePresets ? (
+        <div className="border-border space-y-2 rounded-lg border p-4">
+          <p className="text-foreground text-sm font-medium">
+            {contestCopy.savePresetSectionTitle}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {contestCopy.savePresetHint}
+          </p>
+          <Form method="post" className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="intent" value="savePreset" />
+            <input
+              name="presetName"
+              required
+              placeholder={contestCopy.presetNamePlaceholder}
+              className="border-border bg-background min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="border-border bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium"
+            >
+              Save
+            </button>
+          </Form>
+        </div>
       ) : null}
 
       {isReview ? (

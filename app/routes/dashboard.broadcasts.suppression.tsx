@@ -103,7 +103,7 @@ export default function BroadcastSuppressionRoute() {
   const [selectedPubkeys, setSelectedPubkeys] = useState<string[]>([]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       {notice ? (
         <div
           role="status"

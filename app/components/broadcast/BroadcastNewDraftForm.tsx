@@ -622,45 +622,8 @@ export function BroadcastNewDraftForm({
               review and signing—not an instant blast.
             </p>
 
-            <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
-              <button
-                type="submit"
-                name="intent"
-                value={primaryIntent}
-                disabled={
-                  busy ||
-                  !canContinue ||
-                  (scheduleLater &&
-                    limits.allowSchedule &&
-                    !hasValidScheduleTime)
-                }
-                className="bg-success hover:bg-success/90 inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-              >
-                {hasScheduleTimeForSubmit ? (
-                  <Clock
-                    className="h-5 w-5 shrink-0"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                ) : (
-                  <ArrowRight
-                    className="h-5 w-5 shrink-0"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                )}
-                {primaryLabel}
-              </button>
-              <button
-                type="submit"
-                name="intent"
-                value="create_draft"
-                disabled={busy || !canContinue}
-                className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-              >
-                Save draft
-              </button>
-              {canSaveAudience ? (
+            {canSaveAudience ? (
+              <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
                 <button
                   type="submit"
                   name="intent"
@@ -670,8 +633,8 @@ export function BroadcastNewDraftForm({
                 >
                   Save audience
                 </button>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
         </FormSection>
       </div>
@@ -708,6 +671,45 @@ export function BroadcastNewDraftForm({
         scheduleSummary={scheduleSummary}
         excludeRecentDays={excludeMessagedDays}
         overlapWarning={null}
+        actions={
+          <>
+            <button
+              type="submit"
+              name="intent"
+              value={primaryIntent}
+              disabled={
+                busy ||
+                !canContinue ||
+                (scheduleLater && limits.allowSchedule && !hasValidScheduleTime)
+              }
+              className="bg-success hover:bg-success/90 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {hasScheduleTimeForSubmit ? (
+                <Clock
+                  className="h-5 w-5 shrink-0"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+              ) : (
+                <ArrowRight
+                  className="h-5 w-5 shrink-0"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+              )}
+              {primaryLabel}
+            </button>
+            <button
+              type="submit"
+              name="intent"
+              value="create_draft"
+              disabled={busy || !canContinue}
+              className="border-input bg-background hover:bg-muted w-full rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            >
+              Save draft
+            </button>
+          </>
+        }
       />
     </Form>
   );

@@ -11,6 +11,8 @@ export interface RecentPostOption {
   id: string;
   caption: string | null;
   publishedAt: string;
+  fileUrl: string[];
+  postType: string;
 }
 
 export async function getRecentPostsForGiveawaySelector(
@@ -23,5 +25,7 @@ export async function getRecentPostsForGiveawaySelector(
     caption: p.caption ?? null,
     publishedAt:
       p.publishedAt instanceof Date ? p.publishedAt.toISOString() : "",
+    fileUrl: p.fileUrl,
+    postType: p.postType,
   }));
 }
