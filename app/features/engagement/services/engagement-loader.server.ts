@@ -880,6 +880,84 @@ async function loadPrimalSupplementalEngagementData(params: {
   };
 }
 
+function collectEventIdsFromGroupedNotificationGroups(
+  replyGroups: GroupedNotification[],
+  quoteGroups: GroupedNotification[],
+  mentionGroups: GroupedNotification[]
+): string[] {
+  const ids: string[] = [];
+  for (const group of replyGroups) {
+    for (const n of group.notifications) {
+      if (n.eventId) ids.push(n.eventId);
+    }
+  }
+  for (const group of quoteGroups) {
+    for (const n of group.notifications) {
+      if (n.eventId) ids.push(n.eventId);
+    }
+  }
+  for (const group of mentionGroups) {
+    for (const n of group.notifications) {
+      if (n.eventId) ids.push(n.eventId);
+    }
+  }
+  return ids;
+}
+
+async function loadEngagementFeedWorkflowState(
+  userId: string,
+  allEventIds: string[]
+): Promise<{
+  engagementItemStates: Awaited<ReturnType<typeof getEngagementItemStates>>;
+  engagementLinkedActions: Record<string, EngagementLinkedAction[]>;
+}> {
+  let engagementItemStates: Awaited<
+    ReturnType<typeof getEngagementItemStates>
+  > = {};
+  try {
+    engagementItemStates = await getEngagementItemStates(userId, allEventIds);
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message:
+        "Failed to load engagement item states; continuing without workflow state",
+      userId,
+    });
+  }
+
+  let engagementLinkedActions: Record<string, EngagementLinkedAction[]> = {};
+  try {
+    const linkedActionsRows = await findLinkedActionsByEventIds(
+      userId,
+      allEventIds
+    );
+    engagementLinkedActions = linkedActionsRows.reduce<
+      Record<string, EngagementLinkedAction[]>
+    >((acc, row) => {
+      const key = row.eventId;
+      acc[key] ??= [];
+      acc[key].push({
+        kind: row.kind,
+        postId: row.postId,
+        draftId: row.draftId,
+        queueTypeId: row.queueTypeId,
+        label: row.label,
+        scheduledFor: row.scheduledFor?.toISOString() ?? null,
+        isCanceled: row.isCanceled,
+        isPublished: row.isPublished,
+      });
+      return acc;
+    }, {});
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message:
+        "Failed to load engagement linked actions; continuing without links",
+      userId,
+    });
+  }
+
+  return { engagementItemStates, engagementLinkedActions };
+}
+
 /**
  * Load engagement feed data
  */
@@ -995,47 +1073,13 @@ export async function loadEngagementFeedData(
     trustScores[pubkey] = score;
   });
 
-  const allEventIds: string[] = [];
-  for (const group of groupedByParent.replies) {
-    for (const n of group.notifications) {
-      if (n.eventId) allEventIds.push(n.eventId);
-    }
-  }
-  for (const group of groupedQuoteReposts) {
-    for (const n of group.notifications) {
-      if (n.eventId) allEventIds.push(n.eventId);
-    }
-  }
-  for (const group of groupedByParent.mentions) {
-    for (const n of group.notifications) {
-      if (n.eventId) allEventIds.push(n.eventId);
-    }
-  }
-  const engagementItemStates = await getEngagementItemStates(
-    user.id,
-    allEventIds
+  const allEventIds = collectEventIdsFromGroupedNotificationGroups(
+    groupedByParent.replies,
+    groupedQuoteReposts,
+    groupedByParent.mentions
   );
-  const linkedActionsRows = await findLinkedActionsByEventIds(
-    user.id,
-    allEventIds
-  );
-  const engagementLinkedActions = linkedActionsRows.reduce<
-    Record<string, EngagementLinkedAction[]>
-  >((acc, row) => {
-    const key = row.eventId;
-    acc[key] ??= [];
-    acc[key].push({
-      kind: row.kind,
-      postId: row.postId,
-      draftId: row.draftId,
-      queueTypeId: row.queueTypeId,
-      label: row.label,
-      scheduledFor: row.scheduledFor?.toISOString() ?? null,
-      isCanceled: row.isCanceled,
-      isPublished: row.isPublished,
-    });
-    return acc;
-  }, {});
+  const { engagementItemStates, engagementLinkedActions } =
+    await loadEngagementFeedWorkflowState(user.id, allEventIds);
 
   const postsAsDTOs = toPostDTOArray(postsAsPostData);
   const serializedGroupedReplies = serializeGroupedForResponse(

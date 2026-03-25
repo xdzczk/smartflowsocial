@@ -51,6 +51,7 @@ import {
 import { findPaidFinalizationForLock } from "./repositories/giveaway-finalization-payment.server";
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
+  isSimpleUnifiedEngagementConfig,
   scopeAllowsEngagementEntryTypePick,
   scopeIsFollowGraphAccountPool,
   type GiveawayEngagementConfig,
@@ -58,6 +59,7 @@ import {
   type GiveawayScope,
   type GiveawayWinnerEntry,
   type RelatedEvent,
+  type SimpleUnifiedEngagementConfig,
 } from "./types";
 
 const DEFAULT_ENGAGEMENT_TYPES: GiveawayEngagementType[] = [
@@ -210,6 +212,21 @@ function runSelectionForGiveaway(
     : DEFAULT_ENGAGEMENT_TYPES;
   const weights = g.engagementWeights as Record<string, number> | undefined;
 
+  if (isSimpleUnifiedEngagementConfig(g.engagementConfig)) {
+    const sats = g.engagementConfig._simpleUnified.satsPerWinner;
+    const winners = runGiveawaySelection({
+      relatedEvents,
+      engagementTypes: types,
+      selectionMode: g.selectionMode,
+      engagementWeights: weights,
+      winnerCount: g.winnerCount,
+    });
+    return winners.map((w) => ({
+      ...w,
+      satsPerWinner: sats > 0 ? sats : undefined,
+    }));
+  }
+
   if (
     engagementConfig &&
     typeof engagementConfig === "object" &&
@@ -232,6 +249,34 @@ function runSelectionForGiveaway(
   });
 }
 
+/** Unique eligible accounts for fairness meta (matches selection eligibility). */
+function eligibleAccountCountForPreviewMeta(
+  g: Giveaway,
+  relatedEvents: RelatedEvent[]
+): number {
+  if (scopeIsFollowGraphAccountPool(g.scopeType)) {
+    return new Set(relatedEvents.map((e) => e.pubkey)).size;
+  }
+  const engagementConfig =
+    (g.engagementConfig as GiveawayEngagementConfig | null) ?? null;
+  const engagementTypes =
+    g.engagementTypes as string[] as GiveawayEngagementType[];
+  const types =
+    engagementTypes.length > 0 ? engagementTypes : DEFAULT_ENGAGEMENT_TYPES;
+  if (isSimpleUnifiedEngagementConfig(g.engagementConfig)) {
+    return countEligibleAccountsForEngagementTypes(relatedEvents, types);
+  }
+  const typesFromConfig =
+    engagementConfig && Object.keys(engagementConfig).length > 0
+      ? (Object.keys(engagementConfig) as GiveawayEngagementType[])
+      : [];
+  const eligibilityTypes = typesFromConfig.length > 0 ? typesFromConfig : types;
+  return countEligibleAccountsForEngagementTypes(
+    relatedEvents,
+    eligibilityTypes
+  );
+}
+
 export async function getGiveawayById(
   id: string,
   userId: string
@@ -247,8 +292,11 @@ export interface CreateGiveawayInput {
   eligibilityTo?: Date | null;
   engagementTypes: string[];
   winnerCount: number;
-  /** When set, per-engagement winner counts and sats; winnerCount becomes sum of counts. */
-  engagementConfig?: GiveawayEngagementConfig | null;
+  /** Per-type rewards (advanced), or `_simpleUnified` for simple payout mode. */
+  engagementConfig?:
+    | GiveawayEngagementConfig
+    | SimpleUnifiedEngagementConfig
+    | null;
   selectionMode?: GiveawaySelectionMode;
   engagementWeights?: Record<string, number> | null;
   filters?: Record<string, unknown> | null;
@@ -276,6 +324,7 @@ export async function createGiveaway(
   let winnerCount = Math.min(input.winnerCount, limits.maxWinnerCount);
   if (
     !scopeIsFollowGraphAccountPool(input.scopeType) &&
+    !isSimpleUnifiedEngagementConfig(input.engagementConfig) &&
     input.engagementConfig &&
     typeof input.engagementConfig === "object" &&
     Object.keys(input.engagementConfig).length > 0
@@ -335,7 +384,10 @@ export interface UpdateGiveawayInput {
   name?: string | null;
   winnerCount?: number;
   engagementTypes?: string[];
-  engagementConfig?: GiveawayEngagementConfig | null;
+  engagementConfig?:
+    | GiveawayEngagementConfig
+    | SimpleUnifiedEngagementConfig
+    | null;
   selectionMode?: GiveawaySelectionMode;
 }
 
@@ -394,7 +446,8 @@ export async function updateGiveaway(
         : Prisma.JsonNull;
     if (
       input.engagementConfig &&
-      Object.keys(input.engagementConfig).length > 0
+      Object.keys(input.engagementConfig).length > 0 &&
+      !isSimpleUnifiedEngagementConfig(input.engagementConfig)
     ) {
       const sum = Object.values(input.engagementConfig).reduce(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- engagementConfig entries may omit winnerCount
@@ -439,20 +492,10 @@ export async function previewGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
-  const engagementConfig =
-    (g.engagementConfig as GiveawayEngagementConfig | null) ?? null;
-  const engagementTypes =
-    g.engagementTypes as string[] as GiveawayEngagementType[];
-  const types =
-    engagementTypes.length > 0 ? engagementTypes : DEFAULT_ENGAGEMENT_TYPES;
-  const typesFromConfig = engagementConfig
-    ? (Object.keys(engagementConfig) as GiveawayEngagementType[])
-    : [];
-  const eligibilityTypes = typesFromConfig.length > 0 ? typesFromConfig : types;
-
-  const eligibleAccountCount = scopeIsFollowGraphAccountPool(g.scopeType)
-    ? new Set(relatedEvents.map((e) => e.pubkey)).size
-    : countEligibleAccountsForEngagementTypes(relatedEvents, eligibilityTypes);
+  const eligibleAccountCount = eligibleAccountCountForPreviewMeta(
+    g,
+    relatedEvents
+  );
 
   const lastPreviewMeta = {
     eligiblePoolSize: eligibleAccountCount,
@@ -486,8 +529,13 @@ export async function rerollGiveaway(
   const { relatedEvents } = await getEligibleParticipantsForGiveaway(userId, g);
   const winners = runSelectionForGiveaway(g, relatedEvents);
 
+  const eligibleAccountCount = eligibleAccountCountForPreviewMeta(
+    g,
+    relatedEvents
+  );
+
   const lastPreviewMeta = {
-    eligiblePoolSize: relatedEvents.length,
+    eligiblePoolSize: eligibleAccountCount,
     computedAt: new Date().toISOString(),
     selectionMode: g.selectionMode,
     filters: g.filters ?? null,
@@ -498,7 +546,7 @@ export async function rerollGiveaway(
     lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
     rerollCount: { increment: 1 },
     activityLog: appendGiveawayActivityLog(g.activityLog, "rerolled", {
-      eligiblePoolSize: relatedEvents.length,
+      eligiblePoolSize: eligibleAccountCount,
     }),
   });
 

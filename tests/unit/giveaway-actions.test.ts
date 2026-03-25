@@ -66,6 +66,8 @@ vi.mock("~/features/giveaway/giveaway-selection.server", () => ({
     mockRunGiveawaySelection(...args),
   runGiveawaySelectionPerEngagement: (...args: unknown[]) =>
     mockRunGiveawaySelectionPerEngagement(...args),
+  runGiveawayAccountPoolSelection: vi.fn(() => []),
+  countEligibleAccountsForEngagementTypes: vi.fn(() => 2),
 }));
 
 vi.mock(

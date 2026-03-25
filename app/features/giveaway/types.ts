@@ -118,6 +118,27 @@ export type GiveawayEngagementConfig = Partial<
 >;
 
 /**
+ * Simple payout mode: one pool of winners (any selected engagement type), same sats each.
+ * Stored in Json alongside per-type configs; selection uses {@link isSimpleUnifiedEngagementConfig}.
+ */
+export interface SimpleUnifiedEngagementConfig {
+  _simpleUnified: { satsPerWinner: number };
+}
+
+export function isSimpleUnifiedEngagementConfig(
+  config: unknown
+): config is SimpleUnifiedEngagementConfig {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return false;
+  }
+  const c = config as Record<string, unknown>;
+  const su = c["_simpleUnified"];
+  if (!su || typeof su !== "object" || Array.isArray(su)) return false;
+  const sats = (su as { satsPerWinner?: unknown }).satsPerWinner;
+  return typeof sats === "number" && sats >= 0;
+}
+
+/**
  * Single winner entry in winner snapshot (stored at lock).
  */
 export interface GiveawayWinnerEntry {

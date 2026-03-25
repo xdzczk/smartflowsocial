@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 import { ValidationError } from "~/lib/errors";
-import { normalizeLoaderResponseData } from "~/lib/validation/nostr-events.server";
+import { normalizeLoaderResponseData } from "~/lib/validation/normalize-loader-response-data";
 
 /**
  * Validate loader response data with Zod schema
@@ -46,7 +46,8 @@ export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
   schema: T
 ): z.infer<T> | null {
   try {
-    return schema.parse(data);
+    const normalizedData = normalizeLoaderResponseData(data);
+    return schema.parse(normalizedData);
   } catch {
     return null;
   }

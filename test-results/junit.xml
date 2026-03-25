@@ -1,17 +1,73 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.003747959">
-    <testsuite name="tests/unit/giveaway-selection.test.ts" timestamp="2026-03-25T14:38:31.326Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.003747959">
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; returns empty array when no related events" time="0.0015205">
+<testsuites name="vitest tests" tests="32" failures="0" errors="0" time="0.013608334">
+    <testsuite name="tests/unit/giveaway-actions.test.ts" timestamp="2026-03-25T15:12:17.163Z" hostname="Ivans-MacBook-Pro.local" tests="24" failures="0" errors="0" skipped="0" time="0.007967084">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns giveaway from repo" time="0.001498084">
         </testcase>
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; filters by engagement types and dedupes by pubkey" time="0.000646375">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; getGiveawayById &gt; returns null when not found" time="0.000157">
         </testcase>
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; respects winnerCount cap" time="0.000210834">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; calls repo create with expected shape" time="0.00116">
         </testcase>
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; runGiveawayAccountPoolSelection picks random unique pubkeys ignoring kind" time="0.000161708">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; createGiveaway &gt; throws when queue scope used and plan cannot use queue" time="0.000752958">
         </testcase>
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; supports WEIGHTED_BY_ENGAGEMENT selection mode" time="0.000140083">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when giveaway not found" time="0.000209083">
         </testcase>
-        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; runGiveawaySelectionPerEngagement avoids the same pubkey winning multiple types" time="0.000234833">
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; returns error when status is not DRAFT or PREVIEWED" time="0.000082542">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; fetches participants, runs selection, updates status and snapshot" time="0.000589584">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; previewGiveaway &gt; uses runGiveawaySelectionPerEngagement when engagementConfig present" time="0.00017175">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when not found" time="0.000102959">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; rerollGiveaway &gt; returns error when status is not PREVIEWED" time="0.000087625">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; returns error when not found" time="0.000136042">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; updates status to LOCKED when PREVIEWED and has winners (no fee)" time="0.000767875">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; rejects lock on free plan when fee due and not paid" time="0.000168333">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; locks when free plan fee is paid for current preview hash" time="0.000115625">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; lockGiveaway &gt; returns success when already LOCKED (idempotent)" time="0.000099333">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000082208">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; cancelGiveaway &gt; updates status to CANCELLED" time="0.000123458">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when status is not LOCKED" time="0.000101">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; returns error when winners pending and no override" time="0.00015075">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT when all winners settled" time="0.000124417">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; markGiveawayPaidOut &gt; updates status to PAID_OUT with override when pending" time="0.000118375">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; returns error when LOCKED or PAID_OUT" time="0.000077459">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; deleteGiveaway &gt; calls deleteGiveawayById when DRAFT" time="0.000072416">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-actions.test.ts" name="giveaway-actions &gt; listGiveawaysByUser &gt; returns list from repo" time="0.000093">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/giveaway-payout-budget.test.ts" timestamp="2026-03-25T15:12:17.166Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.00177625">
+        <testcase classname="tests/unit/giveaway-payout-budget.test.ts" name="budgetSatsFromGiveawayRow &gt; uses snapshot when present" time="0.000867834">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-payout-budget.test.ts" name="budgetSatsFromGiveawayRow &gt; computes from _simpleUnified and winnerCount when no snapshot" time="0.000137375">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/giveaway-selection.test.ts" timestamp="2026-03-25T15:12:17.166Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.003865">
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; returns empty array when no related events" time="0.001557333">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; filters by engagement types and dedupes by pubkey" time="0.000700084">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; respects winnerCount cap" time="0.000238541">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; runGiveawayAccountPoolSelection picks random unique pubkeys ignoring kind" time="0.0001765">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; supports WEIGHTED_BY_ENGAGEMENT selection mode" time="0.000147">
+        </testcase>
+        <testcase classname="tests/unit/giveaway-selection.test.ts" name="runGiveawaySelection &gt; runGiveawaySelectionPerEngagement avoids the same pubkey winning multiple types" time="0.000259375">
         </testcase>
     </testsuite>
 </testsuites>

@@ -2,7 +2,11 @@
  * Persisted per-winner payout state for locked giveaways (replaces client sessionStorage).
  */
 
-import type { GiveawayEngagementConfig, GiveawayWinnerEntry } from "./types";
+import {
+  isSimpleUnifiedEngagementConfig,
+  type GiveawayEngagementConfig,
+  type GiveawayWinnerEntry,
+} from "./types";
 
 export type GiveawayPayoutEntryStatus =
   | "pending"
@@ -112,10 +116,16 @@ export function totalSatsPaidFromState(
 export function budgetSatsFromGiveawayRow(g: {
   winnerSnapshot: unknown;
   engagementConfig: unknown;
+  winnerCount?: number;
 }): number {
   const snapshot = (g.winnerSnapshot as GiveawayWinnerEntry[] | null) ?? null;
   if (snapshot && snapshot.length > 0) {
     return totalSatsBudgetFromSnapshot(snapshot);
+  }
+  if (isSimpleUnifiedEngagementConfig(g.engagementConfig)) {
+    const sats = g.engagementConfig._simpleUnified.satsPerWinner;
+    const wc = typeof g.winnerCount === "number" ? g.winnerCount : 0;
+    return Math.max(0, sats * wc);
   }
   const conf = g.engagementConfig as GiveawayEngagementConfig | null;
   if (conf && typeof conf === "object") {

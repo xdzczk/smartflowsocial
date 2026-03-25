@@ -86,23 +86,6 @@ function parseScopeReference(
   return { scopeReference: {} };
 }
 
-/** Split total winners across engagement types as evenly as possible. */
-function distributeWinnersAcrossTypes(
-  total: number,
-  types: string[]
-): Record<string, number> {
-  const n = types.length;
-  if (n === 0 || total <= 0) return {};
-  const out: Record<string, number> = {};
-  for (let i = 0; i < n; i++) {
-    const t = types[i];
-    if (!t) continue;
-    const w = Math.floor(total / n) + (i < total % n ? 1 : 0);
-    if (w > 0) out[t] = w;
-  }
-  return out;
-}
-
 const ENGAGEMENT_TYPE_ALLOWLIST = [
   "REACTION",
   "REPOST",
@@ -115,10 +98,9 @@ type EngagementWinnersResult =
       engagementTypes: string[];
       winnerCount: number;
       selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
-      engagementConfig?: Record<
-        string,
-        { winnerCount: number; satsPerWinner: number }
-      >;
+      engagementConfig?:
+        | Record<string, { winnerCount: number; satsPerWinner: number }>
+        | { _simpleUnified: { satsPerWinner: number } };
     }
   | { error: string; status: 400 };
 
@@ -154,29 +136,11 @@ function parseSimpleSatsEngagementResult(
   simpleSats: number,
   selectionModeResolved: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT"
 ): EngagementWinnersResult {
-  const parts = distributeWinnersAcrossTypes(winnerCount, engagementTypes);
-  const engagementConfig: Record<
-    string,
-    { winnerCount: number; satsPerWinner: number }
-  > = {};
-  for (const t of engagementTypes) {
-    const w = parts[t] ?? 0;
-    if (w > 0) {
-      engagementConfig[t] = {
-        winnerCount: w,
-        satsPerWinner: simpleSats,
-      };
-    }
-  }
-  const sum = Object.values(engagementConfig).reduce(
-    (a, c) => a + c.winnerCount,
-    0
-  );
   return {
     engagementTypes,
-    winnerCount: sum > 0 ? sum : winnerCount,
+    winnerCount,
     selectionMode: selectionModeResolved,
-    ...(Object.keys(engagementConfig).length > 0 ? { engagementConfig } : {}),
+    engagementConfig: { _simpleUnified: { satsPerWinner: simpleSats } },
   };
 }
 

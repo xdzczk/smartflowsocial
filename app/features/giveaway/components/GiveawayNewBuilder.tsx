@@ -132,7 +132,6 @@ function GiveawayNewBuilderStickySummary({
   simpleSats,
   summary,
   selectionMode,
-  typeCount,
   planDisplayName,
   plannedPayoutForFee,
   feePreview,
@@ -152,7 +151,6 @@ function GiveawayNewBuilderStickySummary({
     engagementLine: string;
   };
   selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
-  typeCount: number;
   planDisplayName: string;
   plannedPayoutForFee: number | null;
   feePreview: {
@@ -187,11 +185,6 @@ function GiveawayNewBuilderStickySummary({
           <div>
             <span className="text-foreground font-medium">Winners · </span>
             {winnerCount} total
-            {!isFollowGraphScope && rewardMode === "simple" && typeCount > 1 ? (
-              <span className="block text-xs">
-                (split across {typeCount} types in the backend)
-              </span>
-            ) : null}
           </div>
           <div>
             <span className="text-foreground font-medium">Rewards · </span>
@@ -446,8 +439,6 @@ export function GiveawayNewBuilder({
   const selectedTypes = ENGAGEMENT_META.filter(
     (m) => effectiveEngagement[m.value]
   ).map((m) => m.value);
-  const typeCount = Math.max(1, selectedTypes.length);
-
   const summary = useMemo(() => {
     const maxPayout =
       effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
@@ -1019,7 +1010,6 @@ export function GiveawayNewBuilder({
           simpleSats={simpleSats}
           summary={summary}
           selectionMode={effectiveSelectionMode}
-          typeCount={typeCount}
           planDisplayName={planDisplayName}
           plannedPayoutForFee={plannedPayoutForFee}
           feePreview={feePreview}

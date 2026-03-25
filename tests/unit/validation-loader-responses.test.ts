@@ -276,5 +276,40 @@ describe("Loader Response Validation", () => {
       const result = safeValidateLoaderResponse(data, schema);
       expect(result).toBeNull();
     });
+
+    it("normalizes Prisma-style object tags on nested signedEvent before parse", () => {
+      const schema = z.object({
+        posts: z.array(
+          z.object({
+            id: z.string(),
+            signedEvent: z
+              .object({
+                id: z.string(),
+                tags: z.array(z.array(z.string())),
+              })
+              .passthrough(),
+          })
+        ),
+      });
+
+      const data = {
+        posts: [
+          {
+            id: "p1",
+            signedEvent: {
+              id: "ev1",
+              tags: {
+                "0": { "0": "e", "1": "eventid" },
+              },
+            },
+          },
+        ],
+      };
+
+      const result = safeValidateLoaderResponse(data, schema);
+
+      expect(result).not.toBeNull();
+      expect(result?.posts[0]?.signedEvent.tags).toEqual([["e", "eventid"]]);
+    });
   });
 });
