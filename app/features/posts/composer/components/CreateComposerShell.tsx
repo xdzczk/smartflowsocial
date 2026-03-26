@@ -4,7 +4,6 @@ import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
 
 import type { ComposerPublishMode } from "./composer";
-import { getPrimaryCtaLabelForMode } from "./composer";
 
 type CreateComposerContentType = "post" | "poll" | "thread" | "article";
 
@@ -18,7 +17,8 @@ interface CreateComposerShellProps {
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   draftStateLabel?: string;
   showPublishModeBar?: boolean;
-  showPrimaryCta?: boolean;
+  title?: string;
+  metadataItems?: string[];
   children: React.ReactNode;
 }
 
@@ -40,16 +40,19 @@ export function CreateComposerShell({
   onPublishModeChange,
   draftStateLabel = "Draft idle",
   showPublishModeBar = true,
-  showPrimaryCta = true,
+  title = "Create post",
+  metadataItems = [],
   children,
 }: CreateComposerShellProps) {
   return (
     <div className="p-6">
-      <div className="bg-background/95 sticky top-0 z-20 mb-4 space-y-3 border-b pb-3 backdrop-blur">
+      <div className="bg-background/95 mb-4 space-y-3 border-b pb-3 backdrop-blur">
         <NewPostHeader
           status={status}
           relayCount={relayCount}
           onRelayClick={onRelayClick}
+          title={title}
+          metadataItems={metadataItems}
         />
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -89,7 +92,6 @@ export function CreateComposerShell({
                   ["now", "Now"],
                   ["schedule", "Schedule"],
                   ["queue", "Queue"],
-                  ["draft", "Draft"],
                 ] as const
               ).map(([modeValue, modeLabel]) => (
                 <button
@@ -104,19 +106,6 @@ export function CreateComposerShell({
             </div>
             <div className="text-muted-foreground flex items-center gap-3 text-xs">
               <span>{draftStateLabel}</span>
-              {showPrimaryCta ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.dispatchEvent(
-                      new CustomEvent("composer:primary-action")
-                    )
-                  }
-                  className="bg-success hover:bg-success/90 rounded-md px-3 py-1.5 font-medium text-white"
-                >
-                  {getPrimaryCtaLabelForMode(publishMode, contentType)}
-                </button>
-              ) : null}
             </div>
           </div>
         ) : null}

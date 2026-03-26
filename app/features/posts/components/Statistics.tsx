@@ -80,7 +80,7 @@ export default function Statistics({
       <Card className={cardBase} style={kpiColorStyle("#a855f7")}>
         <CardContent className="p-0">
           <Link
-            to="/dashboard/newpost"
+            to="/dashboard/compose?type=post"
             className={contentBase}
             aria-label="Compose, Add to Flow"
           >

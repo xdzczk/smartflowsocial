@@ -36,8 +36,8 @@ export function TemplateDetailsModal({
 
   const useTemplateHref =
     template.templateType === "LONGFORM"
-      ? `/dashboard/newlongformpost?templateId=${encodeURIComponent(template.id)}`
-      : `/dashboard/newpost?templateId=${encodeURIComponent(template.id)}`;
+      ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(template.id)}`
+      : `/dashboard/compose?type=post&templateId=${encodeURIComponent(template.id)}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

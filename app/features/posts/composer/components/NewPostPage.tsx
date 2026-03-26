@@ -266,6 +266,7 @@ export function parseNewPostLoaderData(
   };
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Page orchestrator intentionally coordinates tabs, route params, modals, and publish state in one place. */
 export default function NewPostPage() {
   const {
     typedQueueTypes,
@@ -343,6 +344,26 @@ export default function NewPostPage() {
       ? selectedRelayUrls.length
       : defaultRelays.length;
 
+  const title =
+    initialDraftId != null
+      ? publishMode === "queue"
+        ? "Edit queue post"
+        : publishMode === "schedule"
+          ? "Edit scheduled post"
+          : "Edit draft"
+      : composerTab === "poll"
+        ? "Create poll"
+        : composerTab === "thread"
+          ? "Create thread"
+          : "Create post";
+
+  const metadataItems = [
+    `Signer: ${composerStatus === "Signing…" ? "Connecting..." : "NIP-07"}`,
+    `Saved: ${draftStateLabel}`,
+    publishMode === "queue" ? "Publish: Queue mode" : null,
+    publishMode === "schedule" ? "Publish: Scheduled" : null,
+  ].filter((item): item is string => item != null);
+
   useNewPostPublishModalEffect({
     searchParams,
     setSearchParams,
@@ -374,7 +395,7 @@ export default function NewPostPage() {
       contentType={composerTab}
       onContentTypeChange={(next) => {
         if (next === "article") {
-          navigate("/dashboard/newlongformpost?type=article");
+          navigate("/dashboard/compose?type=article");
           return;
         }
         setComposerTab(next);
@@ -382,7 +403,8 @@ export default function NewPostPage() {
       publishMode={publishMode}
       onPublishModeChange={setPublishMode}
       draftStateLabel={draftStateLabel}
-      showPrimaryCta
+      title={title}
+      metadataItems={metadataItems}
     >
       <div>
         {templates.length > 0 ? (
@@ -401,7 +423,7 @@ export default function NewPostPage() {
                 const id = e.target.value;
                 if (id)
                   navigate(
-                    `/dashboard/newpost?templateId=${encodeURIComponent(id)}`
+                    `/dashboard/compose?templateId=${encodeURIComponent(id)}`
                   );
               }}
             >
@@ -481,7 +503,7 @@ export default function NewPostPage() {
                 ? "composer-newpost-thread-draft"
                 : "composer-newpost-post-draft"
             }
-            draftPickerNavigateBase={`/dashboard/newpost?type=${composerTab === "thread" ? "thread" : "post"}`}
+            draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
             newPostContentTab={composerTab === "thread" ? "thread" : "post"}
             publishMode={publishMode}
             onDraftStateLabelChange={setDraftStateLabel}

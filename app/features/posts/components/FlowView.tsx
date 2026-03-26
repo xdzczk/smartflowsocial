@@ -379,10 +379,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           return (
             <div className="flex flex-shrink-0 items-stretch px-0.5">
               <Link
-                to="/dashboard/newpost"
+                to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
                 className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-ring flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px]"
-                aria-label="Create a new post"
+                aria-label="Open composer"
               >
                 <Plus
                   className="text-muted-foreground h-12 w-12 md:h-14 md:w-14"
@@ -390,7 +390,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                 />
                 <div className="flex flex-col items-start gap-0.5 text-left">
                   <span className="text-foreground font-semibold">
-                    Create new post
+                    Open composer
                   </span>
                   <span className="text-muted-foreground/90 text-sm">
                     Schedule or publish
@@ -451,10 +451,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             flow.
           </p>
           <Link
-            to="/dashboard/newpost"
+            to="/dashboard/compose?type=post"
             className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
           >
-            Create post
+            Open composer
           </Link>
         </div>
       );

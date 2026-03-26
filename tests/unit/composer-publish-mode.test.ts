@@ -6,20 +6,25 @@ import {
 } from "~/features/posts/composer/components/composer/publish-mode";
 
 describe("composer publish mode helpers", () => {
-  it("returns save draft CTA for draft mode", () => {
-    expect(getPrimaryCtaLabelForMode("draft", "post")).toBe("Save draft");
-    expect(getPrimaryCtaLabelForMode("draft", "poll")).toBe("Save draft");
-    expect(getPrimaryCtaLabelForMode("draft", "thread")).toBe("Save draft");
-    expect(getPrimaryCtaLabelForMode("draft", "article")).toBe("Save draft");
-  });
-
-  it("returns article-specific CTA for article now mode", () => {
-    expect(getPrimaryCtaLabelForMode("now", "article")).toBe(
-      "Publish article now"
+  it("returns queue CTA for queue mode", () => {
+    expect(getPrimaryCtaLabelForMode("queue", "post")).toBe("Add to queue");
+    expect(getPrimaryCtaLabelForMode("queue", "thread")).toBe(
+      "Add thread to queue"
     );
   });
 
-  it("does not map poll draft mode to server submit action", () => {
-    expect(getPollSubmitActionForMode("draft")).toBeNull();
+  it("returns article-specific CTA for article now mode", () => {
+    expect(getPrimaryCtaLabelForMode("now", "article")).toBe("Publish article");
+    expect(getPrimaryCtaLabelForMode("schedule", "article")).toBe(
+      "Schedule article"
+    );
+    expect(getPrimaryCtaLabelForMode("queue", "article")).toBe(
+      "Add article to queue"
+    );
+  });
+
+  it("maps poll modes to submit actions", () => {
+    expect(getPollSubmitActionForMode("now")).toBe("post-poll");
+    expect(getPollSubmitActionForMode("queue")).toBe("schedule-poll");
   });
 });

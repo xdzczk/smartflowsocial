@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.001669542">
-    <testsuite name="tests/unit/composer-publish-mode.test.ts" timestamp="2026-03-26T14:02:43.939Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001669542">
-        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; returns save draft CTA for draft mode" time="0.000743083">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.003858">
+    <testsuite name="tests/unit/composer-publish-mode.test.ts" timestamp="2026-03-26T15:15:15.042Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001873">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; returns queue CTA for queue mode" time="0.000842791">
         </testcase>
-        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; returns article-specific CTA for article now mode" time="0.0001475">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; returns article-specific CTA for article now mode" time="0.000164625">
         </testcase>
-        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; does not map poll draft mode to server submit action" time="0.000092667">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; maps poll modes to submit actions" time="0.000122041">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-26T15:15:15.043Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001985">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000736625">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000164208">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000418625">
         </testcase>
     </testsuite>
 </testsuites>

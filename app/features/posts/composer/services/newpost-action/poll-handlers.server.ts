@@ -124,13 +124,13 @@ export async function handlePostOrSchedulePoll(
     if (isContestEmbedRequest(formData)) {
       return await jsonContestEmbedPost(userId, result.post.id);
     }
-    return redirect(`/dashboard/newpost?published=${result.post.id}`);
+    return redirect(`/dashboard/compose?type=poll&published=${result.post.id}`);
   }
 
   if (isContestEmbedRequest(formData)) {
     return await jsonContestEmbedPost(userId, result.post.id);
   }
-  return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
+  return redirect(`/dashboard/compose?type=poll&scheduled=${result.post.id}`);
 }
 
 /**

@@ -95,10 +95,14 @@ export async function handlePostCreation(
     });
 
     // Stay on current page and show modal there
-    return { redirect: `/dashboard/newpost?published=${result.post.id}` };
+    return {
+      redirect: `/dashboard/compose?type=post&published=${result.post.id}`,
+    };
   }
 
   // schedule - post will be scheduled via outbox pattern
   // Stay on current page and show modal there
-  return { redirect: `/dashboard/newpost?scheduled=${result.post.id}` };
+  return {
+    redirect: `/dashboard/compose?type=post&scheduled=${result.post.id}`,
+  };
 }

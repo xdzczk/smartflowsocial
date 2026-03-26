@@ -78,7 +78,7 @@ export function EmptySlotCreateMenu({
   const navigate = useNavigate();
   const scheduledAt = `${dateKey}T${time}`;
   const q = (path: string) =>
-    `${path}?scheduledAt=${encodeURIComponent(scheduledAt)}`;
+    `${path}${path.includes("?") ? "&" : "?"}scheduledAt=${encodeURIComponent(scheduledAt)}`;
 
   return (
     <DropdownMenu
@@ -99,18 +99,18 @@ export function EmptySlotCreateMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="right" sideOffset={4}>
         <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/newpost"))}
+          onSelect={() => navigate(q("/dashboard/compose?type=post"))}
           className="flex items-center gap-2"
         >
           <MessageSquare className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
-          New Post
+          Composer (Post)
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/newlongformpost"))}
+          onSelect={() => navigate(q("/dashboard/compose?type=article"))}
           className="flex items-center gap-2"
         >
           <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
-          New Article
+          Composer (Article)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -163,7 +163,7 @@ export function EmptySlotCellContent({
         })
       }
       tabIndex={isFutureSlot ? 0 : -1}
-      aria-label={isFutureSlot ? "Create post in this slot" : undefined}
+      aria-label={isFutureSlot ? "Open composer in this slot" : undefined}
     >
       {isFutureSlot && isActive ? (
         <EmptySlotCreateMenu
@@ -231,7 +231,7 @@ export function DayViewEmptyColumnArea({
       }
       role="button"
       tabIndex={isFutureSlot ? 0 : -1}
-      aria-label={isFutureSlot ? "Create post in this slot" : undefined}
+      aria-label={isFutureSlot ? "Open composer in this slot" : undefined}
     >
       {isFutureSlot && isActive ? (
         <EmptySlotCreateMenu

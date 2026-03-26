@@ -385,11 +385,11 @@ export async function handlePostOrScheduleText({
       return await jsonContestEmbedPost(userId, result.post.id);
     }
     // Stay on current page and show modal there
-    return redirect(`/dashboard/newpost?published=${result.post.id}`);
+    return redirect(`/dashboard/compose?type=post&published=${result.post.id}`);
   }
   // schedule-text - post will be scheduled via outbox pattern
   if (isContestEmbedRequest(formData)) {
     return await jsonContestEmbedPost(userId, result.post.id);
   }
-  return redirect(`/dashboard/newpost?scheduled=${result.post.id}`);
+  return redirect(`/dashboard/compose?type=post&scheduled=${result.post.id}`);
 }

@@ -19,10 +19,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  ConfidencePanel,
-  PanelContent,
-} from "~/features/posts/components/ConfidencePanel";
+import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
@@ -47,20 +44,21 @@ import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 
 import {
-  ComposerActionButtons,
   ComposerErrors,
   ComposerQueueField,
   ComposerScheduleField,
   type ComposerPublishMode,
-  getTextSubmitActionForMode,
+  getPrimaryCtaLabelForMode,
+  getReadinessLabel,
+  buildDeliveryLines,
+  buildPostContentLines,
+  buildThreadContentLines,
+  buildPublishPathLines,
 } from "./composer";
 import {
   ACCEPTED_MEDIA_TYPES,
   filterMediaFiles,
   getQueueNextSlotLabel,
-  getRelativeTime,
-  getScheduleTimeLabel,
-  getSummaryLine,
 } from "./composer/composer-helpers";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
@@ -112,11 +110,11 @@ export interface UnifiedComposerProps {
   skipLocalDraftRestore?: boolean;
   /** Schedule intervals from route loader (e.g. new post). Used when user is not yet available so time chips show on first paint. */
   scheduleIntervals?: number[];
-  /** POST target for the composer form (default: current route). Use `/dashboard/newpost` when embedding. */
+  /** POST target for the composer form (default: current route). Use `/dashboard/compose?type=post` when embedding. */
   formAction?: string;
   /** localStorage key for autosave draft (default: composer-newpost-draft). */
   localDraftStorageKey?: string;
-  /** Base path for "Drafts" navigation (default: /dashboard/newpost). */
+  /** Base path for "Drafts" navigation (default: /dashboard/compose). */
   draftPickerNavigateBase?: string;
   /** When set, sends `_embedContext` so newpost action can return JSON instead of redirecting. */
   embedContext?: "contest";
@@ -156,7 +154,7 @@ export function UnifiedComposer({
   scheduleIntervals: scheduleIntervalsProp,
   formAction,
   localDraftStorageKey = "composer-newpost-draft",
-  draftPickerNavigateBase = "/dashboard/newpost",
+  draftPickerNavigateBase = "/dashboard/compose",
   embedContext,
   onEmbedPublishSuccess,
   embeddedDensity,
@@ -793,16 +791,11 @@ export function UnifiedComposer({
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
-  const submitActionValue = getTextSubmitActionForMode(publishMode);
   const showScheduleControls =
     publishMode === "schedule" || publishMode === "queue";
   const showQueueControls =
     publishMode === "queue" || publishMode === "schedule";
 
-  const scheduleValForLabel = (
-    formScheduledFor ?? schedulingScheduledFor
-  ).trim();
-  const scheduleTimeLabel = getScheduleTimeLabel(scheduleValForLabel);
   const publishBlockers: string[] = [];
   if (signerReady === false) publishBlockers.push("Signer not connected");
   if (!canSubmit)
@@ -823,10 +816,54 @@ export function UnifiedComposer({
       : relayOverride && relayOverride.length > 0
         ? relayOverride.length
         : relayCountProp;
-  const publishInfo: string[] = [
-    `Mode: ${publishMode}`,
-    `${relayCount} relay${relayCount !== 1 ? "s" : ""} selected`,
-  ];
+  const issueList = [...publishBlockers];
+  if (!hasContent) {
+    issueList.push(
+      isThreadMode
+        ? "Add content to at least one thread segment."
+        : "Add text or media to continue."
+    );
+  }
+  if (relayCount <= 0) {
+    issueList.push("Select at least one relay.");
+  }
+  const readinessLabel = getReadinessLabel(publishMode, issueList, signerReady);
+  const deliveryLines = buildDeliveryLines({
+    publishMode,
+    relayCount,
+    signerLabel,
+    scheduledFor: formScheduledFor ?? schedulingScheduledFor,
+    timezone: user?.timezone ?? "UTC",
+    selectedQueue,
+    nextSlot:
+      selectedQueueType &&
+      typeof selectedQueueType === "object" &&
+      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+        ? getQueueNextSlotLabel(formScheduledFor ?? schedulingScheduledFor)
+        : undefined,
+    randomizationLabel:
+      scheduleRandomWindowMinutes > 0
+        ? `±${scheduleRandomWindowMinutes}m`
+        : "Off",
+  });
+  const contentLines = isThreadMode
+    ? buildThreadContentLines(
+        threadSegments.length,
+        threadSegments.reduce((acc, s) => acc + s.content.length, 0),
+        threadSegments.reduce((acc, s) => acc + s.attachments.length, 0),
+        threadDelayMinutes
+      )
+    : buildPostContentLines(
+        content.length,
+        attachments.length,
+        selectedHashtags || null
+      );
+  const publishPathLines = buildPublishPathLines(
+    relayCount,
+    signerLabel,
+    selectedQueue
+  );
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -844,19 +881,6 @@ export function UnifiedComposer({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [disabled, signerReady]);
-
-  useEffect(() => {
-    const onPrimaryAction = () => {
-      if (publishMode === "draft") {
-        draftSubmitRef.current?.click();
-        return;
-      }
-      primarySubmitRef.current?.click();
-    };
-    window.addEventListener("composer:primary-action", onPrimaryAction);
-    return () =>
-      window.removeEventListener("composer:primary-action", onPrimaryAction);
-  }, [publishMode]);
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
@@ -1201,97 +1225,11 @@ export function UnifiedComposer({
                         : undefined
                     }
                   />
-                  <div className="border-border space-y-2 border-t pt-3">
-                    <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                      Publish status
-                    </h4>
-                    <PanelContent
-                      queueName={selectedQueue}
-                      nextSlot={
-                        selectedQueueType &&
-                        typeof selectedQueueType === "object" &&
-                        (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                          selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                          ? (
-                              formScheduledFor ?? schedulingScheduledFor
-                            ).trim() || undefined
-                          : undefined
-                      }
-                      scheduledFor={
-                        (formScheduledFor ?? schedulingScheduledFor).trim() ||
-                        undefined
-                      }
-                      timezone={user?.timezone ?? undefined}
-                      relativeTime={getRelativeTime(
-                        formScheduledFor ?? schedulingScheduledFor
-                      )}
-                      charCount={
-                        isThreadMode
-                          ? threadSegments.reduce(
-                              (acc, s) => acc + s.content.length,
-                              0
-                            )
-                          : content.length
-                      }
-                      attachmentCount={
-                        isThreadMode
-                          ? threadSegments.reduce(
-                              (acc, s) => acc + s.attachments.length,
-                              0
-                            )
-                          : attachments.length
-                      }
-                      signerType={signerLabel ?? undefined}
-                      relayCount={relayCount}
-                      summaryLine={getSummaryLine(
-                        selectedQueue,
-                        formScheduledFor ?? schedulingScheduledFor,
-                        isThreadMode,
-                        threadSegments.length,
-                        threadDelayMinutes
-                      )}
-                      threadSummary={
-                        isThreadMode
-                          ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
-                          : undefined
-                      }
-                      blockers={publishBlockers}
-                      warnings={publishWarnings}
-                      info={publishInfo}
-                      usesQueueSlot={
-                        !!(
-                          selectedQueueType &&
-                          typeof selectedQueueType === "object" &&
-                          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                            selectedQueueType.scheduleType ===
-                              "WEEKLY_SLOTS") &&
-                          (formScheduledFor ?? schedulingScheduledFor).trim()
-                        )
-                      }
-                    />
+                  <div className="border-border text-muted-foreground border-t pt-3 text-xs">
+                    Publishing summary moved to the right rail.
                   </div>
                 </div>
               ) : null}
-            </div>
-            <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center sm:justify-end">
-              <ComposerActionButtons
-                isTemplateMode={isTemplateMode}
-                primarySubmitRef={primarySubmitRef}
-                draftSubmitRef={draftSubmitRef}
-                disabled={disabled}
-                signerReady={signerReady}
-                hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
-                submitActionValue={submitActionValue}
-                scheduleTimeLabel={scheduleTimeLabel}
-                isThreadMode={isThreadMode}
-                segmentCount={threadSegments.length}
-                threadDelayMinutes={threadDelayMinutes}
-                isSigning={isSigning}
-                fetcherState={fetcher.state}
-                templateName={templateName}
-                editTemplateContext={editTemplateContext}
-                publishMode={publishMode}
-              />
             </div>
           </div>
         ) : !isTemplateMode ? (
@@ -1420,83 +1358,36 @@ export function UnifiedComposer({
                 />
               ) : null}
             </div>
-            <div className="max-sm:bg-background/95 flex flex-col gap-2 max-sm:sticky max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-10 max-sm:mt-4 max-sm:border-t max-sm:py-3 max-sm:backdrop-blur sm:flex-row sm:items-center">
-              <ComposerActionButtons
-                isTemplateMode={isTemplateMode}
-                primarySubmitRef={primarySubmitRef}
-                draftSubmitRef={draftSubmitRef}
-                disabled={disabled}
-                signerReady={signerReady}
-                hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
-                submitActionValue={submitActionValue}
-                scheduleTimeLabel={scheduleTimeLabel}
-                isThreadMode={isThreadMode}
-                segmentCount={threadSegments.length}
-                threadDelayMinutes={threadDelayMinutes}
-                isSigning={isSigning}
-                fetcherState={fetcher.state}
-                templateName={templateName}
-                editTemplateContext={editTemplateContext}
-                publishMode={publishMode}
-              />
-            </div>
           </div>
         ) : null}
       </fetcher.Form>
       {!isContestLite ? (
-        <ConfidencePanel
-          queueName={selectedQueue}
-          nextSlot={
-            selectedQueueType &&
-            typeof selectedQueueType === "object" &&
-            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-              selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-              ? (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
-              : undefined
-          }
-          scheduledFor={
-            (formScheduledFor ?? schedulingScheduledFor).trim() || undefined
-          }
-          timezone={user?.timezone ?? undefined}
-          relativeTime={getRelativeTime(
-            formScheduledFor ?? schedulingScheduledFor
-          )}
-          charCount={
-            isThreadMode
-              ? threadSegments.reduce((acc, s) => acc + s.content.length, 0)
-              : content.length
-          }
-          attachmentCount={
-            isThreadMode
-              ? threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)
-              : attachments.length
-          }
-          signerType={signerLabel ?? undefined}
-          relayCount={relayCount}
-          summaryLine={getSummaryLine(
-            selectedQueue,
-            formScheduledFor ?? schedulingScheduledFor,
-            isThreadMode,
-            threadSegments.length,
-            threadDelayMinutes
-          )}
-          threadSummary={
-            isThreadMode
-              ? `${threadSegments.length} segments · every ${threadDelayMinutes} min`
-              : undefined
-          }
-          blockers={publishBlockers}
+        <PublishingSummaryRail
+          readinessLabel={readinessLabel}
+          deliverySection={{ title: "Delivery", lines: deliveryLines }}
+          contentSection={{ title: "Content", lines: contentLines }}
+          publishPathSection={{
+            title: "Publish path",
+            lines: publishPathLines,
+          }}
+          issues={issueList}
           warnings={publishWarnings}
-          info={publishInfo}
-          usesQueueSlot={
-            !!(
-              selectedQueueType &&
-              typeof selectedQueueType === "object" &&
-              (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
-              (formScheduledFor ?? schedulingScheduledFor).trim()
-            )
+          saveStateLabel={
+            fetcher.state === "idle" ? "Saved locally" : "Saving..."
           }
+          primaryActionLabel={getPrimaryCtaLabelForMode(
+            publishMode,
+            isThreadMode ? "thread" : "post"
+          )}
+          onPrimaryAction={() => primarySubmitRef.current?.click()}
+          primaryActionDisabled={
+            disabled || signerReady === false || issueList.length > 0
+          }
+          secondaryActionLabel={isTemplateMode ? undefined : "Save draft"}
+          onSecondaryAction={
+            isTemplateMode ? undefined : () => draftSubmitRef.current?.click()
+          }
+          secondaryActionDisabled={disabled}
         />
       ) : null}
       <DraftPickerModal

@@ -13,7 +13,7 @@ export function NewLongFormHeader({
   return (
     <header className="mx-auto w-full max-w-[760px] px-4 pt-6">
       <h1 className="text-muted-foreground text-sm font-medium tracking-tight">
-        New article
+        Composer - Article
       </h1>
     </header>
   );

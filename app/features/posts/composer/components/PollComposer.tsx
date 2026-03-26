@@ -2,22 +2,21 @@
  * NIP-88 poll composer (kind 1068): question, options, schedule/publish via newpost action.
  */
 
-import { useFetcher, Link } from "@remix-run/react";
-import { BarChart3, Clock, Plus, Send, Trash2 } from "lucide-react";
+import { useFetcher } from "@remix-run/react";
+import { BarChart3, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
+import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import type { QueueType } from "~/features/posts/types";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis } from "~/lib/temporal";
@@ -30,14 +29,14 @@ import {
   ComposerErrors,
   ComposerQueueField,
   type ComposerPublishMode,
+  buildDeliveryLines,
+  buildPollContentLines,
+  buildPublishPathLines,
+  getReadinessLabel,
   getPollSubmitActionForMode,
   getPrimaryCtaLabelForMode,
 } from "./composer";
-import {
-  getQueueNextSlotLabel,
-  getRelativeTime,
-  getSummaryLine,
-} from "./composer/composer-helpers";
+import { getQueueNextSlotLabel } from "./composer/composer-helpers";
 import {
   ACTION_POST_POLL,
   ACTION_SCHEDULE_POLL,
@@ -231,9 +230,6 @@ export function PollComposer({
 
   const disabled = isSubmitting || isSigning;
 
-  const primarySubmitRef = useRef<HTMLButtonElement>(null);
-  const saveDraftButtonRef = useRef<HTMLButtonElement>(null);
-
   async function submitPoll(actionType: string): Promise<void> {
     setSigningError(null);
     setLastPublishFailed(false);
@@ -338,6 +334,33 @@ export function PollComposer({
   if (publishMode === "queue" && selectedQueue === "unassigned") {
     warnings.push("Queue mode selected without a queue");
   }
+  if (relayCount <= 0) blockers.push("No relays selected");
+  const readinessLabel = getReadinessLabel(publishMode, blockers, user != null);
+  const deliveryLines = buildDeliveryLines({
+    publishMode,
+    relayCount,
+    signerLabel: user != null ? "NIP-07" : "Not connected",
+    scheduledFor,
+    timezone: userTimezone,
+    selectedQueue,
+    nextSlot:
+      selectedQueueType &&
+      typeof selectedQueueType === "object" &&
+      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+        ? getQueueNextSlotLabel(scheduledFor)
+        : undefined,
+  });
+  const contentLines = buildPollContentLines(
+    question.length,
+    trimmedOptions.length,
+    selectedHashtags
+  );
+  const publishPathLines = buildPublishPathLines(
+    relayCount,
+    user != null ? "NIP-07" : "Not connected",
+    selectedQueue
+  );
 
   useEffect(() => {
     if (
@@ -444,25 +467,8 @@ export function PollComposer({
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
-    if (publishMode === "draft" && fetcher.state === "idle") {
-      onDraftStateLabelChange("Draft ready");
-      return;
-    }
     onDraftStateLabelChange(isSubmitting ? "Saving..." : "Saved");
-  }, [isSubmitting, onDraftStateLabelChange, publishMode, fetcher.state]);
-
-  useEffect(() => {
-    const onPrimaryAction = () => {
-      if (publishMode === "draft") {
-        saveDraftButtonRef.current?.click();
-        return;
-      }
-      primarySubmitRef.current?.click();
-    };
-    window.addEventListener("composer:primary-action", onPrimaryAction);
-    return () =>
-      window.removeEventListener("composer:primary-action", onPrimaryAction);
-  }, [publishMode]);
+  }, [isSubmitting, onDraftStateLabelChange]);
 
   useEffect(() => {
     if (fetcher.state !== "idle") return;
@@ -494,7 +500,9 @@ export function PollComposer({
               setSigningError(null);
               setLastPublishFailed(false);
             }}
-            onRetry={() => primarySubmitRef.current?.click()}
+            onRetry={() => {
+              void submitPoll(pollAction);
+            }}
             disabled={disabled}
             signerReady={user != null}
           />
@@ -690,105 +698,53 @@ export function PollComposer({
             Recyclable post
           </label>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              ref={saveDraftButtonRef}
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              onClick={() => {
-                flushPollDraftSnapshot({
-                  question,
-                  options,
-                  pollType,
-                  endsAtLocal,
-                  selectedHashtags,
-                  hashTagPresetId,
-                  isRecyclable,
-                  selectedQueue,
-                  scheduledFor,
-                  publishMode,
-                });
-                onDraftStateLabelChange?.("Saved locally");
-                trackComposerEvent("composer_draft_saved", {
-                  source: "poll",
-                  mode: "local",
-                });
-              }}
-            >
-              Save draft
-            </Button>
-            {user == null ? (
-              <Button variant="default" asChild>
-                <Link to="/dashboard/settings">Connect signer</Link>
-              </Button>
-            ) : (
-              <Button
-                ref={primarySubmitRef}
-                type="button"
-                className="bg-success hover:bg-success/90 text-white"
-                disabled={
-                  disabled ||
-                  !hasContent ||
-                  !canSubmit ||
-                  pollAction == null ||
-                  (pollAction === ACTION_SCHEDULE_POLL && !hasScheduleTime) ||
-                  publishMode === "draft"
-                }
-                onClick={() => {
-                  if (pollAction == null) return;
-                  void submitPoll(pollAction);
-                }}
-              >
-                {pollAction === ACTION_SCHEDULE_POLL ? (
-                  <Clock
-                    className="mr-1.5 h-5 w-5"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                ) : (
-                  <Send
-                    className="mr-1.5 h-5 w-5"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                )}
-                {primaryLabel}
-              </Button>
-            )}
+          <div className="text-muted-foreground text-xs">
+            Primary publish action is available in the Publishing Summary rail.
           </div>
         </div>
       </div>
 
-      <ConfidencePanel
-        queueName={selectedQueue}
-        nextSlot={
-          selectedQueueType &&
-          typeof selectedQueueType === "object" &&
-          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-            selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-            ? scheduledFor.trim() || undefined
-            : undefined
-        }
-        scheduledFor={scheduledFor.trim() || undefined}
-        timezone={user?.timezone ?? undefined}
-        relativeTime={getRelativeTime(scheduledFor)}
-        charCount={question.length}
-        attachmentCount={0}
-        relayCount={relayCount}
-        summaryLine={getSummaryLine(selectedQueue, scheduledFor, false, 1, 0)}
-        blockers={blockers}
+      <PublishingSummaryRail
+        readinessLabel={readinessLabel}
+        deliverySection={{ title: "Delivery", lines: deliveryLines }}
+        contentSection={{ title: "Content", lines: contentLines }}
+        publishPathSection={{ title: "Publish path", lines: publishPathLines }}
+        issues={blockers}
         warnings={warnings}
-        info={[`Mode: ${publishMode}`]}
-        usesQueueSlot={
-          !!(
-            selectedQueueType &&
-            typeof selectedQueueType === "object" &&
-            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-              selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
-            scheduledFor.trim()
-          )
+        saveStateLabel={isSubmitting ? "Saving..." : "Saved locally"}
+        primaryActionLabel={primaryLabel}
+        onPrimaryAction={() => {
+          if (user == null) return;
+          void submitPoll(pollAction);
+        }}
+        primaryActionDisabled={
+          user == null ||
+          disabled ||
+          !hasContent ||
+          !canSubmit ||
+          (pollAction === ACTION_SCHEDULE_POLL && !hasScheduleTime)
         }
+        secondaryActionLabel="Save draft"
+        onSecondaryAction={() => {
+          flushPollDraftSnapshot({
+            question,
+            options,
+            pollType,
+            endsAtLocal,
+            selectedHashtags,
+            hashTagPresetId,
+            isRecyclable,
+            selectedQueue,
+            scheduledFor,
+            publishMode,
+          });
+          onDraftStateLabelChange?.("Saved locally");
+          trackComposerEvent("composer_draft_saved", {
+            source: "poll",
+            mode: "local",
+          });
+        }}
+        secondaryActionDisabled={disabled}
       />
     </div>
   );

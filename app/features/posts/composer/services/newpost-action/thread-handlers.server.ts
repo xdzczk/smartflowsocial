@@ -221,7 +221,7 @@ export async function handleThreadAction(
     return await jsonContestEmbedPost(userId, firstId);
   }
   if (isSchedule) {
-    return redirect(`/dashboard/newpost?scheduled=${firstId}`);
+    return redirect(`/dashboard/compose?type=thread&scheduled=${firstId}`);
   }
-  return redirect(`/dashboard/newpost?published=${firstId}`);
+  return redirect(`/dashboard/compose?type=thread&published=${firstId}`);
 }

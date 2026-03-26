@@ -21,9 +21,9 @@ export function getPostTypeFromPost(
  */
 export function getNewPostUrl(postType: "post" | "longform"): string {
   if (postType === "longform") {
-    return "/dashboard/newlongformpost";
+    return "/dashboard/compose?type=article";
   }
-  return "/dashboard/newpost";
+  return "/dashboard/compose?type=post";
 }
 
 /**

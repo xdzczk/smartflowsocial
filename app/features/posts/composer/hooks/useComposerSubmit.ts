@@ -85,7 +85,7 @@ export interface UseComposerSubmitOptions {
     showHashTagsinPosts?: boolean;
   } | null;
   defaultTags?: string[];
-  /** When set, all fetcher.submit calls POST to this path (e.g. `/dashboard/newpost` when composer is embedded). */
+  /** When set, all fetcher.submit calls POST to this path (e.g. `/dashboard/compose?type=post` when composer is embedded). */
   submitAction?: string;
   /** Sent as `_embedContext` so the newpost action can return JSON instead of redirects. */
   embedContext?: "contest";

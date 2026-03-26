@@ -1,6 +1,6 @@
 /**
  * When the composer is embedded (e.g. contest creation), return JSON instead of
- * redirecting to /dashboard/newpost so the host page stays mounted.
+ * redirecting to /dashboard/compose so the host page stays mounted.
  */
 
 import { json } from "@remix-run/node";

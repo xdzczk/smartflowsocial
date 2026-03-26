@@ -122,7 +122,7 @@ export { ErrorMessage } from "./components/ErrorMessage";
 export { NewPostHeader } from "./components/NewPostHeader";
 export type { ComposerStatus } from "./components/NewPostHeader";
 export { RelaySelectorModal } from "./components/RelaySelectorModal";
-export { ConfidencePanel } from "./components/ConfidencePanel";
+export { PublishingSummaryRail } from "./components/ConfidencePanel";
 export { TagsChipRow } from "./components/TagsChipRow";
 export { AttachmentsStrip } from "./components/AttachmentsStrip";
 export { AlsoScheduleBlock } from "./components/AlsoScheduleBlock";

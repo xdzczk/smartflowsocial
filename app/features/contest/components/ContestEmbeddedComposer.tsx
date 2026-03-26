@@ -26,7 +26,7 @@ export function ContestEmbeddedComposer({
   return (
     <div className="border-border bg-muted/20 rounded-lg border p-4">
       <p className="text-muted-foreground mb-3 text-sm font-medium">
-        Write and publish your contest post
+        Compose and publish your contest entry
       </p>
       <UnifiedComposer
         key={composerKey}
@@ -43,7 +43,7 @@ export function ContestEmbeddedComposer({
           handleHashtagPresetSelect(presetId ?? "", hashtags)
         }
         relayCount={parsed.defaultRelays.length}
-        formAction="/dashboard/newpost"
+        formAction="/dashboard/compose?type=post"
         localDraftStorageKey="composer-contest-embedded-draft"
         embedContext="contest"
         embeddedDensity="contest-lite"

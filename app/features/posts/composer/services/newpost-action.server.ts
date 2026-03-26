@@ -98,7 +98,7 @@ export async function handleNewPostAction(
     logWarning("Multipart media upload on newpost route rejected", {
       userId,
       action: _action || "unknown",
-      route: "/dashboard/newpost",
+      route: "/dashboard/compose",
     });
     return json(
       {

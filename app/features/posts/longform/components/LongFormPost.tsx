@@ -8,8 +8,16 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { requestNewSignerSession } from "~/features/auth/signer";
 import { ArticleDetailsCollapsible } from "~/features/posts/components/ArticleDetailsCollapsible";
+import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import { WritingSurface } from "~/features/posts/components/WritingSurface";
 import { useLocalDraft } from "~/features/posts/composer";
+import {
+  buildArticleContentLines,
+  buildDeliveryLines,
+  buildPublishPathLines,
+  getReadinessLabel,
+  type ComposerPublishMode,
+} from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
 import type { LongformQuoteEntry } from "~/features/posts/hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
@@ -28,7 +36,6 @@ import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
-import { LongFormActionButtons } from "./LongFormActionButtons";
 import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
 
 interface QueueType {
@@ -88,8 +95,11 @@ interface LongFormPostProps {
   initialScheduledFor?: string | null;
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
+  publishMode?: ComposerPublishMode;
+  onDraftStateLabelChange?: (label: string) => void;
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
 export default function LongFormPost({
   queueTypes = [],
   scheduleIntervals = [],
@@ -111,6 +121,8 @@ export default function LongFormPost({
   initialTemplateName = null,
   initialScheduledFor = null,
   skipLocalDraftRestore = false,
+  publishMode = "now",
+  onDraftStateLabelChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
   const [templateName, setTemplateName] = useState(
@@ -531,247 +543,285 @@ export default function LongFormPost({
     return plain.trim().split(/\s+/).filter(Boolean).length;
   })();
 
+  useEffect(() => {
+    if (!onDraftStateLabelChange) return;
+    onDraftStateLabelChange(
+      fetcher.state === "idle" ? "Saved locally" : "Saving..."
+    );
+  }, [fetcher.state, onDraftStateLabelChange]);
+
+  const issueList: string[] = [];
+  if (!title.trim()) issueList.push("Article title is missing.");
+  if (!content.trim()) issueList.push("Article body is empty.");
+  if (!image) issueList.push("Article cover is missing.");
+  if (
+    (publishMode === "schedule" || publishMode === "queue") &&
+    !scheduledFor
+  ) {
+    issueList.push("Publish time is required.");
+  }
+  const readinessLabel = getReadinessLabel(publishMode, issueList, true);
+  const deliveryLines = buildDeliveryLines({
+    publishMode,
+    relayCount: 0,
+    signerLabel: "NIP-07",
+    scheduledFor: scheduledFor ?? undefined,
+    timezone: userTimezone,
+    selectedQueue: selectedQueueType,
+  });
+  const contentLines = buildArticleContentLines(
+    title.trim().length > 0,
+    wordCount,
+    Boolean(image),
+    0
+  );
+  const publishPathLines = buildPublishPathLines(
+    0,
+    "NIP-07",
+    selectedQueueType
+  );
+
   return (
     <>
-      <div className="flex min-h-screen flex-col">
-        {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
-        <WritingSurface
-          key={initialData?.id ?? "new"}
-          register={form.register}
-          content={content}
-          uploadProvider={uploadProvider}
-          onOpenAssetBrowser={() => {}}
-          editorReady={editorReady}
-          editor={editor}
-        />
+      <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1">
+          {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
+          <WritingSurface
+            key={initialData?.id ?? "new"}
+            register={form.register}
+            content={content}
+            uploadProvider={uploadProvider}
+            onOpenAssetBrowser={() => {}}
+            editorReady={editorReady}
+            editor={editor}
+          />
 
-        {/* Phase 2: Article Details (collapsible) */}
-        <ArticleDetailsCollapsible
-          summary={summary ?? ""}
-          customTags={customTags ?? ""}
-          content={content}
-          onSummaryChange={(value) => form.setValue("summary", value)}
-          onCustomTagsChange={(value) => form.setValue("customTags", value)}
-          onGenerateSummary={handleGenerateSummary}
-          image={image}
-          uploadError={uploadError}
-          uploadProvider={uploadProvider}
-          uploadFetcherState={uploadFetcherState}
-          onImageUpload={(file) => void handleImageUpload(file)}
-          onRemoveImage={() => setCoverImage("")}
-          onOpenAssetBrowser={() => {}}
-        />
+          {/* Phase 2: Article Details (collapsible) */}
+          <ArticleDetailsCollapsible
+            summary={summary ?? ""}
+            customTags={customTags ?? ""}
+            content={content}
+            onSummaryChange={(value) => form.setValue("summary", value)}
+            onCustomTagsChange={(value) => form.setValue("customTags", value)}
+            onGenerateSummary={handleGenerateSummary}
+            image={image}
+            uploadError={uploadError}
+            uploadProvider={uploadProvider}
+            uploadFetcherState={uploadFetcherState}
+            onImageUpload={(file) => void handleImageUpload(file)}
+            onRemoveImage={() => setCoverImage("")}
+            onOpenAssetBrowser={() => {}}
+          />
 
-        {/* Phase 3: Publish Panel */}
-        <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
-          <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
-            {isTemplateMode ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="template-name-longform">Template name</Label>
-                  <Input
-                    id="template-name-longform"
-                    type="text"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="e.g. Weekly article"
-                    className="max-w-xs"
+          {/* Phase 3: Publish Panel */}
+          <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
+            <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
+              {isTemplateMode ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="template-name-longform">
+                      Template name
+                    </Label>
+                    <Input
+                      id="template-name-longform"
+                      type="text"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      placeholder="e.g. Weekly article"
+                      className="max-w-xs"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={handleSaveAsTemplate}
+                      disabled={
+                        fetcher.state !== "idle" ||
+                        !templateName.trim() ||
+                        !image
+                      }
+                    >
+                      {fetcher.state !== "idle"
+                        ? "Saving..."
+                        : editTemplateContext
+                          ? "Save"
+                          : "Save as template"}
+                    </Button>
+                    <Button type="button" variant="ghost" asChild>
+                      <Link to="/dashboard/templates">Cancel</Link>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {displayedHashtags ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        <Hash
+                          className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
+                          strokeWidth={INLINE_ICON_STROKE}
+                          aria-hidden
+                        />
+                        {displayedHashtags}
+                      </Badge>
+                    </div>
+                  ) : null}
+
+                  <LongFormPublishingOptions
+                    queueTypes={queueTypes}
+                    selectedQueueType={selectedQueueType}
+                    onQueueTypeChange={(name) => {
+                      void updateDisplayedHashtags(name);
+                    }}
+                    scheduledFor={scheduledFor}
+                    onScheduledForChange={setScheduledFor}
+                    scheduleIntervals={scheduleIntervals}
+                    onScheduleIntervalClick={(intervalHours) => {
+                      handleScheduleIntervalClick(intervalHours);
+                    }}
+                    onNextSlotClick={() => {
+                      void calculateQueueScheduleTime(selectedQueueType);
+                    }}
+                    hashTagPresets={hashTagPresets}
+                    useHashtagPresets={useHashtagPresets}
+                    selectedHashtagPresetId={selectedHashtagPresetId}
+                    selectedHashtags={selectedHashtags}
+                    onHashtagPresetChange={
+                      onHashtagPresetChange ??
+                      ((_id, _tags) => {
+                        void _id;
+                        void _tags;
+                      })
+                    }
+                    onUseHashtagPresetsChange={
+                      onUseHashtagPresetsChange ??
+                      (() => {
+                        void 0;
+                      })
+                    }
+                    userTimezone={userTimezone}
                   />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    onClick={handleSaveAsTemplate}
-                    disabled={
-                      fetcher.state !== "idle" || !templateName.trim() || !image
-                    }
-                  >
-                    {fetcher.state !== "idle"
-                      ? "Saving..."
-                      : editTemplateContext
-                        ? "Save"
-                        : "Save as template"}
-                  </Button>
-                  <Button type="button" variant="ghost" asChild>
-                    <Link to="/dashboard/templates">Cancel</Link>
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                {displayedHashtags ? (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      <Hash
-                        className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden
-                      />
-                      {displayedHashtags}
-                    </Badge>
+
+                  <AlsoScheduleLongformQuote
+                    alsoScheduleQuote={alsoScheduleQuote}
+                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                    quoteEntries={quoteEntries}
+                    onQuoteEntriesChange={setQuoteEntries}
+                    disabled={fetcher.state !== "idle" || isSigning}
+                  />
+
+                  {!image ? (
+                    <p className="text-muted-foreground text-xs">
+                      Add a cover before publishing
+                    </p>
+                  ) : null}
+                  <div className="text-muted-foreground text-xs">
+                    Primary publish action is available in the Publishing
+                    Summary rail.
                   </div>
-                ) : null}
 
-                <LongFormPublishingOptions
-                  queueTypes={queueTypes}
-                  selectedQueueType={selectedQueueType}
-                  onQueueTypeChange={(name) => {
-                    void updateDisplayedHashtags(name);
-                  }}
-                  scheduledFor={scheduledFor}
-                  onScheduledForChange={setScheduledFor}
-                  scheduleIntervals={scheduleIntervals}
-                  onScheduleIntervalClick={(intervalHours) => {
-                    handleScheduleIntervalClick(intervalHours);
-                  }}
-                  onNextSlotClick={() => {
-                    void calculateQueueScheduleTime(selectedQueueType);
-                  }}
-                  hashTagPresets={hashTagPresets}
-                  useHashtagPresets={useHashtagPresets}
-                  selectedHashtagPresetId={selectedHashtagPresetId}
-                  selectedHashtags={selectedHashtags}
-                  onHashtagPresetChange={
-                    onHashtagPresetChange ??
-                    ((_id, _tags) => {
-                      void _id;
-                      void _tags;
-                    })
-                  }
-                  onUseHashtagPresetsChange={
-                    onUseHashtagPresetsChange ??
-                    (() => {
-                      void 0;
-                    })
-                  }
-                  userTimezone={userTimezone}
-                />
-
-                <AlsoScheduleLongformQuote
-                  alsoScheduleQuote={alsoScheduleQuote}
-                  onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                  quoteEntries={quoteEntries}
-                  onQuoteEntriesChange={setQuoteEntries}
-                  disabled={fetcher.state !== "idle" || isSigning}
-                />
-
-                {!image ? (
-                  <p className="text-muted-foreground text-xs">
-                    Add a cover before publishing
-                  </p>
-                ) : null}
-
-                <LongFormActionButtons
-                  fetcherState={fetcher.state}
-                  isFormValid={isFormValid}
-                  hasScheduledFor={!!scheduledFor}
-                  scheduledFor={scheduledFor}
-                  statusLabel={scheduledFor ? undefined : "Draft"}
-                  onSaveDraft={!initialData ? handleSaveDraft : undefined}
-                  saveDraftDisabled={
-                    !initialData
-                      ? fetcher.state !== "idle" || !content.trim() || isSigning
-                      : undefined
-                  }
-                  scheduledForLabel={
-                    scheduledFor
-                      ? (() => {
-                          try {
-                            const d = new Date(scheduledFor);
-                            if (Number.isNaN(d.getTime())) return "Scheduled";
-                            const month = d.toLocaleString("default", {
-                              month: "short",
-                            });
-                            const day = d.getDate();
-                            const time = d.toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                              hour12: true,
-                            });
-                            return `Scheduled for ${month} ${day}, ${time}`;
-                          } catch {
-                            return "Scheduled";
+                  {isSigning ? (
+                    <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+                      <span>
+                        Waiting for signer approval…
+                        {signAttempt ? (
+                          <>
+                            {" "}
+                            Attempt {signAttempt.attempt} of{" "}
+                            {signAttempt.maxAttempts} ·{" "}
+                            {formatAttemptElapsed(
+                              signElapsedSeconds,
+                              signAttempt.timeoutMs
+                            )}
+                          </>
+                        ) : null}
+                        {" — "}
+                        If you’re using a remote signer, open it to approve the
+                        request. To use a new session in the signer app, click
+                        &quot;Use new session&quot;.
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() =>
+                            void requestNewSignerSession(cancelSigning)
                           }
-                        })()
-                      : undefined
-                  }
-                  wordCount={wordCount}
-                  isSigning={isSigning}
-                  signAttempt={signAttempt}
-                  signElapsedSeconds={signElapsedSeconds}
-                  onPreview={() => {
-                    if (onPreview) {
-                      onPreview({
-                        title,
-                        summary: summary ?? generateSummaryFromContent(content),
-                        content,
-                        image,
-                      });
-                    }
-                  }}
-                  onSchedule={() => {
-                    flushSync();
-                    void handleSchedule("schedule");
-                  }}
-                  onPublish={() => {
-                    flushSync();
-                    void handleSchedule("publish");
-                  }}
-                />
-
-                {isSigning ? (
-                  <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
-                    <span>
-                      Waiting for signer approval…
-                      {signAttempt ? (
-                        <>
-                          {" "}
-                          Attempt {signAttempt.attempt} of{" "}
-                          {signAttempt.maxAttempts} ·{" "}
-                          {formatAttemptElapsed(
-                            signElapsedSeconds,
-                            signAttempt.timeoutMs
-                          )}
-                        </>
-                      ) : null}
-                      {" — "}
-                      If you’re using a remote signer, open it to approve the
-                      request. To use a new session in the signer app, click
-                      &quot;Use new session&quot;.
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          void requestNewSignerSession(cancelSigning)
-                        }
-                      >
-                        Use new session
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={cancelSigning}
-                      >
-                        Cancel
-                      </Button>
-                    </span>
-                  </div>
-                ) : null}
-                {signingError ? (
-                  <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
-                    {signingError}
-                  </div>
-                ) : null}
-              </>
-            )}
+                        >
+                          Use new session
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={cancelSigning}
+                        >
+                          Cancel
+                        </Button>
+                      </span>
+                    </div>
+                  ) : null}
+                  {signingError ? (
+                    <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+                      {signingError}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
         </div>
+        <PublishingSummaryRail
+          readinessLabel={readinessLabel}
+          deliverySection={{ title: "Delivery", lines: deliveryLines }}
+          contentSection={{ title: "Content", lines: contentLines }}
+          publishPathSection={{
+            title: "Publish path",
+            lines: publishPathLines,
+          }}
+          issues={issueList}
+          saveStateLabel={
+            fetcher.state === "idle" ? "Saved locally" : "Saving..."
+          }
+          primaryActionLabel={
+            publishMode === "queue"
+              ? "Add article to queue"
+              : publishMode === "schedule"
+                ? "Schedule article"
+                : "Publish article"
+          }
+          onPrimaryAction={() => {
+            flushSync();
+            void handleSchedule(publishMode === "now" ? "publish" : "schedule");
+          }}
+          primaryActionDisabled={
+            fetcher.state !== "idle" ||
+            !isFormValid ||
+            isSigning ||
+            issueList.length > 0
+          }
+          secondaryActionLabel={!initialData ? "Save draft" : "Preview"}
+          onSecondaryAction={
+            !initialData
+              ? () => {
+                  handleSaveDraft();
+                  onDraftStateLabelChange?.("Saved as draft");
+                }
+              : onPreview
+                ? () =>
+                    onPreview({
+                      title,
+                      summary: summary ?? generateSummaryFromContent(content),
+                      content,
+                      image,
+                    })
+                : undefined
+          }
+          secondaryActionDisabled={fetcher.state !== "idle" || isSigning}
+        />
       </div>
     </>
   );

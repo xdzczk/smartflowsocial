@@ -13,7 +13,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const postId = params["id"]!;
 
   // Redirect to newpost composer with draft so short drafts open in UnifiedComposer
-  return redirect(`/dashboard/newpost?draftId=${postId}`);
+  return redirect(`/dashboard/compose?type=post&draftId=${postId}`);
 }
 
 export const action = withCSRFProtection(

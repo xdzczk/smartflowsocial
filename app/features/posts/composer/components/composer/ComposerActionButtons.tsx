@@ -142,23 +142,21 @@ export function ComposerActionButtons({
           {primaryLabel}
         </Button>
       )}
-      {publishMode !== "draft" ? (
-        <Button
-          ref={draftSubmitRef}
-          type="submit"
-          value="draft-text"
-          name="_action"
-          variant="outline"
-          disabled={disabled}
-        >
-          <Pencil
-            className="mr-1.5 h-5 w-5"
-            strokeWidth={INLINE_ICON_STROKE}
-            aria-hidden
-          />
-          {fetcherState !== "idle" ? "Saving..." : "Save as draft"}
-        </Button>
-      ) : null}
+      <Button
+        ref={draftSubmitRef}
+        type="submit"
+        value="draft-text"
+        name="_action"
+        variant="outline"
+        disabled={disabled}
+      >
+        <Pencil
+          className="mr-1.5 h-5 w-5"
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
+        {fetcherState !== "idle" ? "Saving..." : "Save as draft"}
+      </Button>
     </div>
   );
 }

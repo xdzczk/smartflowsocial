@@ -12,8 +12,7 @@ const PREFETCH_ROUTES = [
   "/dashboard",
   "/dashboard/scheduled",
   "/dashboard/published",
-  "/dashboard/newpost",
-  "/dashboard/newlongformpost",
+  "/dashboard/compose",
 ];
 
 export function PrefetchManager() {

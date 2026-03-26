@@ -453,16 +453,10 @@ const FEATURES: FeatureDefinition[] = [
     keywords: ["home", "main", "overview"],
   },
   {
-    label: "New Post",
-    url: "/dashboard/newpost",
+    label: "Composer",
+    url: "/dashboard/compose?type=post",
     feature: "newPost",
-    keywords: ["create", "new", "post", "compose"],
-  },
-  {
-    label: "New Long-form",
-    url: "/dashboard/newlongformpost",
-    feature: "longformPosts",
-    keywords: ["long", "form", "article", "blog", "create"],
+    keywords: ["create", "new", "compose", "post", "thread", "article", "poll"],
   },
   {
     label: "Bulk Posts",

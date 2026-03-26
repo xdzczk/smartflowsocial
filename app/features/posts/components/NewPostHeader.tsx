@@ -21,17 +21,21 @@ interface NewPostHeaderProps {
   relayCount?: number;
   /** Called when user clicks the relays link (open relay selector modal) */
   onRelayClick?: () => void;
+  title?: string;
+  metadataItems?: string[];
 }
 
 export function NewPostHeader({
   status = "Draft",
   relayCount = 0,
   onRelayClick,
+  title = "Create post",
+  metadataItems = [],
 }: NewPostHeaderProps) {
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 className="text-foreground text-2xl font-bold dark:text-white">
-        Create post
+        {title}
       </h1>
       <div className="flex flex-wrap items-center gap-2">
         {onRelayClick ? (
@@ -53,6 +57,11 @@ export function NewPostHeader({
         >
           {status}
         </Badge>
+        {metadataItems.map((item) => (
+          <span key={item} className="text-muted-foreground text-xs">
+            {item}
+          </span>
+        ))}
       </div>
     </div>
   );

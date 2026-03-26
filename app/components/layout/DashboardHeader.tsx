@@ -5,7 +5,6 @@ import {
   Clock,
   Copy,
   FilePenLine,
-  FileText,
   Flame,
   Gift,
   Home,
@@ -44,10 +43,10 @@ const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
 const NAV_ICON_STROKE = 2.25;
 
 // Nav config for expandable sections (reduces inline complexity in Header)
-// Semantic rule: Create = Plus (matches dashboard Compose). New Post = MessageSquare (note). Drafts = FilePenLine (state).
+// Semantic rule: Create = Plus. Composer = MessageSquare (single entry).
 const CREATE_SECTION_ITEMS = [
   {
-    to: "/dashboard/newpost",
+    to: "/dashboard/compose",
     feature: "newPost" as const,
     icon: (
       <MessageSquare
@@ -55,15 +54,7 @@ const CREATE_SECTION_ITEMS = [
         strokeWidth={NAV_ICON_STROKE}
       />
     ),
-    label: "New Post",
-  },
-  {
-    to: "/dashboard/newlongformpost",
-    feature: "longformPosts" as const,
-    icon: (
-      <FileText className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
-    ),
-    label: "New Article",
+    label: "Composer",
   },
   {
     to: "/dashboard/bulkposts",

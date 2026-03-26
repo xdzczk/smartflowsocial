@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { CreateComposerShell } from "~/features/posts/composer";
+import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
 import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -269,6 +270,8 @@ export default function NewLongFormPostPage() {
     currentState?: string | null;
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
+  const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
+  const [draftStateLabel, setDraftStateLabel] = useState("Draft idle");
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -354,10 +357,14 @@ export default function NewLongFormPostPage() {
       contentType="article"
       onContentTypeChange={(next) => {
         if (next === "article") return;
-        navigate(`/dashboard/newpost?type=${encodeURIComponent(next)}`);
+        navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
-      showPublishModeBar={false}
-      showPrimaryCta={false}
+      showPublishModeBar
+      publishMode={publishMode}
+      onPublishModeChange={setPublishMode}
+      draftStateLabel={draftStateLabel}
+      title={initialTemplateData ? "Edit article draft" : "Create article"}
+      metadataItems={[`Saved: ${draftStateLabel}`]}
     >
       {templatesRaw.length > 0 ? (
         <div className="mb-4 flex items-center gap-2">
@@ -375,7 +382,7 @@ export default function NewLongFormPostPage() {
               const id = e.target.value;
               if (id)
                 navigate(
-                  `/dashboard/newlongformpost?templateId=${encodeURIComponent(id)}`
+                  `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
                 );
             }}
           >
@@ -405,6 +412,8 @@ export default function NewLongFormPostPage() {
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
           key={`newlongform-composer-${publishResultToken ?? "default"}`}
+          publishMode={publishMode}
+          onDraftStateLabelChange={setDraftStateLabel}
           initialData={initialTemplateData}
           initialScheduledFor={scheduledAt ?? undefined}
           queueTypes={queueTypes}
