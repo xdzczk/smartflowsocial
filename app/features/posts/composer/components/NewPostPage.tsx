@@ -1,6 +1,6 @@
 import {
   useLoaderData,
-  useLocation,
+  useNavigation,
   useSearchParams,
   useNavigate,
 } from "@remix-run/react";
@@ -290,7 +290,7 @@ export default function NewPostPage() {
   } = useNewPostState();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
+  const navigation = useNavigation();
   const scheduledAt = searchParams.get("scheduledAt");
   const publishResultToken =
     searchParams.get("published") ?? searchParams.get("scheduled");
@@ -330,15 +330,12 @@ export default function NewPostPage() {
     });
   }, [composerTab]);
   useEffect(() => {
-    // Do not mutate query params while transitioning to dedicated article route.
-    if (location.pathname !== "/dashboard/compose") return;
     const currentType = searchParams.get("type");
-    if (currentType === "article") return;
     if (currentType === composerTab) return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("type", composerTab);
     setSearchParams(nextParams, { replace: true });
-  }, [composerTab, location.pathname, searchParams, setSearchParams]);
+  }, [composerTab, searchParams, setSearchParams]);
 
   useEffect(() => {
     trackComposerEvent("composer_publish_mode_selected", {
@@ -402,8 +399,9 @@ export default function NewPostPage() {
       onRelayClick={() => setRelaySelectorOpen(true)}
       contentType={composerTab}
       onContentTypeChange={(next) => {
+        if (navigation.state !== "idle") return;
         if (next === "article") {
-          navigate("/dashboard/compose/article");
+          navigate("/dashboard/compose?type=article");
           return;
         }
         setComposerTab(next);

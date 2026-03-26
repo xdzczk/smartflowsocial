@@ -1,5 +1,123 @@
-import { Outlet } from "@remix-run/react";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 
-export default function ComposeLayout() {
-  return <Outlet />;
+import { requireUserId } from "~/features/auth";
+import {
+  getComposeMode,
+  NewPostPage,
+  shouldDispatchToLongform,
+} from "~/features/posts/composer";
+import { NewLongFormPostPage } from "~/features/posts/longform";
+import {
+  handleNewPostAction,
+  loadNewPostData,
+} from "~/features/posts/server/composer";
+import {
+  handleNewLongFormAction,
+  loadNewLongFormData,
+} from "~/features/posts/server/longform";
+import { withCSRFProtection } from "~/lib/csrf";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
+    const url = new URL(request.url);
+    const type = url.searchParams.get("type");
+
+    if (getComposeMode(type) === "article") {
+      const templateId = url.searchParams.get("templateId");
+      const payload = await loadNewLongFormData(
+        userId,
+        templateId && templateId.length > 0 ? templateId : null
+      );
+      return json({
+        ...payload,
+        __composeMode: "article" as const,
+      });
+    }
+
+    const draftId = url.searchParams.get("draftId");
+    const templateId = url.searchParams.get("templateId");
+    const payload = await loadNewPostData(
+      userId,
+      draftId && draftId.length > 0 ? draftId : null,
+      templateId && templateId.length > 0 ? templateId : null
+    );
+    return json({
+      ...payload,
+      __composeMode: "shortform" as const,
+    });
+  } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {
+      scheduleIntervals: [],
+      queueTypes: [],
+      hashTagPresets: [],
+      relays: [],
+      templates: [],
+      __composeMode: "shortform",
+    });
+  }
+}
+
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
+      const formData = await request.clone().formData();
+      const contentType = String(formData.get("contentType") ?? "");
+      const actionType = String(formData.get("_action") ?? "");
+
+      if (
+        shouldDispatchToLongform({
+          queryType: type,
+          contentType: contentType || null,
+          actionType: actionType || null,
+        })
+      ) {
+        return await handleNewLongFormAction(userId, request);
+      }
+      return await handleNewPostAction(userId, request);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
+    }
+  }
+);
+
+export default function ComposePage() {
+  const data = useLoaderData<{
+    __composeMode?: "shortform" | "article";
+  }>();
+  const [searchParams] = useSearchParams();
+  const queryType = searchParams.get("type");
+  const mode = data.__composeMode ?? getComposeMode(queryType);
+
+  if (mode === "article") {
+    return <NewLongFormPostPage />;
+  }
+  return <NewPostPage />;
+}
+
+export function ErrorBoundary() {
+  return (
+    <div className="mx-auto max-w-3xl p-6">
+      <h1 className="text-xl font-semibold">
+        Composer temporarily unavailable
+      </h1>
+      <p className="text-muted-foreground mt-2 text-sm">
+        Something went wrong while loading the composer. Please retry in a few
+        seconds.
+      </p>
+    </div>
+  );
 }

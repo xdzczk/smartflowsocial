@@ -106,7 +106,7 @@ export function EmptySlotCreateMenu({
           Composer (Post)
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/compose/article"))}
+          onSelect={() => navigate(q("/dashboard/compose?type=article"))}
           className="flex items-center gap-2"
         >
           <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />

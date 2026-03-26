@@ -29,11 +29,11 @@ describe("Publish Result Utils", () => {
   });
 
   describe("getNewPostUrl", () => {
-    it("returns /dashboard/newlongformpost for longform", () => {
-      expect(getNewPostUrl("longform")).toBe("/dashboard/newlongformpost");
+    it("returns article type route for longform", () => {
+      expect(getNewPostUrl("longform")).toBe("/dashboard/compose?type=article");
     });
-    it("returns /dashboard/newpost for post", () => {
-      expect(getNewPostUrl("post")).toBe("/dashboard/newpost");
+    it("returns post type route for post", () => {
+      expect(getNewPostUrl("post")).toBe("/dashboard/compose?type=post");
     });
   });
 

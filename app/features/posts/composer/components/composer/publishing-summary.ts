@@ -65,9 +65,9 @@ export function buildPostContentLines(
   tagsSummary?: string | null
 ): string[] {
   return [
-    `Chars: ${charCount}`,
-    `Attachments: ${attachmentCount}`,
-    tagsSummary?.trim() ? `Tags: ${tagsSummary.trim()}` : "Tags: None",
+    `${charCount} chars · ${attachmentCount} attachments · ${
+      tagsSummary?.trim() ? tagsSummary.trim() : "no tags"
+    }`,
   ];
 }
 
@@ -79,11 +79,7 @@ export function buildThreadContentLines(
 ): string[] {
   const estimatedTotal = Math.max(segmentCount - 1, 0) * cadenceMinutes;
   return [
-    `Segments: ${segmentCount}`,
-    `Total chars: ${totalChars}`,
-    `Attachments: ${attachmentCount}`,
-    `Cadence: every ${cadenceMinutes} min`,
-    `Estimated duration: ${estimatedTotal} min`,
+    `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} attachments · cadence ${cadenceMinutes}m · est ${estimatedTotal}m`,
   ];
 }
 
@@ -93,9 +89,9 @@ export function buildPollContentLines(
   tagsSummary?: string | null
 ): string[] {
   return [
-    `Chars: ${questionLength}`,
-    `Options: ${optionCount}`,
-    tagsSummary?.trim() ? `Tags: ${tagsSummary.trim()}` : "Tags: None",
+    `${questionLength} chars · ${optionCount} options · ${
+      tagsSummary?.trim() ? tagsSummary.trim() : "no tags"
+    }`,
   ];
 }
 
@@ -106,10 +102,9 @@ export function buildArticleContentLines(
   assetCount: number
 ): string[] {
   return [
-    `Title: ${hasTitle ? "Present" : "Missing"}`,
-    `Word count: ${wordCount}`,
-    `Cover: ${hasCover ? "Present" : "Missing"}`,
-    `Embedded assets: ${assetCount}`,
+    `${hasTitle ? "title set" : "title missing"} · ${wordCount} words · ${
+      hasCover ? "cover set" : "cover missing"
+    } · ${assetCount} assets`,
   ];
 }
 

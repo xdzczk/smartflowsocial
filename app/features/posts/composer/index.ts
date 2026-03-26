@@ -29,3 +29,9 @@ export {
 } from "./hooks/useComposerLocalDraft";
 export type { ComposerLocalSnapshot } from "./hooks/useComposerLocalDraft";
 export { useNewPostState } from "./hooks/useNewPostState";
+export {
+  getComposeMode,
+  normalizeComposeType,
+  shouldDispatchToLongform,
+} from "./services/compose-route-contract";
+export type { ComposeContentType } from "./services/compose-route-contract";

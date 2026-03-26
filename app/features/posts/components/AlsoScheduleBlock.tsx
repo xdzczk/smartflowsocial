@@ -2,6 +2,8 @@
  * Follow-up actions after the main post publishes.
  */
 
+import { useState } from "react";
+
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -60,6 +62,8 @@ export function AlsoScheduleBlock({
   onQuoteEntriesChange,
   disabled = false,
 }: AlsoScheduleBlockProps) {
+  const [showRepostConditions, setShowRepostConditions] = useState(false);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -153,142 +157,170 @@ export function AlsoScheduleBlock({
             Add another repost
           </Button>
           {onRepostConditionsChange ? (
-            <div className="border-border mt-3 space-y-2 rounded border p-3">
-              <Label className="text-muted-foreground text-xs">
-                Only repost if original gets (optional)
-              </Label>
-              <div className="flex flex-wrap items-center gap-3 gap-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs whitespace-nowrap">
-                    Reactions
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  setShowRepostConditions((value) => !value);
+                }}
+                disabled={disabled}
+              >
+                {showRepostConditions
+                  ? "Hide repost conditions"
+                  : "Show repost conditions"}
+              </Button>
+              {showRepostConditions ? (
+                <div className="border-border mt-2 space-y-2 rounded border p-3">
+                  <Label className="text-muted-foreground text-xs">
+                    Only repost if original gets (optional)
                   </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={repostConditions?.minReactions ?? ""}
-                    onChange={(e) => {
-                      const v = toNum(e.target.value);
-                      onRepostConditionsChange(
-                        v !== undefined
-                          ? { ...repostConditions, minReactions: v }
-                          : (() => {
-                              const next = { ...repostConditions };
-                              delete next.minReactions;
-                              return Object.keys(next).length > 0 ? next : null;
-                            })()
-                      );
-                    }}
-                    disabled={disabled}
-                    className="w-20"
-                    aria-label="Min reactions"
-                  />
+                  <div className="flex flex-wrap items-center gap-3 gap-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+                        Reactions
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={repostConditions?.minReactions ?? ""}
+                        onChange={(e) => {
+                          const v = toNum(e.target.value);
+                          onRepostConditionsChange(
+                            v !== undefined
+                              ? { ...repostConditions, minReactions: v }
+                              : (() => {
+                                  const next = { ...repostConditions };
+                                  delete next.minReactions;
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                })()
+                          );
+                        }}
+                        disabled={disabled}
+                        className="w-20"
+                        aria-label="Min reactions"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+                        Zaps
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={repostConditions?.minZaps ?? ""}
+                        onChange={(e) => {
+                          const v = toNum(e.target.value);
+                          onRepostConditionsChange(
+                            v !== undefined
+                              ? { ...repostConditions, minZaps: v }
+                              : (() => {
+                                  const next = { ...repostConditions };
+                                  delete next.minZaps;
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                })()
+                          );
+                        }}
+                        disabled={disabled}
+                        className="w-20"
+                        aria-label="Min zaps"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+                        Comments
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={repostConditions?.minComments ?? ""}
+                        onChange={(e) => {
+                          const v = toNum(e.target.value);
+                          onRepostConditionsChange(
+                            v !== undefined
+                              ? { ...repostConditions, minComments: v }
+                              : (() => {
+                                  const next = { ...repostConditions };
+                                  delete next.minComments;
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                })()
+                          );
+                        }}
+                        disabled={disabled}
+                        className="w-20"
+                        aria-label="Min comments"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+                        Reposts
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={repostConditions?.minReposts ?? ""}
+                        onChange={(e) => {
+                          const v = toNum(e.target.value);
+                          onRepostConditionsChange(
+                            v !== undefined
+                              ? { ...repostConditions, minReposts: v }
+                              : (() => {
+                                  const next = { ...repostConditions };
+                                  delete next.minReposts;
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                })()
+                          );
+                        }}
+                        disabled={disabled}
+                        className="w-20"
+                        aria-label="Min reposts"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-muted-foreground text-xs whitespace-nowrap">
+                        Sats
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="—"
+                        value={repostConditions?.minSats ?? ""}
+                        onChange={(e) => {
+                          const v = toNum(e.target.value);
+                          onRepostConditionsChange(
+                            v !== undefined
+                              ? { ...repostConditions, minSats: v }
+                              : (() => {
+                                  const next = { ...repostConditions };
+                                  delete next.minSats;
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                })()
+                          );
+                        }}
+                        disabled={disabled}
+                        className="w-24"
+                        aria-label="Min sats"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs whitespace-nowrap">
-                    Zaps
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={repostConditions?.minZaps ?? ""}
-                    onChange={(e) => {
-                      const v = toNum(e.target.value);
-                      onRepostConditionsChange(
-                        v !== undefined
-                          ? { ...repostConditions, minZaps: v }
-                          : (() => {
-                              const next = { ...repostConditions };
-                              delete next.minZaps;
-                              return Object.keys(next).length > 0 ? next : null;
-                            })()
-                      );
-                    }}
-                    disabled={disabled}
-                    className="w-20"
-                    aria-label="Min zaps"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs whitespace-nowrap">
-                    Comments
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={repostConditions?.minComments ?? ""}
-                    onChange={(e) => {
-                      const v = toNum(e.target.value);
-                      onRepostConditionsChange(
-                        v !== undefined
-                          ? { ...repostConditions, minComments: v }
-                          : (() => {
-                              const next = { ...repostConditions };
-                              delete next.minComments;
-                              return Object.keys(next).length > 0 ? next : null;
-                            })()
-                      );
-                    }}
-                    disabled={disabled}
-                    className="w-20"
-                    aria-label="Min comments"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs whitespace-nowrap">
-                    Reposts
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={repostConditions?.minReposts ?? ""}
-                    onChange={(e) => {
-                      const v = toNum(e.target.value);
-                      onRepostConditionsChange(
-                        v !== undefined
-                          ? { ...repostConditions, minReposts: v }
-                          : (() => {
-                              const next = { ...repostConditions };
-                              delete next.minReposts;
-                              return Object.keys(next).length > 0 ? next : null;
-                            })()
-                      );
-                    }}
-                    disabled={disabled}
-                    className="w-20"
-                    aria-label="Min reposts"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs whitespace-nowrap">
-                    Sats
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={repostConditions?.minSats ?? ""}
-                    onChange={(e) => {
-                      const v = toNum(e.target.value);
-                      onRepostConditionsChange(
-                        v !== undefined
-                          ? { ...repostConditions, minSats: v }
-                          : (() => {
-                              const next = { ...repostConditions };
-                              delete next.minSats;
-                              return Object.keys(next).length > 0 ? next : null;
-                            })()
-                      );
-                    }}
-                    disabled={disabled}
-                    className="w-24"
-                    aria-label="Min sats"
-                  />
-                </div>
-              </div>
+              ) : null}
             </div>
           ) : null}
         </div>

@@ -2,6 +2,7 @@ import {
   Form,
   useActionData,
   useLoaderData,
+  useNavigation,
   useSearchParams,
   useNavigate,
 } from "@remix-run/react";
@@ -252,6 +253,7 @@ export default function NewLongFormPostPage() {
   } = useNewLongFormState({ userTags: safeUserTags });
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
   const scheduledAt = searchParams.get("scheduledAt");
   const publishResultToken =
     searchParams.get("published") ?? searchParams.get("scheduled");
@@ -356,6 +358,7 @@ export default function NewLongFormPostPage() {
       onRelayClick={() => {}}
       contentType="article"
       onContentTypeChange={(next) => {
+        if (navigation.state !== "idle") return;
         if (next === "article") return;
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
@@ -378,7 +381,7 @@ export default function NewLongFormPostPage() {
               const id = e.target.value;
               if (id)
                 navigate(
-                  `/dashboard/compose/article?templateId=${encodeURIComponent(id)}`
+                  `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
                 );
             }}
           >
@@ -406,6 +409,7 @@ export default function NewLongFormPostPage() {
       />
 
       <Form method="post" encType="multipart/form-data">
+        <input type="hidden" name="contentType" value="article" />
         <LongFormPost
           key={`newlongform-composer-${publishResultToken ?? "default"}`}
           publishMode={publishMode}

@@ -2,8 +2,14 @@ import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle"
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
-import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 
@@ -77,16 +83,6 @@ export function LongFormPublishingOptions({
     return name !== "Unassigned";
   });
 
-  function getQueueDescription(name: string): string {
-    const lower = name.toLowerCase();
-    if (lower.includes("test")) return "Low visibility";
-    if (lower.includes("normal")) return "Default cadence";
-    if (lower.includes("great")) return "High-signal slots";
-    if (lower.includes("weekly") || lower.includes("slot"))
-      return "Scheduled slots";
-    return "Publishing queue";
-  }
-
   return (
     <>
       <Separator className="my-4" />
@@ -101,51 +97,34 @@ export function LongFormPublishingOptions({
           >
             Queue
           </span>
-          <div
-            className="flex flex-col gap-1"
-            role="group"
-            aria-labelledby="longform-queue-type-label"
+          <Select
+            value={
+              selectedQueueType === "unassigned"
+                ? "__unassigned__"
+                : selectedQueueType
+            }
+            onValueChange={(value) =>
+              onQueueTypeChange(
+                value === "__unassigned__" ? "unassigned" : value
+              )
+            }
           >
-            {filteredQueues.map((queue) => {
-              const queueName = typeof queue === "string" ? queue : queue.name;
-              const colorToken =
-                typeof queue === "object"
-                  ? (queue as { colorToken?: string | null }).colorToken
-                  : null;
-              const isSelected = selectedQueueType === queueName;
-              const description = getQueueDescription(queueName);
-              const bundle =
-                colorToken && isSelected
-                  ? getQueueColorBundle(colorToken)
-                  : null;
-              return (
-                <button
-                  key={queueName}
-                  type="button"
-                  onClick={() =>
-                    onQueueTypeChange(isSelected ? "unassigned" : queueName)
-                  }
-                  className={`rounded-md border px-3 py-2 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-primary/60 bg-primary/10" : "border-border/50 hover:bg-muted/40"}`}
-                  style={
-                    bundle
-                      ? {
-                          borderColor: bundle.accent,
-                          backgroundColor: bundle.surface,
-                        }
-                      : {}
-                  }
-                  title={
-                    isSelected ? "Click again to leave unassigned" : undefined
-                  }
-                >
-                  <span className="font-medium">{queueName}</span>
-                  <span className="text-muted-foreground ml-1 text-xs">
-                    — {description}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+            <SelectTrigger id="longform-queue-select" className="w-full">
+              <SelectValue placeholder="Select queue" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__unassigned__">No queue</SelectItem>
+              {filteredQueues.map((queue) => {
+                const queueName =
+                  typeof queue === "string" ? queue : queue.name;
+                return (
+                  <SelectItem key={queueName} value={queueName}>
+                    {queueName}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
           <input
             type="hidden"
             id="longform-queue-type-hidden"

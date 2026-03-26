@@ -23,7 +23,7 @@ export interface PublishingSummaryRailProps {
   modeSpecificSection?: PublishingSummarySection;
   followUpSection?: PublishingSummarySection;
   threadSettingsSection?: PublishingSummarySection;
-  contentSection: PublishingSummarySection;
+  contentSection?: PublishingSummarySection;
   publishPathSection: PublishingSummarySection;
   issues?: string[];
   warnings?: string[];
@@ -126,7 +126,11 @@ function PublishingSummaryRailBody({
       {modeSpecificSection ? <SectionBlock {...modeSpecificSection} /> : null}
       {followUpSection ? <SectionBlock {...followUpSection} /> : null}
       <SectionBlock {...publishPathSection} />
-      <SectionBlock {...contentSection} />
+      {contentSection?.lines?.length ? (
+        <p className="text-muted-foreground px-1 text-[11px] leading-snug">
+          Summary: {contentSection.lines.join(" · ")}
+        </p>
+      ) : null}
       {compactIssues.length > 0 || compactWarnings.length > 0 ? (
         <div className="rounded-md border px-2 py-1.5 text-xs">
           <p className="mb-1 font-semibold">Validation</p>
@@ -169,7 +173,7 @@ function PublishingSummaryRailActions({
   | "saveStateLabel"
 >) {
   return (
-    <div className="border-border bg-background/95 space-y-1.5 border-t pt-2 backdrop-blur">
+    <div className="border-border bg-background/95 mt-3 space-y-1.5 rounded-lg border p-2 shadow-sm backdrop-blur">
       <Button
         type="button"
         size="sm"
@@ -205,7 +209,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   return (
     <>
       <aside
-        className="border-border bg-card hidden w-64 shrink-0 self-start rounded-lg border p-3 shadow-md lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col"
+        className="border-border bg-card hidden w-72 shrink-0 self-start rounded-lg border p-3 shadow-md lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col xl:w-80"
         aria-label="Publishing"
       >
         <h3 className="text-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">

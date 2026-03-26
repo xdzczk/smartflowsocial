@@ -32,10 +32,7 @@ describe("publishing summary helpers", () => {
 
   it("builds article content and publish path lines", () => {
     expect(buildArticleContentLines(true, 120, false, 2)).toEqual([
-      "Title: Present",
-      "Word count: 120",
-      "Cover: Missing",
-      "Embedded assets: 2",
+      "title set · 120 words · cover missing · 2 assets",
     ]);
     expect(buildPublishPathLines(2, "NIP-07", "Main Queue")[2]).toContain(
       "Main Queue"

@@ -26,7 +26,7 @@ export function LongFormBulkActionsBar({
       <div className="flex gap-2">
         {type === "draft" ? (
           <Link
-            to="/dashboard/compose/article"
+            to="/dashboard/compose?type=article"
             className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:focus:ring-ring/40 dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
           >
             Create New

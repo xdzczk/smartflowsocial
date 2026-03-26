@@ -882,6 +882,11 @@ export function UnifiedComposer({
           void handleSubmit(e);
         }}
       >
+        <input
+          type="hidden"
+          name="contentType"
+          value={isThreadMode ? "thread" : "post"}
+        />
         {embedContext ? (
           <input type="hidden" name="_embedContext" value={embedContext} />
         ) : null}

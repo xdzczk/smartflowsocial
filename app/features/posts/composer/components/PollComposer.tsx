@@ -290,6 +290,7 @@ export function PollComposer({
 
       const fd = new FormData();
       fd.set("_action", actionType);
+      fd.set("contentType", "poll");
       fd.set("content", q);
       fd.set("queueType", selectedQueue);
       if (queueTypeId) fd.set("queueTypeId", queueTypeId);
