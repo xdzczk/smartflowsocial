@@ -395,7 +395,7 @@ export default function NewPostPage() {
       contentType={composerTab}
       onContentTypeChange={(next) => {
         if (next === "article") {
-          navigate("/dashboard/compose?type=article");
+          navigate("/dashboard/compose/article");
           return;
         }
         setComposerTab(next);

@@ -532,9 +532,7 @@ async function handlePublish(
     });
 
     // Stay on current page and show modal there
-    return redirect(
-      `/dashboard/compose?type=article&published=${result.post.id}`
-    );
+    return redirect(`/dashboard/compose/article?published=${result.post.id}`);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -706,9 +704,7 @@ async function handleScheduleLongform(
   }
 
   // Stay on current page and show modal there
-  return redirect(
-    `/dashboard/compose?type=article&scheduled=${result.post.id}`
-  );
+  return redirect(`/dashboard/compose/article?scheduled=${result.post.id}`);
 }
 
 /**

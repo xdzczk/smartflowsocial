@@ -30,14 +30,26 @@ export interface PublishingSummaryRailProps {
   secondaryActionDisabled?: boolean;
 }
 
+const SECTION_LINE_LIMIT = 3;
+const ISSUE_LINE_LIMIT = 2;
+
+function compactLines(lines: string[], limit: number): string[] {
+  if (lines.length <= limit) return lines;
+  const hiddenCount = lines.length - limit;
+  return [...lines.slice(0, limit), `+${hiddenCount} more`];
+}
+
 function SectionBlock({ title, lines }: PublishingSummarySection) {
   if (lines.length === 0) return null;
+  const compacted = compactLines(lines, SECTION_LINE_LIMIT);
   return (
-    <div className="bg-muted/10 rounded-md p-2">
-      <span className="text-muted-foreground font-medium">{title}</span>
+    <div className="bg-muted/10 rounded-md px-2 py-1.5">
+      <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+        {title}
+      </span>
       <div className="mt-0.5 space-y-0.5">
-        {lines.map((line) => (
-          <p key={line} className="text-sm">
+        {compacted.map((line) => (
+          <p key={line} className="text-xs leading-snug">
             {line}
           </p>
         ))}
@@ -63,22 +75,24 @@ function PublishingSummaryRailBody({
   | "onSecondaryAction"
   | "secondaryActionDisabled"
 >) {
+  const compactIssues = compactLines(issues, ISSUE_LINE_LIMIT);
+  const compactWarnings = compactLines(warnings, ISSUE_LINE_LIMIT);
   return (
-    <div className="space-y-3 text-sm">
-      <div className="rounded-md border p-2 text-xs">
+    <div className="space-y-2.5 text-xs">
+      <div className="rounded-md border px-2 py-1.5 text-xs">
         <p className="font-semibold">Readiness</p>
         <p>{readinessLabel}</p>
       </div>
-      {issues.length > 0 ? (
-        <div className="rounded-md border border-red-300 bg-red-500/10 p-2 text-xs text-red-700 dark:border-red-900 dark:text-red-300">
-          {issues.map((issue) => (
+      {compactIssues.length > 0 ? (
+        <div className="rounded-md border border-red-300 bg-red-500/10 px-2 py-1.5 text-xs text-red-700 dark:border-red-900 dark:text-red-300">
+          {compactIssues.map((issue) => (
             <p key={issue}>{issue}</p>
           ))}
         </div>
       ) : null}
-      {warnings.length > 0 ? (
-        <div className="rounded-md border border-amber-200 bg-amber-500/10 p-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
-          {warnings.map((warning) => (
+      {compactWarnings.length > 0 ? (
+        <div className="rounded-md border border-amber-200 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
+          {compactWarnings.map((warning) => (
             <p key={warning}>{warning}</p>
           ))}
         </div>
@@ -117,10 +131,11 @@ function PublishingSummaryRailActions({
   | "secondaryActionDisabled"
 >) {
   return (
-    <div className="border-border bg-background/95 space-y-2 border-t pt-3 backdrop-blur">
+    <div className="border-border bg-background/95 space-y-1.5 border-t pt-2 backdrop-blur">
       <Button
         type="button"
-        className="bg-success hover:bg-success/90 w-full text-white"
+        size="sm"
+        className="bg-success hover:bg-success/90 h-8 w-full text-xs text-white"
         onClick={onPrimaryAction}
         disabled={primaryActionDisabled}
       >
@@ -130,7 +145,8 @@ function PublishingSummaryRailActions({
         <Button
           type="button"
           variant="ghost"
-          className="w-full"
+          size="sm"
+          className="h-7 w-full text-xs"
           onClick={onSecondaryAction}
           disabled={secondaryActionDisabled}
         >
@@ -146,13 +162,13 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   return (
     <>
       <aside
-        className="border-border bg-card hidden h-[calc(100vh-6rem)] w-72 shrink-0 self-start rounded-lg border p-4 shadow-md lg:sticky lg:top-20 lg:flex lg:flex-col"
+        className="border-border bg-card hidden w-64 shrink-0 self-start rounded-lg border p-3 shadow-md lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col"
         aria-label="Publishing summary"
       >
-        <h3 className="text-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+        <h3 className="text-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
           Publishing Summary
         </h3>
-        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 space-y-0 pr-0">
           <PublishingSummaryRailBody
             readinessLabel={props.readinessLabel}
             deliverySection={props.deliverySection}

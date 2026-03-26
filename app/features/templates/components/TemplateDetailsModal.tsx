@@ -36,7 +36,7 @@ export function TemplateDetailsModal({
 
   const useTemplateHref =
     template.templateType === "LONGFORM"
-      ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(template.id)}`
+      ? `/dashboard/compose/article?templateId=${encodeURIComponent(template.id)}`
       : `/dashboard/compose?type=post&templateId=${encodeURIComponent(template.id)}`;
 
   return (

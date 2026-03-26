@@ -382,7 +382,7 @@ export default function NewLongFormPostPage() {
               const id = e.target.value;
               if (id)
                 navigate(
-                  `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
+                  `/dashboard/compose/article?templateId=${encodeURIComponent(id)}`
                 );
             }}
           >
