@@ -62,9 +62,12 @@ export function updatePayoutRun(
     totalItems?: number | null;
     totalSats?: number | null;
     metadataJson?: unknown;
-  }
+  },
+  /** Use inside `withPayoutLedgerTransaction` so updates see uncommitted rows. */
+  tx?: AppPrismaTransactionClient
 ) {
-  return prisma.payoutRun.update({
+  const db = tx ?? prisma;
+  return db.payoutRun.update({
     where: { id: runId },
     data: {
       ...(data.status ? { status: data.status } : {}),

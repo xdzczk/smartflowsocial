@@ -3,9 +3,10 @@
  * This file can be imported in both server and client code
  */
 
-import type { z } from "zod";
+import { z } from "zod";
 
 import {
+  searchReplyItemSchema,
   searchResultDataSchema,
   searchResultDisplaySchema,
   searchStatsSchema,
@@ -67,6 +68,21 @@ export function validateSearchStats(
     return searchStatsSchema.parse(value);
   } catch {
     // Client-safe version doesn't log errors
+    return null;
+  }
+}
+
+/**
+ * Safely validate reply list from search loader/fetcher.
+ */
+export function validateSearchReplies(
+  value: unknown
+): Array<z.infer<typeof searchReplyItemSchema>> | null {
+  if (value == null) return null;
+  if (!Array.isArray(value)) return null;
+  try {
+    return z.array(searchReplyItemSchema).parse(value);
+  } catch {
     return null;
   }
 }

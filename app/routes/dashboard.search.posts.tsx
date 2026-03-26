@@ -32,6 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return {
         event: searchResult.event,
         stats: searchResult.stats,
+        replies: searchResult.replies,
       };
     } catch (error: unknown) {
       return {

@@ -12,6 +12,16 @@ interface User {
   timezone?: string | null;
 }
 
+interface SearchReplyItem {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  content: string;
+  authorName: string;
+  authorImage: string | null;
+  mediaUrls?: string[];
+}
+
 interface SearchResultData {
   event?: {
     id: string;
@@ -21,6 +31,8 @@ interface SearchResultData {
     content: string;
     tags: string[][];
     mediaUrls?: string[];
+    authorName: string;
+    authorImage: string | null;
   };
   stats?: {
     likes: number;
@@ -30,6 +42,7 @@ interface SearchResultData {
     zaps: number;
     satszapped: number;
   };
+  replies?: SearchReplyItem[];
   error?: string;
 }
 
@@ -67,6 +80,7 @@ export function useSearchState({
   const dataSource = fetcherData ?? loaderSearchResult;
   const searchResult = dataSource?.event;
   const searchStats = dataSource?.stats;
+  const searchReplies = dataSource?.replies ?? [];
   const searchError = dataSource?.error;
 
   useEffect(() => {
@@ -160,6 +174,7 @@ export function useSearchState({
     isSearching,
     searchResult,
     searchStats,
+    searchReplies,
     fetcher,
     setToast,
     handleSearch,

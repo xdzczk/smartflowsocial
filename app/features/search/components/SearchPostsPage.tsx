@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { Suspense } from "react";
 
 import {
+  validateSearchReplies,
   validateSearchResultData,
   validateSearchResultDisplay,
   validateSearchStats,
@@ -22,6 +23,7 @@ import { SearchToast } from "./SearchToast";
 interface DeferredSearchResult {
   event?: unknown;
   stats?: unknown;
+  replies?: unknown;
   error?: string;
 }
 
@@ -29,7 +31,12 @@ export default function SearchPostsPage() {
   const navigation = useNavigation();
   const loaderData = useLoaderData<{
     user: { timezone?: string | null } | null;
-    searchResult?: { event?: unknown; stats?: unknown; error?: string };
+    searchResult?: {
+      event?: unknown;
+      stats?: unknown;
+      replies?: unknown;
+      error?: string;
+    };
     searchResultPromise?: Promise<DeferredSearchResult>;
   }>();
   const {
@@ -78,6 +85,7 @@ interface SearchPostsPageContentProps {
   loaderSearchResult: {
     event?: unknown;
     stats?: unknown;
+    replies?: unknown;
     error?: string;
   } | null;
   forceShowSkeleton: boolean;
@@ -94,6 +102,7 @@ function SearchPostsPageContent({
     isSearching,
     searchResult,
     searchStats,
+    searchReplies,
     setToast,
     handleScheduleQuote,
     handleScheduleRepost,
@@ -137,6 +146,7 @@ function SearchPostsPageContent({
             }
           }
           stats={validateSearchStats(searchStats) ?? null}
+          replies={validateSearchReplies(searchReplies) ?? []}
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}

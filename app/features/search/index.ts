@@ -38,6 +38,7 @@ export { useSearchState } from "./hooks/useSearchState";
 // ============================================================================
 
 export { loadSearchData } from "./services/search-loader.server";
+export { loadSearchThreadChildReplies } from "./services/search-thread-children.server";
 
 // ============================================================================
 // Global Search (Public API)

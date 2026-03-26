@@ -10,6 +10,19 @@ import type { NostrEvent } from "~/features/nostr/types";
 import { getPostStats, type PostStats } from "~/features/posts/stats.server";
 import { logError } from "~/lib/error-logger.server";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
+
+import { fetchAuthorsInfoBatch } from "./search-authors-batch.server";
+import {
+  extractMediaUrlsFromContent,
+  extractMediaUrlsFromTags,
+} from "./search-event-media.server";
+import { mapLooseNostrEventsToSearchReplyItems } from "./search-reply-items.server";
+import {
+  collectCandidatesFromPrimalResponses,
+  extractDirectRepliesToRoot,
+  getEvId,
+  getEvKind,
+} from "./search-thread-replies.server";
 /**
  * Extended NostrEvent with pubkey and id (from Primal cache)
  */
@@ -179,43 +192,6 @@ async function fetchEventStats(eventId: string): Promise<PostStats> {
 }
 
 /**
- * Extract media URLs from event content (plain URLs in text)
- */
-function extractMediaUrlsFromContent(content: string): string[] {
-  const urlRegex =
-    /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|webm|mov))/gi;
-  return content.match(urlRegex) ?? [];
-}
-
-/**
- * Extract media URLs from event tags (e.g. ["url", "https://..."], NIP-94 style)
- */
-function extractMediaUrlsFromTags(tags: string[][]): string[] {
-  const urls: string[] = [];
-  for (const tag of tags) {
-    if (!Array.isArray(tag) || tag.length < 2) continue;
-    // ["url", "https://..."]
-    if (
-      tag[0] === "url" &&
-      typeof tag[1] === "string" &&
-      /^https?:\/\//i.test(tag[1])
-    ) {
-      urls.push(tag[1]);
-    }
-    // NIP-94 imeta: ["imeta", "url", "https://..."]
-    if (
-      tag[0] === "imeta" &&
-      tag.length >= 3 &&
-      typeof tag[2] === "string" &&
-      /^https?:\/\//i.test(tag[2])
-    ) {
-      urls.push(tag[2]);
-    }
-  }
-  return urls;
-}
-
-/**
  * Handle search event action (notes, nevents, naddr long-form articles).
  */
 /* eslint-disable sonarjs/cognitive-complexity -- branches for multiple identifier types */
@@ -274,16 +250,29 @@ export async function handleSearchEvent(eventInput: string) {
     }
   } else {
     eventIdNorm = decoded.eventId.toLowerCase();
-    try {
-      // Primal `events` only returns already-cached items; `thread_view` can trigger fetch
-      // for missing events (server-side auto_fetch_missing_events path), which makes
-      // external direct-ID lookups much more reliable for uncached posts.
-      responses = await connectToPrimalCache("thread_view", {
+    // `thread_view` can auto-fetch missing events; `events` often returns the full kind 1 body
+    // from cache. Run both in parallel and merge — thread payloads may omit note content early.
+    const [threadSettled, eventsSettled] = await Promise.allSettled([
+      connectToPrimalCache("thread_view", {
         event_id: decoded.eventId,
-      });
-    } catch (error) {
-      // Keep a compatibility fallback to `events` for deployments where thread_view may
-      // be restricted or unavailable.
+      }),
+      connectToPrimalCache("events", {
+        event_ids: [decoded.eventId],
+      }),
+    ]);
+
+    let threadResponses: unknown[] = [];
+    let threadError: unknown;
+    if (threadSettled.status === "fulfilled") {
+      threadResponses = threadSettled.value;
+    } else {
+      threadError = threadSettled.reason;
+    }
+
+    const eventsResponses: unknown[] =
+      eventsSettled.status === "fulfilled" ? eventsSettled.value : [];
+
+    if (threadResponses.length === 0 && eventsResponses.length === 0) {
       try {
         responses = await connectToPrimalCache("events", {
           event_ids: [decoded.eventId],
@@ -301,58 +290,18 @@ export async function handleSearchEvent(eventInput: string) {
                 ? fallbackError.message
                 : String(fallbackError),
             threadViewError:
-              error instanceof Error ? error.message : String(error),
+              threadError instanceof Error
+                ? threadError.message
+                : String(threadError),
           }
         );
       }
+    } else {
+      responses = [...threadResponses, ...eventsResponses];
     }
   }
 
-  const flattenPayload = (raw: unknown): NostrEventWithMetadata[] => {
-    if (!raw || typeof raw !== "object") return [];
-    if (Array.isArray(raw)) {
-      return raw.filter(
-        (e): e is NostrEventWithMetadata => e != null && typeof e === "object"
-      );
-    }
-    const obj = raw as Record<string, unknown>;
-    const ev = obj["event"];
-    if (ev != null && typeof ev === "object") {
-      return [ev as NostrEventWithMetadata];
-    }
-    const data = obj["data"];
-    const events = obj["events"];
-    const arr = Array.isArray(data)
-      ? data
-      : Array.isArray(events)
-        ? events
-        : null;
-    if (arr) {
-      return (arr as unknown[]).filter(
-        (e): e is NostrEventWithMetadata => e != null && typeof e === "object"
-      );
-    }
-    if (data != null && typeof data === "object" && !Array.isArray(data)) {
-      return [data as NostrEventWithMetadata];
-    }
-    if (
-      events != null &&
-      typeof events === "object" &&
-      !Array.isArray(events)
-    ) {
-      return [events as NostrEventWithMetadata];
-    }
-    return [raw as NostrEventWithMetadata];
-  };
-  const candidates = Array.isArray(responses)
-    ? (responses as unknown[])
-        .filter(
-          (res): res is [string, string, unknown] =>
-            Array.isArray(res) && res[0] === "EVENT" && res[2] != null
-        )
-        .flatMap((res) => flattenPayload(res[2]))
-        .filter((ev): ev is NostrEventWithMetadata => typeof ev === "object")
-    : [];
+  const candidates = collectCandidatesFromPrimalResponses(responses);
 
   const getDTag = (ev: NostrEventWithMetadata): string => {
     const tags = Array.isArray(ev.tags) ? ev.tags : [];
@@ -360,33 +309,33 @@ export async function handleSearchEvent(eventInput: string) {
     return d && d.length > 1 && typeof d[1] === "string" ? d[1] : "";
   };
 
-  const getEvId = (ev: NostrEventWithMetadata): string =>
-    (
-      (ev as { id?: string }).id ??
-      (ev as { event_id?: string }).event_id ??
-      ""
-    ).toLowerCase();
-  const getEvKind = (ev: NostrEventWithMetadata): number =>
-    (ev as { kind?: number }).kind ??
-    (ev as { event_kind?: number }).event_kind ??
-    0;
-
   let eventToUse: NostrEventWithMetadata | null = null;
   if (matchByNaddr) {
-    eventToUse =
-      candidates.find(
-        (ev) =>
-          getEvKind(ev) === matchByNaddr.kind &&
-          (typeof ev.pubkey === "string" ? ev.pubkey : "") ===
-            matchByNaddr.pubkey &&
-          getDTag(ev) === matchByNaddr.identifier
-      ) ?? null;
+    const found = candidates.find(
+      (ev) =>
+        getEvKind(ev) === matchByNaddr.kind &&
+        (typeof ev.pubkey === "string" ? ev.pubkey : "") ===
+          matchByNaddr.pubkey &&
+        getDTag(ev as NostrEventWithMetadata) === matchByNaddr.identifier
+    );
+    eventToUse = found ? (found as NostrEventWithMetadata) : null;
   } else {
     const idMatching = candidates.filter((ev) => getEvId(ev) === eventIdNorm);
-    const kind1Note = idMatching.find((ev) => getEvKind(ev) === 1);
-    const firstMatch = idMatching.length > 0 ? (idMatching[0] ?? null) : null;
-    eventToUse = kind1Note ?? firstMatch;
-    if (eventToUse && getEvKind(eventToUse) !== 1) {
+    const kind1ForId = idMatching.filter((ev) => getEvKind(ev) === 1);
+    if (kind1ForId.length > 0) {
+      const scored = kind1ForId.map((ev) => {
+        const content = typeof ev.content === "string" ? ev.content : "";
+        const pubkey = typeof ev.pubkey === "string" ? ev.pubkey : "";
+        const score =
+          content.trim().length * 10 +
+          pubkey.length +
+          (typeof ev.id === "string" && ev.id ? 1 : 0);
+        return { ev, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      const best = scored[0]?.ev;
+      eventToUse = best ? (best as NostrEventWithMetadata) : null;
+    } else {
       eventToUse = null;
     }
   }
@@ -412,9 +361,37 @@ export async function handleSearchEvent(eventInput: string) {
   const eventContent =
     (typeof event.content === "string" ? event.content : null) ??
     (typeof evWithBody.body === "string" ? evWithBody.body : "");
-  const [authorInfo, stats] = await Promise.all([
+
+  let replyCandidatePool = [...candidates];
+  if (matchByNaddr && eventId) {
+    try {
+      const threadExtras = await connectToPrimalCache("thread_view", {
+        event_id: eventId,
+      });
+      replyCandidatePool.push(
+        ...collectCandidatesFromPrimalResponses(threadExtras)
+      );
+    } catch {
+      // Thread may be unavailable; replies stay empty
+    }
+  }
+
+  const replyRawEvents = extractDirectRepliesToRoot(
+    replyCandidatePool,
+    eventId
+  );
+  const replyPubkeys = [
+    ...new Set(
+      replyRawEvents
+        .map((e) => (typeof e.pubkey === "string" ? e.pubkey : ""))
+        .filter(Boolean)
+    ),
+  ];
+
+  const [authorInfo, stats, authorsMap] = await Promise.all([
     fetchAuthorInfo(eventPubkey),
     fetchEventStats(eventId),
+    fetchAuthorsInfoBatch(replyPubkeys),
   ]);
 
   // Extract media URLs from content and tags (NIP-94, url tags, etc.)
@@ -422,6 +399,11 @@ export async function handleSearchEvent(eventInput: string) {
   const eventTags = Array.isArray(event.tags) ? event.tags : [];
   const tagUrls = extractMediaUrlsFromTags(eventTags);
   const mediaUrls = [...new Set([...contentUrls, ...tagUrls].filter(Boolean))];
+
+  const replies = mapLooseNostrEventsToSearchReplyItems(
+    replyRawEvents,
+    authorsMap
+  );
 
   return {
     success: true,
@@ -444,6 +426,7 @@ export async function handleSearchEvent(eventInput: string) {
       mediaUrls,
     },
     stats,
+    replies,
   };
 }
 /* eslint-enable sonarjs/cognitive-complexity */

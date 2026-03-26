@@ -16,6 +16,9 @@ export const searchEventSchema = z.object({
   content: z.string(),
   tags: z.array(z.array(z.string())),
   mediaUrls: z.array(z.string()).optional(),
+  /** Present on server search results; must be kept through parse (Zod strips unknown keys). */
+  authorName: z.string(),
+  authorImage: z.string().nullable(),
 });
 
 /**
@@ -30,12 +33,24 @@ export const searchStatsSchema = z.object({
   satszapped: z.number(),
 });
 
+/** Direct reply to the viewed note (from Primal thread_view). */
+export const searchReplyItemSchema = z.object({
+  id: z.string(),
+  pubkey: z.string(),
+  created_at: z.number(),
+  content: z.string(),
+  authorName: z.string(),
+  authorImage: z.string().nullable(),
+  mediaUrls: z.array(z.string()).optional(),
+});
+
 /**
  * Schema for search result data from fetcher
  */
 export const searchResultDataSchema = z.object({
   event: searchEventSchema.optional(),
   stats: searchStatsSchema.optional(),
+  replies: z.array(searchReplyItemSchema).optional(),
   error: z.string().optional(),
 });
 

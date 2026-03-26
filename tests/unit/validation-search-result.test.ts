@@ -57,6 +57,70 @@ describe("Search Result Validation", () => {
       // If it fails, result will be null
       expect(result === null || typeof result === "object").toBe(true);
     });
+
+    it("preserves authorName and authorImage for downstream display validation", () => {
+      const payload = {
+        event: {
+          id: "a".repeat(64),
+          pubkey: "b".repeat(64),
+          created_at: 1_700_000_000,
+          kind: 1,
+          content: "hello world",
+          tags: [] as string[][],
+          authorName: "Alice",
+          authorImage: null as string | null,
+          mediaUrls: [] as string[],
+        },
+        stats: {
+          likes: 2,
+          replies: 1,
+          mentions: 0,
+          reposts: 0,
+          zaps: 0,
+          satszapped: 0,
+        },
+      };
+
+      const validated = validateSearchResultData(payload);
+      expect(validated?.event?.authorName).toBe("Alice");
+      expect(validated?.event?.authorImage).toBeNull();
+      expect(validateSearchResultDisplay(validated?.event ?? null)).toEqual(
+        expect.objectContaining({
+          id: payload.event.id,
+          content: "hello world",
+          authorName: "Alice",
+          authorImage: null,
+        })
+      );
+    });
+
+    it("accepts optional replies array on search result payload", () => {
+      const payload = {
+        event: {
+          id: "a".repeat(64),
+          pubkey: "b".repeat(64),
+          created_at: 1,
+          kind: 1,
+          content: "root",
+          tags: [] as string[][],
+          authorName: "Root",
+          authorImage: null as string | null,
+        },
+        replies: [
+          {
+            id: "c".repeat(64),
+            pubkey: "d".repeat(64),
+            created_at: 2,
+            content: "reply text",
+            authorName: "Bob",
+            authorImage: null as string | null,
+          },
+        ],
+      };
+      const validated = validateSearchResultData(payload);
+      expect(validated?.replies).toHaveLength(1);
+      expect(validated?.replies?.[0]?.content).toBe("reply text");
+    });
   });
 
   describe("validateSearchResultDisplay", () => {

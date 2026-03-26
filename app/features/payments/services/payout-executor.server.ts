@@ -246,19 +246,27 @@ export async function executeCampaignPayoutBatch(
   const run = await withPayoutLedgerTransaction(async (tx) => {
     const r = await ensureRun(tx, input);
     if (!eligibility.eligible) {
-      await updatePayoutRun(r.id, {
-        status: "skipped",
-        eligibilityErrorCode: eligibility.errorCode,
-        eligibilityErrorMessage: eligibility.errorMessage,
-        completedAt: new Date(),
-      });
+      await updatePayoutRun(
+        r.id,
+        {
+          status: "skipped",
+          eligibilityErrorCode: eligibility.errorCode,
+          eligibilityErrorMessage: eligibility.errorMessage,
+          completedAt: new Date(),
+        },
+        tx
+      );
     } else {
-      await updatePayoutRun(r.id, {
-        status: "running",
-        startedAt: r.startedAt ?? new Date(),
-        eligibilityErrorCode: null,
-        eligibilityErrorMessage: null,
-      });
+      await updatePayoutRun(
+        r.id,
+        {
+          status: "running",
+          startedAt: r.startedAt ?? new Date(),
+          eligibilityErrorCode: null,
+          eligibilityErrorMessage: null,
+        },
+        tx
+      );
     }
     return r;
   });

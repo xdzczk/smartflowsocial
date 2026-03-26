@@ -3,7 +3,14 @@
  */
 
 import { Link, useRouteLoaderData } from "@remix-run/react";
-import { Copy, ExternalLink, Quote, Repeat, User } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  MessageCircle,
+  Quote,
+  Repeat,
+  User,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -16,6 +23,8 @@ import {
   getNostrClientConfig,
   getNostrClientDisplayName,
 } from "~/lib/nostr-client-urls";
+
+import { SearchReplyThread, type SearchReplyItem } from "./SearchReplyThread";
 
 function truncateEventId(id: string, head = 12, tail = 8): string {
   if (id.length <= head + tail + 3) return id;
@@ -46,6 +55,8 @@ interface SearchStats {
 interface SearchResultProps {
   result: SearchResultData;
   stats: SearchStats | null;
+  /** Top-level thread replies (oldest first); expand rows to load nested replies. */
+  replies: SearchReplyItem[];
   onClear: () => void;
   onScheduleQuote: () => void;
   onScheduleRepost: () => void;
@@ -54,6 +65,7 @@ interface SearchResultProps {
 export function SearchResult({
   result,
   stats,
+  replies,
   onClear,
   onScheduleQuote,
   onScheduleRepost,
@@ -213,6 +225,35 @@ export function SearchResult({
               Sats
             </p>
             <p className="text-lg font-semibold">{stats.satszapped}</p>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Thread: top-level replies; chevron loads nested replies on demand */}
+      {replies.length > 0 ? (
+        <div className="mb-4">
+          <div className="mb-1 flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+            <div className="flex items-center gap-2">
+              <MessageCircle
+                className="text-muted-foreground h-4 w-4 shrink-0"
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+              <h3 className="text-foreground text-sm font-semibold">
+                Thread ({replies.length} top-level)
+              </h3>
+            </div>
+            <p className="text-muted-foreground text-xs sm:ml-1">
+              Expand a reply to load its nested replies (not fetched until you
+              open it).
+            </p>
+          </div>
+          <div className="dark:border-border max-h-[min(70vh,640px)] overflow-y-auto rounded-lg border p-3">
+            <SearchReplyThread
+              rootReplies={replies}
+              nostrClientConfig={nostrClientConfig}
+              formatDate={formatDate}
+            />
           </div>
         </div>
       ) : null}
