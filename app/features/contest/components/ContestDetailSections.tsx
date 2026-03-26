@@ -4,11 +4,13 @@ import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "~/components/ui/button";
-import { CampaignReceiptProofShell } from "~/features/campaign-ui";
 import {
-  BatchPayoutStatusBanner,
-  type BatchPayoutProgressSnapshot,
-} from "~/features/payments/components/BatchPayoutStatusBanner";
+  CampaignReceiptProofShell,
+  PayoutMethodSelector,
+  PayoutProgressCard,
+  payoutCopy,
+} from "~/features/campaign-ui";
+import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
 
 import { contestCopy } from "../contest-copy";
@@ -115,12 +117,14 @@ export function ContestDetailHeroHeader({
   headerToneClass,
   stateSummary,
   statusTimestamp,
+  phaseLabel,
 }: {
   contest: ContestRow;
   metric: string;
   headerToneClass: string;
   stateSummary: string;
   statusTimestamp: string;
+  phaseLabel: string;
 }) {
   return (
     <div className={`rounded-lg border p-5 ${headerToneClass}`}>
@@ -133,7 +137,7 @@ export function ContestDetailHeroHeader({
         </div>
         <div className="flex flex-col items-end gap-1 text-right text-xs">
           <span className="bg-muted text-foreground inline-flex rounded-full px-3 py-1 text-xs font-semibold">
-            {contest.statusLabel}
+            {phaseLabel}
           </span>
           <span className="text-muted-foreground">
             Updated {new Date(statusTimestamp).toLocaleString()}
@@ -470,6 +474,10 @@ export function ContestDetailFormsSection({
             name="lockConfigHash"
             value={contest.lockConfigHash ?? ""}
           />
+          <p className="text-muted-foreground text-sm">
+            Locking makes final placements immutable for payout and proof.
+            SmartFlowSocial does not hold prize funds.
+          </p>
           <p className="text-muted-foreground text-xs">
             {feeLabel} · Planned {data.quote.plannedPayoutSats.toLocaleString()}{" "}
             sats · Fee {data.quote.feeSats.toLocaleString()} sats
@@ -506,8 +514,8 @@ export function ContestDetailFormsSection({
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Payout settings</p>
                 <p className="text-muted-foreground text-xs">
-                  Manual payouts always work. NWC enables batch execution and
-                  trusted auto-run.
+                  {payoutCopy.lockTrustNote} Manual payout remains available as
+                  fallback.
                 </p>
               </div>
               <button
@@ -518,53 +526,13 @@ export function ContestDetailFormsSection({
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm">
-                Wallet mode{" "}
-                <select
-                  name="payoutWalletMode"
-                  defaultValue={contest.payoutWalletMode}
-                  className="border-border bg-background ml-2 rounded-md border px-2 py-1 text-sm"
-                >
-                  <option value="manual">manual</option>
-                  <option value="nwc_creator" disabled={!data.nwc.enabled}>
-                    nwc_creator
-                  </option>
-                </select>
-              </label>
-              {!data.nwc.enabled ? (
-                <span className="text-muted-foreground text-xs">
-                  Connect NWC in Settings to enable NWC mode.
-                </span>
-              ) : null}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  name="payoutAutoRunEnabled"
-                  defaultChecked={contest.payoutAutoRunEnabled}
-                  disabled={
-                    contest.payoutWalletMode !== "nwc_creator" ||
-                    !data.nwc.enabled
-                  }
-                  className="mr-2 align-middle"
-                />
-                Trusted auto-run at end
-              </label>
-              <label className="text-sm">
-                Spend cap (sats){" "}
-                <input
-                  type="number"
-                  name="payoutAutoRunSpendCapSats"
-                  defaultValue={contest.payoutAutoRunSpendCapSats ?? ""}
-                  min={0}
-                  step={1}
-                  className="border-border bg-background ml-2 w-40 rounded-md border px-2 py-1 text-sm"
-                />
-              </label>
-            </div>
+            <PayoutMethodSelector
+              walletMode={contest.payoutWalletMode}
+              autoPayEnabled={contest.payoutAutoRunEnabled}
+              autoPayCapSats={contest.payoutAutoRunSpendCapSats}
+              nwcEnabled={data.nwc.enabled}
+              autoPayLabel={payoutCopy.autoPayAtEnd}
+            />
           </Form>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -593,7 +561,7 @@ export function ContestDetailFormsSection({
                     Paying winners…
                   </>
                 ) : (
-                  "Batch payout (NWC)"
+                  payoutCopy.payWinnersNow
                 )}
               </button>
               {!data.nwc.enabled ? (
@@ -602,7 +570,7 @@ export function ContestDetailFormsSection({
                 </p>
               ) : null}
             </div>
-            <BatchPayoutStatusBanner
+            <PayoutProgressCard
               active={isBatchPayoutPending}
               progress={batchProgressSnapshot}
             />
@@ -618,6 +586,17 @@ export function ContestDetailFormsSection({
             summary={data.payoutSummary}
             feeLabel={feeLabel}
           />
+          <div className="border-border bg-card space-y-2 rounded-lg border p-3 text-sm">
+            <p className="font-medium">
+              {data.payoutSummary.paidOrSent} paid · {data.payoutSummary.failed}{" "}
+              failed · {data.payoutSummary.needsReview} needs review ·{" "}
+              {data.payoutSummary.skipped} skipped
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Retry failed payouts from recipient actions or switch to manual
+              fallback in payout settings.
+            </p>
+          </div>
           <ul className="border-border divide-border divide-y rounded-lg border">
             {winners
               .filter((w) => !w.isAlternate)
@@ -653,7 +632,7 @@ export function ContestDetailFormsSection({
               type="submit"
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
             >
-              {contestCopy.markContestComplete}
+              Finish campaign
             </button>
           </Form>
         </div>
@@ -664,6 +643,13 @@ export function ContestDetailFormsSection({
           receiptTitle={contestCopy.receipt}
           receiptBody={
             <div className="space-y-3 text-sm">
+              {data.payoutSummary.failed > 0 ||
+              data.payoutSummary.needsReview > 0 ? (
+                <p className="text-amber-700 dark:text-amber-300">
+                  Completed with issues: {data.payoutSummary.failed} failed ·{" "}
+                  {data.payoutSummary.needsReview} needs review.
+                </p>
+              ) : null}
               <p>{data.receiptSummaryLine}</p>
               <dl className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                 <div>
@@ -681,6 +667,22 @@ export function ContestDetailFormsSection({
                 <div>
                   <dt className="text-muted-foreground">Prize pool</dt>
                   <dd>{data.quote.plannedPayoutSats.toLocaleString()} sats</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Paid via wallet</dt>
+                  <dd>{data.payoutSummary.paidViaWallet}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Paid manually</dt>
+                  <dd>{data.payoutSummary.paidManually}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Failed</dt>
+                  <dd>{data.payoutSummary.failed}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Needs review</dt>
+                  <dd>{data.payoutSummary.needsReview}</dd>
                 </div>
               </dl>
             </div>

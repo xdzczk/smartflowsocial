@@ -168,6 +168,23 @@ SmartFlowSocial uses a fair random selection process:
 - See engagement statistics
 - Access giveaway tools
 
+### Payout terminology (v2)
+
+When winners are locked, Giveaways and Contests use shared payout language:
+
+- **Pay winners now** - start wallet payout from your connected NWC wallet
+- **Payout method** - choose manual payout or wallet payout
+- **Auto-pay after lock** - automatically start wallet payout after lock
+- **Auto-pay cap** - maximum sats auto-pay can spend in one run
+- **Mark paid manually** - confirm off-app/manual payment
+- **Finish campaign** - close payout tracking and generate final receipt/proof
+
+Support notes shown in the UI:
+
+- **SmartFlowSocial never holds prize funds**
+- **Winners are fixed after lock**
+- **Manual payout remains available as fallback**
+
 ### Engagement Statistics
 
 **Metrics shown:**

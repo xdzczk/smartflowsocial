@@ -2,6 +2,7 @@ import type { SerializeFrom } from "@remix-run/node";
 import { useRouteLoaderData } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
 
+import { mapContestCampaignPhase } from "~/features/campaign-ui";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { contestCopy } from "../contest-copy";
@@ -163,6 +164,9 @@ export function ContestDetailView({
     contest.status,
     contest.statusLabel
   );
+  const hasPayoutIssues =
+    data.payoutSummary.failed > 0 || data.payoutSummary.needsReview > 0;
+  const phaseLabel = mapContestCampaignPhase(contest.status, hasPayoutIssues);
 
   const showFrozenLeaderboard =
     !isLive && (frozenRows.length > 0 || isReview || isLocked || isCompleted);
@@ -181,6 +185,7 @@ export function ContestDetailView({
         headerToneClass={headerToneClass}
         stateSummary={stateSummary}
         statusTimestamp={statusTimestamp}
+        phaseLabel={phaseLabel}
       />
 
       {!isDraft ? <ContestPublicShareRow contestId={contest.id} /> : null}

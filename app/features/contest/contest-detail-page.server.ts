@@ -275,11 +275,28 @@ export async function getContestDetailPageData(
   let paidOrSent = 0;
   let pending = 0;
   let failed = 0;
+  let needsReview = 0;
+  let skipped = 0;
+  let paidViaWallet = 0;
+  let paidManually = 0;
   for (const pk of winnerPubkeys) {
-    const st = payoutState[pk]?.status ?? "pending";
-    if (st === "sent" || st === "marked_paid") paidOrSent += 1;
-    else if (st === "failed") failed += 1;
-    else pending += 1;
+    // Status can include legacy/ledger values from persisted snapshots.
+    const st: string = payoutState[pk]?.status ?? "pending";
+    if (st === "sent") {
+      paidOrSent += 1;
+      paidViaWallet += 1;
+    } else if (st === "marked_paid") {
+      paidOrSent += 1;
+      paidManually += 1;
+    } else if (st === "failed") {
+      failed += 1;
+    } else if (st === "claim_needed" || st === "needs_review") {
+      needsReview += 1;
+    } else if (st === "skipped") {
+      skipped += 1;
+    } else {
+      pending += 1;
+    }
   }
 
   const fairnessProofText =
@@ -398,6 +415,10 @@ export async function getContestDetailPageData(
       paidOrSent,
       pending,
       failed,
+      needsReview,
+      skipped,
+      paidViaWallet,
+      paidManually,
       plannedSats: contest.plannedPayoutSats ?? quote.plannedPayoutSats,
     },
     canUsePresets,

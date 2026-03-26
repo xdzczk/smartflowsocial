@@ -4,9 +4,17 @@ import { toast } from "react-hot-toast";
 
 import ZapButton from "~/components/dashboard/ZapButton";
 import { Button } from "~/components/ui/button";
-import { CampaignPayoutOverviewShell } from "~/features/campaign-ui";
+import {
+  CampaignPayoutOverviewShell,
+  mapPayoutItemPhase,
+  payoutCopy,
+} from "~/features/campaign-ui";
 
 import { contestCopy } from "../contest-copy";
+
+const PAID_VIA_WALLET_PHASE = "Paid via wallet";
+const PAID_MANUALLY_PHASE = "Paid manually";
+const NEEDS_REVIEW_PHASE = "Needs review";
 
 export function ContestPayoutOverview({
   summary,
@@ -17,6 +25,10 @@ export function ContestPayoutOverview({
     paidOrSent: number;
     pending: number;
     failed: number;
+    needsReview: number;
+    skipped: number;
+    paidViaWallet: number;
+    paidManually: number;
     plannedSats: number;
   };
   feeLabel: string;
@@ -41,14 +53,15 @@ export function ContestPayoutOverview({
           value: summary.failed,
           valueClassName: "font-semibold text-destructive",
         },
+        { label: NEEDS_REVIEW_PHASE, value: summary.needsReview },
       ]}
       done={done}
       total={total}
       footer={
         <>
           Planned payout: {summary.plannedSats.toLocaleString()} sats ·{" "}
-          {feeLabel}. Zap each winner from the row actions, then mark payouts
-          when done.
+          {feeLabel}. Wallet paid: {summary.paidViaWallet} · Manual paid:{" "}
+          {summary.paidManually} · Skipped: {summary.skipped}.
         </>
       }
     />
@@ -56,20 +69,16 @@ export function ContestPayoutOverview({
 }
 
 function PayoutStatusBadge({ status }: { status: string }) {
-  const label =
-    status === "marked_paid"
-      ? "Marked paid"
-      : status === "sent"
-        ? "Sent"
-        : status === "failed"
-          ? "Failed"
-          : "Pending";
+  const phase = mapPayoutItemPhase(status);
+  const label = phase;
   const cls =
-    status === "sent" || status === "marked_paid"
+    phase === PAID_VIA_WALLET_PHASE || phase === PAID_MANUALLY_PHASE
       ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-      : status === "failed"
+      : phase === "Failed"
         ? "bg-destructive/15 text-destructive"
-        : "bg-muted text-muted-foreground";
+        : phase === NEEDS_REVIEW_PHASE
+          ? "bg-amber-500/15 text-amber-900 dark:text-amber-200"
+          : "bg-muted text-muted-foreground";
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -141,7 +150,13 @@ export function ContestPayoutWinnerRow({
   };
 
   const st = payoutStatus;
+  const phase = mapPayoutItemPhase(st);
   const zapAmount = winner.rewardSats > 0 ? winner.rewardSats : undefined;
+  const canRetry = phase === "Failed" || phase === NEEDS_REVIEW_PHASE;
+  const canMarkFailed = phase === "Pending" || phase === PAID_MANUALLY_PHASE;
+  const canMarkManual = phase === "Pending" || phase === "Failed";
+  const canUseWallet =
+    hasNpub && (phase === "Pending" || phase === NEEDS_REVIEW_PHASE);
 
   return (
     <li className="flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap">
@@ -212,7 +227,7 @@ export function ContestPayoutWinnerRow({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {hasNpub ? (
+        {canUseWallet ? (
           <ZapButton
             npub={npub}
             amountSats={zapAmount}
@@ -222,29 +237,20 @@ export function ContestPayoutWinnerRow({
             }}
           />
         ) : null}
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={payoutFetcher.state !== "idle"}
-          onClick={() => {
-            submitPayout("sent");
-          }}
-        >
-          Mark as sent
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={payoutFetcher.state !== "idle"}
-          onClick={() => {
-            submitPayout("marked_paid");
-          }}
-        >
-          Mark paid
-        </Button>
-        {st === "failed" ? (
+        {canMarkManual ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={payoutFetcher.state !== "idle"}
+            onClick={() => {
+              submitPayout("marked_paid");
+            }}
+          >
+            {payoutCopy.markPaidManually}
+          </Button>
+        ) : null}
+        {canRetry ? (
           <Button
             type="button"
             variant="ghost"
@@ -254,9 +260,10 @@ export function ContestPayoutWinnerRow({
               submitPayout("pending");
             }}
           >
-            Retry
+            {payoutCopy.retry}
           </Button>
-        ) : (
+        ) : null}
+        {canMarkFailed ? (
           <Button
             type="button"
             variant="ghost"
@@ -266,9 +273,9 @@ export function ContestPayoutWinnerRow({
               submitPayout("failed");
             }}
           >
-            Failed
+            {payoutCopy.markFailed}
           </Button>
-        )}
+        ) : null}
       </div>
     </li>
   );

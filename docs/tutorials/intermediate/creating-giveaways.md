@@ -225,6 +225,18 @@ Ends in 7 days.
 - Thank all participants
 - Be transparent about winners
 
+## Payout flow naming (shared with contests)
+
+After locking winners, use these payout actions:
+
+- **Pay winners now** (wallet payout from connected NWC)
+- **Payout method** (manual vs wallet payout)
+- **Auto-pay after lock** and **Auto-pay cap**
+- **Mark paid manually** for off-app settlements
+- **Finish campaign** when payout tracking is complete
+
+The payout phase always keeps funds in your own wallet and leaves manual fallback available.
+
 ---
 
 ## Managing Blacklists

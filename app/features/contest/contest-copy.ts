@@ -14,10 +14,12 @@ export const contestCopy = {
   bannerLive: "Live — entries are being ranked in real time.",
   bannerEndedReview:
     "Ended — leaderboard frozen. Review before locking winners.",
-  bannerLocked: "Locked — winners fixed. Complete payouts below.",
+  bannerLocked:
+    "Winners locked — placements are fixed. Prize funds stay in your wallet until payout.",
   bannerCompleted: "Completed — receipt and proof available below.",
   bannerCancelled: "Cancelled — this contest is no longer active.",
-  bannerPayout: "Payouts in progress — mark each winner when paid.",
+  bannerPayout:
+    "Payouts in progress — sending from your connected wallet or manual fallback.",
   builderSummary: "Launch summary",
   builderSummaryHint: "Planned pool and fee update as you edit the form.",
   railSourceOk: "Selected",

@@ -23,9 +23,14 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import {
-  BatchPayoutStatusBanner,
-  type BatchPayoutProgressSnapshot,
-} from "~/features/payments/components/BatchPayoutStatusBanner";
+  PayoutMethodSelector,
+  PayoutProgressCard,
+  isPayoutItemSettled,
+  mapGiveawayCampaignPhase,
+  mapPayoutItemPhase,
+  payoutCopy,
+} from "~/features/campaign-ui";
+import type { BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
@@ -45,6 +50,10 @@ interface GiveawayFinalizationQuotePayload {
   waivedByPlan: boolean;
   lockConfigHash: string;
 }
+
+const PAID_VIA_WALLET_PHASE = "Paid via wallet";
+const PAID_MANUALLY_PHASE = "Paid manually";
+const NEEDS_REVIEW_PHASE = "Needs review";
 
 function budgetFromSnapshot(snap: GiveawayWinnerEntry[]): number {
   return snap.reduce((a, w) => a + (w.satsPerWinner ?? 0), 0);
@@ -452,6 +461,14 @@ export function GiveawayDetailPage({
     : [];
 
   const totalBudgetSats = budgetFromSnapshot(winners);
+  const unresolvedCount = winners.reduce((acc, w) => {
+    const st = giveaway.payoutState?.[w.pubkey]?.status ?? "pending";
+    return isPayoutItemSettled(st) ? acc : acc + 1;
+  }, 0);
+  const phaseLabel = mapGiveawayCampaignPhase(
+    giveaway.status,
+    giveaway.status === "PAID_OUT" && unresolvedCount > 0
+  );
 
   const copyPublicSummary = async () => {
     const text =
@@ -548,9 +565,9 @@ export function GiveawayDetailPage({
               {giveaway.status === "PREVIEWED"
                 ? "This giveaway is ready to finalize. Locking winners applies your plan’s finalization fee (if any) and creates an official record. You can reroll or exclude winners first."
                 : giveaway.status === "LOCKED"
-                  ? "Finalization complete. Winners are fixed. SmartFlowSocial does not hold prize funds — pay winners manually, then mark progress below."
+                  ? "Winners are fixed. Prize funds remain in your wallet until you choose to pay winners."
                   : giveaway.status === "PAID_OUT"
-                    ? "Giveaway complete. Receipt and proof are available below."
+                    ? "All payouts are resolved. Receipt, proof, and export tools are available below."
                     : "Configure and preview before you lock winners."}
             </p>
           </div>
@@ -558,7 +575,7 @@ export function GiveawayDetailPage({
             <span
               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${giveawayStatusPillClass(giveaway.status)}`}
             >
-              {giveaway.statusLabel ?? giveaway.status}
+              {phaseLabel}
             </span>
             <span className="text-muted-foreground">
               Updated{" "}
@@ -1029,7 +1046,7 @@ export function GiveawayDetailPage({
               >
                 <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Finalize giveaway</DialogTitle>
+                    <DialogTitle>Lock winners</DialogTitle>
                   </DialogHeader>
                   <p className="text-muted-foreground text-sm">
                     This action locks the current winner selection and starts
@@ -1110,8 +1127,9 @@ export function GiveawayDetailPage({
                         What this does not include
                       </p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        SmartFlowSocial does not hold or distribute giveaway
-                        prizes. Winner payouts are completed manually by you.
+                        SmartFlowSocial does not hold prize funds. After lock,
+                        you can pay winners manually or with your connected
+                        wallet.
                       </p>
                     </div>
                   </div>
@@ -1307,8 +1325,8 @@ export function GiveawayDetailPage({
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Payout settings</p>
                 <p className="text-muted-foreground text-xs">
-                  Manual payouts always work. NWC enables batch execution and
-                  trusted auto-run.
+                  {payoutCopy.lockTrustNote} Manual payout remains available as
+                  fallback.
                 </p>
               </div>
               <button
@@ -1319,63 +1337,22 @@ export function GiveawayDetailPage({
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm">
-                Wallet mode{" "}
-                <select
-                  name="payoutWalletMode"
-                  defaultValue={
-                    (giveaway as { payoutWalletMode?: string })
-                      .payoutWalletMode ?? "manual"
-                  }
-                  className="border-border bg-background ml-2 rounded-md border px-2 py-1 text-sm"
-                >
-                  <option value="manual">manual</option>
-                  <option value="nwc_creator" disabled={!nwc.enabled}>
-                    nwc_creator
-                  </option>
-                </select>
-              </label>
-              {!nwc.enabled ? (
-                <span className="text-muted-foreground text-xs">
-                  Connect NWC in Settings to enable NWC mode.
-                </span>
-              ) : null}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm">
-                <input
-                  type="checkbox"
-                  name="payoutAutoRunEnabled"
-                  defaultChecked={Boolean(
-                    (giveaway as { payoutAutoRunEnabled?: unknown })
-                      .payoutAutoRunEnabled
-                  )}
-                  disabled={
-                    ((giveaway as { payoutWalletMode?: string })
-                      .payoutWalletMode ?? "manual") !== "nwc_creator" ||
-                    !nwc.enabled
-                  }
-                  className="mr-2 align-middle"
-                />
-                Trusted auto-run after lock
-              </label>
-              <label className="text-sm">
-                Spend cap (sats){" "}
-                <input
-                  type="number"
-                  name="payoutAutoRunSpendCapSats"
-                  defaultValue={
-                    (giveaway as { payoutAutoRunSpendCapSats?: number | null })
-                      .payoutAutoRunSpendCapSats ?? ""
-                  }
-                  min={0}
-                  step={1}
-                  className="border-border bg-background ml-2 w-40 rounded-md border px-2 py-1 text-sm"
-                />
-              </label>
-            </div>
+            <PayoutMethodSelector
+              walletMode={
+                ((giveaway as { payoutWalletMode?: string }).payoutWalletMode ??
+                  "manual") as "manual" | "nwc_creator"
+              }
+              autoPayEnabled={Boolean(
+                (giveaway as { payoutAutoRunEnabled?: unknown })
+                  .payoutAutoRunEnabled
+              )}
+              autoPayCapSats={
+                (giveaway as { payoutAutoRunSpendCapSats?: number | null })
+                  .payoutAutoRunSpendCapSats ?? null
+              }
+              nwcEnabled={nwc.enabled}
+              autoPayLabel={payoutCopy.autoPayAfterLock}
+            />
           </form>
           <BatchZapFlow
             giveawayId={giveaway.id}
@@ -1395,6 +1372,12 @@ export function GiveawayDetailPage({
         <div className="space-y-4">
           <div className="border-border bg-card rounded-lg border p-5">
             <h2 className="text-foreground text-lg font-semibold">Receipt</h2>
+            {unresolvedCount > 0 ? (
+              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                Completed with issues: {unresolvedCount} payout item
+                {unresolvedCount === 1 ? "" : "s"} still need review.
+              </p>
+            ) : null}
             <p className="text-muted-foreground mt-1 text-sm">
               {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
               {winners.length} winner{winners.length !== 1 ? "s" : ""} ·{" "}
@@ -1410,6 +1393,38 @@ export function GiveawayDetailPage({
                 ? new Date(giveaway.updatedAt).toLocaleString()
                 : ""}
             </p>
+            <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+              <div>
+                <dt className="text-muted-foreground">Total recipients</dt>
+                <dd>{winners.length}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Paid manually</dt>
+                <dd>
+                  {
+                    winners.filter(
+                      (w) =>
+                        giveaway.payoutState?.[w.pubkey]?.status ===
+                        "marked_paid"
+                    ).length
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Paid via wallet</dt>
+                <dd>
+                  {
+                    winners.filter(
+                      (w) => giveaway.payoutState?.[w.pubkey]?.status === "sent"
+                    ).length
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Unresolved</dt>
+                <dd>{unresolvedCount}</dd>
+              </div>
+            </dl>
             <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -1569,20 +1584,16 @@ function SavePresetForm() {
 }
 
 function PayoutStatusBadge({ status }: { status: string }) {
-  const label =
-    status === "marked_paid"
-      ? "Marked paid"
-      : status === "sent"
-        ? "Sent"
-        : status === "failed"
-          ? "Failed"
-          : "Pending";
+  const phase = mapPayoutItemPhase(status);
+  const label = phase;
   const cls =
-    status === "sent" || status === "marked_paid"
+    phase === PAID_VIA_WALLET_PHASE || phase === PAID_MANUALLY_PHASE
       ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-      : status === "failed"
+      : phase === "Failed"
         ? "bg-destructive/15 text-destructive"
-        : "bg-muted text-muted-foreground";
+        : phase === NEEDS_REVIEW_PHASE
+          ? "bg-amber-500/15 text-amber-900 dark:text-amber-200"
+          : "bg-muted text-muted-foreground";
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -1676,6 +1687,21 @@ function BatchZapFlow({
       const s = payoutState[w.pubkey]?.status;
       return s === "sent" || s === "marked_paid";
     });
+  const payoutTally = winners.reduce(
+    (acc, w) => {
+      const phase = mapPayoutItemPhase(
+        payoutState[w.pubkey]?.status ?? "pending"
+      );
+      if (phase === "Paid via wallet" || phase === "Paid manually")
+        acc.paid += 1;
+      else if (phase === "Failed") acc.failed += 1;
+      else if (phase === NEEDS_REVIEW_PHASE) acc.needsReview += 1;
+      else if (phase === "Skipped") acc.skipped += 1;
+      else acc.pending += 1;
+      return acc;
+    },
+    { paid: 0, failed: 0, needsReview: 0, skipped: 0, pending: 0 }
+  );
 
   const submitPayout = (pubkey: string, status: string) => {
     const fd = new FormData();
@@ -1688,13 +1714,11 @@ function BatchZapFlow({
   return (
     <div className="space-y-4">
       <div className="border-border rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-        <p className="text-foreground font-semibold">
-          Locked — payout in progress
-        </p>
+        <p className="text-foreground font-semibold">Winners locked</p>
         <p className="text-muted-foreground mt-1 text-sm">
           Winners fixed at{" "}
-          {lockedAt ? new Date(lockedAt).toLocaleString() : "—"}. Zap each
-          winner, then mark payouts as sent when done.
+          {lockedAt ? new Date(lockedAt).toLocaleString() : "—"}.{" "}
+          {payoutCopy.lockTrustNote}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
@@ -1722,7 +1746,7 @@ function BatchZapFlow({
                 Paying winners…
               </>
             ) : (
-              "Batch payout (NWC)"
+              payoutCopy.payWinnersNow
             )}
           </button>
           {!nwcEnabled ? (
@@ -1731,9 +1755,8 @@ function BatchZapFlow({
             </span>
           ) : null}
         </div>
-        <BatchPayoutStatusBanner
+        <PayoutProgressCard
           active={isBatchPayoutPending}
-          className="mt-3"
           progress={batchProgressSnapshot}
         />
         {batchPayoutFetcher.data &&
@@ -1766,9 +1789,42 @@ function BatchZapFlow({
           </div>
         ) : null}
       </div>
+      <div className="border-border bg-card space-y-2 rounded-lg border p-3 text-sm">
+        <p className="font-medium">
+          {payoutTally.paid} paid · {payoutTally.failed} failed ·{" "}
+          {payoutTally.needsReview} needs review · {payoutTally.skipped} skipped
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={payoutControlsBusy}
+            onClick={() => {
+              winners.forEach((w) => {
+                const phase = mapPayoutItemPhase(
+                  payoutState[w.pubkey]?.status ?? "pending"
+                );
+                if (phase === "Failed" || phase === NEEDS_REVIEW_PHASE) {
+                  submitPayout(w.pubkey, "pending");
+                }
+              });
+            }}
+          >
+            Retry failed
+          </Button>
+        </div>
+      </div>
       <ul className="border-border divide-border divide-y rounded-lg border">
         {winners.map((w) => {
           const st = payoutState[w.pubkey]?.status ?? "pending";
+          const phase = mapPayoutItemPhase(st);
+          const canRetry = phase === "Failed" || phase === NEEDS_REVIEW_PHASE;
+          const canMarkFailed =
+            phase === "Pending" || phase === PAID_MANUALLY_PHASE;
+          const canMarkManual = phase === "Pending" || phase === "Failed";
+          const canUseWallet =
+            phase === "Pending" || phase === NEEDS_REVIEW_PHASE;
           return (
             <li
               key={w.pubkey}
@@ -1791,37 +1847,30 @@ function BatchZapFlow({
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <ZapButton
-                  npub={w.npub}
-                  amountSats={w.satsPerWinner}
-                  size="sm"
-                  onZapped={() => {
-                    submitPayout(w.pubkey, "sent");
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={payoutControlsBusy}
-                  onClick={() => {
-                    submitPayout(w.pubkey, "sent");
-                  }}
-                >
-                  Mark as sent
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={payoutControlsBusy}
-                  onClick={() => {
-                    submitPayout(w.pubkey, "marked_paid");
-                  }}
-                >
-                  Mark paid
-                </Button>
-                {st === "failed" ? (
+                {canUseWallet ? (
+                  <ZapButton
+                    npub={w.npub}
+                    amountSats={w.satsPerWinner}
+                    size="sm"
+                    onZapped={() => {
+                      submitPayout(w.pubkey, "sent");
+                    }}
+                  />
+                ) : null}
+                {canMarkManual ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={payoutControlsBusy}
+                    onClick={() => {
+                      submitPayout(w.pubkey, "marked_paid");
+                    }}
+                  >
+                    {payoutCopy.markPaidManually}
+                  </Button>
+                ) : null}
+                {canRetry ? (
                   <Button
                     type="button"
                     variant="ghost"
@@ -1831,9 +1880,10 @@ function BatchZapFlow({
                       submitPayout(w.pubkey, "pending");
                     }}
                   >
-                    Retry
+                    {payoutCopy.retry}
                   </Button>
-                ) : (
+                ) : null}
+                {canMarkFailed ? (
                   <Button
                     type="button"
                     variant="ghost"
@@ -1843,9 +1893,9 @@ function BatchZapFlow({
                       submitPayout(w.pubkey, "failed");
                     }}
                   >
-                    Failed
+                    {payoutCopy.markFailed}
                   </Button>
-                )}
+                ) : null}
               </div>
             </li>
           );
@@ -1866,7 +1916,7 @@ function BatchZapFlow({
             }
           }}
         >
-          Complete giveaway
+          Finish campaign
         </Button>
         {paidFetcher.data &&
         typeof paidFetcher.data === "object" &&

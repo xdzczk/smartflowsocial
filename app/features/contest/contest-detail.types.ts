@@ -144,6 +144,10 @@ export interface ContestDetailPageData {
     paidOrSent: number;
     pending: number;
     failed: number;
+    needsReview: number;
+    skipped: number;
+    paidViaWallet: number;
+    paidManually: number;
     plannedSats: number;
   };
   /** Same gate as giveaway presets (paid plans). */

@@ -322,7 +322,7 @@ async function getEligibility(
       eligible: false,
       walletMode: "manual",
       errorCode: "nwc_disabled",
-      errorMessage: "Wallet mode is manual",
+      errorMessage: "Payout method is manual",
     };
   }
   const decrypted = await getDecryptedUserNWC(creatorUserId);
