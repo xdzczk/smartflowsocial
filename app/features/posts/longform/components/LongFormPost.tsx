@@ -471,6 +471,7 @@ export default function LongFormPost({
     const values = form.getValues();
     const formData = new FormData();
     formData.set("_action", "save-draft");
+    formData.set("contentType", "article");
     /* eslint-disable @typescript-eslint/no-unnecessary-condition -- FormData.set expects string; values may be undefined at runtime */
     formData.set("title", values.title ?? "");
     formData.set("content", values.content ?? "");
@@ -512,6 +513,7 @@ export default function LongFormPost({
     flushSync();
     const values = form.getValues();
     const formData = new FormData();
+    formData.set("contentType", "article");
     if (editTemplateContext?.templateId && editTemplateContext.longFormPostId) {
       formData.set("_action", "updateTemplateLongform");
       formData.set("templateId", editTemplateContext.templateId);
