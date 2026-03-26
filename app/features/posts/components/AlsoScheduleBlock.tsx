@@ -1,6 +1,5 @@
 /**
- * Also schedule repost / quote of this post.
- * Single target: the post being published. Clear block instead of checkbox soup.
+ * Follow-up actions after the main post publishes.
  */
 
 import { Button } from "~/components/ui/button";
@@ -62,24 +61,26 @@ export function AlsoScheduleBlock({
   disabled = false,
 }: AlsoScheduleBlockProps) {
   return (
-    <div className="border-border mt-4 space-y-4 border-t pt-4">
-      <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
-        Also schedule (repost or quote of this post)
-      </h4>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
+          Repost later
+        </h4>
 
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="alsoScheduleRepost"
-          checked={alsoScheduleRepost}
-          onCheckedChange={(c) => onAlsoScheduleRepostChange(c === true)}
-          disabled={disabled}
-        />
-        <Label
-          htmlFor="alsoScheduleRepost"
-          className="text-muted-foreground dark:text-foreground cursor-pointer text-sm"
-        >
-          Also schedule a repost of this post
-        </Label>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="alsoScheduleRepost"
+            checked={alsoScheduleRepost}
+            onCheckedChange={(c) => onAlsoScheduleRepostChange(c === true)}
+            disabled={disabled}
+          />
+          <Label
+            htmlFor="alsoScheduleRepost"
+            className="text-muted-foreground dark:text-foreground cursor-pointer text-sm"
+          >
+            Schedule repost
+          </Label>
+        </div>
       </div>
       {alsoScheduleRepost ? (
         <div className="ml-6 space-y-2">
@@ -293,19 +294,24 @@ export function AlsoScheduleBlock({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="alsoScheduleQuote"
-          checked={alsoScheduleQuote}
-          onCheckedChange={(c) => onAlsoScheduleQuoteChange(c === true)}
-          disabled={disabled}
-        />
-        <Label
-          htmlFor="alsoScheduleQuote"
-          className="text-muted-foreground dark:text-foreground cursor-pointer text-sm"
-        >
-          Also schedule a quote of this post
-        </Label>
+      <div className="space-y-2">
+        <h4 className="text-muted-foreground dark:text-foreground text-sm font-medium">
+          Quote later
+        </h4>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="alsoScheduleQuote"
+            checked={alsoScheduleQuote}
+            onCheckedChange={(c) => onAlsoScheduleQuoteChange(c === true)}
+            disabled={disabled}
+          />
+          <Label
+            htmlFor="alsoScheduleQuote"
+            className="text-muted-foreground dark:text-foreground cursor-pointer text-sm"
+          >
+            Schedule quote
+          </Label>
+        </div>
       </div>
       {alsoScheduleQuote ? (
         <div className="ml-6 space-y-3">

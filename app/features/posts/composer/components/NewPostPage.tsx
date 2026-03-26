@@ -369,9 +369,8 @@ export default function NewPostPage() {
   const metadataItems = [
     `Signer: ${composerStatus === "Signing…" ? "Connecting..." : "NIP-07"}`,
     `Saved: ${draftStateLabel}`,
-    publishMode === "queue" ? "Publish: Queue mode" : null,
-    publishMode === "schedule" ? "Publish: Scheduled" : null,
-  ].filter((item): item is string => item != null);
+    `Relays: ${relayCount} selected`,
+  ];
 
   useNewPostPublishModalEffect({
     searchParams,
@@ -409,9 +408,6 @@ export default function NewPostPage() {
         }
         setComposerTab(next);
       }}
-      publishMode={publishMode}
-      onPublishModeChange={setPublishMode}
-      draftStateLabel={draftStateLabel}
       title={title}
       metadataItems={metadataItems}
     >
@@ -481,6 +477,7 @@ export default function NewPostPage() {
             defaultRelays={defaultRelays}
             initialScheduledFor={scheduledAt ?? undefined}
             publishMode={publishMode}
+            onPublishModeChange={setPublishMode}
             onDraftStateLabelChange={setDraftStateLabel}
             skipLocalDraftRestore={Boolean(publishResultToken)}
           />
@@ -515,6 +512,7 @@ export default function NewPostPage() {
             draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
             newPostContentTab={composerTab === "thread" ? "thread" : "post"}
             publishMode={publishMode}
+            onPublishModeChange={setPublishMode}
             onDraftStateLabelChange={setDraftStateLabel}
           />
         )}

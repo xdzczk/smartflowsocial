@@ -12,7 +12,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
-import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import { usePostScheduling } from "~/features/posts/scheduling";
@@ -28,8 +27,8 @@ import { useComposerState } from "../hooks/useComposerState";
 import {
   ComposerErrors,
   ComposerQueueField,
+  ComposerScheduleField,
   type ComposerPublishMode,
-  buildDeliveryLines,
   buildPollContentLines,
   buildPublishPathLines,
   getReadinessLabel,
@@ -74,6 +73,7 @@ export interface PollComposerProps {
   scheduleIntervals?: number[];
   initialScheduledFor?: string | null;
   publishMode?: ComposerPublishMode;
+  onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   skipLocalDraftRestore?: boolean;
 }
@@ -92,6 +92,7 @@ export function PollComposer({
   scheduleIntervals: scheduleIntervalsProp,
   initialScheduledFor = null,
   publishMode = "now",
+  onPublishModeChange,
   onDraftStateLabelChange,
   skipLocalDraftRestore = false,
 }: PollComposerProps) {
@@ -330,27 +331,13 @@ export function PollComposer({
   if (publishMode === "schedule" || publishMode === "queue") {
     if (!hasScheduleTime) blockers.push("Publish time is required");
   }
+  if (timeError) blockers.push(timeError);
   const warnings: string[] = [];
   if (publishMode === "queue" && selectedQueue === "unassigned") {
     warnings.push("Queue mode selected without a queue");
   }
   if (relayCount <= 0) blockers.push("No relays selected");
   const readinessLabel = getReadinessLabel(publishMode, blockers, user != null);
-  const deliveryLines = buildDeliveryLines({
-    publishMode,
-    relayCount,
-    signerLabel: user != null ? "NIP-07" : "Not connected",
-    scheduledFor,
-    timezone: userTimezone,
-    selectedQueue,
-    nextSlot:
-      selectedQueueType &&
-      typeof selectedQueueType === "object" &&
-      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-        ? getQueueNextSlotLabel(scheduledFor)
-        : undefined,
-  });
   const contentLines = buildPollContentLines(
     question.length,
     trimmedOptions.length,
@@ -632,42 +619,6 @@ export function PollComposer({
             </div>
           </div>
 
-          {showQueueControls ? (
-            <ComposerQueueField
-              queueTypes={queueTypes}
-              value={selectedQueue}
-              onChange={setSelectedQueue}
-              disabled={disabled}
-              nextSlot={
-                selectedQueueType &&
-                typeof selectedQueueType === "object" &&
-                (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                  selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                  ? getQueueNextSlotLabel(scheduledFor)
-                  : undefined
-              }
-            />
-          ) : null}
-
-          {timeError ? (
-            <p className="text-destructive text-sm">{timeError}</p>
-          ) : null}
-          {showScheduleControls ? (
-            <SchedulingSection
-              scheduledFor={scheduledFor}
-              onScheduledForChange={setScheduledFor}
-              scheduleIntervals={scheduleIntervals}
-              queueTypes={queueTypes}
-              selectedQueue={selectedQueue}
-              onScheduleIntervalClick={handleScheduleIntervalClick}
-              onCalculateNextSlot={() => {
-                void calculateQueueScheduleTime(selectedQueue);
-              }}
-              disabled={disabled}
-              userTimezone={userTimezone}
-            />
-          ) : null}
-
           <TagsChipRow
             tags={selectedHashtags}
             onTagsChange={(t) => {
@@ -705,8 +656,70 @@ export function PollComposer({
       </div>
 
       <PublishingSummaryRail
+        publishMode={publishMode}
+        onPublishModeChange={onPublishModeChange ?? (() => void 0)}
         readinessLabel={readinessLabel}
-        deliverySection={{ title: "Delivery", lines: deliveryLines }}
+        modeSpecificSection={{
+          title:
+            publishMode === "queue" ? "Queue settings" : "Schedule settings",
+          lines: publishMode === "now" ? ["Publishes immediately"] : [],
+          controls:
+            publishMode === "now" ? undefined : (
+              <div className="space-y-2">
+                {showQueueControls ? (
+                  <ComposerQueueField
+                    queueTypes={queueTypes}
+                    value={selectedQueue}
+                    onChange={setSelectedQueue}
+                    disabled={disabled}
+                    nextSlot={
+                      selectedQueueType &&
+                      typeof selectedQueueType === "object" &&
+                      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                        ? getQueueNextSlotLabel(scheduledFor)
+                        : undefined
+                    }
+                  />
+                ) : null}
+                {showScheduleControls ? (
+                  <ComposerScheduleField
+                    layout="minimal"
+                    value={scheduledFor}
+                    onValueChange={setScheduledFor}
+                    scheduleIntervals={scheduleIntervals}
+                    queueTypes={queueTypes}
+                    selectedQueue={selectedQueue}
+                    onScheduleIntervalClick={handleScheduleIntervalClick}
+                    onCalculateNextSlot={() => {
+                      void calculateQueueScheduleTime(selectedQueue);
+                    }}
+                    scheduleRandomWindowMinutes={0}
+                    onScheduleRandomWindowMinutesChange={() => void 0}
+                    postOptionsOpen={false}
+                    onPostOptionsOpenChange={() => void 0}
+                    isThreadMode={false}
+                    onThreadModeChange={() => void 0}
+                    isRecyclable={isRecyclable}
+                    onRecyclableChange={setIsRecyclable}
+                    alsoScheduleRepost={false}
+                    onAlsoScheduleRepostChange={() => void 0}
+                    repostDelayList={[]}
+                    onRepostDelayListChange={(_value) => void _value}
+                    repostConditions={null}
+                    onRepostConditionsChange={() => void 0}
+                    alsoScheduleQuote={false}
+                    onAlsoScheduleQuoteChange={() => void 0}
+                    quoteEntries={[]}
+                    onQuoteEntriesChange={(_value) => void _value}
+                    disabled={disabled}
+                    userTimezone={userTimezone}
+                    showThreadModeToggle={false}
+                  />
+                ) : null}
+              </div>
+            ),
+        }}
         contentSection={{ title: "Content", lines: contentLines }}
         publishPathSection={{ title: "Publish path", lines: publishPathLines }}
         issues={blockers}

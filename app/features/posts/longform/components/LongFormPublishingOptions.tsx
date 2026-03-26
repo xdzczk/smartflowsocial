@@ -39,6 +39,7 @@ interface LongFormPublishingOptionsProps {
   onHashtagPresetChange: (presetId: string | null, hashtags: string) => void;
   onUseHashtagPresetsChange: (value: boolean) => void;
   userTimezone?: string;
+  showHashtagPresets?: boolean;
 }
 
 export function LongFormPublishingOptions({
@@ -57,6 +58,7 @@ export function LongFormPublishingOptions({
   onHashtagPresetChange,
   onUseHashtagPresetsChange,
   userTimezone = "UTC",
+  showHashtagPresets = true,
 }: LongFormPublishingOptionsProps) {
   // Find the currently selected queue type
   const currentQueueType = queueTypes.find(
@@ -152,43 +154,44 @@ export function LongFormPublishingOptions({
           />
         </div>
 
-        {/* Hashtag Preset Toggle */}
-        <HashtagPresetToggle
-          presets={hashTagPresets}
-          selectedPresetId={selectedHashtagPresetId}
-          onSelect={onHashtagPresetChange}
-          useHashtagPresets={useHashtagPresets}
-          onUseHashtagPresetsChange={onUseHashtagPresetsChange}
-          showQueuePreset={true}
-          queueType={(() => {
-            const qt = queueTypes.find(
-              (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
-            );
-            // Only pass QueueType objects with the necessary properties
-            if (qt && typeof qt === "object" && qt.id) {
-              return qt as {
-                id: string;
-                name: string;
-                hashTagPreset?: HashTagPreset | null;
-              };
-            }
-            return null;
-          })()}
-        />
-
-        {/* Hidden hashtag preset inputs */}
-        <input
-          type="hidden"
-          id="longform-use-hashtag-presets-hidden"
-          name="useHashtagPresets"
-          value={useHashtagPresets.toString()}
-        />
-        <input
-          type="hidden"
-          id="longform-hashtag-preset-id-hidden"
-          name="hashTagPresetId"
-          value={selectedHashtagPresetId ?? ""}
-        />
+        {showHashtagPresets ? (
+          <>
+            <HashtagPresetToggle
+              presets={hashTagPresets}
+              selectedPresetId={selectedHashtagPresetId}
+              onSelect={onHashtagPresetChange}
+              useHashtagPresets={useHashtagPresets}
+              onUseHashtagPresetsChange={onUseHashtagPresetsChange}
+              showQueuePreset={true}
+              queueType={(() => {
+                const qt = queueTypes.find(
+                  (q) =>
+                    (typeof q === "string" ? q : q.name) === selectedQueueType
+                );
+                if (qt && typeof qt === "object" && qt.id) {
+                  return qt as {
+                    id: string;
+                    name: string;
+                    hashTagPreset?: HashTagPreset | null;
+                  };
+                }
+                return null;
+              })()}
+            />
+            <input
+              type="hidden"
+              id="longform-use-hashtag-presets-hidden"
+              name="useHashtagPresets"
+              value={useHashtagPresets.toString()}
+            />
+            <input
+              type="hidden"
+              id="longform-hashtag-preset-id-hidden"
+              name="hashTagPresetId"
+              value={selectedHashtagPresetId ?? ""}
+            />
+          </>
+        ) : null}
 
         {/* Schedule Controls */}
         <div className="space-y-3">

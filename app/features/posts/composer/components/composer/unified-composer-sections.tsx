@@ -38,7 +38,6 @@ export interface UnifiedComposerContentSectionProps {
     >
   >;
   threadDelayMinutes: number;
-  onThreadDelayMinutesChange: (v: number) => void;
   onFilesDroppedSegment: (segmentId: string, files: File[]) => void;
   onThreadSegmentFileClick: (segmentId: string) => void;
   draggingOverSegmentId: string | null;
@@ -62,7 +61,6 @@ export function UnifiedComposerContentSection({
   threadSegments,
   onThreadSegmentsChange,
   threadDelayMinutes,
-  onThreadDelayMinutesChange,
   onFilesDroppedSegment,
   onThreadSegmentFileClick,
   draggingOverSegmentId,
@@ -74,7 +72,6 @@ export function UnifiedComposerContentSection({
         segments={threadSegments}
         onSegmentsChange={onThreadSegmentsChange}
         threadDelayMinutes={threadDelayMinutes}
-        onThreadDelayMinutesChange={onThreadDelayMinutesChange}
         onFilesDropped={onFilesDroppedSegment}
         onAddSegmentClick={(segmentId) => onThreadSegmentFileClick(segmentId)}
         disabled={disabled}

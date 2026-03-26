@@ -5,10 +5,10 @@
  */
 
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { ChevronDown } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
@@ -27,7 +28,6 @@ import { DraftPickerModal } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
@@ -50,7 +50,6 @@ import {
   type ComposerPublishMode,
   getPrimaryCtaLabelForMode,
   getReadinessLabel,
-  buildDeliveryLines,
   buildPostContentLines,
   buildThreadContentLines,
   buildPublishPathLines,
@@ -131,6 +130,7 @@ export interface UnifiedComposerProps {
    */
   newPostContentTab?: "post" | "thread";
   publishMode?: ComposerPublishMode;
+  onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
 }
 
@@ -160,12 +160,12 @@ export function UnifiedComposer({
   embeddedDensity,
   newPostContentTab,
   publishMode = "now",
+  onPublishModeChange,
   onDraftStateLabelChange,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
-  const [advancedPostingOpen, setAdvancedPostingOpen] = React.useState(false);
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
   const isContestLite =
@@ -213,8 +213,6 @@ export function UnifiedComposer({
     setAlsoScheduleQuote,
     quoteEntries,
     setQuoteEntries,
-    postOptionsOpen,
-    setPostOptionsOpen,
     scheduleRandomWindowMinutes,
     setScheduleRandomWindowMinutes,
     isThreadMode,
@@ -227,9 +225,7 @@ export function UnifiedComposer({
     setDraggingOverSegmentId,
   } = composerState;
 
-  const threadModeFromNewPostTabs = newPostContentTab != null;
-  const showThreadModeToggle = !threadModeFromNewPostTabs;
-  const includeThreadInPostOptionsSummary = !threadModeFromNewPostTabs;
+  const [followUpActionsOpen, setFollowUpActionsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!newPostContentTab) return;
@@ -791,10 +787,7 @@ export function UnifiedComposer({
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
-  const showScheduleControls =
-    publishMode === "schedule" || publishMode === "queue";
-  const showQueueControls =
-    publishMode === "queue" || publishMode === "schedule";
+  const showQueueControls = publishMode === "queue";
 
   const publishBlockers: string[] = [];
   if (signerReady === false) publishBlockers.push("Signer not connected");
@@ -828,25 +821,6 @@ export function UnifiedComposer({
     issueList.push("Select at least one relay.");
   }
   const readinessLabel = getReadinessLabel(publishMode, issueList, signerReady);
-  const deliveryLines = buildDeliveryLines({
-    publishMode,
-    relayCount,
-    signerLabel,
-    scheduledFor: formScheduledFor ?? schedulingScheduledFor,
-    timezone: user?.timezone ?? "UTC",
-    selectedQueue,
-    nextSlot:
-      selectedQueueType &&
-      typeof selectedQueueType === "object" &&
-      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-        ? getQueueNextSlotLabel(formScheduledFor ?? schedulingScheduledFor)
-        : undefined,
-    randomizationLabel:
-      scheduleRandomWindowMinutes > 0
-        ? `±${scheduleRandomWindowMinutes}m`
-        : "Off",
-  });
   const contentLines = isThreadMode
     ? buildThreadContentLines(
         threadSegments.length,
@@ -864,6 +838,12 @@ export function UnifiedComposer({
     signerLabel,
     selectedQueue
   );
+  const threadSettingsLines = isThreadMode
+    ? [
+        `Cadence: every ${threadDelayMinutes} min`,
+        `Estimated duration: ${Math.max(threadSegments.length - 1, 0) * threadDelayMinutes} min`,
+      ]
+    : [];
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -988,7 +968,6 @@ export function UnifiedComposer({
             threadSegments={threadSegments}
             onThreadSegmentsChange={setThreadSegments}
             threadDelayMinutes={threadDelayMinutes}
-            onThreadDelayMinutesChange={setThreadDelayMinutes}
             onFilesDroppedSegment={processNewFilesForSegment}
             onThreadSegmentFileClick={(segmentId) => {
               (
@@ -1031,139 +1010,102 @@ export function UnifiedComposer({
             />
           </div>
         ) : null}
-        {!isTemplateMode && isContestLite ? (
+        {!isTemplateMode ? (
           <div className="mt-6 space-y-4">
-            {showScheduleControls ? (
-              <ComposerScheduleField
-                layout="minimal"
-                value={
-                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
-                  formScheduledFor ?? schedulingScheduledFor ?? ""
+            <TagsChipRow
+              tags={selectedHashtags}
+              onTagsChange={(newTags) => {
+                setSelectedHashtags(newTags);
+                if (!newTags.trim()) {
+                  form.setValue("useHashtagPresets", false);
+                  form.setValue("hashTagPresetId", undefined);
+                  onHashtagPresetChange?.(null, "");
                 }
-                onValueChange={(v) => {
-                  form.setValue("scheduledFor", v);
-                  setSchedulingScheduledFor(v);
-                }}
-                scheduleIntervals={scheduleIntervals}
-                queueTypes={queueTypes}
-                selectedQueue={selectedQueue}
-                onScheduleIntervalClick={handleScheduleIntervalClick}
-                onCalculateNextSlot={() =>
-                  void calculateQueueScheduleTime(selectedQueue)
-                }
-                scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
-                onScheduleRandomWindowMinutesChange={
-                  setScheduleRandomWindowMinutes
-                }
-                postOptionsOpen={postOptionsOpen}
-                onPostOptionsOpenChange={setPostOptionsOpen}
-                isThreadMode={isThreadMode}
-                onThreadModeChange={setIsThreadMode}
-                isRecyclable={!!form.watch("isRecyclable")}
-                onRecyclableChange={(v) => form.setValue("isRecyclable", v)}
-                control={form.control}
-                alsoScheduleRepost={alsoScheduleRepost}
-                onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                repostDelayList={repostDelayList}
-                onRepostDelayListChange={setRepostDelayList}
-                repostConditions={repostConditions}
-                onRepostConditionsChange={setRepostConditions}
-                alsoScheduleQuote={alsoScheduleQuote}
-                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                quoteEntries={quoteEntries}
-                onQuoteEntriesChange={setQuoteEntries}
-                disabled={disabled}
-                userTimezone={user?.timezone ?? "UTC"}
-                showThreadModeToggle={showThreadModeToggle}
-              />
-            ) : null}
-            <div className="border-border bg-muted/20 rounded-lg border px-3 py-2 text-xs">
-              <p className="text-muted-foreground font-medium">
-                Ready to publish
-              </p>
-              <p className="text-foreground mt-1">
-                {signerReady === false
-                  ? "Connect a signer to publish."
-                  : `${signerLabel ?? "Signer"} · ${relayCount} relay${relayCount !== 1 ? "s" : ""}`}
-              </p>
-            </div>
-            <div className="border-border rounded-lg border">
-              <button
-                type="button"
-                onClick={() => {
-                  setAdvancedPostingOpen((o) => !o);
-                }}
-                aria-expanded={advancedPostingOpen}
-                className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors"
-              >
-                <span>Advanced posting settings</span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform ${advancedPostingOpen ? "rotate-180" : ""}`}
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
+              }}
+              presets={hashTagPresets}
+              selectedPresetId={formSelectedHashtagPresetId}
+              onPresetSelect={(presetId, mergedTags) => {
+                setSelectedHashtags(mergedTags);
+                form.setValue("useHashtagPresets", true);
+                form.setValue("hashTagPresetId", presetId ?? undefined);
+                onHashtagPresetChange?.(presetId, mergedTags);
+              }}
+              disabled={fetcher.state !== "idle"}
+              queuePresetName={
+                selectedQueue !== "unassigned"
+                  ? ((
+                      queueTypes.find(
+                        (q) =>
+                          (typeof q === "string" ? q : q.name) === selectedQueue
+                      ) as
+                        | (QueueType & {
+                            hashTagPreset?: { name: string } | null;
+                          })
+                        | undefined
+                    )?.hashTagPreset?.name ?? undefined)
+                  : undefined
+              }
+            />
+            <div className="border-border rounded-lg border px-3 py-3">
+              <h4 className="text-sm font-medium">Content metadata</h4>
+              <div className="mt-2 flex items-start gap-2">
+                <Checkbox
+                  id="content-metadata-recyclable"
+                  checked={!!form.watch("isRecyclable")}
+                  onCheckedChange={(checked) =>
+                    form.setValue("isRecyclable", checked === true)
+                  }
+                  disabled={disabled}
                 />
-              </button>
-              {advancedPostingOpen ? (
-                <div className="border-border space-y-4 border-t px-3 pt-2 pb-3">
-                  <ComposerQueueField
-                    queueTypes={queueTypes}
-                    value={selectedQueue}
-                    onChange={setSelectedQueue}
-                    disabled={disabled}
-                    className="mb-2"
-                    nextSlot={
-                      selectedQueueType &&
-                      typeof selectedQueueType === "object" &&
-                      (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                        selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                        ? getQueueNextSlotLabel(
-                            formScheduledFor ?? schedulingScheduledFor
-                          )
-                        : undefined
-                    }
-                  />
-                  <TagsChipRow
-                    tags={selectedHashtags}
-                    onTagsChange={(newTags) => {
-                      setSelectedHashtags(newTags);
-                      if (!newTags.trim()) {
-                        form.setValue("useHashtagPresets", false);
-                        form.setValue("hashTagPresetId", undefined);
-                        onHashtagPresetChange?.(null, "");
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="content-metadata-recyclable"
+                    className="text-sm font-medium"
+                  >
+                    Mark as recyclable
+                  </Label>
+                  <p className="text-muted-foreground text-xs">
+                    Show this post in Recyclables so it can be republished
+                    later.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </fetcher.Form>
+      {!isContestLite ? (
+        <PublishingSummaryRail
+          publishMode={publishMode}
+          onPublishModeChange={onPublishModeChange ?? (() => void 0)}
+          readinessLabel={readinessLabel}
+          modeSpecificSection={{
+            title:
+              publishMode === "queue" ? "Queue settings" : "Schedule settings",
+            lines: publishMode === "now" ? ["Publishes immediately"] : [],
+            controls:
+              publishMode === "now" ? undefined : (
+                <div className="space-y-2">
+                  {showQueueControls ? (
+                    <ComposerQueueField
+                      queueTypes={queueTypes}
+                      value={selectedQueue}
+                      onChange={setSelectedQueue}
+                      disabled={disabled}
+                      nextSlot={
+                        selectedQueueType &&
+                        typeof selectedQueueType === "object" &&
+                        (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                          selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                          ? getQueueNextSlotLabel(
+                              formScheduledFor ?? schedulingScheduledFor
+                            )
+                          : undefined
                       }
-                    }}
-                    presets={hashTagPresets}
-                    selectedPresetId={formSelectedHashtagPresetId}
-                    onPresetSelect={(presetId, mergedTags) => {
-                      setSelectedHashtags(mergedTags);
-                      form.setValue("useHashtagPresets", true);
-                      form.setValue("hashTagPresetId", presetId ?? undefined);
-                      onHashtagPresetChange?.(presetId, mergedTags);
-                    }}
-                    disabled={fetcher.state !== "idle"}
-                    queuePresetName={
-                      selectedQueue !== "unassigned"
-                        ? ((
-                            queueTypes.find(
-                              (q) =>
-                                (typeof q === "string" ? q : q.name) ===
-                                selectedQueue
-                            ) as
-                              | (QueueType & {
-                                  hashTagPreset?: { name: string } | null;
-                                })
-                              | undefined
-                          )?.hashTagPreset?.name ?? undefined)
-                        : undefined
-                    }
-                  />
+                    />
+                  ) : null}
                   <ComposerScheduleField
-                    layout="full"
-                    omitScheduleInput
-                    value={
-                      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
-                      formScheduledFor ?? schedulingScheduledFor ?? ""
-                    }
+                    value={formScheduledFor ?? ""}
                     onValueChange={(v) => {
                       form.setValue("scheduledFor", v);
                       setSchedulingScheduledFor(v);
@@ -1179,13 +1121,31 @@ export function UnifiedComposer({
                     onScheduleRandomWindowMinutesChange={
                       setScheduleRandomWindowMinutes
                     }
-                    postOptionsOpen={postOptionsOpen}
-                    onPostOptionsOpenChange={setPostOptionsOpen}
-                    isThreadMode={isThreadMode}
-                    onThreadModeChange={setIsThreadMode}
-                    isRecyclable={!!form.watch("isRecyclable")}
-                    onRecyclableChange={(v) => form.setValue("isRecyclable", v)}
-                    control={form.control}
+                    disabled={disabled}
+                    userTimezone={user?.timezone ?? "UTC"}
+                  />
+                </div>
+              ),
+          }}
+          followUpSection={{
+            title: "Follow-up actions",
+            controls: (
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-full justify-start px-2 text-xs"
+                  onClick={() => {
+                    setFollowUpActionsOpen((open) => !open);
+                  }}
+                >
+                  {followUpActionsOpen
+                    ? "Hide follow-up actions"
+                    : "Show follow-up actions"}
+                </Button>
+                {followUpActionsOpen ? (
+                  <AlsoScheduleBlock
                     alsoScheduleRepost={alsoScheduleRepost}
                     onAlsoScheduleRepostChange={setAlsoScheduleRepost}
                     repostDelayList={repostDelayList}
@@ -1197,179 +1157,40 @@ export function UnifiedComposer({
                     quoteEntries={quoteEntries}
                     onQuoteEntriesChange={setQuoteEntries}
                     disabled={disabled}
-                    userTimezone={user?.timezone ?? "UTC"}
-                    showThreadModeToggle={showThreadModeToggle}
-                    postOptionsSummary={
-                      !postOptionsOpen &&
-                      ((isThreadMode && includeThreadInPostOptionsSummary) ||
-                        form.watch("isRecyclable") ||
-                        alsoScheduleRepost ||
-                        alsoScheduleQuote)
-                        ? [
-                            isThreadMode &&
-                              includeThreadInPostOptionsSummary &&
-                              `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
-                            form.watch("isRecyclable") && "Recyclable",
-                            (alsoScheduleRepost || alsoScheduleQuote) &&
-                              [
-                                alsoScheduleRepost &&
-                                  `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
-                                alsoScheduleQuote &&
-                                  `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
-                              ]
-                                .filter(Boolean)
-                                .join(" · "),
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")
-                        : undefined
-                    }
                   />
-                  <div className="border-border text-muted-foreground border-t pt-3 text-xs">
-                    Publishing summary moved to the right rail.
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : !isTemplateMode ? (
-          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-3">
-              {showQueueControls ? (
-                <ComposerQueueField
-                  queueTypes={queueTypes}
-                  value={selectedQueue}
-                  onChange={setSelectedQueue}
-                  disabled={disabled}
-                  className="mb-2"
-                  nextSlot={
-                    selectedQueueType &&
-                    typeof selectedQueueType === "object" &&
-                    (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                      selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                      ? getQueueNextSlotLabel(
-                          formScheduledFor ?? schedulingScheduledFor
-                        )
-                      : undefined
-                  }
-                />
-              ) : null}
-              <TagsChipRow
-                tags={selectedHashtags}
-                onTagsChange={(newTags) => {
-                  setSelectedHashtags(newTags);
-                  if (!newTags.trim()) {
-                    form.setValue("useHashtagPresets", false);
-                    form.setValue("hashTagPresetId", undefined);
-                    onHashtagPresetChange?.(null, "");
-                  }
-                }}
-                presets={hashTagPresets}
-                selectedPresetId={formSelectedHashtagPresetId}
-                onPresetSelect={(presetId, mergedTags) => {
-                  setSelectedHashtags(mergedTags);
-                  form.setValue("useHashtagPresets", true);
-                  form.setValue("hashTagPresetId", presetId ?? undefined);
-                  onHashtagPresetChange?.(presetId, mergedTags);
-                }}
-                disabled={fetcher.state !== "idle"}
-                queuePresetName={
-                  selectedQueue !== "unassigned"
-                    ? ((
-                        queueTypes.find(
-                          (q) =>
-                            (typeof q === "string" ? q : q.name) ===
-                            selectedQueue
-                        ) as
-                          | (QueueType & {
-                              hashTagPreset?: { name: string } | null;
-                            })
-                          | undefined
-                      )?.hashTagPreset?.name ?? undefined)
-                    : undefined
-                }
-              />
-              {showScheduleControls ? (
-                <ComposerScheduleField
-                  value={
-                    /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive default when scheduled values are unset */
-                    formScheduledFor ?? schedulingScheduledFor ?? ""
-                  }
-                  onValueChange={(v) => {
-                    form.setValue("scheduledFor", v);
-                    setSchedulingScheduledFor(v);
-                  }}
-                  scheduleIntervals={scheduleIntervals}
-                  queueTypes={queueTypes}
-                  selectedQueue={selectedQueue}
-                  onScheduleIntervalClick={handleScheduleIntervalClick}
-                  onCalculateNextSlot={() =>
-                    void calculateQueueScheduleTime(selectedQueue)
-                  }
-                  scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
-                  onScheduleRandomWindowMinutesChange={
-                    setScheduleRandomWindowMinutes
-                  }
-                  postOptionsOpen={postOptionsOpen}
-                  onPostOptionsOpenChange={setPostOptionsOpen}
-                  isThreadMode={isThreadMode}
-                  onThreadModeChange={setIsThreadMode}
-                  isRecyclable={!!form.watch("isRecyclable")}
-                  onRecyclableChange={(v) => form.setValue("isRecyclable", v)}
-                  control={form.control}
-                  alsoScheduleRepost={alsoScheduleRepost}
-                  onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                  repostDelayList={repostDelayList}
-                  onRepostDelayListChange={setRepostDelayList}
-                  repostConditions={repostConditions}
-                  onRepostConditionsChange={setRepostConditions}
-                  alsoScheduleQuote={alsoScheduleQuote}
-                  onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                  quoteEntries={quoteEntries}
-                  onQuoteEntriesChange={setQuoteEntries}
-                  disabled={disabled}
-                  userTimezone={user?.timezone ?? "UTC"}
-                  showThreadModeToggle={showThreadModeToggle}
-                  postOptionsSummary={
-                    !postOptionsOpen &&
-                    ((isThreadMode && includeThreadInPostOptionsSummary) ||
-                      form.watch("isRecyclable") ||
-                      alsoScheduleRepost ||
-                      alsoScheduleQuote)
-                      ? [
-                          isThreadMode &&
-                            includeThreadInPostOptionsSummary &&
-                            `Thread · ${threadSegments.length} segment${threadSegments.length !== 1 ? "s" : ""}`,
-                          form.watch("isRecyclable") && "Recyclable",
-                          (alsoScheduleRepost || alsoScheduleQuote) &&
-                            [
-                              alsoScheduleRepost &&
-                                `${repostDelayList.length} repost${repostDelayList.length !== 1 ? "s" : ""}`,
-                              alsoScheduleQuote &&
-                                `${quoteEntries.length} quote${quoteEntries.length !== 1 ? "s" : ""}`,
-                            ]
-                              .filter(Boolean)
-                              .join(" · "),
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")
-                      : undefined
-                  }
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-      </fetcher.Form>
-      {!isContestLite ? (
-        <PublishingSummaryRail
-          readinessLabel={readinessLabel}
-          deliverySection={{ title: "Delivery", lines: deliveryLines }}
+                ) : null}
+              </div>
+            ),
+          }}
           contentSection={{ title: "Content", lines: contentLines }}
           publishPathSection={{
             title: "Publish path",
             lines: publishPathLines,
           }}
+          threadSettingsSection={
+            isThreadMode
+              ? {
+                  title: "Thread settings",
+                  lines: threadSettingsLines,
+                  controls: (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {[0.5, 1, 2].map((v) => (
+                        <Button
+                          key={v}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setThreadDelayMinutes(v)}
+                          disabled={disabled}
+                        >
+                          {v === 0.5 ? "30s" : `${v}m`}
+                        </Button>
+                      ))}
+                    </div>
+                  ),
+                }
+              : undefined
+          }
           issues={issueList}
           warnings={publishWarnings}
           saveStateLabel={

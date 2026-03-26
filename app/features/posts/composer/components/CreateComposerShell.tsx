@@ -3,8 +3,6 @@ import React from "react";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
 
-import type { ComposerPublishMode } from "./composer";
-
 type CreateComposerContentType = "post" | "poll" | "thread" | "article";
 
 interface CreateComposerShellProps {
@@ -13,10 +11,6 @@ interface CreateComposerShellProps {
   onRelayClick: () => void;
   contentType: CreateComposerContentType;
   onContentTypeChange: (next: CreateComposerContentType) => void;
-  publishMode?: ComposerPublishMode;
-  onPublishModeChange?: (next: ComposerPublishMode) => void;
-  draftStateLabel?: string;
-  showPublishModeBar?: boolean;
   title?: string;
   metadataItems?: string[];
   children: React.ReactNode;
@@ -36,10 +30,6 @@ export function CreateComposerShell({
   onRelayClick,
   contentType,
   onContentTypeChange,
-  publishMode = "now",
-  onPublishModeChange,
-  draftStateLabel = "Draft idle",
-  showPublishModeBar = true,
   title = "Create post",
   metadataItems = [],
   children,
@@ -84,31 +74,6 @@ export function CreateComposerShell({
             Article
           </button>
         </div>
-        {showPublishModeBar ? (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {(
-                [
-                  ["now", "Now"],
-                  ["schedule", "Schedule"],
-                  ["queue", "Queue"],
-                ] as const
-              ).map(([modeValue, modeLabel]) => (
-                <button
-                  key={modeValue}
-                  type="button"
-                  className={tabButtonClass(publishMode === modeValue)}
-                  onClick={() => onPublishModeChange?.(modeValue)}
-                >
-                  {modeLabel}
-                </button>
-              ))}
-            </div>
-            <div className="text-muted-foreground flex items-center gap-3 text-xs">
-              <span>{draftStateLabel}</span>
-            </div>
-          </div>
-        ) : null}
       </div>
       {children}
     </div>

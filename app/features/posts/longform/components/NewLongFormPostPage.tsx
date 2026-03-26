@@ -359,12 +359,8 @@ export default function NewLongFormPostPage() {
         if (next === "article") return;
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
-      showPublishModeBar
-      publishMode={publishMode}
-      onPublishModeChange={setPublishMode}
-      draftStateLabel={draftStateLabel}
       title={initialTemplateData ? "Edit article draft" : "Create article"}
-      metadataItems={[`Saved: ${draftStateLabel}`]}
+      metadataItems={["Signer: NIP-07", `Saved: ${draftStateLabel}`]}
     >
       {templatesRaw.length > 0 ? (
         <div className="mb-4 flex items-center gap-2">
@@ -413,6 +409,7 @@ export default function NewLongFormPostPage() {
         <LongFormPost
           key={`newlongform-composer-${publishResultToken ?? "default"}`}
           publishMode={publishMode}
+          onPublishModeChange={setPublishMode}
           onDraftStateLabelChange={setDraftStateLabel}
           initialData={initialTemplateData}
           initialScheduledFor={scheduledAt ?? undefined}

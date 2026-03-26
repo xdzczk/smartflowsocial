@@ -5,8 +5,6 @@
 import React from "react";
 
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
@@ -22,7 +20,6 @@ export interface ComposerThreadFieldProps {
   segments: ThreadSegment[];
   onSegmentsChange: React.Dispatch<React.SetStateAction<ThreadSegment[]>>;
   threadDelayMinutes: number;
-  onThreadDelayMinutesChange: (value: number) => void;
   onFilesDropped: (segmentId: string, files: File[]) => void;
   onAddSegmentClick: (segmentId: string) => void;
   disabled?: boolean;
@@ -34,7 +31,6 @@ export function ComposerThreadField({
   segments,
   onSegmentsChange,
   threadDelayMinutes,
-  onThreadDelayMinutesChange,
   onFilesDropped,
   onAddSegmentClick,
   disabled = false,
@@ -283,36 +279,6 @@ export function ComposerThreadField({
         >
           Add segment
         </Button>
-        <Label className="text-muted-foreground flex items-center gap-1 text-sm">
-          Thread cadence:
-          <Input
-            type="number"
-            min={1}
-            max={120}
-            value={threadDelayMinutes}
-            onChange={(e) =>
-              onThreadDelayMinutesChange(
-                Math.max(1, Math.min(120, parseInt(e.target.value, 10) || 1))
-              )
-            }
-            className="h-8 w-16"
-          />
-          min
-        </Label>
-        <div className="flex items-center gap-1">
-          {[0.5, 1, 2].map((v) => (
-            <Button
-              key={v}
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => onThreadDelayMinutesChange(v)}
-              disabled={disabled}
-            >
-              {v === 0.5 ? "30s" : `${v}m`}
-            </Button>
-          ))}
-        </div>
       </div>
     </div>
   );

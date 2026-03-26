@@ -2,6 +2,7 @@ import { Link, useFetcher } from "@remix-run/react";
 import { Hash } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
+import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -13,8 +14,8 @@ import { WritingSurface } from "~/features/posts/components/WritingSurface";
 import { useLocalDraft } from "~/features/posts/composer";
 import {
   buildArticleContentLines,
-  buildDeliveryLines,
   buildPublishPathLines,
+  getPrimaryCtaLabelForMode,
   getReadinessLabel,
   type ComposerPublishMode,
 } from "~/features/posts/composer/components/composer";
@@ -96,6 +97,7 @@ interface LongFormPostProps {
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
   publishMode?: ComposerPublishMode;
+  onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
 }
 
@@ -122,6 +124,7 @@ export default function LongFormPost({
   initialScheduledFor = null,
   skipLocalDraftRestore = false,
   publishMode = "now",
+  onPublishModeChange,
   onDraftStateLabelChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
@@ -561,14 +564,6 @@ export default function LongFormPost({
     issueList.push("Publish time is required.");
   }
   const readinessLabel = getReadinessLabel(publishMode, issueList, true);
-  const deliveryLines = buildDeliveryLines({
-    publishMode,
-    relayCount: 0,
-    signerLabel: "NIP-07",
-    scheduledFor: scheduledFor ?? undefined,
-    timezone: userTimezone,
-    selectedQueue: selectedQueueType,
-  });
   const contentLines = buildArticleContentLines(
     title.trim().length > 0,
     wordCount,
@@ -666,48 +661,49 @@ export default function LongFormPost({
                       </Badge>
                     </div>
                   ) : null}
-
-                  <LongFormPublishingOptions
-                    queueTypes={queueTypes}
-                    selectedQueueType={selectedQueueType}
-                    onQueueTypeChange={(name) => {
-                      void updateDisplayedHashtags(name);
-                    }}
-                    scheduledFor={scheduledFor}
-                    onScheduledForChange={setScheduledFor}
-                    scheduleIntervals={scheduleIntervals}
-                    onScheduleIntervalClick={(intervalHours) => {
-                      handleScheduleIntervalClick(intervalHours);
-                    }}
-                    onNextSlotClick={() => {
-                      void calculateQueueScheduleTime(selectedQueueType);
-                    }}
-                    hashTagPresets={hashTagPresets}
-                    useHashtagPresets={useHashtagPresets}
-                    selectedHashtagPresetId={selectedHashtagPresetId}
-                    selectedHashtags={selectedHashtags}
-                    onHashtagPresetChange={
+                  <HashtagPresetToggle
+                    presets={hashTagPresets}
+                    selectedPresetId={selectedHashtagPresetId}
+                    onSelect={
                       onHashtagPresetChange ??
                       ((_id, _tags) => {
                         void _id;
                         void _tags;
                       })
                     }
+                    useHashtagPresets={useHashtagPresets}
                     onUseHashtagPresetsChange={
                       onUseHashtagPresetsChange ??
                       (() => {
                         void 0;
                       })
                     }
-                    userTimezone={userTimezone}
+                    showQueuePreset={true}
+                    queueType={(() => {
+                      const qt = queueTypes.find(
+                        (q) =>
+                          (typeof q === "string" ? q : q.name) ===
+                          selectedQueueType
+                      );
+                      if (qt && typeof qt === "object" && qt.id) {
+                        return qt as {
+                          id: string;
+                          name: string;
+                          hashTagPreset?: HashTagPreset | null;
+                        };
+                      }
+                      return null;
+                    })()}
                   />
-
-                  <AlsoScheduleLongformQuote
-                    alsoScheduleQuote={alsoScheduleQuote}
-                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                    quoteEntries={quoteEntries}
-                    onQuoteEntriesChange={setQuoteEntries}
-                    disabled={fetcher.state !== "idle" || isSigning}
+                  <input
+                    type="hidden"
+                    name="useHashtagPresets"
+                    value={useHashtagPresets.toString()}
+                  />
+                  <input
+                    type="hidden"
+                    name="hashTagPresetId"
+                    value={selectedHashtagPresetId ?? ""}
                   />
 
                   {!image ? (
@@ -775,8 +771,61 @@ export default function LongFormPost({
           </div>
         </div>
         <PublishingSummaryRail
+          publishMode={publishMode}
+          onPublishModeChange={onPublishModeChange ?? (() => void 0)}
           readinessLabel={readinessLabel}
-          deliverySection={{ title: "Delivery", lines: deliveryLines }}
+          modeSpecificSection={{
+            title:
+              publishMode === "queue" ? "Queue settings" : "Schedule settings",
+            lines: publishMode === "now" ? ["Publishes immediately"] : [],
+            controls:
+              publishMode === "now" ? undefined : (
+                <div className="space-y-3">
+                  <LongFormPublishingOptions
+                    queueTypes={queueTypes}
+                    selectedQueueType={selectedQueueType}
+                    onQueueTypeChange={(name) => {
+                      void updateDisplayedHashtags(name);
+                    }}
+                    scheduledFor={scheduledFor}
+                    onScheduledForChange={setScheduledFor}
+                    scheduleIntervals={scheduleIntervals}
+                    onScheduleIntervalClick={(intervalHours) => {
+                      handleScheduleIntervalClick(intervalHours);
+                    }}
+                    onNextSlotClick={() => {
+                      void calculateQueueScheduleTime(selectedQueueType);
+                    }}
+                    hashTagPresets={hashTagPresets}
+                    useHashtagPresets={useHashtagPresets}
+                    selectedHashtagPresetId={selectedHashtagPresetId}
+                    selectedHashtags={selectedHashtags}
+                    onHashtagPresetChange={
+                      onHashtagPresetChange ??
+                      ((_id, _tags) => {
+                        void _id;
+                        void _tags;
+                      })
+                    }
+                    onUseHashtagPresetsChange={
+                      onUseHashtagPresetsChange ??
+                      (() => {
+                        void 0;
+                      })
+                    }
+                    userTimezone={userTimezone}
+                    showHashtagPresets={false}
+                  />
+                  <AlsoScheduleLongformQuote
+                    alsoScheduleQuote={alsoScheduleQuote}
+                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                    quoteEntries={quoteEntries}
+                    onQuoteEntriesChange={setQuoteEntries}
+                    disabled={fetcher.state !== "idle" || isSigning}
+                  />
+                </div>
+              ),
+          }}
           contentSection={{ title: "Content", lines: contentLines }}
           publishPathSection={{
             title: "Publish path",
@@ -786,13 +835,7 @@ export default function LongFormPost({
           saveStateLabel={
             fetcher.state === "idle" ? "Saved locally" : "Saving..."
           }
-          primaryActionLabel={
-            publishMode === "queue"
-              ? "Add article to queue"
-              : publishMode === "schedule"
-                ? "Schedule article"
-                : "Publish article"
-          }
+          primaryActionLabel={getPrimaryCtaLabelForMode(publishMode, "article")}
           onPrimaryAction={() => {
             flushSync();
             void handleSchedule(publishMode === "now" ? "publish" : "schedule");
