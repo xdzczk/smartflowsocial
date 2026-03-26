@@ -18,6 +18,7 @@ import {
   resetGiveawayToDraft,
   setGiveawayWinnerPayoutStatus,
   runGiveawayPayoutBatchWithNwc,
+  runGiveawayPayoutBatchStepWithNwc,
   updateGiveawayPayoutSettings,
   updateGiveaway,
 } from "~/features/giveaway";
@@ -334,11 +335,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const spendCapSatsRaw = String(formData.get("spendCapSats") ?? "").trim();
       const spendCapSats =
         spendCapSatsRaw !== "" ? Number(spendCapSatsRaw) : undefined;
+      const capOpt = Number.isFinite(spendCapSats)
+        ? Math.max(0, Math.floor(spendCapSats as number))
+        : undefined;
+      const stepRaw = formData.get("stepIndex");
+      const hasStep = stepRaw != null && String(stepRaw).trim() !== "";
+      if (hasStep) {
+        const stepIndex = Math.floor(Number(stepRaw));
+        if (!Number.isFinite(stepIndex) || stepIndex < 0) {
+          return json(
+            { success: false, error: "Invalid step index" },
+            { status: 400 }
+          );
+        }
+        const result = await runGiveawayPayoutBatchStepWithNwc(
+          userId,
+          id,
+          stepIndex,
+          {
+            trigger: "manual_trigger",
+            spendCapSats: capOpt,
+          }
+        );
+        if (!result.success) return json(result, { status: 400 });
+        return json(result);
+      }
       const result = await runGiveawayPayoutBatchWithNwc(userId, id, {
         trigger: "manual_trigger",
-        spendCapSats: Number.isFinite(spendCapSats)
-          ? Math.max(0, Math.floor(spendCapSats as number))
-          : undefined,
+        spendCapSats: capOpt,
       });
       if (!result.success) return json(result, { status: 400 });
       return redirectBack();

@@ -9,6 +9,7 @@ import {
 import {
   createPayoutAttempt,
   findOrCreatePayoutRunByIdempotencyKey,
+  findPayoutRunByIdempotencyKey,
   updatePayoutAttemptByIdempotencyKey,
   updatePayoutItem,
   updatePayoutRun,
@@ -70,6 +71,162 @@ export interface ExecuteCampaignPayoutBatchResult {
     claimNeeded: number;
     skipped: number;
   };
+}
+
+export interface ExecuteCampaignPayoutBatchStepResult extends ExecuteCampaignPayoutBatchResult {
+  stepIndex: number;
+  totalSteps: number;
+  /** True when this response finished the last winner (or batch was ineligible). */
+  done: boolean;
+  /** Next step index to POST, or null when done. */
+  nextStep: number | null;
+}
+
+interface PayoutDelta {
+  paid: number;
+  failed: number;
+  claimNeeded: number;
+  skipped: number;
+}
+
+async function processOneWinnerForCampaignPayout(args: {
+  runId: string;
+  nwc: string;
+  input: ExecuteCampaignPayoutBatchInput;
+  w: WinnerPayoutInput;
+}): Promise<PayoutDelta> {
+  const { runId, nwc, input, w } = args;
+  const amountSats = Math.max(0, Math.floor(w.amountSats));
+  if (amountSats <= 0) {
+    return { paid: 0, failed: 0, claimNeeded: 0, skipped: 1 };
+  }
+
+  const itemKey = winnerItemIdempotencyKey({
+    scope: input.scope,
+    contestId: input.contestId,
+    giveawayId: input.giveawayId,
+    winnerPubkeyHex: w.winnerPubkeyHex,
+    amountSats,
+  });
+
+  const item = await upsertPayoutItemByRunAndWinner({
+    runId,
+    winnerPubkey: w.winnerPubkeyHex,
+    amountSats,
+    idempotencyKey: itemKey,
+  });
+
+  const winnerNpub = (w.winnerNpub ?? "").trim()
+    ? (w.winnerNpub ?? "").trim()
+    : nostrAdapter.encodeNpub(w.winnerPubkeyHex);
+  if (!winnerNpub) {
+    await updatePayoutItem(item.id, {
+      status: "claim_needed",
+      errorCode: "missing_destination",
+      errorMessage: "Invalid winner pubkey (cannot derive npub)",
+    });
+    return { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
+  }
+
+  if (item.status === "paid" || item.status === "skipped") {
+    return { paid: 0, failed: 0, claimNeeded: 0, skipped: 1 };
+  }
+
+  const inv = await resolveInvoiceForWinner({
+    winnerNpub,
+    amountSats,
+    lnAddressSnapshot: w.lnAddressSnapshot ?? null,
+  });
+  if (!inv.ok) {
+    await updatePayoutItem(item.id, {
+      status: "claim_needed",
+      errorCode: inv.code,
+      errorMessage:
+        inv.code === "missing_destination"
+          ? "Winner has no Lightning address"
+          : "Could not fetch invoice from LNURL pay endpoint",
+    });
+    return { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
+  }
+
+  const nextAttemptNumber = item.attemptCount + 1;
+  const attemptKey = attemptIdempotencyKey({
+    payoutItemId: item.id,
+    attemptNumber: nextAttemptNumber,
+  });
+
+  await createPayoutAttempt({
+    runId,
+    itemId: item.id,
+    attemptNumber: nextAttemptNumber,
+    idempotencyKey: attemptKey,
+  });
+
+  await updatePayoutItem(item.id, {
+    invoice: inv.invoice,
+    lnAddressSnapshot: inv.lnAddressSnapshot,
+    status: "pending",
+    attemptCount: nextAttemptNumber,
+    lastAttemptAt: new Date(),
+  });
+
+  const payRes = await payInvoiceWithTimeout(nwc, inv.invoice, 45000);
+  if (!payRes.ok) {
+    logError(payRes.error, {
+      message: "Payout payInvoice failed",
+      scope: input.scope,
+      contestId: input.contestId ?? null,
+      giveawayId: input.giveawayId ?? null,
+      winnerPubkey: w.winnerPubkeyHex,
+    });
+    await updatePayoutAttemptByIdempotencyKey(attemptKey, {
+      status: "failed",
+      errorCode: "wallet_error",
+      errorMessage: payRes.error.message,
+      finishedAt: new Date(),
+    });
+    await updatePayoutItem(item.id, {
+      status: "failed",
+      errorCode: "wallet_error",
+      errorMessage: payRes.error.message,
+    });
+    return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
+  }
+
+  await updatePayoutAttemptByIdempotencyKey(attemptKey, {
+    status: "succeeded",
+    walletResponseJson: payRes.walletResponse ?? null,
+    finishedAt: new Date(),
+  });
+  await updatePayoutItem(item.id, {
+    status: "paid",
+    paymentPreimage: payRes.preimage ?? null,
+    errorCode: null,
+    errorMessage: null,
+  });
+  return { paid: 1, failed: 0, claimNeeded: 0, skipped: 0 };
+}
+
+function addDelta(
+  acc: { paid: number; failed: number; claimNeeded: number; skipped: number },
+  d: PayoutDelta
+) {
+  acc.paid += d.paid;
+  acc.failed += d.failed;
+  acc.claimNeeded += d.claimNeeded;
+  acc.skipped += d.skipped;
+}
+
+function finalizeRunStatus(totals: {
+  paid: number;
+  failed: number;
+  claimNeeded: number;
+}): "complete" | "partial" | "failed" {
+  const { paid, failed, claimNeeded } = totals;
+  if (paid > 0 && failed === 0 && claimNeeded === 0) return "complete";
+  if (paid > 0) return "partial";
+  if (failed > 0) return "failed";
+  return "partial";
 }
 
 type PayoutTx = Parameters<
@@ -289,140 +446,20 @@ export async function executeCampaignPayoutBatch(
   }
 
   const nwc = eligibility.nwc;
-  let paid = 0;
-  let failed = 0;
-  let claimNeeded = 0;
-  let skipped = 0;
+  const totals = { paid: 0, failed: 0, claimNeeded: 0, skipped: 0 };
 
   for (const w of input.winners) {
-    const amountSats = Math.max(0, Math.floor(w.amountSats));
-    if (amountSats <= 0) {
-      skipped += 1;
-      continue;
-    }
-
-    const itemKey = winnerItemIdempotencyKey({
-      scope: input.scope,
-      contestId: input.contestId,
-      giveawayId: input.giveawayId,
-      winnerPubkeyHex: w.winnerPubkeyHex,
-      amountSats,
-    });
-
-    // Ensure item row exists (idempotent per run + winner).
-    const item = await upsertPayoutItemByRunAndWinner({
+    const delta = await processOneWinnerForCampaignPayout({
       runId: run.id,
-      winnerPubkey: w.winnerPubkeyHex,
-      amountSats,
-      idempotencyKey: itemKey,
+      nwc,
+      input,
+      w,
     });
-
-    const winnerNpub = (w.winnerNpub ?? "").trim()
-      ? (w.winnerNpub ?? "").trim()
-      : nostrAdapter.encodeNpub(w.winnerPubkeyHex);
-    if (!winnerNpub) {
-      claimNeeded += 1;
-      await updatePayoutItem(item.id, {
-        status: "claim_needed",
-        errorCode: "missing_destination",
-        errorMessage: "Invalid winner pubkey (cannot derive npub)",
-      });
-      continue;
-    }
-
-    // Skip already-paid items.
-    if (item.status === "paid" || item.status === "skipped") {
-      skipped += 1;
-      continue;
-    }
-
-    // Resolve invoice just-in-time.
-    const inv = await resolveInvoiceForWinner({
-      winnerNpub,
-      amountSats,
-      lnAddressSnapshot: w.lnAddressSnapshot ?? null,
-    });
-    if (!inv.ok) {
-      claimNeeded += 1;
-      await updatePayoutItem(item.id, {
-        status: "claim_needed",
-        errorCode: inv.code,
-        errorMessage:
-          inv.code === "missing_destination"
-            ? "Winner has no Lightning address"
-            : "Could not fetch invoice from LNURL pay endpoint",
-      });
-      continue;
-    }
-
-    const nextAttemptNumber = item.attemptCount + 1;
-    const attemptKey = attemptIdempotencyKey({
-      payoutItemId: item.id,
-      attemptNumber: nextAttemptNumber,
-    });
-
-    await createPayoutAttempt({
-      runId: run.id,
-      itemId: item.id,
-      attemptNumber: nextAttemptNumber,
-      idempotencyKey: attemptKey,
-    });
-
-    await updatePayoutItem(item.id, {
-      invoice: inv.invoice,
-      lnAddressSnapshot: inv.lnAddressSnapshot,
-      status: "pending",
-      attemptCount: nextAttemptNumber,
-      lastAttemptAt: new Date(),
-    });
-
-    const payRes = await payInvoiceWithTimeout(nwc, inv.invoice, 45000);
-    if (!payRes.ok) {
-      failed += 1;
-      logError(payRes.error, {
-        message: "Payout payInvoice failed",
-        scope: input.scope,
-        contestId: input.contestId ?? null,
-        giveawayId: input.giveawayId ?? null,
-        winnerPubkey: w.winnerPubkeyHex,
-      });
-      await updatePayoutAttemptByIdempotencyKey(attemptKey, {
-        status: "failed",
-        errorCode: "wallet_error",
-        errorMessage: payRes.error.message,
-        finishedAt: new Date(),
-      });
-      await updatePayoutItem(item.id, {
-        status: "failed",
-        errorCode: "wallet_error",
-        errorMessage: payRes.error.message,
-      });
-      continue;
-    }
-
-    paid += 1;
-    await updatePayoutAttemptByIdempotencyKey(attemptKey, {
-      status: "succeeded",
-      walletResponseJson: payRes.walletResponse ?? null,
-      finishedAt: new Date(),
-    });
-    await updatePayoutItem(item.id, {
-      status: "paid",
-      paymentPreimage: payRes.preimage ?? null,
-      errorCode: null,
-      errorMessage: null,
-    });
+    addDelta(totals, delta);
   }
 
   const totalItems = input.winners.length;
-  const finalStatus =
-    paid > 0 && failed === 0 && claimNeeded === 0
-      ? "complete"
-      : paid > 0
-        ? "partial"
-        : failed > 0
-          ? "failed"
-          : "partial";
+  const finalStatus = finalizeRunStatus(totals);
 
   await updatePayoutRun(run.id, {
     status: finalStatus,
@@ -432,13 +469,202 @@ export async function executeCampaignPayoutBatch(
       (acc, w) => acc + Math.max(0, Math.floor(w.amountSats)),
       0
     ),
-    metadataJson: { paid, failed, claimNeeded, skipped },
+    metadataJson: { ...totals },
   });
 
   return {
     runId: run.id,
     walletMode: "nwc_creator",
     eligible: true,
-    totals: { items: totalItems, paid, failed, claimNeeded, skipped },
+    totals: { items: totalItems, ...totals },
+  };
+}
+
+/**
+ * Process a single winner row (by index) so the client can refresh UI between payments.
+ * Step 0 creates/updates the run; later steps reuse the same run idempotency key.
+ */
+export async function executeCampaignPayoutBatchStep(
+  input: ExecuteCampaignPayoutBatchInput,
+  stepIndex: number
+): Promise<ExecuteCampaignPayoutBatchStepResult> {
+  const totalSteps = input.winners.length;
+  const idKey = campaignIdempotencyKey(input);
+
+  if (totalSteps === 0 || stepIndex < 0 || stepIndex >= totalSteps) {
+    return {
+      runId: null,
+      walletMode: "nwc_creator",
+      eligible: false,
+      eligibilityErrorCode: "nwc_missing",
+      eligibilityErrorMessage: "No winners to process",
+      totals: { items: 0, paid: 0, failed: 0, claimNeeded: 0, skipped: 0 },
+      stepIndex: Math.max(0, stepIndex),
+      totalSteps: 0,
+      done: true,
+      nextStep: null,
+    };
+  }
+
+  const eligibility = await getEligibility(
+    input.creatorUserId,
+    input.walletMode
+  );
+
+  let runId: string;
+
+  if (stepIndex === 0) {
+    const run = await withPayoutLedgerTransaction(async (tx) => {
+      const r = await ensureRun(tx, input);
+      if (!eligibility.eligible) {
+        await updatePayoutRun(
+          r.id,
+          {
+            status: "skipped",
+            eligibilityErrorCode: eligibility.errorCode,
+            eligibilityErrorMessage: eligibility.errorMessage,
+            completedAt: new Date(),
+          },
+          tx
+        );
+      } else {
+        await updatePayoutRun(
+          r.id,
+          {
+            status: "running",
+            startedAt: r.startedAt ?? new Date(),
+            eligibilityErrorCode: null,
+            eligibilityErrorMessage: null,
+          },
+          tx
+        );
+      }
+      return r;
+    });
+    runId = run.id;
+
+    if (!eligibility.eligible) {
+      return {
+        runId,
+        walletMode: "manual",
+        eligible: false,
+        eligibilityErrorCode: eligibility.errorCode,
+        eligibilityErrorMessage: eligibility.errorMessage,
+        totals: {
+          items: totalSteps,
+          paid: 0,
+          failed: 0,
+          claimNeeded: 0,
+          skipped: totalSteps,
+        },
+        stepIndex: 0,
+        totalSteps,
+        done: true,
+        nextStep: null,
+      };
+    }
+  } else {
+    const existing = await findPayoutRunByIdempotencyKey(idKey);
+    if (!existing) {
+      return {
+        runId: null,
+        walletMode: "nwc_creator",
+        eligible: false,
+        eligibilityErrorCode: "nwc_missing",
+        eligibilityErrorMessage:
+          "Payout run not found — start batch from step 0",
+        totals: {
+          items: totalSteps,
+          paid: 0,
+          failed: 0,
+          claimNeeded: 0,
+          skipped: 0,
+        },
+        stepIndex,
+        totalSteps,
+        done: true,
+        nextStep: null,
+      };
+    }
+    runId = existing.id;
+
+    if (!eligibility.eligible) {
+      return {
+        runId,
+        walletMode: "manual",
+        eligible: false,
+        eligibilityErrorCode: eligibility.errorCode,
+        eligibilityErrorMessage: eligibility.errorMessage,
+        totals: {
+          items: totalSteps,
+          paid: 0,
+          failed: 0,
+          claimNeeded: 0,
+          skipped: totalSteps,
+        },
+        stepIndex,
+        totalSteps,
+        done: true,
+        nextStep: null,
+      };
+    }
+  }
+
+  const nwc = eligibility.nwc;
+  const existingRun = await findPayoutRunByIdempotencyKey(idKey);
+  const prevMeta =
+    (existingRun?.metadataJson as Record<string, number> | null) ?? {};
+  const cumulative = {
+    paid: prevMeta["paid"] ?? 0,
+    failed: prevMeta["failed"] ?? 0,
+    claimNeeded: prevMeta["claimNeeded"] ?? 0,
+    skipped: prevMeta["skipped"] ?? 0,
+  };
+
+  const w = input.winners[stepIndex]!;
+  const delta = await processOneWinnerForCampaignPayout({
+    runId,
+    nwc,
+    input,
+    w,
+  });
+  addDelta(cumulative, delta);
+
+  const done = stepIndex >= totalSteps - 1;
+  const totalItems = totalSteps;
+  const totalSats = input.winners.reduce(
+    (acc, winner) => acc + Math.max(0, Math.floor(winner.amountSats)),
+    0
+  );
+
+  if (done) {
+    const finalStatus = finalizeRunStatus(cumulative);
+    await updatePayoutRun(runId, {
+      status: finalStatus,
+      completedAt: new Date(),
+      totalItems,
+      totalSats,
+      metadataJson: { ...cumulative },
+    });
+  } else {
+    await updatePayoutRun(runId, {
+      status: "running",
+      metadataJson: {
+        ...cumulative,
+        currentStep: stepIndex,
+        totalSteps,
+      },
+    });
+  }
+
+  return {
+    runId,
+    walletMode: "nwc_creator",
+    eligible: true,
+    totals: { items: totalItems, ...cumulative },
+    stepIndex,
+    totalSteps,
+    done,
+    nextStep: done ? null : stepIndex + 1,
   };
 }

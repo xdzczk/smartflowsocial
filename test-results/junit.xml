@@ -1,51 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="22" failures="0" errors="0" time="0.008604668">
-    <testsuite name="tests/unit/search-thread-replies.test.ts" timestamp="2026-03-26T06:11:13.356Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.002709334">
-        <testcase classname="tests/unit/search-thread-replies.test.ts" name="search-thread-replies &gt; extractDirectRepliesToRoot keeps kind 1 with e tag to root, excludes root" time="0.001248042">
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.004444125">
+    <testsuite name="tests/unit/payout-executor.test.ts" timestamp="2026-03-26T06:30:32.118Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.004444125">
+        <testcase classname="tests/unit/payout-executor.test.ts" name="executeCampaignPayoutBatch &gt; creates a run and skips when creator has no NWC" time="0.002368666">
         </testcase>
-        <testcase classname="tests/unit/search-thread-replies.test.ts" name="search-thread-replies &gt; replyHasRootEtag matches case-insensitive hex" time="0.000112125">
-        </testcase>
-        <testcase classname="tests/unit/search-thread-replies.test.ts" name="search-thread-replies &gt; replyEtagReferencesTarget matches any e tag to parent" time="0.000084125">
-        </testcase>
-        <testcase classname="tests/unit/search-thread-replies.test.ts" name="search-thread-replies &gt; extractDirectRepliesToParent returns replies to intermediate note" time="0.000353875">
-        </testcase>
-        <testcase classname="tests/unit/search-thread-replies.test.ts" name="search-thread-replies &gt; collectCandidatesFromPrimalResponses flattens EVENT tuples" time="0.000167416">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/validation-search-result.test.ts" timestamp="2026-03-26T06:11:13.358Z" hostname="Ivans-MacBook-Pro.local" tests="17" failures="0" errors="0" skipped="0" time="0.005895334">
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; should return null for null input" time="0.000687416">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; should return null for undefined input" time="0.000100958">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; should return null for non-object input" time="0.000528542">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; should return null for invalid data structure" time="0.000479458">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; should return validated data for valid input" time="0.000105833">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; preserves authorName and authorImage for downstream display validation" time="0.001166292">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultData &gt; accepts optional replies array on search result payload" time="0.000670916">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultDisplay &gt; should return null for null input" time="0.0000475">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultDisplay &gt; should return null for undefined input" time="0.000052041">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultDisplay &gt; should return null for non-object input" time="0.00012825">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultDisplay &gt; should return null for invalid data structure" time="0.000219584">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchResultDisplay &gt; should return validated data for valid input" time="0.000193292">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchStats &gt; should return null for null input" time="0.000080667">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchStats &gt; should return null for undefined input" time="0.000058875">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchStats &gt; should return null for non-object input" time="0.000111042">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchStats &gt; should return null for invalid data structure" time="0.000205042">
-        </testcase>
-        <testcase classname="tests/unit/validation-search-result.test.ts" name="Search Result Validation &gt; validateSearchStats &gt; should return validated stats for valid input" time="0.000114041">
+        <testcase classname="tests/unit/payout-executor.test.ts" name="executeCampaignPayoutBatch &gt; pays one invoice via NWC and marks item paid" time="0.001343833">
         </testcase>
     </testsuite>
 </testsuites>

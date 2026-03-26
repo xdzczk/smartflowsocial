@@ -27,6 +27,7 @@ export {
   lockContest,
   setContestWinnerPayoutStatus,
   runContestPayoutBatchWithNwc,
+  runContestPayoutBatchStepWithNwc,
   updateContestPayoutSettings,
   completeContest,
   cancelContest,

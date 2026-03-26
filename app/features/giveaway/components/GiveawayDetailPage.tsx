@@ -1,4 +1,5 @@
 import { Form, useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { Loader2 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
@@ -21,6 +22,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  BatchPayoutStatusBanner,
+  type BatchPayoutProgressSnapshot,
+} from "~/features/payments/components/BatchPayoutStatusBanner";
 import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
@@ -1614,8 +1619,56 @@ function BatchZapFlow({
   nwcEnabled: boolean;
 }) {
   const payoutFetcher = useFetcher();
+  const batchPayoutFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    done?: boolean;
+    nextStep?: number | null;
+    stepIndex?: number;
+    totalSteps?: number;
+    totals?: {
+      items: number;
+      paid: number;
+      failed: number;
+      claimNeeded: number;
+      skipped: number;
+    };
+  }>();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
+  const isBatchPayoutPending = batchPayoutFetcher.state !== "idle";
+  const payoutControlsBusy =
+    payoutFetcher.state !== "idle" || batchPayoutFetcher.state !== "idle";
+
+  const batchProgressSnapshot: BatchPayoutProgressSnapshot | null =
+    batchPayoutFetcher.data &&
+    batchPayoutFetcher.data.success === true &&
+    batchPayoutFetcher.data.totals &&
+    typeof batchPayoutFetcher.data.stepIndex === "number" &&
+    typeof batchPayoutFetcher.data.totalSteps === "number"
+      ? {
+          stepIndex: batchPayoutFetcher.data.stepIndex,
+          totalSteps: batchPayoutFetcher.data.totalSteps,
+          totals: {
+            paid: batchPayoutFetcher.data.totals.paid,
+            failed: batchPayoutFetcher.data.totals.failed,
+            claimNeeded: batchPayoutFetcher.data.totals.claimNeeded,
+            skipped: batchPayoutFetcher.data.totals.skipped,
+          },
+        }
+      : null;
+
+  useEffect(() => {
+    if (batchPayoutFetcher.state !== "idle") return;
+    const d = batchPayoutFetcher.data;
+    if (!d || d.success !== true) return;
+    if (d.done !== false || typeof d.nextStep !== "number") return;
+    const fd = new FormData();
+    fd.set("intent", "runBatchPayout");
+    fd.set("stepIndex", String(d.nextStep));
+    batchPayoutFetcher.submit(fd, { method: "post" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chained batch steps; deps are state/data only
+  }, [batchPayoutFetcher.state, batchPayoutFetcher.data]);
 
   const allSettled =
     winners.length > 0 &&
@@ -1646,20 +1699,31 @@ function BatchZapFlow({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            disabled={!nwcEnabled || payoutFetcher.state !== "idle"}
+            disabled={!nwcEnabled || payoutControlsBusy}
             onClick={() => {
               const fd = new FormData();
               fd.set("intent", "runBatchPayout");
-              payoutFetcher.submit(fd, { method: "post" });
+              fd.set("stepIndex", "0");
+              batchPayoutFetcher.submit(fd, { method: "post" });
             }}
-            className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-md px-3 py-1.5 text-sm font-medium"
+            className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
             title={
               nwcEnabled
                 ? "Pay all winners using your connected wallet"
                 : "Connect NWC in Settings to enable auto payouts"
             }
           >
-            Batch payout (NWC)
+            {isBatchPayoutPending ? (
+              <>
+                <Loader2
+                  className="h-4 w-4 shrink-0 animate-spin"
+                  aria-hidden
+                />
+                Paying winners…
+              </>
+            ) : (
+              "Batch payout (NWC)"
+            )}
           </button>
           {!nwcEnabled ? (
             <span className="text-muted-foreground text-xs">
@@ -1667,6 +1731,18 @@ function BatchZapFlow({
             </span>
           ) : null}
         </div>
+        <BatchPayoutStatusBanner
+          active={isBatchPayoutPending}
+          className="mt-3"
+          progress={batchProgressSnapshot}
+        />
+        {batchPayoutFetcher.data &&
+        batchPayoutFetcher.data.success === false &&
+        batchPayoutFetcher.data.error ? (
+          <p className="text-destructive mt-2 text-xs">
+            {batchPayoutFetcher.data.error}
+          </p>
+        ) : null}
         {payoutProgress ? (
           <div className="mt-3 space-y-2">
             <div className="flex flex-wrap justify-between gap-2 text-sm">
@@ -1727,7 +1803,7 @@ function BatchZapFlow({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={payoutFetcher.state !== "idle"}
+                  disabled={payoutControlsBusy}
                   onClick={() => {
                     submitPayout(w.pubkey, "sent");
                   }}
@@ -1738,7 +1814,7 @@ function BatchZapFlow({
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={payoutFetcher.state !== "idle"}
+                  disabled={payoutControlsBusy}
                   onClick={() => {
                     submitPayout(w.pubkey, "marked_paid");
                   }}
@@ -1750,7 +1826,7 @@ function BatchZapFlow({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    disabled={payoutFetcher.state !== "idle"}
+                    disabled={payoutControlsBusy}
                     onClick={() => {
                       submitPayout(w.pubkey, "pending");
                     }}
@@ -1762,7 +1838,7 @@ function BatchZapFlow({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    disabled={payoutFetcher.state !== "idle"}
+                    disabled={payoutControlsBusy}
                     onClick={() => {
                       submitPayout(w.pubkey, "failed");
                     }}

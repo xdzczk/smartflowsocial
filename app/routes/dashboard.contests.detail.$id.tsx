@@ -14,6 +14,7 @@ import {
   launchContest,
   lockContest,
   runContestPayoutBatchWithNwc,
+  runContestPayoutBatchStepWithNwc,
   setContestWinnerPayoutStatus,
   updateContestPayoutSettings,
 } from "~/features/contest";
@@ -133,6 +134,30 @@ async function handleContestDetailIntent(args: {
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "runBatchPayout": {
+      const stepRaw = formData.get("stepIndex");
+      const hasStep = stepRaw != null && String(stepRaw).trim() !== "";
+      if (hasStep) {
+        const stepIndex = Math.floor(Number(stepRaw));
+        if (!Number.isFinite(stepIndex) || stepIndex < 0) {
+          return json({ error: "Invalid step index" }, { status: 400 });
+        }
+        const result = await runContestPayoutBatchStepWithNwc(
+          userId,
+          contestId,
+          stepIndex,
+          {
+            trigger: "manual_trigger",
+            spendCapSats: parseSpendCapSats(formData),
+          }
+        );
+        if (!result.success) {
+          return json(
+            { success: false, error: result.error ?? "Batch payout failed" },
+            { status: 400 }
+          );
+        }
+        return json(result);
+      }
       const result = await runContestPayoutBatchWithNwc(userId, contestId, {
         trigger: "manual_trigger",
         spendCapSats: parseSpendCapSats(formData),

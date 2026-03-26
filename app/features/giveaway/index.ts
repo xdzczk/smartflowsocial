@@ -50,6 +50,7 @@ export {
   markGiveawayPaidOut,
   setGiveawayWinnerPayoutStatus,
   runGiveawayPayoutBatchWithNwc,
+  runGiveawayPayoutBatchStepWithNwc,
   updateGiveawayPayoutSettings,
   duplicateGiveaway,
   resetGiveawayToDraft,

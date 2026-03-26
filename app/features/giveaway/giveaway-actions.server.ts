@@ -12,7 +12,10 @@ import {
 } from "~/features/payments/types";
 import { getUserById } from "~/features/user";
 
-import { executeCampaignPayoutBatch } from "../payments/services/payout-executor.server";
+import {
+  executeCampaignPayoutBatch,
+  executeCampaignPayoutBatchStep,
+} from "../payments/services/payout-executor.server";
 
 import { Prisma } from "./data/giveaway-prisma-types.server";
 import type {
@@ -906,6 +909,94 @@ export async function runGiveawayPayoutBatchWithNwc(
   });
 
   return { success: true, runId: exec.runId };
+}
+
+export async function runGiveawayPayoutBatchStepWithNwc(
+  userId: string,
+  giveawayId: string,
+  stepIndex: number,
+  options?: { trigger?: "manual_trigger" | "autorun"; spendCapSats?: number }
+): Promise<
+  | { success: false; error: string }
+  | ({ success: true } & Awaited<
+      ReturnType<typeof executeCampaignPayoutBatchStep>
+    >)
+> {
+  const g = await getGiveawayById(giveawayId, userId);
+  if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
+  if (g.status !== "LOCKED") {
+    return {
+      success: false,
+      error: "Giveaway must be locked to run payouts",
+    };
+  }
+  const snapshot = (g.winnerSnapshot as GiveawayWinnerEntry[] | null) ?? [];
+  if (snapshot.length === 0)
+    return { success: false, error: "No winners to pay" };
+
+  const exec = await executeCampaignPayoutBatchStep(
+    {
+      scope: "GIVEAWAY",
+      giveawayId,
+      creatorUserId: userId,
+      trigger: options?.trigger ?? "manual_trigger",
+      walletMode: "nwc_creator",
+      spendCapSats: options?.spendCapSats ?? null,
+      winners: snapshot.map((w) => ({
+        winnerPubkeyHex: w.pubkey,
+        amountSats: Math.max(0, Math.floor(w.satsPerWinner ?? 0)),
+        winnerNpub: w.npub,
+      })),
+    },
+    stepIndex
+  );
+
+  const items = exec.runId ? await listPayoutItemsByRunId(exec.runId) : [];
+  const itemByPubkey = new Map(items.map((i) => [i.winnerPubkey, i]));
+
+  const state = normalizePayoutState(g.payoutState, snapshot);
+  const now = new Date().toISOString();
+  for (const w of snapshot) {
+    const item = itemByPubkey.get(w.pubkey);
+    if (!item) continue;
+    if (item.status === "paid") {
+      state[w.pubkey] = { status: "sent", updatedAt: now };
+    } else if (item.status === "failed") {
+      state[w.pubkey] = {
+        status: "failed",
+        updatedAt: now,
+        note: item.errorMessage ?? undefined,
+      };
+    } else if (item.status === "claim_needed") {
+      state[w.pubkey] = {
+        status: "failed",
+        updatedAt: now,
+        note: item.errorMessage ?? "Winner needs claim",
+      };
+    }
+  }
+
+  await updateGiveawayRow(giveawayId, {
+    payoutState: state as unknown as Prisma.InputJsonValue,
+    ...(exec.done
+      ? {
+          activityLog: appendGiveawayActivityLog(
+            g.activityLog,
+            "payout_batch_executed",
+            {
+              runId: exec.runId,
+              eligible: exec.eligible,
+              walletMode: exec.walletMode,
+              totals: exec.totals,
+              eligibilityErrorCode: exec.eligibilityErrorCode,
+              stepped: true,
+            }
+          ),
+        }
+      : {}),
+  });
+
+  return { success: true, ...exec };
 }
 
 export async function updateGiveawayPayoutSettings(

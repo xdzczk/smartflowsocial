@@ -1,8 +1,14 @@
 import type { SerializeFrom } from "@remix-run/node";
-import { Form, Link } from "@remix-run/react";
+import { Form, Link, useFetcher } from "@remix-run/react";
+import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "~/components/ui/button";
 import { CampaignReceiptProofShell } from "~/features/campaign-ui";
+import {
+  BatchPayoutStatusBanner,
+  type BatchPayoutProgressSnapshot,
+} from "~/features/payments/components/BatchPayoutStatusBanner";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
 
 import { contestCopy } from "../contest-copy";
@@ -370,6 +376,52 @@ export function ContestDetailFormsSection({
   nostr: ContestDetailNostrUrls;
   canUsePresets: boolean;
 }) {
+  const batchPayoutFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    done?: boolean;
+    nextStep?: number | null;
+    stepIndex?: number;
+    totalSteps?: number;
+    totals?: {
+      items: number;
+      paid: number;
+      failed: number;
+      claimNeeded: number;
+      skipped: number;
+    };
+  }>();
+  const isBatchPayoutPending = batchPayoutFetcher.state !== "idle";
+  const batchProgressSnapshot: BatchPayoutProgressSnapshot | null =
+    batchPayoutFetcher.data &&
+    batchPayoutFetcher.data.success === true &&
+    batchPayoutFetcher.data.totals &&
+    typeof batchPayoutFetcher.data.stepIndex === "number" &&
+    typeof batchPayoutFetcher.data.totalSteps === "number"
+      ? {
+          stepIndex: batchPayoutFetcher.data.stepIndex,
+          totalSteps: batchPayoutFetcher.data.totalSteps,
+          totals: {
+            paid: batchPayoutFetcher.data.totals.paid,
+            failed: batchPayoutFetcher.data.totals.failed,
+            claimNeeded: batchPayoutFetcher.data.totals.claimNeeded,
+            skipped: batchPayoutFetcher.data.totals.skipped,
+          },
+        }
+      : null;
+
+  useEffect(() => {
+    if (batchPayoutFetcher.state !== "idle") return;
+    const d = batchPayoutFetcher.data;
+    if (!d || d.success !== true) return;
+    if (d.done !== false || typeof d.nextStep !== "number") return;
+    const fd = new FormData();
+    fd.set("intent", "runBatchPayout");
+    fd.set("stepIndex", String(d.nextStep));
+    batchPayoutFetcher.submit(fd, { method: "post" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chained batch steps; deps are state/data only
+  }, [batchPayoutFetcher.state, batchPayoutFetcher.data]);
+
   return (
     <>
       {isDraft ? (
@@ -514,26 +566,54 @@ export function ContestDetailFormsSection({
               </label>
             </div>
           </Form>
-          <Form method="post" className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="intent" value="runBatchPayout" />
-            <button
-              type="submit"
-              disabled={!data.nwc.enabled}
-              className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground rounded-md px-4 py-2 text-sm font-medium"
-              title={
-                data.nwc.enabled
-                  ? "Pay all winners using your connected wallet"
-                  : "Connect NWC in Settings to enable auto payouts"
-              }
-            >
-              Batch payout (NWC)
-            </button>
-            {!data.nwc.enabled ? (
-              <p className="text-muted-foreground text-xs">
-                Auto payout requires NWC. Manual zaps still work.
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={!data.nwc.enabled || isBatchPayoutPending}
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.set("intent", "runBatchPayout");
+                  fd.set("stepIndex", "0");
+                  batchPayoutFetcher.submit(fd, { method: "post" });
+                }}
+                className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+                title={
+                  data.nwc.enabled
+                    ? "Pay all winners using your connected wallet"
+                    : "Connect NWC in Settings to enable auto payouts"
+                }
+              >
+                {isBatchPayoutPending ? (
+                  <>
+                    <Loader2
+                      className="h-4 w-4 shrink-0 animate-spin"
+                      aria-hidden
+                    />
+                    Paying winners…
+                  </>
+                ) : (
+                  "Batch payout (NWC)"
+                )}
+              </button>
+              {!data.nwc.enabled ? (
+                <p className="text-muted-foreground text-xs">
+                  Auto payout requires NWC. Manual zaps still work.
+                </p>
+              ) : null}
+            </div>
+            <BatchPayoutStatusBanner
+              active={isBatchPayoutPending}
+              progress={batchProgressSnapshot}
+            />
+            {batchPayoutFetcher.data &&
+            batchPayoutFetcher.data.success === false &&
+            batchPayoutFetcher.data.error ? (
+              <p className="text-destructive text-xs">
+                {batchPayoutFetcher.data.error}
               </p>
             ) : null}
-          </Form>
+          </div>
           <ContestPayoutOverview
             summary={data.payoutSummary}
             feeLabel={feeLabel}
