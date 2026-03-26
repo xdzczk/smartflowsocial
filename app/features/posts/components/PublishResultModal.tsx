@@ -23,6 +23,13 @@ import { useOptionalUser } from "~/lib/remix-utils";
 
 import { formatRelayUrl } from "../utils/publish-result.utils";
 
+/**
+ * Minimum time to show the publishing state before revealing per-relay rows.
+ * Outcomes are already decided on the server before redirect; this only improves
+ * perceived pacing so the modal does not snap to success/partial instantly.
+ */
+const MIN_RELAY_RESULTS_REVEAL_MS = 1000;
+
 interface RelayAck {
   relayUrl: string;
   status: "ACCEPTED" | "FAILED" | "TIMEOUT";
@@ -261,6 +268,9 @@ export default function PublishResultModal({
   queueSummary,
 }: PublishResultModalProps) {
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
+  const [relayResultsVisible, setRelayResultsVisible] = useState(false);
+  const modalOpenedAtRef = useRef<number>(0);
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
   // When parent passes null (e.g. race after redirect), we may resolve via fetch
   const [resolvedPublishAttemptId, setResolvedPublishAttemptId] = useState<
@@ -273,6 +283,11 @@ export default function PublishResultModal({
   const pollingInterval = 5000; // 5 seconds - increased to avoid rate limiting
   const maxResolveAttempts = 10;
   const resolveInterval = 2000;
+
+  const relayAcksForUi = useMemo(
+    () => (relayResultsVisible ? relayAcks : []),
+    [relayResultsVisible, relayAcks]
+  );
 
   // Helper function to calculate status from relay acks
   const calculateStatusFromAcks = useCallback(
@@ -320,6 +335,12 @@ export default function PublishResultModal({
   useEffect(() => {
     if (!isOpen || action !== "publish") return;
     const t = setTimeout(() => {
+      modalOpenedAtRef.current = Date.now();
+      if (revealTimerRef.current) {
+        clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
+      setRelayResultsVisible(false);
       setRelayAcks([]);
       setHasTimedOut(false);
       setResolvedAttemptsGaveUp(false);
@@ -327,6 +348,37 @@ export default function PublishResultModal({
     }, 0);
     return () => clearTimeout(t);
   }, [isOpen, action, publishAttemptId]);
+
+  // After ACKs exist, wait at least MIN_RELAY_RESULTS_REVEAL_MS from modal open before showing rows.
+  useEffect(() => {
+    if (!isOpen || action !== "publish") {
+      if (revealTimerRef.current) {
+        clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
+      return;
+    }
+    if (relayAcks.length === 0) {
+      queueMicrotask(() => {
+        setRelayResultsVisible(false);
+      });
+      if (revealTimerRef.current) {
+        clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
+      return;
+    }
+    if (relayResultsVisible) return;
+    if (revealTimerRef.current) return;
+
+    const openedAt = modalOpenedAtRef.current || Date.now();
+    const elapsed = Date.now() - openedAt;
+    const delay = Math.max(0, MIN_RELAY_RESULTS_REVEAL_MS - elapsed);
+    revealTimerRef.current = setTimeout(() => {
+      revealTimerRef.current = null;
+      setRelayResultsVisible(true);
+    }, delay);
+  }, [isOpen, action, relayAcks, relayResultsVisible]);
 
   // Resolve publishAttemptId by polling post when it was null (server may not have written it yet)
   const resolveAttemptsRef = useRef(0);
@@ -514,19 +566,19 @@ export default function PublishResultModal({
     calculateStatusFromAcks,
   ]);
 
-  // Calculate relay status counts
+  // Calculate relay status counts (respect minimum reveal delay for UI)
   const relayStatusCounts = useMemo(() => {
-    const acceptedCount = relayAcks.filter(
+    const acceptedCount = relayAcksForUi.filter(
       (ack) => ack.status === "ACCEPTED"
     ).length;
-    const failedCount = relayAcks.filter(
+    const failedCount = relayAcksForUi.filter(
       (ack) => ack.status === "FAILED"
     ).length;
-    const timeoutCount = relayAcks.filter(
+    const timeoutCount = relayAcksForUi.filter(
       (ack) => ack.status === "TIMEOUT"
     ).length;
     return { acceptedCount, failedCount, timeoutCount };
-  }, [relayAcks]);
+  }, [relayAcksForUi]);
 
   // Determine overall status
   const status = useMemo(() => {
@@ -539,7 +591,7 @@ export default function PublishResultModal({
       return "success";
     }
 
-    if (relayAcks.length === 0) {
+    if (relayAcksForUi.length === 0) {
       return "publishing";
     }
 
@@ -556,7 +608,13 @@ export default function PublishResultModal({
     }
 
     return "publishing";
-  }, [action, relayAcks.length, relayStatusCounts, resolvedAttemptsGaveUp]);
+  }, [
+    action,
+    relayAcks.length,
+    relayAcksForUi.length,
+    relayStatusCounts,
+    resolvedAttemptsGaveUp,
+  ]);
 
   // Call hook before any conditional returns
   const user = useOptionalUser() ?? null;
@@ -661,10 +719,10 @@ export default function PublishResultModal({
           </DialogDescription>
         </DialogHeader>
 
-        {action === "publish" && relayAcks.length > 0 ? (
+        {action === "publish" && relayAcksForUi.length > 0 ? (
           <div className="max-h-96 space-y-2 overflow-y-auto">
             <h3 className="text-sm font-semibold">Relay Status</h3>
-            {relayAcks.map((ack) => (
+            {relayAcksForUi.map((ack) => (
               <div
                 key={ack.relayUrl}
                 className="flex items-center justify-between rounded-lg border p-3"
@@ -684,13 +742,15 @@ export default function PublishResultModal({
         ) : null}
 
         {action === "publish" &&
-        relayAcks.length === 0 &&
+        relayAcksForUi.length === 0 &&
         status === "publishing" ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
             <span className="text-muted-foreground text-center text-sm">
               {resolvedPublishAttemptId
-                ? "Waiting for relay responses..."
+                ? relayAcks.length > 0
+                  ? "Preparing relay status…"
+                  : "Waiting for relay responses..."
                 : "Checking publish status..."}
             </span>
             {hasTimedOut ? (

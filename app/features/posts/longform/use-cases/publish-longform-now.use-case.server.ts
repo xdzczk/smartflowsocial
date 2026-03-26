@@ -76,14 +76,43 @@ export class PublishLongFormNowUseCase {
     });
     if (!lease) {
       logInfo(
-        "PublishLongFormNowUseCase: Publish lease held, skipping duplicate publish",
+        "PublishLongFormNowUseCase: Publish lease not acquired; failing publish",
         {
           postId: input.postId,
           userId: input.userId,
           correlationId,
         }
       );
-      return;
+      try {
+        await this.stateMachine.transition(
+          input.postId,
+          input.userId,
+          "FAILED",
+          "Publish lease not acquired (concurrent publish or lock held)",
+          {
+            additionalPostData: {
+              publishingLockId: null,
+              publishingLockExpiresAt: null,
+            },
+          }
+        );
+      } catch (transitionError) {
+        logError(
+          transitionError instanceof Error
+            ? transitionError
+            : new Error(String(transitionError)),
+          {
+            postId: input.postId,
+            userId: input.userId,
+            correlationId,
+            message:
+              "PublishLongFormNowUseCase: Failed to transition to FAILED after lease miss",
+          }
+        );
+      }
+      throw new Error(
+        "Could not start publish (another publish may be in progress). Please try again in a few seconds."
+      );
     }
 
     const publishAttemptId = generatePublishAttemptId(
@@ -121,6 +150,13 @@ export class PublishLongFormNowUseCase {
             message:
               "PublishLongFormNowUseCase: Failed to persist publish ACKs",
           }
+        );
+      }
+
+      const relayResults = publishResult.results;
+      if (relayResults.length > 0 && relayResults.every((r) => !r.ok)) {
+        throw new Error(
+          "Publish failed on all relays: no relay accepted the event. Check Network settings and try again."
         );
       }
 

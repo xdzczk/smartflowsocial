@@ -80,7 +80,9 @@ export function useNewPostPublishModalEffect(input: {
           return;
         }
 
-        if (scheduledPostId) {
+        // Invalidate published/scheduled/dashboard/drafts/calendar queries so
+        // Published and other views show the new post without a full page reload.
+        if (publishedPostId || scheduledPostId) {
           refreshPostViews(queryClient);
         }
         setTimeout(() => {

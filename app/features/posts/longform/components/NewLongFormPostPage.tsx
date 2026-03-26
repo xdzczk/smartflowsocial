@@ -311,7 +311,7 @@ export default function NewLongFormPostPage() {
           };
 
           if (data.post || data.longFormPost) {
-            if (scheduledPostId) {
+            if (publishedPostId || scheduledPostId) {
               refreshPostViews(queryClient);
             }
             setTimeout(() => {

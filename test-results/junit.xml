@@ -1,19 +1,241 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.002218334">
-    <testsuite name="tests/unit/compose-route-contract.test.ts" timestamp="2026-03-26T18:58:53.933Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.002218334">
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; defaults unknown types to post" time="0.000743083">
+<testsuites name="vitest tests" tests="9" failures="3" errors="0" time="0.082301791">
+    <testsuite name="tests/integration/use-cases/publish-now.use-case.integration.test.ts" timestamp="2026-03-26T19:31:04.578Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="3" errors="0" skipped="0" time="0.029903541">
+        <testcase classname="tests/integration/use-cases/publish-now.use-case.integration.test.ts" name="PublishNowUseCase Integration &gt; should publish a post successfully" time="0.020155292">
+            <system-out>
+prisma:error 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+
+            </system-out>
+            <system-err>
+
+❌ Error: {
+  message: &apos;\n&apos; +
+    &apos;Invalid `prisma.user.upsert()` invocation in\n&apos; +
+    &apos;/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38\n&apos; +
+    &apos;\n&apos; +
+    &apos;  39 \n&apos; +
+    &apos;  40 // Create a test user - use upsert to handle duplicates\n&apos; +
+    &apos;  41 const npub = `test-${Date.now()}-${Math.random()}`;\n&apos; +
+    &apos;→ 42 const user = await prisma.user.upsert(\n&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+            <failure message="
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+" type="PrismaClientKnownRequestError">
+PrismaClientKnownRequestError: 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+ ❯ qr.handleRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:8172
+ ❯ qr.handleAndLogRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7467
+ ❯ qr.request node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7174
+ ❯ Array.$allOperations app/lib/prisma.server.ts:79:28
+ ❯ a node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:75:5816
+ ❯ tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;ECONNREFUSED&apos;, meta: { modelName: &apos;User&apos; }, clientVersion: &apos;7.2.0&apos;, batchRequestIdx: undefined }
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; returns supported type values unchanged" time="0.000152833">
+        <testcase classname="tests/integration/use-cases/publish-now.use-case.integration.test.ts" name="PublishNowUseCase Integration &gt; should throw error if post not found" time="0.005009167">
+            <system-out>
+prisma:error 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+
+            </system-out>
+            <system-err>
+
+❌ Error: {
+  message: &apos;\n&apos; +
+    &apos;Invalid `prisma.user.upsert()` invocation in\n&apos; +
+    &apos;/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38\n&apos; +
+    &apos;\n&apos; +
+    &apos;  39 \n&apos; +
+    &apos;  40 // Create a test user - use upsert to handle duplicates\n&apos; +
+    &apos;  41 const npub = `test-${Date.now()}-${Math.random()}`;\n&apos; +
+    &apos;→ 42 const user = await prisma.user.upsert(\n&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+            <failure message="
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+" type="PrismaClientKnownRequestError">
+PrismaClientKnownRequestError: 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+ ❯ qr.handleRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:8172
+ ❯ qr.handleAndLogRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7467
+ ❯ qr.request node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7174
+ ❯ Array.$allOperations app/lib/prisma.server.ts:79:28
+ ❯ a node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:75:5816
+ ❯ tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;ECONNREFUSED&apos;, meta: { modelName: &apos;User&apos; }, clientVersion: &apos;7.2.0&apos;, batchRequestIdx: undefined }
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; getComposeMode &gt; uses article mode only for article type" time="0.000124375">
+        <testcase classname="tests/integration/use-cases/publish-now.use-case.integration.test.ts" name="PublishNowUseCase Integration &gt; should throw error if post already published" time="0.003923291">
+            <system-out>
+prisma:error 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+
+            </system-out>
+            <system-err>
+
+❌ Error: {
+  message: &apos;\n&apos; +
+    &apos;Invalid `prisma.user.upsert()` invocation in\n&apos; +
+    &apos;/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38\n&apos; +
+    &apos;\n&apos; +
+    &apos;  39 \n&apos; +
+    &apos;  40 // Create a test user - use upsert to handle duplicates\n&apos; +
+    &apos;  41 const npub = `test-${Date.now()}-${Math.random()}`;\n&apos; +
+    &apos;→ 42 const user = await prisma.user.upsert(\n&apos;,
+  code: &apos;UNKNOWN_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+            <failure message="
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+" type="PrismaClientKnownRequestError">
+PrismaClientKnownRequestError: 
+Invalid `prisma.user.upsert()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:38
+
+  39 
+  40 // Create a test user - use upsert to handle duplicates
+  41 const npub = `test-${Date.now()}-${Math.random()}`;
+→ 42 const user = await prisma.user.upsert(
+
+ ❯ qr.handleRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:8172
+ ❯ qr.handleAndLogRequestError node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7467
+ ❯ qr.request node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:65:7174
+ ❯ Array.$allOperations app/lib/prisma.server.ts:79:28
+ ❯ a node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@18.3.1_react@18.3.1__re_2511729ada088efa42cee5e5b997768e/node_modules/@prisma/client/runtime/client.js:75:5816
+ ❯ tests/integration/use-cases/publish-now.use-case.integration.test.ts:42:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;ECONNREFUSED&apos;, meta: { modelName: &apos;User&apos; }, clientVersion: &apos;7.2.0&apos;, batchRequestIdx: undefined }
+            </failure>
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for explicit article contentType" time="0.000093083">
+    </testsuite>
+    <testsuite name="tests/unit/use-cases/publish-now.use-case.test.ts" timestamp="2026-03-26T19:31:04.581Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.05239825">
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should publish a post successfully" time="0.035612041">
+            <system-out>
+prisma:error 
+Invalid `prisma.publishRelayAck.createMany()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/app/features/relays/repositories/publish-relay-acks.server.ts:17:32
+
+  14 
+  15 const now = new Date();
+  16 
+→ 17 await prisma.publishRelayAck.createMany(
+
+
+            </system-out>
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for article query context" time="0.000077417">
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should throw error if post not found" time="0.000823417">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for longform-specific actions" time="0.0000665">
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should return without throwing when post already published (idempotent)" time="0.000281209">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; keeps shortform actions in shortform dispatch" time="0.000065375">
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should handle publish failure and transition to FAILED" time="0.00391975">
+        </testcase>
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should use correlation ID if provided" time="0.005551041">
+            <system-out>
+prisma:error 
+Invalid `prisma.publishRelayAck.createMany()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/app/features/relays/repositories/publish-relay-acks.server.ts:17:32
+
+  14 
+  15 const now = new Date();
+  16 
+→ 17 await prisma.publishRelayAck.createMany(
+
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/unit/use-cases/publish-now.use-case.test.ts" name="PublishNowUseCase &gt; execute &gt; should handle state transition failure during publish" time="0.005337042">
+            <system-out>
+prisma:error 
+Invalid `prisma.publishRelayAck.createMany()` invocation in
+/Users/ivmitko/Documents/Dev/vibe-smartflow-main/app/features/relays/repositories/publish-relay-acks.server.ts:17:32
+
+  14 
+  15 const now = new Date();
+  16 
+→ 17 await prisma.publishRelayAck.createMany(
+
+
+            </system-out>
         </testcase>
     </testsuite>
 </testsuites>

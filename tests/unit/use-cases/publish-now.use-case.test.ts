@@ -104,8 +104,12 @@ describe("PublishNowUseCase", () => {
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({
+        results: [
+          { relay: "wss://relay1.com", ok: true },
+          { relay: "wss://relay2.com", ok: true },
+        ],
+      });
 
       await useCase.execute({
         postId: TEST_POST_ID,
@@ -278,8 +282,9 @@ describe("PublishNowUseCase", () => {
       const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: true }],
+      });
 
       await useCase.execute({
         postId: TEST_POST_ID,
@@ -314,8 +319,9 @@ describe("PublishNowUseCase", () => {
       const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: true }],
+      });
       mockTransition
         .mockResolvedValueOnce(undefined) // PUBLISHING transition succeeds
         .mockRejectedValueOnce(new Error("State transition failed")); // PUBLISHED transition fails

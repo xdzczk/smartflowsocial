@@ -67,6 +67,96 @@ function normalizeRelays(relays: string[]): string[] {
   );
 }
 
+/** Canonical key for comparing relay URLs across formatting differences. */
+function canonicalRelayKey(url: string): string {
+  const t = url.trim();
+  if (!t) return "";
+  const withScheme = /^wss?:\/\//i.test(t) ? t : `wss://${t}`;
+  try {
+    const u = new URL(withScheme);
+    const host = u.hostname.toLowerCase();
+    const path = (u.pathname || "").replace(/\/+$/, "") || "";
+    return `${u.protocol.toLowerCase()}//${host}${path}`;
+  } catch {
+    return t.toLowerCase().replace(/\/+$/, "");
+  }
+}
+
+function relayHostname(url: string): string {
+  const t = url.trim();
+  if (!t) return "";
+  const withScheme = /^wss?:\/\//i.test(t) ? t : `wss://${t}`;
+  try {
+    return new URL(withScheme).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function findMatchingPublisherResult(
+  requestedUrl: string,
+  results: RelayPublishResult[]
+): RelayPublishResult | undefined {
+  const reqKey = canonicalRelayKey(requestedUrl);
+  for (const r of results) {
+    if (canonicalRelayKey(r.relay) === reqKey) return r;
+  }
+  const reqHost = relayHostname(requestedUrl);
+  if (!reqHost) return undefined;
+  for (const r of results) {
+    if (relayHostname(r.relay) === reqHost) return r;
+  }
+  return undefined;
+}
+
+/**
+ * Map upstream per-relay rows onto the relays we sent. The HTTP publisher may
+ * use different URL strings (trailing slash, hostname-only). Strict equality
+ * drops every row → empty ACK persistence and stale Settings relay timestamps.
+ */
+function mergePublisherResultsForRequested(
+  requested: string[],
+  perRelay: RelayPublishResult[],
+  context: { correlationId?: string; eventId: string }
+): RelayPublishResult[] {
+  const merged: RelayPublishResult[] = [];
+  for (const req of requested) {
+    const hit = findMatchingPublisherResult(req, perRelay);
+    if (hit) {
+      merged.push({ ...hit, relay: req });
+    }
+  }
+  if (merged.length === 0 && perRelay.length > 0 && requested.length > 0) {
+    const requestedHosts = new Set(
+      requested.map((u) => relayHostname(u)).filter(Boolean)
+    );
+    const byHost = perRelay.filter((r) =>
+      requestedHosts.has(relayHostname(r.relay))
+    );
+    if (byHost.length > 0) {
+      logWarning(
+        "Nostr publisher: per-relay results matched requested relays only by hostname; using hostname-filtered rows for ACK persistence",
+        {
+          ...context,
+          requestedSample: requested.slice(0, 5),
+          upstreamSample: perRelay.slice(0, 5).map((r) => r.relay),
+        }
+      );
+      return byHost;
+    }
+    logWarning(
+      "Nostr publisher: per-relay results did not match requested relays; using raw upstream rows for ACK persistence",
+      {
+        ...context,
+        requestedSample: requested.slice(0, 5),
+        upstreamSample: perRelay.slice(0, 5).map((r) => r.relay),
+      }
+    );
+    return perRelay;
+  }
+  return merged;
+}
+
 function parsePerRelayResults(raw: unknown): Array<{
   relay: string;
   ok: boolean;
@@ -313,9 +403,15 @@ export class DefaultNostrPublisher implements NostrPublisher {
         return { results: [] };
       }
 
-      for (const result of perRelayResults) {
-        // Only attribute outcomes for relays we actually attempted.
-        if (!prioritizedRelays.includes(result.relay)) continue;
+      // Prefer rows that correspond to relays we requested (exclude fan-out noise).
+      // Match by canonical URL / hostname so ACK rows are not dropped on format mismatch.
+      const filteredResults = mergePublisherResultsForRequested(
+        prioritizedRelays,
+        perRelayResults,
+        { correlationId, eventId: event.id }
+      );
+
+      for (const result of filteredResults) {
         if (result.ok) {
           recordRelaySuccess(result.relay, result.latencyMs ?? totalLatency);
           recordRelayRequest(result.relay, true);
@@ -325,7 +421,7 @@ export class DefaultNostrPublisher implements NostrPublisher {
         }
       }
 
-      return { results: perRelayResults };
+      return { results: filteredResults };
     } catch (error) {
       // If the publisher call failed entirely, record a failure for every relay we intended to use.
       const errorMessage =
