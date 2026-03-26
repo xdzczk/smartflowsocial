@@ -234,6 +234,9 @@ export interface QueueType {
   description?: string | null;
   scheduleType?: "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
   scheduleConfig?: ScheduleConfig;
+  cadenceLabel?: string | null;
+  waitingCount?: number | null;
+  status?: "active" | "paused" | "full" | "manual" | null;
   isEnabled?: boolean;
   userId?: string;
 }
@@ -462,6 +465,55 @@ export interface ComposerDraft {
     attachments: ComposerAttachment[];
   }>;
   signerContext?: { type: string; pubkey?: string; lastReadyAt?: number };
+}
+
+export type ComposerContentType = "post" | "poll" | "thread" | "article";
+
+export interface ComposerDraftEnvelope<TPayload> {
+  version: number;
+  contentType: ComposerContentType;
+  payload: TPayload;
+  savedAt: number;
+}
+
+export interface PostDraftPayload {
+  content: string;
+  attachments: ComposerAttachment[];
+  queueType: string;
+  scheduledFor?: string;
+  tags: string;
+}
+
+export interface PollDraftPayload {
+  question: string;
+  options: string[];
+  pollType: "singlechoice" | "multiplechoice";
+  endsAtLocal?: string;
+  queueType: string;
+  scheduledFor?: string;
+  tags: string;
+}
+
+export interface ThreadDraftPayload {
+  segments: Array<{
+    id: string;
+    content: string;
+    attachments: ComposerAttachment[];
+  }>;
+  delayMinutes: number;
+  queueType: string;
+  scheduledFor?: string;
+  tags: string;
+}
+
+export interface ArticleDraftPayload {
+  title: string;
+  summary: string;
+  content: string;
+  image?: string;
+  customTags?: string;
+  queueType?: string;
+  scheduledFor?: string;
 }
 
 /** Inline token format: [attach:localId] */

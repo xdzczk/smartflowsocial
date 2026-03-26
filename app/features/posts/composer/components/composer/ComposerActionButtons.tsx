@@ -10,9 +10,9 @@ import { Button } from "~/components/ui/button";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import {
-  ACTION_POST_TEXT,
-  ACTION_SCHEDULE_TEXT,
-} from "./composer-submit-utils";
+  type ComposerPublishMode,
+  getPrimaryCtaLabelForMode,
+} from "./publish-mode";
 
 function getPrimaryLabel(
   isSigning: boolean,
@@ -44,6 +44,7 @@ export interface ComposerActionButtonsProps {
   disabled: boolean;
   signerReady: boolean | null;
   hasScheduleTimeForSubmit: boolean;
+  submitActionValue: string;
   scheduleTimeLabel: string | null;
   isThreadMode: boolean;
   segmentCount: number;
@@ -52,6 +53,7 @@ export interface ComposerActionButtonsProps {
   fetcherState: string;
   templateName: string;
   editTemplateContext: { templateId: string; postId: string } | null;
+  publishMode: ComposerPublishMode;
 }
 
 export function ComposerActionButtons({
@@ -61,6 +63,7 @@ export function ComposerActionButtons({
   disabled,
   signerReady,
   hasScheduleTimeForSubmit,
+  submitActionValue,
   scheduleTimeLabel,
   isThreadMode,
   segmentCount: _segmentCount,
@@ -69,14 +72,21 @@ export function ComposerActionButtons({
   fetcherState,
   templateName,
   editTemplateContext,
+  publishMode,
 }: ComposerActionButtonsProps) {
-  const primaryLabel = getPrimaryLabel(
-    isSigning,
-    fetcherState,
-    hasScheduleTimeForSubmit,
-    scheduleTimeLabel,
-    isThreadMode
-  );
+  const primaryLabel =
+    fetcherState !== "idle" || isSigning
+      ? getPrimaryLabel(
+          isSigning,
+          fetcherState,
+          hasScheduleTimeForSubmit,
+          scheduleTimeLabel,
+          isThreadMode
+        )
+      : getPrimaryCtaLabelForMode(
+          publishMode,
+          isThreadMode ? "thread" : "post"
+        );
 
   if (isTemplateMode) {
     return (
@@ -111,9 +121,7 @@ export function ComposerActionButtons({
         <Button
           ref={primarySubmitRef}
           type="submit"
-          value={
-            hasScheduleTimeForSubmit ? ACTION_SCHEDULE_TEXT : ACTION_POST_TEXT
-          }
+          value={submitActionValue}
           name="_action"
           className="bg-success hover:bg-success/90 text-white"
           disabled={disabled}
@@ -134,21 +142,23 @@ export function ComposerActionButtons({
           {primaryLabel}
         </Button>
       )}
-      <Button
-        ref={draftSubmitRef}
-        type="submit"
-        value="draft-text"
-        name="_action"
-        variant="outline"
-        disabled={disabled}
-      >
-        <Pencil
-          className="mr-1.5 h-5 w-5"
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        {fetcherState !== "idle" ? "Saving..." : "Save as Draft"}
-      </Button>
+      {publishMode !== "draft" ? (
+        <Button
+          ref={draftSubmitRef}
+          type="submit"
+          value="draft-text"
+          name="_action"
+          variant="outline"
+          disabled={disabled}
+        >
+          <Pencil
+            className="mr-1.5 h-5 w-5"
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+          {fetcherState !== "idle" ? "Saving..." : "Save as draft"}
+        </Button>
+      ) : null}
     </div>
   );
 }

@@ -18,7 +18,7 @@ export interface ComposerContentFieldProps {
   disabled?: boolean;
   placeholder?: string;
   rows?: number;
-  /** Show "Open draft" button (hidden in template mode) */
+  /** Show "Drafts" button (hidden in template mode) */
   showDraftButton?: boolean;
   onOpenDraft?: () => void;
   maxLength?: number;
@@ -65,14 +65,14 @@ export function ComposerContentField({
               size="sm"
               onClick={onOpenDraft}
               disabled={disabled}
-              aria-label="Open draft"
+              aria-label="Drafts"
             >
               <FolderOpen
                 className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
                 strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
-              Open draft
+              Drafts
             </Button>
           </div>
         ) : null}

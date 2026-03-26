@@ -39,6 +39,10 @@ interface ConfidencePanelProps {
   threadSummary?: string;
   /** Warnings to show e.g. "Unassigned queue + schedule may not run as expected" */
   warnings?: string[];
+  /** Blocking issues that prevent submit */
+  blockers?: string[];
+  /** Informational notes */
+  info?: string[];
   /** When slot-based queue: show "Uses next queue slot" under When */
   usesQueueSlot?: boolean;
   /** Content for desktop: always visible when not in sheet */
@@ -58,14 +62,40 @@ export function PanelContent({
   summaryLine,
   threadSummary,
   warnings,
+  blockers,
+  info,
   usesQueueSlot,
 }: Omit<ConfidencePanelProps, "children">) {
+  const status =
+    blockers && blockers.length > 0
+      ? "Blocked"
+      : warnings && warnings.length > 0
+        ? "Warning"
+        : "Ready";
   return (
     <div className="space-y-3 text-sm">
+      <div className="rounded-md border p-2 text-xs">
+        <p className="font-semibold">Status</p>
+        <p>{status}</p>
+      </div>
+      {blockers && blockers.length > 0 ? (
+        <div className="rounded-md border border-red-300 bg-red-500/10 p-2 text-xs text-red-700 dark:border-red-900 dark:text-red-300">
+          {blockers.map((b) => (
+            <p key={b}>{b}</p>
+          ))}
+        </div>
+      ) : null}
       {warnings && warnings.length > 0 ? (
         <div className="rounded-md border border-amber-200 bg-amber-500/10 p-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
           {warnings.map((w) => (
             <p key={w}>{w}</p>
+          ))}
+        </div>
+      ) : null}
+      {info && info.length > 0 ? (
+        <div className="rounded-md border p-2 text-xs">
+          {info.map((item) => (
+            <p key={item}>{item}</p>
           ))}
         </div>
       ) : null}
@@ -139,7 +169,9 @@ export function ConfidencePanel({
   relayCount,
   summaryLine,
   threadSummary,
+  blockers,
   warnings,
+  info,
   usesQueueSlot,
   children,
 }: ConfidencePanelProps) {
@@ -154,7 +186,7 @@ export function ConfidencePanel({
       >
         <div className="space-y-3">
           <h3 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-            Execution summary
+            Publish status
           </h3>
           <PanelContent
             queueName={queueName}
@@ -168,7 +200,9 @@ export function ConfidencePanel({
             relayCount={relayCount}
             summaryLine={summaryLine}
             threadSummary={threadSummary}
+            blockers={blockers}
             warnings={warnings}
+            info={info}
             usesQueueSlot={usesQueueSlot}
           />
           {children}
@@ -180,12 +214,12 @@ export function ConfidencePanel({
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="w-full">
-              Execution summary
+              Publish status
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto max-h-[70vh]">
             <SheetHeader>
-              <SheetTitle>Execution summary</SheetTitle>
+              <SheetTitle>Publish status</SheetTitle>
             </SheetHeader>
             <div className="mt-4">
               <PanelContent
@@ -200,7 +234,9 @@ export function ConfidencePanel({
                 relayCount={relayCount}
                 summaryLine={summaryLine}
                 threadSummary={threadSummary}
+                blockers={blockers}
                 warnings={warnings}
+                info={info}
                 usesQueueSlot={usesQueueSlot}
               />
             </div>

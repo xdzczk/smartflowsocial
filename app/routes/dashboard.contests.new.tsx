@@ -654,7 +654,6 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     preset?.title?.trim() ? preset.title : ""
   );
   const [now] = useState(() => Date.now());
-  const [createSetupStepsOpen, setCreateSetupStepsOpen] = useState(false);
 
   const { posts, planType, planLabel, presetDefaults } = loaderData;
 
@@ -856,97 +855,40 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
             ) : null}
           </section>
 
-          {sourceMode === "create" ? (
-            <details
-              open={createSetupStepsOpen}
-              onToggle={(e) => {
-                setCreateSetupStepsOpen(e.currentTarget.open);
-              }}
-              className="border-border bg-card/30 group rounded-lg border"
-            >
-              <summary className="text-foreground cursor-pointer list-none px-4 py-3 text-base font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
-                <span className="flex items-center justify-between gap-2">
-                  <span>
-                    Steps 2–4: Ranking, prizes, and eligibility
-                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      (expand to configure)
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground text-xs font-normal">
-                    {createSetupStepsOpen ? "Hide" : "Show"}
-                  </span>
-                </span>
-              </summary>
-              <div className="border-border space-y-10 border-t px-4 pt-6 pb-4">
-                <ContestNewFormSetupSteps
-                  rankingMetric={rankingMetric}
-                  setRankingMetric={setRankingMetric}
-                  contestEndAt={contestEndAt}
-                  setContestEndAt={setContestEndAt}
-                  tieBreakPreview={tieBreakPreview}
-                  stepIssuesRanking={stepIssues.ranking}
-                  prizeMode={prizeMode}
-                  setPrizeMode={setPrizeMode}
-                  winnerCount={winnerCount}
-                  setWinnerCount={setWinnerCount}
-                  equalRewardSats={equalRewardSats}
-                  setEqualRewardSats={setEqualRewardSats}
-                  rankRewards={rankRewards}
-                  setRankRewards={setRankRewards}
-                  prizeSummary={prizeSummary}
-                  stepIssuesRewards={stepIssues.rewards}
-                  excludeMuted={excludeMuted}
-                  setExcludeMuted={setExcludeMuted}
-                  excludeBlocked={excludeBlocked}
-                  setExcludeBlocked={setExcludeBlocked}
-                  excludeLowTrust={excludeLowTrust}
-                  setExcludeLowTrust={setExcludeLowTrust}
-                  excludeNonFollowers={excludeNonFollowers}
-                  setExcludeNonFollowers={setExcludeNonFollowers}
-                  minAccountAgeDays={minAccountAgeDays}
-                  setMinAccountAgeDays={setMinAccountAgeDays}
-                  minFollowers={minFollowers}
-                  setMinFollowers={setMinFollowers}
-                  contestEndRequired={false}
-                />
-              </div>
-            </details>
-          ) : (
-            <ContestNewFormSetupSteps
-              rankingMetric={rankingMetric}
-              setRankingMetric={setRankingMetric}
-              contestEndAt={contestEndAt}
-              setContestEndAt={setContestEndAt}
-              tieBreakPreview={tieBreakPreview}
-              stepIssuesRanking={stepIssues.ranking}
-              prizeMode={prizeMode}
-              setPrizeMode={setPrizeMode}
-              winnerCount={winnerCount}
-              setWinnerCount={setWinnerCount}
-              equalRewardSats={equalRewardSats}
-              setEqualRewardSats={setEqualRewardSats}
-              rankRewards={rankRewards}
-              setRankRewards={setRankRewards}
-              prizeSummary={prizeSummary}
-              stepIssuesRewards={stepIssues.rewards}
-              excludeMuted={excludeMuted}
-              setExcludeMuted={setExcludeMuted}
-              excludeBlocked={excludeBlocked}
-              setExcludeBlocked={setExcludeBlocked}
-              excludeLowTrust={excludeLowTrust}
-              setExcludeLowTrust={setExcludeLowTrust}
-              excludeNonFollowers={excludeNonFollowers}
-              setExcludeNonFollowers={setExcludeNonFollowers}
-              minAccountAgeDays={minAccountAgeDays}
-              setMinAccountAgeDays={setMinAccountAgeDays}
-              minFollowers={minFollowers}
-              setMinFollowers={setMinFollowers}
-              contestEndRequired
-            />
-          )}
+          <ContestNewFormSetupSteps
+            rankingMetric={rankingMetric}
+            setRankingMetric={setRankingMetric}
+            contestEndAt={contestEndAt}
+            setContestEndAt={setContestEndAt}
+            tieBreakPreview={tieBreakPreview}
+            stepIssuesRanking={stepIssues.ranking}
+            prizeMode={prizeMode}
+            setPrizeMode={setPrizeMode}
+            winnerCount={winnerCount}
+            setWinnerCount={setWinnerCount}
+            equalRewardSats={equalRewardSats}
+            setEqualRewardSats={setEqualRewardSats}
+            rankRewards={rankRewards}
+            setRankRewards={setRankRewards}
+            prizeSummary={prizeSummary}
+            stepIssuesRewards={stepIssues.rewards}
+            excludeMuted={excludeMuted}
+            setExcludeMuted={setExcludeMuted}
+            excludeBlocked={excludeBlocked}
+            setExcludeBlocked={setExcludeBlocked}
+            excludeLowTrust={excludeLowTrust}
+            setExcludeLowTrust={setExcludeLowTrust}
+            excludeNonFollowers={excludeNonFollowers}
+            setExcludeNonFollowers={setExcludeNonFollowers}
+            minAccountAgeDays={minAccountAgeDays}
+            setMinAccountAgeDays={setMinAccountAgeDays}
+            minFollowers={minFollowers}
+            setMinFollowers={setMinFollowers}
+            contestEndRequired={sourceMode !== "create"}
+          />
         </div>
 
-        <div className="mt-10 w-full min-w-0 self-start lg:mt-0">
+        <div className="mt-10 w-full min-w-0 self-start lg:sticky lg:top-20 lg:mt-0">
           <ContestBuilderSummaryRail
             planType={planType}
             planLabel={planLabel}

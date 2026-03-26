@@ -8,6 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const DEBOUNCE_MS = 1500;
 
 export interface ComposerLocalSnapshot {
+  version?: number;
+  contentType?: "post" | "thread" | "poll" | "article";
   content: string;
   queueType: string;
   queueTypeId: string | null;
@@ -15,6 +17,12 @@ export interface ComposerLocalSnapshot {
   tags: string;
   hashTagPresetId: string | null;
   attachmentMeta: Array<{ localId: string; url: string; alt?: string }>;
+  threadSegments?: Array<{
+    id: string;
+    content: string;
+    attachments: Array<{ localId: string; url?: string; alt?: string }>;
+  }>;
+  threadDelayMinutes?: number;
   savedAt: number;
 }
 

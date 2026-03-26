@@ -7,6 +7,7 @@ export type {
   UnifiedComposerProps,
 } from "./components/UnifiedComposer";
 export { default as NewPostPage } from "./components/NewPostPage";
+export { CreateComposerShell } from "./components/CreateComposerShell";
 export {
   BulkComposerModal,
   type BulkComposerMode,

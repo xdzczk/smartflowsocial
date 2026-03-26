@@ -125,7 +125,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
   if (layout === "minimal") {
     return (
       <div className="flex flex-col gap-2">
-        <Label htmlFor="scheduledFor">Schedule for later</Label>
+        <Label htmlFor="scheduledFor">Publish time</Label>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Input
             type="datetime-local"
@@ -152,7 +152,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
     <div className="flex flex-col gap-2">
       {!omitScheduleInput ? (
         <>
-          <Label htmlFor="scheduledFor">Schedule for later</Label>
+          <Label htmlFor="scheduledFor">Publish time</Label>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Input
               type="datetime-local"
@@ -183,7 +183,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
       />
       <div className="space-y-2">
         <Label htmlFor="scheduleRandomWindowMinutes">
-          Post at random time within ± minutes
+          Randomize publish time
         </Label>
         <Select
           value={String(scheduleRandomWindowMinutes)}

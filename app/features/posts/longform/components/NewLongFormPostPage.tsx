@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
+import { CreateComposerShell } from "~/features/posts/composer";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
 import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -24,7 +25,6 @@ import { getActionErrorMessage } from "~/lib/errors";
 
 import LongFormPost from "./LongFormPost";
 import LongFormPreviewModal from "./LongFormPreviewModal";
-import { NewLongFormHeader } from "./NewLongFormHeader";
 
 export default function NewLongFormPostPage() {
   const loaderData = useLoaderData<unknown>();
@@ -347,9 +347,18 @@ export default function NewLongFormPostPage() {
   }, [publishResultToken]);
 
   return (
-    <div className="p-6">
-      <NewLongFormHeader displayedHashtags={displayedHashtags} />
-
+    <CreateComposerShell
+      status="Draft"
+      relayCount={0}
+      onRelayClick={() => {}}
+      contentType="article"
+      onContentTypeChange={(next) => {
+        if (next === "article") return;
+        navigate(`/dashboard/newpost?type=${encodeURIComponent(next)}`);
+      }}
+      showPublishModeBar={false}
+      showPrimaryCta={false}
+    >
       {templatesRaw.length > 0 ? (
         <div className="mb-4 flex items-center gap-2">
           <label
@@ -489,6 +498,6 @@ export default function NewLongFormPostPage() {
           }}
         />
       ) : null}
-    </div>
+    </CreateComposerShell>
   );
 }

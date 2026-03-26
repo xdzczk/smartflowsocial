@@ -37,7 +37,7 @@ export function QueueSelector({
         id="queue-type-label"
         className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
       >
-        Queue Type
+        Queue
       </span>
       <div
         className="flex flex-wrap gap-2"
@@ -61,6 +61,21 @@ export function QueueSelector({
             const isSelected = selectedQueue === queueName;
             const accent =
               colorToken != null ? getQueueAccentHex(colorToken) : undefined;
+            const queueMeta =
+              typeof queue === "object"
+                ? {
+                    cadenceLabel:
+                      typeof queue.cadenceLabel === "string"
+                        ? queue.cadenceLabel
+                        : null,
+                    waitingCount:
+                      typeof queue.waitingCount === "number"
+                        ? queue.waitingCount
+                        : null,
+                    status:
+                      typeof queue.status === "string" ? queue.status : null,
+                  }
+                : null;
             return (
               <button
                 key={queueName}
@@ -81,7 +96,28 @@ export function QueueSelector({
                     : undefined
                 }
               >
-                {queueName}
+                <span className="font-medium">{queueName}</span>
+                {typeof queue === "object" && queue.scheduleType ? (
+                  <span className="ml-1 text-[10px] opacity-80">
+                    {queue.scheduleType.toLowerCase().replace("_", " ")}
+                  </span>
+                ) : null}
+                {queueMeta &&
+                (queueMeta.cadenceLabel ||
+                  queueMeta.waitingCount != null ||
+                  queueMeta.status) ? (
+                  <span className="ml-2 text-[10px] opacity-80">
+                    {[
+                      queueMeta.cadenceLabel ?? null,
+                      queueMeta.waitingCount != null
+                        ? `${queueMeta.waitingCount} waiting`
+                        : null,
+                      queueMeta.status,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                ) : null}
               </button>
             );
           })}

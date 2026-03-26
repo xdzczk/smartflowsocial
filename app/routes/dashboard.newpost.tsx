@@ -1,5 +1,6 @@
 import {
   json,
+  redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -16,6 +17,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     const url = new URL(request.url);
+    const type = url.searchParams.get("type");
+    if (type === "article") {
+      const target = new URL("/dashboard/newlongformpost", url.origin);
+      target.searchParams.set("type", "article");
+      const templateIdParam = url.searchParams.get("templateId");
+      if (templateIdParam)
+        target.searchParams.set("templateId", templateIdParam);
+      const scheduledAtParam = url.searchParams.get("scheduledAt");
+      if (scheduledAtParam)
+        target.searchParams.set("scheduledAt", scheduledAtParam);
+      return redirect(`${target.pathname}${target.search}`);
+    }
     const draftId = url.searchParams.get("draftId");
     const templateId = url.searchParams.get("templateId");
     const data = await loadNewPostData(

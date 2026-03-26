@@ -14,6 +14,7 @@ import { ConfidencePanel } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
+import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import type { QueueType } from "~/features/posts/types";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -21,14 +22,20 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis } from "~/lib/temporal";
 
+import { useLocalDraft } from "../hooks/useComposerLocalDraft";
 import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
 import { useComposerState } from "../hooks/useComposerState";
 
-import { ComposerErrors, ComposerQueueField } from "./composer";
+import {
+  ComposerErrors,
+  ComposerQueueField,
+  type ComposerPublishMode,
+  getPollSubmitActionForMode,
+  getPrimaryCtaLabelForMode,
+} from "./composer";
 import {
   getQueueNextSlotLabel,
   getRelativeTime,
-  getScheduleTimeLabel,
   getSummaryLine,
 } from "./composer/composer-helpers";
 import {
@@ -67,8 +74,12 @@ export interface PollComposerProps {
   defaultRelays: string[];
   scheduleIntervals?: number[];
   initialScheduledFor?: string | null;
+  publishMode?: ComposerPublishMode;
+  onDraftStateLabelChange?: (label: string) => void;
+  skipLocalDraftRestore?: boolean;
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- poll composer intentionally orchestrates many mode-specific UI states */
 export function PollComposer({
   queueTypes = [],
   hashTagPresets = [],
@@ -81,6 +92,9 @@ export function PollComposer({
   defaultRelays,
   scheduleIntervals: scheduleIntervalsProp,
   initialScheduledFor = null,
+  publishMode = "now",
+  onDraftStateLabelChange,
+  skipLocalDraftRestore = false,
 }: PollComposerProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
@@ -103,6 +117,26 @@ export function PollComposer({
   const [signingError, setSigningError] = useState<string | null>(null);
   const [publishSubmitInFlight, setPublishSubmitInFlight] = useState(false);
   const [lastPublishFailed, setLastPublishFailed] = useState(false);
+  const pollDraftStorageKey = "composer-newpost-poll-draft";
+  const {
+    restored: pollDraftRestored,
+    saveSnapshot: savePollDraftSnapshot,
+    flushSnapshot: flushPollDraftSnapshot,
+    clearSnapshot: clearPollDraftSnapshot,
+  } = useLocalDraft<{
+    question: string;
+    options: string[];
+    pollType: "singlechoice" | "multiplechoice";
+    endsAtLocal: string;
+    selectedHashtags: string;
+    hashTagPresetId: string | null;
+    isRecyclable: boolean;
+    selectedQueue: string;
+    scheduledFor: string;
+    publishMode: ComposerPublishMode;
+    savedAt: number;
+  }>(pollDraftStorageKey, skipLocalDraftRestore, 1500);
+  const appliedPollRestoreRef = useRef(false);
 
   const {
     selectedQueue,
@@ -153,6 +187,10 @@ export function PollComposer({
     question.trim().length > 0 && trimmedOptions.length >= MIN_OPTIONS;
   const canSubmit = trimmedOptions.length >= MIN_OPTIONS;
   const hasScheduleTime = scheduledFor.trim().length > 0;
+  const showScheduleControls =
+    publishMode === "schedule" || publishMode === "queue";
+  const showQueueControls =
+    publishMode === "queue" || publishMode === "schedule";
   const isSubmitting = fetcher.state !== "idle";
 
   const composerStatus = useComposerState({
@@ -175,9 +213,14 @@ export function PollComposer({
       if (typeof data.error === "string") {
         setLastPublishFailed(true);
         toast.error(data.error);
+        trackComposerEvent("composer_publish_failed", { source: "poll" });
       }
     }
   }, [fetcher.state, fetcher.data]);
+
+  useEffect(() => {
+    trackComposerEvent("composer_queue_selected", { queue: selectedQueue });
+  }, [selectedQueue]);
 
   const clearSigningState = useCallback(() => {
     setIsSigning(false);
@@ -186,12 +229,12 @@ export function PollComposer({
 
   useComposerSignerReconnect(clearSigningState, isSigning);
 
-  const scheduleTimeLabel = scheduledFor.trim();
   const disabled = isSubmitting || isSigning;
 
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
+  const saveDraftButtonRef = useRef<HTMLButtonElement>(null);
 
-  async function submitPoll(postNow: boolean): Promise<void> {
+  async function submitPoll(actionType: string): Promise<void> {
     setSigningError(null);
     setLastPublishFailed(false);
     const q = question.trim();
@@ -209,7 +252,7 @@ export function PollComposer({
     }
 
     let scheduledTimeMs: number;
-    if (postNow) {
+    if (actionType === ACTION_POST_POLL) {
       scheduledTimeMs = nowMillis();
     } else {
       if (!scheduledFor.trim()) {
@@ -249,7 +292,7 @@ export function PollComposer({
         });
 
       const fd = new FormData();
-      fd.set("_action", postNow ? ACTION_POST_POLL : ACTION_SCHEDULE_POLL);
+      fd.set("_action", actionType);
       fd.set("content", q);
       fd.set("queueType", selectedQueue);
       if (queueTypeId) fd.set("queueTypeId", queueTypeId);
@@ -276,18 +319,163 @@ export function PollComposer({
     }
   }
 
-  const slotLabel = getScheduleTimeLabel(scheduleTimeLabel);
+  const pollAction = getPollSubmitActionForMode(publishMode);
   const primaryLabel = isSigning
     ? "Waiting for signer…"
     : isSubmitting
-      ? hasScheduleTime
+      ? pollAction === ACTION_SCHEDULE_POLL
         ? "Scheduling..."
         : "Posting..."
-      : hasScheduleTime
-        ? slotLabel
-          ? `Schedule for ${slotLabel}`
-          : "Schedule poll"
-        : "Post poll now";
+      : getPrimaryCtaLabelForMode(publishMode, "poll");
+  const blockers: string[] = [];
+  if (question.trim().length === 0) blockers.push("Question is required");
+  if (trimmedOptions.length < MIN_OPTIONS)
+    blockers.push(`At least ${MIN_OPTIONS} poll options are required`);
+  if (publishMode === "schedule" || publishMode === "queue") {
+    if (!hasScheduleTime) blockers.push("Publish time is required");
+  }
+  const warnings: string[] = [];
+  if (publishMode === "queue" && selectedQueue === "unassigned") {
+    warnings.push("Queue mode selected without a queue");
+  }
+
+  useEffect(() => {
+    if (
+      !pollDraftRestored ||
+      skipLocalDraftRestore ||
+      appliedPollRestoreRef.current
+    )
+      return;
+    appliedPollRestoreRef.current = true;
+    setQuestion(pollDraftRestored.question);
+    setOptions(
+      pollDraftRestored.options.length >= MIN_OPTIONS
+        ? pollDraftRestored.options
+        : ["", ""]
+    );
+    setOptionRowIds(
+      (pollDraftRestored.options.length >= MIN_OPTIONS
+        ? pollDraftRestored.options
+        : ["", ""]
+      ).map(() => newPollOptionRowId())
+    );
+    setPollType(pollDraftRestored.pollType);
+    setEndsAtLocal(pollDraftRestored.endsAtLocal);
+    setSelectedHashtags(pollDraftRestored.selectedHashtags);
+    setHashTagPresetId(pollDraftRestored.hashTagPresetId);
+    setIsRecyclable(pollDraftRestored.isRecyclable);
+    setSelectedQueue(pollDraftRestored.selectedQueue);
+    setScheduledFor(pollDraftRestored.scheduledFor);
+    onDraftStateLabelChange?.("Restored local draft");
+    trackComposerEvent("composer_draft_restored", {
+      source: "poll",
+      mode: "local",
+    });
+  }, [
+    pollDraftRestored,
+    setScheduledFor,
+    setSelectedQueue,
+    skipLocalDraftRestore,
+    onDraftStateLabelChange,
+  ]);
+
+  useEffect(() => {
+    const snapshot = {
+      question,
+      options,
+      pollType,
+      endsAtLocal,
+      selectedHashtags,
+      hashTagPresetId,
+      isRecyclable,
+      selectedQueue,
+      scheduledFor,
+      publishMode,
+    };
+    savePollDraftSnapshot(snapshot);
+  }, [
+    question,
+    options,
+    pollType,
+    endsAtLocal,
+    selectedHashtags,
+    hashTagPresetId,
+    isRecyclable,
+    selectedQueue,
+    scheduledFor,
+    publishMode,
+    savePollDraftSnapshot,
+  ]);
+
+  useEffect(() => {
+    const flush = () => {
+      flushPollDraftSnapshot({
+        question,
+        options,
+        pollType,
+        endsAtLocal,
+        selectedHashtags,
+        hashTagPresetId,
+        isRecyclable,
+        selectedQueue,
+        scheduledFor,
+        publishMode,
+      });
+    };
+    const onHide = () => flush();
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      flush();
+    };
+  }, [
+    question,
+    options,
+    pollType,
+    endsAtLocal,
+    selectedHashtags,
+    hashTagPresetId,
+    isRecyclable,
+    selectedQueue,
+    scheduledFor,
+    publishMode,
+    flushPollDraftSnapshot,
+  ]);
+
+  useEffect(() => {
+    if (!onDraftStateLabelChange) return;
+    if (publishMode === "draft" && fetcher.state === "idle") {
+      onDraftStateLabelChange("Draft ready");
+      return;
+    }
+    onDraftStateLabelChange(isSubmitting ? "Saving..." : "Saved");
+  }, [isSubmitting, onDraftStateLabelChange, publishMode, fetcher.state]);
+
+  useEffect(() => {
+    const onPrimaryAction = () => {
+      if (publishMode === "draft") {
+        saveDraftButtonRef.current?.click();
+        return;
+      }
+      primarySubmitRef.current?.click();
+    };
+    window.addEventListener("composer:primary-action", onPrimaryAction);
+    return () =>
+      window.removeEventListener("composer:primary-action", onPrimaryAction);
+  }, [publishMode]);
+
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    const data = fetcher.data as { error?: string } | undefined;
+    if (data?.error) return;
+    if (!publishSubmitInFlight) return;
+    clearPollDraftSnapshot();
+  }, [
+    fetcher.state,
+    fetcher.data,
+    publishSubmitInFlight,
+    clearPollDraftSnapshot,
+  ]);
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -326,7 +514,9 @@ export function PollComposer({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Options</Label>
+              <Label>
+                Options ({options.length}/{MAX_OPTIONS})
+              </Label>
               <Button
                 type="button"
                 variant="outline"
@@ -354,6 +544,27 @@ export function PollComposer({
                       setOptions((prev) =>
                         prev.map((p, j) => (j === i ? v : p))
                       );
+                    }}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData("text");
+                      if (!pasted.includes("\n")) return;
+                      e.preventDefault();
+                      const rows = pasted
+                        .split("\n")
+                        .map((r) => r.trim())
+                        .filter(Boolean)
+                        .slice(0, MAX_OPTIONS);
+                      if (rows.length < 2) return;
+                      setOptions(rows);
+                      setOptionRowIds(rows.map(() => newPollOptionRowId()));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      if (options.length >= MAX_OPTIONS) return;
+                      if (i !== options.length - 1) return;
+                      setOptions((prev) => [...prev, ""]);
+                      setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
                     }}
                     disabled={disabled}
                     placeholder={`Option ${i + 1}`}
@@ -383,7 +594,7 @@ export function PollComposer({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="poll-type">How people vote</Label>
+              <Label htmlFor="poll-type">Voting mode</Label>
               <select
                 id="poll-type"
                 value={pollType}
@@ -402,7 +613,7 @@ export function PollComposer({
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="poll-ends">End voting (optional)</Label>
+              <Label htmlFor="poll-ends">Poll end</Label>
               <Input
                 id="poll-ends"
                 type="datetime-local"
@@ -413,37 +624,41 @@ export function PollComposer({
             </div>
           </div>
 
-          <ComposerQueueField
-            queueTypes={queueTypes}
-            value={selectedQueue}
-            onChange={setSelectedQueue}
-            disabled={disabled}
-            nextSlot={
-              selectedQueueType &&
-              typeof selectedQueueType === "object" &&
-              (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                ? getQueueNextSlotLabel(scheduledFor)
-                : undefined
-            }
-          />
+          {showQueueControls ? (
+            <ComposerQueueField
+              queueTypes={queueTypes}
+              value={selectedQueue}
+              onChange={setSelectedQueue}
+              disabled={disabled}
+              nextSlot={
+                selectedQueueType &&
+                typeof selectedQueueType === "object" &&
+                (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                  selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                  ? getQueueNextSlotLabel(scheduledFor)
+                  : undefined
+              }
+            />
+          ) : null}
 
           {timeError ? (
             <p className="text-destructive text-sm">{timeError}</p>
           ) : null}
-          <SchedulingSection
-            scheduledFor={scheduledFor}
-            onScheduledForChange={setScheduledFor}
-            scheduleIntervals={scheduleIntervals}
-            queueTypes={queueTypes}
-            selectedQueue={selectedQueue}
-            onScheduleIntervalClick={handleScheduleIntervalClick}
-            onCalculateNextSlot={() => {
-              void calculateQueueScheduleTime(selectedQueue);
-            }}
-            disabled={disabled}
-            userTimezone={userTimezone}
-          />
+          {showScheduleControls ? (
+            <SchedulingSection
+              scheduledFor={scheduledFor}
+              onScheduledForChange={setScheduledFor}
+              scheduleIntervals={scheduleIntervals}
+              queueTypes={queueTypes}
+              selectedQueue={selectedQueue}
+              onScheduleIntervalClick={handleScheduleIntervalClick}
+              onCalculateNextSlot={() => {
+                void calculateQueueScheduleTime(selectedQueue);
+              }}
+              disabled={disabled}
+              userTimezone={userTimezone}
+            />
+          ) : null}
 
           <TagsChipRow
             tags={selectedHashtags}
@@ -476,6 +691,33 @@ export function PollComposer({
           </label>
 
           <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              ref={saveDraftButtonRef}
+              type="button"
+              variant="outline"
+              disabled={disabled}
+              onClick={() => {
+                flushPollDraftSnapshot({
+                  question,
+                  options,
+                  pollType,
+                  endsAtLocal,
+                  selectedHashtags,
+                  hashTagPresetId,
+                  isRecyclable,
+                  selectedQueue,
+                  scheduledFor,
+                  publishMode,
+                });
+                onDraftStateLabelChange?.("Saved locally");
+                trackComposerEvent("composer_draft_saved", {
+                  source: "poll",
+                  mode: "local",
+                });
+              }}
+            >
+              Save draft
+            </Button>
             {user == null ? (
               <Button variant="default" asChild>
                 <Link to="/dashboard/settings">Connect signer</Link>
@@ -485,10 +727,20 @@ export function PollComposer({
                 ref={primarySubmitRef}
                 type="button"
                 className="bg-success hover:bg-success/90 text-white"
-                disabled={disabled || !hasContent || !canSubmit}
-                onClick={() => void submitPoll(!hasScheduleTime)}
+                disabled={
+                  disabled ||
+                  !hasContent ||
+                  !canSubmit ||
+                  pollAction == null ||
+                  (pollAction === ACTION_SCHEDULE_POLL && !hasScheduleTime) ||
+                  publishMode === "draft"
+                }
+                onClick={() => {
+                  if (pollAction == null) return;
+                  void submitPoll(pollAction);
+                }}
               >
-                {hasScheduleTime ? (
+                {pollAction === ACTION_SCHEDULE_POLL ? (
                   <Clock
                     className="mr-1.5 h-5 w-5"
                     strokeWidth={INLINE_ICON_STROKE}
@@ -525,6 +777,9 @@ export function PollComposer({
         attachmentCount={0}
         relayCount={relayCount}
         summaryLine={getSummaryLine(selectedQueue, scheduledFor, false, 1, 0)}
+        blockers={blockers}
+        warnings={warnings}
+        info={[`Mode: ${publishMode}`]}
         usesQueueSlot={
           !!(
             selectedQueueType &&

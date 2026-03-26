@@ -41,8 +41,18 @@ export function ComposerThreadField({
   draggingOverSegmentId,
   onDraggingOverSegmentIdChange,
 }: ComposerThreadFieldProps) {
+  const estimatedMinutes = Math.max(
+    0,
+    (segments.length - 1) * threadDelayMinutes
+  );
   return (
     <div className="space-y-4">
+      <div className="bg-muted/30 rounded-md border px-3 py-2 text-xs">
+        <p>
+          {segments.length} segment{segments.length === 1 ? "" : "s"} ·
+          estimated duration {estimatedMinutes} min
+        </p>
+      </div>
       {segments.map((seg, idx) => (
         <div
           key={seg.id}
@@ -103,21 +113,81 @@ export function ComposerThreadField({
               Segment {idx + 1}
             </span>
             {segments.length > 1 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                onClick={() =>
-                  onSegmentsChange((prev) =>
-                    prev.filter((p) => p.id !== seg.id)
-                  )
-                }
-                disabled={disabled}
-                aria-label={`Remove segment ${idx + 1}`}
-              >
-                Remove
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    onSegmentsChange((prev) => {
+                      if (idx === 0) return prev;
+                      const next = [...prev];
+                      const [item] = next.splice(idx, 1);
+                      if (!item) return prev;
+                      next.splice(idx - 1, 0, item);
+                      return next;
+                    })
+                  }
+                  disabled={disabled || idx === 0}
+                >
+                  Up
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    onSegmentsChange((prev) => {
+                      if (idx >= prev.length - 1) return prev;
+                      const next = [...prev];
+                      const [item] = next.splice(idx, 1);
+                      if (!item) return prev;
+                      next.splice(idx + 1, 0, item);
+                      return next;
+                    })
+                  }
+                  disabled={disabled || idx >= segments.length - 1}
+                >
+                  Down
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    onSegmentsChange((prev) => {
+                      const source = prev[idx];
+                      if (!source) return prev;
+                      const clone: ThreadSegment = {
+                        id: crypto.randomUUID(),
+                        content: source.content,
+                        attachments: [...source.attachments],
+                      };
+                      const next = [...prev];
+                      next.splice(idx + 1, 0, clone);
+                      return next;
+                    })
+                  }
+                  disabled={disabled}
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                  onClick={() =>
+                    onSegmentsChange((prev) =>
+                      prev.filter((p) => p.id !== seg.id)
+                    )
+                  }
+                  disabled={disabled}
+                  aria-label={`Remove segment ${idx + 1}`}
+                >
+                  Remove
+                </Button>
+              </div>
             ) : null}
           </div>
           <Textarea
@@ -129,11 +199,28 @@ export function ComposerThreadField({
                 )
               )
             }
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Enter") {
+                e.preventDefault();
+                onSegmentsChange((prev) => {
+                  const next = [...prev];
+                  next.splice(idx + 1, 0, {
+                    id: crypto.randomUUID(),
+                    content: "",
+                    attachments: [],
+                  });
+                  return next;
+                });
+              }
+            }}
             placeholder="Segment content…"
             rows={3}
             disabled={disabled}
             className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
           />
+          <p className="text-muted-foreground mb-2 text-xs">
+            {seg.content.length} chars
+          </p>
           <AttachmentsStrip
             attachments={seg.attachments}
             onRemove={(localId) =>
@@ -154,6 +241,27 @@ export function ComposerThreadField({
             onAdd={() => onAddSegmentClick(seg.id)}
             disabled={disabled}
           />
+          <div className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                onSegmentsChange((prev) => {
+                  const next = [...prev];
+                  next.splice(idx + 1, 0, {
+                    id: crypto.randomUUID(),
+                    content: "",
+                    attachments: [],
+                  });
+                  return next;
+                })
+              }
+              disabled={disabled}
+            >
+              Add below
+            </Button>
+          </div>
         </div>
       ))}
       <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +284,7 @@ export function ComposerThreadField({
           Add segment
         </Button>
         <Label className="text-muted-foreground flex items-center gap-1 text-sm">
-          Delay between posts:
+          Thread cadence:
           <Input
             type="number"
             min={1}
@@ -191,6 +299,20 @@ export function ComposerThreadField({
           />
           min
         </Label>
+        <div className="flex items-center gap-1">
+          {[0.5, 1, 2].map((v) => (
+            <Button
+              key={v}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onThreadDelayMinutesChange(v)}
+              disabled={disabled}
+            >
+              {v === 0.5 ? "30s" : `${v}m`}
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   );

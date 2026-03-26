@@ -29,3 +29,12 @@ export {
   buildQuoteSchedules,
 } from "./composer-submit-utils";
 export type { SignedEventLike } from "./composer-submit-utils";
+export type {
+  ComposerPublishMode,
+  ComposerValidationState,
+} from "./publish-mode";
+export {
+  getTextSubmitActionForMode,
+  getPollSubmitActionForMode,
+  getPrimaryCtaLabelForMode,
+} from "./publish-mode";
