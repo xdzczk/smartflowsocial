@@ -55,14 +55,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (error instanceof Response) {
       return error;
     }
-    const { handleLoaderError } = await import("~/lib/error-handler.server");
-    return handleLoaderError(error, {
+    const url = new URL(request.url);
+    const mode = getComposeMode(url.searchParams.get("type"));
+    return json({
       scheduleIntervals: [],
       queueTypes: [],
       hashTagPresets: [],
       relays: [],
       templates: [],
-      __composeMode: "shortform",
+      tags: "",
+      userTimezone: "Etc/GMT",
+      uploadProvider: null,
+      initialTemplateData: null,
+      __composeMode: mode,
+      // Keep loader failures local and non-fatal during fast tab transitions.
+      error: {
+        message: "Composer data temporarily unavailable",
+      },
     });
   }
 }

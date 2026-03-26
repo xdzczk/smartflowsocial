@@ -48,6 +48,7 @@ import {
   ComposerQueueField,
   ComposerScheduleField,
   type ComposerPublishMode,
+  getTextSubmitActionForMode,
   getPrimaryCtaLabelForMode,
   getReadinessLabel,
   buildPostContentLines,
@@ -871,6 +872,8 @@ export function UnifiedComposer({
     onDraftStateLabelChange("Saved");
   }, [fetcher.state, onDraftStateLabelChange]);
 
+  const primarySubmitAction = getTextSubmitActionForMode(publishMode);
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <fetcher.Form
@@ -1077,6 +1080,27 @@ export function UnifiedComposer({
               </div>
             </div>
           </div>
+        ) : null}
+        {/* Rail CTAs trigger these submitters via refs. */}
+        <button
+          ref={primarySubmitRef}
+          type="submit"
+          name="_action"
+          value={primarySubmitAction}
+          className="hidden"
+          aria-hidden
+          tabIndex={-1}
+        />
+        {!isTemplateMode ? (
+          <button
+            ref={draftSubmitRef}
+            type="submit"
+            name="_action"
+            value="save-draft"
+            className="hidden"
+            aria-hidden
+            tabIndex={-1}
+          />
         ) : null}
       </fetcher.Form>
       {!isContestLite ? (

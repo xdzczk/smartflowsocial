@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.002086708">
-    <testsuite name="tests/unit/compose-route-contract.test.ts" timestamp="2026-03-26T18:49:06.237Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.002086708">
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; defaults unknown types to post" time="0.000724084">
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.002218334">
+    <testsuite name="tests/unit/compose-route-contract.test.ts" timestamp="2026-03-26T18:58:53.933Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.002218334">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; defaults unknown types to post" time="0.000743083">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; returns supported type values unchanged" time="0.000141125">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; normalizeComposeType &gt; returns supported type values unchanged" time="0.000152833">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; getComposeMode &gt; uses article mode only for article type" time="0.00012125">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; getComposeMode &gt; uses article mode only for article type" time="0.000124375">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for explicit article contentType" time="0.000092125">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for explicit article contentType" time="0.000093083">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for article query context" time="0.00007725">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for article query context" time="0.000077417">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for longform-specific actions" time="0.000065375">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; dispatches to longform for longform-specific actions" time="0.0000665">
         </testcase>
-        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; keeps shortform actions in shortform dispatch" time="0.00006">
+        <testcase classname="tests/unit/compose-route-contract.test.ts" name="compose-route-contract &gt; shouldDispatchToLongform &gt; keeps shortform actions in shortform dispatch" time="0.000065375">
         </testcase>
     </testsuite>
 </testsuites>
