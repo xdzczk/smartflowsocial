@@ -1,4 +1,9 @@
-import { useLoaderData, useSearchParams, useNavigate } from "@remix-run/react";
+import {
+  useLoaderData,
+  useLocation,
+  useSearchParams,
+  useNavigate,
+} from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -285,6 +290,7 @@ export default function NewPostPage() {
   } = useNewPostState();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const scheduledAt = searchParams.get("scheduledAt");
   const publishResultToken =
     searchParams.get("published") ?? searchParams.get("scheduled");
@@ -324,12 +330,15 @@ export default function NewPostPage() {
     });
   }, [composerTab]);
   useEffect(() => {
+    // Do not mutate query params while transitioning to dedicated article route.
+    if (location.pathname !== "/dashboard/compose") return;
     const currentType = searchParams.get("type");
+    if (currentType === "article") return;
     if (currentType === composerTab) return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("type", composerTab);
     setSearchParams(nextParams, { replace: true });
-  }, [composerTab, searchParams, setSearchParams]);
+  }, [composerTab, location.pathname, searchParams, setSearchParams]);
 
   useEffect(() => {
     trackComposerEvent("composer_publish_mode_selected", {
