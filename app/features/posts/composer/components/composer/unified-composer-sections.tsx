@@ -22,6 +22,7 @@ export interface UnifiedComposerContentSectionProps {
   attachments: ComposerAttachment[];
   onRemoveAttachment: (localId: string) => void;
   onAddAttachment: () => void;
+  onReorderAttachments?: (fromIndex: number, toIndex: number) => void;
   onFilesDroppedSingle: (files: File[]) => void;
   threadSegments: Array<{
     id: string;
@@ -57,6 +58,7 @@ export function UnifiedComposerContentSection({
   attachments,
   onRemoveAttachment,
   onAddAttachment,
+  onReorderAttachments,
   onFilesDroppedSingle,
   threadSegments,
   onThreadSegmentsChange,
@@ -94,6 +96,7 @@ export function UnifiedComposerContentSection({
         attachments={attachments}
         onRemove={onRemoveAttachment}
         onAdd={onAddAttachment}
+        onReorder={onReorderAttachments}
         onFilesDropped={onFilesDroppedSingle}
         disabled={disabled}
       />

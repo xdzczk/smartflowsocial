@@ -1,18 +1,13 @@
 import React from "react";
 
-import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
 
 type CreateComposerContentType = "post" | "poll" | "thread" | "article";
 
 interface CreateComposerShellProps {
-  status: ComposerStatus;
-  relayCount: number;
-  onRelayClick: () => void;
   contentType: CreateComposerContentType;
   onContentTypeChange: (next: CreateComposerContentType) => void;
   title?: string;
-  metadataItems?: string[];
   children: React.ReactNode;
 }
 
@@ -25,25 +20,15 @@ function tabButtonClass(active: boolean): string {
 }
 
 export function CreateComposerShell({
-  status,
-  relayCount,
-  onRelayClick,
   contentType,
   onContentTypeChange,
   title = "Create post",
-  metadataItems = [],
   children,
 }: CreateComposerShellProps) {
   return (
     <div className="p-6">
       <div className="bg-background/95 mb-4 space-y-3 border-b pb-3 backdrop-blur">
-        <NewPostHeader
-          status={status}
-          relayCount={relayCount}
-          onRelayClick={onRelayClick}
-          title={title}
-          metadataItems={metadataItems}
-        />
+        <NewPostHeader title={title} />
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

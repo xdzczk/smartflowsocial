@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { tryBackgroundReconnect } from "~/features/auth/signer";
+import type { ComposerPublishMode } from "~/features/posts/composer/components/composer/publish-mode";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -107,6 +108,10 @@ interface UseLongFormSubmissionProps {
   alsoScheduleQuote?: boolean;
   quoteEntries?: LongformQuoteEntry[];
   userTimezone?: string;
+  publishMode?: ComposerPublishMode;
+  calculateQueueScheduleTime?: (
+    queueTypeName: string
+  ) => Promise<string | null>;
 }
 
 export function useLongFormSubmission({
@@ -123,6 +128,8 @@ export function useLongFormSubmission({
   alsoScheduleQuote = false,
   quoteEntries = [],
   userTimezone = "UTC",
+  publishMode = "now",
+  calculateQueueScheduleTime,
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -171,9 +178,22 @@ export function useLongFormSubmission({
       const finalSummary = summary || generateSummaryFromMarkdown(content);
       const identifier = generateArticleIdentifier(title);
 
+      let effectiveScheduled = scheduledFor;
+      if (
+        actionType === "schedule" &&
+        publishMode === "queue" &&
+        selectedQueueType !== "unassigned" &&
+        selectedQueueType !== "Unassigned" &&
+        !effectiveScheduled &&
+        calculateQueueScheduleTime
+      ) {
+        const computed = await calculateQueueScheduleTime(selectedQueueType);
+        if (computed) effectiveScheduled = computed;
+      }
+
       const scheduledTimestamp =
-        actionType === "schedule" && scheduledFor
-          ? await parseScheduledTimestamp(scheduledFor)
+        actionType === "schedule" && effectiveScheduled
+          ? await parseScheduledTimestamp(effectiveScheduled)
           : undefined;
 
       if (

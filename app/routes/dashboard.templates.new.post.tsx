@@ -112,7 +112,7 @@ export default function TemplateNewPostPage() {
           ← Back to type picker
         </Link>
       </div>
-      <NewPostHeader status="Draft" relayCount={0} />
+      <NewPostHeader />
       <UnifiedComposer
         mode="template"
         queueTypes={typedQueueTypes}

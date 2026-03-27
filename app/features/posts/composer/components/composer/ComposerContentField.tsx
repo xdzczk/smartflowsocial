@@ -34,7 +34,7 @@ export function ComposerContentField({
   onChange,
   error = null,
   disabled = false,
-  placeholder = "Write a note…",
+  placeholder = "Write your post…",
   rows = 6,
   showDraftButton = false,
   onOpenDraft,
@@ -50,7 +50,7 @@ export function ComposerContentField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={
-            "text-foreground min-h-[160px] border-0 bg-transparent shadow-none focus-visible:ring-0 " +
+            "text-foreground min-h-[180px] resize-y border-0 bg-transparent text-[15px] leading-relaxed shadow-none focus-visible:ring-0 " +
             (error ? "focus-visible:ring-destructive" : "")
           }
           placeholder={placeholder}
@@ -80,9 +80,13 @@ export function ComposerContentField({
       {error?.message ? (
         <div className="text-destructive mt-1 text-sm">{error.message}</div>
       ) : null}
-      <div className="text-muted-foreground mt-2 flex items-center justify-between text-sm">
-        <span>
-          {value.length}/{maxLength}
+      <div className="text-muted-foreground mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+        <span className="hidden sm:inline">
+          ⌘S save draft · ⌘↵ publish (when ready)
+        </span>
+        <span className="sm:hidden">⌘S save · ⌘↵ publish</span>
+        <span className="text-right text-sm tabular-nums sm:ml-auto">
+          {value.length} / {maxLength}
         </span>
       </div>
     </div>

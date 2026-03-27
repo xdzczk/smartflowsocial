@@ -8,7 +8,6 @@ import { useFetcher, useNavigate } from "@remix-run/react";
 import React, { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +18,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
@@ -33,7 +33,11 @@ import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import type { QueueType, ComposerAttachment } from "../../types";
-import { appendToken, removeToken } from "../../utils/inline-tokens.client";
+import {
+  appendToken,
+  removeToken,
+  reorderAttachmentTokensInContent,
+} from "../../utils/inline-tokens.client";
 import {
   useComposerLocalDraft,
   type ComposerLocalSnapshot,
@@ -50,16 +54,20 @@ import {
   type ComposerPublishMode,
   getTextSubmitActionForMode,
   getPrimaryCtaLabelForMode,
-  getReadinessLabel,
-  buildPostContentLines,
-  buildThreadContentLines,
-  buildPublishPathLines,
+  getPrimaryCtaPendingLabelForMode,
+  getReadinessPresentation,
+  buildPublishPathSummary,
+  buildComposerContentSummaryLines,
+  buildPublishingOutcomeSentence,
+  formatPostStatusSummaryInline,
+  formatThreadPostStatusSummaryInline,
+  getQueueNextSlotLabel,
 } from "./composer";
 import {
   ACCEPTED_MEDIA_TYPES,
   filterMediaFiles,
-  getQueueNextSlotLabel,
 } from "./composer/composer-helpers";
+import { ComposerOutputPanel } from "./composer/ComposerOutputPanel";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
 export interface ContestEmbedPublishPayload {
@@ -81,8 +89,10 @@ export interface UnifiedComposerProps {
   relayOverride?: string[];
   /** Relay count to show in confidence panel (default list or override). */
   relayCount?: number;
-  /** Called when composer status changes (for header status pill). */
+  /** Called when composer status changes (optional analytics/parent hooks). */
   onComposerStatusChange?: (status: ComposerStatus) => void;
+  /** Opens relay selector (parent owns modal). */
+  onRelayClick?: () => void;
   /** When opening an existing draft from URL, pass its id so "Save as Draft" updates this draft. */
   initialDraftId?: string | null;
   /** Draft data to prefill the composer (when opening from drafts). Requires initialDraftId. */
@@ -163,6 +173,7 @@ export function UnifiedComposer({
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
+  onRelayClick,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -225,8 +236,6 @@ export function UnifiedComposer({
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
-
-  const [followUpActionsOpen, setFollowUpActionsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!newPostContentTab) return;
@@ -515,6 +524,8 @@ export function UnifiedComposer({
     defaultTags: tags,
     submitAction: formAction,
     embedContext,
+    publishMode,
+    calculateQueueScheduleTime,
   });
 
   useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
@@ -781,6 +792,33 @@ export function UnifiedComposer({
     setAttachments((prev) => prev.filter((a) => a.localId !== localId));
   };
 
+  const handleReorderAttachments = React.useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+      setAttachments((prev) => {
+        if (
+          fromIndex < 0 ||
+          toIndex < 0 ||
+          fromIndex >= prev.length ||
+          toIndex >= prev.length
+        ) {
+          return prev;
+        }
+        const next = [...prev];
+        const moved = next.splice(fromIndex, 1)[0];
+        if (!moved) return prev;
+        next.splice(toIndex, 0, moved);
+        const ids = next.map((a) => a.localId);
+        const body = form.getValues("content");
+        form.setValue("content", reorderAttachmentTokensInContent(body, ids), {
+          shouldDirty: true,
+        });
+        return next;
+      });
+    },
+    [form, setAttachments]
+  );
+
   const disabled = fetcher.state !== "idle" || isSigning;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
@@ -788,22 +826,18 @@ export function UnifiedComposer({
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
-  const showQueueControls = publishMode === "queue";
 
   const publishBlockers: string[] = [];
   if (signerReady === false) publishBlockers.push("Signer not connected");
   if (!canSubmit)
     publishBlockers.push("Resolve media upload issues before publishing");
-  if (
-    (publishMode === "schedule" || publishMode === "queue") &&
-    !hasScheduleTimeForSubmit
-  ) {
+  if (publishMode === "schedule" && !hasScheduleTimeForSubmit) {
     publishBlockers.push("Publish time is required");
   }
-  const publishWarnings: string[] = [];
   if (publishMode === "queue" && selectedQueue === "unassigned") {
-    publishWarnings.push("Queue mode selected without a queue");
+    publishBlockers.push("Select a queue");
   }
+  const publishWarnings: string[] = [];
   const relayCount =
     relayCountProp > 0
       ? relayCountProp
@@ -815,26 +849,35 @@ export function UnifiedComposer({
     issueList.push(
       isThreadMode
         ? "Add content to at least one thread segment."
-        : "Add text or media to continue."
+        : "Add text or at least one media item."
     );
   }
   if (relayCount <= 0) {
     issueList.push("Select at least one relay.");
   }
-  const readinessLabel = getReadinessLabel(publishMode, issueList, signerReady);
-  const contentLines = isThreadMode
-    ? buildThreadContentLines(
-        threadSegments.length,
-        threadSegments.reduce((acc, s) => acc + s.content.length, 0),
-        threadSegments.reduce((acc, s) => acc + s.attachments.length, 0),
-        threadDelayMinutes
-      )
-    : buildPostContentLines(
+  const readiness = getReadinessPresentation(
+    publishMode,
+    issueList,
+    signerReady
+  );
+  const isRecyclableVal = !!form.watch("isRecyclable");
+  const contentSummaryLines = isThreadMode
+    ? [
+        `${threadSegments.length} segments`,
+        `${threadSegments.reduce((acc, s) => acc + s.content.length, 0)} characters`,
+        `${threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)} media`,
+        selectedHashtags.trim()
+          ? `Tags: ${selectedHashtags.trim()}`
+          : "Tags: none",
+        isRecyclableVal ? "Recyclable: on" : "Recyclable: off",
+      ]
+    : buildComposerContentSummaryLines(
         content.length,
         attachments.length,
-        selectedHashtags || null
+        selectedHashtags,
+        isRecyclableVal
       );
-  const publishPathLines = buildPublishPathLines(
+  const publishPath = buildPublishPathSummary(
     relayCount,
     signerLabel,
     selectedQueue
@@ -845,6 +888,58 @@ export function UnifiedComposer({
         `Estimated duration: ${Math.max(threadSegments.length - 1, 0) * threadDelayMinutes} min`,
       ]
     : [];
+
+  const queueNextSlotLabel = getQueueNextSlotLabel(
+    formScheduledFor ?? schedulingScheduledFor
+  );
+
+  const postStatusSummaryInline = isThreadMode
+    ? formatThreadPostStatusSummaryInline(
+        threadSegments.length,
+        threadSegments.reduce((acc, s) => acc + s.content.length, 0),
+        threadSegments.reduce((acc, s) => acc + s.attachments.length, 0),
+        selectedHashtags,
+        isRecyclableVal
+      )
+    : formatPostStatusSummaryInline(
+        content.length,
+        attachments.length,
+        selectedHashtags,
+        isRecyclableVal
+      );
+
+  const outcomeSentence = buildPublishingOutcomeSentence({
+    publishMode,
+    relayCount,
+    signerReady,
+    scheduledFor:
+      (formScheduledFor ?? "").trim() !== ""
+        ? (formScheduledFor ?? "")
+        : schedulingScheduledFor,
+    hasScheduleTime: hasScheduleTimeForSubmit,
+    selectedQueue,
+    queueNextSlotLabel: publishMode === "queue" ? queueNextSlotLabel : null,
+  });
+
+  const followUpSummaryLine = (() => {
+    if (!alsoScheduleRepost && !alsoScheduleQuote) return "None";
+    const parts: string[] = [];
+    if (alsoScheduleRepost) {
+      parts.push(
+        repostDelayList.length > 0
+          ? `Repost (${repostDelayList.length})`
+          : "Repost"
+      );
+    }
+    if (alsoScheduleQuote) {
+      parts.push(
+        quoteEntries.length > 0 ? `Quote (${quoteEntries.length})` : "Quote"
+      );
+    }
+    return parts.join(" · ");
+  })();
+
+  const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -972,6 +1067,7 @@ export function UnifiedComposer({
             attachments={attachments}
             onRemoveAttachment={handleRemoveAttachment}
             onAddAttachment={handleAddAttachment}
+            onReorderAttachments={handleReorderAttachments}
             onFilesDroppedSingle={processNewFilesForSingleNote}
             threadSegments={threadSegments}
             onThreadSegmentsChange={setThreadSegments}
@@ -986,6 +1082,23 @@ export function UnifiedComposer({
             draggingOverSegmentId={draggingOverSegmentId}
             onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
           />
+          {!isTemplateMode && !isThreadMode ? (
+            <ComposerOutputPanel
+              content={content}
+              attachments={attachments}
+              tagsLine={selectedHashtags}
+              isRecyclable={isRecyclableVal}
+            />
+          ) : null}
+          {!isTemplateMode && isThreadMode && threadSegments[0] ? (
+            <ComposerOutputPanel
+              content={threadSegments[0].content}
+              attachments={threadSegments[0].attachments}
+              tagsLine={selectedHashtags}
+              isRecyclable={isRecyclableVal}
+              previewLabel="Preview (first segment)"
+            />
+          ) : null}
         </div>
         <input
           id="thread-segment-file-input"
@@ -1020,63 +1133,64 @@ export function UnifiedComposer({
         ) : null}
         {!isTemplateMode ? (
           <div className="mt-6 space-y-4">
-            <TagsChipRow
-              tags={selectedHashtags}
-              onTagsChange={(newTags) => {
-                setSelectedHashtags(newTags);
-                if (!newTags.trim()) {
-                  form.setValue("useHashtagPresets", false);
-                  form.setValue("hashTagPresetId", undefined);
-                  onHashtagPresetChange?.(null, "");
-                }
-              }}
-              presets={hashTagPresets}
-              selectedPresetId={formSelectedHashtagPresetId}
-              onPresetSelect={(presetId, mergedTags) => {
-                setSelectedHashtags(mergedTags);
-                form.setValue("useHashtagPresets", true);
-                form.setValue("hashTagPresetId", presetId ?? undefined);
-                onHashtagPresetChange?.(presetId, mergedTags);
-              }}
-              disabled={fetcher.state !== "idle"}
-              queuePresetName={
-                selectedQueue !== "unassigned"
-                  ? ((
-                      queueTypes.find(
-                        (q) =>
-                          (typeof q === "string" ? q : q.name) === selectedQueue
-                      ) as
-                        | (QueueType & {
-                            hashTagPreset?: { name: string } | null;
-                          })
-                        | undefined
-                    )?.hashTagPreset?.name ?? undefined)
-                  : undefined
-              }
-            />
-            <div className="border-border rounded-lg border px-3 py-3">
-              <h4 className="text-sm font-medium">Content metadata</h4>
-              <div className="mt-2 flex items-start gap-2">
-                <Checkbox
-                  id="content-metadata-recyclable"
-                  checked={!!form.watch("isRecyclable")}
-                  onCheckedChange={(checked) =>
-                    form.setValue("isRecyclable", checked === true)
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <TagsChipRow
+                  tags={selectedHashtags}
+                  onTagsChange={(newTags) => {
+                    setSelectedHashtags(newTags);
+                    if (!newTags.trim()) {
+                      form.setValue("useHashtagPresets", false);
+                      form.setValue("hashTagPresetId", undefined);
+                      onHashtagPresetChange?.(null, "");
+                    }
+                  }}
+                  presets={hashTagPresets}
+                  selectedPresetId={formSelectedHashtagPresetId}
+                  onPresetSelect={(presetId, mergedTags) => {
+                    setSelectedHashtags(mergedTags);
+                    form.setValue("useHashtagPresets", true);
+                    form.setValue("hashTagPresetId", presetId ?? undefined);
+                    onHashtagPresetChange?.(presetId, mergedTags);
+                  }}
+                  disabled={fetcher.state !== "idle"}
+                  queuePresetName={
+                    selectedQueue !== "unassigned"
+                      ? ((
+                          queueTypes.find(
+                            (q) =>
+                              (typeof q === "string" ? q : q.name) ===
+                              selectedQueue
+                          ) as
+                            | (QueueType & {
+                                hashTagPreset?: { name: string } | null;
+                              })
+                            | undefined
+                        )?.hashTagPreset?.name ?? undefined)
+                      : undefined
                   }
-                  disabled={disabled}
                 />
-                <div className="space-y-1">
+              </div>
+              <div className="border-border bg-muted/20 flex shrink-0 items-center gap-3 rounded-lg border px-3 py-2 sm:max-w-[14rem] sm:flex-col sm:items-stretch">
+                <div className="flex w-full items-center justify-between gap-3">
                   <Label
-                    htmlFor="content-metadata-recyclable"
-                    className="text-sm font-medium"
+                    htmlFor="composer-recyclable"
+                    className="text-sm font-semibold"
                   >
-                    Mark as recyclable
+                    Recyclable
                   </Label>
-                  <p className="text-muted-foreground text-xs">
-                    Show this post in Recyclables so it can be republished
-                    later.
-                  </p>
+                  <Switch
+                    id="composer-recyclable"
+                    checked={isRecyclableVal}
+                    onCheckedChange={(checked) =>
+                      form.setValue("isRecyclable", checked === true)
+                    }
+                    disabled={disabled}
+                  />
                 </div>
+                <p className="text-muted-foreground text-xs leading-snug">
+                  Show in Recyclables for republishing later.
+                </p>
               </div>
             </div>
           </div>
@@ -1107,95 +1221,109 @@ export function UnifiedComposer({
         <PublishingSummaryRail
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
-          readinessLabel={readinessLabel}
-          modeSpecificSection={{
-            title:
-              publishMode === "queue" ? "Queue settings" : "Schedule settings",
-            lines: publishMode === "now" ? ["Publishes immediately"] : [],
-            controls:
-              publishMode === "now" ? undefined : (
-                <div className="space-y-2">
-                  {showQueueControls ? (
-                    <ComposerQueueField
-                      queueTypes={queueTypes}
-                      value={selectedQueue}
-                      onChange={setSelectedQueue}
-                      disabled={disabled}
-                      nextSlot={
-                        selectedQueueType &&
-                        typeof selectedQueueType === "object" &&
-                        (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                          selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                          ? getQueueNextSlotLabel(
-                              formScheduledFor ?? schedulingScheduledFor
-                            )
-                          : undefined
-                      }
-                    />
-                  ) : null}
-                  <ComposerScheduleField
-                    value={formScheduledFor ?? ""}
-                    onValueChange={(v) => {
-                      form.setValue("scheduledFor", v);
-                      setSchedulingScheduledFor(v);
-                    }}
-                    scheduleIntervals={scheduleIntervals}
-                    queueTypes={queueTypes}
-                    selectedQueue={selectedQueue}
-                    onScheduleIntervalClick={handleScheduleIntervalClick}
-                    onCalculateNextSlot={() =>
-                      void calculateQueueScheduleTime(selectedQueue)
-                    }
-                    scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
-                    onScheduleRandomWindowMinutesChange={
-                      setScheduleRandomWindowMinutes
-                    }
-                    disabled={disabled}
-                    userTimezone={user?.timezone ?? "UTC"}
-                  />
-                </div>
-              ),
+          outcomeSentence={outcomeSentence}
+          readiness={readiness}
+          sessionStrip={{
+            composerStatus,
+            relayCount,
+            onRelayClick,
+            signerLabel: signerReady === false ? "Not connected" : signerLabel,
+            saveStateLabel:
+              fetcher.state !== "idle"
+                ? "Saving…"
+                : "All changes saved locally",
           }}
-          followUpSection={{
-            title: "Follow-up actions",
-            controls: (
-              <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-full justify-start px-2 text-xs"
-                  onClick={() => {
-                    setFollowUpActionsOpen((open) => !open);
-                  }}
-                >
-                  {followUpActionsOpen
-                    ? "Hide follow-up actions"
-                    : "Show follow-up actions"}
-                </Button>
-                {followUpActionsOpen ? (
-                  <AlsoScheduleBlock
-                    alsoScheduleRepost={alsoScheduleRepost}
-                    onAlsoScheduleRepostChange={setAlsoScheduleRepost}
-                    repostDelayList={repostDelayList}
-                    onRepostDelayListChange={setRepostDelayList}
-                    repostConditions={repostConditions}
-                    onRepostConditionsChange={setRepostConditions}
-                    alsoScheduleQuote={alsoScheduleQuote}
-                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                    quoteEntries={quoteEntries}
-                    onQuoteEntriesChange={setQuoteEntries}
-                    disabled={disabled}
-                  />
-                ) : null}
-              </div>
+          modeSpecificSection={
+            publishMode === "now"
+              ? {
+                  title: "Timing",
+                  lines: ["Immediate"],
+                }
+              : {
+                  title: publishMode === "queue" ? "Queue" : "Schedule",
+                  lines:
+                    publishMode === "queue"
+                      ? [
+                          "Timing is set by your queue when you publish.",
+                          ...(selectedQueueType &&
+                          typeof selectedQueueType === "object" &&
+                          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                            selectedQueueType.scheduleType ===
+                              "WEEKLY_SLOTS") &&
+                          queueNextSlotLabel
+                            ? [`Next slot (estimate): ${queueNextSlotLabel}`]
+                            : []),
+                        ]
+                      : [],
+                  controls:
+                    publishMode === "queue" ? (
+                      <div className="space-y-2">
+                        <ComposerQueueField
+                          queueTypes={queueTypes}
+                          value={selectedQueue}
+                          onChange={setSelectedQueue}
+                          disabled={disabled}
+                          nextSlot={
+                            selectedQueueType &&
+                            typeof selectedQueueType === "object" &&
+                            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
+                              selectedQueueType.scheduleType === "WEEKLY_SLOTS")
+                              ? getQueueNextSlotLabel(
+                                  formScheduledFor ?? schedulingScheduledFor
+                                )
+                              : undefined
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <ComposerScheduleField
+                          value={formScheduledFor ?? ""}
+                          onValueChange={(v) => {
+                            form.setValue("scheduledFor", v);
+                            setSchedulingScheduledFor(v);
+                          }}
+                          scheduleIntervals={scheduleIntervals}
+                          queueTypes={queueTypes}
+                          selectedQueue={selectedQueue}
+                          onScheduleIntervalClick={handleScheduleIntervalClick}
+                          onCalculateNextSlot={() =>
+                            void calculateQueueScheduleTime(selectedQueue)
+                          }
+                          scheduleRandomWindowMinutes={
+                            scheduleRandomWindowMinutes
+                          }
+                          onScheduleRandomWindowMinutesChange={
+                            setScheduleRandomWindowMinutes
+                          }
+                          disabled={disabled}
+                          userTimezone={user?.timezone ?? "UTC"}
+                        />
+                      </div>
+                    ),
+                }
+          }
+          followUp={{
+            summaryLine: followUpSummaryLine,
+            children: (
+              <AlsoScheduleBlock
+                alsoScheduleRepost={alsoScheduleRepost}
+                onAlsoScheduleRepostChange={setAlsoScheduleRepost}
+                repostDelayList={repostDelayList}
+                onRepostDelayListChange={setRepostDelayList}
+                repostConditions={repostConditions}
+                onRepostConditionsChange={setRepostConditions}
+                alsoScheduleQuote={alsoScheduleQuote}
+                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                quoteEntries={quoteEntries}
+                onQuoteEntriesChange={setQuoteEntries}
+                disabled={disabled}
+              />
             ),
           }}
-          contentSection={{ title: "Content", lines: contentLines }}
-          publishPathSection={{
-            title: "Publish path",
-            lines: publishPathLines,
-          }}
+          postStatusSummaryInline={postStatusSummaryInline}
+          contentSummaryLines={contentSummaryLines}
+          publishPath={publishPath}
           threadSettingsSection={
             isThreadMode
               ? {
@@ -1222,10 +1350,12 @@ export function UnifiedComposer({
           }
           issues={issueList}
           warnings={publishWarnings}
-          saveStateLabel={
-            fetcher.state === "idle" ? "Saved locally" : "Saving..."
-          }
           primaryActionLabel={getPrimaryCtaLabelForMode(
+            publishMode,
+            isThreadMode ? "thread" : "post"
+          )}
+          primaryActionLoading={primaryActionLoading}
+          primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
             publishMode,
             isThreadMode ? "thread" : "post"
           )}

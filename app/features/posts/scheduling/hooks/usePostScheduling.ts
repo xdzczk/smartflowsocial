@@ -42,10 +42,10 @@ export function usePostScheduling({
   }, [queueTypes, onTimeError, user?.id]);
 
   const calculateQueueScheduleTime = useCallback(
-    async (queueTypeName: string) => {
+    async (queueTypeName: string): Promise<string | null> => {
       if (queueTypeName === "unassigned") {
         setScheduledFor("");
-        return;
+        return null;
       }
 
       // Find the queue type object to get its ID
@@ -75,10 +75,11 @@ export function usePostScheduling({
           const scheduledTime = data.scheduledTime;
           if (scheduledTime) {
             setScheduledFor(scheduledTime);
-          }
-          setTimeError("");
-          if (onTimeErrorRef.current) {
-            onTimeErrorRef.current("");
+            setTimeError("");
+            if (onTimeErrorRef.current) {
+              onTimeErrorRef.current("");
+            }
+            return scheduledTime;
           }
         }
       } catch (error) {
@@ -92,6 +93,7 @@ export function usePostScheduling({
           }
         );
       }
+      return null;
     },
     []
   );

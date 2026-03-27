@@ -12,6 +12,8 @@ export interface ComposerMediaFieldProps {
   onRemove: (localId: string) => void;
   onAdd: () => void;
   onFilesDropped?: (files: File[]) => void;
+  /** Reorder thumbnails (updates signing order when wired to content tokens) */
+  onReorder?: (fromIndex: number, toIndex: number) => void;
   disabled?: boolean;
   /** Accessible label for the drop zone */
   dropZoneLabel?: string;
@@ -25,9 +27,10 @@ export function ComposerMediaField({
   onRemove,
   onAdd,
   onFilesDropped,
+  onReorder,
   disabled = false,
   dropZoneLabel = "Drop zone for images and videos. Press Enter to add files.",
-  emptyHint = "Drag files here or paste images",
+  emptyHint = "Drag files here, paste from clipboard, or use +",
   className = "",
 }: ComposerMediaFieldProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -66,18 +69,19 @@ export function ComposerMediaField({
 
   return (
     <div className={className}>
+      <h3 className="text-foreground mb-2 text-sm font-semibold">Media</h3>
       <div
         role="button"
         tabIndex={-1}
         aria-label={dropZoneLabel}
-        className="relative"
+        className="border-border bg-muted/5 relative min-h-[7rem] rounded-lg border-2 border-dashed p-3"
         onDragOver={onFilesDropped ? handleDragOver : undefined}
         onDragLeave={onFilesDropped ? handleDragLeave : undefined}
         onDrop={onFilesDropped ? handleDrop : undefined}
         onKeyDown={handleKeyDown}
       >
         {isDraggingOver ? (
-          <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed">
+          <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed">
             <span className="text-muted-foreground text-sm">
               Drop to add images or videos
             </span>
@@ -87,10 +91,13 @@ export function ComposerMediaField({
           attachments={attachments}
           onRemove={onRemove}
           onAdd={onAdd}
+          onReorder={onReorder}
           disabled={disabled}
         />
         {attachments.length === 0 && !isDraggingOver && emptyHint ? (
-          <p className="text-muted-foreground mt-1 text-xs">{emptyHint}</p>
+          <p className="text-muted-foreground mt-2 text-center text-xs sm:text-left">
+            {emptyHint}
+          </p>
         ) : null}
       </div>
     </div>

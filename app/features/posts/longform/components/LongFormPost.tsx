@@ -1,5 +1,5 @@
 import { Link, useFetcher } from "@remix-run/react";
-import { Hash } from "lucide-react";
+import { ChevronDown, ChevronUp, Hash } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -10,13 +10,18 @@ import { Label } from "~/components/ui/label";
 import { requestNewSignerSession } from "~/features/auth/signer";
 import { ArticleDetailsCollapsible } from "~/features/posts/components/ArticleDetailsCollapsible";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
+import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
 import { WritingSurface } from "~/features/posts/components/WritingSurface";
-import { useLocalDraft } from "~/features/posts/composer";
+import { useComposerState, useLocalDraft } from "~/features/posts/composer";
 import {
   buildArticleContentLines,
-  buildPublishPathLines,
+  buildPublishPathSummary,
+  buildPublishingOutcomeSentence,
+  formatArticlePostStatusSummaryInline,
   getPrimaryCtaLabelForMode,
-  getReadinessLabel,
+  getPrimaryCtaPendingLabelForMode,
+  getQueueNextSlotLabel,
+  getReadinessPresentation,
   type ComposerPublishMode,
 } from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
@@ -30,6 +35,7 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
+  INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
@@ -132,6 +138,7 @@ export default function LongFormPost({
     () => initialTemplateName ?? ""
   );
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const [articlePreviewOpen, setArticlePreviewOpen] = useState(false);
   const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
     {
@@ -502,11 +509,29 @@ export default function LongFormPost({
       alsoScheduleQuote,
       quoteEntries,
       userTimezone,
+      publishMode,
+      calculateQueueScheduleTime,
     });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   // Form validation using Zod
   const isFormValid = form.formState.isValid && !!image;
+
+  const hasScheduleTimeLong =
+    Boolean(scheduledFor) ||
+    (publishMode === "queue" &&
+      selectedQueueType !== "unassigned" &&
+      selectedQueueType !== "Unassigned");
+
+  const composerStatus = useComposerState({
+    hasContent: Boolean(title.trim() && content.trim() && image),
+    canSubmit: isFormValid,
+    hasScheduleTime: hasScheduleTimeLong,
+    isSigning,
+    isSubmitting: fetcher.state !== "idle",
+    publishSubmitInFlight: false,
+    lastPublishFailed: false,
+  });
 
   const handleSaveAsTemplate = () => {
     if (!templateName.trim()) return;
@@ -559,24 +584,62 @@ export default function LongFormPost({
   if (!title.trim()) issueList.push("Article title is missing.");
   if (!content.trim()) issueList.push("Article body is empty.");
   if (!image) issueList.push("Article cover is missing.");
-  if (
-    (publishMode === "schedule" || publishMode === "queue") &&
-    !scheduledFor
-  ) {
-    issueList.push("Publish time is required.");
+  if (publishMode === "schedule" && !scheduledFor) {
+    issueList.push("Select a date and time.");
   }
-  const readinessLabel = getReadinessLabel(publishMode, issueList, true);
-  const contentLines = buildArticleContentLines(
-    title.trim().length > 0,
+  if (
+    publishMode === "queue" &&
+    (selectedQueueType === "unassigned" || selectedQueueType === "Unassigned")
+  ) {
+    issueList.push("Select a queue.");
+  }
+  const readiness = getReadinessPresentation(publishMode, issueList, true);
+  const contentSummaryLines = [
+    ...buildArticleContentLines(
+      title.trim().length > 0,
+      wordCount,
+      Boolean(image),
+      0
+    ),
+  ];
+  const publishPath = buildPublishPathSummary(0, "NIP-07", selectedQueueType);
+
+  const selectedQueueTypeObj = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
+  );
+  const longformQueueNextSlotLabel =
+    publishMode === "queue" &&
+    selectedQueueTypeObj &&
+    typeof selectedQueueTypeObj === "object" &&
+    (selectedQueueTypeObj.scheduleType === "FIXED_SLOTS" ||
+      selectedQueueTypeObj.scheduleType === "WEEKLY_SLOTS")
+      ? getQueueNextSlotLabel(scheduledFor ?? "")
+      : undefined;
+
+  const outcomeSentence = buildPublishingOutcomeSentence({
+    publishMode,
+    relayCount: 0,
+    signerReady: true,
+    scheduledFor: scheduledFor ?? "",
+    hasScheduleTime: Boolean(scheduledFor?.trim()),
+    selectedQueue: selectedQueueType,
+    queueNextSlotLabel: longformQueueNextSlotLabel,
+    omitRelayRequirement: true,
+  });
+
+  const postStatusSummaryInline = formatArticlePostStatusSummaryInline(
     wordCount,
     Boolean(image),
-    0
+    customTags
   );
-  const publishPathLines = buildPublishPathLines(
-    0,
-    "NIP-07",
-    selectedQueueType
-  );
+
+  const longformFollowUpSummary = alsoScheduleQuote
+    ? quoteEntries.length > 0
+      ? `Quote (${quoteEntries.length})`
+      : "Quote"
+    : "None";
+
+  const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
   return (
     <>
@@ -609,6 +672,68 @@ export default function LongFormPost({
             onRemoveImage={() => setCoverImage("")}
             onOpenAssetBrowser={() => {}}
           />
+
+          {!isTemplateMode ? (
+            <div className="border-border mx-auto mt-6 max-w-[760px] rounded-lg border px-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground h-10 w-full justify-between rounded-none px-1 text-xs font-medium"
+                onClick={() => setArticlePreviewOpen((o) => !o)}
+                aria-expanded={articlePreviewOpen}
+              >
+                Article preview
+                {articlePreviewOpen ? (
+                  <ChevronUp
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                  />
+                ) : (
+                  <ChevronDown
+                    className={INLINE_ICON_SIZE_CLASS}
+                    strokeWidth={INLINE_ICON_STROKE}
+                  />
+                )}
+              </Button>
+              {articlePreviewOpen ? (
+                <div className="border-border space-y-4 border-t py-4">
+                  {image ? (
+                    <div className="overflow-hidden rounded-lg border">
+                      <img
+                        src={image}
+                        alt=""
+                        className="max-h-56 w-full object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  <div>
+                    <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+                      {title.trim() || "Untitled"}
+                    </h2>
+                    {summary.trim() ? (
+                      <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+                        {summary.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="bg-muted/20 max-h-[min(70vh,32rem)] overflow-y-auto rounded-md border p-4">
+                    <MarkdownPreview
+                      source={content}
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                    />
+                  </div>
+                  {customTags.trim() ? (
+                    <p className="text-muted-foreground text-xs">
+                      Tags: {customTags.trim()}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-xs">Tags: none</p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Phase 3: Publish Panel */}
           <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
@@ -775,69 +900,98 @@ export default function LongFormPost({
         <PublishingSummaryRail
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
-          readinessLabel={readinessLabel}
-          modeSpecificSection={{
-            title:
-              publishMode === "queue" ? "Queue settings" : "Schedule settings",
-            lines: publishMode === "now" ? ["Publishes immediately"] : [],
-            controls:
-              publishMode === "now" ? undefined : (
-                <div className="space-y-3">
-                  <LongFormPublishingOptions
-                    queueTypes={queueTypes}
-                    selectedQueueType={selectedQueueType}
-                    onQueueTypeChange={(name) => {
-                      void updateDisplayedHashtags(name);
-                    }}
-                    scheduledFor={scheduledFor}
-                    onScheduledForChange={setScheduledFor}
-                    scheduleIntervals={scheduleIntervals}
-                    onScheduleIntervalClick={(intervalHours) => {
-                      handleScheduleIntervalClick(intervalHours);
-                    }}
-                    onNextSlotClick={() => {
-                      void calculateQueueScheduleTime(selectedQueueType);
-                    }}
-                    hashTagPresets={hashTagPresets}
-                    useHashtagPresets={useHashtagPresets}
-                    selectedHashtagPresetId={selectedHashtagPresetId}
-                    selectedHashtags={selectedHashtags}
-                    onHashtagPresetChange={
-                      onHashtagPresetChange ??
-                      ((_id, _tags) => {
-                        void _id;
-                        void _tags;
-                      })
-                    }
-                    onUseHashtagPresetsChange={
-                      onUseHashtagPresetsChange ??
-                      (() => {
-                        void 0;
-                      })
-                    }
-                    userTimezone={userTimezone}
-                    showHashtagPresets={false}
-                  />
-                  <AlsoScheduleLongformQuote
-                    alsoScheduleQuote={alsoScheduleQuote}
-                    onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
-                    quoteEntries={quoteEntries}
-                    onQuoteEntriesChange={setQuoteEntries}
-                    disabled={fetcher.state !== "idle" || isSigning}
-                  />
-                </div>
-              ),
+          outcomeSentence={outcomeSentence}
+          readiness={readiness}
+          sessionStrip={{
+            composerStatus,
+            relayCount: 0,
+            signerLabel: "NIP-07",
+            saveStateLabel:
+              fetcher.state !== "idle"
+                ? "Saving…"
+                : "All changes saved locally",
           }}
-          contentSection={{ title: "Content", lines: contentLines }}
-          publishPathSection={{
-            title: "Publish path",
-            lines: publishPathLines,
-          }}
-          issues={issueList}
-          saveStateLabel={
-            fetcher.state === "idle" ? "Saved locally" : "Saving..."
+          modeSpecificSection={
+            publishMode === "now"
+              ? {
+                  title: "Timing",
+                  lines: ["Immediate"],
+                }
+              : {
+                  title: publishMode === "queue" ? "Queue" : "Schedule",
+                  lines:
+                    publishMode === "queue"
+                      ? [
+                          "Timing is set by your queue when you publish.",
+                          ...(longformQueueNextSlotLabel
+                            ? [
+                                `Next slot (estimate): ${longformQueueNextSlotLabel}`,
+                              ]
+                            : []),
+                        ]
+                      : [],
+                  controls: (
+                    <LongFormPublishingOptions
+                      queueTypes={queueTypes}
+                      selectedQueueType={selectedQueueType}
+                      onQueueTypeChange={(name) => {
+                        void updateDisplayedHashtags(name);
+                      }}
+                      scheduledFor={scheduledFor}
+                      onScheduledForChange={setScheduledFor}
+                      scheduleIntervals={scheduleIntervals}
+                      onScheduleIntervalClick={(intervalHours) => {
+                        handleScheduleIntervalClick(intervalHours);
+                      }}
+                      onNextSlotClick={() => {
+                        void calculateQueueScheduleTime(selectedQueueType);
+                      }}
+                      hashTagPresets={hashTagPresets}
+                      useHashtagPresets={useHashtagPresets}
+                      selectedHashtagPresetId={selectedHashtagPresetId}
+                      selectedHashtags={selectedHashtags}
+                      onHashtagPresetChange={
+                        onHashtagPresetChange ??
+                        ((_id, _tags) => {
+                          void _id;
+                          void _tags;
+                        })
+                      }
+                      onUseHashtagPresetsChange={
+                        onUseHashtagPresetsChange ??
+                        (() => {
+                          void 0;
+                        })
+                      }
+                      userTimezone={userTimezone}
+                      showHashtagPresets={false}
+                      hideScheduleControls={publishMode === "queue"}
+                    />
+                  ),
+                }
           }
+          followUp={{
+            summaryLine: longformFollowUpSummary,
+            children: (
+              <AlsoScheduleLongformQuote
+                alsoScheduleQuote={alsoScheduleQuote}
+                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
+                quoteEntries={quoteEntries}
+                onQuoteEntriesChange={setQuoteEntries}
+                disabled={fetcher.state !== "idle" || isSigning}
+              />
+            ),
+          }}
+          postStatusSummaryInline={postStatusSummaryInline}
+          contentSummaryLines={contentSummaryLines}
+          publishPath={publishPath}
+          issues={issueList}
           primaryActionLabel={getPrimaryCtaLabelForMode(publishMode, "article")}
+          primaryActionLoading={primaryActionLoading}
+          primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
+            publishMode,
+            "article"
+          )}
           onPrimaryAction={() => {
             flushSync();
             void handleSchedule(publishMode === "now" ? "publish" : "schedule");

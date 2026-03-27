@@ -41,10 +41,10 @@ export function useLongFormScheduling({
   }, [queueTypes]);
 
   const calculateQueueScheduleTime = useCallback(
-    async (queueTypeName: string) => {
+    async (queueTypeName: string): Promise<string | null> => {
       if (queueTypeName === "Unassigned" || queueTypeName === "unassigned") {
         setScheduledFor(null);
-        return;
+        return null;
       }
 
       const queueTypesCurrent = queueTypesRef.current;
@@ -77,7 +77,10 @@ export function useLongFormScheduling({
               "string"
               ? (data as { scheduledTime: string }).scheduledTime
               : "";
-          setScheduledFor(scheduledTime);
+          if (scheduledTime) {
+            setScheduledFor(scheduledTime);
+            return scheduledTime;
+          }
         }
       } catch (error) {
         const { handleErrorSafely } =
@@ -87,6 +90,7 @@ export function useLongFormScheduling({
           action: "calculateQueueScheduleTime",
         });
       }
+      return null;
     },
     []
   );

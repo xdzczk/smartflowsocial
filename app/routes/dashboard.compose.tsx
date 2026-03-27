@@ -3,7 +3,11 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+} from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -21,6 +25,20 @@ import {
   loadNewLongFormData,
 } from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf";
+
+const COMPOSE_PATHNAME = "/dashboard/compose";
+
+function ComposeTransitionShell() {
+  return (
+    <div
+      className="flex min-h-[40vh] flex-col items-center justify-center p-6"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <p className="text-muted-foreground text-sm">Loading composer…</p>
+    </div>
+  );
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -108,10 +126,38 @@ export default function ComposePage() {
     __composeMode?: "shortform" | "article";
   }>();
   const [searchParams] = useSearchParams();
-  const queryType = searchParams.get("type");
-  const mode = data.__composeMode ?? getComposeMode(queryType);
+  const navigation = useNavigation();
 
-  if (mode === "article") {
+  const queryType = searchParams.get("type");
+  const urlMode = getComposeMode(queryType);
+  const loaderMode = data.__composeMode ?? urlMode;
+
+  const urlDiscriminatorMismatch =
+    data.__composeMode !== undefined && data.__composeMode !== urlMode;
+
+  const navigatingWithinCompose =
+    navigation.state === "loading" &&
+    navigation.location.pathname === COMPOSE_PATHNAME;
+
+  const destinationMode = navigatingWithinCompose
+    ? getComposeMode(
+        new URLSearchParams(navigation.location.search).get("type")
+      )
+    : null;
+
+  if (urlDiscriminatorMismatch) {
+    return <ComposeTransitionShell />;
+  }
+
+  if (
+    navigatingWithinCompose &&
+    destinationMode !== null &&
+    destinationMode !== loaderMode
+  ) {
+    return <ComposeTransitionShell />;
+  }
+
+  if (loaderMode === "article") {
     return <NewLongFormPostPage />;
   }
   return <NewPostPage />;

@@ -35,6 +35,7 @@ import {
   COMPOSER_UPLOAD_WAIT,
   COMPOSER_REMOVE_FAILED_ATTACHMENTS,
 } from "../components/composer/composer-validation";
+import type { ComposerPublishMode } from "../components/composer/publish-mode";
 
 export type TextPostFormData = z.infer<typeof textPostClientSchema>;
 
@@ -89,6 +90,10 @@ export interface UseComposerSubmitOptions {
   submitAction?: string;
   /** Sent as `_embedContext` so the newpost action can return JSON instead of redirects. */
   embedContext?: "contest";
+  /** Delivery mode: queue uses API-derived slot when `scheduledFor` is empty. */
+  publishMode?: ComposerPublishMode;
+  /** From `usePostScheduling`; used to resolve queue slot at submit when mode is queue. */
+  calculateQueueScheduleTime?: (queueName: string) => Promise<string | null>;
 }
 
 export function useComposerSubmit(options: UseComposerSubmitOptions) {
@@ -121,6 +126,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     defaultTags = [],
     submitAction,
     embedContext,
+    publishMode = "now",
+    calculateQueueScheduleTime,
   } = options;
 
   const fetcherSubmitOptions = React.useMemo(
@@ -219,6 +226,29 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         return;
       }
 
+      async function resolveScheduleLocalInput(
+        d: TextPostFormData,
+        activeSubmitType: string
+      ): Promise<string> {
+        if (activeSubmitType !== ACTION_SCHEDULE_TEXT) {
+          return d.scheduledFor ?? "";
+        }
+        let s = d.scheduledFor?.trim() ?? "";
+        if (
+          publishMode === "queue" &&
+          selectedQueue !== "unassigned" &&
+          !s &&
+          calculateQueueScheduleTime
+        ) {
+          const computed = await calculateQueueScheduleTime(selectedQueue);
+          if (computed) {
+            form.setValue("scheduledFor", computed);
+            return computed;
+          }
+        }
+        return d.scheduledFor ?? "";
+      }
+
       async function runThreadSubmit(): Promise<void> {
         let generation: number | null = null;
         try {
@@ -235,12 +265,25 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             return;
           }
           const userTimezone = user?.timezone ?? "UTC";
+          const threadScheduleInput = await resolveScheduleLocalInput(
+            data,
+            submitType
+          );
+          if (
+            submitType === ACTION_SCHEDULE_TEXT &&
+            !threadScheduleInput.trim()
+          ) {
+            setSigningError(
+              "Schedule time is required, or select a queue so we can pick the next slot."
+            );
+            return;
+          }
           const baseTime =
             submitType === ACTION_POST_TEXT
               ? Math.floor(Date.now() / 1000)
               : Math.floor(
                   (await parseScheduledTime(
-                    data.scheduledFor ?? "",
+                    threadScheduleInput,
                     userTimezone
                   )) / 1000
                 );
@@ -470,21 +513,22 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (queueTypeId) threadPayload.set("queueTypeId", queueTypeId);
         if (formData.hashTagPresetId)
           threadPayload.set("hashTagPresetId", formData.hashTagPresetId);
-        if (
-          actionSubmitType === ACTION_SCHEDULE_TEXT &&
-          formData.scheduledFor
-        ) {
-          const unix = Math.floor(
-            (await parseScheduledTime(
-              formData.scheduledFor,
-              user?.timezone ?? "UTC"
-            )) / 1000
+        if (actionSubmitType === ACTION_SCHEDULE_TEXT) {
+          const resolved = await resolveScheduleLocalInput(
+            formData,
+            ACTION_SCHEDULE_TEXT
           );
-          if (unix < Math.floor(Date.now() / 1000)) {
-            setSigningError(COMPOSER_SCHEDULE_FUTURE);
-            return null;
+          if (resolved.trim()) {
+            const unix = Math.floor(
+              (await parseScheduledTime(resolved, user?.timezone ?? "UTC")) /
+                1000
+            );
+            if (unix < Math.floor(Date.now() / 1000)) {
+              setSigningError(COMPOSER_SCHEDULE_FUTURE);
+              return null;
+            }
+            threadPayload.set("scheduledFor", String(unix));
           }
-          threadPayload.set("scheduledFor", String(unix));
         }
         if (relayOverride && relayOverride.length > 0)
           threadPayload.set("relays", JSON.stringify(relayOverride));
@@ -501,38 +545,56 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         return null;
       }
 
+      function applySinglePostValidationError(
+        validationError: string | null
+      ): boolean {
+        if (!validationError) return false;
+        setSigningError(validationError);
+        if (validationError === COMPOSER_CONTENT_REQUIRED) {
+          form.setError("content", {
+            type: "manual",
+            message: COMPOSER_CONTENT_REQUIRED,
+          });
+        }
+        return true;
+      }
+
       async function runSinglePostSubmit(): Promise<void> {
         let generation: number | null = null;
         try {
           setSigningError(null);
-          const validationError = getSinglePostValidationError();
-          if (validationError) {
-            setSigningError(validationError);
-            if (validationError === COMPOSER_CONTENT_REQUIRED) {
-              form.setError("content", {
-                type: "manual",
-                message: COMPOSER_CONTENT_REQUIRED,
-              });
-            }
+          if (applySinglePostValidationError(getSinglePostValidationError())) {
             return;
           }
           const userTimezone = user?.timezone ?? "UTC";
+          const scheduledForInput = await resolveScheduleLocalInput(
+            data,
+            submitType
+          );
+          if (
+            submitType === ACTION_SCHEDULE_TEXT &&
+            !scheduledForInput.trim()
+          ) {
+            setSigningError(
+              "Schedule time is required, or select a queue so we can pick the next slot."
+            );
+            return;
+          }
           const scheduledTime =
             submitType === ACTION_POST_TEXT
               ? nowMillis()
-              : await parseScheduledTime(data.scheduledFor ?? "", userTimezone);
+              : await parseScheduledTime(scheduledForInput, userTimezone);
           const nominalUnix = Math.floor(scheduledTime / 1000);
           const isSchedule = submitType === ACTION_SCHEDULE_TEXT;
           if (isSchedule && nominalUnix * 1000 < Date.now()) {
             setSigningError(COMPOSER_SCHEDULE_FUTURE);
             return;
           }
+          const effectiveRandomMinutes =
+            publishMode === "queue" ? 0 : scheduleRandomWindowMinutes;
           const scheduledForUnix =
-            isSchedule && scheduleRandomWindowMinutes > 0
-              ? applyRandomScheduleWindow(
-                  nominalUnix,
-                  scheduleRandomWindowMinutes
-                )
+            isSchedule && effectiveRandomMinutes > 0
+              ? applyRandomScheduleWindow(nominalUnix, effectiveRandomMinutes)
               : nominalUnix;
 
           const effectiveHashtags = await getEffectiveHashtagsForSubmit(
@@ -583,7 +645,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           };
           if (
             submitType === ACTION_SCHEDULE_TEXT &&
-            scheduleRandomWindowMinutes > 0
+            effectiveRandomMinutes > 0
           ) {
             payload["nominalScheduledFor"] = String(nominalUnix);
           }
@@ -720,6 +782,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       defaultTags,
       fetcherSubmitOptions,
       embedContext,
+      publishMode,
+      calculateQueueScheduleTime,
     ]
   );
 

@@ -46,6 +46,8 @@ interface LongFormPublishingOptionsProps {
   onUseHashtagPresetsChange: (value: boolean) => void;
   userTimezone?: string;
   showHashtagPresets?: boolean;
+  /** When true (e.g. queue delivery mode), hide manual schedule datetime; slot comes from queue API. */
+  hideScheduleControls?: boolean;
 }
 
 export function LongFormPublishingOptions({
@@ -65,6 +67,7 @@ export function LongFormPublishingOptions({
   onUseHashtagPresetsChange,
   userTimezone = "UTC",
   showHashtagPresets = true,
+  hideScheduleControls = false,
 }: LongFormPublishingOptionsProps) {
   // Find the currently selected queue type
   const currentQueueType = queueTypes.find(
@@ -172,61 +175,66 @@ export function LongFormPublishingOptions({
           </>
         ) : null}
 
-        {/* Schedule Controls */}
-        <div className="space-y-3">
-          <Label
-            htmlFor="scheduledFor"
-            className="text-muted-foreground dark:text-foreground text-xs font-medium"
-          >
-            When should this enter the network?
-          </Label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input
-              type="datetime-local"
-              id="scheduledFor"
-              name="scheduledFor"
-              value={scheduledFor ?? ""}
-              onChange={(e) => {
-                const v = e.target.value || null;
-                if (!v) {
-                  onScheduledForChange(null);
-                  return;
-                }
-                const min = getNowForDateTimeLocal(userTimezone);
-                onScheduledForChange(v < min ? min : v);
-              }}
-              min={getNowForDateTimeLocal(userTimezone)}
-              className="dark:bg-card flex-1 bg-white"
-              placeholder="Select date and time"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {isSlotBasedQueue ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onNextSlotClick}
-                className="border-primary text-foreground hover:bg-muted"
-              >
-                Next Slot
-              </Button>
-            ) : (
-              scheduleIntervals.map((interval) => (
+        {/* Schedule Controls (hidden in queue mode — timing from queue rules) */}
+        {hideScheduleControls ? null : (
+          <div className="space-y-3">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
+              Timing
+            </p>
+            <Label
+              htmlFor="scheduledFor"
+              className="text-muted-foreground dark:text-foreground text-xs font-medium"
+            >
+              When should this enter the network?
+            </Label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                type="datetime-local"
+                id="scheduledFor"
+                name="scheduledFor"
+                value={scheduledFor ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value || null;
+                  if (!v) {
+                    onScheduledForChange(null);
+                    return;
+                  }
+                  const min = getNowForDateTimeLocal(userTimezone);
+                  onScheduledForChange(v < min ? min : v);
+                }}
+                min={getNowForDateTimeLocal(userTimezone)}
+                className="dark:bg-card flex-1 bg-white"
+                placeholder="Select date and time"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isSlotBasedQueue ? (
                 <Button
-                  key={interval}
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
-                  onClick={() => onScheduleIntervalClick(interval)}
-                  className="transition-transform hover:scale-105"
+                  onClick={onNextSlotClick}
+                  className="border-primary text-foreground hover:bg-muted"
                 >
-                  {formatIntervalLabel(interval, { compact: true })}
+                  Next Slot
                 </Button>
-              ))
-            )}
+              ) : (
+                scheduleIntervals.map((interval) => (
+                  <Button
+                    key={interval}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onScheduleIntervalClick(interval)}
+                    className="transition-transform hover:scale-105"
+                  >
+                    {formatIntervalLabel(interval, { compact: true })}
+                  </Button>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

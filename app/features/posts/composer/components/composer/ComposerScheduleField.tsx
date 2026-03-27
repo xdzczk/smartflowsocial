@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import type { QueueType, RepostConditions } from "~/features/posts/types";
 import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
@@ -121,10 +122,13 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+        Timing
+      </p>
       {!omitScheduleInput ? (
-        <>
-          <Label htmlFor="scheduledFor">Publish time</Label>
+        <div className="space-y-2">
+          <Label htmlFor="scheduledFor">Publish at</Label>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Input
               type="datetime-local"
@@ -139,7 +143,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
               disabled={disabled}
             />
           </div>
-        </>
+        </div>
       ) : null}
       <SchedulingSection
         scheduledFor={value}
@@ -153,25 +157,52 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
         showTimeInput={false}
         userTimezone={userTimezone}
       />
-      <div className="space-y-2">
-        <Label htmlFor="scheduleRandomWindowMinutes">
+      <div className="flex items-center justify-between gap-3">
+        <Label
+          htmlFor="schedule-randomize-switch"
+          className="text-sm font-normal"
+        >
           Randomize publish time
         </Label>
-        <Select
-          value={String(scheduleRandomWindowMinutes)}
-          onValueChange={(v) => onScheduleRandomWindowMinutesChange(Number(v))}
-        >
-          <SelectTrigger id="scheduleRandomWindowMinutes">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">Off (exact time)</SelectItem>
-            <SelectItem value="5">±5 minutes</SelectItem>
-            <SelectItem value="10">±10 minutes</SelectItem>
-            <SelectItem value="15">±15 minutes</SelectItem>
-          </SelectContent>
-        </Select>
+        <Switch
+          id="schedule-randomize-switch"
+          checked={scheduleRandomWindowMinutes > 0}
+          onCheckedChange={(on) => {
+            if (!on) {
+              onScheduleRandomWindowMinutesChange(0);
+            } else {
+              onScheduleRandomWindowMinutesChange(
+                scheduleRandomWindowMinutes > 0
+                  ? scheduleRandomWindowMinutes
+                  : 15
+              );
+            }
+          }}
+          disabled={disabled}
+        />
       </div>
+      {scheduleRandomWindowMinutes > 0 ? (
+        <div className="space-y-2">
+          <Label htmlFor="scheduleRandomWindowMinutes">Window</Label>
+          <Select
+            value={String(scheduleRandomWindowMinutes)}
+            onValueChange={(v) =>
+              onScheduleRandomWindowMinutesChange(Number(v))
+            }
+          >
+            <SelectTrigger id="scheduleRandomWindowMinutes">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">±5 minutes</SelectItem>
+              <SelectItem value="10">±10 minutes</SelectItem>
+              <SelectItem value="15">±15 minutes</SelectItem>
+              <SelectItem value="30">±30 minutes</SelectItem>
+              <SelectItem value="60">±1 hour</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
     </div>
   );
 }

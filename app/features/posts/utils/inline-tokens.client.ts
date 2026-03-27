@@ -60,6 +60,34 @@ export function getTokenLocalIds(content: string): string[] {
 }
 
 /**
+ * Remove all attachment tokens and collapse extra newlines (keeps non-token text).
+ */
+export function stripAttachmentTokens(content: string): string {
+  return content
+    .replace(ATTACH_TOKEN_REGEX, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
+}
+
+/**
+ * Rebuild content so attachment tokens appear in `orderedLocalIds` order (block at end).
+ * Preserves body text; typical composer flow appends tokens at the end.
+ */
+export function reorderAttachmentTokensInContent(
+  content: string,
+  orderedLocalIds: string[]
+): string {
+  const base = stripAttachmentTokens(content);
+  const tokenLines = orderedLocalIds.map(
+    (id) =>
+      `${COMPOSER_ATTACH_TOKEN_PREFIX}${id}${COMPOSER_ATTACH_TOKEN_SUFFIX}`
+  );
+  const block = tokenLines.join("\n\n");
+  if (!base.trim()) return block;
+  return `${base}\n\n${block}`;
+}
+
+/**
  * Resolve tokens in content for signing: replace each [attach:localId] with the
  * actual media URL so the signed Nostr event content includes media and clients
  * can display it.

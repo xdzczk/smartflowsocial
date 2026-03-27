@@ -273,7 +273,6 @@ export default function NewLongFormPostPage() {
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
-  const [draftStateLabel, setDraftStateLabel] = useState("Draft idle");
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -353,9 +352,6 @@ export default function NewLongFormPostPage() {
 
   return (
     <CreateComposerShell
-      status="Draft"
-      relayCount={0}
-      onRelayClick={() => {}}
       contentType="article"
       onContentTypeChange={(next) => {
         if (navigation.state !== "idle") return;
@@ -363,7 +359,6 @@ export default function NewLongFormPostPage() {
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
       title={initialTemplateData ? "Edit article draft" : "Create article"}
-      metadataItems={["Signer: NIP-07", `Saved: ${draftStateLabel}`]}
     >
       {templatesRaw.length > 0 ? (
         <div className="mb-4 flex items-center gap-2">
@@ -414,7 +409,6 @@ export default function NewLongFormPostPage() {
           key={`newlongform-composer-${publishResultToken ?? "default"}`}
           publishMode={publishMode}
           onPublishModeChange={setPublishMode}
-          onDraftStateLabelChange={setDraftStateLabel}
           initialData={initialTemplateData}
           initialScheduledFor={scheduledAt ?? undefined}
           queueTypes={queueTypes}

@@ -4,7 +4,7 @@
  * Upload state: queued → uploading → done → failed (retry).
  */
 
-import { Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -25,10 +25,11 @@ export function AttachmentsStrip({
   onRemove,
   onAdd,
   disabled = false,
+  onReorder,
 }: AttachmentsStripProps) {
   return (
     <div className="border-border mt-2 flex flex-wrap items-center gap-2 rounded-md border p-2">
-      {attachments.map((att) => (
+      {attachments.map((att, index) => (
         <div
           key={att.localId}
           className="border-border bg-muted/50 relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded border"
@@ -62,6 +63,38 @@ export function AttachmentsStrip({
           ) : null}
           {att.status === "failed" ? (
             <span className="text-destructive text-xs">Failed</span>
+          ) : null}
+          {onReorder && attachments.length > 1 ? (
+            <div className="bg-background/80 absolute bottom-0 left-0 flex flex-col gap-0 p-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                aria-label="Move earlier"
+                disabled={disabled || index === 0}
+                onClick={() => onReorder(index, index - 1)}
+              >
+                <ChevronUp
+                  className="h-3 w-3"
+                  strokeWidth={INLINE_ICON_STROKE}
+                />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                aria-label="Move later"
+                disabled={disabled || index === attachments.length - 1}
+                onClick={() => onReorder(index, index + 1)}
+              >
+                <ChevronDown
+                  className="h-3 w-3"
+                  strokeWidth={INLINE_ICON_STROKE}
+                />
+              </Button>
+            </div>
           ) : null}
           <Button
             type="button"

@@ -43,3 +43,24 @@ export function getPrimaryCtaLabelForMode(
   if (entity === "article") return "Publish article";
   return "Publish now";
 }
+
+/** Primary button label while submit/signing is in flight. */
+export function getPrimaryCtaPendingLabelForMode(
+  mode: ComposerPublishMode,
+  entity: "post" | "poll" | "thread" | "article"
+): string {
+  if (mode === "queue") {
+    if (entity === "thread") return "Adding thread to queue…";
+    if (entity === "article") return "Adding article to queue…";
+    return "Adding to queue…";
+  }
+  if (mode === "schedule") {
+    if (entity === "thread") return "Scheduling thread…";
+    if (entity === "article") return "Scheduling article…";
+    return "Scheduling…";
+  }
+  if (entity === "poll") return "Publishing poll…";
+  if (entity === "thread") return "Publishing thread…";
+  if (entity === "article") return "Publishing article…";
+  return "Publishing…";
+}

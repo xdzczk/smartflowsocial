@@ -15,11 +15,7 @@ import {
   type HashTagPreset,
   type QueueType,
 } from "~/features/posts/types";
-import {
-  type ComposerStatus,
-  PublishResultModal,
-  RelaySelectorModal,
-} from "~/features/posts/ui";
+import { PublishResultModal, RelaySelectorModal } from "~/features/posts/ui";
 
 import {
   getPostTypeFromPost,
@@ -310,7 +306,6 @@ export default function NewPostPage() {
     currentState?: string | null;
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
-  const [composerStatus, setComposerStatus] = useState<ComposerStatus>("Draft");
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
 
@@ -343,8 +338,6 @@ export default function NewPostPage() {
     });
   }, [publishMode]);
 
-  const [draftStateLabel, setDraftStateLabel] = useState("Draft idle");
-
   const relayCount =
     selectedRelayUrls.length > 0
       ? selectedRelayUrls.length
@@ -362,12 +355,6 @@ export default function NewPostPage() {
         : composerTab === "thread"
           ? "Create thread"
           : "Create post";
-
-  const metadataItems = [
-    `Signer: ${composerStatus === "Signing…" ? "Connecting..." : "NIP-07"}`,
-    `Saved: ${draftStateLabel}`,
-    `Relays: ${relayCount} selected`,
-  ];
 
   useNewPostPublishModalEffect({
     searchParams,
@@ -394,9 +381,6 @@ export default function NewPostPage() {
 
   return (
     <CreateComposerShell
-      status={composerStatus}
-      relayCount={relayCount}
-      onRelayClick={() => setRelaySelectorOpen(true)}
       contentType={composerTab}
       onContentTypeChange={(next) => {
         if (navigation.state !== "idle") return;
@@ -407,7 +391,6 @@ export default function NewPostPage() {
         setComposerTab(next);
       }}
       title={title}
-      metadataItems={metadataItems}
     >
       <div>
         {templates.length > 0 ? (
@@ -471,12 +454,11 @@ export default function NewPostPage() {
               selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
             }
             relayCount={relayCount}
-            onComposerStatusChange={setComposerStatus}
+            onRelayClick={() => setRelaySelectorOpen(true)}
             defaultRelays={defaultRelays}
             initialScheduledFor={scheduledAt ?? undefined}
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
-            onDraftStateLabelChange={setDraftStateLabel}
             skipLocalDraftRestore={Boolean(publishResultToken)}
           />
         ) : (
@@ -497,7 +479,7 @@ export default function NewPostPage() {
               selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
             }
             relayCount={relayCount}
-            onComposerStatusChange={setComposerStatus}
+            onRelayClick={() => setRelaySelectorOpen(true)}
             initialDraft={initialDraft}
             initialDraftId={initialDraftId}
             initialScheduledFor={scheduledAt ?? undefined}
@@ -511,7 +493,6 @@ export default function NewPostPage() {
             newPostContentTab={composerTab === "thread" ? "thread" : "post"}
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
-            onDraftStateLabelChange={setDraftStateLabel}
           />
         )}
 
