@@ -123,24 +123,21 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-muted-foreground text-xs font-medium">Schedule</p>
       {!omitScheduleInput ? (
-        <div className="space-y-2">
-          <Label htmlFor="scheduledFor">Publish at</Label>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Input
-              type="datetime-local"
-              id="scheduledFor"
-              value={value}
-              onChange={(e) => {
-                const v = e.target.value;
-                const clamped = v && v < minDatetime ? minDatetime : v;
-                onValueChange(clamped);
-              }}
-              min={minDatetime}
-              disabled={disabled}
-            />
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            type="datetime-local"
+            id="scheduledFor"
+            aria-label="Publish date and time"
+            value={value}
+            onChange={(e) => {
+              const v = e.target.value;
+              const clamped = v && v < minDatetime ? minDatetime : v;
+              onValueChange(clamped);
+            }}
+            min={minDatetime}
+            disabled={disabled}
+          />
         </div>
       ) : null}
       <SchedulingSection

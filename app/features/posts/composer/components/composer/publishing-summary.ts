@@ -318,5 +318,5 @@ export function buildPublishingOutcomeSentence(
   if (queueNextSlotLabel) {
     return `Will be added to ${q}. Next eligible slot around ${queueNextSlotLabel}.`;
   }
-  return `Will be added to ${q}. Timing follows your queue rules.`;
+  return `Will be added to ${q}.`;
 }

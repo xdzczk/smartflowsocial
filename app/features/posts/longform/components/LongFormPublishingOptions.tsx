@@ -97,12 +97,6 @@ export function LongFormPublishingOptions({
 
         {/* Queue Type Selection - vertical */}
         <div className="space-y-2">
-          <span
-            id="longform-queue-type-label"
-            className="text-muted-foreground dark:text-foreground block text-xs font-medium"
-          >
-            Queue
-          </span>
           <Select
             value={
               selectedQueueType === "unassigned"
@@ -115,7 +109,11 @@ export function LongFormPublishingOptions({
               )
             }
           >
-            <SelectTrigger id="longform-queue-select" className="w-full">
+            <SelectTrigger
+              id="longform-queue-select"
+              className="w-full"
+              aria-label="Select queue"
+            >
               <SelectValue placeholder="Select queue" />
             </SelectTrigger>
             <SelectContent>

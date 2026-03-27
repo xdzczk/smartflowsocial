@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.026506125">
-    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-27T06:31:11.622Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.026506125">
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000742375">
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.027542875">
+    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-27T15:29:26.728Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.027542875">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000766458">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness presentation tone" time="0.00012675">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness presentation tone" time="0.000121083">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000179125">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000175875">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000416209">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000424292">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildPublishingOutcomeSentence covers now, schedule, queue" time="0.023982042">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildPublishingOutcomeSentence covers now, schedule, queue" time="0.024905666">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPostStatusSummaryInline matches rail spec shape" time="0.000188042">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPostStatusSummaryInline matches rail spec shape" time="0.000213333">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatRecyclableMetaLine" time="0.000081334">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatRecyclableMetaLine" time="0.000079917">
         </testcase>
     </testsuite>
 </testsuites>

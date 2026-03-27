@@ -773,7 +773,6 @@ export function PollComposer({
                 lines:
                   publishMode === "queue"
                     ? [
-                        "Timing follows your queue rules.",
                         ...(selectedQueueType &&
                         typeof selectedQueueType === "object" &&
                         (selectedQueueType.scheduleType === "FIXED_SLOTS" ||

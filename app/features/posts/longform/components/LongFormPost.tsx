@@ -946,7 +946,6 @@ export default function LongFormPost({
                   lines:
                     publishMode === "queue"
                       ? [
-                          "Timing follows your queue rules.",
                           ...(longformQueueNextSlotLabel
                             ? [
                                 `Next slot (estimate): ${longformQueueNextSlotLabel}`,

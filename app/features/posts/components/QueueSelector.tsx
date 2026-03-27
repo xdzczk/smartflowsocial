@@ -39,12 +39,6 @@ export function QueueSelector({
 
   return (
     <div className={className}>
-      <span
-        id="queue-type-label"
-        className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
-      >
-        Queue
-      </span>
       <Select
         value={
           selectedQueue === "unassigned" ? "__unassigned__" : selectedQueue
@@ -54,7 +48,11 @@ export function QueueSelector({
         }
         disabled={disabled}
       >
-        <SelectTrigger id="queue-type-select" className="w-full">
+        <SelectTrigger
+          id="queue-type-select"
+          className="w-full"
+          aria-label="Select queue"
+        >
           <SelectValue placeholder="Choose a queue" />
         </SelectTrigger>
         <SelectContent>
