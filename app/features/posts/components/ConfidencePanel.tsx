@@ -107,7 +107,7 @@ function PublishingModeFusedHeader({
     <div
       role="tablist"
       aria-label="Publishing mode"
-      className="border-border/80 bg-muted/25 grid grid-cols-3 overflow-hidden border-b"
+      className="bg-muted/25 grid grid-cols-3 overflow-hidden"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -121,8 +121,8 @@ function PublishingModeFusedHeader({
             className={cn(
               "border-border/70 min-h-[44px] border-r px-1 py-2.5 text-center text-xs transition-colors last:border-r-0",
               active
-                ? "bg-card text-foreground relative z-[1] -mb-px border-b border-b-transparent font-semibold"
-                : "text-muted-foreground bg-muted/20 hover:bg-muted/45 hover:text-foreground"
+                ? "bg-card text-foreground relative z-[1] font-semibold"
+                : "text-muted-foreground bg-muted/20 hover:bg-muted/45 hover:text-foreground border-b"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -132,15 +132,6 @@ function PublishingModeFusedHeader({
       })}
     </div>
   );
-}
-
-function formatSignerChipLabel(signerLabel: string | null): string {
-  const s = signerLabel?.trim();
-  if (!s) return "Signer —";
-  if (s === "NIP-07" || s.toLowerCase().includes("nip-07")) {
-    return "NIP-07 extension";
-  }
-  return s;
 }
 
 function DestinationChips({
@@ -165,9 +156,6 @@ function DestinationChips({
           {path.relayCount} relay{path.relayCount !== 1 ? "s" : ""}
         </Badge>
       )}
-      <Badge variant="secondary" className="max-w-full truncate font-normal">
-        {formatSignerChipLabel(path.signerLabel)}
-      </Badge>
       {path.queueLabel ? (
         <Badge variant="secondary" className="max-w-full truncate font-normal">
           {path.queueLabel}
@@ -299,11 +287,6 @@ function PostStatusBlock({
         </ul>
       ) : null}
       <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-        {sessionStrip ? (
-          <Badge variant="outline" className="font-normal">
-            {sessionStrip.composerStatus}
-          </Badge>
-        ) : null}
         <DestinationChips
           path={publishPath}
           onRelayClick={sessionStrip?.onRelayClick}
@@ -379,41 +362,37 @@ function PublishingSummaryRailBody({
 >) {
   return (
     <div className="flex flex-col gap-0 text-xs">
-      <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
-        <PublishingModeFusedHeader
-          publishMode={publishMode}
-          onPublishModeChange={onPublishModeChange}
+      <PublishingModeFusedHeader
+        publishMode={publishMode}
+        onPublishModeChange={onPublishModeChange}
+      />
+      <div className="bg-card px-3 py-2.5">
+        <p className="text-foreground text-sm leading-snug font-medium">
+          {outcomeSentence}
+        </p>
+      </div>
+      <div className="border-border/60 space-y-2 border-t px-3 py-2">
+        {threadSettingsSection ? (
+          <SectionBlock {...threadSettingsSection} />
+        ) : null}
+        {modeSpecificSection ? <SectionBlock {...modeSpecificSection} /> : null}
+        {followUp ? (
+          <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
+            {followUp.children}
+          </FollowUpRailCollapsible>
+        ) : followUpSection ? (
+          <SectionBlock {...followUpSection} />
+        ) : null}
+        <PostStatusBlock
+          postStatusSummaryInline={postStatusSummaryInline}
+          postStatusRecyclableMeta={postStatusRecyclableMeta}
+          contentSummaryLines={contentSummaryLines}
+          sessionStrip={sessionStrip}
+          publishPath={publishPath}
+          readiness={readiness}
+          issues={issues}
+          warnings={warnings}
         />
-        <div className="bg-card px-3 py-2.5">
-          <p className="text-foreground text-sm leading-snug font-medium">
-            {outcomeSentence}
-          </p>
-        </div>
-        <div className="border-border/60 space-y-2.5 border-t px-3 py-2.5">
-          {threadSettingsSection ? (
-            <SectionBlock {...threadSettingsSection} />
-          ) : null}
-          {modeSpecificSection ? (
-            <SectionBlock {...modeSpecificSection} />
-          ) : null}
-          {followUp ? (
-            <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
-              {followUp.children}
-            </FollowUpRailCollapsible>
-          ) : followUpSection ? (
-            <SectionBlock {...followUpSection} />
-          ) : null}
-          <PostStatusBlock
-            postStatusSummaryInline={postStatusSummaryInline}
-            postStatusRecyclableMeta={postStatusRecyclableMeta}
-            contentSummaryLines={contentSummaryLines}
-            sessionStrip={sessionStrip}
-            publishPath={publishPath}
-            readiness={readiness}
-            issues={issues}
-            warnings={warnings}
-          />
-        </div>
       </div>
     </div>
   );
@@ -428,7 +407,6 @@ function PublishingSummaryRailActions({
   secondaryActionLabel,
   onSecondaryAction,
   secondaryActionDisabled,
-  footerSaveHelper,
 }: Pick<
   PublishingSummaryRailProps,
   | "primaryActionLabel"
@@ -439,18 +417,16 @@ function PublishingSummaryRailActions({
   | "secondaryActionLabel"
   | "onSecondaryAction"
   | "secondaryActionDisabled"
-> & {
-  footerSaveHelper?: string | null;
-}) {
+>) {
   const showLoading = Boolean(
     primaryActionLoading && primaryActionLoadingLabel
   );
   const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
 
   return (
-    <div className="border-border/70 mt-1.5 shrink-0 overflow-hidden rounded-xl border">
+    <div className="border-border/60 shrink-0 overflow-hidden border-t">
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/70 bg-muted/20 space-y-0.5 border-b px-2.5 py-1.5">
+        <div className="border-border/60 bg-muted/15 space-y-0.5 border-b px-2.5 py-1.5">
           <Button
             type="button"
             variant="outline"
@@ -461,14 +437,9 @@ function PublishingSummaryRailActions({
           >
             {secondaryActionLabel}
           </Button>
-          {footerSaveHelper ? (
-            <p className="text-muted-foreground/80 text-center text-[10px] leading-snug">
-              {footerSaveHelper}
-            </p>
-          ) : null}
         </div>
       ) : null}
-      <div className="bg-primary/95 p-1.5">
+      <div className="bg-primary/95 px-1.5 pt-1.5 pb-2">
         <Button
           type="button"
           size="sm"
@@ -486,8 +457,6 @@ function PublishingSummaryRailActions({
 
 export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const footerSaveHelper =
-    props.sessionStrip?.saveStateLabel ?? props.saveStateLabel ?? null;
 
   const bodyProps = {
     publishMode: props.publishMode,
@@ -513,25 +482,22 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
         className="border-border hidden w-72 shrink-0 self-start bg-transparent lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col xl:w-80"
         aria-label="Publish"
       >
-        <div className="min-h-0 flex-1 overflow-y-auto px-0.5 pr-1">
-          <PublishingSummaryRailBody {...bodyProps} />
-        </div>
-        <div className="shrink-0 px-0.5">
-          <PublishingSummaryRailActions
-            primaryActionLabel={props.primaryActionLabel}
-            onPrimaryAction={props.onPrimaryAction}
-            primaryActionDisabled={props.primaryActionDisabled}
-            primaryActionLoading={props.primaryActionLoading}
-            primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-            secondaryActionLabel={props.secondaryActionLabel}
-            onSecondaryAction={props.onSecondaryAction}
-            secondaryActionDisabled={props.secondaryActionDisabled}
-            footerSaveHelper={
-              props.secondaryActionLabel && props.onSecondaryAction
-                ? footerSaveHelper
-                : undefined
-            }
-          />
+        <div className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <PublishingSummaryRailBody {...bodyProps} />
+          </div>
+          <div className="shrink-0">
+            <PublishingSummaryRailActions
+              primaryActionLabel={props.primaryActionLabel}
+              onPrimaryAction={props.onPrimaryAction}
+              primaryActionDisabled={props.primaryActionDisabled}
+              primaryActionLoading={props.primaryActionLoading}
+              primaryActionLoadingLabel={props.primaryActionLoadingLabel}
+              secondaryActionLabel={props.secondaryActionLabel}
+              onSecondaryAction={props.onSecondaryAction}
+              secondaryActionDisabled={props.secondaryActionDisabled}
+            />
+          </div>
         </div>
       </aside>
 
@@ -546,28 +512,25 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
             <SheetHeader className="shrink-0">
               <SheetTitle>Publish</SheetTitle>
             </SheetHeader>
-            <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
-              <PublishingSummaryRailBody {...bodyProps} />
-            </div>
-            <div className="shrink-0 pt-2">
-              <PublishingSummaryRailActions
-                primaryActionLabel={props.primaryActionLabel}
-                onPrimaryAction={() => {
-                  props.onPrimaryAction();
-                  setSheetOpen(false);
-                }}
-                primaryActionDisabled={props.primaryActionDisabled}
-                primaryActionLoading={props.primaryActionLoading}
-                primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-                secondaryActionLabel={props.secondaryActionLabel}
-                onSecondaryAction={props.onSecondaryAction}
-                secondaryActionDisabled={props.secondaryActionDisabled}
-                footerSaveHelper={
-                  props.secondaryActionLabel && props.onSecondaryAction
-                    ? footerSaveHelper
-                    : undefined
-                }
-              />
+            <div className="border-border mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <PublishingSummaryRailBody {...bodyProps} />
+              </div>
+              <div className="shrink-0">
+                <PublishingSummaryRailActions
+                  primaryActionLabel={props.primaryActionLabel}
+                  onPrimaryAction={() => {
+                    props.onPrimaryAction();
+                    setSheetOpen(false);
+                  }}
+                  primaryActionDisabled={props.primaryActionDisabled}
+                  primaryActionLoading={props.primaryActionLoading}
+                  primaryActionLoadingLabel={props.primaryActionLoadingLabel}
+                  secondaryActionLabel={props.secondaryActionLabel}
+                  onSecondaryAction={props.onSecondaryAction}
+                  secondaryActionDisabled={props.secondaryActionDisabled}
+                />
+              </div>
             </div>
           </SheetContent>
         </Sheet>
