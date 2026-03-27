@@ -84,9 +84,7 @@ export function buildDeliveryLines({
     selectedQueue && selectedQueue !== "unassigned" ? selectedQueue : null;
   return [
     queueName ? `Queue: ${queueName}` : "Queue: Not selected",
-    nextSlot
-      ? `Next slot: ${nextSlot}`
-      : "Timing: Set by queue when you publish",
+    nextSlot ? `Next slot: ${nextSlot}` : "Timing follows your queue rules.",
   ];
 }
 
@@ -107,13 +105,13 @@ export function buildComposerContentSummaryLines(
   charCount: number,
   attachmentCount: number,
   tagsSummary: string | null | undefined,
-  isRecyclable?: boolean
+  _isRecyclable?: boolean
 ): string[] {
+  void _isRecyclable;
   return [
     `${charCount} characters`,
     `${attachmentCount} media`,
     tagsSummary?.trim() ? `Tags: ${tagsSummary.trim()}` : "Tags: none",
-    isRecyclable ? "Recyclable: on" : "Recyclable: off",
   ];
 }
 
@@ -209,23 +207,25 @@ function tagTokenCount(tagsSummary: string | null | undefined): number {
   return tagsSummary.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function tagsAndRecyclableSuffix(
-  tagsSummary: string | null | undefined,
-  isRecyclable?: boolean
-): string {
+function tagsInlineSuffix(tagsSummary: string | null | undefined): string {
   const n = tagTokenCount(tagsSummary);
-  const tagPart = `${n} tag${n !== 1 ? "s" : ""}`;
-  return isRecyclable ? `${tagPart} · Recyclable` : tagPart;
+  return `${n} tag${n !== 1 ? "s" : ""}`;
 }
 
-/** Single-line post summary for the Post status rail row. */
+/** Muted recyclable row below tags in Post status (separate from the main summary line). */
+export function formatRecyclableMetaLine(isRecyclable: boolean): string {
+  return isRecyclable ? "Recyclable: on" : "Recyclable: off";
+}
+
+/** Single-line post summary for the Post status rail row (chars · media · tags only). */
 export function formatPostStatusSummaryInline(
   charCount: number,
   attachmentCount: number,
   tagsSummary: string | null | undefined,
-  isRecyclable?: boolean
+  _isRecyclable?: boolean
 ): string {
-  return `${charCount} chars · ${attachmentCount} media · ${tagsAndRecyclableSuffix(tagsSummary, isRecyclable)}`;
+  void _isRecyclable;
+  return `${charCount} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
 export function formatThreadPostStatusSummaryInline(
@@ -233,18 +233,20 @@ export function formatThreadPostStatusSummaryInline(
   totalChars: number,
   attachmentCount: number,
   tagsSummary: string | null | undefined,
-  isRecyclable?: boolean
+  _isRecyclable?: boolean
 ): string {
-  return `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} media · ${tagsAndRecyclableSuffix(tagsSummary, isRecyclable)}`;
+  void _isRecyclable;
+  return `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
 export function formatPollPostStatusSummaryInline(
   questionCharCount: number,
   optionCount: number,
   tagsSummary: string | null | undefined,
-  isRecyclable: boolean
+  _isRecyclable: boolean
 ): string {
-  return `${questionCharCount} chars · ${optionCount} options · ${tagsAndRecyclableSuffix(tagsSummary, isRecyclable)}`;
+  void _isRecyclable;
+  return `${questionCharCount} chars · ${optionCount} options · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
 export function formatArticlePostStatusSummaryInline(
@@ -252,7 +254,7 @@ export function formatArticlePostStatusSummaryInline(
   hasCover: boolean,
   tagsSummary: string | null | undefined
 ): string {
-  return `${wordCount} words · ${hasCover ? "cover set" : "no cover"} · ${tagsAndRecyclableSuffix(tagsSummary)}`;
+  return `${wordCount} words · ${hasCover ? "cover set" : "no cover"} · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
 export interface PublishingOutcomeInput {

@@ -1,5 +1,5 @@
 import { Link, useFetcher } from "@remix-run/react";
-import { ChevronDown, ChevronUp, Hash } from "lucide-react";
+import { ChevronDown, ChevronUp, FolderOpen, Hash } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -105,6 +105,9 @@ interface LongFormPostProps {
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
+  /** When true, show "Drafts / Templates" near the writing surface (new article flow). */
+  showDraftTemplatesPicker?: boolean;
+  onOpenDraftTemplatesPicker?: () => void;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
@@ -132,6 +135,8 @@ export default function LongFormPost({
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
+  showDraftTemplatesPicker = false,
+  onOpenDraftTemplatesPicker,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
   const [templateName, setTemplateName] = useState(
@@ -591,7 +596,7 @@ export default function LongFormPost({
     publishMode === "queue" &&
     (selectedQueueType === "unassigned" || selectedQueueType === "Unassigned")
   ) {
-    issueList.push("Select a queue.");
+    issueList.push("Choose a queue.");
   }
   const readiness = getReadinessPresentation(publishMode, issueList, true);
   const contentSummaryLines = [
@@ -646,15 +651,37 @@ export default function LongFormPost({
       <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
-          <WritingSurface
-            key={initialData?.id ?? "new"}
-            register={form.register}
-            content={content}
-            uploadProvider={uploadProvider}
-            onOpenAssetBrowser={() => {}}
-            editorReady={editorReady}
-            editor={editor}
-          />
+          <div className="relative">
+            {showDraftTemplatesPicker && onOpenDraftTemplatesPicker ? (
+              <div className="pointer-events-none absolute top-6 right-4 z-10 flex justify-end sm:right-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="pointer-events-auto"
+                  onClick={onOpenDraftTemplatesPicker}
+                  disabled={fetcher.state !== "idle"}
+                  aria-label="Drafts / Templates"
+                >
+                  <FolderOpen
+                    className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                  Drafts / Templates
+                </Button>
+              </div>
+            ) : null}
+            <WritingSurface
+              key={initialData?.id ?? "new"}
+              register={form.register}
+              content={content}
+              uploadProvider={uploadProvider}
+              onOpenAssetBrowser={() => {}}
+              editorReady={editorReady}
+              editor={editor}
+            />
+          </div>
 
           {/* Phase 2: Article Details (collapsible) */}
           <ArticleDetailsCollapsible
@@ -711,9 +738,9 @@ export default function LongFormPost({
                     <h2 className="text-foreground text-2xl font-semibold tracking-tight">
                       {title.trim() || "Untitled"}
                     </h2>
-                    {summary.trim() ? (
+                    {(summary ?? "").trim() ? (
                       <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                        {summary.trim()}
+                        {(summary ?? "").trim()}
                       </p>
                     ) : null}
                   </div>
@@ -723,9 +750,9 @@ export default function LongFormPost({
                       className="prose prose-sm dark:prose-invert max-w-none"
                     />
                   </div>
-                  {customTags.trim() ? (
+                  {(customTags ?? "").trim() ? (
                     <p className="text-muted-foreground text-xs">
-                      Tags: {customTags.trim()}
+                      Tags: {(customTags ?? "").trim()}
                     </p>
                   ) : (
                     <p className="text-muted-foreground text-xs">Tags: none</p>
@@ -913,16 +940,13 @@ export default function LongFormPost({
           }}
           modeSpecificSection={
             publishMode === "now"
-              ? {
-                  title: "Timing",
-                  lines: ["Immediate"],
-                }
+              ? undefined
               : {
                   title: publishMode === "queue" ? "Queue" : "Schedule",
                   lines:
                     publishMode === "queue"
                       ? [
-                          "Timing is set by your queue when you publish.",
+                          "Timing follows your queue rules.",
                           ...(longformQueueNextSlotLabel
                             ? [
                                 `Next slot (estimate): ${longformQueueNextSlotLabel}`,

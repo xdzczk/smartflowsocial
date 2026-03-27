@@ -21,6 +21,8 @@ export interface ComposerContentFieldProps {
   /** Show "Drafts" button (hidden in template mode) */
   showDraftButton?: boolean;
   onOpenDraft?: () => void;
+  /** Button label (default: "Drafts") */
+  draftButtonLabel?: string;
   maxLength?: number;
   id?: string;
   /** Optional className for the wrapper */
@@ -38,6 +40,7 @@ export function ComposerContentField({
   rows = 6,
   showDraftButton = false,
   onOpenDraft,
+  draftButtonLabel = "Drafts",
   maxLength = DEFAULT_MAX_LENGTH,
   id = "content",
   className = "",
@@ -65,14 +68,14 @@ export function ComposerContentField({
               size="sm"
               onClick={onOpenDraft}
               disabled={disabled}
-              aria-label="Drafts"
+              aria-label={draftButtonLabel}
             >
               <FolderOpen
                 className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
                 strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
-              Drafts
+              {draftButtonLabel}
             </Button>
           </div>
         ) : null}

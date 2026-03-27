@@ -6,7 +6,6 @@ export { default as ScheduledPostsPage } from "./components/ScheduledPostsPage";
 export { default } from "./components/ScheduledPostsPage";
 export { default as ScheduledPosts } from "./components/ScheduledPosts";
 export { ScheduledPostsTable } from "./components/ScheduledPostsTable";
-export { ScheduleIntervalsSettings } from "./components/ScheduleIntervalsSettings";
 export { ScheduleNext7DaysCard } from "./components/ScheduleNext7DaysCard";
 export { SimpleRescheduleModal } from "./components/SimpleRescheduleModal";
 export {

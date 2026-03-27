@@ -123,9 +123,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
-        Timing
-      </p>
+      <p className="text-muted-foreground text-xs font-medium">Schedule</p>
       {!omitScheduleInput ? (
         <div className="space-y-2">
           <Label htmlFor="scheduledFor">Publish at</Label>

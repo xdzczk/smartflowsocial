@@ -55,6 +55,8 @@ export interface PublishingSummaryRailProps {
   threadSettingsSection?: PublishingSummarySection;
   /** Single-line summary for Post status; preferred over contentSummaryLines. */
   postStatusSummaryInline?: string;
+  /** Shown under system chips (e.g. Recyclable on/off). */
+  postStatusRecyclableMeta?: string;
   /** Extra bullets under the inline summary (e.g. thread cadence). */
   contentSummaryLines?: string[];
   publishPath: PublishPathSummary;
@@ -105,7 +107,7 @@ function PublishingModeFusedHeader({
     <div
       role="tablist"
       aria-label="Publishing mode"
-      className="border-border bg-muted/40 grid grid-cols-3 overflow-hidden rounded-t-lg border border-b-0"
+      className="border-border bg-muted/30 grid grid-cols-3 overflow-hidden"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -119,8 +121,8 @@ function PublishingModeFusedHeader({
             className={cn(
               "border-border min-h-[44px] border-r px-1 py-2.5 text-center text-xs transition-colors last:border-r-0",
               active
-                ? "bg-card text-foreground z-[1] font-semibold"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                ? "bg-card text-foreground border-primary z-[1] border-b-2 font-semibold shadow-[0_1px_0_0_hsl(var(--border))]"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -130,6 +132,15 @@ function PublishingModeFusedHeader({
       })}
     </div>
   );
+}
+
+function formatSignerChipLabel(signerLabel: string | null): string {
+  const s = signerLabel?.trim();
+  if (!s) return "Signer —";
+  if (s === "NIP-07" || s.toLowerCase().includes("nip-07")) {
+    return "NIP-07 extension";
+  }
+  return s;
 }
 
 function DestinationChips({
@@ -155,7 +166,7 @@ function DestinationChips({
         </Badge>
       )}
       <Badge variant="secondary" className="max-w-full truncate font-normal">
-        {path.signerLabel?.trim() ? path.signerLabel : "Signer —"}
+        {formatSignerChipLabel(path.signerLabel)}
       </Badge>
       {path.queueLabel ? (
         <Badge variant="secondary" className="max-w-full truncate font-normal">
@@ -175,37 +186,41 @@ function FollowUpRailCollapsible({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-border rounded-md border">
+    <div className="border-border/80 bg-muted/5 rounded-lg border">
       <button
         type="button"
-        className="text-muted-foreground hover:bg-muted/40 flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-xs"
+        className="hover:bg-muted/30 flex w-full items-center gap-2 px-2.5 py-2 text-left text-xs"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span>
-          <span className="text-foreground font-semibold tracking-wide uppercase">
-            Follow-up actions
-          </span>
-          <span className="text-muted-foreground ml-1.5 font-normal">
-            {summaryLine}
-          </span>
+        <span className="text-foreground shrink-0 font-medium">
+          Follow-up actions
+        </span>
+        <span className="text-muted-foreground min-w-0 flex-1 truncate text-right">
+          {summaryLine}
         </span>
         {open ? (
           <ChevronUp
-            className={INLINE_ICON_SIZE_CLASS}
+            className={cn(
+              INLINE_ICON_SIZE_CLASS,
+              "text-muted-foreground shrink-0"
+            )}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
         ) : (
           <ChevronDown
-            className={INLINE_ICON_SIZE_CLASS}
+            className={cn(
+              INLINE_ICON_SIZE_CLASS,
+              "text-muted-foreground shrink-0"
+            )}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
         )}
       </button>
       {open ? (
-        <div className="border-border border-t px-2 py-2">{children}</div>
+        <div className="border-border/80 border-t px-2.5 py-2">{children}</div>
       ) : null}
     </div>
   );
@@ -219,9 +234,9 @@ function SectionBlock({
   if (lines.length === 0 && !controls) return null;
   const compacted = compactLines(lines, SECTION_LINE_LIMIT);
   return (
-    <div className="bg-muted/10 rounded-md px-2 py-1.5">
+    <div className="bg-muted/10 rounded-lg px-2.5 py-2">
       {title ? (
-        <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+        <span className="text-muted-foreground text-xs font-medium">
           {title}
         </span>
       ) : null}
@@ -239,6 +254,7 @@ function SectionBlock({
 
 function PostStatusBlock({
   postStatusSummaryInline,
+  postStatusRecyclableMeta,
   contentSummaryLines = [],
   sessionStrip,
   publishPath,
@@ -247,6 +263,7 @@ function PostStatusBlock({
   warnings,
 }: {
   postStatusSummaryInline?: string;
+  postStatusRecyclableMeta?: string;
   contentSummaryLines?: string[];
   sessionStrip?: PublishingSessionStripProps;
   publishPath: PublishPathSummary;
@@ -263,8 +280,8 @@ function PostStatusBlock({
   const summaryLine = postStatusSummaryInline ?? fallbackInline;
 
   return (
-    <div className="border-border bg-muted/10 rounded-md border px-2 py-2">
-      <p className="text-muted-foreground mb-1.5 text-[11px] font-semibold tracking-wide uppercase">
+    <div className="border-border/80 bg-muted/5 rounded-lg border border-dashed px-2.5 py-2.5">
+      <p className="text-muted-foreground mb-2 text-xs font-medium">
         Post status
       </p>
       {summaryLine ? (
@@ -290,6 +307,11 @@ function PostStatusBlock({
           onRelayClick={sessionStrip?.onRelayClick}
         />
       </div>
+      {postStatusRecyclableMeta ? (
+        <p className="text-muted-foreground mb-2 text-[11px] leading-snug">
+          {postStatusRecyclableMeta}
+        </p>
+      ) : null}
       {compactIssues.length === 0 && compactWarnings.length === 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="secondary" className="font-normal">
@@ -303,17 +325,17 @@ function PostStatusBlock({
         </div>
       ) : null}
       {compactIssues.length > 0 ? (
-        <div className="mt-2 space-y-1.5 rounded-md border border-red-300 bg-red-500/10 px-2 py-2 text-xs text-red-800 dark:border-red-900 dark:text-red-200">
-          <p className="font-medium">{readiness.headline}</p>
+        <div className="mt-2 space-y-1.5 rounded-lg border border-red-300/80 bg-red-500/[0.08] px-2.5 py-2 text-xs text-red-800 dark:border-red-900/80 dark:text-red-200">
+          <p className="leading-snug font-semibold">{readiness.headline}</p>
           {compactIssues.map((issue) => (
-            <p key={issue} className="text-[11px] leading-snug">
+            <p key={issue} className="text-[11px] leading-snug opacity-95">
               {issue}
             </p>
           ))}
         </div>
       ) : null}
       {compactWarnings.length > 0 ? (
-        <div className="mt-2 space-y-1 rounded-md border border-amber-200 bg-amber-500/10 px-2 py-2 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200">
+        <div className="mt-2 space-y-1 rounded-lg border border-amber-200/90 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200">
           {compactWarnings.map((warning) => (
             <p key={warning} className="text-[11px] leading-snug">
               {warning}
@@ -336,6 +358,7 @@ function PublishingSummaryRailBody({
   followUpSection,
   threadSettingsSection,
   postStatusSummaryInline,
+  postStatusRecyclableMeta,
   contentSummaryLines = [],
   publishPath,
   issues = [],
@@ -353,40 +376,43 @@ function PublishingSummaryRailBody({
   | "saveStateLabel"
 >) {
   return (
-    <div className="flex flex-col gap-2.5 text-xs">
-      <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+    <div className="flex flex-col gap-0 text-xs">
+      <div className="border-border bg-card overflow-hidden rounded-xl border shadow-sm">
         <PublishingModeFusedHeader
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange}
         />
-        <div className="border-border bg-card border-t px-2.5 py-2">
+        <div className="border-border/60 bg-card border-t px-3 py-2.5">
           <p className="text-foreground text-sm leading-snug font-medium">
             {outcomeSentence}
           </p>
         </div>
+        <div className="border-border/60 space-y-3 border-t px-3 py-3">
+          {threadSettingsSection ? (
+            <SectionBlock {...threadSettingsSection} />
+          ) : null}
+          {modeSpecificSection ? (
+            <SectionBlock {...modeSpecificSection} />
+          ) : null}
+          {followUp ? (
+            <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
+              {followUp.children}
+            </FollowUpRailCollapsible>
+          ) : followUpSection ? (
+            <SectionBlock {...followUpSection} />
+          ) : null}
+          <PostStatusBlock
+            postStatusSummaryInline={postStatusSummaryInline}
+            postStatusRecyclableMeta={postStatusRecyclableMeta}
+            contentSummaryLines={contentSummaryLines}
+            sessionStrip={sessionStrip}
+            publishPath={publishPath}
+            readiness={readiness}
+            issues={issues}
+            warnings={warnings}
+          />
+        </div>
       </div>
-
-      {threadSettingsSection ? (
-        <SectionBlock {...threadSettingsSection} />
-      ) : null}
-      {modeSpecificSection ? <SectionBlock {...modeSpecificSection} /> : null}
-      {followUp ? (
-        <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
-          {followUp.children}
-        </FollowUpRailCollapsible>
-      ) : followUpSection ? (
-        <SectionBlock {...followUpSection} />
-      ) : null}
-
-      <PostStatusBlock
-        postStatusSummaryInline={postStatusSummaryInline}
-        contentSummaryLines={contentSummaryLines}
-        sessionStrip={sessionStrip}
-        publishPath={publishPath}
-        readiness={readiness}
-        issues={issues}
-        warnings={warnings}
-      />
     </div>
   );
 }
@@ -420,36 +446,38 @@ function PublishingSummaryRailActions({
   const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
 
   return (
-    <div className="border-border bg-card mt-2 shrink-0 space-y-2 rounded-lg border p-2 shadow-sm">
+    <div className="border-border mt-2 shrink-0 overflow-hidden rounded-xl border shadow-sm">
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="space-y-1">
+        <div className="border-border/80 bg-muted/30 space-y-1 border-b px-2.5 py-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-9 w-full text-xs"
+            className="h-9 w-full text-xs font-medium"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
             {secondaryActionLabel}
           </Button>
           {footerSaveHelper ? (
-            <p className="text-muted-foreground px-0.5 text-center text-[11px] leading-snug">
+            <p className="text-muted-foreground text-center text-[11px] leading-snug">
               {footerSaveHelper}
             </p>
           ) : null}
         </div>
       ) : null}
-      <Button
-        type="button"
-        size="sm"
-        variant="default"
-        className="h-10 w-full text-xs font-semibold"
-        onClick={onPrimaryAction}
-        disabled={Boolean(primaryActionDisabled) || showLoading}
-      >
-        {label}
-      </Button>
+      <div className="bg-primary p-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 w-full border-0 text-xs font-semibold shadow-none"
+          onClick={onPrimaryAction}
+          disabled={Boolean(primaryActionDisabled) || showLoading}
+        >
+          {label}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -470,6 +498,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
     followUpSection: props.followUpSection,
     threadSettingsSection: props.threadSettingsSection,
     postStatusSummaryInline: props.postStatusSummaryInline,
+    postStatusRecyclableMeta: props.postStatusRecyclableMeta,
     contentSummaryLines: props.contentSummaryLines,
     publishPath: props.publishPath,
     issues: props.issues,
@@ -479,27 +508,29 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   return (
     <>
       <aside
-        className="border-border bg-card hidden w-72 shrink-0 self-start rounded-lg border p-2 shadow-md lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col xl:w-80"
+        className="border-border hidden w-72 shrink-0 self-start bg-transparent lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col xl:w-80"
         aria-label="Publish"
       >
-        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-0.5 pr-1">
           <PublishingSummaryRailBody {...bodyProps} />
         </div>
-        <PublishingSummaryRailActions
-          primaryActionLabel={props.primaryActionLabel}
-          onPrimaryAction={props.onPrimaryAction}
-          primaryActionDisabled={props.primaryActionDisabled}
-          primaryActionLoading={props.primaryActionLoading}
-          primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-          secondaryActionLabel={props.secondaryActionLabel}
-          onSecondaryAction={props.onSecondaryAction}
-          secondaryActionDisabled={props.secondaryActionDisabled}
-          footerSaveHelper={
-            props.secondaryActionLabel && props.onSecondaryAction
-              ? footerSaveHelper
-              : undefined
-          }
-        />
+        <div className="shrink-0 px-0.5">
+          <PublishingSummaryRailActions
+            primaryActionLabel={props.primaryActionLabel}
+            onPrimaryAction={props.onPrimaryAction}
+            primaryActionDisabled={props.primaryActionDisabled}
+            primaryActionLoading={props.primaryActionLoading}
+            primaryActionLoadingLabel={props.primaryActionLoadingLabel}
+            secondaryActionLabel={props.secondaryActionLabel}
+            onSecondaryAction={props.onSecondaryAction}
+            secondaryActionDisabled={props.secondaryActionDisabled}
+            footerSaveHelper={
+              props.secondaryActionLabel && props.onSecondaryAction
+                ? footerSaveHelper
+                : undefined
+            }
+          />
+        </div>
       </aside>
 
       <div className="lg:hidden">

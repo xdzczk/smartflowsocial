@@ -6,6 +6,11 @@ export const ALLOWED_SCHEDULE_INTERVAL_HOURS: number[] = [
   0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 24,
 ];
 
+/** Fixed quick-pick intervals used by composer schedule pills. */
+export const COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS: number[] = [
+  0.25, 0.5, 1, 3, 24,
+];
+
 /**
  * Returns true if the value is an allowed schedule interval (0.25, 0.5, or a positive integer).
  */
@@ -26,7 +31,7 @@ export function formatIntervalLabel(
   const prefix = options?.compact ? "+" : "";
   if (hours < 1) {
     const minutes = Math.round(hours * 60);
-    return `${prefix}${minutes} min`;
+    return options?.compact ? `${prefix}${minutes}m` : `${minutes} min`;
   }
   if (options?.compact) {
     return `${prefix}${hours}h`;

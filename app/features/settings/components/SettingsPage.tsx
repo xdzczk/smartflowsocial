@@ -19,7 +19,6 @@ import {
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
-import { ScheduleIntervalsSettings } from "~/features/posts/scheduling";
 import {
   type HashTagPreset,
   type QueueType,
@@ -306,7 +305,6 @@ export default function SettingsPage() {
     managedRelays?: unknown;
     relayAcks?: unknown;
     giveawayBlacklist?: unknown;
-    scheduleIntervals?: unknown;
     queueTypes?: unknown;
     uploadProvider?: unknown;
     customBlossomUrl?: unknown;
@@ -359,7 +357,6 @@ export default function SettingsPage() {
     managedRelays,
     relayAcks,
     giveawayBlacklist,
-    scheduleIntervals,
     queueTypes: queueTypesRaw,
     uploadProvider,
     customBlossomUrl,
@@ -469,7 +466,6 @@ export default function SettingsPage() {
   const managedRelaysList = parseManagedRelays(managedRelays);
   const relayAcksMap = parseRelayAcksMap(relayAcks);
   const giveawayBlacklistList = asStringArray(giveawayBlacklist);
-  const scheduleIntervalsList = asStringArray(scheduleIntervals);
   const uploadProviderValue = asStringOrUndefined(uploadProvider) ?? "";
   const customBlossomUrlValue = asStringOrNull(customBlossomUrl);
   const enableMirrorBlossomValue = asBoolean(enableMirrorBlossom);
@@ -573,9 +569,6 @@ export default function SettingsPage() {
               customNostrClientBaseUrl={asStringOrNull(
                 customNostrClientBaseUrlRaw
               )}
-            />
-            <ScheduleIntervalsSettings
-              scheduleIntervals={scheduleIntervalsList}
             />
             <NotificationSettings
               pushNotificationsEnabled={asBoolean(

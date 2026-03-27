@@ -8,7 +8,6 @@ import { describe, it, expect } from "vitest";
 import {
   updateRelaysClientSchema,
   updateTimezoneClientSchema,
-  updateScheduleIntervalsClientSchema,
   updateBlacklistClientSchema,
   createHashtagPresetClientSchema,
   updateHashtagPresetClientSchema,
@@ -43,15 +42,6 @@ describe("settings.client.schemas", () => {
       expect(() =>
         updateTimezoneClientSchema.parse({ timezone: "" })
       ).toThrow();
-    });
-  });
-
-  describe("updateScheduleIntervalsClientSchema", () => {
-    it("accepts array of strings", () => {
-      const result = updateScheduleIntervalsClientSchema.parse({
-        scheduleIntervals: ["1", "2"],
-      });
-      expect(result.scheduleIntervals).toEqual(["1", "2"]);
     });
   });
 

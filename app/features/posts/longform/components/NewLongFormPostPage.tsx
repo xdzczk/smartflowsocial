@@ -13,6 +13,7 @@ import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { CreateComposerShell } from "~/features/posts/composer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
+import { DraftPickerModal } from "~/features/posts/drafts";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
 import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -273,6 +274,8 @@ export default function NewLongFormPostPage() {
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
+  const [draftTemplatesPickerOpen, setDraftTemplatesPickerOpen] =
+    useState(false);
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -360,36 +363,6 @@ export default function NewLongFormPostPage() {
       }}
       title={initialTemplateData ? "Edit article draft" : "Create article"}
     >
-      {templatesRaw.length > 0 ? (
-        <div className="mb-4 flex items-center gap-2">
-          <label
-            htmlFor="load-template-longform"
-            className="text-muted-foreground text-sm"
-          >
-            Load template:
-          </label>
-          <select
-            id="load-template-longform"
-            className="border-input bg-background rounded-md border px-2 py-1.5 text-sm"
-            value=""
-            onChange={(e) => {
-              const id = e.target.value;
-              if (id)
-                navigate(
-                  `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
-                );
-            }}
-          >
-            <option value="">— Choose —</option>
-            {templatesRaw.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name ?? "Unnamed template"}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
-
       <ErrorMessage
         error={getActionErrorMessage(actionData)}
         success={
@@ -431,8 +404,24 @@ export default function NewLongFormPostPage() {
           selectedHashtags={selectedHashtags}
           onHashtagPresetChange={handleHashtagPresetSelect}
           skipLocalDraftRestore={Boolean(publishResultToken)}
+          showDraftTemplatesPicker
+          onOpenDraftTemplatesPicker={() => setDraftTemplatesPickerOpen(true)}
         />
       </Form>
+
+      <DraftPickerModal
+        open={draftTemplatesPickerOpen}
+        onClose={() => setDraftTemplatesPickerOpen(false)}
+        type="longform"
+        onSelect={(id) => navigate(`/dashboard/drafts/longform/edit/${id}`)}
+        draftsAndTemplates={{
+          templates: templatesRaw,
+          onSelectTemplate: (templateId) =>
+            navigate(
+              `/dashboard/compose?type=article&templateId=${encodeURIComponent(templateId)}`
+            ),
+        }}
+      />
 
       <LongFormPreviewModal
         isOpen={showPreviewModal}

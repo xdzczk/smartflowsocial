@@ -30,6 +30,7 @@ function getTitle(
   if (currentTab === "posts") return `${prefix} Posts`;
   if (currentTab === "reposts") return `${prefix} Reposts`;
   if (currentTab === "polls") return `${prefix} Polls`;
+  if (currentTab === "threads") return `${prefix} Threads`;
   return `${prefix} Articles`;
 }
 

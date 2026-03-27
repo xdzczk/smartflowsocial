@@ -1,22 +1,40 @@
 import { useFetcher } from "@remix-run/react";
-import { FileText, List } from "lucide-react";
-import { useEffect } from "react";
+import { FileText, LayoutTemplate, List } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+
+import { isThreadDraftPost } from "../utils/draft-post-classification";
 
 export type DraftPickerType = "short" | "longform" | "bulk";
+
+export type ShortDraftFilter = "all" | "poll" | "thread";
+
+export interface DraftsAndTemplatesPickerOptions {
+  templates: Array<{ id: string; name: string | null }>;
+  onSelectTemplate: (id: string) => void;
+  /** When true, only the templates list is shown (e.g. poll composer). */
+  templatesOnly?: boolean;
+}
 
 interface DraftPickerModalProps {
   open: boolean;
   onClose: () => void;
   type: DraftPickerType;
-  onSelect: (id: string) => void;
+  /** Called when a draft is chosen (omit when `draftsAndTemplates.templatesOnly` is true). */
+  onSelect?: (id: string) => void;
+  /** When set, user can switch between drafts and saved templates. */
+  draftsAndTemplates?: DraftsAndTemplatesPickerOptions;
+  /** When `type` is short, limit listed drafts (default: all). */
+  shortDraftFilter?: ShortDraftFilter;
 }
 
 function previewText(text: string | null | undefined, maxLen: number): string {
@@ -30,124 +48,237 @@ export function DraftPickerModal({
   onClose,
   type,
   onSelect,
+  draftsAndTemplates,
+  shortDraftFilter = "all",
 }: DraftPickerModalProps) {
   const fetcher = useFetcher<{
     posts?: Array<{
       id: string;
       caption?: string | null;
       content?: string | null;
+      postType?: string;
+      postKind?: string;
+      draftMeta?: unknown;
     }>;
     longformPosts?: Array<{ id: string; title?: string | null }>;
     bulkDraftGroups?: Array<{ id: string; postCount: number }>;
   }>();
 
+  const [activeTab, setActiveTab] = useState<"drafts" | "templates">("drafts");
+
+  const skipDraftsFetch = Boolean(draftsAndTemplates?.templatesOnly);
+
   useEffect(() => {
-    if (open && fetcher.state === "idle" && !fetcher.data) {
-      fetcher.load("/dashboard/drafts");
+    if (!open || skipDraftsFetch || fetcher.state !== "idle" || fetcher.data) {
+      return;
     }
+    fetcher.load("/dashboard/drafts");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes; we only want to react to state/data
-  }, [open, fetcher.state, fetcher.data]);
+  }, [open, skipDraftsFetch, fetcher.state, fetcher.data]);
+
+  useEffect(() => {
+    if (open) setActiveTab("drafts");
+  }, [open]);
 
   const data = fetcher.data;
-  const posts = data?.posts ?? [];
+  const postsRaw = data?.posts ?? [];
+  const posts =
+    type === "short" && shortDraftFilter !== "all"
+      ? postsRaw.filter((p) =>
+          shortDraftFilter === "poll"
+            ? p.postType === "POLL"
+            : isThreadDraftPost(p)
+        )
+      : postsRaw;
   const longformPosts = data?.longformPosts ?? [];
   const bulkGroups = data?.bulkDraftGroups ?? [];
 
   const handleSelect = (id: string) => {
-    onSelect(id);
+    onSelect?.(id);
     onClose();
   };
 
-  const title =
+  const handleSelectTemplate = (id: string) => {
+    draftsAndTemplates?.onSelectTemplate(id);
+    onClose();
+  };
+
+  const baseTitle =
     type === "short"
-      ? "Open short draft"
+      ? shortDraftFilter === "poll"
+        ? "Open poll draft"
+        : shortDraftFilter === "thread"
+          ? "Open thread draft"
+          : "Open short draft"
       : type === "longform"
         ? "Open article draft"
         : "Open bulk draft";
+
+  const shortDraftsEmptyLabel =
+    shortDraftFilter === "poll"
+      ? "No poll drafts."
+      : shortDraftFilter === "thread"
+        ? "No thread drafts."
+        : "No short drafts.";
+
+  const dualMode = Boolean(draftsAndTemplates);
+  const templatesOnly = Boolean(draftsAndTemplates?.templatesOnly);
+  const templatesList = draftsAndTemplates?.templates ?? [];
+
+  const dialogTitle = (() => {
+    if (!dualMode) return baseTitle;
+    if (templatesOnly) return "Templates";
+    return "Drafts & templates";
+  })();
+
+  const draftsListContent =
+    type === "short" ? (
+      <ul className="space-y-1">
+        {posts.length === 0 ? (
+          <li className="text-muted-foreground text-sm">
+            {shortDraftsEmptyLabel}
+          </li>
+        ) : (
+          posts.map((p) => (
+            <li key={p.id}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2 font-normal"
+                onClick={() => handleSelect(p.id)}
+              >
+                <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="truncate">
+                  {previewText(p.caption ?? p.content, 60)}
+                </span>
+              </Button>
+            </li>
+          ))
+        )}
+      </ul>
+    ) : type === "longform" ? (
+      <ul className="space-y-1">
+        {longformPosts.length === 0 ? (
+          <li className="text-muted-foreground text-sm">No article drafts.</li>
+        ) : (
+          longformPosts.map((p) => (
+            <li key={p.id}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2 font-normal"
+                onClick={() => handleSelect(p.id)}
+              >
+                <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="truncate">{previewText(p.title, 60)}</span>
+              </Button>
+            </li>
+          ))
+        )}
+      </ul>
+    ) : (
+      <ul className="space-y-1">
+        {bulkGroups.length === 0 ? (
+          <li className="text-muted-foreground text-sm">No bulk drafts.</li>
+        ) : (
+          bulkGroups.map((g) => (
+            <li key={g.id}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2 font-normal"
+                onClick={() => handleSelect(g.id)}
+              >
+                <List className="h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  {g.postCount} {g.postCount === 1 ? "post" : "posts"}
+                </span>
+              </Button>
+            </li>
+          ))
+        )}
+      </ul>
+    );
+
+  const templatesPanel = (
+    <ul className="space-y-1">
+      {templatesList.length === 0 ? (
+        <li className="text-muted-foreground text-sm">No templates yet.</li>
+      ) : (
+        templatesList.map((t) => (
+          <li key={t.id}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start gap-2 font-normal"
+              onClick={() => handleSelectTemplate(t.id)}
+            >
+              <LayoutTemplate className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{t.name ?? "Unnamed template"}</span>
+            </Button>
+          </li>
+        ))
+      )}
+    </ul>
+  );
+
+  const body = (() => {
+    if (dualMode && templatesOnly) {
+      return templatesPanel;
+    }
+    if (dualMode && !templatesOnly) {
+      return (
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "drafts" | "templates")}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="drafts">Drafts</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="drafts"
+            className="mt-3 max-h-[min(50vh,24rem)] overflow-y-auto"
+          >
+            {fetcher.state === "loading" && !data ? (
+              <p className="text-muted-foreground text-sm">Loading drafts…</p>
+            ) : (
+              draftsListContent
+            )}
+          </TabsContent>
+          <TabsContent
+            value="templates"
+            className="mt-3 max-h-[min(50vh,24rem)] overflow-y-auto"
+          >
+            {templatesPanel}
+          </TabsContent>
+        </Tabs>
+      );
+    }
+    return fetcher.state === "loading" && !data ? (
+      <p className="text-muted-foreground text-sm">Loading drafts…</p>
+    ) : (
+      draftsListContent
+    );
+  })();
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          {dualMode && !templatesOnly ? (
+            <DialogDescription>
+              Open a saved draft or load content from a template.
+            </DialogDescription>
+          ) : dualMode && templatesOnly ? (
+            <DialogDescription>
+              Load a saved template into the composer.
+            </DialogDescription>
+          ) : null}
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {fetcher.state === "loading" && !data ? (
-            <p className="text-muted-foreground text-sm">Loading drafts…</p>
-          ) : type === "short" ? (
-            <ul className="space-y-1">
-              {posts.length === 0 ? (
-                <li className="text-muted-foreground text-sm">
-                  No short drafts.
-                </li>
-              ) : (
-                posts.map((p) => (
-                  <li key={p.id}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full justify-start gap-2 font-normal"
-                      onClick={() => handleSelect(p.id)}
-                    >
-                      <FileText className="h-4 w-4 shrink-0" aria-hidden />
-                      <span className="truncate">
-                        {previewText(p.caption ?? p.content, 60)}
-                      </span>
-                    </Button>
-                  </li>
-                ))
-              )}
-            </ul>
-          ) : type === "longform" ? (
-            <ul className="space-y-1">
-              {longformPosts.length === 0 ? (
-                <li className="text-muted-foreground text-sm">
-                  No article drafts.
-                </li>
-              ) : (
-                longformPosts.map((p) => (
-                  <li key={p.id}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full justify-start gap-2 font-normal"
-                      onClick={() => handleSelect(p.id)}
-                    >
-                      <FileText className="h-4 w-4 shrink-0" aria-hidden />
-                      <span className="truncate">
-                        {previewText(p.title, 60)}
-                      </span>
-                    </Button>
-                  </li>
-                ))
-              )}
-            </ul>
-          ) : (
-            <ul className="space-y-1">
-              {bulkGroups.length === 0 ? (
-                <li className="text-muted-foreground text-sm">
-                  No bulk drafts.
-                </li>
-              ) : (
-                bulkGroups.map((g) => (
-                  <li key={g.id}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full justify-start gap-2 font-normal"
-                      onClick={() => handleSelect(g.id)}
-                    >
-                      <List className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>
-                        {g.postCount} {g.postCount === 1 ? "post" : "posts"}
-                      </span>
-                    </Button>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
       </DialogContent>
     </Dialog>
   );

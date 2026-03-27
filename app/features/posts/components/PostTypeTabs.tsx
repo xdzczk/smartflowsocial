@@ -30,12 +30,17 @@ interface PostTypeTabsProps {
   totalLongformCount?: number;
   /** When set, show a fifth "Bulk (n)" tab (e.g. for Drafts page). */
   bulkCount?: number;
+  /** Drafts page: poll drafts count */
+  totalPollsCount?: number;
+  /** Drafts page: thread drafts count */
+  totalThreadsCount?: number;
   /** When true, render without outer border/margin so parent can put queue filter on same line. */
   inRow?: boolean;
   /** When true, always use dropdown (Select) instead of tabs (e.g. in calendar header to save space). */
   forceDropdown?: boolean;
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Tab labels mirror many route tab values */
 export default function PostTypeTabs({
   currentTab,
   allContent = [],
@@ -47,6 +52,8 @@ export default function PostTypeTabs({
   totalRepostsCount,
   totalLongformCount,
   bulkCount,
+  totalPollsCount,
+  totalThreadsCount,
   inRow = false,
   forceDropdown = false,
 }: PostTypeTabsProps) {
@@ -76,6 +83,10 @@ export default function PostTypeTabs({
   const repostsCount = totalRepostsCount ?? 0;
   const longformCount = totalLongformCount ?? longformPosts.length;
   const showBulkTab = bulkCount !== undefined;
+  const showPollsThreadsTabs =
+    totalPollsCount !== undefined && totalThreadsCount !== undefined;
+  const pollsCount = totalPollsCount ?? 0;
+  const threadsCount = totalThreadsCount ?? 0;
 
   const wrapperClass = inRow ? "flex-1 min-w-0" : "border-border mb-6 border-b";
 
@@ -89,13 +100,17 @@ export default function PostTypeTabs({
         ? `All Types (${allCount})`
         : currentTab === "posts"
           ? `Posts (${postsCount})`
-          : currentTab === "longform"
-            ? `Articles (${longformCount})`
-            : currentTab === "reposts"
-              ? `Reposts (${repostsCount})`
-              : showBulkTab && currentTab === "bulk"
-                ? `Bulk (${bulkCount})`
-                : currentTab;
+          : currentTab === "polls"
+            ? `Polls (${pollsCount})`
+            : currentTab === "threads"
+              ? `Threads (${threadsCount})`
+              : currentTab === "longform"
+                ? `Articles (${longformCount})`
+                : currentTab === "reposts"
+                  ? `Reposts (${repostsCount})`
+                  : showBulkTab && currentTab === "bulk"
+                    ? `Bulk (${bulkCount})`
+                    : currentTab;
     return (
       <div className={wrapperClass}>
         <Select value={currentTab} onValueChange={handleMobileTabChange}>
@@ -108,6 +123,14 @@ export default function PostTypeTabs({
           <SelectContent>
             <SelectItem value="all">All Types ({allCount})</SelectItem>
             <SelectItem value="posts">Posts ({postsCount})</SelectItem>
+            {showPollsThreadsTabs ? (
+              <>
+                <SelectItem value="polls">Polls ({pollsCount})</SelectItem>
+                <SelectItem value="threads">
+                  Threads ({threadsCount})
+                </SelectItem>
+              </>
+            ) : null}
             <SelectItem value="longform">Articles ({longformCount})</SelectItem>
             <SelectItem value="reposts">Reposts ({repostsCount})</SelectItem>
             {showBulkTab ? (
@@ -134,6 +157,22 @@ export default function PostTypeTabs({
         >
           Posts ({postsCount})
         </Link>
+        {showPollsThreadsTabs ? (
+          <>
+            <Link
+              to={`${basePath}${queueParam}?${searchWithTab("polls")}`}
+              className={getTabClasses(currentTab === "polls")}
+            >
+              Polls ({pollsCount})
+            </Link>
+            <Link
+              to={`${basePath}${queueParam}?${searchWithTab("threads")}`}
+              className={getTabClasses(currentTab === "threads")}
+            >
+              Threads ({threadsCount})
+            </Link>
+          </>
+        ) : null}
         <Link
           to={`${basePath}${queueParam}?${searchWithTab("longform")}`}
           className={getTabClasses(currentTab === "longform")}

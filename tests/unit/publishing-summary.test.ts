@@ -6,6 +6,7 @@ import {
   buildPublishPathLines,
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
+  formatRecyclableMetaLine,
   getReadinessLabel,
   getReadinessPresentation,
 } from "~/features/posts/composer/components/composer/publishing-summary";
@@ -94,10 +95,15 @@ describe("publishing summary helpers", () => {
 
   it("formatPostStatusSummaryInline matches rail spec shape", () => {
     expect(formatPostStatusSummaryInline(10, 2, "a b", true)).toBe(
-      "10 chars · 2 media · 2 tags · Recyclable"
+      "10 chars · 2 media · 2 tags"
     );
     expect(formatPostStatusSummaryInline(0, 0, "", false)).toBe(
       "0 chars · 0 media · 0 tags"
     );
+  });
+
+  it("formatRecyclableMetaLine", () => {
+    expect(formatRecyclableMetaLine(true)).toBe("Recyclable: on");
+    expect(formatRecyclableMetaLine(false)).toBe("Recyclable: off");
   });
 });

@@ -10,7 +10,10 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
-import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import {
+  COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
+  formatIntervalLabel,
+} from "~/lib/schedule-intervals";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 interface QueueType {
@@ -56,7 +59,7 @@ export function LongFormPublishingOptions({
   onQueueTypeChange,
   scheduledFor,
   onScheduledForChange,
-  scheduleIntervals,
+  scheduleIntervals: _scheduleIntervals,
   onScheduleIntervalClick,
   onNextSlotClick,
   hashTagPresets,
@@ -219,7 +222,7 @@ export function LongFormPublishingOptions({
                   Next Slot
                 </Button>
               ) : (
-                scheduleIntervals.map((interval) => (
+                COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS.map((interval) => (
                   <Button
                     key={interval}
                     type="button"

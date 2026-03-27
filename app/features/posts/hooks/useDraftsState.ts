@@ -2,11 +2,20 @@ import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
+import {
+  isPollDraftPost,
+  isShortPostDraftForPostsTab,
+  isThreadDraftPost,
+} from "~/features/posts/drafts/utils/draft-post-classification";
+
 import { draftsKeys } from "./useDraftsQuery";
 interface Post {
   id: string;
   caption?: string | null;
   createdAt: string;
+  postType?: string;
+  postKind?: string;
+  draftMeta?: unknown;
   [key: string]: unknown;
 }
 
@@ -79,10 +88,14 @@ export function useDraftsState({
   const filteredPosts = useMemo(() => {
     const byTab =
       currentTab === "posts"
-        ? sortedPosts.filter((p) => !isRepostDraft(p))
-        : currentTab === "reposts"
-          ? sortedPosts.filter((p) => isRepostDraft(p))
-          : sortedPosts;
+        ? sortedPosts.filter((p) => isShortPostDraftForPostsTab(p))
+        : currentTab === "polls"
+          ? sortedPosts.filter((p) => isPollDraftPost(p))
+          : currentTab === "threads"
+            ? sortedPosts.filter((p) => isThreadDraftPost(p))
+            : currentTab === "reposts"
+              ? sortedPosts.filter((p) => isRepostDraft(p))
+              : sortedPosts;
     return byTab.filter((post) =>
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );

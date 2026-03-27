@@ -58,6 +58,7 @@ export {
   formatArticlePostStatusSummaryInline,
   formatPollPostStatusSummaryInline,
   formatPostStatusSummaryInline,
+  formatRecyclableMetaLine,
   formatScheduledForDisplay,
   formatThreadPostStatusSummaryInline,
 } from "./publishing-summary";

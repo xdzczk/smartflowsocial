@@ -19,6 +19,7 @@ export interface UnifiedComposerContentSectionProps {
   disabled: boolean;
   showDraftButton: boolean;
   onOpenDraft: () => void;
+  draftButtonLabel?: string;
   attachments: ComposerAttachment[];
   onRemoveAttachment: (localId: string) => void;
   onAddAttachment: () => void;
@@ -55,6 +56,7 @@ export function UnifiedComposerContentSection({
   disabled,
   showDraftButton,
   onOpenDraft,
+  draftButtonLabel,
   attachments,
   onRemoveAttachment,
   onAddAttachment,
@@ -91,6 +93,7 @@ export function UnifiedComposerContentSection({
         disabled={disabled}
         showDraftButton={showDraftButton}
         onOpenDraft={onOpenDraft}
+        draftButtonLabel={draftButtonLabel}
       />
       <ComposerMediaField
         attachments={attachments}

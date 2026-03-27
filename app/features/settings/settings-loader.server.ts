@@ -28,7 +28,6 @@ import {
   getConfirmedChildrenForParent,
   getGiveawayBlacklist,
   getPendingChildrenForParent,
-  getScheduleInterval,
   getShowHashTagsInPosts,
   getUserBasicInfo,
   getUserBlastrRelayEnabled,
@@ -90,7 +89,6 @@ export interface SettingsLoaderData {
   >;
   showHashTagsInPosts: boolean;
   giveawayBlacklist: string[];
-  scheduleIntervals: string[];
   queueTypes: QueueType[];
   uploadProvider: string;
   customBlossomUrl: string | null;
@@ -249,7 +247,6 @@ export async function loadSettingsData(
     effectiveWriteRelays,
     giveawayBlacklist,
     showHashTagsInPosts,
-    scheduleIntervals,
     queueTypes,
     uploadProviderSettings,
     enableMirrorBlossom,
@@ -273,7 +270,6 @@ export async function loadSettingsData(
     getEffectiveWriteRelays(userId),
     getGiveawayBlacklist(userId),
     getShowHashTagsInPosts(userId),
-    getScheduleInterval(userId),
     getQueueTypes(userId),
     getResolvedUploadProviderSettings(userId),
     getUserEnableMirrorBlossom(userId),
@@ -356,7 +352,6 @@ export async function loadSettingsData(
     relayAcks,
     showHashTagsInPosts,
     giveawayBlacklist,
-    scheduleIntervals,
     queueTypes: queueTypes.map((qt) => ({
       id: qt.id,
       name: qt.name,

@@ -10,7 +10,6 @@ import {
   updateTimezoneSchema,
   updateRelaysSchema,
   updateBlacklistSchema,
-  updateScheduleIntervalsSchema,
   updatePreferredNostrClientSchema,
   createHashtagPresetSchema,
   updateHashtagPresetSchema,
@@ -72,22 +71,6 @@ describe("settings.schemas", () => {
       expect(() =>
         updateBlacklistSchema.parse({
           blacklist: "npub1ok\ninvalid",
-        })
-      ).toThrow();
-    });
-  });
-
-  describe("updateScheduleIntervalsSchema", () => {
-    it("accepts allowed intervals (0.25, 0.5, 1)", () => {
-      const result = updateScheduleIntervalsSchema.parse({
-        scheduleIntervals: "0.25\n0.5\n1\n24",
-      });
-      expect(result.scheduleIntervals).toEqual([0.25, 0.5, 1, 24]);
-    });
-    it("rejects invalid interval", () => {
-      expect(() =>
-        updateScheduleIntervalsSchema.parse({
-          scheduleIntervals: "0.33",
         })
       ).toThrow();
     });

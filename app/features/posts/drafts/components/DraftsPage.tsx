@@ -1,7 +1,13 @@
 import { Outlet, useParams, useSearchParams } from "@remix-run/react";
 import { useState } from "react";
 
-import { useDraftsInfiniteData, useDraftsState } from "~/features/posts/drafts";
+import {
+  isPollDraftPost,
+  isShortPostDraftForPostsTab,
+  isThreadDraftPost,
+  useDraftsInfiniteData,
+  useDraftsState,
+} from "~/features/posts/drafts";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import type {
   CombinedContent,
@@ -66,7 +72,9 @@ export default function DraftsPage() {
   const currentTab = searchParams.get("tab") ?? "all";
 
   const repostsCount = posts.filter((p) => isRepostPost(p)).length;
-  const postsCount = posts.length - repostsCount;
+  const postsCount = posts.filter((p) => isShortPostDraftForPostsTab(p)).length;
+  const pollsCount = posts.filter((p) => isPollDraftPost(p)).length;
+  const threadsCount = posts.filter((p) => isThreadDraftPost(p)).length;
 
   const {
     sortConfig,
@@ -110,6 +118,8 @@ export default function DraftsPage() {
         currentTab={currentTab}
         allContentLength={allContent.length}
         postsCount={postsCount}
+        pollsCount={pollsCount}
+        threadsCount={threadsCount}
         repostsCount={repostsCount}
         longformCount={longformPosts.length}
         bulkCount={bulkDraftGroups.length}
@@ -171,7 +181,9 @@ export default function DraftsPage() {
 
       {(currentTab === "all" ||
         currentTab === "posts" ||
-        currentTab === "reposts") &&
+        currentTab === "reposts" ||
+        currentTab === "polls" ||
+        currentTab === "threads") &&
       selectedPost ? (
         <PostDetailsModal
           post={

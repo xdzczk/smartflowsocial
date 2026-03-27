@@ -2,8 +2,8 @@
  * NIP-88 poll composer (kind 1068): question, options, schedule/publish via newpost action.
  */
 
-import { useFetcher } from "@remix-run/react";
-import { BarChart3, Plus, Trash2 } from "lucide-react";
+import { useFetcher, useNavigate } from "@remix-run/react";
+import { BarChart3, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -15,8 +15,13 @@ import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePan
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
+import { DraftPickerModal } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import type { QueueType } from "~/features/posts/types";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { nowMillis } from "~/lib/temporal";
@@ -34,6 +39,7 @@ import {
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
   formatPollPostStatusSummaryInline,
+  formatRecyclableMetaLine,
   getReadinessPresentation,
   getPollSubmitActionForMode,
   getPrimaryCtaLabelForMode,
@@ -81,6 +87,8 @@ export interface PollComposerProps {
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   skipLocalDraftRestore?: boolean;
+  /** When set (including empty), show "Drafts / Templates" with template-only picker. */
+  composerTemplates?: Array<{ id: string; name: string | null }>;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- poll composer intentionally orchestrates many mode-specific UI states */
@@ -101,9 +109,14 @@ export function PollComposer({
   onPublishModeChange,
   onDraftStateLabelChange,
   skipLocalDraftRestore = false,
+  composerTemplates,
 }: PollComposerProps) {
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const user = useOptionalUser();
+  const draftTemplatesPickerEnabled = composerTemplates !== undefined;
+  const [draftTemplatesPickerOpen, setDraftTemplatesPickerOpen] =
+    useState(false);
   const userTimezone = user?.timezone ?? "UTC";
 
   const [question, setQuestion] = useState("");
@@ -347,7 +360,7 @@ export function PollComposer({
     blockers.push("Publish time is required");
   }
   if (publishMode === "queue" && selectedQueue === "unassigned") {
-    blockers.push("Select a queue");
+    blockers.push("Choose a queue");
   }
   if (timeError) blockers.push(timeError);
   const warnings: string[] = [];
@@ -361,7 +374,6 @@ export function PollComposer({
     `${question.trim().length} characters (question)`,
     `${trimmedOptions.length} options`,
     selectedHashtags.trim() ? `Tags: ${selectedHashtags.trim()}` : "Tags: none",
-    isRecyclable ? "Recyclable: on" : "Recyclable: off",
   ];
   const publishPath = buildPublishPathSummary(
     relayCount,
@@ -513,9 +525,27 @@ export function PollComposer({
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
-        <div className="text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium">
-          <BarChart3 className="h-4 w-4" aria-hidden />
-          NIP-88 poll
+        <div className="text-muted-foreground mb-4 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" aria-hidden />
+            NIP-88 poll
+          </div>
+          {draftTemplatesPickerEnabled ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDraftTemplatesPickerOpen(true)}
+              aria-label="Drafts / Templates"
+            >
+              <FolderOpen
+                className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+              Drafts / Templates
+            </Button>
+          ) : null}
         </div>
         <div className="space-y-6">
           <ComposerErrors
@@ -737,16 +767,13 @@ export function PollComposer({
         }}
         modeSpecificSection={
           publishMode === "now"
-            ? {
-                title: "Timing",
-                lines: ["Immediate"],
-              }
+            ? undefined
             : {
                 title: publishMode === "queue" ? "Queue" : "Schedule",
                 lines:
                   publishMode === "queue"
                     ? [
-                        "Timing is set by your queue when you publish.",
+                        "Timing follows your queue rules.",
                         ...(selectedQueueType &&
                         typeof selectedQueueType === "object" &&
                         (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
@@ -812,6 +839,7 @@ export function PollComposer({
               }
         }
         postStatusSummaryInline={postStatusSummaryInline}
+        postStatusRecyclableMeta={formatRecyclableMetaLine(isRecyclable)}
         contentSummaryLines={contentSummaryLines}
         publishPath={publishPath}
         issues={blockers}
@@ -855,6 +883,26 @@ export function PollComposer({
         }}
         secondaryActionDisabled={disabled}
       />
+      {draftTemplatesPickerEnabled ? (
+        <DraftPickerModal
+          open={draftTemplatesPickerOpen}
+          onClose={() => setDraftTemplatesPickerOpen(false)}
+          type="short"
+          shortDraftFilter="poll"
+          onSelect={(id) =>
+            navigate(
+              `/dashboard/compose?type=poll&draftId=${encodeURIComponent(id)}`
+            )
+          }
+          draftsAndTemplates={{
+            templates: composerTemplates,
+            onSelectTemplate: (templateId) =>
+              navigate(
+                `/dashboard/compose?type=poll&templateId=${encodeURIComponent(templateId)}`
+              ),
+          }}
+        />
+      ) : null}
     </div>
   );
 }

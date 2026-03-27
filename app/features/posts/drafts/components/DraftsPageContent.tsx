@@ -24,6 +24,8 @@ export interface DraftsPageContentProps {
   currentTab: string;
   allContentLength: number;
   postsCount: number;
+  pollsCount: number;
+  threadsCount: number;
   repostsCount: number;
   longformCount: number;
   bulkCount: number;
@@ -69,6 +71,8 @@ export function DraftsPageContent({
   currentTab,
   allContentLength,
   postsCount,
+  pollsCount,
+  threadsCount,
   repostsCount,
   longformCount,
   bulkCount,
@@ -105,6 +109,8 @@ export function DraftsPageContent({
   const showQueueTabs =
     currentTab === "all" ||
     currentTab === "posts" ||
+    currentTab === "polls" ||
+    currentTab === "threads" ||
     currentTab === "reposts" ||
     currentTab === "longform";
 
@@ -117,6 +123,8 @@ export function DraftsPageContent({
             basePath="/dashboard/drafts"
             totalContentCount={allContentLength}
             totalPostsCount={postsCount}
+            totalPollsCount={pollsCount}
+            totalThreadsCount={threadsCount}
             totalRepostsCount={repostsCount}
             totalLongformCount={longformCount}
             bulkCount={bulkCount}
@@ -146,6 +154,8 @@ export function DraftsPageContent({
             basePath="/dashboard/drafts"
             totalContentCount={allContentLength}
             totalPostsCount={postsCount}
+            totalPollsCount={pollsCount}
+            totalThreadsCount={threadsCount}
             totalRepostsCount={repostsCount}
             totalLongformCount={longformCount}
             bulkCount={bulkCount}
@@ -183,7 +193,12 @@ export function DraftsPageContent({
     );
   }
 
-  if (currentTab === "posts" || currentTab === "reposts") {
+  if (
+    currentTab === "posts" ||
+    currentTab === "reposts" ||
+    currentTab === "polls" ||
+    currentTab === "threads"
+  ) {
     return (
       <>
         <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
@@ -192,6 +207,8 @@ export function DraftsPageContent({
             basePath="/dashboard/drafts"
             totalContentCount={allContentLength}
             totalPostsCount={postsCount}
+            totalPollsCount={pollsCount}
+            totalThreadsCount={threadsCount}
             totalRepostsCount={repostsCount}
             totalLongformCount={longformCount}
             bulkCount={bulkCount}
@@ -255,6 +272,8 @@ export function DraftsPageContent({
           basePath="/dashboard/drafts"
           totalContentCount={allContentLength}
           totalPostsCount={postsCount}
+          totalPollsCount={pollsCount}
+          totalThreadsCount={threadsCount}
           totalRepostsCount={repostsCount}
           totalLongformCount={longformCount}
           bulkCount={bulkCount}

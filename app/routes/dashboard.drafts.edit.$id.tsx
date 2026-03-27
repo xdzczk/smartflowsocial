@@ -6,14 +6,33 @@ import {
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { handleDraftEditAction } from "~/features/posts/server/drafts";
+import { isPollDraftPost, isThreadDraftPost } from "~/features/posts/drafts";
+import {
+  handleDraftEditAction,
+  loadDraftEditData,
+} from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requireUserId(request);
+  const userId = await requireUserId(request);
   const postId = params["id"]!;
 
-  // Redirect to newpost composer with draft so short drafts open in UnifiedComposer
-  return redirect(`/dashboard/compose?type=post&draftId=${postId}`);
+  try {
+    const { post } = await loadDraftEditData(userId, postId);
+    const composeType = isPollDraftPost(post)
+      ? "poll"
+      : isThreadDraftPost(post)
+        ? "thread"
+        : "post";
+    return redirect(
+      `/dashboard/compose?type=${encodeURIComponent(composeType)}&draftId=${encodeURIComponent(postId)}`
+    );
+  } catch (e) {
+    if (e instanceof Response) {
+      return e;
+    }
+    return redirect("/dashboard/drafts");
+  }
 }
 
 export const action = withCSRFProtection(

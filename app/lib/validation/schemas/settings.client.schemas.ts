@@ -29,14 +29,6 @@ export const updateTimezoneClientSchema = z.object({
 });
 
 /**
- * Schedule intervals update schema for client-side forms
- * Works with array of strings (converted to numbers on submit)
- */
-export const updateScheduleIntervalsClientSchema = z.object({
-  scheduleIntervals: z.array(z.string()),
-});
-
-/**
  * Blacklist update schema for client-side forms
  * Works with array of strings directly
  */

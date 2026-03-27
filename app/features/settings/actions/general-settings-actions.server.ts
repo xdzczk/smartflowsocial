@@ -6,7 +6,6 @@ import { json } from "@remix-run/node";
 
 import {
   updateGiveawayBlacklist,
-  updateScheduleInterval,
   updateUserPushNotificationPreferences,
   updateUserRelays,
   updateUserBlastrRelayEnabled,
@@ -23,7 +22,6 @@ import {
   updateTimezoneSchema,
   updateRelaysSchema,
   updateBlacklistSchema,
-  updateScheduleIntervalsSchema,
   updatePreferredNostrClientSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
@@ -143,19 +141,6 @@ export async function handleGeneralSettingsAction(
     const result = validateFormDataOrRespond(formData, updateBlacklistSchema);
     if (!result.success) return result.response;
     await updateGiveawayBlacklist(userId, result.data.blacklist);
-    return json({ success: true });
-  }
-
-  if (action === "update_schedule_intervals") {
-    const result = validateFormDataOrRespond(
-      formData,
-      updateScheduleIntervalsSchema
-    );
-    if (!result.success) return result.response;
-    const intervals = result.data.scheduleIntervals.map((num) =>
-      num.toString()
-    );
-    await updateScheduleInterval(userId, intervals);
     return json({ success: true });
   }
 

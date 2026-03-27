@@ -393,35 +393,6 @@ export default function NewPostPage() {
       title={title}
     >
       <div>
-        {templates.length > 0 ? (
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="load-template-post"
-              className="text-muted-foreground text-sm"
-            >
-              Templates:
-            </label>
-            <select
-              id="load-template-post"
-              className="border-input bg-background rounded-md border px-2 py-1.5 text-sm"
-              value=""
-              onChange={(e) => {
-                const id = e.target.value;
-                if (id)
-                  navigate(
-                    `/dashboard/compose?templateId=${encodeURIComponent(id)}`
-                  );
-              }}
-            >
-              <option value="">Choose template</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name ?? "Unnamed template"}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
         {relaySelectorOpen ? (
           <RelaySelectorModal
             defaultRelays={defaultRelays}
@@ -460,6 +431,7 @@ export default function NewPostPage() {
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
             skipLocalDraftRestore={Boolean(publishResultToken)}
+            composerTemplates={templates}
           />
         ) : (
           <UnifiedComposer
@@ -493,6 +465,7 @@ export default function NewPostPage() {
             newPostContentTab={composerTab === "thread" ? "thread" : "post"}
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
+            composerTemplates={templates}
           />
         )}
 

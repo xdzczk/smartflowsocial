@@ -17,7 +17,15 @@ export {
 export {
   DraftPickerModal,
   type DraftPickerType,
+  type DraftsAndTemplatesPickerOptions,
+  type ShortDraftFilter,
 } from "./components/DraftPickerModal";
+export {
+  isPollDraftPost,
+  isThreadDraftPost,
+  isShortPostDraftForPostsTab,
+  isRepostDraftPost,
+} from "./utils/draft-post-classification";
 
 // Re-export hooks from parent so consumers can use ~/features/posts/drafts or ~/features/posts/ui
 export {

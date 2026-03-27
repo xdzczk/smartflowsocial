@@ -55,7 +55,7 @@ export function QueueSelector({
         disabled={disabled}
       >
         <SelectTrigger id="queue-type-select" className="w-full">
-          <SelectValue placeholder="Select queue" />
+          <SelectValue placeholder="Choose a queue" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__unassigned__">No queue</SelectItem>

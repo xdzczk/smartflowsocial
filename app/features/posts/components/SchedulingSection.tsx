@@ -1,7 +1,10 @@
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import {
+  COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
+  formatIntervalLabel,
+} from "~/lib/schedule-intervals";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import type { QueueType } from "../types";
@@ -23,7 +26,7 @@ interface SchedulingSectionProps {
 export function SchedulingSection({
   scheduledFor,
   onScheduledForChange,
-  scheduleIntervals,
+  scheduleIntervals: _scheduleIntervals,
   queueTypes,
   selectedQueue,
   onScheduleIntervalClick,
@@ -81,7 +84,7 @@ export function SchedulingSection({
             Next Slot
           </Button>
         ) : (
-          scheduleIntervals.map((interval) => (
+          COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS.map((interval) => (
             <Button
               key={interval}
               type="button"

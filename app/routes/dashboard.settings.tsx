@@ -36,7 +36,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       managedRelays: [],
       relayAcks: {},
       giveawayBlacklist: [],
-      scheduleIntervals: [],
       queueTypes: [],
       uploadProvider: null,
       enableMirrorBlossom: false,

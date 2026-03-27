@@ -5,6 +5,7 @@
  */
 
 import { useFetcher, useNavigate } from "@remix-run/react";
+import { FolderOpen } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -24,10 +25,17 @@ import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePan
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
-import { DraftPickerModal } from "~/features/posts/drafts";
+import {
+  DraftPickerModal,
+  type ShortDraftFilter,
+} from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
@@ -60,6 +68,7 @@ import {
   buildComposerContentSummaryLines,
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
+  formatRecyclableMetaLine,
   formatThreadPostStatusSummaryInline,
   getQueueNextSlotLabel,
 } from "./composer";
@@ -126,6 +135,16 @@ export interface UnifiedComposerProps {
   localDraftStorageKey?: string;
   /** Base path for "Drafts" navigation (default: /dashboard/compose). */
   draftPickerNavigateBase?: string;
+  /**
+   * When set (including empty array), the Drafts control opens a combined
+   * drafts + templates picker and the button label becomes "Drafts / Templates".
+   */
+  composerTemplates?: Array<{ id: string; name: string | null }>;
+  /**
+   * When opening the short draft list, limit to poll or thread-shaped drafts.
+   * Defaults to thread-only when `newPostContentTab` is `thread`, else all.
+   */
+  shortDraftFilter?: ShortDraftFilter;
   /** When set, sends `_embedContext` so newpost action can return JSON instead of redirecting. */
   embedContext?: "contest";
   /** Called after a successful publish when `embedContext` is set (JSON response from server). */
@@ -174,10 +193,18 @@ export function UnifiedComposer({
   onPublishModeChange,
   onDraftStateLabelChange,
   onRelayClick,
+  composerTemplates,
+  shortDraftFilter: shortDraftFilterProp,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
+  const draftTemplatesPickerEnabled = composerTemplates !== undefined;
+  const draftButtonLabel = draftTemplatesPickerEnabled
+    ? "Drafts / Templates"
+    : "Drafts";
+  const shortDraftFilter: ShortDraftFilter =
+    shortDraftFilterProp ?? (newPostContentTab === "thread" ? "thread" : "all");
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
   const isContestLite =
@@ -835,7 +862,7 @@ export function UnifiedComposer({
     publishBlockers.push("Publish time is required");
   }
   if (publishMode === "queue" && selectedQueue === "unassigned") {
-    publishBlockers.push("Select a queue");
+    publishBlockers.push("Choose a queue");
   }
   const publishWarnings: string[] = [];
   const relayCount =
@@ -869,7 +896,6 @@ export function UnifiedComposer({
         selectedHashtags.trim()
           ? `Tags: ${selectedHashtags.trim()}`
           : "Tags: none",
-        isRecyclableVal ? "Recyclable: on" : "Recyclable: off",
       ]
     : buildComposerContentSummaryLines(
         content.length,
@@ -1053,6 +1079,25 @@ export function UnifiedComposer({
           </DialogContent>
         </Dialog>
         <div className="my-8">
+          {isThreadMode && draftTemplatesPickerEnabled && !isTemplateMode ? (
+            <div className="mb-3 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDraftPickerOpen(true)}
+                disabled={disabled}
+                aria-label={draftButtonLabel}
+              >
+                <FolderOpen
+                  className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                {draftButtonLabel}
+              </Button>
+            </div>
+          ) : null}
           <UnifiedComposerContentSection
             isThreadMode={isThreadMode}
             content={
@@ -1064,6 +1109,7 @@ export function UnifiedComposer({
             disabled={disabled}
             showDraftButton={!isTemplateMode}
             onOpenDraft={() => setDraftPickerOpen(true)}
+            draftButtonLabel={draftButtonLabel}
             attachments={attachments}
             onRemoveAttachment={handleRemoveAttachment}
             onAddAttachment={handleAddAttachment}
@@ -1235,16 +1281,13 @@ export function UnifiedComposer({
           }}
           modeSpecificSection={
             publishMode === "now"
-              ? {
-                  title: "Timing",
-                  lines: ["Immediate"],
-                }
+              ? undefined
               : {
                   title: publishMode === "queue" ? "Queue" : "Schedule",
                   lines:
                     publishMode === "queue"
                       ? [
-                          "Timing is set by your queue when you publish.",
+                          "Timing follows your queue rules.",
                           ...(selectedQueueType &&
                           typeof selectedQueueType === "object" &&
                           (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
@@ -1322,6 +1365,7 @@ export function UnifiedComposer({
             ),
           }}
           postStatusSummaryInline={postStatusSummaryInline}
+          postStatusRecyclableMeta={formatRecyclableMetaLine(isRecyclableVal)}
           contentSummaryLines={contentSummaryLines}
           publishPath={publishPath}
           threadSettingsSection={
@@ -1380,6 +1424,22 @@ export function UnifiedComposer({
             `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
           );
         }}
+        draftsAndTemplates={
+          draftTemplatesPickerEnabled
+            ? {
+                templates: composerTemplates,
+                onSelectTemplate: (templateId) => {
+                  const separator = draftPickerNavigateBase.includes("?")
+                    ? "&"
+                    : "?";
+                  navigate(
+                    `${draftPickerNavigateBase}${separator}templateId=${encodeURIComponent(templateId)}`
+                  );
+                },
+              }
+            : undefined
+        }
+        shortDraftFilter={shortDraftFilter}
       />
     </div>
   );
