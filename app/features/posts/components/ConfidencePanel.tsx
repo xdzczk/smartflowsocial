@@ -1,8 +1,15 @@
+/**
+ * Composer publish rail: delivery, validation, and primary publish actions.
+ * Main composer column = what you publish; this rail = how and when it ships.
+ * New controls: classify as content (main) vs delivery (here) before placing UI.
+ */
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -10,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
+import { Switch } from "~/components/ui/switch";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
 import type {
@@ -36,6 +44,16 @@ export interface PublishingSessionStripProps {
   saveStateLabel: string | null;
 }
 
+/** Recyclable / distribution toggle — lives in the rail only. */
+export interface PublishingRecyclableControlProps {
+  switchId: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+  helperText?: string;
+}
+
 export interface PublishingSummaryRailProps {
   publishMode: ComposerPublishMode;
   onPublishModeChange: (next: ComposerPublishMode) => void;
@@ -53,19 +71,27 @@ export interface PublishingSummaryRailProps {
   /** @deprecated Prefer `followUp` with collapsible summary. */
   followUpSection?: PublishingSummarySection;
   threadSettingsSection?: PublishingSummarySection;
-  /** Single-line summary for Post status; preferred over contentSummaryLines. */
+  /** Distribution: optional delivery extras (grouped with follow-up below). */
+  recyclableControl?: PublishingRecyclableControlProps;
+  /** Single-line content metrics for Ready check (chars · media · tags, etc.). */
   postStatusSummaryInline?: string;
-  /** Shown under system chips (e.g. Recyclable on/off). */
-  postStatusRecyclableMeta?: string;
-  /** Extra bullets under the inline summary (e.g. thread cadence). */
+  /** Follow-up + Recyclable (and similar) for Ready check options row. */
+  publishSummaryOptionsLine?: string;
+  /** Extra detail lines under Content row (e.g. thread cadence). */
   contentSummaryLines?: string[];
   publishPath: PublishPathSummary;
   issues?: string[];
   warnings?: string[];
+  /** Neutral hint when the composer is pristine but not yet publishable (no red). */
+  pristineHint?: string;
+  /** Badge label when there are no red/amber issue rows (e.g. "Draft" vs "Ready"). */
+  idleStatusLabel?: string;
   /** When `sessionStrip` is omitted, passive save text under Save draft. */
   saveStateLabel?: string;
   primaryActionLabel: string;
   onPrimaryAction: () => void;
+  /** Fires when the user activates the primary control while `primaryActionDisabled` (progressive validation). */
+  onPrimaryActionBlocked?: () => void;
   primaryActionDisabled?: boolean;
   /** When true, shows `primaryActionLoadingLabel` on the primary button. */
   primaryActionLoading?: boolean;
@@ -84,6 +110,7 @@ function compactLines(lines: string[], limit: number): string[] {
   return [...lines.slice(0, limit), `+${hiddenCount} more`];
 }
 
+/** Outcome line above Save draft / CTA — single consequence-focused sentence. */
 function deriveActionSummary(
   publishMode: ComposerPublishMode,
   outcomeSentence: string
@@ -91,22 +118,12 @@ function deriveActionSummary(
   const s = outcomeSentence.trim();
   if (!s) {
     return publishMode === "schedule"
-      ? "Schedule not set"
+      ? "Set a publish time to continue"
       : publishMode === "queue"
-        ? "Queue not selected"
-        : "Publishes now";
+        ? "Choose a queue to continue"
+        : "Content required to publish";
   }
-  if (publishMode === "now") {
-    return s
-      .replace(/^Publishes immediately after signing/i, "Publishes now")
-      .replace(/\.$/, "");
-  }
-  if (publishMode === "schedule") {
-    if (/select a publish time/i.test(s)) return "Schedule not set";
-    return s.replace(/^Will publish on/i, "Schedules for").replace(/\.$/, "");
-  }
-  if (/choose a queue/i.test(s)) return "Queue not selected";
-  return s.replace(/^Will be added to/i, "Adds to").replace(/\.$/, "");
+  return s.replace(/\.\s*$/, "");
 }
 
 function PublishingModeFusedHeader({
@@ -130,9 +147,9 @@ function PublishingModeFusedHeader({
 
   return (
     <div
-      role="tablist"
+      role="radiogroup"
       aria-label="Publishing mode"
-      className="bg-muted/25 grid grid-cols-3 overflow-hidden"
+      className="bg-muted/30 grid grid-cols-3 gap-px p-px"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -140,14 +157,14 @@ function PublishingModeFusedHeader({
           <button
             key={m}
             type="button"
-            role="tab"
-            aria-selected={active}
+            role="radio"
+            aria-checked={active}
             aria-label={ariaLabels[m]}
             className={cn(
-              "border-border/70 min-h-[44px] border-r px-1 py-2.5 text-center text-xs transition-colors last:border-r-0",
+              "min-h-[44px] px-1 py-2 text-center text-xs transition-all",
               active
-                ? "bg-card text-foreground relative z-[1] font-semibold"
-                : "text-muted-foreground bg-muted/20 hover:bg-muted/45 hover:text-foreground border-b"
+                ? "bg-card text-foreground ring-border/80 font-semibold ring-1 shadow-sm"
+                : "text-muted-foreground/75 hover:text-foreground bg-transparent"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -199,16 +216,14 @@ function FollowUpRailCollapsible({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-border/70 bg-muted/[0.04] rounded-lg border">
+    <div>
       <button
         type="button"
-        className="hover:bg-muted/25 flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs"
+        className="hover:bg-muted/30 flex w-full items-center gap-2 rounded-sm px-1 py-1 text-left text-xs"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="text-foreground shrink-0 font-medium">
-          Follow-up actions
-        </span>
+        <span className="text-foreground shrink-0 font-medium">Follow-up</span>
         <span className="text-muted-foreground min-w-0 flex-1 truncate text-right">
           {summaryLine}
         </span>
@@ -233,10 +248,81 @@ function FollowUpRailCollapsible({
         )}
       </button>
       {open ? (
-        <div className="border-border/70 border-t px-2.5 py-1.5">
+        <div className="border-border/50 mt-1 border-t pt-1.5 pl-1">
           {children}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function RecyclableRailRow(props: PublishingRecyclableControlProps) {
+  const {
+    switchId,
+    checked,
+    onCheckedChange,
+    disabled,
+    label = "Recyclable",
+    helperText,
+  } = props;
+  return (
+    <div className="flex flex-col gap-0.5 px-1 py-0.5">
+      <div className="flex w-full items-center justify-between gap-2">
+        <Label
+          htmlFor={switchId}
+          className="text-foreground text-xs font-medium"
+        >
+          {label}
+        </Label>
+        <Switch
+          id={switchId}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          disabled={disabled}
+        />
+      </div>
+      {helperText ? (
+        <p className="text-muted-foreground pl-0 text-[10px] leading-snug">
+          {helperText}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DeliveryOptionsSection({
+  followUp,
+  followUpSection,
+  recyclableControl,
+}: {
+  followUp?: { summaryLine: string; children: ReactNode };
+  followUpSection?: PublishingSummarySection;
+  recyclableControl?: PublishingRecyclableControlProps;
+}) {
+  if (!followUp && !followUpSection && !recyclableControl) return null;
+  return (
+    <div className="border-border/60 rounded-md border px-2 py-1.5">
+      <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wide uppercase">
+        Delivery options
+      </p>
+      <div className="space-y-0.5">
+        {followUp ? (
+          <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
+            {followUp.children}
+          </FollowUpRailCollapsible>
+        ) : followUpSection ? (
+          <SectionBlock {...followUpSection} />
+        ) : null}
+        {recyclableControl ? (
+          <RecyclableRailRow
+            {...recyclableControl}
+            helperText={
+              recyclableControl.helperText ??
+              "Include in Recyclables for republishing."
+            }
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -249,7 +335,7 @@ function SectionBlock({
   if (lines.length === 0 && !controls) return null;
   const compacted = compactLines(lines, SECTION_LINE_LIMIT);
   return (
-    <div className="bg-muted/[0.06] rounded-lg px-2.5 py-1.5">
+    <div className="bg-muted/[0.06] rounded-md px-2 py-1">
       {title ? (
         <span className="text-muted-foreground text-xs font-medium">
           {title}
@@ -261,30 +347,49 @@ function SectionBlock({
             {line}
           </p>
         ))}
-        {controls ? <div className="pt-1">{controls}</div> : null}
+        {controls ? <div className="pt-0.5">{controls}</div> : null}
       </div>
+    </div>
+  );
+}
+
+function ReadyCheckRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="text-[11px] leading-snug">
+      <span className="text-muted-foreground font-medium">{label}:</span>{" "}
+      <span className="text-foreground">{children}</span>
     </div>
   );
 }
 
 function PostStatusBlock({
   postStatusSummaryInline,
-  postStatusRecyclableMeta,
+  publishSummaryOptionsLine,
   contentSummaryLines = [],
   sessionStrip,
   publishPath,
   readiness,
   issues,
   warnings,
+  pristineHint,
+  idleStatusLabel,
 }: {
   postStatusSummaryInline?: string;
-  postStatusRecyclableMeta?: string;
+  publishSummaryOptionsLine?: string;
   contentSummaryLines?: string[];
   sessionStrip?: PublishingSessionStripProps;
   publishPath: PublishPathSummary;
   readiness: ReadinessPresentation;
   issues: string[];
   warnings: string[];
+  pristineHint?: string;
+  idleStatusLabel?: string;
 }) {
   const compactIssues = compactLines(issues, ISSUE_LINE_LIMIT);
   const compactWarnings = compactLines(warnings, ISSUE_LINE_LIMIT);
@@ -292,51 +397,62 @@ function PostStatusBlock({
     contentSummaryLines.length > 0
       ? contentSummaryLines.slice(0, 3).join(" · ")
       : null;
-  const summaryLine = postStatusSummaryInline ?? fallbackInline;
+  const contentValue = postStatusSummaryInline ?? fallbackInline ?? "—";
 
   return (
-    <div className="border-border/70 bg-muted/[0.03] rounded-lg border px-2.5 py-2">
-      <p className="text-muted-foreground mb-2 text-xs font-medium">
-        Post status
+    <div className="border-border/60 rounded-md border px-2 py-1.5">
+      <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wide uppercase">
+        Ready check
       </p>
-      {summaryLine ? (
-        <p className="text-foreground mb-2 text-xs leading-snug">
-          {summaryLine}
-        </p>
-      ) : null}
-      {contentSummaryLines.length > 3 ? (
-        <ul className="text-muted-foreground mb-2 space-y-0.5 text-[11px] leading-snug">
-          {contentSummaryLines.slice(3).map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      ) : null}
-      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-        <DestinationChips
-          path={publishPath}
-          onRelayClick={sessionStrip?.onRelayClick}
-        />
+      <div className="space-y-1">
+        <ReadyCheckRow label="Content">{contentValue}</ReadyCheckRow>
+        {contentSummaryLines.length > 3 ? (
+          <ul className="text-muted-foreground ml-0 list-none space-y-0.5 pl-0 text-[10px] leading-snug">
+            {contentSummaryLines.slice(3).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
+          <span className="text-muted-foreground text-[11px] font-medium">
+            Delivery:
+          </span>
+          <DestinationChips
+            path={publishPath}
+            onRelayClick={sessionStrip?.onRelayClick}
+          />
+        </div>
+        {publishSummaryOptionsLine ? (
+          <ReadyCheckRow label="Options">
+            {publishSummaryOptionsLine}
+          </ReadyCheckRow>
+        ) : null}
       </div>
-      {postStatusRecyclableMeta ? (
-        <p className="text-muted-foreground mb-1.5 text-[11px] leading-snug opacity-85">
-          {postStatusRecyclableMeta}
-        </p>
-      ) : null}
       {compactIssues.length === 0 && compactWarnings.length === 0 ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary" className="font-normal">
-            {readiness.tone === "ok" ? "Ready" : readiness.headline}
-          </Badge>
-          {readiness.tone === "ok" ? (
-            <span className="text-muted-foreground text-[11px]">
-              No blocking issues
-            </span>
+        <div className="border-border/50 mt-1.5 space-y-1 border-t pt-1.5">
+          {pristineHint ? (
+            <p className="text-muted-foreground text-[11px] leading-snug">
+              {pristineHint}
+            </p>
           ) : null}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="secondary" className="font-normal">
+              {idleStatusLabel ??
+                (readiness.tone === "ok" ? "Ready" : readiness.headline)}
+            </Badge>
+            {readiness.tone === "ok" && !pristineHint ? (
+              <span className="text-muted-foreground text-[11px]">
+                No blocking issues
+              </span>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {compactIssues.length > 0 ? (
-        <div className="mt-1.5 space-y-1 rounded-lg border border-red-300/85 bg-red-500/[0.08] px-2.5 py-1.5 text-xs text-red-800 dark:border-red-900/80 dark:text-red-200">
-          <p className="leading-snug font-semibold">{readiness.headline}</p>
+        <div className="border-destructive/40 bg-destructive/8 dark:bg-destructive/12 mt-1.5 space-y-1 rounded-md border px-2 py-1.5 text-red-900 dark:border-red-900/70 dark:text-red-100">
+          <p className="text-[11px] leading-snug font-semibold">
+            {readiness.headline}
+          </p>
           {compactIssues.map((issue) => (
             <p key={issue} className="text-[11px] leading-snug opacity-95">
               {issue}
@@ -345,7 +461,8 @@ function PostStatusBlock({
         </div>
       ) : null}
       {compactWarnings.length > 0 ? (
-        <div className="mt-1.5 space-y-1 rounded-lg border border-amber-200/90 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200">
+        <div className="mt-1.5 space-y-1 rounded-md border border-amber-200/90 bg-amber-500/10 px-2 py-1.5 text-amber-950 dark:border-amber-800 dark:text-amber-100">
+          <p className="text-[11px] font-semibold">Missing requirements</p>
           {compactWarnings.map((warning) => (
             <p key={warning} className="text-[11px] leading-snug">
               {warning}
@@ -367,16 +484,20 @@ function PublishingSummaryRailBody({
   followUp,
   followUpSection,
   threadSettingsSection,
+  recyclableControl,
   postStatusSummaryInline,
-  postStatusRecyclableMeta,
+  publishSummaryOptionsLine,
   contentSummaryLines = [],
   publishPath,
   issues = [],
   warnings = [],
+  pristineHint,
+  idleStatusLabel,
 }: Omit<
   PublishingSummaryRailProps,
   | "primaryActionLabel"
   | "onPrimaryAction"
+  | "onPrimaryActionBlocked"
   | "primaryActionDisabled"
   | "primaryActionLoading"
   | "primaryActionLoadingLabel"
@@ -392,10 +513,7 @@ function PublishingSummaryRailBody({
         publishMode={publishMode}
         onPublishModeChange={onPublishModeChange}
       />
-      <div className="space-y-2 px-3 py-2">
-        {threadSettingsSection ? (
-          <SectionBlock {...threadSettingsSection} />
-        ) : null}
+      <div className="space-y-1.5 px-2.5 py-1.5">
         {modeSpecificSection ? (
           <SectionBlock
             title=""
@@ -403,22 +521,25 @@ function PublishingSummaryRailBody({
             controls={modeSpecificSection.controls}
           />
         ) : null}
-        {followUp ? (
-          <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
-            {followUp.children}
-          </FollowUpRailCollapsible>
-        ) : followUpSection ? (
-          <SectionBlock {...followUpSection} />
+        {threadSettingsSection ? (
+          <SectionBlock {...threadSettingsSection} />
         ) : null}
+        <DeliveryOptionsSection
+          followUp={followUp}
+          followUpSection={followUpSection}
+          recyclableControl={recyclableControl}
+        />
         <PostStatusBlock
           postStatusSummaryInline={postStatusSummaryInline}
-          postStatusRecyclableMeta={postStatusRecyclableMeta}
+          publishSummaryOptionsLine={publishSummaryOptionsLine}
           contentSummaryLines={contentSummaryLines}
           sessionStrip={sessionStrip}
           publishPath={publishPath}
           readiness={readiness}
           issues={issues}
           warnings={warnings}
+          pristineHint={pristineHint}
+          idleStatusLabel={idleStatusLabel}
         />
       </div>
     </div>
@@ -429,6 +550,7 @@ function PublishingSummaryRailActions({
   actionSummary,
   primaryActionLabel,
   onPrimaryAction,
+  onPrimaryActionBlocked,
   primaryActionDisabled,
   primaryActionLoading,
   primaryActionLoadingLabel,
@@ -439,6 +561,7 @@ function PublishingSummaryRailActions({
   PublishingSummaryRailProps,
   | "primaryActionLabel"
   | "onPrimaryAction"
+  | "onPrimaryActionBlocked"
   | "primaryActionDisabled"
   | "primaryActionLoading"
   | "primaryActionLoadingLabel"
@@ -450,19 +573,20 @@ function PublishingSummaryRailActions({
     primaryActionLoading && primaryActionLoadingLabel
   );
   const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
+  const primaryInert = showLoading;
 
   return (
     <div className="border-border/60 shrink-0 overflow-hidden border-t">
-      <div className="text-muted-foreground border-border/60 bg-muted/10 border-b px-3 py-1.5 text-[11px] leading-snug">
+      <div className="text-foreground/90 border-border/60 bg-muted/20 border-b px-3 py-2 text-[11px] leading-snug">
         {actionSummary}
       </div>
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/60 bg-muted/10 border-b">
+        <div className="border-border/60 bg-muted/25 border-b">
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="sm"
-            className="h-9 w-full rounded-none text-xs font-medium"
+            className="text-foreground hover:bg-muted/80 h-10 w-full rounded-none border-0 text-xs font-medium shadow-none"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
@@ -475,9 +599,20 @@ function PublishingSummaryRailActions({
           type="button"
           size="sm"
           variant="default"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none border-0 text-xs font-semibold shadow-none"
-          onClick={onPrimaryAction}
-          disabled={Boolean(primaryActionDisabled) || showLoading}
+          aria-disabled={primaryInert || Boolean(primaryActionDisabled)}
+          className={cn(
+            "bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none border-0 text-xs font-semibold shadow-none",
+            (primaryInert || primaryActionDisabled) &&
+              "pointer-events-auto opacity-60"
+          )}
+          onClick={() => {
+            if (primaryInert) return;
+            if (primaryActionDisabled) {
+              onPrimaryActionBlocked?.();
+              return;
+            }
+            onPrimaryAction();
+          }}
         >
           {label}
         </Button>
@@ -503,12 +638,15 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
     followUp: props.followUp,
     followUpSection: props.followUpSection,
     threadSettingsSection: props.threadSettingsSection,
+    recyclableControl: props.recyclableControl,
     postStatusSummaryInline: props.postStatusSummaryInline,
-    postStatusRecyclableMeta: props.postStatusRecyclableMeta,
+    publishSummaryOptionsLine: props.publishSummaryOptionsLine,
     contentSummaryLines: props.contentSummaryLines,
     publishPath: props.publishPath,
     issues: props.issues,
     warnings: props.warnings,
+    pristineHint: props.pristineHint,
+    idleStatusLabel: props.idleStatusLabel,
   };
 
   return (
@@ -526,6 +664,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
               actionSummary={actionSummary}
               primaryActionLabel={props.primaryActionLabel}
               onPrimaryAction={props.onPrimaryAction}
+              onPrimaryActionBlocked={props.onPrimaryActionBlocked}
               primaryActionDisabled={props.primaryActionDisabled}
               primaryActionLoading={props.primaryActionLoading}
               primaryActionLoadingLabel={props.primaryActionLoadingLabel}
@@ -560,6 +699,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
                     props.onPrimaryAction();
                     setSheetOpen(false);
                   }}
+                  onPrimaryActionBlocked={props.onPrimaryActionBlocked}
                   primaryActionDisabled={props.primaryActionDisabled}
                   primaryActionLoading={props.primaryActionLoading}
                   primaryActionLoadingLabel={props.primaryActionLoadingLabel}

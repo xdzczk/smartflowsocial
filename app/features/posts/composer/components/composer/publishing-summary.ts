@@ -18,6 +18,18 @@ interface BuildCommonSectionsInput {
   randomizationLabel?: string;
 }
 
+/** Controls how validation is surfaced in the publish rail (see Composer IA). */
+export type ComposerIssueDisplayPhase = "pristine" | "soft" | "blocking";
+
+export function resolveComposerIssueDisplayPhase(
+  publishAttempted: boolean,
+  composerTouched: boolean
+): ComposerIssueDisplayPhase {
+  if (publishAttempted) return "blocking";
+  if (composerTouched) return "soft";
+  return "pristine";
+}
+
 export function getReadinessPresentation(
   publishMode: ComposerPublishMode,
   issues: string[],
@@ -29,10 +41,7 @@ export function getReadinessPresentation(
   if (issues.length > 0) {
     return {
       tone: "block",
-      headline:
-        issues.length === 1
-          ? "1 issue to fix"
-          : `${issues.length} issues to fix`,
+      headline: "Can't publish yet",
     };
   }
   if (publishMode === "queue") {
@@ -185,7 +194,7 @@ export function buildPublishPathLines(
 }
 
 /** Human-readable local datetime for outcome / schedule copy. */
-const SCHEDULE_TIME_REQUIRED = "Select a publish time to continue.";
+const SCHEDULE_TIME_REQUIRED = "Set a publish time to continue";
 
 export function formatScheduledForDisplay(isoDatetimeLocal: string): string {
   const s = isoDatetimeLocal.trim();
@@ -215,6 +224,21 @@ function tagsInlineSuffix(tagsSummary: string | null | undefined): string {
 /** Muted recyclable row below tags in Post status (separate from the main summary line). */
 export function formatRecyclableMetaLine(isRecyclable: boolean): string {
   return isRecyclable ? "Recyclable: on" : "Recyclable: off";
+}
+
+/** Single "Options" row in Ready check (follow-up + optional recyclable). */
+export function formatPublishSummaryOptionsLine(input: {
+  followUpSummaryLine?: string | null;
+  showRecyclable?: boolean;
+  isRecyclable?: boolean;
+}): string {
+  const raw = (input.followUpSummaryLine ?? "None").trim();
+  const follow = raw.toLowerCase() === "none" ? "none" : raw;
+  const parts = [`Follow-up: ${follow}`];
+  if (input.showRecyclable) {
+    parts.push(input.isRecyclable ? "Recyclable: on" : "Recyclable: off");
+  }
+  return parts.join(" · ");
 }
 
 /** Single-line post summary for the Post status rail row (chars · media · tags only). */
@@ -292,9 +316,9 @@ export function buildPublishingOutcomeSentence(
       return "Select at least one relay to publish.";
     }
     if (omitRelayRequirement || relayCount <= 0) {
-      return "Publishes immediately after signing.";
+      return "Will publish immediately after signing.";
     }
-    return `Publishes immediately after signing to ${relayCount} relay${relayCount !== 1 ? "s" : ""}.`;
+    return `Will publish immediately to ${relayCount} relay${relayCount !== 1 ? "s" : ""}`;
   }
 
   if (publishMode === "schedule") {
@@ -306,17 +330,17 @@ export function buildPublishingOutcomeSentence(
     if (!when) return SCHEDULE_TIME_REQUIRED;
     const relayPart =
       relayCount > 0
-        ? ` to ${relayCount} relay${relayCount !== 1 ? "s" : ""}`
+        ? ` · ${relayCount} relay${relayCount !== 1 ? "s" : ""}`
         : "";
-    return `Will publish on ${when}${relayPart}.`;
+    return `Will schedule for ${when}${relayPart}`;
   }
 
   if (selectedQueue === "unassigned") {
-    return "Choose a queue to continue.";
+    return "Choose a queue to continue";
   }
   const q = selectedQueue;
   if (queueNextSlotLabel) {
-    return `Will be added to ${q}. Next eligible slot around ${queueNextSlotLabel}.`;
+    return `Will add to queue: ${q} · next slot ~${queueNextSlotLabel}`;
   }
-  return `Will be added to ${q}.`;
+  return `Will add to queue: ${q}`;
 }

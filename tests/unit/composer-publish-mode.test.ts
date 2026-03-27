@@ -8,19 +8,15 @@ import {
 describe("composer publish mode helpers", () => {
   it("returns queue CTA for queue mode", () => {
     expect(getPrimaryCtaLabelForMode("queue", "post")).toBe("Add to queue");
-    expect(getPrimaryCtaLabelForMode("queue", "thread")).toBe(
-      "Add thread to queue"
-    );
+    expect(getPrimaryCtaLabelForMode("queue", "thread")).toBe("Add to queue");
   });
 
-  it("returns article-specific CTA for article now mode", () => {
-    expect(getPrimaryCtaLabelForMode("now", "article")).toBe("Publish article");
+  it("uses unified CTA labels across entity types", () => {
+    expect(getPrimaryCtaLabelForMode("now", "article")).toBe("Publish now");
     expect(getPrimaryCtaLabelForMode("schedule", "article")).toBe(
-      "Schedule article"
+      "Schedule post"
     );
-    expect(getPrimaryCtaLabelForMode("queue", "article")).toBe(
-      "Add article to queue"
-    );
+    expect(getPrimaryCtaLabelForMode("queue", "article")).toBe("Add to queue");
   });
 
   it("maps poll modes to submit actions", () => {

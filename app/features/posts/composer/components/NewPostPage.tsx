@@ -466,6 +466,7 @@ export default function NewPostPage() {
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
             composerTemplates={templates}
+            contentFieldAutoFocus
           />
         )}
 

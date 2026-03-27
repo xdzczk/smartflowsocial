@@ -6,7 +6,7 @@
 
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { FolderOpen } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -19,7 +19,6 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
 import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
@@ -64,11 +63,12 @@ import {
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
   getReadinessPresentation,
+  resolveComposerIssueDisplayPhase,
   buildPublishPathSummary,
   buildComposerContentSummaryLines,
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
-  formatRecyclableMetaLine,
+  formatPublishSummaryOptionsLine,
   formatThreadPostStatusSummaryInline,
   getQueueNextSlotLabel,
 } from "./composer";
@@ -162,6 +162,8 @@ export interface UnifiedComposerProps {
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
+  /** Focus the main text field on mount (new-post flow only). */
+  contentFieldAutoFocus?: boolean;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -195,6 +197,7 @@ export function UnifiedComposer({
   onRelayClick,
   composerTemplates,
   shortDraftFilter: shortDraftFilterProp,
+  contentFieldAutoFocus = false,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -263,6 +266,9 @@ export function UnifiedComposer({
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
+
+  const [publishAttempted, setPublishAttempted] = useState(false);
+  const [composerTouched, setComposerTouched] = useState(false);
 
   React.useEffect(() => {
     if (!newPostContentTab) return;
@@ -854,39 +860,124 @@ export function UnifiedComposer({
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
 
-  const publishBlockers: string[] = [];
-  if (signerReady === false) publishBlockers.push("Signer not connected");
-  if (!canSubmit)
-    publishBlockers.push("Resolve media upload issues before publishing");
+  const hardBlockers: string[] = [];
+  if (signerReady === false) {
+    hardBlockers.push("Signer not connected");
+  }
+
+  const deferrableBlockers: string[] = [];
+  if (!canSubmit) {
+    deferrableBlockers.push("Resolve media upload issues before publishing");
+  }
   if (publishMode === "schedule" && !hasScheduleTimeForSubmit) {
-    publishBlockers.push("Publish time is required");
+    deferrableBlockers.push("Publish time is required");
   }
   if (publishMode === "queue" && selectedQueue === "unassigned") {
-    publishBlockers.push("Choose a queue");
+    deferrableBlockers.push("Choose a queue");
   }
-  const publishWarnings: string[] = [];
+  if (!hasContent) {
+    deferrableBlockers.push(
+      isThreadMode
+        ? "Add content to at least one thread segment."
+        : "Add text or at least one media item."
+    );
+  }
   const relayCount =
     relayCountProp > 0
       ? relayCountProp
       : relayOverride && relayOverride.length > 0
         ? relayOverride.length
         : relayCountProp;
-  const issueList = [...publishBlockers];
-  if (!hasContent) {
-    issueList.push(
-      isThreadMode
-        ? "Add content to at least one thread segment."
-        : "Add text or at least one media item."
-    );
-  }
   if (relayCount <= 0) {
-    issueList.push("Select at least one relay.");
+    deferrableBlockers.push("Select at least one relay.");
   }
-  const readiness = getReadinessPresentation(
-    publishMode,
-    issueList,
-    signerReady
+
+  const issueList = [...hardBlockers, ...deferrableBlockers];
+
+  const issueDisplayPhase = resolveComposerIssueDisplayPhase(
+    publishAttempted,
+    composerTouched
   );
+  const displayRedIssues =
+    issueDisplayPhase === "blocking"
+      ? [...hardBlockers, ...deferrableBlockers]
+      : [...hardBlockers];
+  const displayAmberIssues =
+    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+
+  const pristineHint =
+    issueDisplayPhase === "pristine" &&
+    deferrableBlockers.length > 0 &&
+    hardBlockers.length === 0
+      ? "Content required to publish. Add text or media and select relays to continue."
+      : undefined;
+  const idleStatusLabel =
+    issueDisplayPhase === "pristine" &&
+    deferrableBlockers.length > 0 &&
+    hardBlockers.length === 0
+      ? "Draft"
+      : undefined;
+
+  const readinessForRail =
+    displayRedIssues.length > 0
+      ? getReadinessPresentation(publishMode, displayRedIssues, signerReady)
+      : displayAmberIssues.length > 0
+        ? ({
+            tone: "warn",
+            headline: "Missing requirements",
+          } as const)
+        : getReadinessPresentation(publishMode, [], signerReady);
+
+  // Defer setState to satisfy react-hooks/set-state-in-effect.
+  useEffect(() => {
+    if (issueList.length === 0 && publishAttempted) {
+      queueMicrotask(() => setPublishAttempted(false));
+    }
+  }, [issueList.length, publishAttempted]);
+
+  useEffect(() => {
+    const threadTouch = isThreadMode
+      ? threadSegments.some(
+          (s) => s.content.trim().length > 0 || s.attachments.length > 0
+        )
+      : false;
+    if (
+      content.trim().length > 0 ||
+      attachments.length > 0 ||
+      selectedHashtags.trim().length > 0 ||
+      threadTouch
+    ) {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [
+    content,
+    attachments.length,
+    selectedHashtags,
+    isThreadMode,
+    threadSegments,
+  ]);
+
+  useEffect(() => {
+    if (publishMode !== "now") {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [publishMode]);
+
+  useEffect(() => {
+    if (selectedQueue !== "unassigned") {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [selectedQueue]);
+
+  useEffect(() => {
+    const t = (formScheduledFor ?? schedulingScheduledFor).trim();
+    if (t) queueMicrotask(() => setComposerTouched(true));
+  }, [formScheduledFor, schedulingScheduledFor]);
+
+  const handleRelayRailClick = useCallback(() => {
+    setComposerTouched(true);
+    onRelayClick?.();
+  }, [onRelayClick]);
   const isRecyclableVal = !!form.watch("isRecyclable");
   const contentSummaryLines = isThreadMode
     ? [
@@ -1078,26 +1169,7 @@ export function UnifiedComposer({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="my-8">
-          {isThreadMode && draftTemplatesPickerEnabled && !isTemplateMode ? (
-            <div className="mb-3 flex justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setDraftPickerOpen(true)}
-                disabled={disabled}
-                aria-label={draftButtonLabel}
-              >
-                <FolderOpen
-                  className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-                {draftButtonLabel}
-              </Button>
-            </div>
-          ) : null}
+        <div className="my-4 space-y-4">
           <UnifiedComposerContentSection
             isThreadMode={isThreadMode}
             content={
@@ -1110,6 +1182,26 @@ export function UnifiedComposer({
             showDraftButton={!isTemplateMode}
             onOpenDraft={() => setDraftPickerOpen(true)}
             draftButtonLabel={draftButtonLabel}
+            contentFieldAutoFocus={contentFieldAutoFocus}
+            threadTopRightActions={
+              isThreadMode && draftTemplatesPickerEnabled && !isTemplateMode ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDraftPickerOpen(true)}
+                  disabled={disabled}
+                  aria-label={draftButtonLabel}
+                >
+                  <FolderOpen
+                    className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                  {draftButtonLabel}
+                </Button>
+              ) : undefined
+            }
             attachments={attachments}
             onRemoveAttachment={handleRemoveAttachment}
             onAddAttachment={handleAddAttachment}
@@ -1133,7 +1225,6 @@ export function UnifiedComposer({
               content={content}
               attachments={attachments}
               tagsLine={selectedHashtags}
-              isRecyclable={isRecyclableVal}
             />
           ) : null}
           {!isTemplateMode && isThreadMode && threadSegments[0] ? (
@@ -1141,7 +1232,6 @@ export function UnifiedComposer({
               content={threadSegments[0].content}
               attachments={threadSegments[0].attachments}
               tagsLine={selectedHashtags}
-              isRecyclable={isRecyclableVal}
               previewLabel="Preview (first segment)"
             />
           ) : null}
@@ -1178,67 +1268,41 @@ export function UnifiedComposer({
           </div>
         ) : null}
         {!isTemplateMode ? (
-          <div className="mt-6 space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 flex-1">
-                <TagsChipRow
-                  tags={selectedHashtags}
-                  onTagsChange={(newTags) => {
-                    setSelectedHashtags(newTags);
-                    if (!newTags.trim()) {
-                      form.setValue("useHashtagPresets", false);
-                      form.setValue("hashTagPresetId", undefined);
-                      onHashtagPresetChange?.(null, "");
-                    }
-                  }}
-                  presets={hashTagPresets}
-                  selectedPresetId={formSelectedHashtagPresetId}
-                  onPresetSelect={(presetId, mergedTags) => {
-                    setSelectedHashtags(mergedTags);
-                    form.setValue("useHashtagPresets", true);
-                    form.setValue("hashTagPresetId", presetId ?? undefined);
-                    onHashtagPresetChange?.(presetId, mergedTags);
-                  }}
-                  disabled={fetcher.state !== "idle"}
-                  queuePresetName={
-                    selectedQueue !== "unassigned"
-                      ? ((
-                          queueTypes.find(
-                            (q) =>
-                              (typeof q === "string" ? q : q.name) ===
-                              selectedQueue
-                          ) as
-                            | (QueueType & {
-                                hashTagPreset?: { name: string } | null;
-                              })
-                            | undefined
-                        )?.hashTagPreset?.name ?? undefined)
-                      : undefined
-                  }
-                />
-              </div>
-              <div className="border-border bg-muted/20 flex shrink-0 items-center gap-3 rounded-lg border px-3 py-2 sm:max-w-[14rem] sm:flex-col sm:items-stretch">
-                <div className="flex w-full items-center justify-between gap-3">
-                  <Label
-                    htmlFor="composer-recyclable"
-                    className="text-sm font-semibold"
-                  >
-                    Recyclable
-                  </Label>
-                  <Switch
-                    id="composer-recyclable"
-                    checked={isRecyclableVal}
-                    onCheckedChange={(checked) =>
-                      form.setValue("isRecyclable", checked === true)
-                    }
-                    disabled={disabled}
-                  />
-                </div>
-                <p className="text-muted-foreground text-xs leading-snug">
-                  Show in Recyclables for republishing later.
-                </p>
-              </div>
-            </div>
+          <div className="mt-4">
+            <TagsChipRow
+              tags={selectedHashtags}
+              onTagsChange={(newTags) => {
+                setSelectedHashtags(newTags);
+                if (!newTags.trim()) {
+                  form.setValue("useHashtagPresets", false);
+                  form.setValue("hashTagPresetId", undefined);
+                  onHashtagPresetChange?.(null, "");
+                }
+              }}
+              presets={hashTagPresets}
+              selectedPresetId={formSelectedHashtagPresetId}
+              onPresetSelect={(presetId, mergedTags) => {
+                setSelectedHashtags(mergedTags);
+                form.setValue("useHashtagPresets", true);
+                form.setValue("hashTagPresetId", presetId ?? undefined);
+                onHashtagPresetChange?.(presetId, mergedTags);
+              }}
+              disabled={fetcher.state !== "idle"}
+              queuePresetName={
+                selectedQueue !== "unassigned"
+                  ? ((
+                      queueTypes.find(
+                        (q) =>
+                          (typeof q === "string" ? q : q.name) === selectedQueue
+                      ) as
+                        | (QueueType & {
+                            hashTagPreset?: { name: string } | null;
+                          })
+                        | undefined
+                    )?.hashTagPreset?.name ?? undefined)
+                  : undefined
+              }
+            />
           </div>
         ) : null}
         {/* Rail CTAs trigger these submitters via refs. */}
@@ -1268,11 +1332,11 @@ export function UnifiedComposer({
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
           outcomeSentence={outcomeSentence}
-          readiness={readiness}
+          readiness={readinessForRail}
           sessionStrip={{
             composerStatus,
             relayCount,
-            onRelayClick,
+            onRelayClick: handleRelayRailClick,
             signerLabel: signerReady === false ? "Not connected" : signerLabel,
             saveStateLabel:
               fetcher.state !== "idle"
@@ -1364,9 +1428,24 @@ export function UnifiedComposer({
             ),
           }}
           postStatusSummaryInline={postStatusSummaryInline}
-          postStatusRecyclableMeta={formatRecyclableMetaLine(isRecyclableVal)}
+          publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
+            followUpSummaryLine: followUpSummaryLine,
+            showRecyclable: true,
+            isRecyclable: isRecyclableVal,
+          })}
           contentSummaryLines={contentSummaryLines}
           publishPath={publishPath}
+          recyclableControl={
+            !isTemplateMode
+              ? {
+                  switchId: "composer-recyclable",
+                  checked: isRecyclableVal,
+                  onCheckedChange: (checked) =>
+                    form.setValue("isRecyclable", checked === true),
+                  disabled,
+                }
+              : undefined
+          }
           threadSettingsSection={
             isThreadMode
               ? {
@@ -1380,7 +1459,10 @@ export function UnifiedComposer({
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => setThreadDelayMinutes(v)}
+                          onClick={() => {
+                            setComposerTouched(true);
+                            setThreadDelayMinutes(v);
+                          }}
                           disabled={disabled}
                         >
                           {v === 0.5 ? "30s" : `${v}m`}
@@ -1391,8 +1473,10 @@ export function UnifiedComposer({
                 }
               : undefined
           }
-          issues={issueList}
-          warnings={publishWarnings}
+          issues={displayRedIssues}
+          warnings={displayAmberIssues}
+          pristineHint={pristineHint}
+          idleStatusLabel={idleStatusLabel}
           primaryActionLabel={getPrimaryCtaLabelForMode(
             publishMode,
             isThreadMode ? "thread" : "post"
@@ -1403,6 +1487,7 @@ export function UnifiedComposer({
             isThreadMode ? "thread" : "post"
           )}
           onPrimaryAction={() => primarySubmitRef.current?.click()}
+          onPrimaryActionBlocked={() => setPublishAttempted(true)}
           primaryActionDisabled={
             disabled || signerReady === false || issueList.length > 0
           }

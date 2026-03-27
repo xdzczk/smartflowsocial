@@ -46,6 +46,8 @@ export interface UnifiedComposerContentSectionProps {
   onDraggingOverSegmentIdChange: React.Dispatch<
     React.SetStateAction<string | null>
   >;
+  threadTopRightActions?: React.ReactNode;
+  contentFieldAutoFocus?: boolean;
 }
 
 export function UnifiedComposerContentSection({
@@ -69,6 +71,8 @@ export function UnifiedComposerContentSection({
   onThreadSegmentFileClick,
   draggingOverSegmentId,
   onDraggingOverSegmentIdChange,
+  threadTopRightActions,
+  contentFieldAutoFocus = false,
 }: UnifiedComposerContentSectionProps) {
   if (isThreadMode) {
     return (
@@ -81,6 +85,7 @@ export function UnifiedComposerContentSection({
         disabled={disabled}
         draggingOverSegmentId={draggingOverSegmentId}
         onDraggingOverSegmentIdChange={onDraggingOverSegmentIdChange}
+        topRightActions={threadTopRightActions}
       />
     );
   }
@@ -94,6 +99,7 @@ export function UnifiedComposerContentSection({
         showDraftButton={showDraftButton}
         onOpenDraft={onOpenDraft}
         draftButtonLabel={draftButtonLabel}
+        autoFocus={contentFieldAutoFocus} // eslint-disable-line jsx-a11y/no-autofocus -- true only from NewPostPage
       />
       <ComposerMediaField
         attachments={attachments}

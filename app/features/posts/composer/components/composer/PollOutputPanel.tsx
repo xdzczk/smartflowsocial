@@ -3,9 +3,8 @@
  */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -20,7 +19,6 @@ export interface PollOutputPanelProps {
   /** Stable ids aligned with `options` (same length). */
   optionRowIds: string[];
   tagsLine: string;
-  isRecyclable: boolean;
   pollTypeLabel: string;
 }
 
@@ -29,7 +27,6 @@ export function PollOutputPanel({
   options,
   optionRowIds,
   tagsLine,
-  isRecyclable,
   pollTypeLabel,
 }: PollOutputPanelProps) {
   const [open, setOpen] = useState(false);
@@ -43,14 +40,53 @@ export function PollOutputPanel({
     }))
     .filter((row) => row.text.length > 0);
 
+  const filledCount = filledRows.length;
+
+  const dismissedAutoRef = useRef(false);
+  const prevFilledRef = useRef(filledCount);
+  const prevQuestionLenRef = useRef(q.length);
+
+  // Defer setState to satisfy react-hooks/set-state-in-effect (auto-open on draft richness).
+  useEffect(() => {
+    const prev = prevFilledRef.current;
+    prevFilledRef.current = filledCount;
+    if (dismissedAutoRef.current) return;
+    if (prev < 2 && filledCount >= 2) {
+      queueMicrotask(() => setOpen(true));
+    }
+  }, [filledCount]);
+
+  useEffect(() => {
+    const prev = prevQuestionLenRef.current;
+    prevQuestionLenRef.current = q.length;
+    if (dismissedAutoRef.current) return;
+    if (prev < 24 && q.length >= 24) {
+      queueMicrotask(() => setOpen(true));
+    }
+  }, [q.length]);
+
+  useEffect(() => {
+    if (filledCount === 0 && q.length === 0) {
+      dismissedAutoRef.current = false;
+    }
+  }, [filledCount, q.length]);
+
+  const toggleOpen = () => {
+    setOpen((o) => {
+      const next = !o;
+      if (!next) dismissedAutoRef.current = true;
+      return next;
+    });
+  };
+
   return (
-    <div className="border-border mt-4 rounded-lg border">
+    <div className="border-border/60 border-t pt-2">
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground hover:text-foreground h-9 w-full justify-between rounded-none px-3 text-xs font-medium"
-        onClick={() => setOpen((o) => !o)}
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
+        onClick={toggleOpen}
         aria-expanded={open}
       >
         Preview
@@ -67,7 +103,7 @@ export function PollOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="border-border space-y-3 border-t p-3 text-sm">
+        <div className="border-border/50 space-y-3 border-t py-3 text-sm">
           <div>
             <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
               Question
@@ -109,11 +145,6 @@ export function PollOutputPanel({
             ) : (
               <span className="text-muted-foreground text-xs">Tags: none</span>
             )}
-            {isRecyclable ? (
-              <Badge variant="secondary" className="text-xs">
-                Recyclable
-              </Badge>
-            ) : null}
           </div>
         </div>
       ) : null}

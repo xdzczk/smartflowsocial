@@ -1,11 +1,10 @@
 /**
- * Collapsible draft preview: body (tokens stripped), media thumbs, tags, recyclable.
+ * Collapsible draft preview: body (tokens stripped), media thumbs, tags.
  */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { ComposerAttachment } from "~/features/posts/types";
@@ -19,30 +18,69 @@ export interface ComposerOutputPanelProps {
   content: string;
   attachments: ComposerAttachment[];
   tagsLine: string;
-  isRecyclable: boolean;
   /** e.g. "Preview (first segment)" in thread mode */
   previewLabel?: string;
+}
+
+function bodyLooksRich(text: string): boolean {
+  return /[#*_`]|]\(|^>\s/m.test(text);
 }
 
 export function ComposerOutputPanel({
   content,
   attachments,
   tagsLine,
-  isRecyclable,
   previewLabel = "Preview",
 }: ComposerOutputPanelProps) {
   const [open, setOpen] = useState(false);
   const body = stripAttachmentTokens(content).trim();
   const withUrl = attachments.filter((a) => a.url);
 
+  const dismissedAutoRef = useRef(false);
+  const prevAttachCountRef = useRef(attachments.length);
+  const prevBodyLenRef = useRef(body.length);
+
+  // Defer setState to satisfy react-hooks/set-state-in-effect (auto-open on content/media change).
+  useEffect(() => {
+    const prev = prevAttachCountRef.current;
+    prevAttachCountRef.current = attachments.length;
+    if (dismissedAutoRef.current) return;
+    if (prev === 0 && attachments.length > 0) {
+      queueMicrotask(() => setOpen(true));
+    }
+  }, [attachments.length]);
+
+  useEffect(() => {
+    const prev = prevBodyLenRef.current;
+    prevBodyLenRef.current = body.length;
+    if (dismissedAutoRef.current) return;
+    if (prev < 80 && body.length >= 80 && bodyLooksRich(body)) {
+      queueMicrotask(() => setOpen(true));
+    }
+  }, [body]);
+
+  useEffect(() => {
+    if (attachments.length === 0 && body.length === 0) {
+      dismissedAutoRef.current = false;
+    }
+  }, [attachments.length, body.length]);
+
+  const toggleOpen = () => {
+    setOpen((o) => {
+      const next = !o;
+      if (!next) dismissedAutoRef.current = true;
+      return next;
+    });
+  };
+
   return (
-    <div className="border-border mt-4 rounded-lg border">
+    <div className="border-border/60 border-t pt-2">
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground hover:text-foreground h-9 w-full justify-between rounded-none px-3 text-xs font-medium"
-        onClick={() => setOpen((o) => !o)}
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
+        onClick={toggleOpen}
         aria-expanded={open}
       >
         {previewLabel}
@@ -59,7 +97,7 @@ export function ComposerOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="border-border space-y-3 border-t p-3">
+        <div className="border-border/50 space-y-3 border-t py-3">
           {withUrl.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {withUrl.map((a) => (
@@ -100,11 +138,6 @@ export function ComposerOutputPanel({
             ) : (
               <span className="text-muted-foreground text-xs">Tags: none</span>
             )}
-            {isRecyclable ? (
-              <Badge variant="secondary" className="text-xs">
-                Recyclable
-              </Badge>
-            ) : null}
           </div>
         </div>
       ) : null}

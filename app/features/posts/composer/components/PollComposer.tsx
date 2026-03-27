@@ -10,7 +10,6 @@ import { toast } from "react-hot-toast";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
@@ -39,8 +38,9 @@ import {
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
   formatPollPostStatusSummaryInline,
-  formatRecyclableMetaLine,
+  formatPublishSummaryOptionsLine,
   getReadinessPresentation,
+  resolveComposerIssueDisplayPhase,
   getPollSubmitActionForMode,
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
@@ -132,6 +132,8 @@ export function PollComposer({
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
+  const [publishAttempted, setPublishAttempted] = useState(false);
+  const [composerTouched, setComposerTouched] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
   const [publishSubmitInFlight, setPublishSubmitInFlight] = useState(false);
@@ -352,24 +354,57 @@ export function PollComposer({
         ? "Scheduling..."
         : "Posting..."
       : getPrimaryCtaLabelForMode(publishMode, "poll");
-  const blockers: string[] = [];
-  if (question.trim().length === 0) blockers.push("Question is required");
-  if (trimmedOptions.length < MIN_OPTIONS)
-    blockers.push(`At least ${MIN_OPTIONS} poll options are required`);
+  const deferrableBlockers: string[] = [];
+  if (question.trim().length === 0) {
+    deferrableBlockers.push("Question is required");
+  }
+  if (trimmedOptions.length < MIN_OPTIONS) {
+    deferrableBlockers.push(
+      `At least ${MIN_OPTIONS} poll options are required`
+    );
+  }
   if (publishMode === "schedule" && !hasScheduleTime) {
-    blockers.push("Publish time is required");
+    deferrableBlockers.push("Publish time is required");
   }
   if (publishMode === "queue" && selectedQueue === "unassigned") {
-    blockers.push("Choose a queue");
+    deferrableBlockers.push("Choose a queue");
   }
-  if (timeError) blockers.push(timeError);
-  const warnings: string[] = [];
-  if (relayCount <= 0) blockers.push("No relays selected");
-  const readiness = getReadinessPresentation(
-    publishMode,
-    blockers,
-    user != null
+  if (timeError) deferrableBlockers.push(timeError);
+  if (relayCount <= 0) deferrableBlockers.push("No relays selected");
+
+  const blockers = deferrableBlockers;
+  const issueDisplayPhase = resolveComposerIssueDisplayPhase(
+    publishAttempted,
+    composerTouched
   );
+  const displayRedIssues =
+    issueDisplayPhase === "blocking" ? [...deferrableBlockers] : [];
+  const displayAmberIssues =
+    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+
+  const pristineHint =
+    issueDisplayPhase === "pristine" &&
+    user != null &&
+    deferrableBlockers.length > 0
+      ? "Content required to publish. Finish the poll, relays, and schedule (if needed) to continue."
+      : undefined;
+  const idleStatusLabel =
+    issueDisplayPhase === "pristine" &&
+    user != null &&
+    deferrableBlockers.length > 0
+      ? "Draft"
+      : undefined;
+
+  const readinessForRail =
+    displayRedIssues.length > 0
+      ? getReadinessPresentation(publishMode, displayRedIssues, user != null)
+      : displayAmberIssues.length > 0
+        ? ({
+            tone: "warn",
+            headline: "Missing requirements",
+          } as const)
+        : getReadinessPresentation(publishMode, [], user != null);
+
   const contentSummaryLines = [
     `${question.trim().length} characters (question)`,
     `${trimmedOptions.length} options`,
@@ -522,6 +557,46 @@ export function PollComposer({
     clearPollDraftSnapshot,
   ]);
 
+  // Defer setState to satisfy react-hooks/set-state-in-effect.
+  useEffect(() => {
+    if (blockers.length === 0 && publishAttempted) {
+      queueMicrotask(() => setPublishAttempted(false));
+    }
+  }, [blockers.length, publishAttempted]);
+
+  useEffect(() => {
+    if (
+      question.trim().length > 0 ||
+      trimmedOptions.some((o) => o.trim().length > 0) ||
+      selectedHashtags.trim().length > 0
+    ) {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [question, trimmedOptions, selectedHashtags]);
+
+  useEffect(() => {
+    if (publishMode !== "now") {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [publishMode]);
+
+  useEffect(() => {
+    if (selectedQueue !== "unassigned") {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [selectedQueue]);
+
+  useEffect(() => {
+    if (scheduledFor.trim()) {
+      queueMicrotask(() => setComposerTouched(true));
+    }
+  }, [scheduledFor]);
+
+  const handleRelayRailClick = useCallback(() => {
+    setComposerTouched(true);
+    onRelayClick?.();
+  }, [onRelayClick]);
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
@@ -547,7 +622,7 @@ export function PollComposer({
             </Button>
           ) : null}
         </div>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <ComposerErrors
             isSigning={isSigning}
             signerLabel={null}
@@ -689,61 +764,39 @@ export function PollComposer({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <TagsChipRow
-                tags={selectedHashtags}
-                onTagsChange={(t) => {
-                  setSelectedHashtags(t);
-                  if (!t.trim()) {
-                    setHashTagPresetId(null);
-                  }
-                }}
-                presets={hashTagPresets}
-                selectedPresetId={
-                  hashTagPresetId ?? selectedHashTagPresetId ?? null
-                }
-                onPresetSelect={(id, tags) => {
-                  setHashTagPresetId(id);
-                  setSelectedHashtags(tags);
-                  onHashtagPresetChange?.(id, tags);
-                }}
-                disabled={disabled}
-              />
-            </div>
-            <div className="border-border bg-muted/20 flex shrink-0 items-center gap-3 rounded-lg border px-3 py-2 sm:max-w-[14rem] sm:flex-col sm:items-stretch">
-              <div className="flex w-full items-center justify-between gap-3">
-                <Label
-                  htmlFor="poll-recyclable"
-                  className="text-sm font-semibold"
-                >
-                  Recyclable
-                </Label>
-                <Switch
-                  id="poll-recyclable"
-                  checked={isRecyclable}
-                  onCheckedChange={setIsRecyclable}
-                  disabled={disabled}
-                />
-              </div>
-              <p className="text-muted-foreground text-xs leading-snug">
-                Show in Recyclables for republishing later.
-              </p>
-            </div>
-          </div>
-
           <PollOutputPanel
             question={question}
             options={options}
             optionRowIds={optionRowIds}
             tagsLine={selectedHashtags}
-            isRecyclable={isRecyclable}
             pollTypeLabel={
               pollType === "multiplechoice"
                 ? "Multiple choice"
                 : "Single choice"
             }
           />
+
+          <div className="mt-4">
+            <TagsChipRow
+              tags={selectedHashtags}
+              onTagsChange={(t) => {
+                setSelectedHashtags(t);
+                if (!t.trim()) {
+                  setHashTagPresetId(null);
+                }
+              }}
+              presets={hashTagPresets}
+              selectedPresetId={
+                hashTagPresetId ?? selectedHashTagPresetId ?? null
+              }
+              onPresetSelect={(id, tags) => {
+                setHashTagPresetId(id);
+                setSelectedHashtags(tags);
+                onHashtagPresetChange?.(id, tags);
+              }}
+              disabled={disabled}
+            />
+          </div>
 
           <div className="text-muted-foreground text-xs">
             Primary publish action is available in the Publishing Summary rail.
@@ -755,11 +808,11 @@ export function PollComposer({
         publishMode={publishMode}
         onPublishModeChange={onPublishModeChange ?? (() => void 0)}
         outcomeSentence={outcomeSentence}
-        readiness={readiness}
+        readiness={readinessForRail}
         sessionStrip={{
           composerStatus,
           relayCount,
-          onRelayClick,
+          onRelayClick: handleRelayRailClick,
           signerLabel: user != null ? "NIP-07" : "Not connected",
           saveStateLabel: isSubmitting
             ? "Saving…"
@@ -837,12 +890,24 @@ export function PollComposer({
                   ),
               }
         }
+        recyclableControl={{
+          switchId: "poll-recyclable",
+          checked: isRecyclable,
+          onCheckedChange: setIsRecyclable,
+          disabled,
+        }}
         postStatusSummaryInline={postStatusSummaryInline}
-        postStatusRecyclableMeta={formatRecyclableMetaLine(isRecyclable)}
+        publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
+          followUpSummaryLine: "None",
+          showRecyclable: true,
+          isRecyclable,
+        })}
         contentSummaryLines={contentSummaryLines}
         publishPath={publishPath}
-        issues={blockers}
-        warnings={warnings}
+        issues={displayRedIssues}
+        warnings={displayAmberIssues}
+        pristineHint={pristineHint}
+        idleStatusLabel={idleStatusLabel}
         primaryActionLabel={primaryLabel}
         primaryActionLoading={primaryActionLoading}
         primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
@@ -850,9 +915,9 @@ export function PollComposer({
           "poll"
         )}
         onPrimaryAction={() => {
-          if (user == null) return;
           void submitPoll(pollAction);
         }}
+        onPrimaryActionBlocked={() => setPublishAttempted(true)}
         primaryActionDisabled={
           user == null ||
           disabled ||

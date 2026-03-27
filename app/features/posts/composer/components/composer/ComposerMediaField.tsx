@@ -30,7 +30,7 @@ export function ComposerMediaField({
   onReorder,
   disabled = false,
   dropZoneLabel = "Drop zone for images and videos. Press Enter to add files.",
-  emptyHint = "Drag files here, paste from clipboard, or use +",
+  emptyHint = "Drag, paste from clipboard, or + to add",
   className = "",
 }: ComposerMediaFieldProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -67,14 +67,22 @@ export function ComposerMediaField({
     }
   };
 
+  const empty = attachments.length === 0;
+
   return (
     <div className={className}>
-      <h3 className="text-foreground mb-2 text-sm font-semibold">Media</h3>
+      <h3 className="text-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+        Media
+      </h3>
       <div
         role="button"
         tabIndex={-1}
         aria-label={dropZoneLabel}
-        className="border-border bg-muted/5 relative min-h-[7rem] rounded-lg border-2 border-dashed p-3"
+        className={`border-border bg-muted/5 relative rounded-lg p-2.5 ${
+          empty
+            ? "min-h-[4rem] border-2 border-dashed"
+            : "min-h-0 border border-solid"
+        }`}
         onDragOver={onFilesDropped ? handleDragOver : undefined}
         onDragLeave={onFilesDropped ? handleDragLeave : undefined}
         onDrop={onFilesDropped ? handleDrop : undefined}
@@ -94,8 +102,8 @@ export function ComposerMediaField({
           onReorder={onReorder}
           disabled={disabled}
         />
-        {attachments.length === 0 && !isDraggingOver && emptyHint ? (
-          <p className="text-muted-foreground mt-2 text-center text-xs sm:text-left">
+        {empty && !isDraggingOver && emptyHint ? (
+          <p className="text-muted-foreground mt-1 text-center text-[11px] sm:text-left">
             {emptyHint}
           </p>
         ) : null}

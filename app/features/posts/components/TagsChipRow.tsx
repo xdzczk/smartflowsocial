@@ -159,37 +159,15 @@ export function TagsChipRow({
   };
 
   return (
-    <div className="space-y-3">
-      <div>
+    <div className="space-y-2">
+      <div className="flex flex-col gap-0.5">
         <span className="text-foreground text-sm font-semibold">Tags</span>
-        <p className="text-muted-foreground mt-0.5 text-xs">
-          Discovery: add hashtags for search and campaigns.
+        <p className="text-muted-foreground/80 text-[10px] leading-snug">
+          Hashtags help discovery and campaigns—keep them specific.
         </p>
       </div>
+
       <div className="flex flex-wrap items-center gap-2">
-        {tagList.map((tag, idx) => (
-          <Badge
-            key={`${tag}-${idx}`}
-            variant="secondary"
-            className="gap-1 pr-1"
-          >
-            #{tag.replace(/^#+/u, "")}
-            {!disabled ? (
-              <button
-                type="button"
-                onClick={() => removeTag(idx)}
-                className="hover:bg-muted-foreground/20 rounded-full p-0.5"
-                aria-label={`Remove ${tag}`}
-              >
-                <X
-                  className="h-3 w-3"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              </button>
-            ) : null}
-          </Badge>
-        ))}
         <Select
           value={selectValue}
           onValueChange={(value) => {
@@ -198,8 +176,8 @@ export function TagsChipRow({
           }}
           disabled={disabled || presets.length === 0}
         >
-          <SelectTrigger className="w-auto min-w-[8rem] shrink-0">
-            <SelectValue placeholder="+ Add preset" />
+          <SelectTrigger className="h-9 w-auto min-w-[7.5rem] shrink-0">
+            <SelectValue placeholder="Preset" />
           </SelectTrigger>
           <SelectContent>
             {presets.map((preset) => {
@@ -215,8 +193,6 @@ export function TagsChipRow({
             })}
           </SelectContent>
         </Select>
-      </div>
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
         <Input
           type="text"
           value={manualInput}
@@ -224,13 +200,42 @@ export function TagsChipRow({
           onKeyDown={onManualKeyDown}
           disabled={disabled}
           placeholder="Add tag — Enter or comma"
-          className="sm:max-w-xs"
+          className="min-w-0 flex-1 basis-[12rem]"
           aria-label="Add hashtag"
         />
       </div>
+
+      {tagList.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {tagList.map((tag, idx) => (
+            <Badge
+              key={`${tag}-${idx}`}
+              variant="secondary"
+              className="gap-1 pr-1"
+            >
+              #{tag.replace(/^#+/u, "")}
+              {!disabled ? (
+                <button
+                  type="button"
+                  onClick={() => removeTag(idx)}
+                  className="hover:bg-muted-foreground/20 rounded-full p-0.5"
+                  aria-label={`Remove ${tag}`}
+                >
+                  <X
+                    className="h-3 w-3"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                </button>
+              ) : null}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
       {recentTags.length > 0 ? (
         <div className="space-y-1">
-          <span className="text-muted-foreground text-xs font-medium">
+          <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
             Recent
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -248,8 +253,9 @@ export function TagsChipRow({
           </div>
         </div>
       ) : null}
+
       {queuePresetName ? (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground/80 text-[10px]">
           Queue default: {queuePresetName}
         </p>
       ) : null}

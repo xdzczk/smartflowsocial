@@ -1,19 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.027542875">
-    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-27T15:29:26.728Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.027542875">
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000766458">
+<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.01708525">
+    <testsuite name="tests/unit/composer-publish-mode.test.ts" timestamp="2026-03-27T17:53:53.382Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001756458">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; returns queue CTA for queue mode" time="0.000750166">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness presentation tone" time="0.000121083">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; uses unified CTA labels across entity types" time="0.000151167">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000175875">
+        <testcase classname="tests/unit/composer-publish-mode.test.ts" name="composer publish mode helpers &gt; maps poll modes to submit actions" time="0.000120167">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000424292">
+    </testsuite>
+    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-27T17:53:53.383Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.015328792">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000710375">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildPublishingOutcomeSentence covers now, schedule, queue" time="0.024905666">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness presentation tone" time="0.000137041">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPostStatusSummaryInline matches rail spec shape" time="0.000213333">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; resolveComposerIssueDisplayPhase prioritizes publish attempt over touch" time="0.000125">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatRecyclableMetaLine" time="0.000079917">
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000194208">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000401958">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildPublishingOutcomeSentence covers now, schedule, queue" time="0.012605875">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPostStatusSummaryInline matches rail spec shape" time="0.000187">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatRecyclableMetaLine" time="0.000083708">
+        </testcase>
+        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPublishSummaryOptionsLine" time="0.000103875">
         </testcase>
     </testsuite>
 </testsuites>

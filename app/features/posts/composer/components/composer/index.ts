@@ -46,6 +46,7 @@ export {
 export {
   getReadinessLabel,
   getReadinessPresentation,
+  resolveComposerIssueDisplayPhase,
   buildDeliveryLines,
   buildPostContentLines,
   buildComposerContentSummaryLines,
@@ -59,6 +60,7 @@ export {
   formatPollPostStatusSummaryInline,
   formatPostStatusSummaryInline,
   formatRecyclableMetaLine,
+  formatPublishSummaryOptionsLine,
   formatScheduledForDisplay,
   formatThreadPostStatusSummaryInline,
 } from "./publishing-summary";
@@ -67,5 +69,6 @@ export type {
   ReadinessTone,
   ReadinessPresentation,
   PublishPathSummary,
+  ComposerIssueDisplayPhase,
 } from "./publishing-summary";
 export { getQueueNextSlotLabel } from "./composer-helpers";

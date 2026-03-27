@@ -27,16 +27,21 @@ export interface ComposerContentFieldProps {
   id?: string;
   /** Optional className for the wrapper */
   className?: string;
+  /** Focus textarea on mount (main compose route only; avoid in embeds). */
+  autoFocus?: boolean;
 }
 
 const DEFAULT_MAX_LENGTH = 5000;
+
+const DEFAULT_PLACEHOLDER =
+  "Share an update, link, or drop media—tokens go inline as you type.";
 
 export function ComposerContentField({
   value,
   onChange,
   error = null,
   disabled = false,
-  placeholder = "Write your post…",
+  placeholder = DEFAULT_PLACEHOLDER,
   rows = 6,
   showDraftButton = false,
   onOpenDraft,
@@ -44,54 +49,59 @@ export function ComposerContentField({
   maxLength = DEFAULT_MAX_LENGTH,
   id = "content",
   className = "",
+  autoFocus = false,
 }: ComposerContentFieldProps) {
   return (
     <div className={className}>
-      <div className="border-border bg-card focus-within:ring-primary/25 relative rounded-lg border p-4 shadow-sm transition-shadow duration-200 focus-within:ring-2">
-        <Textarea
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={
-            "text-foreground min-h-[180px] resize-y border-0 bg-transparent text-[15px] leading-relaxed shadow-none focus-visible:ring-0 " +
-            (error ? "focus-visible:ring-destructive" : "")
-          }
-          placeholder={placeholder}
-          rows={rows}
-          disabled={disabled}
-        />
-        {showDraftButton && onOpenDraft ? (
-          <div className="absolute top-4 right-4 flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onOpenDraft}
-              disabled={disabled}
-              aria-label={draftButtonLabel}
-            >
-              <FolderOpen
-                className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-              {draftButtonLabel}
-            </Button>
-          </div>
-        ) : null}
+      <div className="border-border bg-card focus-within:ring-primary/25 relative overflow-hidden rounded-lg border shadow-sm transition-shadow duration-200 focus-within:ring-2">
+        <div className="relative px-3 pt-3 pb-2">
+          <Textarea
+            id={id}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            autoFocus={autoFocus} // eslint-disable-line jsx-a11y/no-autofocus -- optional; main compose route only
+            className={
+              "text-foreground min-h-[150px] resize-y border-0 bg-transparent px-0 py-0 text-[15px] leading-relaxed shadow-none focus-visible:ring-0 " +
+              (showDraftButton && onOpenDraft ? "pr-28 " : "") +
+              (error ? "focus-visible:ring-destructive" : "")
+            }
+            placeholder={placeholder}
+            rows={rows}
+            disabled={disabled}
+          />
+          {showDraftButton && onOpenDraft ? (
+            <div className="absolute top-3 right-3 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onOpenDraft}
+                disabled={disabled}
+                aria-label={draftButtonLabel}
+              >
+                <FolderOpen
+                  className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                {draftButtonLabel}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        <div className="border-border/80 bg-muted/25 text-muted-foreground flex flex-col gap-0.5 border-t px-3 py-1.5 text-[11px] sm:flex-row sm:items-center sm:justify-between">
+          <span className="hidden sm:inline">
+            ⌘S save draft · ⌘↵ publish (when ready)
+          </span>
+          <span className="sm:hidden">⌘S save · ⌘↵ publish</span>
+          <span className="text-foreground/80 text-right text-xs tabular-nums sm:ml-auto">
+            {value.length} / {maxLength}
+          </span>
+        </div>
       </div>
       {error?.message ? (
         <div className="text-destructive mt-1 text-sm">{error.message}</div>
       ) : null}
-      <div className="text-muted-foreground mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
-        <span className="hidden sm:inline">
-          ⌘S save draft · ⌘↵ publish (when ready)
-        </span>
-        <span className="sm:hidden">⌘S save · ⌘↵ publish</span>
-        <span className="text-right text-sm tabular-nums sm:ml-auto">
-          {value.length} / {maxLength}
-        </span>
-      </div>
     </div>
   );
 }

@@ -25,6 +25,8 @@ export interface ComposerThreadFieldProps {
   disabled?: boolean;
   draggingOverSegmentId: string | null;
   onDraggingOverSegmentIdChange: (id: string | null) => void;
+  /** e.g. Drafts button—aligned top-right of the thread stack for parity with post editor. */
+  topRightActions?: React.ReactNode;
 }
 
 export function ComposerThreadField({
@@ -36,6 +38,7 @@ export function ComposerThreadField({
   disabled = false,
   draggingOverSegmentId,
   onDraggingOverSegmentIdChange,
+  topRightActions,
 }: ComposerThreadFieldProps) {
   const estimatedMinutes = Math.max(
     0,
@@ -43,11 +46,18 @@ export function ComposerThreadField({
   );
   return (
     <div className="space-y-4">
-      <div className="bg-muted/30 rounded-md border px-3 py-2 text-xs">
-        <p>
-          {segments.length} segment{segments.length === 1 ? "" : "s"} ·
-          estimated duration {estimatedMinutes} min
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div className="bg-muted/30 min-w-0 flex-1 rounded-md border px-3 py-2 text-xs">
+          <p>
+            {segments.length} segment{segments.length === 1 ? "" : "s"} ·
+            estimated duration {estimatedMinutes} min
+          </p>
+        </div>
+        {topRightActions ? (
+          <div className="flex shrink-0 justify-end sm:pt-0">
+            {topRightActions}
+          </div>
+        ) : null}
       </div>
       {segments.map((seg, idx) => (
         <div

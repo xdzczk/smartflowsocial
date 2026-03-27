@@ -12,10 +12,10 @@ interface CreateComposerShellProps {
 }
 
 function tabButtonClass(active: boolean): string {
-  return `rounded-md px-3 py-1.5 text-sm font-medium ${
+  return `rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
     active
       ? "bg-primary text-primary-foreground"
-      : "text-muted-foreground hover:bg-muted"
+      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
   }`;
 }
 
@@ -26,12 +26,18 @@ export function CreateComposerShell({
   children,
 }: CreateComposerShellProps) {
   return (
-    <div className="p-6">
-      <div className="bg-background/95 mb-4 space-y-3 border-b pb-3 backdrop-blur">
+    <div className="px-6 pt-4 pb-5">
+      <header className="border-border/50 mb-3 space-y-1.5 border-b pb-2.5">
         <NewPostHeader title={title} />
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          role="tablist"
+          aria-label="Content type"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={contentType === "post"}
             className={tabButtonClass(contentType === "post")}
             onClick={() => onContentTypeChange("post")}
           >
@@ -39,6 +45,8 @@ export function CreateComposerShell({
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={contentType === "poll"}
             className={tabButtonClass(contentType === "poll")}
             onClick={() => onContentTypeChange("poll")}
           >
@@ -46,6 +54,8 @@ export function CreateComposerShell({
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={contentType === "thread"}
             className={tabButtonClass(contentType === "thread")}
             onClick={() => onContentTypeChange("thread")}
           >
@@ -53,13 +63,15 @@ export function CreateComposerShell({
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={contentType === "article"}
             className={tabButtonClass(contentType === "article")}
             onClick={() => onContentTypeChange("article")}
           >
             Article
           </button>
         </div>
-      </div>
+      </header>
       {children}
     </div>
   );

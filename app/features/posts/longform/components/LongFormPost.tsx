@@ -18,10 +18,12 @@ import {
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
   formatArticlePostStatusSummaryInline,
+  formatPublishSummaryOptionsLine,
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
   getQueueNextSlotLabel,
   getReadinessPresentation,
+  resolveComposerIssueDisplayPhase,
   type ComposerPublishMode,
 } from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
@@ -143,6 +145,8 @@ export default function LongFormPost({
     () => initialTemplateName ?? ""
   );
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
+  const [publishAttempted, setPublishAttempted] = useState(false);
+  const [composerTouched, setComposerTouched] = useState(false);
   const [articlePreviewOpen, setArticlePreviewOpen] = useState(false);
   const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
@@ -585,20 +589,45 @@ export default function LongFormPost({
     );
   }, [fetcher.state, onDraftStateLabelChange]);
 
-  const issueList: string[] = [];
-  if (!title.trim()) issueList.push("Article title is missing.");
-  if (!content.trim()) issueList.push("Article body is empty.");
-  if (!image) issueList.push("Article cover is missing.");
+  const deferrableBlockers: string[] = [];
+  if (!title.trim()) deferrableBlockers.push("Article title is missing.");
+  if (!content.trim()) deferrableBlockers.push("Article body is empty.");
+  if (!image) deferrableBlockers.push("Article cover is missing.");
   if (publishMode === "schedule" && !scheduledFor) {
-    issueList.push("Select a date and time.");
+    deferrableBlockers.push("Select a date and time.");
   }
   if (
     publishMode === "queue" &&
     (selectedQueueType === "unassigned" || selectedQueueType === "Unassigned")
   ) {
-    issueList.push("Choose a queue.");
+    deferrableBlockers.push("Choose a queue.");
   }
-  const readiness = getReadinessPresentation(publishMode, issueList, true);
+  const issueList = deferrableBlockers;
+  const issueDisplayPhase = resolveComposerIssueDisplayPhase(
+    publishAttempted,
+    composerTouched
+  );
+  const displayRedIssues =
+    issueDisplayPhase === "blocking" ? [...deferrableBlockers] : [];
+  const displayAmberIssues =
+    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+  const pristineHint =
+    issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
+      ? "Content required to publish. Add title, body, and cover, then set schedule or queue to continue."
+      : undefined;
+  const idleStatusLabel =
+    issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
+      ? "Draft"
+      : undefined;
+  const readinessForRail =
+    displayRedIssues.length > 0
+      ? getReadinessPresentation(publishMode, displayRedIssues, true)
+      : displayAmberIssues.length > 0
+        ? ({
+            tone: "warn",
+            headline: "Missing requirements",
+          } as const)
+        : getReadinessPresentation(publishMode, [], true);
   const contentSummaryLines = [
     ...buildArticleContentLines(
       title.trim().length > 0,
@@ -646,9 +675,43 @@ export default function LongFormPost({
 
   const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
+  useEffect(() => {
+    if (issueList.length === 0 && publishAttempted) {
+      setPublishAttempted(false);
+    }
+  }, [issueList.length, publishAttempted]);
+
+  useEffect(() => {
+    if (
+      title.trim().length > 0 ||
+      content.trim().length > 0 ||
+      Boolean(image) ||
+      (customTags ?? "").trim().length > 0
+    ) {
+      setComposerTouched(true);
+    }
+  }, [title, content, image, customTags]);
+
+  useEffect(() => {
+    if (publishMode !== "now") setComposerTouched(true);
+  }, [publishMode]);
+
+  useEffect(() => {
+    if (
+      selectedQueueType !== "unassigned" &&
+      selectedQueueType !== "Unassigned"
+    ) {
+      setComposerTouched(true);
+    }
+  }, [selectedQueueType]);
+
+  useEffect(() => {
+    if (scheduledFor?.trim()) setComposerTouched(true);
+  }, [scheduledFor]);
+
   return (
     <>
-      <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="flex min-h-screen flex-col gap-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
           <div className="relative">
@@ -701,12 +764,12 @@ export default function LongFormPost({
           />
 
           {!isTemplateMode ? (
-            <div className="border-border mx-auto mt-6 max-w-[760px] rounded-lg border px-4">
+            <div className="border-border/60 mx-auto mt-4 max-w-[760px] border-t px-4 pt-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground hover:text-foreground h-10 w-full justify-between rounded-none px-1 text-xs font-medium"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
                 onClick={() => setArticlePreviewOpen((o) => !o)}
                 aria-expanded={articlePreviewOpen}
               >
@@ -724,7 +787,7 @@ export default function LongFormPost({
                 )}
               </Button>
               {articlePreviewOpen ? (
-                <div className="border-border space-y-4 border-t py-4">
+                <div className="border-border/50 space-y-4 border-t py-3">
                   {image ? (
                     <div className="overflow-hidden rounded-lg border">
                       <img
@@ -928,7 +991,7 @@ export default function LongFormPost({
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
           outcomeSentence={outcomeSentence}
-          readiness={readiness}
+          readiness={readinessForRail}
           sessionStrip={{
             composerStatus,
             relayCount: 0,
@@ -1006,9 +1069,16 @@ export default function LongFormPost({
             ),
           }}
           postStatusSummaryInline={postStatusSummaryInline}
+          publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
+            followUpSummaryLine: longformFollowUpSummary,
+            showRecyclable: false,
+          })}
           contentSummaryLines={contentSummaryLines}
           publishPath={publishPath}
-          issues={issueList}
+          issues={displayRedIssues}
+          warnings={displayAmberIssues}
+          pristineHint={pristineHint}
+          idleStatusLabel={idleStatusLabel}
           primaryActionLabel={getPrimaryCtaLabelForMode(publishMode, "article")}
           primaryActionLoading={primaryActionLoading}
           primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
@@ -1019,6 +1089,7 @@ export default function LongFormPost({
             flushSync();
             void handleSchedule(publishMode === "now" ? "publish" : "schedule");
           }}
+          onPrimaryActionBlocked={() => setPublishAttempted(true)}
           primaryActionDisabled={
             fetcher.state !== "idle" ||
             !isFormValid ||

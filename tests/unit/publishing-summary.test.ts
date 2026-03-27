@@ -6,16 +6,18 @@ import {
   buildPublishPathLines,
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
+  formatPublishSummaryOptionsLine,
   formatRecyclableMetaLine,
   getReadinessLabel,
   getReadinessPresentation,
+  resolveComposerIssueDisplayPhase,
 } from "~/features/posts/composer/components/composer/publishing-summary";
 
 describe("publishing summary helpers", () => {
   it("returns readiness labels based on blockers and mode", () => {
     expect(getReadinessLabel("now", [], true)).toBe("Ready to publish");
     expect(getReadinessLabel("schedule", ["Missing content"], true)).toBe(
-      "1 issue to fix"
+      "Can't publish yet"
     );
     expect(getReadinessLabel("queue", [], false)).toBe("Signer not connected");
   });
@@ -23,6 +25,16 @@ describe("publishing summary helpers", () => {
   it("returns readiness presentation tone", () => {
     expect(getReadinessPresentation("now", [], true).tone).toBe("ok");
     expect(getReadinessPresentation("now", ["x"], true).tone).toBe("block");
+    expect(getReadinessPresentation("now", ["a", "b"], true).headline).toBe(
+      "Can't publish yet"
+    );
+  });
+
+  it("resolveComposerIssueDisplayPhase prioritizes publish attempt over touch", () => {
+    expect(resolveComposerIssueDisplayPhase(false, false)).toBe("pristine");
+    expect(resolveComposerIssueDisplayPhase(false, true)).toBe("soft");
+    expect(resolveComposerIssueDisplayPhase(true, false)).toBe("blocking");
+    expect(resolveComposerIssueDisplayPhase(true, true)).toBe("blocking");
   });
 
   it("builds queue delivery lines", () => {
@@ -67,7 +79,7 @@ describe("publishing summary helpers", () => {
         hasScheduleTime: true,
         selectedQueue: "unassigned",
       })
-    ).toContain("Will publish on");
+    ).toContain("Will schedule for");
 
     expect(
       buildPublishingOutcomeSentence({
@@ -78,7 +90,7 @@ describe("publishing summary helpers", () => {
         hasScheduleTime: false,
         selectedQueue: "unassigned",
       })
-    ).toBe("Choose a queue to continue.");
+    ).toBe("Choose a queue to continue");
 
     expect(
       buildPublishingOutcomeSentence({
@@ -90,7 +102,7 @@ describe("publishing summary helpers", () => {
         selectedQueue: "Morning",
         queueNextSlotLabel: "Today 09:00",
       })
-    ).toContain("Morning");
+    ).toContain("Will add to queue: Morning");
   });
 
   it("formatPostStatusSummaryInline matches rail spec shape", () => {
@@ -105,5 +117,21 @@ describe("publishing summary helpers", () => {
   it("formatRecyclableMetaLine", () => {
     expect(formatRecyclableMetaLine(true)).toBe("Recyclable: on");
     expect(formatRecyclableMetaLine(false)).toBe("Recyclable: off");
+  });
+
+  it("formatPublishSummaryOptionsLine", () => {
+    expect(
+      formatPublishSummaryOptionsLine({
+        followUpSummaryLine: "None",
+        showRecyclable: true,
+        isRecyclable: false,
+      })
+    ).toBe("Follow-up: none · Recyclable: off");
+    expect(
+      formatPublishSummaryOptionsLine({
+        followUpSummaryLine: "Quote (1)",
+        showRecyclable: false,
+      })
+    ).toBe("Follow-up: Quote (1)");
   });
 });
