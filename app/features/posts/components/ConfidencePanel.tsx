@@ -84,6 +84,31 @@ function compactLines(lines: string[], limit: number): string[] {
   return [...lines.slice(0, limit), `+${hiddenCount} more`];
 }
 
+function deriveActionSummary(
+  publishMode: ComposerPublishMode,
+  outcomeSentence: string
+): string {
+  const s = outcomeSentence.trim();
+  if (!s) {
+    return publishMode === "schedule"
+      ? "Schedule not set"
+      : publishMode === "queue"
+        ? "Queue not selected"
+        : "Publishes now";
+  }
+  if (publishMode === "now") {
+    return s
+      .replace(/^Publishes immediately after signing/i, "Publishes now")
+      .replace(/\.$/, "");
+  }
+  if (publishMode === "schedule") {
+    if (/select a publish time/i.test(s)) return "Schedule not set";
+    return s.replace(/^Will publish on/i, "Schedules for").replace(/\.$/, "");
+  }
+  if (/choose a queue/i.test(s)) return "Queue not selected";
+  return s.replace(/^Will be added to/i, "Adds to").replace(/\.$/, "");
+}
+
 function PublishingModeFusedHeader({
   publishMode,
   onPublishModeChange,
@@ -335,7 +360,7 @@ function PostStatusBlock({
 function PublishingSummaryRailBody({
   publishMode,
   onPublishModeChange,
-  outcomeSentence,
+  outcomeSentence: _outcomeSentence,
   readiness,
   sessionStrip,
   modeSpecificSection,
@@ -360,22 +385,24 @@ function PublishingSummaryRailBody({
   | "secondaryActionDisabled"
   | "saveStateLabel"
 >) {
+  void _outcomeSentence;
   return (
     <div className="flex flex-col gap-0 text-xs">
       <PublishingModeFusedHeader
         publishMode={publishMode}
         onPublishModeChange={onPublishModeChange}
       />
-      <div className="bg-card px-3 py-2.5">
-        <p className="text-foreground text-sm leading-snug font-medium">
-          {outcomeSentence}
-        </p>
-      </div>
-      <div className="border-border/60 space-y-2 border-t px-3 py-2">
+      <div className="space-y-2 px-3 py-2">
         {threadSettingsSection ? (
           <SectionBlock {...threadSettingsSection} />
         ) : null}
-        {modeSpecificSection ? <SectionBlock {...modeSpecificSection} /> : null}
+        {modeSpecificSection ? (
+          <SectionBlock
+            title=""
+            lines={modeSpecificSection.lines}
+            controls={modeSpecificSection.controls}
+          />
+        ) : null}
         {followUp ? (
           <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
             {followUp.children}
@@ -399,6 +426,7 @@ function PublishingSummaryRailBody({
 }
 
 function PublishingSummaryRailActions({
+  actionSummary,
   primaryActionLabel,
   onPrimaryAction,
   primaryActionDisabled,
@@ -417,7 +445,7 @@ function PublishingSummaryRailActions({
   | "secondaryActionLabel"
   | "onSecondaryAction"
   | "secondaryActionDisabled"
->) {
+> & { actionSummary: string }) {
   const showLoading = Boolean(
     primaryActionLoading && primaryActionLoadingLabel
   );
@@ -425,13 +453,16 @@ function PublishingSummaryRailActions({
 
   return (
     <div className="border-border/60 shrink-0 overflow-hidden border-t">
+      <div className="text-muted-foreground border-border/60 bg-muted/10 border-b px-3 py-1.5 text-[11px] leading-snug">
+        {actionSummary}
+      </div>
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/60 bg-muted/15 space-y-0.5 border-b px-2.5 py-1.5">
+        <div className="border-border/60 bg-muted/10 border-b">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="border-border/70 h-9 w-full text-xs font-medium"
+            className="h-9 w-full rounded-none text-xs font-medium"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
@@ -439,12 +470,12 @@ function PublishingSummaryRailActions({
           </Button>
         </div>
       ) : null}
-      <div className="bg-primary/95 px-1.5 pt-1.5 pb-2">
+      <div className="bg-primary/95 p-0">
         <Button
           type="button"
           size="sm"
           variant="default"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 w-full border-0 text-xs font-semibold shadow-none"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none border-0 text-xs font-semibold shadow-none"
           onClick={onPrimaryAction}
           disabled={Boolean(primaryActionDisabled) || showLoading}
         >
@@ -457,6 +488,10 @@ function PublishingSummaryRailActions({
 
 export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const actionSummary = deriveActionSummary(
+    props.publishMode,
+    props.outcomeSentence
+  );
 
   const bodyProps = {
     publishMode: props.publishMode,
@@ -488,6 +523,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
           </div>
           <div className="shrink-0">
             <PublishingSummaryRailActions
+              actionSummary={actionSummary}
               primaryActionLabel={props.primaryActionLabel}
               onPrimaryAction={props.onPrimaryAction}
               primaryActionDisabled={props.primaryActionDisabled}
@@ -518,6 +554,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
               </div>
               <div className="shrink-0">
                 <PublishingSummaryRailActions
+                  actionSummary={actionSummary}
                   primaryActionLabel={props.primaryActionLabel}
                   onPrimaryAction={() => {
                     props.onPrimaryAction();

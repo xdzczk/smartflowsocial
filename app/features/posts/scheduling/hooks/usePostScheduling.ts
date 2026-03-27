@@ -7,6 +7,7 @@ import {
   addHours,
   formatForDateTimeLocal,
   nowInTimezone,
+  parseDateTimeLocal,
 } from "~/lib/temporal";
 
 interface UsePostSchedulingProps {
@@ -116,18 +117,28 @@ export function usePostScheduling({
       return;
     }
 
-    // Use Temporal for cleaner date arithmetic and formatting
     const effectiveTimezone = userTimezone || (user?.timezone ?? "UTC");
     const now = nowInTimezone(effectiveTimezone);
-    const hoursLater = addHours(now, Number(intervalHours));
+    const hoursNum = Number(intervalHours);
 
-    // Format for datetime-local input in user's timezone
-    const formattedForInput = formatForDateTimeLocal(
-      hoursLater,
-      effectiveTimezone
-    );
-
-    setScheduledFor(formattedForInput);
+    setScheduledFor((prev) => {
+      const trimmed = prev.trim();
+      let base: ReturnType<typeof nowInTimezone>;
+      if (trimmed) {
+        try {
+          base = parseDateTimeLocal(trimmed, effectiveTimezone);
+        } catch {
+          base = now;
+        }
+      } else {
+        base = now;
+      }
+      let result = addHours(base, hoursNum);
+      if (Number(result.epochMilliseconds) < Number(now.epochMilliseconds)) {
+        result = now;
+      }
+      return formatForDateTimeLocal(result, effectiveTimezone);
+    });
     setTimeError("");
     if (onTimeErrorRef.current) {
       onTimeErrorRef.current("");

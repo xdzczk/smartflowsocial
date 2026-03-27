@@ -4,6 +4,7 @@ import {
   addHours,
   formatForDateTimeLocal,
   nowInTimezone,
+  parseDateTimeLocal,
 } from "~/lib/temporal";
 interface QueueType {
   id?: string;
@@ -169,13 +170,25 @@ export function useLongFormScheduling({
         return;
       }
 
-      const now = nowInTimezone(userTimezone);
-      const hoursLaterZoned = addHours(now, intervalHours);
-      const formattedForInput = formatForDateTimeLocal(
-        hoursLaterZoned,
-        userTimezone
-      );
-      setScheduledFor(formattedForInput);
+      setScheduledFor((prev) => {
+        const now = nowInTimezone(userTimezone);
+        const trimmed = (prev ?? "").trim();
+        let base: ReturnType<typeof nowInTimezone>;
+        if (trimmed) {
+          try {
+            base = parseDateTimeLocal(trimmed, userTimezone);
+          } catch {
+            base = now;
+          }
+        } else {
+          base = now;
+        }
+        let result = addHours(base, intervalHours);
+        if (Number(result.epochMilliseconds) < Number(now.epochMilliseconds)) {
+          result = now;
+        }
+        return formatForDateTimeLocal(result, userTimezone);
+      });
     },
     [selectedQueueType, userTimezone, calculateQueueScheduleTime]
   );

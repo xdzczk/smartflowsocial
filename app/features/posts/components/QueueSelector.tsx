@@ -58,7 +58,7 @@ export function QueueSelector({
           <SelectValue placeholder="Choose a queue" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="__unassigned__">No queue</SelectItem>
+          <SelectItem value="__unassigned__">Select queue</SelectItem>
           {queueTypes
             .filter((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;

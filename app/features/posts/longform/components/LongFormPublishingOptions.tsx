@@ -119,7 +119,7 @@ export function LongFormPublishingOptions({
               <SelectValue placeholder="Select queue" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__unassigned__">No queue</SelectItem>
+              <SelectItem value="__unassigned__">Select queue</SelectItem>
               {filteredQueues.map((queue) => {
                 const queueName =
                   typeof queue === "string" ? queue : queue.name;
@@ -210,7 +210,11 @@ export function LongFormPublishingOptions({
                 placeholder="Select date and time"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div
+              className={
+                isSlotBasedQueue ? "" : "grid grid-cols-5 gap-1.5 sm:gap-2"
+              }
+            >
               {isSlotBasedQueue ? (
                 <Button
                   type="button"
@@ -229,7 +233,7 @@ export function LongFormPublishingOptions({
                     variant="secondary"
                     size="sm"
                     onClick={() => onScheduleIntervalClick(interval)}
-                    className="transition-transform hover:scale-105"
+                    className="w-full min-w-0 shrink-0 px-1.5 text-xs transition-transform hover:scale-105 sm:px-2 sm:text-sm"
                   >
                     {formatIntervalLabel(interval, { compact: true })}
                   </Button>

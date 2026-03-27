@@ -71,7 +71,11 @@ export function SchedulingSection({
         </div>
       ) : null}
 
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+      <div
+        className={
+          isSlotBasedQueue ? "mt-2" : "mt-2 grid grid-cols-5 gap-1.5 sm:gap-2"
+        }
+      >
         {isSlotBasedQueue ? (
           <Button
             type="button"
@@ -92,7 +96,7 @@ export function SchedulingSection({
               size="sm"
               onClick={() => onScheduleIntervalClick(interval)}
               disabled={disabled}
-              className="border-primary text-foreground hover:bg-muted transition-transform duration-150 active:scale-95"
+              className="border-primary text-foreground hover:bg-muted w-full min-w-0 shrink-0 px-1.5 text-xs transition-transform duration-150 active:scale-95 sm:px-2 sm:text-sm"
             >
               {formatIntervalLabel(interval, { compact: true })}
             </Button>
