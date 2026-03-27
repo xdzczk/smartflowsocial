@@ -107,7 +107,7 @@ function PublishingModeFusedHeader({
     <div
       role="tablist"
       aria-label="Publishing mode"
-      className="border-border bg-muted/30 grid grid-cols-3 overflow-hidden"
+      className="border-border/80 bg-muted/25 grid grid-cols-3 overflow-hidden border-b"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -119,10 +119,10 @@ function PublishingModeFusedHeader({
             aria-selected={active}
             aria-label={ariaLabels[m]}
             className={cn(
-              "border-border min-h-[44px] border-r px-1 py-2.5 text-center text-xs transition-colors last:border-r-0",
+              "border-border/70 min-h-[44px] border-r px-1 py-2.5 text-center text-xs transition-colors last:border-r-0",
               active
-                ? "bg-card text-foreground border-primary z-[1] border-b-2 font-semibold shadow-[0_1px_0_0_hsl(var(--border))]"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? "bg-card text-foreground relative z-[1] -mb-px border-b border-b-transparent font-semibold"
+                : "text-muted-foreground bg-muted/20 hover:bg-muted/45 hover:text-foreground"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -186,10 +186,10 @@ function FollowUpRailCollapsible({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-border/80 bg-muted/5 rounded-lg border">
+    <div className="border-border/70 bg-muted/[0.04] rounded-lg border">
       <button
         type="button"
-        className="hover:bg-muted/30 flex w-full items-center gap-2 px-2.5 py-2 text-left text-xs"
+        className="hover:bg-muted/25 flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
@@ -220,7 +220,9 @@ function FollowUpRailCollapsible({
         )}
       </button>
       {open ? (
-        <div className="border-border/80 border-t px-2.5 py-2">{children}</div>
+        <div className="border-border/70 border-t px-2.5 py-1.5">
+          {children}
+        </div>
       ) : null}
     </div>
   );
@@ -234,7 +236,7 @@ function SectionBlock({
   if (lines.length === 0 && !controls) return null;
   const compacted = compactLines(lines, SECTION_LINE_LIMIT);
   return (
-    <div className="bg-muted/10 rounded-lg px-2.5 py-2">
+    <div className="bg-muted/[0.06] rounded-lg px-2.5 py-1.5">
       {title ? (
         <span className="text-muted-foreground text-xs font-medium">
           {title}
@@ -280,7 +282,7 @@ function PostStatusBlock({
   const summaryLine = postStatusSummaryInline ?? fallbackInline;
 
   return (
-    <div className="border-border/80 bg-muted/5 rounded-lg border border-dashed px-2.5 py-2.5">
+    <div className="border-border/70 bg-muted/[0.03] rounded-lg border px-2.5 py-2">
       <p className="text-muted-foreground mb-2 text-xs font-medium">
         Post status
       </p>
@@ -296,7 +298,7 @@ function PostStatusBlock({
           ))}
         </ul>
       ) : null}
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
         {sessionStrip ? (
           <Badge variant="outline" className="font-normal">
             {sessionStrip.composerStatus}
@@ -308,7 +310,7 @@ function PostStatusBlock({
         />
       </div>
       {postStatusRecyclableMeta ? (
-        <p className="text-muted-foreground mb-2 text-[11px] leading-snug">
+        <p className="text-muted-foreground mb-1.5 text-[11px] leading-snug opacity-85">
           {postStatusRecyclableMeta}
         </p>
       ) : null}
@@ -325,7 +327,7 @@ function PostStatusBlock({
         </div>
       ) : null}
       {compactIssues.length > 0 ? (
-        <div className="mt-2 space-y-1.5 rounded-lg border border-red-300/80 bg-red-500/[0.08] px-2.5 py-2 text-xs text-red-800 dark:border-red-900/80 dark:text-red-200">
+        <div className="mt-1.5 space-y-1 rounded-lg border border-red-300/85 bg-red-500/[0.08] px-2.5 py-1.5 text-xs text-red-800 dark:border-red-900/80 dark:text-red-200">
           <p className="leading-snug font-semibold">{readiness.headline}</p>
           {compactIssues.map((issue) => (
             <p key={issue} className="text-[11px] leading-snug opacity-95">
@@ -335,7 +337,7 @@ function PostStatusBlock({
         </div>
       ) : null}
       {compactWarnings.length > 0 ? (
-        <div className="mt-2 space-y-1 rounded-lg border border-amber-200/90 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200">
+        <div className="mt-1.5 space-y-1 rounded-lg border border-amber-200/90 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-800 dark:text-amber-200">
           {compactWarnings.map((warning) => (
             <p key={warning} className="text-[11px] leading-snug">
               {warning}
@@ -382,12 +384,12 @@ function PublishingSummaryRailBody({
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange}
         />
-        <div className="border-border/60 bg-card border-t px-3 py-2.5">
+        <div className="bg-card px-3 py-2.5">
           <p className="text-foreground text-sm leading-snug font-medium">
             {outcomeSentence}
           </p>
         </div>
-        <div className="border-border/60 space-y-3 border-t px-3 py-3">
+        <div className="border-border/60 space-y-2.5 border-t px-3 py-2.5">
           {threadSettingsSection ? (
             <SectionBlock {...threadSettingsSection} />
           ) : null}
@@ -446,27 +448,27 @@ function PublishingSummaryRailActions({
   const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
 
   return (
-    <div className="border-border mt-2 shrink-0 overflow-hidden rounded-xl border shadow-sm">
+    <div className="border-border/70 mt-1.5 shrink-0 overflow-hidden rounded-xl border">
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/80 bg-muted/30 space-y-1 border-b px-2.5 py-2">
+        <div className="border-border/70 bg-muted/20 space-y-0.5 border-b px-2.5 py-1.5">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-9 w-full text-xs font-medium"
+            className="border-border/70 h-9 w-full text-xs font-medium"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
             {secondaryActionLabel}
           </Button>
           {footerSaveHelper ? (
-            <p className="text-muted-foreground text-center text-[11px] leading-snug">
+            <p className="text-muted-foreground/80 text-center text-[10px] leading-snug">
               {footerSaveHelper}
             </p>
           ) : null}
         </div>
       ) : null}
-      <div className="bg-primary p-2">
+      <div className="bg-primary/95 p-1.5">
         <Button
           type="button"
           size="sm"

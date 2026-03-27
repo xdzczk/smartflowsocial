@@ -246,7 +246,7 @@ export function formatPollPostStatusSummaryInline(
   _isRecyclable: boolean
 ): string {
   void _isRecyclable;
-  return `${questionCharCount} chars · ${optionCount} options · ${tagsInlineSuffix(tagsSummary)}`;
+  return `${questionCharCount} question chars · ${optionCount} options · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
 export function formatArticlePostStatusSummaryInline(
