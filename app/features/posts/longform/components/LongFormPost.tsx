@@ -1,5 +1,5 @@
 import { Link, useFetcher } from "@remix-run/react";
-import { FolderOpen, Hash } from "lucide-react";
+import { Hash } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -34,7 +34,6 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
-  INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
@@ -107,9 +106,6 @@ interface LongFormPostProps {
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
-  /** When true, show "Drafts / Templates" near the writing surface (new article flow). */
-  showDraftTemplatesPicker?: boolean;
-  onOpenDraftTemplatesPicker?: () => void;
   /** Default relays from loader (count + relay modal seed). */
   defaultRelays?: string[];
   /** When user saved a custom set from the relay modal. */
@@ -143,8 +139,6 @@ export default function LongFormPost({
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
-  showDraftTemplatesPicker = false,
-  onOpenDraftTemplatesPicker,
   defaultRelays = [],
   relayOverride: relayOverrideProp,
   onRelayClick,
@@ -868,26 +862,6 @@ export default function LongFormPost({
     if (scheduledFor?.trim()) setComposerTouched(true);
   }, [scheduledFor]);
 
-  const draftsTemplatesButton =
-    showDraftTemplatesPicker && onOpenDraftTemplatesPicker ? (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-8 text-xs"
-        onClick={onOpenDraftTemplatesPicker}
-        disabled={fetcher.state !== "idle"}
-        aria-label="Drafts / Templates"
-      >
-        <FolderOpen
-          className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        Drafts / Templates
-      </Button>
-    ) : null;
-
   const editPreviewToggle = (
     <div
       className="border-border bg-background/80 inline-flex rounded-md border p-0.5"
@@ -999,7 +973,6 @@ export default function LongFormPost({
                 bodyView={bodyView}
                 previewMarkdown={content}
                 chromeLeading={editPreviewToggle}
-                chromeTrailing={draftsTemplatesButton}
               />
             </div>
 
@@ -1199,6 +1172,7 @@ export default function LongFormPost({
                       : [],
                   controls: (
                     <LongFormPublishingOptions
+                      layout="rail"
                       queueTypes={queueTypes}
                       selectedQueueType={selectedQueueType}
                       onQueueTypeChange={(name) => {

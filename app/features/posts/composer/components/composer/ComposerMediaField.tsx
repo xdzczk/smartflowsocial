@@ -1,25 +1,27 @@
 /**
- * Presentational media field: drop zone + AttachmentsStrip + hint.
+ * Media section: compact add + strip; dashed affordance only on drag-over.
  */
 
 import React, { useState } from "react";
 
 import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
+import { cn } from "~/lib/utils";
 
 export interface ComposerMediaFieldProps {
   attachments: ComposerAttachment[];
   onRemove: (localId: string) => void;
   onAdd: () => void;
   onFilesDropped?: (files: File[]) => void;
-  /** Reorder thumbnails (updates signing order when wired to content tokens) */
   onReorder?: (fromIndex: number, toIndex: number) => void;
   disabled?: boolean;
-  /** Accessible label for the drop zone */
   dropZoneLabel?: string;
-  /** Hint when no attachments */
   emptyHint?: string;
   className?: string;
+  /** Callout when Blossom (or similar) uploads depend on an active Nostr signer. */
+  signerConnectionNote?: React.ReactNode;
+  /** Tooltip on failed attachment tiles */
+  attachmentFailedTitle?: string;
 }
 
 export function ComposerMediaField({
@@ -30,8 +32,10 @@ export function ComposerMediaField({
   onReorder,
   disabled = false,
   dropZoneLabel = "Drop zone for images and videos. Press Enter to add files.",
-  emptyHint = "Drag, paste from clipboard, or + to add",
+  emptyHint = "Drag, paste, or click to add media",
   className = "",
+  signerConnectionNote,
+  attachmentFailedTitle,
 }: ComposerMediaFieldProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -71,39 +75,49 @@ export function ComposerMediaField({
 
   return (
     <div className={className}>
-      <h3 className="text-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+      <h3 className="text-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
         Media
       </h3>
+      {signerConnectionNote ? (
+        <div className="mb-2" role="note">
+          {signerConnectionNote}
+        </div>
+      ) : null}
       <div
         role="button"
         tabIndex={-1}
         aria-label={dropZoneLabel}
-        className={`border-border bg-muted/5 relative rounded-lg p-2.5 ${
-          empty
-            ? "min-h-[4rem] border-2 border-dashed"
-            : "min-h-0 border border-solid"
-        }`}
+        className={cn(
+          "relative rounded-lg transition-colors",
+          empty && !isDraggingOver && "min-h-0",
+          !empty && "bg-muted/15 -mx-1 rounded-md px-1 py-1.5 sm:px-1.5",
+          isDraggingOver &&
+            onFilesDropped &&
+            "bg-primary/5 ring-primary/40 ring-dashed ring-2"
+        )}
         onDragOver={onFilesDropped ? handleDragOver : undefined}
         onDragLeave={onFilesDropped ? handleDragLeave : undefined}
         onDrop={onFilesDropped ? handleDrop : undefined}
         onKeyDown={handleKeyDown}
       >
-        {isDraggingOver ? (
-          <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed">
+        {isDraggingOver && onFilesDropped ? (
+          <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex min-h-[3.5rem] items-center justify-center rounded-md border-2 border-dashed">
             <span className="text-muted-foreground text-sm">
               Drop to add images or videos
             </span>
           </div>
         ) : null}
         <AttachmentsStrip
+          variant="inline"
           attachments={attachments}
           onRemove={onRemove}
           onAdd={onAdd}
           onReorder={onReorder}
           disabled={disabled}
+          failedStatusTitle={attachmentFailedTitle}
         />
         {empty && !isDraggingOver && emptyHint ? (
-          <p className="text-muted-foreground mt-1 text-center text-[11px] sm:text-left">
+          <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug sm:mt-2">
             {emptyHint}
           </p>
         ) : null}

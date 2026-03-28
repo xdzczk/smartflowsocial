@@ -35,6 +35,8 @@ interface DraftPickerModalProps {
   draftsAndTemplates?: DraftsAndTemplatesPickerOptions;
   /** When `type` is short, limit listed drafts (default: all). */
   shortDraftFilter?: ShortDraftFilter;
+  /** Dual-mode only: which tab to show when the dialog opens. */
+  initialActiveTab?: "drafts" | "templates";
 }
 
 function previewText(text: string | null | undefined, maxLen: number): string {
@@ -50,6 +52,7 @@ export function DraftPickerModal({
   onSelect,
   draftsAndTemplates,
   shortDraftFilter = "all",
+  initialActiveTab = "drafts",
 }: DraftPickerModalProps) {
   const fetcher = useFetcher<{
     posts?: Array<{
@@ -77,8 +80,10 @@ export function DraftPickerModal({
   }, [open, skipDraftsFetch, fetcher.state, fetcher.data]);
 
   useEffect(() => {
-    if (open) setActiveTab("drafts");
-  }, [open]);
+    if (open) {
+      setActiveTab(initialActiveTab);
+    }
+  }, [open, initialActiveTab]);
 
   const data = fetcher.data;
   const postsRaw = data?.posts ?? [];

@@ -8,6 +8,10 @@ interface CreateComposerShellProps {
   contentType: CreateComposerContentType;
   onContentTypeChange: (next: CreateComposerContentType) => void;
   title?: string;
+  /**
+   * Shown to the left of `saveStateLabel` on the tab row (e.g. Drafts / Templates).
+   */
+  composerHeaderActions?: React.ReactNode;
   /** Shown on the right of the Post/Poll/Thread/Article tab row (e.g. save status). */
   saveStateLabel?: string | null;
   children: React.ReactNode;
@@ -25,11 +29,13 @@ export function CreateComposerShell({
   contentType,
   onContentTypeChange,
   title = "Create post",
+  composerHeaderActions = null,
   saveStateLabel = null,
   children,
 }: CreateComposerShellProps) {
   const showSaveLabel =
     typeof saveStateLabel === "string" && saveStateLabel.trim().length > 0;
+  const showRightCluster = composerHeaderActions != null || showSaveLabel;
 
   return (
     <div className="px-6 pt-4 pb-5">
@@ -37,7 +43,7 @@ export function CreateComposerShell({
         <NewPostHeader title={title} />
         <div className="flex w-full min-w-0 items-center gap-3">
           <div
-            className="flex min-w-0 flex-wrap items-center gap-1.5"
+            className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5"
             role="tablist"
             aria-label="Content type"
           >
@@ -78,13 +84,18 @@ export function CreateComposerShell({
               Article
             </button>
           </div>
-          {showSaveLabel ? (
-            <span
-              className="text-muted-foreground ml-auto shrink-0 text-right text-xs whitespace-nowrap tabular-nums"
-              aria-live="polite"
-            >
-              {saveStateLabel.trim()}
-            </span>
+          {showRightCluster ? (
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              {composerHeaderActions}
+              {showSaveLabel ? (
+                <span
+                  className="text-muted-foreground text-right text-xs whitespace-nowrap tabular-nums"
+                  aria-live="polite"
+                >
+                  {saveStateLabel.trim()}
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </header>

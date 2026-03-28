@@ -1,3 +1,8 @@
+export {
+  ComposerLeftCanvas,
+  ComposerCanvasDivider,
+} from "./ComposerLeftCanvas";
+export type { ComposerLeftCanvasProps } from "./ComposerLeftCanvas";
 export { ComposerOutputPanel } from "./ComposerOutputPanel";
 export type { ComposerOutputPanelProps } from "./ComposerOutputPanel";
 export { PollOutputPanel } from "./PollOutputPanel";

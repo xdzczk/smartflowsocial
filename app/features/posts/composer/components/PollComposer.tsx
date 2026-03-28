@@ -2,8 +2,8 @@
  * NIP-88 poll composer (kind 1068): question, options, schedule/publish via newpost action.
  */
 
-import { useFetcher, useNavigate } from "@remix-run/react";
-import { FolderOpen, Plus, Trash2 } from "lucide-react";
+import { useFetcher } from "@remix-run/react";
+import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -14,13 +14,8 @@ import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePan
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
-import { DraftPickerModal } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import type { QueueType } from "~/features/posts/types";
-import {
-  INLINE_ICON_SIZE_CLASS,
-  INLINE_ICON_STROKE,
-} from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
@@ -88,8 +83,6 @@ export interface PollComposerProps {
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   skipLocalDraftRestore?: boolean;
-  /** When set (including empty), show "Drafts / Templates" with template-only picker. */
-  composerTemplates?: Array<{ id: string; name: string | null }>;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- poll composer intentionally orchestrates many mode-specific UI states */
@@ -110,14 +103,9 @@ export function PollComposer({
   onPublishModeChange,
   onDraftStateLabelChange,
   skipLocalDraftRestore = false,
-  composerTemplates,
 }: PollComposerProps) {
   const fetcher = useFetcher();
-  const navigate = useNavigate();
   const user = useOptionalUser();
-  const draftTemplatesPickerEnabled = composerTemplates !== undefined;
-  const [draftTemplatesPickerOpen, setDraftTemplatesPickerOpen] =
-    useState(false);
   const userTimezone = user?.timezone ?? "UTC";
 
   const [question, setQuestion] = useState("");
@@ -642,39 +630,15 @@ export function PollComposer({
 
           <div className="space-y-2">
             <Label htmlFor="poll-question">Question</Label>
-            <div className="relative">
-              <textarea
-                id="poll-question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                disabled={disabled}
-                rows={3}
-                className={
-                  "border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 " +
-                  (draftTemplatesPickerEnabled ? "pr-28" : "")
-                }
-                placeholder="What do you want to ask?"
-              />
-              {draftTemplatesPickerEnabled ? (
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDraftTemplatesPickerOpen(true)}
-                    disabled={disabled}
-                    aria-label="Drafts / Templates"
-                  >
-                    <FolderOpen
-                      className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                    Drafts / Templates
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+            <textarea
+              id="poll-question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              disabled={disabled}
+              rows={3}
+              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="What do you want to ask?"
+            />
           </div>
 
           <div className="space-y-2">
@@ -963,26 +927,6 @@ export function PollComposer({
         }}
         secondaryActionDisabled={disabled}
       />
-      {draftTemplatesPickerEnabled ? (
-        <DraftPickerModal
-          open={draftTemplatesPickerOpen}
-          onClose={() => setDraftTemplatesPickerOpen(false)}
-          type="short"
-          shortDraftFilter="poll"
-          onSelect={(id) =>
-            navigate(
-              `/dashboard/compose?type=poll&draftId=${encodeURIComponent(id)}`
-            )
-          }
-          draftsAndTemplates={{
-            templates: composerTemplates,
-            onSelectTemplate: (templateId) =>
-              navigate(
-                `/dashboard/compose?type=poll&templateId=${encodeURIComponent(templateId)}`
-              ),
-          }}
-        />
-      ) : null}
     </div>
   );
 }

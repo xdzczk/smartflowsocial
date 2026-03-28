@@ -14,6 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  RailChip,
+  RailChipGroup,
+} from "~/features/posts/components/publishing-rail";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 const RECENT_TAGS_STORAGE_KEY = "sfs-composer-recent-tags";
@@ -233,19 +237,19 @@ export function TagsChipRow({
           <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
             Recent
           </span>
-          <div className="flex flex-wrap gap-1.5">
+          <RailChipGroup>
             {recentTags.map((t) => (
-              <button
+              <RailChip
                 key={t}
                 type="button"
                 disabled={disabled}
-                className="border-border bg-muted/40 hover:bg-muted text-foreground rounded-md border px-2 py-0.5 text-xs disabled:opacity-50"
+                className="text-muted-foreground hover:bg-muted/50 h-6 border-transparent bg-transparent px-2 text-[11px] font-normal"
                 onClick={() => addTagsAndRemember([t])}
               >
                 #{t}
-              </button>
+              </RailChip>
             ))}
-          </div>
+          </RailChipGroup>
         </div>
       ) : null}
 

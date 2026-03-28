@@ -32,11 +32,25 @@ export const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
   "video/mp4",
   "video/webm",
   "video/ogg",
   "video/quicktime",
 ] as const;
+
+/**
+ * Browsers (especially iOS Safari) often send multipart part Content-Type
+ * `application/octet-stream` when `File.type` is empty. We still verify the
+ * real type from file magic bytes and the allowlist; this only skips the
+ * strict header-vs-detected equality check for these placeholders.
+ */
+const CLIENT_CONTENT_TYPES_DEFER_TO_MAGIC_BYTES = new Set([
+  "application/octet-stream",
+]);
 
 /**
  * Legacy max size alias (absolute cap, 100MB).
@@ -119,16 +133,19 @@ export async function validateUpload(
     };
   }
 
-  // If contentType was provided, verify it matches detected type
-  // This prevents MIME type spoofing
+  // If contentType was provided, verify it matches detected type (prevents
+  // spoofing). Skip when the client sent a generic binary type — magic-byte
+  // detection + allowlist above are authoritative in that case.
   if (contentType) {
-    // Normalize content type (remove charset, etc.)
     const contentTypeParts = contentType.split(";");
     const normalizedContentType =
       contentTypeParts[0]?.trim().toLowerCase() ?? "";
     const normalizedDetected = detectedMimeType.toLowerCase();
 
-    if (normalizedContentType !== normalizedDetected) {
+    if (
+      !CLIENT_CONTENT_TYPES_DEFER_TO_MAGIC_BYTES.has(normalizedContentType) &&
+      normalizedContentType !== normalizedDetected
+    ) {
       return {
         valid: false,
         error: `Content-Type mismatch: expected ${detectedMimeType}, got ${contentType}`,

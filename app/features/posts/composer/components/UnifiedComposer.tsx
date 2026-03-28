@@ -4,8 +4,7 @@
  * Layout + composition of composer subcomponents and hooks.
  */
 
-import { useFetcher, useNavigate } from "@remix-run/react";
-import { FolderOpen } from "lucide-react";
+import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import React, {
   useCallback,
   useEffect,
@@ -28,6 +27,10 @@ import { Label } from "~/components/ui/label";
 import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
+import {
+  RailChip,
+  RailChipGroup,
+} from "~/features/posts/components/publishing-rail";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import {
@@ -36,12 +39,11 @@ import {
 } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
+import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import {
-  INLINE_ICON_SIZE_CLASS,
-  INLINE_ICON_STROKE,
-} from "~/lib/icon-constants";
+import { getUploadProvider } from "~/lib/query/hooks/useApiQuery";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { cn } from "~/lib/utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
@@ -61,7 +63,10 @@ import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 
 import {
+  ComposerCanvasDivider,
   ComposerErrors,
+  ComposerLeftCanvas,
+  ComposerOutputPanel,
   ComposerQueueField,
   ComposerScheduleField,
   type ComposerPublishMode,
@@ -75,14 +80,12 @@ import {
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
   formatPublishSummaryOptionsLine,
-  formatThreadPostStatusSummaryInline,
   getQueueNextSlotLabel,
 } from "./composer";
 import {
-  ACCEPTED_MEDIA_TYPES,
+  composerAttachmentMime,
   filterMediaFiles,
 } from "./composer/composer-helpers";
-import { ComposerOutputPanel } from "./composer/ComposerOutputPanel";
 import { MIN_THREAD_SEGMENTS } from "./composer/thread-constants";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
@@ -172,6 +175,10 @@ export interface UnifiedComposerProps {
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
+  /**
+   * When true, omit built-in draft/template picker UI and modal (e.g. New Post page uses shell actions).
+   */
+  suppressBuiltInDraftPicker?: boolean;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -205,14 +212,16 @@ export function UnifiedComposer({
   onRelayClick,
   composerTemplates,
   shortDraftFilter: shortDraftFilterProp,
+  suppressBuiltInDraftPicker = false,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
   const draftTemplatesPickerEnabled = composerTemplates !== undefined;
-  const draftButtonLabel = draftTemplatesPickerEnabled
-    ? "Drafts / Templates"
-    : "Drafts";
+  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
+  const [draftPickerInitialTab, setDraftPickerInitialTab] = useState<
+    "drafts" | "templates"
+  >("drafts");
   const shortDraftFilter: ShortDraftFilter =
     shortDraftFilterProp ?? (newPostContentTab === "thread" ? "thread" : "all");
   const user = useOptionalUser();
@@ -237,8 +246,6 @@ export function UnifiedComposer({
     initialAttachments: initialAttachmentsFromDraft,
   });
   const {
-    draftPickerOpen,
-    setDraftPickerOpen,
     publishSubmitInFlight,
     setPublishSubmitInFlight,
     lastPublishFailed,
@@ -273,6 +280,78 @@ export function UnifiedComposer({
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
+
+  const [mediaUploadProvider, setMediaUploadProvider] = useState<
+    string | undefined
+  >();
+  const [mediaUploadProviderKnown, setMediaUploadProviderKnown] =
+    useState(false);
+
+  const uploadProviderFetchActiveRef = useRef(false);
+  useEffect(() => {
+    uploadProviderFetchActiveRef.current = true;
+    void (async () => {
+      try {
+        const d = await getUploadProvider();
+        if (uploadProviderFetchActiveRef.current) {
+          setMediaUploadProvider(d.provider);
+        }
+      } catch {
+        // ignore — treat as unknown provider until a later refresh
+      } finally {
+        if (uploadProviderFetchActiveRef.current) {
+          setMediaUploadProviderKnown(true);
+        }
+      }
+    })();
+    return () => {
+      uploadProviderFetchActiveRef.current = false;
+    };
+  }, []);
+
+  const blossomMediaUploads =
+    mediaUploadProviderKnown && isBlossomProvider(mediaUploadProvider);
+
+  const blossomSignerMediaNote = useMemo(() => {
+    if (!blossomMediaUploads) return;
+    const signerMissing = signerReady === false;
+    return (
+      <div
+        className={cn(
+          "rounded-md border px-2.5 py-2 text-[11px] leading-snug",
+          signerMissing
+            ? "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+            : "border-border/70 bg-muted/40 text-muted-foreground"
+        )}
+      >
+        <span className="text-foreground font-medium">
+          Blossom media uploads
+        </span>{" "}
+        need an{" "}
+        <span className="text-foreground font-medium">active Nostr signer</span>
+        —either a{" "}
+        <span className="text-foreground font-medium">
+          browser extension
+        </span>{" "}
+        (NIP-07) or a{" "}
+        <span className="text-foreground font-medium">
+          connected remote signer
+        </span>{" "}
+        (NIP-46). If uploads fail or your signer connection is stale, open{" "}
+        <Link
+          to="/dashboard/settings"
+          className="text-primary font-medium underline underline-offset-2"
+        >
+          Settings
+        </Link>{" "}
+        and reconnect your signer.
+      </div>
+    );
+  }, [blossomMediaUploads, signerReady]);
+
+  const attachmentFailedTitleHint = blossomMediaUploads
+    ? "Upload failed. Reconnect your Nostr signer in Settings, remove this file, and add it again."
+    : undefined;
 
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
@@ -743,7 +822,7 @@ export function UnifiedComposer({
         localId: crypto.randomUUID(),
         status: "uploading",
         file,
-        mime: file.type,
+        mime: composerAttachmentMime(file),
       }));
       let newContent = content;
       for (const a of newAttachments) {
@@ -794,7 +873,7 @@ export function UnifiedComposer({
         localId: crypto.randomUUID(),
         status: "uploading" as const,
         file,
-        mime: file.type,
+        mime: composerAttachmentMime(file),
       }));
       setThreadSegments((prev) =>
         prev.map((p) => {
@@ -873,14 +952,15 @@ export function UnifiedComposer({
     const onPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items) return;
-      const files: File[] = [];
+      const raw: File[] = [];
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (item?.kind === "file") {
           const file = item.getAsFile();
-          if (file && ACCEPTED_MEDIA_TYPES.test(file.type)) files.push(file);
+          if (file) raw.push(file);
         }
       }
+      const files = filterMediaFiles(raw);
       if (files.length === 0) return;
       e.preventDefault();
       const firstSegment = threadSegments[0];
@@ -1068,9 +1148,6 @@ export function UnifiedComposer({
         `${threadSegments.length} segments`,
         `${threadSegments.reduce((acc, s) => acc + s.content.length, 0)} characters`,
         `${threadSegments.reduce((acc, s) => acc + s.attachments.length, 0)} media`,
-        selectedHashtags.trim()
-          ? `Tags: ${selectedHashtags.trim()}`
-          : "Tags: none",
       ]
     : buildComposerContentSummaryLines(
         content.length,
@@ -1094,20 +1171,25 @@ export function UnifiedComposer({
     formScheduledFor ?? schedulingScheduledFor
   );
 
+  const threadCharCount = threadSegments.reduce(
+    (acc, s) => acc + s.content.length,
+    0
+  );
+  const threadMediaCount = threadSegments.reduce(
+    (acc, s) => acc + s.attachments.length,
+    0
+  );
   const postStatusSummaryInline = isThreadMode
-    ? formatThreadPostStatusSummaryInline(
-        threadSegments.length,
-        threadSegments.reduce((acc, s) => acc + s.content.length, 0),
-        threadSegments.reduce((acc, s) => acc + s.attachments.length, 0),
-        selectedHashtags,
-        isRecyclableVal
-      )
+    ? `${threadSegments.length} segments · ${threadCharCount} chars · ${threadMediaCount} media`
     : formatPostStatusSummaryInline(
         content.length,
         attachments.length,
         selectedHashtags,
         isRecyclableVal
       );
+  const publishSummaryTagsLine = isThreadMode
+    ? selectedHashtags.trim() || "none"
+    : undefined;
 
   const outcomeSentence = buildPublishingOutcomeSentence({
     publishMode,
@@ -1238,6 +1320,41 @@ export function UnifiedComposer({
 
   const primarySubmitAction = getTextSubmitActionForMode(publishMode);
 
+  const openDraftPicker = (tab: "drafts" | "templates") => {
+    setDraftPickerInitialTab(tab);
+    setDraftPickerOpen(true);
+  };
+
+  const composerHeaderTrailing =
+    !isTemplateMode && !suppressBuiltInDraftPicker ? (
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => openDraftPicker("drafts")}
+          disabled={disabled}
+          aria-label="Open drafts"
+          className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+        >
+          Drafts
+        </Button>
+        {draftTemplatesPickerEnabled ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => openDraftPicker("templates")}
+            disabled={disabled}
+            aria-label="Open templates"
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+          >
+            Templates
+          </Button>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <fetcher.Form
@@ -1321,71 +1438,97 @@ export function UnifiedComposer({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="mb-4 space-y-4">
-          <UnifiedComposerContentSection
-            isThreadMode={isThreadMode}
-            content={
-              /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- form state can be undefined */
-              content ?? ""
-            }
-            onContentChange={(v) => form.setValue("content", v)}
-            contentError={form.formState.errors.content?.message ?? undefined}
-            disabled={disabled}
-            showDraftButton={!isTemplateMode}
-            onOpenDraft={() => setDraftPickerOpen(true)}
-            draftButtonLabel={draftButtonLabel}
-            threadTopRightActions={
-              isThreadMode && draftTemplatesPickerEnabled && !isTemplateMode ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDraftPickerOpen(true)}
-                  disabled={disabled}
-                  aria-label={draftButtonLabel}
-                >
-                  <FolderOpen
-                    className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  {draftButtonLabel}
-                </Button>
-              ) : undefined
-            }
-            attachments={attachments}
-            onRemoveAttachment={handleRemoveAttachment}
-            onAddAttachment={handleAddAttachment}
-            onReorderAttachments={handleReorderAttachments}
-            onFilesDroppedSingle={processNewFilesForSingleNote}
-            threadSegments={threadSegments}
-            onThreadSegmentsChange={setThreadSegments}
-            threadDelayMinutes={threadDelayMinutes}
-            onFilesDroppedSegment={processNewFilesForSegment}
-            onThreadSegmentFileClick={(segmentId) => {
-              (
-                window as unknown as { __threadSegmentId?: string }
-              ).__threadSegmentId = segmentId;
-              document.getElementById("thread-segment-file-input")?.click();
-            }}
-            draggingOverSegmentId={draggingOverSegmentId}
-            onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
-          />
-          {!isTemplateMode && !isThreadMode ? (
-            <ComposerOutputPanel
-              content={content}
+        <div className="mb-4">
+          <ComposerLeftCanvas
+            headerTrailing={composerHeaderTrailing ?? undefined}
+          >
+            <UnifiedComposerContentSection
+              isThreadMode={isThreadMode}
+              content={
+                /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- form state can be undefined */
+                content ?? ""
+              }
+              onContentChange={(v) => form.setValue("content", v)}
+              contentError={form.formState.errors.content?.message ?? undefined}
+              disabled={disabled}
               attachments={attachments}
-              tagsLine={selectedHashtags}
+              onRemoveAttachment={handleRemoveAttachment}
+              onAddAttachment={handleAddAttachment}
+              onReorderAttachments={handleReorderAttachments}
+              onFilesDroppedSingle={processNewFilesForSingleNote}
+              threadSegments={threadSegments}
+              onThreadSegmentsChange={setThreadSegments}
+              threadDelayMinutes={threadDelayMinutes}
+              onFilesDroppedSegment={processNewFilesForSegment}
+              onThreadSegmentFileClick={(segmentId) => {
+                (
+                  window as unknown as { __threadSegmentId?: string }
+                ).__threadSegmentId = segmentId;
+                document.getElementById("thread-segment-file-input")?.click();
+              }}
+              draggingOverSegmentId={draggingOverSegmentId}
+              onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
+              blossomSignerMediaNote={blossomSignerMediaNote}
+              attachmentFailedTitleHint={attachmentFailedTitleHint}
             />
-          ) : null}
-          {!isTemplateMode && isThreadMode && threadSegments[0] ? (
-            <ComposerOutputPanel
-              content={threadSegments[0].content}
-              attachments={threadSegments[0].attachments}
-              tagsLine={selectedHashtags}
-              previewLabel="Preview (first segment)"
-            />
-          ) : null}
+            {!isTemplateMode ? (
+              <>
+                <ComposerCanvasDivider />
+                {!isThreadMode ? (
+                  <ComposerOutputPanel
+                    variant="embedded"
+                    content={content}
+                    attachments={attachments}
+                    tagsLine={selectedHashtags}
+                  />
+                ) : (
+                  <ComposerOutputPanel
+                    variant="embedded"
+                    content={threadSegments[0]?.content ?? ""}
+                    attachments={threadSegments[0]?.attachments ?? []}
+                    tagsLine={selectedHashtags}
+                    previewLabel="Preview (first segment)"
+                  />
+                )}
+                <ComposerCanvasDivider />
+                <TagsChipRow
+                  tags={selectedHashtags}
+                  onTagsChange={(newTags) => {
+                    setSelectedHashtags(newTags);
+                    if (!newTags.trim()) {
+                      form.setValue("useHashtagPresets", false);
+                      form.setValue("hashTagPresetId", undefined);
+                      onHashtagPresetChange?.(null, "");
+                    }
+                  }}
+                  presets={hashTagPresets}
+                  selectedPresetId={formSelectedHashtagPresetId}
+                  onPresetSelect={(presetId, mergedTags) => {
+                    setSelectedHashtags(mergedTags);
+                    form.setValue("useHashtagPresets", true);
+                    form.setValue("hashTagPresetId", presetId ?? undefined);
+                    onHashtagPresetChange?.(presetId, mergedTags);
+                  }}
+                  disabled={fetcher.state !== "idle"}
+                  queuePresetName={
+                    selectedQueue !== "unassigned"
+                      ? ((
+                          queueTypes.find(
+                            (q) =>
+                              (typeof q === "string" ? q : q.name) ===
+                              selectedQueue
+                          ) as
+                            | (QueueType & {
+                                hashTagPreset?: { name: string } | null;
+                              })
+                            | undefined
+                        )?.hashTagPreset?.name ?? undefined)
+                      : undefined
+                  }
+                />
+              </>
+            ) : null}
+          </ComposerLeftCanvas>
         </div>
         <input
           id="thread-segment-file-input"
@@ -1415,44 +1558,6 @@ export function UnifiedComposer({
               placeholder="e.g. Weekly tip"
               className="max-w-xs"
               required
-            />
-          </div>
-        ) : null}
-        {!isTemplateMode ? (
-          <div className="mt-4">
-            <TagsChipRow
-              tags={selectedHashtags}
-              onTagsChange={(newTags) => {
-                setSelectedHashtags(newTags);
-                if (!newTags.trim()) {
-                  form.setValue("useHashtagPresets", false);
-                  form.setValue("hashTagPresetId", undefined);
-                  onHashtagPresetChange?.(null, "");
-                }
-              }}
-              presets={hashTagPresets}
-              selectedPresetId={formSelectedHashtagPresetId}
-              onPresetSelect={(presetId, mergedTags) => {
-                setSelectedHashtags(mergedTags);
-                form.setValue("useHashtagPresets", true);
-                form.setValue("hashTagPresetId", presetId ?? undefined);
-                onHashtagPresetChange?.(presetId, mergedTags);
-              }}
-              disabled={fetcher.state !== "idle"}
-              queuePresetName={
-                selectedQueue !== "unassigned"
-                  ? ((
-                      queueTypes.find(
-                        (q) =>
-                          (typeof q === "string" ? q : q.name) === selectedQueue
-                      ) as
-                        | (QueueType & {
-                            hashTagPreset?: { name: string } | null;
-                          })
-                        | undefined
-                    )?.hashTagPreset?.name ?? undefined)
-                  : undefined
-              }
             />
           </div>
         ) : null}
@@ -1574,6 +1679,7 @@ export function UnifiedComposer({
             ),
           }}
           postStatusSummaryInline={postStatusSummaryInline}
+          publishSummaryTagsLine={publishSummaryTagsLine}
           publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
             followUpSummaryLine: followUpSummaryLine,
             showRecyclable: true,
@@ -1598,15 +1704,12 @@ export function UnifiedComposer({
                   title: "Thread settings",
                   lines: threadSettingsLines,
                   controls: (
-                    <div className="flex flex-wrap items-center gap-1">
+                    <RailChipGroup>
                       {THREAD_CADENCE_MINUTES_CHIPS.map((v) => (
-                        <Button
+                        <RailChip
                           key={v}
                           type="button"
-                          size="sm"
-                          variant={
-                            threadDelayMinutes === v ? "default" : "outline"
-                          }
+                          selected={threadDelayMinutes === v}
                           onClick={() => {
                             setComposerTouched(true);
                             setThreadDelayMinutes(v);
@@ -1614,9 +1717,9 @@ export function UnifiedComposer({
                           disabled={disabled}
                         >
                           {v}m
-                        </Button>
+                        </RailChip>
                       ))}
-                    </div>
+                    </RailChipGroup>
                   ),
                 }
               : undefined
@@ -1646,33 +1749,36 @@ export function UnifiedComposer({
           secondaryActionDisabled={disabled}
         />
       ) : null}
-      <DraftPickerModal
-        open={draftPickerOpen}
-        onClose={() => setDraftPickerOpen(false)}
-        type="short"
-        onSelect={(id) => {
-          const separator = draftPickerNavigateBase.includes("?") ? "&" : "?";
-          navigate(
-            `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
-          );
-        }}
-        draftsAndTemplates={
-          draftTemplatesPickerEnabled
-            ? {
-                templates: composerTemplates,
-                onSelectTemplate: (templateId) => {
-                  const separator = draftPickerNavigateBase.includes("?")
-                    ? "&"
-                    : "?";
-                  navigate(
-                    `${draftPickerNavigateBase}${separator}templateId=${encodeURIComponent(templateId)}`
-                  );
-                },
-              }
-            : undefined
-        }
-        shortDraftFilter={shortDraftFilter}
-      />
+      {!suppressBuiltInDraftPicker ? (
+        <DraftPickerModal
+          open={draftPickerOpen}
+          onClose={() => setDraftPickerOpen(false)}
+          type="short"
+          initialActiveTab={draftPickerInitialTab}
+          onSelect={(id) => {
+            const separator = draftPickerNavigateBase.includes("?") ? "&" : "?";
+            navigate(
+              `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
+            );
+          }}
+          draftsAndTemplates={
+            draftTemplatesPickerEnabled
+              ? {
+                  templates: composerTemplates,
+                  onSelectTemplate: (templateId) => {
+                    const separator = draftPickerNavigateBase.includes("?")
+                      ? "&"
+                      : "?";
+                    navigate(
+                      `${draftPickerNavigateBase}${separator}templateId=${encodeURIComponent(templateId)}`
+                    );
+                  },
+                }
+              : undefined
+          }
+          shortDraftFilter={shortDraftFilter}
+        />
+      ) : null}
     </div>
   );
 }

@@ -2,12 +2,26 @@
  * Composer UI helpers: schedule time label, relative time, summary line, media filter.
  */
 
+import { inferMimeTypeFromFileName } from "~/features/upload/upload-file-utils";
+
 /** Regex for accepted attachment MIME types (image/*, video/*). */
 export const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
 
+/** Effective MIME for UI and policy when `File.type` is missing (common on iOS). */
+export function composerAttachmentMime(file: File): string {
+  return file.type || inferMimeTypeFromFileName(file.name);
+}
+
 /** Filter file list to accepted image/video types for composer attachments. */
 export function filterMediaFiles(files: File[]): File[] {
-  return files.filter((f) => ACCEPTED_MEDIA_TYPES.test(f.type));
+  return files.filter((f) => {
+    if (ACCEPTED_MEDIA_TYPES.test(f.type)) return true;
+    if (!f.type) {
+      const inferred = inferMimeTypeFromFileName(f.name);
+      return inferred ? ACCEPTED_MEDIA_TYPES.test(inferred) : false;
+    }
+    return false;
+  });
 }
 
 export function getScheduleTimeLabel(scheduledForStr: string): string | null {

@@ -3,6 +3,8 @@
  * Keeps UnifiedComposer.tsx focused on hook wiring and layout.
  */
 
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+
 import type { ComposerAttachment } from "~/features/posts/types";
 
 import {
@@ -17,9 +19,6 @@ export interface UnifiedComposerContentSectionProps {
   onContentChange: (v: string) => void;
   contentError: string | undefined;
   disabled: boolean;
-  showDraftButton: boolean;
-  onOpenDraft: () => void;
-  draftButtonLabel?: string;
   attachments: ComposerAttachment[];
   onRemoveAttachment: (localId: string) => void;
   onAddAttachment: () => void;
@@ -30,8 +29,8 @@ export interface UnifiedComposerContentSectionProps {
     content: string;
     attachments: ComposerAttachment[];
   }>;
-  onThreadSegmentsChange: React.Dispatch<
-    React.SetStateAction<
+  onThreadSegmentsChange: Dispatch<
+    SetStateAction<
       Array<{
         id: string;
         content: string;
@@ -43,10 +42,9 @@ export interface UnifiedComposerContentSectionProps {
   onFilesDroppedSegment: (segmentId: string, files: File[]) => void;
   onThreadSegmentFileClick: (segmentId: string) => void;
   draggingOverSegmentId: string | null;
-  onDraggingOverSegmentIdChange: React.Dispatch<
-    React.SetStateAction<string | null>
-  >;
-  threadTopRightActions?: React.ReactNode;
+  onDraggingOverSegmentIdChange: Dispatch<SetStateAction<string | null>>;
+  blossomSignerMediaNote?: ReactNode;
+  attachmentFailedTitleHint?: string;
 }
 
 export function UnifiedComposerContentSection({
@@ -55,9 +53,6 @@ export function UnifiedComposerContentSection({
   onContentChange,
   contentError,
   disabled,
-  showDraftButton,
-  onOpenDraft,
-  draftButtonLabel,
   attachments,
   onRemoveAttachment,
   onAddAttachment,
@@ -70,7 +65,8 @@ export function UnifiedComposerContentSection({
   onThreadSegmentFileClick,
   draggingOverSegmentId,
   onDraggingOverSegmentIdChange,
-  threadTopRightActions,
+  blossomSignerMediaNote,
+  attachmentFailedTitleHint,
 }: UnifiedComposerContentSectionProps) {
   if (isThreadMode) {
     return (
@@ -83,7 +79,8 @@ export function UnifiedComposerContentSection({
         disabled={disabled}
         draggingOverSegmentId={draggingOverSegmentId}
         onDraggingOverSegmentIdChange={onDraggingOverSegmentIdChange}
-        topRightActions={threadTopRightActions}
+        signerConnectionNote={blossomSignerMediaNote}
+        attachmentFailedTitle={attachmentFailedTitleHint}
       />
     );
   }
@@ -94,9 +91,7 @@ export function UnifiedComposerContentSection({
         onChange={onContentChange}
         error={contentError != null ? { message: contentError } : undefined}
         disabled={disabled}
-        showDraftButton={showDraftButton}
-        onOpenDraft={onOpenDraft}
-        draftButtonLabel={draftButtonLabel}
+        surface="embedded"
       />
       <ComposerMediaField
         attachments={attachments}
@@ -105,6 +100,8 @@ export function UnifiedComposerContentSection({
         onReorder={onReorderAttachments}
         onFilesDropped={onFilesDroppedSingle}
         disabled={disabled}
+        signerConnectionNote={blossomSignerMediaNote}
+        attachmentFailedTitle={attachmentFailedTitleHint}
       />
     </>
   );

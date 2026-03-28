@@ -1,17 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.005946374">
-    <testsuite name="tests/integration/services/loaders/longform-edit-loader.test.ts" timestamp="2026-03-28T09:03:31.765Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.003326916">
-        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should load longform edit data" time="0.001493709">
+<testsuites name="vitest tests" tests="22" failures="0" errors="0" time="0.018532875">
+    <testsuite name="tests/security/file-upload-security.test.ts" timestamp="2026-03-28T12:03:49.968Z" hostname="Ivans-MacBook-Pro.local" tests="17" failures="0" errors="0" skipped="0" time="0.016608375">
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should validate MIME types using magic bytes" time="0.012842166">
         </testcase>
-        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should throw 404 if post not found" time="0.000930125">
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should reject files with incorrect MIME type" time="0.000263209">
         </testcase>
-        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should use default timezone if user timezone is missing" time="0.000158375">
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should validate file content, not just extension" time="0.000128458">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should reject files that cannot be detected" time="0.000392458">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should accept valid PNG files" time="0.0002785">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should validate against Content-Type header if provided" time="0.00013025">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should accept application/octet-stream when magic bytes match (iOS empty File.type)" time="0.000079666">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Type Validation &gt; should only allow whitelisted MIME types" time="0.000397791">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Size Limits &gt; should enforce maximum file size" time="0.000240083">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Size Limits &gt; should accept files within size limit" time="0.000128375">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: File Size Limits &gt; should validate size before MIME type detection" time="0.00007675">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Constants &gt; should have MAX_FILE_SIZE defined" time="0.000109416">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Constants &gt; should have ALLOWED_MIME_TYPES defined" time="0.000148375">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Constants &gt; should only allow image MIME types" time="0.000195958">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Edge Cases &gt; should handle empty buffer" time="0.000064">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Edge Cases &gt; should handle very small buffers" time="0.000151208">
+        </testcase>
+        <testcase classname="tests/security/file-upload-security.test.ts" name="File Upload Security: Edge Cases &gt; should normalize Content-Type with charset" time="0.000127291">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/services/loaders/newlongform-loader.test.ts" timestamp="2026-03-28T09:03:31.765Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002619458">
-        <testcase classname="tests/integration/services/loaders/newlongform-loader.test.ts" name="New Longform Loader &gt; should load new longform data" time="0.001800916">
+    <testsuite name="tests/unit/media-policy.server.test.ts" timestamp="2026-03-28T12:03:49.970Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.0019245">
+        <testcase classname="tests/unit/media-policy.server.test.ts" name="evaluateMediaPolicy &gt; allows valid image payloads within limit" time="0.000739792">
         </testcase>
-        <testcase classname="tests/integration/services/loaders/newlongform-loader.test.ts" name="New Longform Loader &gt; should use default timezone if user timezone is missing" time="0.000176291">
+        <testcase classname="tests/unit/media-policy.server.test.ts" name="evaluateMediaPolicy &gt; rejects oversized images" time="0.00012275">
+        </testcase>
+        <testcase classname="tests/unit/media-policy.server.test.ts" name="evaluateMediaPolicy &gt; allows valid video payloads within limit" time="0.000095917">
+        </testcase>
+        <testcase classname="tests/unit/media-policy.server.test.ts" name="evaluateMediaPolicy &gt; rejects unsupported media types" time="0.000091">
+        </testcase>
+        <testcase classname="tests/unit/media-policy.server.test.ts" name="evaluateMediaPolicy &gt; allows HEIC/HEIF image types (iOS camera default)" time="0.000101667">
         </testcase>
     </testsuite>
 </testsuites>

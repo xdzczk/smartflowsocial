@@ -38,4 +38,13 @@ describe("evaluateMediaPolicy", () => {
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe("unsupported_media_type");
   });
+
+  it("allows HEIC/HEIF image types (iOS camera default)", () => {
+    expect(
+      evaluateMediaPolicy({ mimeType: "image/heic", sizeBytes: 1024 }).allowed
+    ).toBe(true);
+    expect(
+      evaluateMediaPolicy({ mimeType: "image/heif", sizeBytes: 1024 }).allowed
+    ).toBe(true);
+  });
 });

@@ -3,13 +3,14 @@
  * Default = loader relays; user can override.
  */
 
-import { useEffect, useState } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,16 +39,10 @@ export function RelaySelectorModal({
   onClose,
   onSave,
 }: RelaySelectorModalProps) {
+  const fieldIdPrefix = useId();
   const [urls, setUrls] = useState<string[]>(() =>
     selectedRelays.length > 0 ? [...selectedRelays] : [...defaultRelays]
   );
-
-  useEffect(() => {
-    const next =
-      selectedRelays.length > 0 ? [...selectedRelays] : [...defaultRelays];
-    const id = setTimeout(() => setUrls(next), 0);
-    return () => clearTimeout(id);
-  }, [defaultRelays, selectedRelays]);
 
   const toggle = (url: string) => {
     setUrls((prev) =>
@@ -68,15 +63,15 @@ export function RelaySelectorModal({
   );
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Post target: Relays</DialogTitle>
+          <DialogDescription>
+            Choose which relays this post will be published to. Leave as default
+            to use your configured relays.
+          </DialogDescription>
         </DialogHeader>
-        <p className="text-muted-foreground text-sm">
-          Choose which relays this post will be published to. Leave as default
-          to use your configured relays.
-        </p>
         <div className="flex justify-end">
           <Button
             type="button"
@@ -93,24 +88,27 @@ export function RelaySelectorModal({
               No relays configured.
             </p>
           ) : (
-            relayList.map((url) => (
-              <div
-                key={url}
-                className="flex items-center gap-2 rounded border p-2"
-              >
-                <Checkbox
-                  id={`relay-${url}`}
-                  checked={urls.includes(url)}
-                  onCheckedChange={() => toggle(url)}
-                />
-                <Label
-                  htmlFor={`relay-${url}`}
-                  className="text-muted-foreground cursor-pointer truncate text-sm"
+            relayList.map((url, index) => {
+              const inputId = `${fieldIdPrefix}-relay-${index}`;
+              return (
+                <div
+                  key={url}
+                  className="flex items-center gap-2 rounded border p-2"
                 >
-                  {formatRelayUrl(url)}
-                </Label>
-              </div>
-            ))
+                  <Checkbox
+                    id={inputId}
+                    checked={urls.includes(url)}
+                    onCheckedChange={() => toggle(url)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="text-muted-foreground cursor-pointer truncate text-sm"
+                  >
+                    {formatRelayUrl(url)}
+                  </Label>
+                </div>
+              );
+            })
           )}
         </div>
         <DialogFooter>

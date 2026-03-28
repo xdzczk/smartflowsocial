@@ -7,8 +7,9 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { CreateComposerShell } from "~/features/posts/composer";
@@ -33,6 +34,11 @@ export default function NewLongFormPostPage() {
   const actionData = useActionData<unknown>();
   const queryClient = useQueryClient();
 
+  const parsedLoader = useMemo(
+    () => parseNewLongFormPostLoader(loaderData),
+    [loaderData]
+  );
+
   const {
     userTags,
     scheduleIntervals,
@@ -43,7 +49,7 @@ export default function NewLongFormPostPage() {
     defaultRelays,
     initialTemplateData,
     templatesRaw,
-  } = parseNewLongFormPostLoader(loaderData);
+  } = parsedLoader;
 
   const safeUserTags = typeof userTags === "string" ? userTags : "";
 
@@ -82,11 +88,17 @@ export default function NewLongFormPostPage() {
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
-  const [draftTemplatesPickerOpen, setDraftTemplatesPickerOpen] =
-    useState(false);
+  const [longformDraftPicker, setLongformDraftPicker] = useState<{
+    open: boolean;
+    tab: "drafts" | "templates";
+  }>({ open: false, tab: "drafts" });
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+
+  const openRelaySelector = useCallback(() => {
+    setRelaySelectorOpen(true);
+  }, []);
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -173,6 +185,34 @@ export default function NewLongFormPostPage() {
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
       title={initialTemplateData ? "Edit article draft" : "Create article"}
+      composerHeaderActions={
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setLongformDraftPicker({ open: true, tab: "drafts" })
+            }
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            aria-label="Open drafts"
+          >
+            Drafts
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setLongformDraftPicker({ open: true, tab: "templates" })
+            }
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            aria-label="Open templates"
+          >
+            Templates
+          </Button>
+        </div>
+      }
       saveStateLabel={saveStateLabel}
     >
       <ErrorMessage
@@ -216,14 +256,12 @@ export default function NewLongFormPostPage() {
           selectedHashtags={selectedHashtags}
           onHashtagPresetChange={handleHashtagPresetSelect}
           skipLocalDraftRestore={Boolean(publishResultToken)}
-          showDraftTemplatesPicker
-          onOpenDraftTemplatesPicker={() => setDraftTemplatesPickerOpen(true)}
           onDraftStateLabelChange={setSaveStateLabel}
           defaultRelays={defaultRelays}
           relayOverride={
             selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
           }
-          onRelayClick={() => setRelaySelectorOpen(true)}
+          onRelayClick={openRelaySelector}
         />
       </Form>
 
@@ -242,8 +280,9 @@ export default function NewLongFormPostPage() {
       ) : null}
 
       <DraftPickerModal
-        open={draftTemplatesPickerOpen}
-        onClose={() => setDraftTemplatesPickerOpen(false)}
+        open={longformDraftPicker.open}
+        onClose={() => setLongformDraftPicker((s) => ({ ...s, open: false }))}
+        initialActiveTab={longformDraftPicker.tab}
         type="longform"
         onSelect={(id) => navigate(`/dashboard/drafts/longform/edit/${id}`)}
         draftsAndTemplates={{

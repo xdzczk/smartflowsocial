@@ -7,7 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { railSelectTriggerClassNames } from "~/features/posts/components/publishing-rail";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
@@ -50,7 +52,7 @@ export function QueueSelector({
       >
         <SelectTrigger
           id="queue-type-select"
-          className="w-full"
+          className={cn("w-full", railSelectTriggerClassNames)}
           aria-label="Select queue"
         >
           <SelectValue placeholder="Choose a queue" />

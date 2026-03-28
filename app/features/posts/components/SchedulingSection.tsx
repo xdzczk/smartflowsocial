@@ -1,6 +1,10 @@
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  RailChip,
+  RailChipGroup,
+  railFieldClassNames,
+} from "~/features/posts/components/publishing-rail";
 import {
   COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
   formatIntervalLabel,
@@ -37,6 +41,7 @@ export function SchedulingSection({
   className = "",
   userTimezone = "UTC",
 }: SchedulingSectionProps) {
+  void _scheduleIntervals;
   // Find the currently selected queue type
   const selectedQueueType = queueTypes.find((qt) =>
     typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
@@ -58,6 +63,7 @@ export function SchedulingSection({
               type="datetime-local"
               id="scheduledFor"
               name="scheduledFor"
+              className={railFieldClassNames}
               value={scheduledFor}
               onChange={(e) => {
                 const v = e.target.value;
@@ -73,33 +79,31 @@ export function SchedulingSection({
 
       <div
         className={
-          isSlotBasedQueue ? "mt-2" : "mt-2 grid grid-cols-5 gap-1.5 sm:gap-2"
+          isSlotBasedQueue ? "mt-2" : "mt-2 grid grid-cols-5 gap-1 sm:gap-1.5"
         }
       >
         {isSlotBasedQueue ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onCalculateNextSlot}
-            disabled={disabled}
-            className="border-primary text-foreground hover:bg-muted transition-transform duration-150 active:scale-95"
-          >
-            Next Slot
-          </Button>
+          <RailChipGroup className="w-full">
+            <RailChip
+              type="button"
+              className="w-full min-w-0"
+              onClick={onCalculateNextSlot}
+              disabled={disabled}
+            >
+              Next slot
+            </RailChip>
+          </RailChipGroup>
         ) : (
           COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS.map((interval) => (
-            <Button
+            <RailChip
               key={interval}
               type="button"
-              variant="outline"
-              size="sm"
+              className="w-full min-w-0 px-1 sm:px-2"
               onClick={() => onScheduleIntervalClick(interval)}
               disabled={disabled}
-              className="border-primary text-foreground hover:bg-muted w-full min-w-0 shrink-0 px-1.5 text-xs transition-transform duration-150 active:scale-95 sm:px-2 sm:text-sm"
             >
               {formatIntervalLabel(interval, { compact: true })}
-            </Button>
+            </RailChip>
           ))
         )}
       </div>

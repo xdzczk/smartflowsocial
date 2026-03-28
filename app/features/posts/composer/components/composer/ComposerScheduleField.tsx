@@ -14,10 +14,16 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
+import {
+  RailSettingsRow,
+  railFieldClassNames,
+  railSelectTriggerClassNames,
+} from "~/features/posts/components/publishing-rail";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import type { QueueType, RepostConditions } from "~/features/posts/types";
 import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 export interface RepostDelayItem {
   id: string;
@@ -104,6 +110,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
           <Input
             type="datetime-local"
             id="scheduledFor"
+            className={railFieldClassNames}
             value={value}
             onChange={(e) => {
               const v = e.target.value;
@@ -126,6 +133,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
             type="datetime-local"
             id="scheduledFor"
             aria-label="Publish date and time"
+            className={railFieldClassNames}
             value={value}
             onChange={(e) => {
               const v = e.target.value;
@@ -149,40 +157,46 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
         showTimeInput={false}
         userTimezone={userTimezone}
       />
-      <div className="flex items-center justify-between gap-3">
-        <Label
-          htmlFor="schedule-randomize-switch"
-          className="text-sm font-normal"
-        >
-          Randomize publish time
-        </Label>
-        <Switch
-          id="schedule-randomize-switch"
-          checked={scheduleRandomWindowMinutes > 0}
-          onCheckedChange={(on) => {
-            if (!on) {
-              onScheduleRandomWindowMinutesChange(0);
-            } else {
-              onScheduleRandomWindowMinutesChange(
-                scheduleRandomWindowMinutes > 0
-                  ? scheduleRandomWindowMinutes
-                  : 15
-              );
-            }
-          }}
-          disabled={disabled}
-        />
-      </div>
+      <RailSettingsRow
+        labelFor="schedule-randomize-switch"
+        label="Randomize publish time"
+        control={
+          <Switch
+            id="schedule-randomize-switch"
+            checked={scheduleRandomWindowMinutes > 0}
+            onCheckedChange={(on) => {
+              if (!on) {
+                onScheduleRandomWindowMinutesChange(0);
+              } else {
+                onScheduleRandomWindowMinutesChange(
+                  scheduleRandomWindowMinutes > 0
+                    ? scheduleRandomWindowMinutes
+                    : 15
+                );
+              }
+            }}
+            disabled={disabled}
+          />
+        }
+      />
       {scheduleRandomWindowMinutes > 0 ? (
-        <div className="space-y-2">
-          <Label htmlFor="scheduleRandomWindowMinutes">Window</Label>
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="scheduleRandomWindowMinutes"
+            className="text-muted-foreground text-xs font-medium"
+          >
+            Window
+          </Label>
           <Select
             value={String(scheduleRandomWindowMinutes)}
             onValueChange={(v) =>
               onScheduleRandomWindowMinutesChange(Number(v))
             }
           >
-            <SelectTrigger id="scheduleRandomWindowMinutes">
+            <SelectTrigger
+              id="scheduleRandomWindowMinutes"
+              className={cn(railSelectTriggerClassNames)}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

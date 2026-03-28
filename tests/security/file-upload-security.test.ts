@@ -153,6 +153,17 @@ describe("File Upload Security: File Type Validation", () => {
     expect(invalidResult.error).toContain("Content-Type mismatch");
   });
 
+  it("should accept application/octet-stream when magic bytes match (iOS empty File.type)", async () => {
+    const jpegBuffer = createValidJPEGBuffer();
+    const result = await validateUpload(
+      jpegBuffer,
+      "photo.jpg",
+      "application/octet-stream"
+    );
+    expect(result.valid).toBe(true);
+    expect(result.detectedMimeType).toBe("image/jpeg");
+  });
+
   it("should only allow whitelisted MIME types", async () => {
     // Test that only ALLOWED_MIME_TYPES are accepted
     const jpegBuffer = createValidJPEGBuffer();

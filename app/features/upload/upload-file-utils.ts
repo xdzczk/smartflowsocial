@@ -2,6 +2,29 @@
  * Pure utilities: file validation, hashing, and chunking.
  */
 
+/** Map common extensions to MIME when `File.type` is empty (e.g. iOS Safari). */
+const EXTENSION_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  ogg: "video/ogg",
+  ogv: "video/ogg",
+  mov: "video/quicktime",
+  qt: "video/quicktime",
+};
+
+/** Infer image/video MIME from filename when the browser leaves `File.type` blank. */
+export function inferMimeTypeFromFileName(fileName: string): string {
+  const ext = (fileName.split(".").pop() ?? "").toLowerCase();
+  return EXTENSION_TO_MIME[ext] ?? "";
+}
+
 export interface ValidationResult {
   valid: boolean;
   error?: string;

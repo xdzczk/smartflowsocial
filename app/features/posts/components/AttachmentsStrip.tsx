@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 import type { ComposerAttachment } from "../types";
 
@@ -16,8 +17,16 @@ interface AttachmentsStripProps {
   onRemove: (localId: string) => void;
   onAdd: () => void;
   disabled?: boolean;
+  /** Shown as native tooltip on failed tiles (e.g. Blossom + signer hints). */
+  failedStatusTitle?: string;
   /** Optional: reorder (fromIndex, toIndex) - for drag reorder */
   onReorder?: (fromIndex: number, toIndex: number) => void;
+  /**
+   * `inline` — no outer bordered box (use inside unified composer canvas).
+   * `boxed` — legacy bordered wrapper.
+   */
+  variant?: "inline" | "boxed";
+  className?: string;
 }
 
 export function AttachmentsStrip({
@@ -25,10 +34,20 @@ export function AttachmentsStrip({
   onRemove,
   onAdd,
   disabled = false,
+  failedStatusTitle,
   onReorder,
+  variant = "inline",
+  className,
 }: AttachmentsStripProps) {
   return (
-    <div className="border-border mt-2 flex flex-wrap items-center gap-2 rounded-md border p-2">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2",
+        variant === "boxed" && "border-border mt-2 rounded-md border p-2",
+        variant === "inline" && "mt-0",
+        className
+      )}
+    >
       {attachments.map((att, index) => (
         <div
           key={att.localId}
@@ -62,7 +81,12 @@ export function AttachmentsStrip({
             </span>
           ) : null}
           {att.status === "failed" ? (
-            <span className="text-destructive text-xs">Failed</span>
+            <span
+              className="text-destructive text-xs"
+              title={failedStatusTitle}
+            >
+              Failed
+            </span>
           ) : null}
           {onReorder && attachments.length > 1 ? (
             <div className="bg-background/80 absolute bottom-0 left-0 flex flex-col gap-0 p-0.5">

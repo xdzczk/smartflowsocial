@@ -27,8 +27,10 @@ export interface ComposerThreadFieldProps {
   disabled?: boolean;
   draggingOverSegmentId: string | null;
   onDraggingOverSegmentIdChange: (id: string | null) => void;
-  /** e.g. Drafts / Templates—top-right inside the first segment textarea. */
-  topRightActions?: React.ReactNode;
+  /** Shown once above segments when Blossom uploads depend on a Nostr signer. */
+  signerConnectionNote?: React.ReactNode;
+  /** Tooltip on failed attachment tiles in each segment */
+  attachmentFailedTitle?: string;
 }
 
 export function ComposerThreadField({
@@ -40,10 +42,16 @@ export function ComposerThreadField({
   disabled = false,
   draggingOverSegmentId,
   onDraggingOverSegmentIdChange,
-  topRightActions,
+  signerConnectionNote,
+  attachmentFailedTitle,
 }: ComposerThreadFieldProps) {
   return (
     <div className="space-y-4">
+      {signerConnectionNote ? (
+        <div className="mb-1" role="note">
+          {signerConnectionNote}
+        </div>
+      ) : null}
       {segments.map((seg, idx) => (
         <div
           key={seg.id}
@@ -52,8 +60,8 @@ export function ComposerThreadField({
           aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
           className={`group relative rounded-lg border p-3 ${
             idx === 0
-              ? "border-border bg-card shadow-sm"
-              : "animate-in fade-in slide-in-from-bottom-2 border-border border-l-primary/30 bg-muted/20 dark:bg-muted/10 border-l-2 duration-200"
+              ? "border-border/50 bg-muted/10 shadow-none"
+              : "animate-in fade-in slide-in-from-bottom-2 border-border/50 border-l-primary/25 bg-muted/15 dark:bg-muted/10 border-l duration-200"
           }`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -161,82 +169,39 @@ export function ComposerThreadField({
               </div>
             ) : null}
           </div>
-          {idx === 0 && topRightActions ? (
-            <div className="relative mb-2">
-              <Textarea
-                value={seg.content}
-                onChange={(e) =>
-                  onSegmentsChange((prev) =>
-                    prev.map((p) =>
-                      p.id === seg.id ? { ...p, content: e.target.value } : p
-                    )
-                  )
-                }
-                onKeyDown={(e) => {
-                  if (
-                    (e.metaKey || e.ctrlKey) &&
-                    e.shiftKey &&
-                    e.key === "Enter"
-                  ) {
-                    e.preventDefault();
-                    onSegmentsChange((prev) => {
-                      const next = [...prev];
-                      next.splice(idx + 1, 0, {
-                        id: crypto.randomUUID(),
-                        content: "",
-                        attachments: [],
-                      });
-                      return next;
-                    });
-                  }
-                }}
-                placeholder="Segment content…"
-                rows={3}
-                disabled={disabled}
-                className="text-foreground focus-visible:ring-primary/20 min-h-[80px] pr-28 focus-visible:ring-2"
-              />
-              <div className="absolute top-3 right-3 flex gap-2">
-                {topRightActions}
-              </div>
-            </div>
-          ) : (
-            <Textarea
-              value={seg.content}
-              onChange={(e) =>
-                onSegmentsChange((prev) =>
-                  prev.map((p) =>
-                    p.id === seg.id ? { ...p, content: e.target.value } : p
-                  )
+          <Textarea
+            value={seg.content}
+            onChange={(e) =>
+              onSegmentsChange((prev) =>
+                prev.map((p) =>
+                  p.id === seg.id ? { ...p, content: e.target.value } : p
                 )
-              }
-              onKeyDown={(e) => {
-                if (
-                  (e.metaKey || e.ctrlKey) &&
-                  e.shiftKey &&
-                  e.key === "Enter"
-                ) {
-                  e.preventDefault();
-                  onSegmentsChange((prev) => {
-                    const next = [...prev];
-                    next.splice(idx + 1, 0, {
-                      id: crypto.randomUUID(),
-                      content: "",
-                      attachments: [],
-                    });
-                    return next;
+              )
+            }
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Enter") {
+                e.preventDefault();
+                onSegmentsChange((prev) => {
+                  const next = [...prev];
+                  next.splice(idx + 1, 0, {
+                    id: crypto.randomUUID(),
+                    content: "",
+                    attachments: [],
                   });
-                }
-              }}
-              placeholder="Segment content…"
-              rows={3}
-              disabled={disabled}
-              className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
-            />
-          )}
+                  return next;
+                });
+              }
+            }}
+            placeholder="Segment content…"
+            rows={3}
+            disabled={disabled}
+            className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] border-0 bg-transparent px-0 shadow-none focus-visible:ring-2"
+          />
           <p className="text-muted-foreground mb-2 text-xs">
             {seg.content.length} chars
           </p>
           <AttachmentsStrip
+            variant="inline"
             attachments={seg.attachments}
             onRemove={(localId) =>
               onSegmentsChange((prev) =>
@@ -255,6 +220,7 @@ export function ComposerThreadField({
             }
             onAdd={() => onAddSegmentClick(seg.id)}
             disabled={disabled}
+            failedStatusTitle={attachmentFailedTitle}
           />
           <div className="mt-2">
             <Button

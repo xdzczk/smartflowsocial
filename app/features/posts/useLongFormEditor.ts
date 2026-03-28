@@ -4,7 +4,6 @@
  */
 
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import { Markdown } from "@tiptap/markdown";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -42,9 +41,14 @@ export function useLongFormEditor({
     return () => clearTimeout(id);
   }, []);
 
+  /** StarterKit v3 already includes Link; do not register Link twice (breaks link/mark commands at runtime). */
   const extensions = useMemo(
     () => [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+        },
+      }),
       Markdown.configure({
         markedOptions: {
           gfm: true,
@@ -55,7 +59,6 @@ export function useLongFormEditor({
         },
       }),
       Image,
-      Link.configure({ openOnClick: false }),
     ],
     []
   );
@@ -102,9 +105,9 @@ export function useLongFormEditor({
         }
       : {
           immediatelyRender: false,
-          extensions: [StarterKit],
+          extensions,
         },
-    [mounted, initialMarkdown]
+    [mounted, initialMarkdown, extensions]
   );
 
   const flushSync = useCallback(() => {

@@ -7,9 +7,14 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import { UnifiedComposer } from "~/features/posts/composer";
 import { PollComposer } from "~/features/posts/composer/components/PollComposer";
 import { useNewPostPublishModalEffect } from "~/features/posts/composer/hooks/useNewPostPublishModalEffect.client";
+import {
+  DraftPickerModal,
+  type ShortDraftFilter,
+} from "~/features/posts/drafts";
 import {
   convertJsonValueToScheduleConfig,
   type HashTagPreset,
@@ -309,6 +314,10 @@ export default function NewPostPage() {
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
+  const [shortDraftPicker, setShortDraftPicker] = useState<{
+    open: boolean;
+    tab: "drafts" | "templates";
+  }>({ open: false, tab: "drafts" });
 
   const initialComposerType = searchParams.get("type");
   const [composerTab, setComposerTab] = useState<"post" | "poll" | "thread">(
@@ -357,6 +366,20 @@ export default function NewPostPage() {
           ? "Create thread"
           : "Create post";
 
+  const shortComposeDraftPickerBase =
+    composerTab === "thread"
+      ? "/dashboard/compose?type=thread"
+      : composerTab === "poll"
+        ? "/dashboard/compose?type=poll"
+        : "/dashboard/compose?type=post";
+
+  const shortDraftFilter: ShortDraftFilter =
+    composerTab === "poll"
+      ? "poll"
+      : composerTab === "thread"
+        ? "thread"
+        : "all";
+
   useNewPostPublishModalEffect({
     searchParams,
     setSearchParams,
@@ -392,6 +415,32 @@ export default function NewPostPage() {
         setComposerTab(next);
       }}
       title={title}
+      composerHeaderActions={
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShortDraftPicker({ open: true, tab: "drafts" })}
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            aria-label="Open drafts"
+          >
+            Drafts
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setShortDraftPicker({ open: true, tab: "templates" })
+            }
+            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            aria-label="Open templates"
+          >
+            Templates
+          </Button>
+        </div>
+      }
       saveStateLabel={saveStateLabel}
     >
       <div>
@@ -433,7 +482,6 @@ export default function NewPostPage() {
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
             skipLocalDraftRestore={Boolean(publishResultToken)}
-            composerTemplates={templates}
             onDraftStateLabelChange={setSaveStateLabel}
           />
         ) : (
@@ -469,9 +517,38 @@ export default function NewPostPage() {
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
             composerTemplates={templates}
+            suppressBuiltInDraftPicker
             onDraftStateLabelChange={setSaveStateLabel}
           />
         )}
+
+        <DraftPickerModal
+          key={composerTab}
+          open={shortDraftPicker.open}
+          onClose={() => setShortDraftPicker((s) => ({ ...s, open: false }))}
+          initialActiveTab={shortDraftPicker.tab}
+          type="short"
+          shortDraftFilter={shortDraftFilter}
+          onSelect={(id) => {
+            const separator = shortComposeDraftPickerBase.includes("?")
+              ? "&"
+              : "?";
+            navigate(
+              `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
+            );
+          }}
+          draftsAndTemplates={{
+            templates,
+            onSelectTemplate: (templateId) => {
+              const separator = shortComposeDraftPickerBase.includes("?")
+                ? "&"
+                : "?";
+              navigate(
+                `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
+              );
+            },
+          }}
+        />
 
         {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
           <PublishResultModal

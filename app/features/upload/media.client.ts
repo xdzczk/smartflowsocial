@@ -1,7 +1,35 @@
+import { inferMimeTypeFromFileName } from "./upload-file-utils";
 import {
   uploadFile as uploadFileLegacy,
   uploadMultipleFiles as uploadMultipleFilesLegacy,
 } from "./upload.client";
+
+/** Trimmed non-empty string, else undefined — use with `??` instead of `||` for MIME fallbacks. */
+function nonemptyMime(value: string | undefined | null): string | undefined {
+  if (value == null) return undefined;
+  const t = value.trim();
+  return t !== "" ? t : undefined;
+}
+
+function intentMimeTypeForFile(file: File): string {
+  return (
+    nonemptyMime(file.type) ??
+    nonemptyMime(inferMimeTypeFromFileName(file.name)) ??
+    "application/octet-stream"
+  );
+}
+
+function commitMimeTypeForFile(
+  fromResult: string | undefined,
+  file: File
+): string {
+  return (
+    nonemptyMime(fromResult) ??
+    nonemptyMime(file.type) ??
+    nonemptyMime(inferMimeTypeFromFileName(file.name)) ??
+    "application/octet-stream"
+  );
+}
 
 interface LegacyUploadResult {
   success: boolean;
@@ -35,7 +63,7 @@ async function createIntent(files: File[]): Promise<IntentResponse | null> {
         files: files.map((file) => ({
           fileName: file.name,
           size: file.size,
-          mimeType: file.type || "application/octet-stream",
+          mimeType: intentMimeTypeForFile(file),
         })),
       }),
     });
@@ -60,7 +88,7 @@ async function commitUploads(
         fileName: file.name,
         url: result.file.url,
         size: result.file.size,
-        mimeType: result.file.mimeType ?? file.type,
+        mimeType: commitMimeTypeForFile(result.file.mimeType, file),
         provider: result.file.provider,
         sha256: result.file.sha256,
       };

@@ -19,7 +19,6 @@ export function useUnifiedComposerState({
   initialTemplateName = "",
   initialAttachments = [],
 }: UseUnifiedComposerStateParams = {}) {
-  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
   const [publishSubmitInFlight, setPublishSubmitInFlight] = useState(false);
   const [lastPublishFailed, setLastPublishFailed] = useState(false);
   const [signerLabel, setSignerLabel] = useState<string | null>(null);
@@ -93,8 +92,6 @@ export function useUnifiedComposerState({
   }, [refreshSignerState]);
 
   return {
-    draftPickerOpen,
-    setDraftPickerOpen,
     publishSubmitInFlight,
     setPublishSubmitInFlight,
     lastPublishFailed,

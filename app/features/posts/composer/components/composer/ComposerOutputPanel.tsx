@@ -13,6 +13,7 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 export interface ComposerOutputPanelProps {
   content: string;
@@ -20,6 +21,11 @@ export interface ComposerOutputPanelProps {
   tagsLine: string;
   /** e.g. "Preview (first segment)" in thread mode */
   previewLabel?: string;
+  /**
+   * `embedded` — inside ComposerLeftCanvas; no top border (parent divider).
+   * `standalone` — legacy top border when used alone.
+   */
+  variant?: "embedded" | "standalone";
 }
 
 function bodyLooksRich(text: string): boolean {
@@ -31,6 +37,7 @@ export function ComposerOutputPanel({
   attachments,
   tagsLine,
   previewLabel = "Preview",
+  variant = "embedded",
 }: ComposerOutputPanelProps) {
   const [open, setOpen] = useState(false);
   const body = stripAttachmentTokens(content).trim();
@@ -40,7 +47,6 @@ export function ComposerOutputPanel({
   const prevAttachCountRef = useRef(attachments.length);
   const prevBodyLenRef = useRef(body.length);
 
-  // Defer setState to satisfy react-hooks/set-state-in-effect (auto-open on content/media change).
   useEffect(() => {
     const prev = prevAttachCountRef.current;
     prevAttachCountRef.current = attachments.length;
@@ -73,8 +79,10 @@ export function ComposerOutputPanel({
     });
   };
 
+  const standalone = variant === "standalone";
+
   return (
-    <div className="border-border/60 border-t pt-2">
+    <div className={cn(standalone && "border-border/60 border-t pt-2")}>
       <Button
         type="button"
         variant="ghost"
@@ -97,7 +105,7 @@ export function ComposerOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="border-border/50 space-y-3 border-t py-3">
+        <div className="space-y-3 pt-3">
           {withUrl.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {withUrl.map((a) => (
@@ -123,7 +131,7 @@ export function ComposerOutputPanel({
               ))}
             </div>
           ) : null}
-          <div className="bg-muted/30 max-h-48 overflow-y-auto rounded-md p-3 text-sm whitespace-pre-wrap">
+          <div className="bg-muted/25 max-h-48 overflow-y-auto rounded-md p-3 text-sm whitespace-pre-wrap">
             {body ? (
               body
             ) : (
