@@ -372,10 +372,12 @@ export function UnifiedComposer({
       useHashtagPresets: !!initialDraft?.hashTagPresetId,
       hashTagPresetId:
         initialDraft?.hashTagPresetId ?? selectedHashTagPresetId ?? undefined,
+      includeHashtagsInNoteBody: user?.showHashTagsinPosts !== false,
     },
   });
 
   const content = form.watch("content");
+  const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
   const formSelectedHashtagPresetId = form.watch("hashTagPresetId");
 
   const {
@@ -444,6 +446,7 @@ export function UnifiedComposer({
       isRecyclable: false,
       useHashtagPresets: !!localRestored.hashTagPresetId,
       hashTagPresetId: localRestored.hashTagPresetId ?? undefined,
+      includeHashtagsInNoteBody: user?.showHashTagsinPosts !== false,
     });
     setSelectedHashtags(localRestored.tags);
     setAttachments(
@@ -501,6 +504,7 @@ export function UnifiedComposer({
     setSelectedHashtags,
     setThreadSegments,
     setThreadDelayMinutes,
+    user?.showHashTagsinPosts,
   ]);
 
   React.useEffect(() => {
@@ -1503,6 +1507,13 @@ export function UnifiedComposer({
                     onHashtagPresetChange?.(presetId, mergedTags);
                   }}
                   disabled={fetcher.state !== "idle"}
+                  accountAllowsHashtagsInNoteBody={
+                    user?.showHashTagsinPosts !== false
+                  }
+                  includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                  onIncludeHashtagsInNoteBodyChange={(v) =>
+                    form.setValue("includeHashtagsInNoteBody", v)
+                  }
                   queuePresetName={
                     selectedQueue !== "unassigned"
                       ? ((

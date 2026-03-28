@@ -5,6 +5,8 @@ import type { HashTagPreset, QueueType } from "~/features/posts/types";
 export interface NewLongFormPostLoaderParsed {
   userTags: unknown;
   userTimezone: unknown;
+  /** Account default: append hashtag line to stored article markdown when publishing. */
+  showHashTagsinPosts: boolean;
   uploadProvider: unknown;
   defaultRelays: string[];
   initialTemplateData: {
@@ -190,6 +192,13 @@ export function parseNewLongFormPostLoader(
     loaderData && typeof loaderData === "object" && "userTimezone" in loaderData
       ? (loaderData as { userTimezone?: unknown }).userTimezone
       : null;
+  const showHashTagsRaw =
+    loaderData &&
+    typeof loaderData === "object" &&
+    "showHashTagsinPosts" in loaderData
+      ? (loaderData as { showHashTagsinPosts?: unknown }).showHashTagsinPosts
+      : true;
+  const showHashTagsinPosts = showHashTagsRaw !== false;
   const uploadProvider =
     loaderData &&
     typeof loaderData === "object" &&
@@ -241,6 +250,7 @@ export function parseNewLongFormPostLoader(
   return {
     userTags,
     userTimezone,
+    showHashTagsinPosts,
     uploadProvider,
     defaultRelays,
     initialTemplateData,

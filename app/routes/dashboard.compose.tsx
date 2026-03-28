@@ -11,6 +11,7 @@ import {
 } from "@remix-run/react";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
+import { Skeleton } from "~/components/ui/skeleton";
 import { requireUserId } from "~/features/auth";
 import {
   CreateComposerShell,
@@ -35,7 +36,18 @@ function useEffectiveComposeSearch(): string {
   const navigation = useNavigation();
   const location = useLocation();
   if (navigation.state === "loading") {
-    return navigation.location.search;
+    const nav = navigation.location;
+    // Pending location sometimes omits `search` on same-path navigations (e.g. tab
+    // switches) while the address bar still has `?type=article`. Using empty search
+    // makes urlMode "shortform" and mismatches article loader data → skeleton flash.
+    if (nav.pathname === location.pathname) {
+      const pending = nav.search;
+      if (pending.length <= 1) {
+        return location.search;
+      }
+      return pending;
+    }
+    return nav.search || location.search;
   }
   return location.search;
 }
@@ -74,6 +86,16 @@ function ComposeSkeletonLayout() {
         );
       }}
       title={composeShellTitle(contentType)}
+      reserveTitleStatusSlot
+      composerHeaderActions={
+        <div
+          className="pointer-events-none flex shrink-0 items-center gap-0.5 sm:gap-1"
+          aria-hidden
+        >
+          <Skeleton className="h-8 w-[3.25rem] rounded-md" />
+          <Skeleton className="h-8 w-[4.5rem] rounded-md" />
+        </div>
+      }
     >
       <ComposerSkeleton />
     </CreateComposerShell>

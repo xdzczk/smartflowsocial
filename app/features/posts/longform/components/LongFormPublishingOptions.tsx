@@ -1,3 +1,5 @@
+import { useLayoutEffect, useMemo } from "react";
+
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -42,13 +44,6 @@ interface HashTagPreset {
 
 function isUnassignedQueueType(name: string): boolean {
   return name === "unassigned" || name === "Unassigned";
-}
-
-/** Radix Select value for the queue dropdown (must match a SelectItem). */
-function queueSelectControlValue(selectedQueueType: string): string {
-  return isUnassignedQueueType(selectedQueueType)
-    ? "__unassigned__"
-    : selectedQueueType;
 }
 
 interface LongFormPublishingOptionsProps {
@@ -114,10 +109,42 @@ export function LongFormPublishingOptions({
     return name !== "Unassigned";
   });
 
+  const selectableQueueNames = useMemo(() => {
+    return queueTypes
+      .filter((queue) => {
+        if (typeof queue === "object" && queue.isEnabled === false)
+          return false;
+        const name = typeof queue === "string" ? queue : queue.name;
+        return name !== "Unassigned";
+      })
+      .map((queue) => (typeof queue === "string" ? queue : queue.name));
+  }, [queueTypes]);
+  const selectableKey = selectableQueueNames.join("\0");
+
+  const radixQueueSelectValue = useMemo(() => {
+    if (isUnassignedQueueType(selectedQueueType)) return "__unassigned__";
+    const allowed = new Set(selectableQueueNames);
+    if (allowed.has(selectedQueueType)) return selectedQueueType;
+    return "__unassigned__";
+  }, [selectedQueueType, selectableQueueNames]);
+
+  useLayoutEffect(() => {
+    if (isUnassignedQueueType(selectedQueueType)) return;
+    const allowed = new Set(selectableQueueNames);
+    if (!allowed.has(selectedQueueType)) {
+      onQueueTypeChange("unassigned");
+    }
+  }, [
+    selectedQueueType,
+    selectableKey,
+    selectableQueueNames,
+    onQueueTypeChange,
+  ]);
+
   const queueBlock = (
     <div className={cn("space-y-2", isRail && "space-y-1.5")}>
       <Select
-        value={queueSelectControlValue(selectedQueueType)}
+        value={radixQueueSelectValue}
         onValueChange={(value) =>
           onQueueTypeChange(value === "__unassigned__" ? "unassigned" : value)
         }

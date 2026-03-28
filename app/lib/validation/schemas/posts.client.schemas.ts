@@ -24,6 +24,8 @@ export const textPostClientSchema = z.object({
   isRecyclable: z.boolean().default(false),
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().optional(),
+  /** When false, tags are only on the event as `t` tags (subject to account default). */
+  includeHashtagsInNoteBody: z.boolean().default(true),
 });
 
 /**
@@ -55,6 +57,7 @@ export const editLongformPostClientSchema = z.object({
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().optional(),
   customTags: z.string().optional(),
+  includeHashtagsInNoteBody: z.boolean().default(true),
 });
 
 /**
@@ -72,6 +75,7 @@ export const longformPostClientSchema = z.object({
   queueType: z.string().default("Unassigned"),
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().optional(),
+  includeHashtagsInNoteBody: z.boolean().default(true),
 });
 
 /**

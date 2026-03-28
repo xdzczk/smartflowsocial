@@ -29,6 +29,7 @@ import {
   handlePostOrScheduleText,
 } from "./newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./newpost-action/hashtag-preset-utils.server";
+import { effectiveAppendHashtagsToNoteBody } from "./newpost-action/hashtag-utils.server";
 import {
   handlePostOrSchedulePoll,
   resolvePollHashtagContext,
@@ -126,13 +127,19 @@ export async function handleNewPostAction(
   if (_action === "save-draft") {
     const { handleSaveDraft } =
       await import("./newpost-action/autosave-draft.server");
-    return handleSaveDraft(userId, formData);
+    return handleSaveDraft(userId, formData, showHashTagsinPosts);
   }
 
   if (_action === "post-thread" || _action === "schedule-thread") {
     const { handleThreadAction } =
       await import("./newpost-action/thread-handlers.server");
-    return handleThreadAction(userId, sessionPubkey, formData, sanitizedRelays);
+    return handleThreadAction(
+      userId,
+      sessionPubkey,
+      formData,
+      sanitizedRelays,
+      showHashTagsinPosts
+    );
   }
 
   if (_action === "post-poll" || _action === "schedule-poll") {
@@ -207,13 +214,19 @@ export async function handleNewPostAction(
       ? hashtagResult.presetId
       : manualHashTagPresetId;
 
+  const perPostInclude = validatedData.includeHashtagsInNoteBody ?? true;
+  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
+    showHashTagsinPosts,
+    perPostInclude
+  );
+
   // Common handler parameters
   const handlerParams = {
     userId,
     sessionPubkey,
     formData,
     hashTagPresetTags,
-    showHashTagsinPosts,
+    showHashTagsinPosts: showHashTagsinPostsEffective,
     queueType,
     queueTypeId,
     isRecyclable,

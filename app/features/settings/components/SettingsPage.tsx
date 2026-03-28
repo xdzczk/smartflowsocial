@@ -606,6 +606,15 @@ export default function SettingsPage() {
 
         <TabsContent value="content" className="mt-6 min-w-0 space-y-6">
           <div className="grid min-w-0 gap-6 md:grid-cols-1">
+            <QueueTypesSettings
+              queueTypes={queueTypes}
+              hashTagPresets={hashTagPresets.map((p) => ({
+                id: p.id,
+                name: p.name,
+                tags: p.tags,
+                description: p.description ?? undefined,
+              }))}
+            />
             <HashtagPresetsSettings
               presets={hashTagPresets.map((p) => ({
                 id: p.id,
@@ -614,15 +623,6 @@ export default function SettingsPage() {
                 description: p.description ?? null,
                 createdAt: toIsoStringOrNow(p.createdAt),
                 updatedAt: toIsoStringOrNow(p.updatedAt),
-              }))}
-            />
-            <QueueTypesSettings
-              queueTypes={queueTypes}
-              hashTagPresets={hashTagPresets.map((p) => ({
-                id: p.id,
-                name: p.name,
-                tags: p.tags,
-                description: p.description ?? undefined,
               }))}
             />
           </div>

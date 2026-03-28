@@ -115,6 +115,7 @@ export const newPostBaseSchema = z.object({
   isRecyclable: z.coerce.boolean().default(false).optional(),
   useHashtagPresets: z.coerce.boolean().default(false).optional(),
   hashTagPresetId: z.string().nullable().default(null),
+  includeHashtagsInNoteBody: z.coerce.boolean().optional(),
 });
 
 /**
@@ -183,6 +184,7 @@ export const newLongformPostBaseSchema = z.object({
   queueType: z.string().optional().default("Unassigned"),
   useHashtagPresets: z.coerce.boolean().default(false).optional(),
   hashTagPresetId: z.string().nullable().optional(),
+  includeHashtagsInNoteBody: z.coerce.boolean().optional(),
 });
 
 export const saveDraftLongformSchema = newLongformPostBaseSchema.extend({

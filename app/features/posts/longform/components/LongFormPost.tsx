@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { requestNewSignerSession } from "~/features/auth/signer";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
@@ -104,6 +105,8 @@ interface LongFormPostProps {
   initialScheduledFor?: string | null;
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
+  /** From loader: account setting for appending tags into article markdown on publish. */
+  accountAllowsHashtagsInNoteBody?: boolean;
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
@@ -137,6 +140,7 @@ export default function LongFormPost({
   initialTemplateName = null,
   initialScheduledFor = null,
   skipLocalDraftRestore = false,
+  accountAllowsHashtagsInNoteBody = true,
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
@@ -178,6 +182,7 @@ export default function LongFormPost({
       queueType: initialData?.queueType?.name ?? "unassigned",
       useHashtagPresets: useHashtagPresets,
       hashTagPresetId: selectedHashtagPresetId ?? undefined,
+      includeHashtagsInNoteBody: accountAllowsHashtagsInNoteBody,
     },
   });
 
@@ -186,6 +191,7 @@ export default function LongFormPost({
   const summary = form.watch("summary");
   const content = form.watch("content");
   const customTags = form.watch("customTags");
+  const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
 
   const titleFieldReg = form.register("title");
   const titleRegisterRefRef = useRef(titleFieldReg.ref);
@@ -545,6 +551,10 @@ export default function LongFormPost({
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     formData.set("useHashtagPresets", String(useHashtagPresets));
     formData.set("hashTagPresetId", selectedHashtagPresetId ?? "");
+    formData.set(
+      "includeHashtagsInNoteBody",
+      String(Boolean(values.includeHashtagsInNoteBody))
+    );
     if (serverLongFormPostId) {
       formData.set("longFormPostId", serverLongFormPostId);
     }
@@ -572,6 +582,7 @@ export default function LongFormPost({
       publishMode,
       calculateQueueScheduleTime,
       relayOverride,
+      includeHashtagsInNoteBody: Boolean(includeHashtagsInNoteBody),
     });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
@@ -1040,6 +1051,40 @@ export default function LongFormPost({
                 type="hidden"
                 name="hashTagPresetId"
                 value={selectedHashtagPresetId ?? ""}
+              />
+              <div className="border-border/60 flex items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+                <div className="min-w-0 space-y-0.5">
+                  <Label
+                    htmlFor="longform-include-tags-in-body"
+                    className="text-foreground text-sm leading-none font-medium"
+                  >
+                    Include tags in article text
+                  </Label>
+                  <p className="text-muted-foreground text-[11px] leading-snug">
+                    {accountAllowsHashtagsInNoteBody
+                      ? "On by default. Turn off to hide tags from the article text (they stay on the event)."
+                      : "Your account keeps tags out of article text (Settings)."}
+                  </p>
+                </div>
+                <Switch
+                  id="longform-include-tags-in-body"
+                  checked={Boolean(
+                    accountAllowsHashtagsInNoteBody && includeHashtagsInNoteBody
+                  )}
+                  onCheckedChange={(v) => {
+                    if (!accountAllowsHashtagsInNoteBody) return;
+                    form.setValue("includeHashtagsInNoteBody", v);
+                  }}
+                  disabled={
+                    fetcher.state !== "idle" || !accountAllowsHashtagsInNoteBody
+                  }
+                  className="shrink-0"
+                />
+              </div>
+              <input
+                type="hidden"
+                name="includeHashtagsInNoteBody"
+                value={String(Boolean(includeHashtagsInNoteBody))}
               />
             </div>
           </div>

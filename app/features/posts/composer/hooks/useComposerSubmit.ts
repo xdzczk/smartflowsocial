@@ -27,6 +27,7 @@ import {
   parseScheduledTime,
   buildRepostSchedules,
   buildQuoteSchedules,
+  effectiveAppendHashtagsToNoteBody,
   type SignedEventLike,
 } from "../components/composer/composer-submit-utils";
 import {
@@ -186,6 +187,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           "useHashtagPresets",
           String(Boolean(data.useHashtagPresets))
         );
+        formData.set(
+          "includeHashtagsInNoteBody",
+          String(Boolean(data.includeHashtagsInNoteBody))
+        );
         const draftAttachmentMeta = attachments
           .filter((a) => a.url)
           .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt }));
@@ -217,6 +222,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (draftAttachmentMeta.length > 0) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
         }
+        formData.set(
+          "includeHashtagsInNoteBody",
+          String(Boolean(data.includeHashtagsInNoteBody))
+        );
         if (embedContext) formData.set("_embedContext", embedContext);
         fetcher.submit(formData, fetcherSubmitOptions);
       }
@@ -470,7 +479,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       ): Promise<{ signedEvent: SignedEvent | null }> {
         const withUrl = seg.attachments.filter((a) => a.url);
         const contentToSign = resolveContentForSigning(seg.content, withUrl);
-        const contentWithTags = user?.showHashTagsinPosts
+        const appendTags = effectiveAppendHashtagsToNoteBody(
+          user?.showHashTagsinPosts,
+          Boolean(data.includeHashtagsInNoteBody)
+        );
+        const contentWithTags = appendTags
           ? `${contentToSign}\n${effectiveHashtags}`
           : contentToSign;
         const created_at = baseTime + index * threadDelayMinutes * 60;
@@ -554,6 +567,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (relayOverride && relayOverride.length > 0)
           threadPayload.set("relays", JSON.stringify(relayOverride));
         if (embedContext) threadPayload.set("_embedContext", embedContext);
+        threadPayload.set(
+          "includeHashtagsInNoteBody",
+          String(Boolean(formData.includeHashtagsInNoteBody))
+        );
         return threadPayload;
       }
 
@@ -636,7 +653,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             data.content,
             attachmentsWithUrl
           );
-          const contentToSign = user?.showHashTagsinPosts
+          const appendTagsSingle = effectiveAppendHashtagsToNoteBody(
+            user?.showHashTagsinPosts,
+            Boolean(data.includeHashtagsInNoteBody)
+          );
+          const contentToSign = appendTagsSingle
             ? `${contentResolvedForSign}\n${effectiveHashtags}`
             : contentResolvedForSign;
 
@@ -675,6 +696,9 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             payload["hashTagPresetId"] = data["hashTagPresetId"];
             payload["useHashtagPresets"] = "on";
           }
+          payload["includeHashtagsInNoteBody"] = String(
+            Boolean(data.includeHashtagsInNoteBody)
+          );
           if (relayOverride && relayOverride.length > 0) {
             payload["relays"] = JSON.stringify(relayOverride);
           }
@@ -875,6 +899,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     if (relayOverride && relayOverride.length > 0)
       threadPayload.set("relays", JSON.stringify(relayOverride));
     if (embedContext) threadPayload.set("_embedContext", embedContext);
+    threadPayload.set(
+      "includeHashtagsInNoteBody",
+      String(Boolean(state.data.includeHashtagsInNoteBody))
+    );
     setPartialThreadState(null);
     setLastPublishFailed(false);
     setPublishSubmitInFlight(true);

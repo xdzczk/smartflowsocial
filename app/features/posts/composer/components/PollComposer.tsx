@@ -45,6 +45,7 @@ import {
 import {
   ACTION_POST_POLL,
   ACTION_SCHEDULE_POLL,
+  effectiveAppendHashtagsToNoteBody,
   parseScheduledTime,
 } from "./composer/composer-submit-utils";
 
@@ -64,6 +65,16 @@ function parseTopicTagValues(hashtagLine: string): string[] {
     .map((t) => t.trim())
     .filter((t) => t.length > 0)
     .map((t) => t.replace(/^#/u, ""));
+}
+
+function pollQuestionForSignedEvent(
+  questionTrimmed: string,
+  tagLine: string,
+  appendTagsToBody: boolean
+): string {
+  return appendTagsToBody && tagLine
+    ? `${questionTrimmed}\n${tagLine}`.trim()
+    : questionTrimmed;
 }
 
 export interface PollComposerProps {
@@ -119,6 +130,9 @@ export function PollComposer({
   );
   const [endsAtLocal, setEndsAtLocal] = useState("");
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] = useState(
+    () => user?.showHashTagsinPosts !== false
+  );
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
@@ -147,6 +161,7 @@ export function PollComposer({
     scheduledFor: string;
     publishMode: ComposerPublishMode;
     scheduleRandomWindowMinutes?: number;
+    includeHashtagsInNoteBody?: boolean;
     savedAt: number;
   }>(pollDraftStorageKey, skipLocalDraftRestore, 1500);
   const appliedPollRestoreRef = useRef(false);
@@ -248,6 +263,16 @@ export function PollComposer({
       toast.error("Enter a poll question.");
       return;
     }
+    const tagLine = selectedHashtags.trim();
+    const appendTagsToQuestion = effectiveAppendHashtagsToNoteBody(
+      user?.showHashTagsinPosts,
+      includeHashtagsInNoteBody
+    );
+    const questionForEvent = pollQuestionForSignedEvent(
+      q,
+      tagLine,
+      appendTagsToQuestion
+    );
     if (trimmedOptions.length < MIN_OPTIONS) {
       toast.error(`Add at least ${MIN_OPTIONS} options.`);
       return;
@@ -306,7 +331,7 @@ export function PollComposer({
     try {
       const { nostrEvent, signedEvent } =
         await nostrAdapter.signPollEventWithOneRetry({
-          question: q,
+          question: questionForEvent,
           created_at: createdUnix,
           optionLabels: trimmedOptions,
           pollType,
@@ -318,7 +343,11 @@ export function PollComposer({
       const fd = new FormData();
       fd.set("_action", actionType);
       fd.set("contentType", "poll");
-      fd.set("content", q);
+      fd.set("content", questionForEvent);
+      fd.set(
+        "includeHashtagsInNoteBody",
+        String(Boolean(includeHashtagsInNoteBody))
+      );
       fd.set("queueType", selectedQueue);
       if (queueTypeId) fd.set("queueTypeId", queueTypeId);
       if (isRecyclable) fd.set("isRecyclable", "on");
@@ -457,6 +486,9 @@ export function PollComposer({
     setPollType(pollDraftRestored.pollType);
     setEndsAtLocal(pollDraftRestored.endsAtLocal);
     setSelectedHashtags(pollDraftRestored.selectedHashtags);
+    setIncludeHashtagsInNoteBody(
+      pollDraftRestored.includeHashtagsInNoteBody !== false
+    );
     setHashTagPresetId(pollDraftRestored.hashTagPresetId);
     setIsRecyclable(pollDraftRestored.isRecyclable);
     setSelectedQueue(pollDraftRestored.selectedQueue);
@@ -482,6 +514,7 @@ export function PollComposer({
       pollType,
       endsAtLocal,
       selectedHashtags,
+      includeHashtagsInNoteBody,
       hashTagPresetId,
       isRecyclable,
       selectedQueue,
@@ -496,6 +529,7 @@ export function PollComposer({
     pollType,
     endsAtLocal,
     selectedHashtags,
+    includeHashtagsInNoteBody,
     hashTagPresetId,
     isRecyclable,
     selectedQueue,
@@ -513,6 +547,7 @@ export function PollComposer({
         pollType,
         endsAtLocal,
         selectedHashtags,
+        includeHashtagsInNoteBody,
         hashTagPresetId,
         isRecyclable,
         selectedQueue,
@@ -533,6 +568,7 @@ export function PollComposer({
     pollType,
     endsAtLocal,
     selectedHashtags,
+    includeHashtagsInNoteBody,
     hashTagPresetId,
     isRecyclable,
     selectedQueue,
@@ -784,6 +820,11 @@ export function PollComposer({
                 onHashtagPresetChange?.(id, tags);
               }}
               disabled={disabled}
+              accountAllowsHashtagsInNoteBody={
+                user?.showHashTagsinPosts !== false
+              }
+              includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+              onIncludeHashtagsInNoteBodyChange={setIncludeHashtagsInNoteBody}
             />
           </div>
         </div>
@@ -904,6 +945,7 @@ export function PollComposer({
             pollType,
             endsAtLocal,
             selectedHashtags,
+            includeHashtagsInNoteBody,
             hashTagPresetId,
             isRecyclable,
             selectedQueue,

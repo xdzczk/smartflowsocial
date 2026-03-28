@@ -127,6 +127,14 @@ export default function LongFormDraftEditPage() {
     (r): r is string => typeof r === "string" && r.length > 0
   );
 
+  const accountAllowsHashtagsInNoteBody =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "showHashTagsinPosts" in loaderData
+      ? (loaderData as { showHashTagsinPosts?: unknown })
+          .showHashTagsinPosts !== false
+      : true;
+
   const versions = versionsRaw.filter(
     (
       v: unknown
@@ -232,6 +240,7 @@ export default function LongFormDraftEditPage() {
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={userTags}
+          accountAllowsHashtagsInNoteBody={accountAllowsHashtagsInNoteBody}
           onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           onPreview={handlePreview}
           initialData={

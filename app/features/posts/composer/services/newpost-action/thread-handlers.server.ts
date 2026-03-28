@@ -18,7 +18,11 @@ import {
   jsonContestEmbedPost,
 } from "./contest-embed-response.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
-import { applyHashtags } from "./hashtag-utils.server";
+import {
+  applyHashtags,
+  effectiveAppendHashtagsToNoteBody,
+  parseIncludeHashtagsInNoteBodyFromForm,
+} from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
 
 const DEFAULT_DELAY_SECONDS = 60; // 1 minute
@@ -100,7 +104,8 @@ export async function handleThreadAction(
   userId: string,
   sessionPubkey: string,
   formData: FormData,
-  sanitizedRelays: string[]
+  sanitizedRelays: string[],
+  userShowHashTagsInPosts: boolean
 ): Promise<Response> {
   const action = formData.get("_action");
   const isSchedule = action === "schedule-thread";
@@ -175,6 +180,12 @@ export async function handleThreadAction(
 
   const threadGroupId = `thread_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
+  const perPostInclude = parseIncludeHashtagsInNoteBodyFromForm(formData, true);
+  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
+    userShowHashTagsInPosts,
+    perPostInclude
+  );
+
   const createPostUseCase = new CreatePostUseCase();
   const publishUseCase = new PublishNowUseCase();
   const postIds: string[] = [];
@@ -192,7 +203,11 @@ export async function handleThreadAction(
     }
     await assertMediaUrlsReady(fileUrl);
 
-    const contentWithHashtags = applyHashtags(content, hashTagPresetTags, true);
+    const contentWithHashtags = applyHashtags(
+      content,
+      hashTagPresetTags,
+      showHashTagsinPostsEffective
+    );
 
     const signedEvent = signedEvents[i];
     if (!signedEvent) continue;
@@ -219,7 +234,7 @@ export async function handleThreadAction(
       nostrEvent: signedEvent as unknown as NostrEvent,
       scheduledFor: scheduledForUnix,
       hashTagPresetTags,
-      showHashTagsinPosts: true,
+      showHashTagsinPosts: showHashTagsinPostsEffective,
       postKind: "THREAD",
       threadGroupId,
     });

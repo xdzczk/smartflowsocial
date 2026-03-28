@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 import {
   RailChip,
   RailChipGroup,
@@ -101,6 +103,11 @@ interface TagsChipRowProps {
   disabled?: boolean;
   /** Optional: show queue default hint */
   queuePresetName?: string | null;
+  /** Account allows appending tag text to the note (Settings). When false, tags are metadata-only. */
+  accountAllowsHashtagsInNoteBody?: boolean;
+  /** Per-post: append resolved tags to signed note text (subject to account setting). */
+  includeHashtagsInNoteBody?: boolean;
+  onIncludeHashtagsInNoteBodyChange?: (value: boolean) => void;
 }
 
 export function TagsChipRow({
@@ -111,6 +118,9 @@ export function TagsChipRow({
   onPresetSelect,
   disabled = false,
   queuePresetName,
+  accountAllowsHashtagsInNoteBody = true,
+  includeHashtagsInNoteBody = true,
+  onIncludeHashtagsInNoteBodyChange,
 }: TagsChipRowProps) {
   const tagList = parseTags(tags);
   const [selectValue, setSelectValue] = useState("");
@@ -229,6 +239,36 @@ export function TagsChipRow({
               ) : null}
             </Badge>
           ))}
+        </div>
+      ) : null}
+
+      {onIncludeHashtagsInNoteBodyChange ? (
+        <div className="border-border/60 flex items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+          <div className="min-w-0 space-y-0.5">
+            <Label
+              htmlFor="tags-include-in-note-body"
+              className="text-foreground text-sm leading-none font-medium"
+            >
+              Include tags in note text
+            </Label>
+            <p className="text-muted-foreground text-[11px] leading-snug">
+              {accountAllowsHashtagsInNoteBody
+                ? "On by default. Turn off to hide tags from the note text (they stay as topic metadata)."
+                : "Your account keeps tags out of note text (Settings)."}
+            </p>
+          </div>
+          <Switch
+            id="tags-include-in-note-body"
+            checked={Boolean(
+              accountAllowsHashtagsInNoteBody && includeHashtagsInNoteBody
+            )}
+            onCheckedChange={(v) => {
+              if (!accountAllowsHashtagsInNoteBody) return;
+              onIncludeHashtagsInNoteBodyChange(v);
+            }}
+            disabled={disabled || !accountAllowsHashtagsInNoteBody}
+            className="shrink-0"
+          />
         </div>
       ) : null}
 

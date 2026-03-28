@@ -16,6 +16,7 @@ import {
   getLongFormPost,
   updateLongFormPost,
 } from "~/features/posts/server";
+import { effectiveAppendHashtagsToNoteBody } from "~/features/posts/server/composer";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
@@ -820,6 +821,13 @@ export async function handleNewLongFormAction(
   // Ensure hashTagPresetId is string | null (not undefined)
   const finalHashTagPresetId: string | null = hashTagPresetId ?? null;
 
+  const perPostIncludeHashtagsInBody =
+    validatedData.includeHashtagsInNoteBody ?? true;
+  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
+    showHashTagsinPosts,
+    perPostIncludeHashtagsInBody
+  );
+
   // Handle different actions
   if (_action === "save-draft") {
     return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
@@ -832,7 +840,7 @@ export async function handleNewLongFormAction(
       queueType,
       finalHashTagPresetId,
       hashTagPresetTags,
-      showHashTagsinPosts,
+      showHashTagsinPostsEffective,
       sanitizedRelays,
       sessionPubkey
     );
@@ -845,7 +853,7 @@ export async function handleNewLongFormAction(
       queueType,
       finalHashTagPresetId,
       hashTagPresetTags,
-      showHashTagsinPosts,
+      showHashTagsinPostsEffective,
       sessionPubkey
     );
   }

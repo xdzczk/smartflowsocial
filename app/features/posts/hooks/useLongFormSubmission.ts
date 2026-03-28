@@ -228,6 +228,7 @@ interface UseLongFormSubmissionProps {
   ) => Promise<string | null>;
   /** When set (user picked relays in composer), sent as `relays` JSON on submit. */
   relayOverride?: string[] | null;
+  includeHashtagsInNoteBody: boolean;
 }
 
 export function useLongFormSubmission({
@@ -247,6 +248,7 @@ export function useLongFormSubmission({
   publishMode = "now",
   calculateQueueScheduleTime,
   relayOverride = null,
+  includeHashtagsInNoteBody,
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -375,6 +377,7 @@ export function useLongFormSubmission({
         ],
         ["signedEvent", JSON.stringify(signedEvent)],
         ["nostrEvent", JSON.stringify(nostrEvent)],
+        ["includeHashtagsInNoteBody", String(includeHashtagsInNoteBody)],
       ];
 
       if (quoteSchedules.length > 0) {

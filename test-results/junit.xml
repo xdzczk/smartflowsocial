@@ -1,31 +1,83 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.017207958">
-    <testsuite name="tests/unit/follow-up-summary.test.ts" timestamp="2026-03-28T13:17:51.051Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.0017095">
-        <testcase classname="tests/unit/follow-up-summary.test.ts" name="follow-up summary helpers &gt; countRepostConditionRules counts set thresholds only" time="0.000760291">
+<testsuites name="vitest tests" tests="39" failures="0" errors="0" time="0.009521375">
+    <testsuite name="tests/unit/posts-schemas.test.ts" timestamp="2026-03-28T16:59:00.052Z" hostname="Ivans-MacBook-Pro.local" tests="39" failures="0" errors="0" skipped="0" time="0.009521375">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; accepts valid action values" time="0.00080375">
         </testcase>
-        <testcase classname="tests/unit/follow-up-summary.test.ts" name="follow-up summary helpers &gt; buildFollowUpCollapsedSummary" time="0.000210958">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; rejects invalid action" time="0.000708">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/publishing-summary.test.ts" timestamp="2026-03-28T13:17:51.052Z" hostname="Ivans-MacBook-Pro.local" tests="10" failures="0" errors="0" skipped="0" time="0.015498458">
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness labels based on blockers and mode" time="0.000772875">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; parses valid text post with required fields" time="0.000793458">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; returns readiness presentation tone" time="0.000146375">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; rejects empty content" time="0.000218125">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; resolveComposerIssueDisplayPhase prioritizes publish attempt over touch" time="0.000135292">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; rejects content over 5000 chars" time="0.000175459">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds queue delivery lines" time="0.000191292">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; imagePostSchema &gt; parses valid image post with optional caption" time="0.0003315">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; builds article content and publish path lines" time="0.000426208">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; imagePostSchema &gt; rejects caption over 5000 chars" time="0.0001315">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildArticlePublishSummaryLines returns stacked rail checklist" time="0.000533083">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; longformPostSchema &gt; parses valid longform with title and content" time="0.000285">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; buildPublishingOutcomeSentence covers now, schedule, queue" time="0.012142375">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; longformPostSchema &gt; rejects empty content" time="0.000144292">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPostStatusSummaryInline matches rail spec shape" time="0.000152708">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; bulkPostSchema &gt; parses valid bulk posts array" time="0.000673416">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatRecyclableMetaLine" time="0.000073">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; bulkPostSchema &gt; rejects empty content in post" time="0.000142834">
         </testcase>
-        <testcase classname="tests/unit/publishing-summary.test.ts" name="publishing summary helpers &gt; formatPublishSummaryOptionsLine" time="0.000120875">
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostBaseSchema &gt; applies defaults for optional fields" time="0.000284458">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; draftTextPostSchema &gt; parses draft-text action with content" time="0.000281458">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postOrScheduleTextSchema &gt; parses post-text and schedule-text" time="0.000247625">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; draftImagePostSchema &gt; parses draft-image, draft-images, draft-media" time="0.000252208">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postOrScheduleImageSchema &gt; parses post-image and schedule-image variants" time="0.000116459">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; parses draft-text discriminated union member" time="0.000184041">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; parses post-image discriminated union member" time="0.000042584">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; rejects invalid _action" time="0.000095541">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadPreviewSchema &gt; parses upload-images-preview and upload-media-preview" time="0.000087875">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; transforms valid JSON uploadResults array" time="0.000498041">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; rejects when uploadResults is invalid JSON (transform catch returns [], then pipe min(1) fails)" time="0.000126666">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; rejects when uploadResults parses to non-array (transform returns [], then pipe min(1) fails)" time="0.000113625">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostBaseSchema &gt; applies default queueType" time="0.000146375">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; saveDraftLongformSchema &gt; parses save-draft with content" time="0.000190292">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; scheduleLongformSchema &gt; parses schedule-longform with scheduledFor" time="0.000182042">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; scheduleLongformSchema &gt; rejects empty scheduledFor" time="0.000131833">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; accepts all action values including upload-image" time="0.000048917">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; accepts scheduledFor and queueTypeId" time="0.000066208">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses schedule-text" time="0.000062">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses draft-images and draft-media" time="0.000056584">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses post-images and schedule-image" time="0.000060333">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; rejects invalid _action" time="0.000084791">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; autosaveDraftLongformSchema &gt; parses autosave-draft with content" time="0.000166833">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; publishLongformSchema &gt; parses publish with content" time="0.000166125">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImageLongformSchema &gt; parses upload-image action" time="0.000067333">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; parses save-draft member" time="0.00007375">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; parses publish and schedule-longform members" time="0.000064042">
+        </testcase>
+        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; rejects invalid _action" time="0.000081833">
         </testcase>
     </testsuite>
 </testsuites>
