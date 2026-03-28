@@ -139,30 +139,32 @@ function PublishingModeFusedHeader({
   };
 
   return (
-    <div role="radiogroup" aria-label="Publishing mode" className="px-1">
-      <div className="border-border/60 flex border-b">
-        {modes.map((m) => {
-          const active = publishMode === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              aria-label={ariaLabels[m]}
-              className={cn(
-                "-mb-px min-h-[44px] flex-1 px-2 py-2.5 text-center text-xs transition-colors",
-                active
-                  ? "text-foreground border-primary border-b-2 font-semibold"
-                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent font-medium"
-              )}
-              onClick={() => onPublishModeChange(m)}
-            >
-              {labels[m]}
-            </button>
-          );
-        })}
-      </div>
+    <div
+      role="radiogroup"
+      aria-label="Publishing mode"
+      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x border-b"
+    >
+      {modes.map((m) => {
+        const active = publishMode === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={ariaLabels[m]}
+            className={cn(
+              "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
+              active
+                ? "text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            )}
+            onClick={() => onPublishModeChange(m)}
+          >
+            {labels[m]}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -567,30 +569,32 @@ function PublishingSummaryRailActions({
   const primaryInert = showLoading;
 
   return (
-    <div className="border-border/60 shrink-0 border-t px-3 py-3">
-      <p className="text-foreground/90 mb-3 text-center text-[11px] leading-snug">
+    <div className="border-border/60 shrink-0 overflow-hidden border-t">
+      <div className="text-muted-foreground border-border/60 border-b px-3 py-2 text-[11px] leading-snug">
         {actionSummary}
-      </p>
-      <div className="flex w-full flex-col items-center gap-2.5">
-        {secondaryActionLabel && onSecondaryAction ? (
+      </div>
+      {secondaryActionLabel && onSecondaryAction ? (
+        <div className="border-border/60 bg-background border-b">
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            className="bg-muted/80 text-foreground hover:bg-muted h-10 min-w-[9.5rem] rounded-full px-6 text-xs font-medium shadow-none"
+            className="text-foreground hover:bg-muted/60 h-10 w-full rounded-none border-0 bg-transparent text-xs font-semibold shadow-none"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
             {secondaryActionLabel}
           </Button>
-        ) : null}
+        </div>
+      ) : null}
+      <div className="bg-primary/95 p-0">
         <Button
           type="button"
           size="sm"
           variant="default"
           aria-disabled={primaryInert || Boolean(primaryActionDisabled)}
           className={cn(
-            "bg-primary text-primary-foreground hover:bg-primary/90 h-10 min-w-[9.5rem] rounded-full px-6 text-xs font-semibold shadow-none",
+            "bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             (primaryInert || primaryActionDisabled) &&
               "pointer-events-auto opacity-60"
           )}
