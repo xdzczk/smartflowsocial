@@ -27,7 +27,7 @@ export interface ComposerThreadFieldProps {
   disabled?: boolean;
   draggingOverSegmentId: string | null;
   onDraggingOverSegmentIdChange: (id: string | null) => void;
-  /** Shown once above segments when Blossom uploads depend on a Nostr signer. */
+  /** Shown once when Blossom is on but there is no Settings signer and no NIP-07 `window.nostr`. */
   signerConnectionNote?: React.ReactNode;
   /** Tooltip on failed attachment tiles in each segment */
   attachmentFailedTitle?: string;
@@ -58,11 +58,7 @@ export function ComposerThreadField({
           role="button"
           tabIndex={-1}
           aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
-          className={`group relative rounded-lg border p-3 ${
-            idx === 0
-              ? "border-border/50 bg-muted/10 shadow-none"
-              : "animate-in fade-in slide-in-from-bottom-2 border-border/50 border-l-primary/25 bg-muted/15 dark:bg-muted/10 border-l duration-200"
-          }`}
+          className="group border-border/50 bg-muted/10 relative rounded-lg border p-3 shadow-none"
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -100,16 +96,11 @@ export function ComposerThreadField({
             </div>
           ) : null}
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
-              {idx > 0 ? (
-                <span
-                  className="bg-muted flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs"
-                  aria-hidden
-                >
-                  {idx + 1}
-                </span>
-              ) : null}
-              Segment {idx + 1}
+            <span
+              className="bg-muted text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium tabular-nums"
+              aria-hidden
+            >
+              {idx + 1}
             </span>
             {segments.length > 1 ? (
               <div className="flex items-center gap-1">
@@ -154,7 +145,7 @@ export function ComposerThreadField({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                    className="text-destructive hover:bg-destructive/10"
                     onClick={() =>
                       onSegmentsChange((prev) =>
                         prev.filter((p) => p.id !== seg.id)

@@ -90,8 +90,8 @@ export default function NewLongFormPostPage() {
   const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
   const [longformDraftPicker, setLongformDraftPicker] = useState<{
     open: boolean;
-    tab: "drafts" | "templates";
-  }>({ open: false, tab: "drafts" });
+    mode: "drafts" | "templates";
+  }>({ open: false, mode: "drafts" });
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
@@ -192,7 +192,7 @@ export default function NewLongFormPostPage() {
             variant="ghost"
             size="sm"
             onClick={() =>
-              setLongformDraftPicker({ open: true, tab: "drafts" })
+              setLongformDraftPicker({ open: true, mode: "drafts" })
             }
             className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
             aria-label="Open drafts"
@@ -204,7 +204,7 @@ export default function NewLongFormPostPage() {
             variant="ghost"
             size="sm"
             onClick={() =>
-              setLongformDraftPicker({ open: true, tab: "templates" })
+              setLongformDraftPicker({ open: true, mode: "templates" })
             }
             className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
             aria-label="Open templates"
@@ -280,18 +280,27 @@ export default function NewLongFormPostPage() {
       ) : null}
 
       <DraftPickerModal
+        key={longformDraftPicker.mode}
         open={longformDraftPicker.open}
         onClose={() => setLongformDraftPicker((s) => ({ ...s, open: false }))}
-        initialActiveTab={longformDraftPicker.tab}
         type="longform"
-        onSelect={(id) => navigate(`/dashboard/drafts/longform/edit/${id}`)}
-        draftsAndTemplates={{
-          templates: templatesRaw,
-          onSelectTemplate: (templateId) =>
-            navigate(
-              `/dashboard/compose?type=article&templateId=${encodeURIComponent(templateId)}`
-            ),
-        }}
+        onSelect={
+          longformDraftPicker.mode === "drafts"
+            ? (id) => navigate(`/dashboard/drafts/longform/edit/${id}`)
+            : undefined
+        }
+        draftsAndTemplates={
+          longformDraftPicker.mode === "templates"
+            ? {
+                templates: templatesRaw,
+                templatesOnly: true,
+                onSelectTemplate: (templateId) =>
+                  navigate(
+                    `/dashboard/compose?type=article&templateId=${encodeURIComponent(templateId)}`
+                  ),
+              }
+            : undefined
+        }
       />
 
       <LongFormPreviewModal

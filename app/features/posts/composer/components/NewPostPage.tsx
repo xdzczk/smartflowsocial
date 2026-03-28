@@ -316,8 +316,8 @@ export default function NewPostPage() {
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
   const [shortDraftPicker, setShortDraftPicker] = useState<{
     open: boolean;
-    tab: "drafts" | "templates";
-  }>({ open: false, tab: "drafts" });
+    mode: "drafts" | "templates";
+  }>({ open: false, mode: "drafts" });
 
   const initialComposerType = searchParams.get("type");
   const [composerTab, setComposerTab] = useState<"post" | "poll" | "thread">(
@@ -421,7 +421,7 @@ export default function NewPostPage() {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setShortDraftPicker({ open: true, tab: "drafts" })}
+            onClick={() => setShortDraftPicker({ open: true, mode: "drafts" })}
             className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
             aria-label="Open drafts"
           >
@@ -432,7 +432,7 @@ export default function NewPostPage() {
             variant="ghost"
             size="sm"
             onClick={() =>
-              setShortDraftPicker({ open: true, tab: "templates" })
+              setShortDraftPicker({ open: true, mode: "templates" })
             }
             className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
             aria-label="Open templates"
@@ -523,31 +523,39 @@ export default function NewPostPage() {
         )}
 
         <DraftPickerModal
-          key={composerTab}
+          key={`${composerTab}-${shortDraftPicker.mode}`}
           open={shortDraftPicker.open}
           onClose={() => setShortDraftPicker((s) => ({ ...s, open: false }))}
-          initialActiveTab={shortDraftPicker.tab}
           type="short"
           shortDraftFilter={shortDraftFilter}
-          onSelect={(id) => {
-            const separator = shortComposeDraftPickerBase.includes("?")
-              ? "&"
-              : "?";
-            navigate(
-              `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
-            );
-          }}
-          draftsAndTemplates={{
-            templates,
-            onSelectTemplate: (templateId) => {
-              const separator = shortComposeDraftPickerBase.includes("?")
-                ? "&"
-                : "?";
-              navigate(
-                `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
-              );
-            },
-          }}
+          onSelect={
+            shortDraftPicker.mode === "drafts"
+              ? (id) => {
+                  const separator = shortComposeDraftPickerBase.includes("?")
+                    ? "&"
+                    : "?";
+                  navigate(
+                    `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
+                  );
+                }
+              : undefined
+          }
+          draftsAndTemplates={
+            shortDraftPicker.mode === "templates"
+              ? {
+                  templates,
+                  templatesOnly: true,
+                  onSelectTemplate: (templateId) => {
+                    const separator = shortComposeDraftPickerBase.includes("?")
+                      ? "&"
+                      : "?";
+                    navigate(
+                      `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
+                    );
+                  },
+                }
+              : undefined
+          }
         />
 
         {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (

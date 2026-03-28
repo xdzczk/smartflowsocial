@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { FileText, LayoutTemplate, List } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 import { isThreadDraftPost } from "../utils/draft-post-classification";
 
@@ -21,7 +20,7 @@ export type ShortDraftFilter = "all" | "poll" | "thread";
 export interface DraftsAndTemplatesPickerOptions {
   templates: Array<{ id: string; name: string | null }>;
   onSelectTemplate: (id: string) => void;
-  /** When true, only the templates list is shown (e.g. poll composer). */
+  /** When true, only the templates list is shown (no draft fetch). */
   templatesOnly?: boolean;
 }
 
@@ -31,12 +30,10 @@ interface DraftPickerModalProps {
   type: DraftPickerType;
   /** Called when a draft is chosen (omit when `draftsAndTemplates.templatesOnly` is true). */
   onSelect?: (id: string) => void;
-  /** When set, user can switch between drafts and saved templates. */
+  /** When set with `templatesOnly`, shows only templates. Omit for drafts-only. */
   draftsAndTemplates?: DraftsAndTemplatesPickerOptions;
   /** When `type` is short, limit listed drafts (default: all). */
   shortDraftFilter?: ShortDraftFilter;
-  /** Dual-mode only: which tab to show when the dialog opens. */
-  initialActiveTab?: "drafts" | "templates";
 }
 
 function previewText(text: string | null | undefined, maxLen: number): string {
@@ -45,6 +42,7 @@ function previewText(text: string | null | undefined, maxLen: number): string {
   return t.length <= maxLen ? t : t.slice(0, maxLen) + "…";
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- three picker types × draft/template-only modes */
 export function DraftPickerModal({
   open,
   onClose,
@@ -52,7 +50,6 @@ export function DraftPickerModal({
   onSelect,
   draftsAndTemplates,
   shortDraftFilter = "all",
-  initialActiveTab = "drafts",
 }: DraftPickerModalProps) {
   const fetcher = useFetcher<{
     posts?: Array<{
@@ -67,9 +64,8 @@ export function DraftPickerModal({
     bulkDraftGroups?: Array<{ id: string; postCount: number }>;
   }>();
 
-  const [activeTab, setActiveTab] = useState<"drafts" | "templates">("drafts");
-
-  const skipDraftsFetch = Boolean(draftsAndTemplates?.templatesOnly);
+  const templatesOnly = Boolean(draftsAndTemplates?.templatesOnly);
+  const skipDraftsFetch = templatesOnly;
 
   useEffect(() => {
     if (!open || skipDraftsFetch || fetcher.state !== "idle" || fetcher.data) {
@@ -78,12 +74,6 @@ export function DraftPickerModal({
     fetcher.load("/dashboard/drafts");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes; we only want to react to state/data
   }, [open, skipDraftsFetch, fetcher.state, fetcher.data]);
-
-  useEffect(() => {
-    if (open) {
-      setActiveTab(initialActiveTab);
-    }
-  }, [open, initialActiveTab]);
 
   const data = fetcher.data;
   const postsRaw = data?.posts ?? [];
@@ -126,15 +116,9 @@ export function DraftPickerModal({
         ? "No thread drafts."
         : "No short drafts.";
 
-  const dualMode = Boolean(draftsAndTemplates);
-  const templatesOnly = Boolean(draftsAndTemplates?.templatesOnly);
   const templatesList = draftsAndTemplates?.templates ?? [];
 
-  const dialogTitle = (() => {
-    if (!dualMode) return baseTitle;
-    if (templatesOnly) return "Templates";
-    return "Drafts & templates";
-  })();
+  const dialogTitle = templatesOnly ? "Templates" : baseTitle;
 
   const draftsListContent =
     type === "short" ? (
@@ -227,57 +211,20 @@ export function DraftPickerModal({
     </ul>
   );
 
-  const body = (() => {
-    if (dualMode && templatesOnly) {
-      return templatesPanel;
-    }
-    if (dualMode && !templatesOnly) {
-      return (
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as "drafts" | "templates")}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="drafts">Drafts</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value="drafts"
-            className="mt-3 max-h-[min(50vh,24rem)] overflow-y-auto"
-          >
-            {fetcher.state === "loading" && !data ? (
-              <p className="text-muted-foreground text-sm">Loading drafts…</p>
-            ) : (
-              draftsListContent
-            )}
-          </TabsContent>
-          <TabsContent
-            value="templates"
-            className="mt-3 max-h-[min(50vh,24rem)] overflow-y-auto"
-          >
-            {templatesPanel}
-          </TabsContent>
-        </Tabs>
-      );
-    }
-    return fetcher.state === "loading" && !data ? (
-      <p className="text-muted-foreground text-sm">Loading drafts…</p>
-    ) : (
-      draftsListContent
-    );
-  })();
+  const body = templatesOnly ? (
+    templatesPanel
+  ) : fetcher.state === "loading" && !data ? (
+    <p className="text-muted-foreground text-sm">Loading drafts…</p>
+  ) : (
+    draftsListContent
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
-          {dualMode && !templatesOnly ? (
-            <DialogDescription>
-              Open a saved draft or load content from a template.
-            </DialogDescription>
-          ) : dualMode && templatesOnly ? (
+          {templatesOnly ? (
             <DialogDescription>
               Load a saved template into the composer.
             </DialogDescription>

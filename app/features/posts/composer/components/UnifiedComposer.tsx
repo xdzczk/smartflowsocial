@@ -218,10 +218,10 @@ export function UnifiedComposer({
   const navigate = useNavigate();
   const lastHandledEmbedPostIdRef = React.useRef<string | null>(null);
   const draftTemplatesPickerEnabled = composerTemplates !== undefined;
-  const [draftPickerOpen, setDraftPickerOpen] = useState(false);
-  const [draftPickerInitialTab, setDraftPickerInitialTab] = useState<
-    "drafts" | "templates"
-  >("drafts");
+  const [draftPicker, setDraftPicker] = useState<{
+    open: boolean;
+    mode: "drafts" | "templates";
+  }>({ open: false, mode: "drafts" });
   const shortDraftFilter: ShortDraftFilter =
     shortDraftFilterProp ?? (newPostContentTab === "thread" ? "thread" : "all");
   const user = useOptionalUser();
@@ -252,6 +252,7 @@ export function UnifiedComposer({
     setLastPublishFailed,
     signerLabel,
     signerReady,
+    windowNostrBridgePresent,
     selectedHashtags,
     setSelectedHashtags,
     templateName,
@@ -313,45 +314,41 @@ export function UnifiedComposer({
     mediaUploadProviderKnown && isBlossomProvider(mediaUploadProvider);
 
   const blossomSignerMediaNote = useMemo(() => {
-    if (!blossomMediaUploads) return;
-    const signerMissing = signerReady === false;
+    if (
+      !blossomMediaUploads ||
+      signerReady !== false ||
+      windowNostrBridgePresent
+    ) {
+      return;
+    }
     return (
       <div
         className={cn(
           "rounded-md border px-2.5 py-2 text-[11px] leading-snug",
-          signerMissing
-            ? "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
-            : "border-border/70 bg-muted/40 text-muted-foreground"
+          "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
         )}
       >
-        <span className="text-foreground font-medium">
-          Blossom media uploads
-        </span>{" "}
-        need an{" "}
-        <span className="text-foreground font-medium">active Nostr signer</span>
-        —either a{" "}
-        <span className="text-foreground font-medium">
-          browser extension
-        </span>{" "}
-        (NIP-07) or a{" "}
-        <span className="text-foreground font-medium">
-          connected remote signer
-        </span>{" "}
-        (NIP-46). If uploads fail or your signer connection is stale, open{" "}
+        <span className="font-medium">No active Nostr signer</span>
+        {" — "}
+        Blossom media uploads need a{" "}
+        <span className="font-medium">browser extension</span> (NIP-07) or a{" "}
+        <span className="font-medium">connected remote signer</span> (NIP-46).
+        Open{" "}
         <Link
           to="/dashboard/settings"
           className="text-primary font-medium underline underline-offset-2"
         >
           Settings
         </Link>{" "}
-        and reconnect your signer.
+        to connect or reconnect your signer.
       </div>
     );
-  }, [blossomMediaUploads, signerReady]);
+  }, [blossomMediaUploads, signerReady, windowNostrBridgePresent]);
 
-  const attachmentFailedTitleHint = blossomMediaUploads
-    ? "Upload failed. Reconnect your Nostr signer in Settings, remove this file, and add it again."
-    : undefined;
+  const attachmentFailedTitleHint =
+    blossomMediaUploads && signerReady === false && !windowNostrBridgePresent
+      ? "Upload failed. Reconnect your Nostr signer in Settings, remove this file, and add it again."
+      : undefined;
 
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
@@ -1320,9 +1317,8 @@ export function UnifiedComposer({
 
   const primarySubmitAction = getTextSubmitActionForMode(publishMode);
 
-  const openDraftPicker = (tab: "drafts" | "templates") => {
-    setDraftPickerInitialTab(tab);
-    setDraftPickerOpen(true);
+  const openDraftPicker = (mode: "drafts" | "templates") => {
+    setDraftPicker({ open: true, mode });
   };
 
   const composerHeaderTrailing =
@@ -1751,20 +1747,28 @@ export function UnifiedComposer({
       ) : null}
       {!suppressBuiltInDraftPicker ? (
         <DraftPickerModal
-          open={draftPickerOpen}
-          onClose={() => setDraftPickerOpen(false)}
+          key={draftPicker.mode}
+          open={draftPicker.open}
+          onClose={() => setDraftPicker((s) => ({ ...s, open: false }))}
           type="short"
-          initialActiveTab={draftPickerInitialTab}
-          onSelect={(id) => {
-            const separator = draftPickerNavigateBase.includes("?") ? "&" : "?";
-            navigate(
-              `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
-            );
-          }}
+          shortDraftFilter={shortDraftFilter}
+          onSelect={
+            draftPicker.mode === "drafts"
+              ? (id) => {
+                  const separator = draftPickerNavigateBase.includes("?")
+                    ? "&"
+                    : "?";
+                  navigate(
+                    `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
+                  );
+                }
+              : undefined
+          }
           draftsAndTemplates={
-            draftTemplatesPickerEnabled
+            draftPicker.mode === "templates" && draftTemplatesPickerEnabled
               ? {
                   templates: composerTemplates,
+                  templatesOnly: true,
                   onSelectTemplate: (templateId) => {
                     const separator = draftPickerNavigateBase.includes("?")
                       ? "&"
@@ -1776,7 +1780,6 @@ export function UnifiedComposer({
                 }
               : undefined
           }
-          shortDraftFilter={shortDraftFilter}
         />
       ) : null}
     </div>

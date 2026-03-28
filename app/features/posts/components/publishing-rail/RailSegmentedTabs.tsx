@@ -26,7 +26,7 @@ export function RailSegmentedTabs({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="border-border/60 relative grid grid-cols-3 border-b"
+      className="divide-border/60 relative grid grid-cols-3 divide-x"
     >
       {modes.map((m) => {
         const active = value === m;
@@ -39,10 +39,10 @@ export function RailSegmentedTabs({
             aria-label={ariaLabels[m]}
             className={cn(
               TAB_ROW_H,
-              "border-border/50 flex items-center justify-center border-e px-1 text-center text-xs transition-colors last:border-e-0",
+              "flex items-center justify-center px-1 text-center text-xs transition-colors",
               active
-                ? "text-foreground bg-muted/40 border-b-card relative z-[1] -mb-px border-b font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/20 border-b border-transparent font-medium"
+                ? "text-foreground bg-muted/40 relative z-[1] border-b border-b-transparent font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/20 border-border/60 border-b font-medium"
             )}
             onClick={() => onValueChange(m)}
           >

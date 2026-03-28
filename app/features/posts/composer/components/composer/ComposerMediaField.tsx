@@ -18,7 +18,7 @@ export interface ComposerMediaFieldProps {
   dropZoneLabel?: string;
   emptyHint?: string;
   className?: string;
-  /** Callout when Blossom (or similar) uploads depend on an active Nostr signer. */
+  /** Callout when Blossom uploads have no usable signer (no Settings signer and no NIP-07 `window.nostr`). */
   signerConnectionNote?: React.ReactNode;
   /** Tooltip on failed attachment tiles */
   attachmentFailedTitle?: string;
