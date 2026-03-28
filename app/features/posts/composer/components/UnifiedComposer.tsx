@@ -162,8 +162,6 @@ export interface UnifiedComposerProps {
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
-  /** Focus the main text field on mount (new-post flow only). */
-  contentFieldAutoFocus?: boolean;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -197,7 +195,6 @@ export function UnifiedComposer({
   onRelayClick,
   composerTemplates,
   shortDraftFilter: shortDraftFilterProp,
-  contentFieldAutoFocus = false,
 }: UnifiedComposerProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
@@ -1182,7 +1179,6 @@ export function UnifiedComposer({
             showDraftButton={!isTemplateMode}
             onOpenDraft={() => setDraftPickerOpen(true)}
             draftButtonLabel={draftButtonLabel}
-            contentFieldAutoFocus={contentFieldAutoFocus}
             threadTopRightActions={
               isThreadMode && draftTemplatesPickerEnabled && !isTemplateMode ? (
                 <Button

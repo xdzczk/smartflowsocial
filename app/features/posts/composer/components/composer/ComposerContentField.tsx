@@ -27,8 +27,6 @@ export interface ComposerContentFieldProps {
   id?: string;
   /** Optional className for the wrapper */
   className?: string;
-  /** Focus textarea on mount (main compose route only; avoid in embeds). */
-  autoFocus?: boolean;
 }
 
 const DEFAULT_MAX_LENGTH = 5000;
@@ -49,7 +47,6 @@ export function ComposerContentField({
   maxLength = DEFAULT_MAX_LENGTH,
   id = "content",
   className = "",
-  autoFocus = false,
 }: ComposerContentFieldProps) {
   return (
     <div className={className}>
@@ -59,7 +56,6 @@ export function ComposerContentField({
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            autoFocus={autoFocus} // eslint-disable-line jsx-a11y/no-autofocus -- optional; main compose route only
             className={
               "text-foreground min-h-[150px] resize-y border-0 bg-transparent px-0 py-0 text-[15px] leading-relaxed shadow-none focus-visible:ring-0 " +
               (showDraftButton && onOpenDraft ? "pr-28 " : "") +

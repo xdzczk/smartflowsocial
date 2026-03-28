@@ -10,13 +10,6 @@ import { useState, type ReactNode } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "~/components/ui/sheet";
 import { Switch } from "~/components/ui/switch";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
@@ -146,32 +139,30 @@ function PublishingModeFusedHeader({
   };
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Publishing mode"
-      className="bg-muted/30 grid grid-cols-3 gap-px p-px"
-    >
-      {modes.map((m) => {
-        const active = publishMode === m;
-        return (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={ariaLabels[m]}
-            className={cn(
-              "min-h-[44px] px-1 py-2 text-center text-xs transition-all",
-              active
-                ? "bg-card text-foreground ring-border/80 font-semibold ring-1 shadow-sm"
-                : "text-muted-foreground/75 hover:text-foreground bg-transparent"
-            )}
-            onClick={() => onPublishModeChange(m)}
-          >
-            {labels[m]}
-          </button>
-        );
-      })}
+    <div role="radiogroup" aria-label="Publishing mode" className="px-1">
+      <div className="border-border/60 flex border-b">
+        {modes.map((m) => {
+          const active = publishMode === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={ariaLabels[m]}
+              className={cn(
+                "-mb-px min-h-[44px] flex-1 px-2 py-2.5 text-center text-xs transition-colors",
+                active
+                  ? "text-foreground border-primary border-b-2 font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-b-2 border-transparent font-medium"
+              )}
+              onClick={() => onPublishModeChange(m)}
+            >
+              {labels[m]}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -576,32 +567,30 @@ function PublishingSummaryRailActions({
   const primaryInert = showLoading;
 
   return (
-    <div className="border-border/60 shrink-0 overflow-hidden border-t">
-      <div className="text-foreground/90 border-border/60 bg-muted/20 border-b px-3 py-2 text-[11px] leading-snug">
+    <div className="border-border/60 shrink-0 border-t px-3 py-3">
+      <p className="text-foreground/90 mb-3 text-center text-[11px] leading-snug">
         {actionSummary}
-      </div>
-      {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/60 bg-muted/25 border-b">
+      </p>
+      <div className="flex w-full flex-col items-center gap-2.5">
+        {secondaryActionLabel && onSecondaryAction ? (
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            className="text-foreground hover:bg-muted/80 h-10 w-full rounded-none border-0 text-xs font-medium shadow-none"
+            className="bg-muted/80 text-foreground hover:bg-muted h-10 min-w-[9.5rem] rounded-full px-6 text-xs font-medium shadow-none"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
             {secondaryActionLabel}
           </Button>
-        </div>
-      ) : null}
-      <div className="bg-primary/95 p-0">
+        ) : null}
         <Button
           type="button"
           size="sm"
           variant="default"
           aria-disabled={primaryInert || Boolean(primaryActionDisabled)}
           className={cn(
-            "bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none border-0 text-xs font-semibold shadow-none",
+            "bg-primary text-primary-foreground hover:bg-primary/90 h-10 min-w-[9.5rem] rounded-full px-6 text-xs font-semibold shadow-none",
             (primaryInert || primaryActionDisabled) &&
               "pointer-events-auto opacity-60"
           )}
@@ -622,7 +611,6 @@ function PublishingSummaryRailActions({
 }
 
 export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
-  const [sheetOpen, setSheetOpen] = useState(false);
   const actionSummary = deriveActionSummary(
     props.publishMode,
     props.outcomeSentence
@@ -650,68 +638,29 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   };
 
   return (
-    <>
-      <aside
-        className="border-border hidden w-72 shrink-0 self-start bg-transparent lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100vh-5rem)] lg:flex-col xl:w-80"
-        aria-label="Publish"
-      >
-        <div className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <PublishingSummaryRailBody {...bodyProps} />
-          </div>
-          <div className="shrink-0">
-            <PublishingSummaryRailActions
-              actionSummary={actionSummary}
-              primaryActionLabel={props.primaryActionLabel}
-              onPrimaryAction={props.onPrimaryAction}
-              onPrimaryActionBlocked={props.onPrimaryActionBlocked}
-              primaryActionDisabled={props.primaryActionDisabled}
-              primaryActionLoading={props.primaryActionLoading}
-              primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-              secondaryActionLabel={props.secondaryActionLabel}
-              onSecondaryAction={props.onSecondaryAction}
-              secondaryActionDisabled={props.secondaryActionDisabled}
-            />
-          </div>
+    <aside
+      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:w-72 xl:w-80"
+      aria-label="Publish"
+    >
+      <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <PublishingSummaryRailBody {...bodyProps} />
         </div>
-      </aside>
-
-      <div className="lg:hidden">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full">
-              Publish
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="flex max-h-[85vh] flex-col">
-            <SheetHeader className="shrink-0">
-              <SheetTitle>Publish</SheetTitle>
-            </SheetHeader>
-            <div className="border-border mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <PublishingSummaryRailBody {...bodyProps} />
-              </div>
-              <div className="shrink-0">
-                <PublishingSummaryRailActions
-                  actionSummary={actionSummary}
-                  primaryActionLabel={props.primaryActionLabel}
-                  onPrimaryAction={() => {
-                    props.onPrimaryAction();
-                    setSheetOpen(false);
-                  }}
-                  onPrimaryActionBlocked={props.onPrimaryActionBlocked}
-                  primaryActionDisabled={props.primaryActionDisabled}
-                  primaryActionLoading={props.primaryActionLoading}
-                  primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-                  secondaryActionLabel={props.secondaryActionLabel}
-                  onSecondaryAction={props.onSecondaryAction}
-                  secondaryActionDisabled={props.secondaryActionDisabled}
-                />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <div className="shrink-0">
+          <PublishingSummaryRailActions
+            actionSummary={actionSummary}
+            primaryActionLabel={props.primaryActionLabel}
+            onPrimaryAction={props.onPrimaryAction}
+            onPrimaryActionBlocked={props.onPrimaryActionBlocked}
+            primaryActionDisabled={props.primaryActionDisabled}
+            primaryActionLoading={props.primaryActionLoading}
+            primaryActionLoadingLabel={props.primaryActionLoadingLabel}
+            secondaryActionLabel={props.secondaryActionLabel}
+            onSecondaryAction={props.onSecondaryAction}
+            secondaryActionDisabled={props.secondaryActionDisabled}
+          />
+        </div>
       </div>
-    </>
+    </aside>
   );
 }
