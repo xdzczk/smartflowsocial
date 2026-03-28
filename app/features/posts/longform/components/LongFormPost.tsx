@@ -928,10 +928,6 @@ export default function LongFormPost({
                       Add a cover before publishing
                     </p>
                   ) : null}
-                  <div className="text-muted-foreground text-xs">
-                    Primary publish action is available in the Publishing
-                    Summary rail.
-                  </div>
 
                   {isSigning ? (
                     <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">

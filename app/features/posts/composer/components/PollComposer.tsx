@@ -3,7 +3,7 @@
  */
 
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { BarChart3, FolderOpen, Plus, Trash2 } from "lucide-react";
+import { FolderOpen, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -600,28 +600,6 @@ export function PollComposer({
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
-        <div className="text-muted-foreground mb-4 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" aria-hidden />
-            NIP-88 poll
-          </div>
-          {draftTemplatesPickerEnabled ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDraftTemplatesPickerOpen(true)}
-              aria-label="Drafts / Templates"
-            >
-              <FolderOpen
-                className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-              Drafts / Templates
-            </Button>
-          ) : null}
-        </div>
         <div className="space-y-4">
           <ComposerErrors
             isSigning={isSigning}
@@ -641,15 +619,39 @@ export function PollComposer({
 
           <div className="space-y-2">
             <Label htmlFor="poll-question">Question</Label>
-            <textarea
-              id="poll-question"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              disabled={disabled}
-              rows={3}
-              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="What do you want to ask?"
-            />
+            <div className="relative">
+              <textarea
+                id="poll-question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                disabled={disabled}
+                rows={3}
+                className={
+                  "border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 " +
+                  (draftTemplatesPickerEnabled ? "pr-28" : "")
+                }
+                placeholder="What do you want to ask?"
+              />
+              {draftTemplatesPickerEnabled ? (
+                <div className="absolute top-3 right-3 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDraftTemplatesPickerOpen(true)}
+                    disabled={disabled}
+                    aria-label="Drafts / Templates"
+                  >
+                    <FolderOpen
+                      className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                    Drafts / Templates
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -796,10 +798,6 @@ export function PollComposer({
               }}
               disabled={disabled}
             />
-          </div>
-
-          <div className="text-muted-foreground text-xs">
-            Primary publish action is available in the Publishing Summary rail.
           </div>
         </div>
       </div>

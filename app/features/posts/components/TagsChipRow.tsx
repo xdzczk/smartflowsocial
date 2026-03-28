@@ -160,12 +160,7 @@ export function TagsChipRow({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-foreground text-sm font-semibold">Tags</span>
-        <p className="text-muted-foreground/80 text-[10px] leading-snug">
-          Hashtags help discovery and campaigns—keep them specific.
-        </p>
-      </div>
+      <span className="text-foreground text-sm font-semibold">Tags</span>
 
       <div className="flex flex-wrap items-center gap-2">
         <Select

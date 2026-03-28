@@ -77,6 +77,7 @@ import {
   filterMediaFiles,
 } from "./composer/composer-helpers";
 import { ComposerOutputPanel } from "./composer/ComposerOutputPanel";
+import { MIN_THREAD_SEGMENTS } from "./composer/thread-constants";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
 export interface ContestEmbedPublishPayload {
@@ -369,18 +370,25 @@ export function UnifiedComposer({
       localRestored.contentType === "thread" &&
       localRestored.threadSegments
     ) {
-      setThreadSegments(
-        localRestored.threadSegments.map((segment) => ({
-          id: segment.id,
-          content: segment.content,
-          attachments: segment.attachments.map((attachment) => ({
-            localId: attachment.localId,
-            url: attachment.url,
-            alt: attachment.alt,
-            status: "done" as const,
-          })),
-        }))
-      );
+      const mapped = localRestored.threadSegments.map((segment) => ({
+        id: segment.id,
+        content: segment.content,
+        attachments: segment.attachments.map((attachment) => ({
+          localId: attachment.localId,
+          url: attachment.url,
+          alt: attachment.alt,
+          status: "done" as const,
+        })),
+      }));
+      const padded = [...mapped];
+      while (padded.length < MIN_THREAD_SEGMENTS) {
+        padded.push({
+          id: crypto.randomUUID(),
+          content: "",
+          attachments: [],
+        });
+      }
+      setThreadSegments(padded);
       if (typeof localRestored.threadDelayMinutes === "number") {
         setThreadDelayMinutes(localRestored.threadDelayMinutes);
       }
@@ -871,6 +879,11 @@ export function UnifiedComposer({
   }
   if (publishMode === "queue" && selectedQueue === "unassigned") {
     deferrableBlockers.push("Choose a queue");
+  }
+  if (isThreadMode && threadSegments.length < MIN_THREAD_SEGMENTS) {
+    deferrableBlockers.push(
+      "Threads need at least two segments. Add another below the first."
+    );
   }
   if (!hasContent) {
     deferrableBlockers.push(

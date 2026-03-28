@@ -10,6 +10,8 @@ import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
 import { removeToken } from "~/features/posts/utils/inline-tokens.client";
 
+import { MIN_THREAD_SEGMENTS } from "./thread-constants";
+
 export interface ThreadSegment {
   id: string;
   content: string;
@@ -25,14 +27,14 @@ export interface ComposerThreadFieldProps {
   disabled?: boolean;
   draggingOverSegmentId: string | null;
   onDraggingOverSegmentIdChange: (id: string | null) => void;
-  /** e.g. Drafts button—aligned top-right of the thread stack for parity with post editor. */
+  /** e.g. Drafts / Templates—top-right inside the first segment textarea. */
   topRightActions?: React.ReactNode;
 }
 
 export function ComposerThreadField({
   segments,
   onSegmentsChange,
-  threadDelayMinutes,
+  threadDelayMinutes: _threadDelayMinutes,
   onFilesDropped,
   onAddSegmentClick,
   disabled = false,
@@ -40,25 +42,8 @@ export function ComposerThreadField({
   onDraggingOverSegmentIdChange,
   topRightActions,
 }: ComposerThreadFieldProps) {
-  const estimatedMinutes = Math.max(
-    0,
-    (segments.length - 1) * threadDelayMinutes
-  );
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <div className="bg-muted/30 min-w-0 flex-1 rounded-md border px-3 py-2 text-xs">
-          <p>
-            {segments.length} segment{segments.length === 1 ? "" : "s"} ·
-            estimated duration {estimatedMinutes} min
-          </p>
-        </div>
-        {topRightActions ? (
-          <div className="flex shrink-0 justify-end sm:pt-0">
-            {topRightActions}
-          </div>
-        ) : null}
-      </div>
       {segments.map((seg, idx) => (
         <div
           key={seg.id}
@@ -188,7 +173,7 @@ export function ComposerThreadField({
                       prev.filter((p) => p.id !== seg.id)
                     )
                   }
-                  disabled={disabled}
+                  disabled={disabled || segments.length <= MIN_THREAD_SEGMENTS}
                   aria-label={`Remove segment ${idx + 1}`}
                 >
                   Remove
@@ -196,34 +181,78 @@ export function ComposerThreadField({
               </div>
             ) : null}
           </div>
-          <Textarea
-            value={seg.content}
-            onChange={(e) =>
-              onSegmentsChange((prev) =>
-                prev.map((p) =>
-                  p.id === seg.id ? { ...p, content: e.target.value } : p
+          {idx === 0 && topRightActions ? (
+            <div className="relative mb-2">
+              <Textarea
+                value={seg.content}
+                onChange={(e) =>
+                  onSegmentsChange((prev) =>
+                    prev.map((p) =>
+                      p.id === seg.id ? { ...p, content: e.target.value } : p
+                    )
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (
+                    (e.metaKey || e.ctrlKey) &&
+                    e.shiftKey &&
+                    e.key === "Enter"
+                  ) {
+                    e.preventDefault();
+                    onSegmentsChange((prev) => {
+                      const next = [...prev];
+                      next.splice(idx + 1, 0, {
+                        id: crypto.randomUUID(),
+                        content: "",
+                        attachments: [],
+                      });
+                      return next;
+                    });
+                  }
+                }}
+                placeholder="Segment content…"
+                rows={3}
+                disabled={disabled}
+                className="text-foreground focus-visible:ring-primary/20 min-h-[80px] pr-28 focus-visible:ring-2"
+              />
+              <div className="absolute top-3 right-3 flex gap-2">
+                {topRightActions}
+              </div>
+            </div>
+          ) : (
+            <Textarea
+              value={seg.content}
+              onChange={(e) =>
+                onSegmentsChange((prev) =>
+                  prev.map((p) =>
+                    p.id === seg.id ? { ...p, content: e.target.value } : p
+                  )
                 )
-              )
-            }
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "Enter") {
-                e.preventDefault();
-                onSegmentsChange((prev) => {
-                  const next = [...prev];
-                  next.splice(idx + 1, 0, {
-                    id: crypto.randomUUID(),
-                    content: "",
-                    attachments: [],
-                  });
-                  return next;
-                });
               }
-            }}
-            placeholder="Segment content…"
-            rows={3}
-            disabled={disabled}
-            className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
-          />
+              onKeyDown={(e) => {
+                if (
+                  (e.metaKey || e.ctrlKey) &&
+                  e.shiftKey &&
+                  e.key === "Enter"
+                ) {
+                  e.preventDefault();
+                  onSegmentsChange((prev) => {
+                    const next = [...prev];
+                    next.splice(idx + 1, 0, {
+                      id: crypto.randomUUID(),
+                      content: "",
+                      attachments: [],
+                    });
+                    return next;
+                  });
+                }
+              }}
+              placeholder="Segment content…"
+              rows={3}
+              disabled={disabled}
+              className="text-foreground focus-visible:ring-primary/20 mb-2 min-h-[80px] focus-visible:ring-2"
+            />
+          )}
           <p className="text-muted-foreground mb-2 text-xs">
             {seg.content.length} chars
           </p>

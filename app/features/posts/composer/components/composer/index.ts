@@ -14,6 +14,7 @@ export type {
 } from "./ComposerScheduleField";
 export { ComposerQueueField } from "./ComposerQueueField";
 export type { ComposerQueueFieldProps } from "./ComposerQueueField";
+export { MIN_THREAD_SEGMENTS } from "./thread-constants";
 export { ComposerThreadField } from "./ComposerThreadField";
 export type {
   ComposerThreadFieldProps,

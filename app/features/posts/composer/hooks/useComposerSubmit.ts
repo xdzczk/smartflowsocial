@@ -36,6 +36,7 @@ import {
   COMPOSER_REMOVE_FAILED_ATTACHMENTS,
 } from "../components/composer/composer-validation";
 import type { ComposerPublishMode } from "../components/composer/publish-mode";
+import { MIN_THREAD_SEGMENTS } from "../components/composer/thread-constants";
 
 export type TextPostFormData = z.infer<typeof textPostClientSchema>;
 
@@ -261,6 +262,12 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           if (hasUploading) {
             setSigningError(
               "Wait for uploads or remove failed attachments in each segment."
+            );
+            return;
+          }
+          if (threadSegments.length < MIN_THREAD_SEGMENTS) {
+            setSigningError(
+              `A thread must have at least ${MIN_THREAD_SEGMENTS} segments.`
             );
             return;
           }

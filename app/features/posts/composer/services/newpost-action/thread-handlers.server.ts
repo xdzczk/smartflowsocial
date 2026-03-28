@@ -22,6 +22,7 @@ import { applyHashtags } from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
 
 const DEFAULT_DELAY_SECONDS = 60; // 1 minute
+const MIN_THREAD_SEGMENTS = 2;
 
 interface ThreadSegmentInput {
   content: string;
@@ -65,6 +66,21 @@ function parseSignedEvents(formData: FormData): SignedEvent[] {
   }
 }
 
+function threadSegmentsValidationError(
+  segments: ThreadSegmentInput[],
+  signedEvents: SignedEvent[]
+): { error: string } | null {
+  if (segments.length < MIN_THREAD_SEGMENTS) {
+    return {
+      error: `Threads need at least ${MIN_THREAD_SEGMENTS} segments.`,
+    };
+  }
+  if (signedEvents.length !== segments.length) {
+    return { error: "Signed events must match each thread segment." };
+  }
+  return null;
+}
+
 export async function handleThreadAction(
   userId: string,
   sessionPubkey: string,
@@ -77,14 +93,9 @@ export async function handleThreadAction(
   const segments = parseSegments(formData);
   const signedEvents = parseSignedEvents(formData);
 
-  if (segments.length === 0 || signedEvents.length !== segments.length) {
-    return json(
-      {
-        error:
-          "Thread must have at least one segment and signed events for each",
-      },
-      { status: 400 }
-    );
+  const segmentError = threadSegmentsValidationError(segments, signedEvents);
+  if (segmentError) {
+    return json(segmentError, { status: 400 });
   }
 
   const rawDelay = formData.get("threadDelaySeconds");

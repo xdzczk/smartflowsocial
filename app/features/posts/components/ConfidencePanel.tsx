@@ -142,7 +142,7 @@ function PublishingModeFusedHeader({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x border-b"
+      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -156,8 +156,8 @@ function PublishingModeFusedHeader({
             className={cn(
               "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
               active
-                ? "text-foreground font-semibold"
-                : "text-muted-foreground hover:text-foreground font-medium"
+                ? "bg-card text-foreground relative z-[1] -mb-px border-b border-b-transparent font-semibold"
+                : "text-muted-foreground hover:text-foreground border-border/60 border-b font-medium"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -307,13 +307,7 @@ function DeliveryOptionsSection({
           <SectionBlock {...followUpSection} />
         ) : null}
         {recyclableControl ? (
-          <RecyclableRailRow
-            {...recyclableControl}
-            helperText={
-              recyclableControl.helperText ??
-              "Include in Recyclables for republishing."
-            }
-          />
+          <RecyclableRailRow {...recyclableControl} />
         ) : null}
       </div>
     </div>
@@ -579,7 +573,7 @@ function PublishingSummaryRailActions({
             type="button"
             variant="secondary"
             size="sm"
-            className="text-foreground hover:bg-muted/60 h-10 w-full rounded-none border-0 bg-transparent text-xs font-semibold shadow-none"
+            className="text-foreground hover:bg-muted/60 h-9 w-full rounded-none border-0 bg-transparent text-[11px] leading-none font-semibold shadow-none"
             onClick={onSecondaryAction}
             disabled={secondaryActionDisabled}
           >
@@ -643,7 +637,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
 
   return (
     <aside
-      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:w-72 xl:w-80"
+      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:w-[312px] xl:w-[344px]"
       aria-label="Publish"
     >
       <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">

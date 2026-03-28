@@ -4,6 +4,7 @@ import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/features/auth/signer";
 
 import type { ComposerAttachment, RepostConditions } from "../../types";
 import type { DelayAfterMain } from "../../utils/delay-after-main";
+import { MIN_THREAD_SEGMENTS } from "../components/composer/thread-constants";
 
 const SIGNER_LABEL_NIP46 = "NIP-46 (Bunker)";
 
@@ -55,7 +56,13 @@ export function useUnifiedComposerState({
   const [isThreadMode, setIsThreadMode] = useState(false);
   const [threadSegments, setThreadSegments] = useState<
     Array<{ id: string; content: string; attachments: ComposerAttachment[] }>
-  >([{ id: crypto.randomUUID(), content: "", attachments: [] }]);
+  >(() =>
+    Array.from({ length: MIN_THREAD_SEGMENTS }, () => ({
+      id: crypto.randomUUID(),
+      content: "",
+      attachments: [] as ComposerAttachment[],
+    }))
+  );
   const [threadDelayMinutes, setThreadDelayMinutes] = useState(1);
 
   const [draggingOverSegmentId, setDraggingOverSegmentId] = useState<
