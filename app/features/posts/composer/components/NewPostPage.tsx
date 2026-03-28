@@ -308,6 +308,7 @@ export default function NewPostPage() {
   } | null>(null);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
   const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+  const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
 
   const initialComposerType = searchParams.get("type");
   const [composerTab, setComposerTab] = useState<"post" | "poll" | "thread">(
@@ -391,6 +392,7 @@ export default function NewPostPage() {
         setComposerTab(next);
       }}
       title={title}
+      saveStateLabel={saveStateLabel}
     >
       <div>
         {relaySelectorOpen ? (
@@ -432,6 +434,7 @@ export default function NewPostPage() {
             onPublishModeChange={setPublishMode}
             skipLocalDraftRestore={Boolean(publishResultToken)}
             composerTemplates={templates}
+            onDraftStateLabelChange={setSaveStateLabel}
           />
         ) : (
           <UnifiedComposer
@@ -466,6 +469,7 @@ export default function NewPostPage() {
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
             composerTemplates={templates}
+            onDraftStateLabelChange={setSaveStateLabel}
           />
         )}
 

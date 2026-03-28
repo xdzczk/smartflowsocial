@@ -1,7 +1,6 @@
 /**
  * Composer publish rail: delivery, validation, and primary publish actions.
- * Main composer column = what you publish; this rail = how and when it ships.
- * New controls: classify as content (main) vs delivery (here) before placing UI.
+ * Publishing Rail V3: single surface, divider-based zones, no nested section cards.
  */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -34,7 +33,6 @@ export interface PublishingSessionStripProps {
   relayCount: number;
   onRelayClick?: () => void;
   signerLabel: string | null;
-  saveStateLabel: string | null;
 }
 
 /** Recyclable / distribution toggle — lives in the rail only. */
@@ -50,13 +48,11 @@ export interface PublishingRecyclableControlProps {
 export interface PublishingSummaryRailProps {
   publishMode: ComposerPublishMode;
   onPublishModeChange: (next: ComposerPublishMode) => void;
-  /** Plain-language line directly under the mode selector. */
+  /** Plain-language outcome; folded into publish summary (valid path). */
   outcomeSentence: string;
   readiness: ReadinessPresentation;
-  /** Merged into Post status (not a separate Session card). */
   sessionStrip?: PublishingSessionStripProps;
   modeSpecificSection?: PublishingSummarySection;
-  /** Collapsible follow-up row with summary (e.g. None / Repost · Quote). */
   followUp?: {
     summaryLine: string;
     children: ReactNode;
@@ -64,29 +60,19 @@ export interface PublishingSummaryRailProps {
   /** @deprecated Prefer `followUp` with collapsible summary. */
   followUpSection?: PublishingSummarySection;
   threadSettingsSection?: PublishingSummarySection;
-  /** Distribution: optional delivery extras (grouped with follow-up below). */
   recyclableControl?: PublishingRecyclableControlProps;
-  /** Single-line content metrics for Ready check (chars · media · tags, etc.). */
   postStatusSummaryInline?: string;
-  /** Follow-up + Recyclable (and similar) for Ready check options row. */
   publishSummaryOptionsLine?: string;
-  /** Extra detail lines under Content row (e.g. thread cadence). */
   contentSummaryLines?: string[];
   publishPath: PublishPathSummary;
   issues?: string[];
   warnings?: string[];
-  /** Neutral hint when the composer is pristine but not yet publishable (no red). */
   pristineHint?: string;
-  /** Badge label when there are no red/amber issue rows (e.g. "Draft" vs "Ready"). */
   idleStatusLabel?: string;
-  /** When `sessionStrip` is omitted, passive save text under Save draft. */
-  saveStateLabel?: string;
   primaryActionLabel: string;
   onPrimaryAction: () => void;
-  /** Fires when the user activates the primary control while `primaryActionDisabled` (progressive validation). */
   onPrimaryActionBlocked?: () => void;
   primaryActionDisabled?: boolean;
-  /** When true, shows `primaryActionLoadingLabel` on the primary button. */
   primaryActionLoading?: boolean;
   primaryActionLoadingLabel?: string;
   secondaryActionLabel?: string;
@@ -103,8 +89,8 @@ function compactLines(lines: string[], limit: number): string[] {
   return [...lines.slice(0, limit), `+${hiddenCount} more`];
 }
 
-/** Outcome line above Save draft / CTA — single consequence-focused sentence. */
-function deriveActionSummary(
+/** Single line for publish summary (valid state), trimmed. */
+function deriveSummaryOutcomeLine(
   publishMode: ComposerPublishMode,
   outcomeSentence: string
 ): string {
@@ -114,9 +100,17 @@ function deriveActionSummary(
       ? "Set a publish time to continue"
       : publishMode === "queue"
         ? "Choose a queue to continue"
-        : "Content required to publish";
+        : "Add content and relays to publish";
   }
   return s.replace(/\.\s*$/, "");
+}
+
+function RailSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-muted-foreground mb-2 text-[10px] font-medium tracking-wide uppercase">
+      {children}
+    </p>
+  );
 }
 
 function PublishingModeFusedHeader({
@@ -142,7 +136,7 @@ function PublishingModeFusedHeader({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x"
+      className="bg-muted/25 dark:bg-muted/15 grid grid-cols-3 gap-0.5 p-1.5"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -154,10 +148,10 @@ function PublishingModeFusedHeader({
             aria-checked={active}
             aria-label={ariaLabels[m]}
             className={cn(
-              "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
+              "min-h-10 rounded-md px-1 py-2 text-center text-xs transition-colors",
               active
-                ? "bg-card text-foreground relative z-[1] -mb-px border-b border-b-transparent font-semibold"
-                : "text-muted-foreground hover:text-foreground border-border/60 border-b font-medium"
+                ? "bg-card text-foreground font-semibold shadow-sm"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -209,14 +203,16 @@ function FollowUpRailCollapsible({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div>
+    <div className="w-full">
       <button
         type="button"
-        className="hover:bg-muted/30 flex w-full items-center gap-2 rounded-sm px-1 py-1 text-left text-xs"
+        className="hover:bg-muted/40 flex w-full items-center gap-2 rounded-sm py-2 text-left text-xs"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="text-foreground shrink-0 font-medium">Follow-up</span>
+        <span className="text-foreground w-24 shrink-0 font-medium">
+          Follow-up
+        </span>
         <span className="text-muted-foreground min-w-0 flex-1 truncate text-right">
           {summaryLine}
         </span>
@@ -241,7 +237,7 @@ function FollowUpRailCollapsible({
         )}
       </button>
       {open ? (
-        <div className="border-border/50 mt-1 border-t pt-1.5 pl-1">
+        <div className="border-border/50 mt-1 border-t border-dashed pt-2 pl-0">
           {children}
         </div>
       ) : null}
@@ -259,7 +255,7 @@ function RecyclableRailRow(props: PublishingRecyclableControlProps) {
     helperText,
   } = props;
   return (
-    <div className="flex flex-col gap-0.5 px-1 py-0.5">
+    <div className="flex flex-col gap-0.5 py-2">
       <div className="flex w-full items-center justify-between gap-2">
         <Label
           htmlFor={switchId}
@@ -275,7 +271,7 @@ function RecyclableRailRow(props: PublishingRecyclableControlProps) {
         />
       </div>
       {helperText ? (
-        <p className="text-muted-foreground pl-0 text-[10px] leading-snug">
+        <p className="text-muted-foreground text-[10px] leading-snug">
           {helperText}
         </p>
       ) : null}
@@ -283,38 +279,8 @@ function RecyclableRailRow(props: PublishingRecyclableControlProps) {
   );
 }
 
-function DeliveryOptionsSection({
-  followUp,
-  followUpSection,
-  recyclableControl,
-}: {
-  followUp?: { summaryLine: string; children: ReactNode };
-  followUpSection?: PublishingSummarySection;
-  recyclableControl?: PublishingRecyclableControlProps;
-}) {
-  if (!followUp && !followUpSection && !recyclableControl) return null;
-  return (
-    <div className="border-border/60 rounded-md border px-2 py-1.5">
-      <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wide uppercase">
-        Delivery options
-      </p>
-      <div className="space-y-0.5">
-        {followUp ? (
-          <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
-            {followUp.children}
-          </FollowUpRailCollapsible>
-        ) : followUpSection ? (
-          <SectionBlock {...followUpSection} />
-        ) : null}
-        {recyclableControl ? (
-          <RecyclableRailRow {...recyclableControl} />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function SectionBlock({
+/** SectionBlock — only for deprecated followUpSection fallback (plain lines + controls). */
+function SectionBlockFallback({
   title,
   lines = [],
   controls,
@@ -322,25 +288,23 @@ function SectionBlock({
   if (lines.length === 0 && !controls) return null;
   const compacted = compactLines(lines, SECTION_LINE_LIMIT);
   return (
-    <div className="bg-muted/[0.06] rounded-md px-2 py-1">
+    <div className="space-y-1">
       {title ? (
         <span className="text-muted-foreground text-xs font-medium">
           {title}
         </span>
       ) : null}
-      <div className={title ? "mt-0.5 space-y-0.5" : "space-y-0.5"}>
-        {compacted.map((line) => (
-          <p key={line} className="text-xs leading-snug">
-            {line}
-          </p>
-        ))}
-        {controls ? <div className="pt-0.5">{controls}</div> : null}
-      </div>
+      {compacted.map((line) => (
+        <p key={line} className="text-[11px] leading-snug">
+          {line}
+        </p>
+      ))}
+      {controls ? <div className="pt-1">{controls}</div> : null}
     </div>
   );
 }
 
-function ReadyCheckRow({
+function SummaryMetadataRow({
   label,
   children,
 }: {
@@ -349,13 +313,15 @@ function ReadyCheckRow({
 }) {
   return (
     <div className="text-[11px] leading-snug">
-      <span className="text-muted-foreground font-medium">{label}:</span>{" "}
+      <span className="text-muted-foreground font-medium">{label}</span>{" "}
       <span className="text-foreground">{children}</span>
     </div>
   );
 }
 
-function PostStatusBlock({
+function PublishSummarySection({
+  publishMode,
+  outcomeSentence,
   postStatusSummaryInline,
   publishSummaryOptionsLine,
   contentSummaryLines = [],
@@ -365,8 +331,10 @@ function PostStatusBlock({
   issues,
   warnings,
   pristineHint,
-  idleStatusLabel,
+  idleStatusLabel: _idleStatusLabel,
 }: {
+  publishMode: ComposerPublishMode;
+  outcomeSentence: string;
   postStatusSummaryInline?: string;
   publishSummaryOptionsLine?: string;
   contentSummaryLines?: string[];
@@ -378,6 +346,7 @@ function PostStatusBlock({
   pristineHint?: string;
   idleStatusLabel?: string;
 }) {
+  void _idleStatusLabel;
   const compactIssues = compactLines(issues, ISSUE_LINE_LIMIT);
   const compactWarnings = compactLines(warnings, ISSUE_LINE_LIMIT);
   const fallbackInline =
@@ -385,24 +354,24 @@ function PostStatusBlock({
       ? contentSummaryLines.slice(0, 3).join(" · ")
       : null;
   const contentValue = postStatusSummaryInline ?? fallbackInline ?? "—";
+  const outcomeLine = deriveSummaryOutcomeLine(publishMode, outcomeSentence);
+  const hasBlocking = compactIssues.length > 0 || compactWarnings.length > 0;
 
   return (
-    <div className="border-border/60 rounded-md border px-2 py-1.5">
-      <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wide uppercase">
-        Ready check
-      </p>
-      <div className="space-y-1">
-        <ReadyCheckRow label="Content">{contentValue}</ReadyCheckRow>
+    <div className="space-y-2">
+      <RailSectionLabel>Publish summary</RailSectionLabel>
+      <div className="space-y-1.5">
+        <SummaryMetadataRow label="Content">{contentValue}</SummaryMetadataRow>
         {contentSummaryLines.length > 3 ? (
-          <ul className="text-muted-foreground ml-0 list-none space-y-0.5 pl-0 text-[10px] leading-snug">
+          <ul className="text-muted-foreground list-none space-y-0.5 pl-0 text-[10px] leading-snug">
             {contentSummaryLines.slice(3).map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
         ) : null}
-        <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span className="text-muted-foreground text-[11px] font-medium">
-            Delivery:
+            Delivery
           </span>
           <DestinationChips
             path={publishPath}
@@ -410,33 +379,30 @@ function PostStatusBlock({
           />
         </div>
         {publishSummaryOptionsLine ? (
-          <ReadyCheckRow label="Options">
+          <SummaryMetadataRow label="Options">
             {publishSummaryOptionsLine}
-          </ReadyCheckRow>
+          </SummaryMetadataRow>
         ) : null}
       </div>
-      {compactIssues.length === 0 && compactWarnings.length === 0 ? (
-        <div className="border-border/50 mt-1.5 space-y-1 border-t pt-1.5">
+
+      {!hasBlocking ? (
+        <div className="space-y-1 pt-1">
           {pristineHint ? (
             <p className="text-muted-foreground text-[11px] leading-snug">
               {pristineHint}
             </p>
           ) : null}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="font-normal">
-              {idleStatusLabel ??
-                (readiness.tone === "ok" ? "Ready" : readiness.headline)}
-            </Badge>
-            {readiness.tone === "ok" && !pristineHint ? (
-              <span className="text-muted-foreground text-[11px]">
-                No blocking issues
-              </span>
+          <p className="text-foreground text-[11px] leading-snug">
+            <span className="font-medium">{readiness.headline}</span>
+            {outcomeLine ? (
+              <span className="text-muted-foreground"> · {outcomeLine}</span>
             ) : null}
-          </div>
+          </p>
         </div>
       ) : null}
+
       {compactIssues.length > 0 ? (
-        <div className="border-destructive/40 bg-destructive/8 dark:bg-destructive/12 mt-1.5 space-y-1 rounded-md border px-2 py-1.5 text-red-900 dark:border-red-900/70 dark:text-red-100">
+        <div className="border-destructive/45 bg-destructive/10 dark:bg-destructive/15 space-y-1 rounded-md border px-2.5 py-2 text-red-900 dark:border-red-900/60 dark:text-red-100">
           <p className="text-[11px] leading-snug font-semibold">
             {readiness.headline}
           </p>
@@ -448,7 +414,7 @@ function PostStatusBlock({
         </div>
       ) : null}
       {compactWarnings.length > 0 ? (
-        <div className="mt-1.5 space-y-1 rounded-md border border-amber-200/90 bg-amber-500/10 px-2 py-1.5 text-amber-950 dark:border-amber-800 dark:text-amber-100">
+        <div className="space-y-1 rounded-md border border-amber-200/90 bg-amber-500/10 px-2.5 py-2 text-amber-950 dark:border-amber-800 dark:text-amber-100">
           <p className="text-[11px] font-semibold">Missing requirements</p>
           {compactWarnings.map((warning) => (
             <p key={warning} className="text-[11px] leading-snug">
@@ -461,10 +427,120 @@ function PostStatusBlock({
   );
 }
 
+function ModeAndThreadZones({
+  modeSpecificSection,
+  threadSettingsSection,
+}: {
+  modeSpecificSection?: PublishingSummarySection;
+  threadSettingsSection?: PublishingSummarySection;
+}) {
+  const modeLines = modeSpecificSection?.lines ?? [];
+  const modeTitle = modeSpecificSection?.title;
+  const modeControls = modeSpecificSection?.controls;
+  const hasMode = Boolean(
+    modeSpecificSection &&
+    (modeLines.length > 0 ||
+      modeControls != null ||
+      (modeTitle != null && modeTitle.trim().length > 0))
+  );
+
+  const threadLines = threadSettingsSection?.lines ?? [];
+  const threadTitle = threadSettingsSection?.title;
+  const threadControls = threadSettingsSection?.controls;
+  const hasThread = Boolean(
+    threadSettingsSection &&
+    (threadLines.length > 0 ||
+      threadControls != null ||
+      (threadTitle != null && threadTitle.trim().length > 0))
+  );
+
+  if (!hasMode && !hasThread) return null;
+
+  return (
+    <div className="space-y-4">
+      {hasMode ? (
+        <div className="space-y-2">
+          {modeTitle != null && modeTitle.trim().length > 0 ? (
+            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+              {modeTitle}
+            </p>
+          ) : null}
+          {modeLines.length > 0 ? (
+            <div className="space-y-0.5">
+              {compactLines(modeLines, SECTION_LINE_LIMIT).map((line) => (
+                <p
+                  key={line}
+                  className="text-muted-foreground text-[11px] leading-snug"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          ) : null}
+          {modeControls ? <div>{modeControls}</div> : null}
+        </div>
+      ) : null}
+      {hasThread ? (
+        <div className="space-y-2">
+          {threadTitle ? (
+            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+              {threadTitle}
+            </p>
+          ) : null}
+          {threadLines.length > 0 ? (
+            <div className="space-y-0.5">
+              {threadLines.map((line) => (
+                <p
+                  key={line}
+                  className="text-muted-foreground text-[11px] leading-snug"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          ) : null}
+          {threadControls ? <div>{threadControls}</div> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PublishOptionsZone({
+  followUp,
+  followUpSection,
+  recyclableControl,
+}: {
+  followUp?: { summaryLine: string; children: ReactNode };
+  followUpSection?: PublishingSummarySection;
+  recyclableControl?: PublishingRecyclableControlProps;
+}) {
+  if (!followUp && !followUpSection && !recyclableControl) return null;
+  return (
+    <div className="space-y-0">
+      <RailSectionLabel>Publish options</RailSectionLabel>
+      <div className="divide-border/50 divide-y">
+        {followUp ? (
+          <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
+            {followUp.children}
+          </FollowUpRailCollapsible>
+        ) : followUpSection ? (
+          <div className="py-2">
+            <SectionBlockFallback {...followUpSection} />
+          </div>
+        ) : null}
+        {recyclableControl ? (
+          <RecyclableRailRow {...recyclableControl} />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function PublishingSummaryRailBody({
   publishMode,
   onPublishModeChange,
-  outcomeSentence: _outcomeSentence,
+  outcomeSentence,
   readiness,
   sessionStrip,
   modeSpecificSection,
@@ -491,50 +567,75 @@ function PublishingSummaryRailBody({
   | "secondaryActionLabel"
   | "onSecondaryAction"
   | "secondaryActionDisabled"
-  | "saveStateLabel"
 >) {
-  void _outcomeSentence;
+  const hasModeThread =
+    Boolean(
+      modeSpecificSection &&
+      (modeSpecificSection.controls != null ||
+        (modeSpecificSection.lines ?? []).length > 0 ||
+        modeSpecificSection.title.trim().length > 0)
+    ) ||
+    Boolean(
+      threadSettingsSection &&
+      (threadSettingsSection.controls != null ||
+        (threadSettingsSection.lines ?? []).length > 0 ||
+        threadSettingsSection.title.trim().length > 0)
+    );
+  const hasPublishOptions = Boolean(
+    followUp != null || followUpSection != null || recyclableControl != null
+  );
+
   return (
-    <div className="flex flex-col gap-0 text-xs">
-      <PublishingModeFusedHeader
-        publishMode={publishMode}
-        onPublishModeChange={onPublishModeChange}
-      />
-      <div className="space-y-1.5 px-2.5 py-1.5">
-        {modeSpecificSection ? (
-          <SectionBlock
-            title=""
-            lines={modeSpecificSection.lines}
-            controls={modeSpecificSection.controls}
+    <div className="flex flex-col text-xs">
+      <div className="border-border/60 shrink-0 border-b px-2 pt-2 pb-2">
+        <PublishingModeFusedHeader
+          publishMode={publishMode}
+          onPublishModeChange={onPublishModeChange}
+        />
+      </div>
+
+      <div className="divide-border/60 flex flex-col divide-y">
+        {hasModeThread ? (
+          <div className="px-3 py-3">
+            <ModeAndThreadZones
+              modeSpecificSection={modeSpecificSection}
+              threadSettingsSection={threadSettingsSection}
+            />
+          </div>
+        ) : null}
+
+        {hasPublishOptions ? (
+          <div className="px-3 py-3">
+            <PublishOptionsZone
+              followUp={followUp}
+              followUpSection={followUpSection}
+              recyclableControl={recyclableControl}
+            />
+          </div>
+        ) : null}
+
+        <div className="px-3 py-3">
+          <PublishSummarySection
+            publishMode={publishMode}
+            outcomeSentence={outcomeSentence}
+            postStatusSummaryInline={postStatusSummaryInline}
+            publishSummaryOptionsLine={publishSummaryOptionsLine}
+            contentSummaryLines={contentSummaryLines}
+            sessionStrip={sessionStrip}
+            publishPath={publishPath}
+            readiness={readiness}
+            issues={issues}
+            warnings={warnings}
+            pristineHint={pristineHint}
+            idleStatusLabel={idleStatusLabel}
           />
-        ) : null}
-        {threadSettingsSection ? (
-          <SectionBlock {...threadSettingsSection} />
-        ) : null}
-        <DeliveryOptionsSection
-          followUp={followUp}
-          followUpSection={followUpSection}
-          recyclableControl={recyclableControl}
-        />
-        <PostStatusBlock
-          postStatusSummaryInline={postStatusSummaryInline}
-          publishSummaryOptionsLine={publishSummaryOptionsLine}
-          contentSummaryLines={contentSummaryLines}
-          sessionStrip={sessionStrip}
-          publishPath={publishPath}
-          readiness={readiness}
-          issues={issues}
-          warnings={warnings}
-          pristineHint={pristineHint}
-          idleStatusLabel={idleStatusLabel}
-        />
+        </div>
       </div>
     </div>
   );
 }
 
 function PublishingSummaryRailActions({
-  actionSummary,
   primaryActionLabel,
   onPrimaryAction,
   onPrimaryActionBlocked,
@@ -555,42 +656,39 @@ function PublishingSummaryRailActions({
   | "secondaryActionLabel"
   | "onSecondaryAction"
   | "secondaryActionDisabled"
-> & { actionSummary: string }) {
+>) {
   const showLoading = Boolean(
     primaryActionLoading && primaryActionLoadingLabel
   );
   const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
   const primaryInert = showLoading;
+  const blocked = primaryInert || Boolean(primaryActionDisabled);
 
   return (
-    <div className="border-border/60 shrink-0 overflow-hidden border-t">
-      <div className="text-muted-foreground border-border/60 border-b px-3 py-2 text-[11px] leading-snug">
-        {actionSummary}
-      </div>
+    <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
       {secondaryActionLabel && onSecondaryAction ? (
-        <div className="border-border/60 bg-background border-b">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="text-foreground hover:bg-muted/60 h-9 w-full rounded-none border-0 bg-transparent text-[11px] leading-none font-semibold shadow-none"
-            onClick={onSecondaryAction}
-            disabled={secondaryActionDisabled}
-          >
-            {secondaryActionLabel}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="text-foreground hover:bg-muted/70 border-border/60 h-9 w-full rounded-none border-0 border-b bg-transparent text-[11px] font-semibold shadow-none"
+          onClick={onSecondaryAction}
+          disabled={secondaryActionDisabled}
+        >
+          {secondaryActionLabel}
+        </Button>
       ) : null}
-      <div className="bg-primary/95 p-0">
+      <div className="p-0">
         <Button
           type="button"
           size="sm"
           variant="default"
-          aria-disabled={primaryInert || Boolean(primaryActionDisabled)}
+          aria-disabled={blocked}
           className={cn(
-            "bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
-            (primaryInert || primaryActionDisabled) &&
-              "pointer-events-auto opacity-60"
+            "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
+            blocked
+              ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           )}
           onClick={() => {
             if (primaryInert) return;
@@ -609,11 +707,6 @@ function PublishingSummaryRailActions({
 }
 
 export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
-  const actionSummary = deriveActionSummary(
-    props.publishMode,
-    props.outcomeSentence
-  );
-
   const bodyProps = {
     publishMode: props.publishMode,
     onPublishModeChange: props.onPublishModeChange,
@@ -646,7 +739,6 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
         </div>
         <div className="shrink-0">
           <PublishingSummaryRailActions
-            actionSummary={actionSummary}
             primaryActionLabel={props.primaryActionLabel}
             onPrimaryAction={props.onPrimaryAction}
             onPrimaryActionBlocked={props.onPrimaryActionBlocked}

@@ -992,10 +992,6 @@ export default function LongFormPost({
             composerStatus,
             relayCount: 0,
             signerLabel: "NIP-07",
-            saveStateLabel:
-              fetcher.state !== "idle"
-                ? "Saving…"
-                : "All changes saved locally",
           }}
           modeSpecificSection={
             publishMode === "now"

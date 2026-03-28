@@ -276,6 +276,7 @@ export default function NewLongFormPostPage() {
   const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
   const [draftTemplatesPickerOpen, setDraftTemplatesPickerOpen] =
     useState(false);
+  const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
 
   // Check for published/scheduled URL param
   useEffect(() => {
@@ -362,6 +363,7 @@ export default function NewLongFormPostPage() {
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
       title={initialTemplateData ? "Edit article draft" : "Create article"}
+      saveStateLabel={saveStateLabel}
     >
       <ErrorMessage
         error={getActionErrorMessage(actionData)}
@@ -406,6 +408,7 @@ export default function NewLongFormPostPage() {
           skipLocalDraftRestore={Boolean(publishResultToken)}
           showDraftTemplatesPicker
           onOpenDraftTemplatesPicker={() => setDraftTemplatesPickerOpen(true)}
+          onDraftStateLabelChange={setSaveStateLabel}
         />
       </Form>
 

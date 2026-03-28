@@ -141,43 +141,23 @@ export function ComposerThreadField({
                 >
                   Down
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    onSegmentsChange((prev) => {
-                      const source = prev[idx];
-                      if (!source) return prev;
-                      const clone: ThreadSegment = {
-                        id: crypto.randomUUID(),
-                        content: source.content,
-                        attachments: [...source.attachments],
-                      };
-                      const next = [...prev];
-                      next.splice(idx + 1, 0, clone);
-                      return next;
-                    })
-                  }
-                  disabled={disabled}
-                >
-                  Duplicate
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                  onClick={() =>
-                    onSegmentsChange((prev) =>
-                      prev.filter((p) => p.id !== seg.id)
-                    )
-                  }
-                  disabled={disabled || segments.length <= MIN_THREAD_SEGMENTS}
-                  aria-label={`Remove segment ${idx + 1}`}
-                >
-                  Remove
-                </Button>
+                {segments.length > MIN_THREAD_SEGMENTS ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                    onClick={() =>
+                      onSegmentsChange((prev) =>
+                        prev.filter((p) => p.id !== seg.id)
+                      )
+                    }
+                    disabled={disabled}
+                    aria-label={`Remove segment ${idx + 1}`}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
               </div>
             ) : null}
           </div>

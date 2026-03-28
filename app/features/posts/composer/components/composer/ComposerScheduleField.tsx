@@ -114,9 +114,6 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
             disabled={disabled}
           />
         </div>
-        <p className="text-muted-foreground text-xs">
-          Leave empty to publish immediately.
-        </p>
       </div>
     );
   }

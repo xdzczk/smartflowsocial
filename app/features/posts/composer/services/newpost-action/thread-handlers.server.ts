@@ -66,6 +66,15 @@ function parseSignedEvents(formData: FormData): SignedEvent[] {
   }
 }
 
+function segmentHasTextOrMedia(seg: ThreadSegmentInput): boolean {
+  const hasText = seg.content.trim().length > 0;
+  const hasMedia =
+    seg.attachmentMeta?.some(
+      (a) => typeof a.url === "string" && a.url.trim() !== ""
+    ) ?? false;
+  return hasText || hasMedia;
+}
+
 function threadSegmentsValidationError(
   segments: ThreadSegmentInput[],
   signedEvents: SignedEvent[]
@@ -77,6 +86,12 @@ function threadSegmentsValidationError(
   }
   if (signedEvents.length !== segments.length) {
     return { error: "Signed events must match each thread segment." };
+  }
+  if (!segments.every((s) => segmentHasTextOrMedia(s))) {
+    return {
+      error:
+        "Each thread segment must include text or at least one media attachment.",
+    };
   }
   return null;
 }

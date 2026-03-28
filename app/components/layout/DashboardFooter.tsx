@@ -98,7 +98,7 @@ export default function Footer() {
         <div className="text-muted-foreground">
           SmartFlow Social © {new Date().getFullYear()}
         </div>
-        <div className="text-muted-foreground flex items-center justify-center gap-1.5 sm:gap-2">
+        <div className="text-muted-foreground flex items-center justify-center gap-1.5 tabular-nums sm:gap-2">
           <SignerStatusIndicator />
           {syncNeedsAttention ? (
             <>
@@ -118,7 +118,10 @@ export default function Footer() {
               : dateString.split(",")[0]}
           </span>
           <span className="hidden lg:inline">·</span>
-          <span>{timeString}</span>
+          {/* min-w + text-end: stable width so justify-between layout does not jog as digits tick */}
+          <span className="inline-block min-w-[11ch] text-end">
+            {timeString}
+          </span>
           {userTimezone ? (
             <>
               <span className="hidden lg:inline">·</span>

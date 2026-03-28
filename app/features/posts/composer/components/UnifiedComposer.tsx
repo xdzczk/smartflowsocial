@@ -80,6 +80,9 @@ import { ComposerOutputPanel } from "./composer/ComposerOutputPanel";
 import { MIN_THREAD_SEGMENTS } from "./composer/thread-constants";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
 
+/** Minute spacing options for thread cadence (publish rail). */
+const THREAD_CADENCE_MINUTES_CHIPS = [1, 2, 3, 4, 5] as const;
+
 export interface ContestEmbedPublishPayload {
   ok: true;
   embedContext: "contest";
@@ -390,7 +393,12 @@ export function UnifiedComposer({
       }
       setThreadSegments(padded);
       if (typeof localRestored.threadDelayMinutes === "number") {
-        setThreadDelayMinutes(localRestored.threadDelayMinutes);
+        const d = localRestored.threadDelayMinutes;
+        setThreadDelayMinutes(
+          (THREAD_CADENCE_MINUTES_CHIPS as readonly number[]).includes(d)
+            ? d
+            : 1
+        );
       }
     }
     setSelectedQueue(localRestored.queueType);
@@ -573,7 +581,7 @@ export function UnifiedComposer({
   });
 
   const hasContent = isThreadMode
-    ? threadSegments.some(
+    ? threadSegments.every(
         (s) => s.content.trim() !== "" || s.attachments.length > 0
       )
     : (content?.trim() ?? "") !== "" || attachments.length > 0; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- content from form.watch can be undefined
@@ -888,7 +896,7 @@ export function UnifiedComposer({
   if (!hasContent) {
     deferrableBlockers.push(
       isThreadMode
-        ? "Add content to at least one thread segment."
+        ? "Each thread segment needs text or at least one media item."
         : "Add text or at least one media item."
     );
   }
@@ -1179,7 +1187,7 @@ export function UnifiedComposer({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="my-4 space-y-4">
+        <div className="mb-4 space-y-4">
           <UnifiedComposerContentSection
             isThreadMode={isThreadMode}
             content={
@@ -1347,10 +1355,6 @@ export function UnifiedComposer({
             relayCount,
             onRelayClick: handleRelayRailClick,
             signerLabel: signerReady === false ? "Not connected" : signerLabel,
-            saveStateLabel:
-              fetcher.state !== "idle"
-                ? "Saving…"
-                : "All changes saved locally",
           }}
           modeSpecificSection={
             publishMode === "now"
@@ -1462,19 +1466,21 @@ export function UnifiedComposer({
                   lines: threadSettingsLines,
                   controls: (
                     <div className="flex flex-wrap items-center gap-1">
-                      {[0.5, 1, 2].map((v) => (
+                      {THREAD_CADENCE_MINUTES_CHIPS.map((v) => (
                         <Button
                           key={v}
                           type="button"
                           size="sm"
-                          variant="outline"
+                          variant={
+                            threadDelayMinutes === v ? "default" : "outline"
+                          }
                           onClick={() => {
                             setComposerTouched(true);
                             setThreadDelayMinutes(v);
                           }}
                           disabled={disabled}
                         >
-                          {v === 0.5 ? "30s" : `${v}m`}
+                          {v}m
                         </Button>
                       ))}
                     </div>

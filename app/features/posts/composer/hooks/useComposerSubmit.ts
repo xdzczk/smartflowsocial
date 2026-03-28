@@ -222,7 +222,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         submitTemplateSave();
         return;
       }
-      if (submitType === "draft-text") {
+      // Rail uses `value="save-draft"`; legacy buttons may use `draft-text`. Both skip signing.
+      if (submitType === "draft-text" || submitType === "save-draft") {
         submitDraftSave();
         return;
       }
@@ -268,6 +269,15 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           if (threadSegments.length < MIN_THREAD_SEGMENTS) {
             setSigningError(
               `A thread must have at least ${MIN_THREAD_SEGMENTS} segments.`
+            );
+            return;
+          }
+          const segmentMissingBody = threadSegments.some(
+            (s) => s.content.trim() === "" && s.attachments.length === 0
+          );
+          if (segmentMissingBody) {
+            setSigningError(
+              "Every thread segment must include text or at least one media item."
             );
             return;
           }

@@ -23,6 +23,7 @@ import {
 } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import { nowMillis } from "~/lib/temporal";
 
 import { useLocalDraft } from "../hooks/useComposerLocalDraft";
@@ -132,6 +133,8 @@ export function PollComposer({
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
+  const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
+    useState(0);
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
@@ -155,6 +158,7 @@ export function PollComposer({
     selectedQueue: string;
     scheduledFor: string;
     publishMode: ComposerPublishMode;
+    scheduleRandomWindowMinutes?: number;
     savedAt: number;
   }>(pollDraftStorageKey, skipLocalDraftRestore, 1500);
   const appliedPollRestoreRef = useRef(false);
@@ -293,11 +297,17 @@ export function PollComposer({
     }
 
     const nominalUnix = Math.floor(scheduledTimeMs / 1000);
+    const effectiveRandomMinutes =
+      publishMode === "queue" ? 0 : scheduleRandomWindowMinutes;
+    const createdUnix =
+      actionType !== ACTION_POST_POLL && effectiveRandomMinutes > 0
+        ? applyRandomScheduleWindow(nominalUnix, effectiveRandomMinutes)
+        : nominalUnix;
     let endsAtUnix: number | undefined;
     if (endsAtLocal.trim()) {
       const endMs = await parseScheduledTime(endsAtLocal, userTimezone);
       endsAtUnix = Math.floor(endMs / 1000);
-      if (endsAtUnix <= nominalUnix) {
+      if (endsAtUnix <= createdUnix) {
         toast.error("Poll end time must be after publish time.");
         return;
       }
@@ -309,7 +319,7 @@ export function PollComposer({
       const { nostrEvent, signedEvent } =
         await nostrAdapter.signPollEventWithOneRetry({
           question: q,
-          created_at: nominalUnix,
+          created_at: createdUnix,
           optionLabels: trimmedOptions,
           pollType,
           relayUrls,
@@ -463,6 +473,9 @@ export function PollComposer({
     setIsRecyclable(pollDraftRestored.isRecyclable);
     setSelectedQueue(pollDraftRestored.selectedQueue);
     setScheduledFor(pollDraftRestored.scheduledFor);
+    setScheduleRandomWindowMinutes(
+      pollDraftRestored.scheduleRandomWindowMinutes ?? 0
+    );
     onDraftStateLabelChange?.("Restored local draft");
     trackComposerEvent("composer_draft_restored", {
       source: "poll",
@@ -488,6 +501,7 @@ export function PollComposer({
       selectedQueue,
       scheduledFor,
       publishMode,
+      scheduleRandomWindowMinutes,
     };
     savePollDraftSnapshot(snapshot);
   }, [
@@ -501,6 +515,7 @@ export function PollComposer({
     selectedQueue,
     scheduledFor,
     publishMode,
+    scheduleRandomWindowMinutes,
     savePollDraftSnapshot,
   ]);
 
@@ -517,6 +532,7 @@ export function PollComposer({
         selectedQueue,
         scheduledFor,
         publishMode,
+        scheduleRandomWindowMinutes,
       });
     };
     const onHide = () => flush();
@@ -536,6 +552,7 @@ export function PollComposer({
     selectedQueue,
     scheduledFor,
     publishMode,
+    scheduleRandomWindowMinutes,
     flushPollDraftSnapshot,
   ]);
 
@@ -812,9 +829,6 @@ export function PollComposer({
           relayCount,
           onRelayClick: handleRelayRailClick,
           signerLabel: user != null ? "NIP-07" : "Not connected",
-          saveStateLabel: isSubmitting
-            ? "Saving…"
-            : "All changes saved locally",
         }}
         modeSpecificSection={
           publishMode === "now"
@@ -852,39 +866,39 @@ export function PollComposer({
                       />
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <ComposerScheduleField
-                        layout="minimal"
-                        value={scheduledFor}
-                        onValueChange={setScheduledFor}
-                        scheduleIntervals={scheduleIntervals}
-                        queueTypes={queueTypes}
-                        selectedQueue={selectedQueue}
-                        onScheduleIntervalClick={handleScheduleIntervalClick}
-                        onCalculateNextSlot={() => {
-                          void calculateQueueScheduleTime(selectedQueue);
-                        }}
-                        scheduleRandomWindowMinutes={0}
-                        onScheduleRandomWindowMinutesChange={() => void 0}
-                        postOptionsOpen={false}
-                        onPostOptionsOpenChange={() => void 0}
-                        isThreadMode={false}
-                        onThreadModeChange={() => void 0}
-                        alsoScheduleRepost={false}
-                        onAlsoScheduleRepostChange={() => void 0}
-                        repostDelayList={[]}
-                        onRepostDelayListChange={(_value) => void _value}
-                        repostConditions={null}
-                        onRepostConditionsChange={() => void 0}
-                        alsoScheduleQuote={false}
-                        onAlsoScheduleQuoteChange={() => void 0}
-                        quoteEntries={[]}
-                        onQuoteEntriesChange={(_value) => void _value}
-                        disabled={disabled}
-                        userTimezone={userTimezone}
-                        showThreadModeToggle={false}
-                      />
-                    </div>
+                    <ComposerScheduleField
+                      layout="full"
+                      value={scheduledFor}
+                      onValueChange={setScheduledFor}
+                      scheduleIntervals={scheduleIntervals}
+                      queueTypes={queueTypes}
+                      selectedQueue={selectedQueue}
+                      onScheduleIntervalClick={handleScheduleIntervalClick}
+                      onCalculateNextSlot={() => {
+                        void calculateQueueScheduleTime(selectedQueue);
+                      }}
+                      scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+                      onScheduleRandomWindowMinutesChange={
+                        setScheduleRandomWindowMinutes
+                      }
+                      postOptionsOpen={false}
+                      onPostOptionsOpenChange={() => void 0}
+                      isThreadMode={false}
+                      onThreadModeChange={() => void 0}
+                      alsoScheduleRepost={false}
+                      onAlsoScheduleRepostChange={() => void 0}
+                      repostDelayList={[]}
+                      onRepostDelayListChange={(_value) => void _value}
+                      repostConditions={null}
+                      onRepostConditionsChange={() => void 0}
+                      alsoScheduleQuote={false}
+                      onAlsoScheduleQuoteChange={() => void 0}
+                      quoteEntries={[]}
+                      onQuoteEntriesChange={(_value) => void _value}
+                      disabled={disabled}
+                      userTimezone={userTimezone}
+                      showThreadModeToggle={false}
+                    />
                   ),
               }
         }

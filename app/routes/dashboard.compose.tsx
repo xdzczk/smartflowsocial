@@ -3,13 +3,22 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  useLoaderData,
+  useLocation,
+  useNavigate,
+  useNavigation,
+} from "@remix-run/react";
 
+import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
+  CreateComposerShell,
   getComposeMode,
   NewPostPage,
+  normalizeComposeType,
   shouldDispatchToLongform,
+  type ComposeContentType,
 } from "~/features/posts/composer";
 import { NewLongFormPostPage } from "~/features/posts/longform";
 import {
@@ -22,15 +31,52 @@ import {
 } from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf";
 
-function ComposeTransitionShell() {
+function useEffectiveComposeSearch(): string {
+  const navigation = useNavigation();
+  const location = useLocation();
+  if (navigation.state === "loading") {
+    return navigation.location.search;
+  }
+  return location.search;
+}
+
+function typeParamFromComposeSearch(search: string): string | null {
+  const q = search.startsWith("?") ? search.slice(1) : search;
+  return new URLSearchParams(q).get("type");
+}
+
+function composeShellTitle(contentType: ComposeContentType): string {
+  if (contentType === "poll") return "Create poll";
+  if (contentType === "thread") return "Create thread";
+  if (contentType === "article") return "Create article";
+  return "Create post";
+}
+
+/** Header + tabs + skeleton body while loader catches up to the URL (or after a recoverable error). */
+function ComposeSkeletonLayout() {
+  const effectiveSearch = useEffectiveComposeSearch();
+  const queryType = typeParamFromComposeSearch(effectiveSearch);
+  const contentType = normalizeComposeType(queryType);
+  const navigate = useNavigate();
+  const navigation = useNavigation();
+
   return (
-    <div
-      className="flex min-h-[40vh] flex-col items-center justify-center p-6"
-      aria-busy="true"
-      aria-live="polite"
+    <CreateComposerShell
+      contentType={contentType}
+      onContentTypeChange={(next) => {
+        if (navigation.state !== "idle") return;
+        if (next === "article") {
+          navigate("/dashboard/compose?type=article");
+          return;
+        }
+        navigate(
+          `/dashboard/compose?type=${encodeURIComponent(next === "post" ? "post" : next)}`
+        );
+      }}
+      title={composeShellTitle(contentType)}
     >
-      <p className="text-muted-foreground text-sm">Loading composer…</p>
-    </div>
+      <ComposerSkeleton />
+    </CreateComposerShell>
   );
 }
 
@@ -119,9 +165,8 @@ export default function ComposePage() {
   const data = useLoaderData<{
     __composeMode?: "shortform" | "article";
   }>();
-  const [searchParams] = useSearchParams();
-
-  const queryType = searchParams.get("type");
+  const effectiveSearch = useEffectiveComposeSearch();
+  const queryType = typeParamFromComposeSearch(effectiveSearch);
   const urlMode = getComposeMode(queryType);
   const loaderMode = data.__composeMode ?? urlMode;
 
@@ -129,7 +174,7 @@ export default function ComposePage() {
     data.__composeMode !== undefined && data.__composeMode !== urlMode;
 
   if (urlDiscriminatorMismatch) {
-    return <ComposeTransitionShell />;
+    return <ComposeSkeletonLayout />;
   }
 
   if (loaderMode === "article") {
@@ -139,15 +184,5 @@ export default function ComposePage() {
 }
 
 export function ErrorBoundary() {
-  return (
-    <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-xl font-semibold">
-        Composer temporarily unavailable
-      </h1>
-      <p className="text-muted-foreground mt-2 text-sm">
-        Something went wrong while loading the composer. Please retry in a few
-        seconds.
-      </p>
-    </div>
-  );
+  return <ComposeSkeletonLayout />;
 }
