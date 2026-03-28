@@ -54,6 +54,7 @@ export {
   buildThreadContentLines,
   buildPollContentLines,
   buildArticleContentLines,
+  buildArticlePublishSummaryLines,
   buildPublishPathLines,
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,

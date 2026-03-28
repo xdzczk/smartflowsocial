@@ -1,6 +1,6 @@
 /**
- * Content editor component for LongFormPost
- * Tiptap editor with markdown sync; client-only mount to avoid SSR.
+ * Content editor for LongFormPost: Tiptap + markdown sync.
+ * `surface="editorial"` — unified chrome for article composer; `legacy` — form / modal layout.
  */
 
 import { EditorContent } from "@tiptap/react";
@@ -8,6 +8,7 @@ import { FolderOpen } from "lucide-react";
 import type React from "react";
 
 import { Button } from "~/components/ui/button";
+import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
 import { TiptapToolbar } from "~/features/posts/components/TiptapToolbar";
 import {
   SMALL_ICON_SIZE_CLASS,
@@ -17,24 +18,144 @@ import {
 interface LongFormContentEditorProps {
   uploadProvider?: string | null;
   onOpenAssetBrowser: () => void;
-  /** When false, hide the "Content *" label (for writing-surface hero). Default true. */
+  /** When false, hide the "Content *" label (legacy hero). Default true. */
   showLabel?: boolean;
+  /** `editorial` — article composer chrome; `legacy` — existing form behavior. */
+  surface?: "legacy" | "editorial";
+  /** When surface is editorial, toggle body view. */
+  bodyView?: "edit" | "preview";
+  /** Markdown source for preview mode. */
+  previewMarkdown?: string;
+  /** Leading chrome (e.g. Edit / Preview control). */
+  chromeLeading?: React.ReactNode;
+  /** Trailing chrome (e.g. Insert Assets, Drafts / Templates). */
+  chromeTrailing?: React.ReactNode;
   /** When false, block pointer events on editor area until editor is ready. */
   editorReady?: boolean;
   /** Tiptap editor instance (null before client mount). */
   editor: React.ComponentProps<typeof EditorContent>["editor"];
 }
 
-const EDITOR_MIN_HEIGHT = "min-h-[500px]";
-const PLACEHOLDER_MIN_HEIGHT = "min-h-[500px]";
+const EDITOR_MIN_HEIGHT = "min-h-[min(55vh,28rem)]";
+const PLACEHOLDER_MIN_HEIGHT = "min-h-[min(55vh,28rem)]";
 
-export function LongFormContentEditor({
+function blossomOrS3BadgeLabel(uploadProvider: string): string {
+  if (!uploadProvider.includes("BLOSSOM")) return "☁️ S3";
+  if (uploadProvider === "BLOSSOM_PRIMAL") return "🌸 Primal";
+  if (uploadProvider === "BLOSSOM_SFS") return "🌸 SmartFlow Blossom";
+  return "🌸 Blosstr";
+}
+
+function EditorialLongFormContentEditor({
   uploadProvider,
   onOpenAssetBrowser,
-  showLabel = true,
-  editorReady = true,
+  bodyView,
+  previewMarkdown,
+  chromeLeading,
+  chromeTrailing,
+  editorReady,
   editor,
-}: LongFormContentEditorProps) {
+}: Pick<
+  LongFormContentEditorProps,
+  | "uploadProvider"
+  | "onOpenAssetBrowser"
+  | "bodyView"
+  | "previewMarkdown"
+  | "chromeLeading"
+  | "chromeTrailing"
+  | "editorReady"
+  | "editor"
+>) {
+  const showPlaceholder = !editor;
+  const uploadHint =
+    uploadProvider != null ? (
+      <div className="text-muted-foreground hidden items-center gap-1 text-[11px] sm:flex">
+        <span>Images via</span>
+        <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-medium">
+          {blossomOrS3BadgeLabel(uploadProvider)}
+        </span>
+      </div>
+    ) : null;
+
+  return (
+    <div>
+      <div className="border-border bg-card focus-within:border-primary focus-within:ring-ring overflow-hidden rounded-lg border focus-within:ring-1">
+        <div className="border-border bg-muted/30 flex min-h-[2.75rem] flex-wrap items-center justify-between gap-2 border-b px-2 py-1.5 sm:px-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {chromeLeading}
+            {uploadHint}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={onOpenAssetBrowser}
+            >
+              <FolderOpen
+                className={`mr-1 ${SMALL_ICON_SIZE_CLASS}`}
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+              Insert Assets
+            </Button>
+            {chromeTrailing}
+          </div>
+        </div>
+        <div
+          className={`${showPlaceholder ? PLACEHOLDER_MIN_HEIGHT : EDITOR_MIN_HEIGHT} ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          aria-busy={!editorReady}
+          aria-label={!editorReady ? "Editor loading" : undefined}
+        >
+          {showPlaceholder ? (
+            <div
+              className="text-muted-foreground p-4 text-sm"
+              role="status"
+              aria-label="Article content"
+            >
+              Loading editor…
+            </div>
+          ) : bodyView === "preview" ? (
+            <div className="max-h-[min(70vh,36rem)] overflow-y-auto p-4">
+              <MarkdownPreview
+                source={previewMarkdown ?? ""}
+                className="prose prose-lg dark:prose-invert max-w-none"
+              />
+            </div>
+          ) : (
+            <>
+              <TiptapToolbar
+                editor={editor}
+                onInsertImage={onOpenAssetBrowser}
+              />
+              <EditorContent
+                editor={editor}
+                className="prose prose-lg dark:prose-invert max-w-none px-4 py-3 [&_.ProseMirror]:min-h-[min(50vh,24rem)] [&_.ProseMirror]:outline-none"
+                aria-label="Article content"
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LegacyLongFormContentEditor({
+  uploadProvider,
+  onOpenAssetBrowser,
+  showLabel,
+  editorReady,
+  editor,
+}: Pick<
+  LongFormContentEditorProps,
+  | "uploadProvider"
+  | "onOpenAssetBrowser"
+  | "showLabel"
+  | "editorReady"
+  | "editor"
+>) {
   const showPlaceholder = !editor;
 
   return (
@@ -52,9 +173,7 @@ export function LongFormContentEditor({
               <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <span>Images upload via:</span>
                 <span className="bg-muted text-foreground rounded px-2 py-1 text-xs font-medium">
-                  {uploadProvider.includes("BLOSSOM")
-                    ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
-                    : "☁️ S3"}
+                  {blossomOrS3BadgeLabel(uploadProvider)}
                 </span>
               </div>
             ) : null}
@@ -99,7 +218,7 @@ export function LongFormContentEditor({
         >
           {showPlaceholder ? (
             <div
-              className="prose prose-lg dark:prose-invert text-muted-foreground min-h-[460px] max-w-none"
+              className="prose prose-lg dark:prose-invert text-muted-foreground max-w-none"
               role="textbox"
               aria-labelledby={showLabel ? "content-label" : undefined}
               aria-label={showLabel ? undefined : "Article content"}
@@ -123,5 +242,43 @@ export function LongFormContentEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+export function LongFormContentEditor({
+  uploadProvider,
+  onOpenAssetBrowser,
+  showLabel = true,
+  surface = "legacy",
+  bodyView = "edit",
+  previewMarkdown = "",
+  chromeLeading = null,
+  chromeTrailing = null,
+  editorReady = true,
+  editor,
+}: LongFormContentEditorProps) {
+  if (surface === "editorial") {
+    return (
+      <EditorialLongFormContentEditor
+        uploadProvider={uploadProvider}
+        onOpenAssetBrowser={onOpenAssetBrowser}
+        bodyView={bodyView}
+        previewMarkdown={previewMarkdown}
+        chromeLeading={chromeLeading}
+        chromeTrailing={chromeTrailing}
+        editorReady={editorReady}
+        editor={editor}
+      />
+    );
+  }
+
+  return (
+    <LegacyLongFormContentEditor
+      uploadProvider={uploadProvider}
+      onOpenAssetBrowser={onOpenAssetBrowser}
+      showLabel={showLabel}
+      editorReady={editorReady}
+      editor={editor}
+    />
   );
 }

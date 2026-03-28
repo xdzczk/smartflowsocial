@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildArticleContentLines,
+  buildArticlePublishSummaryLines,
   buildDeliveryLines,
   buildPublishPathLines,
   buildPublishingOutcomeSentence,
@@ -56,6 +57,43 @@ describe("publishing summary helpers", () => {
     expect(buildPublishPathLines(2, "NIP-07", "Main Queue")[2]).toContain(
       "Queue: Main Queue"
     );
+  });
+
+  it("buildArticlePublishSummaryLines returns stacked rail checklist", () => {
+    expect(
+      buildArticlePublishSummaryLines({
+        hasTitle: false,
+        hasSummary: false,
+        wordCount: 438,
+        hasCover: false,
+        customTags: "a, b",
+        relayCount: 3,
+        publishMode: "now",
+        hasScheduleTime: false,
+        queueAssigned: false,
+      })
+    ).toEqual([
+      "Title missing",
+      "Summary optional",
+      "Cover missing",
+      "Body: 438 words",
+      "2 custom tags",
+      "3 relays selected",
+      "Mode: Publish now",
+    ]);
+    const scheduleLines = buildArticlePublishSummaryLines({
+      hasTitle: true,
+      hasSummary: true,
+      wordCount: 1,
+      hasCover: true,
+      customTags: "",
+      relayCount: 0,
+      publishMode: "schedule",
+      hasScheduleTime: true,
+      queueAssigned: true,
+    });
+    expect(scheduleLines).toContain("Schedule: time set");
+    expect(scheduleLines).toContain("0 relays selected");
   });
 
   it("buildPublishingOutcomeSentence covers now, schedule, queue", () => {

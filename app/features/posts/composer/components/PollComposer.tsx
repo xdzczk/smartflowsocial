@@ -476,7 +476,7 @@ export function PollComposer({
     setScheduleRandomWindowMinutes(
       pollDraftRestored.scheduleRandomWindowMinutes ?? 0
     );
-    onDraftStateLabelChange?.("Restored local draft");
+    onDraftStateLabelChange?.("Restored from browser draft");
     trackComposerEvent("composer_draft_restored", {
       source: "poll",
       mode: "local",
@@ -558,8 +558,16 @@ export function PollComposer({
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
-    onDraftStateLabelChange(isSubmitting ? "Saving..." : "Saved");
-  }, [isSubmitting, onDraftStateLabelChange]);
+    if (isSubmitting) {
+      onDraftStateLabelChange("Saving…");
+      return;
+    }
+    if (!skipLocalDraftRestore) {
+      onDraftStateLabelChange("Saved locally");
+      return;
+    }
+    onDraftStateLabelChange("");
+  }, [isSubmitting, skipLocalDraftRestore, onDraftStateLabelChange]);
 
   useEffect(() => {
     if (fetcher.state !== "idle") return;
@@ -834,7 +842,6 @@ export function PollComposer({
           publishMode === "now"
             ? undefined
             : {
-                title: publishMode === "queue" ? "Queue" : "Schedule",
                 lines:
                   publishMode === "queue"
                     ? [
@@ -951,7 +958,6 @@ export function PollComposer({
             scheduledFor,
             publishMode,
           });
-          onDraftStateLabelChange?.("Saved locally");
           trackComposerEvent("composer_draft_saved", {
             source: "poll",
             mode: "local",

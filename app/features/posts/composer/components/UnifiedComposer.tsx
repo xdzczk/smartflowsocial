@@ -6,7 +6,13 @@
 
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { FolderOpen } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -448,6 +454,63 @@ export function UnifiedComposer({
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;
 
+  const pendingExplicitSaveDraftRef = useRef(false);
+  const fetcherWasBusyRef = useRef(false);
+  const [serverDraftSavedBaseline, setServerDraftSavedBaseline] = useState<
+    string | null
+  >(null);
+
+  const composerDraftFingerprint = useMemo(
+    () =>
+      JSON.stringify({
+        content: content,
+        selectedHashtags,
+        scheduledFor: formScheduledFor ?? "",
+        selectedQueue,
+        hashTagPresetId: formSelectedHashtagPresetId ?? null,
+        attachments: attachments
+          .filter((a): a is typeof a & { url: string } => Boolean(a.url))
+          .map((a) => ({
+            localId: a.localId,
+            url: a.url,
+            alt: a.alt,
+          })),
+        isThreadMode,
+        threadSegments: isThreadMode
+          ? threadSegments.map((s) => ({
+              id: s.id,
+              content: s.content,
+              attachments: s.attachments
+                .filter((a): a is typeof a & { url: string } => Boolean(a.url))
+                .map((a) => ({
+                  localId: a.localId,
+                  url: a.url,
+                  alt: a.alt,
+                })),
+            }))
+          : undefined,
+        threadDelayMinutes: isThreadMode ? threadDelayMinutes : undefined,
+      }),
+    [
+      content,
+      selectedHashtags,
+      formScheduledFor,
+      selectedQueue,
+      formSelectedHashtagPresetId,
+      attachments,
+      isThreadMode,
+      threadSegments,
+      threadDelayMinutes,
+    ]
+  );
+
+  React.useEffect(() => {
+    setServerDraftSavedBaseline((prev) => {
+      if (prev === null) return null;
+      return prev === composerDraftFingerprint ? prev : null;
+    });
+  }, [composerDraftFingerprint]);
+
   // Persist to localStorage when not editing a server draft
   React.useEffect(() => {
     if (initialDraftId || skipLocalDraftRestore) return;
@@ -479,7 +542,6 @@ export function UnifiedComposer({
     };
     lastLocalSnapshotRef.current = snapshot;
     saveLocalSnapshot(snapshot);
-    onDraftStateLabelChange?.("Saved locally");
   }, [
     initialDraftId,
     skipLocalDraftRestore,
@@ -494,7 +556,6 @@ export function UnifiedComposer({
     threadSegments,
     threadDelayMinutes,
     saveLocalSnapshot,
-    onDraftStateLabelChange,
   ]);
 
   // Flush localStorage on unmount and when page is hidden so content is not lost when navigating away
@@ -524,6 +585,10 @@ export function UnifiedComposer({
       setSchedulingScheduledFor(formScheduledFor);
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
+
+  const onBeginSaveDraft = useCallback(() => {
+    pendingExplicitSaveDraftRef.current = true;
+  }, []);
 
   const {
     runSubmit,
@@ -572,6 +637,7 @@ export function UnifiedComposer({
     embedContext,
     publishMode,
     calculateQueueScheduleTime,
+    onBeginSaveDraft,
   });
 
   useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
@@ -1095,12 +1161,80 @@ export function UnifiedComposer({
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
-    if (fetcher.state !== "idle") {
-      onDraftStateLabelChange("Saving...");
+
+    const busy = fetcher.state !== "idle";
+
+    if (busy) {
+      fetcherWasBusyRef.current = true;
+      onDraftStateLabelChange(
+        pendingExplicitSaveDraftRef.current ? "Saving draft…" : "Saving…"
+      );
       return;
     }
-    onDraftStateLabelChange("Saved");
-  }, [fetcher.state, onDraftStateLabelChange]);
+
+    const completedNetworkRequest = fetcherWasBusyRef.current;
+    fetcherWasBusyRef.current = false;
+
+    if (completedNetworkRequest && pendingExplicitSaveDraftRef.current) {
+      pendingExplicitSaveDraftRef.current = false;
+      const data = fetcher.data as
+        | { error?: unknown; draftSaved?: boolean; draftId?: string }
+        | undefined;
+      const jsonError =
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        data.error != null &&
+        data.error !== "";
+      const serverConfirmedSave =
+        data &&
+        typeof data === "object" &&
+        data.draftSaved === true &&
+        typeof data.draftId === "string" &&
+        data.draftId.length > 0;
+      if (!jsonError && serverConfirmedSave) {
+        const savedDraftId = data.draftId;
+        queueMicrotask(() => {
+          setServerDraftSavedBaseline(composerDraftFingerprint);
+          onDraftStateLabelChange("Draft saved");
+          if (!initialDraftId && savedDraftId) {
+            const base = draftPickerNavigateBase;
+            const sep = base.includes("?") ? "&" : "?";
+            navigate(
+              `${base}${sep}draftId=${encodeURIComponent(savedDraftId)}`,
+              { replace: true }
+            );
+          }
+        });
+        return;
+      }
+    }
+
+    if (
+      serverDraftSavedBaseline !== null &&
+      composerDraftFingerprint === serverDraftSavedBaseline
+    ) {
+      onDraftStateLabelChange("Draft saved");
+      return;
+    }
+
+    if (!initialDraftId && !skipLocalDraftRestore) {
+      onDraftStateLabelChange("Saved locally");
+      return;
+    }
+
+    onDraftStateLabelChange("");
+  }, [
+    fetcher.state,
+    fetcher.data,
+    draftPickerNavigateBase,
+    navigate,
+    composerDraftFingerprint,
+    serverDraftSavedBaseline,
+    initialDraftId,
+    skipLocalDraftRestore,
+    onDraftStateLabelChange,
+  ]);
 
   const primarySubmitAction = getTextSubmitActionForMode(publishMode);
 
@@ -1360,7 +1494,6 @@ export function UnifiedComposer({
             publishMode === "now"
               ? undefined
               : {
-                  title: publishMode === "queue" ? "Queue" : "Schedule",
                   lines:
                     publishMode === "queue"
                       ? [

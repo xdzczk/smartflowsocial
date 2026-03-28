@@ -23,7 +23,7 @@ import {
 import { cn } from "~/lib/utils";
 
 export interface PublishingSummarySection {
-  title: string;
+  title?: string;
   lines?: string[];
   controls?: ReactNode;
 }
@@ -64,6 +64,8 @@ export interface PublishingSummaryRailProps {
   postStatusSummaryInline?: string;
   publishSummaryOptionsLine?: string;
   contentSummaryLines?: string[];
+  /** When "stacked", render content summary as a vertical list (e.g. article checklist). */
+  contentSummaryDisplay?: "inline" | "stacked";
   publishPath: PublishPathSummary;
   issues?: string[];
   warnings?: string[];
@@ -136,7 +138,7 @@ function PublishingModeFusedHeader({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x border-b"
+      className="border-border/60 divide-border/60 relative grid grid-cols-3 divide-x border-b"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -150,7 +152,7 @@ function PublishingModeFusedHeader({
             className={cn(
               "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
               active
-                ? "text-foreground font-semibold"
+                ? "text-foreground border-card bg-card relative z-[1] -mb-px border-b font-semibold"
                 : "text-muted-foreground hover:text-foreground font-medium"
             )}
             onClick={() => onPublishModeChange(m)}
@@ -325,6 +327,7 @@ function PublishSummarySection({
   postStatusSummaryInline,
   publishSummaryOptionsLine,
   contentSummaryLines = [],
+  contentSummaryDisplay = "inline",
   sessionStrip,
   publishPath,
   readiness,
@@ -338,6 +341,7 @@ function PublishSummarySection({
   postStatusSummaryInline?: string;
   publishSummaryOptionsLine?: string;
   contentSummaryLines?: string[];
+  contentSummaryDisplay?: "inline" | "stacked";
   sessionStrip?: PublishingSessionStripProps;
   publishPath: PublishPathSummary;
   readiness: ReadinessPresentation;
@@ -353,7 +357,11 @@ function PublishSummarySection({
     contentSummaryLines.length > 0
       ? contentSummaryLines.slice(0, 3).join(" · ")
       : null;
-  const contentValue = postStatusSummaryInline ?? fallbackInline ?? "—";
+  const useStacked =
+    contentSummaryDisplay === "stacked" && contentSummaryLines.length > 0;
+  const contentValue = useStacked
+    ? null
+    : (postStatusSummaryInline ?? fallbackInline ?? "—");
   const outcomeLine = deriveSummaryOutcomeLine(publishMode, outcomeSentence);
   const hasBlocking = compactIssues.length > 0 || compactWarnings.length > 0;
 
@@ -361,8 +369,26 @@ function PublishSummarySection({
     <div className="space-y-2">
       <RailSectionLabel>Publish summary</RailSectionLabel>
       <div className="space-y-1.5">
-        <SummaryMetadataRow label="Content">{contentValue}</SummaryMetadataRow>
-        {contentSummaryLines.length > 3 ? (
+        {useStacked ? (
+          <div className="space-y-1">
+            <span className="text-muted-foreground font-medium">Content</span>
+            <ul className="text-foreground list-none space-y-0.5 pl-0 text-[11px] leading-snug">
+              {contentSummaryLines.map((line) => (
+                <li
+                  key={line}
+                  className="border-border/40 border-b border-dotted pb-0.5 last:border-0"
+                >
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <SummaryMetadataRow label="Content">
+            {contentValue}
+          </SummaryMetadataRow>
+        )}
+        {!useStacked && contentSummaryLines.length > 3 ? (
           <ul className="text-muted-foreground list-none space-y-0.5 pl-0 text-[10px] leading-snug">
             {contentSummaryLines.slice(3).map((line) => (
               <li key={line}>{line}</li>
@@ -435,13 +461,9 @@ function ModeAndThreadZones({
   threadSettingsSection?: PublishingSummarySection;
 }) {
   const modeLines = modeSpecificSection?.lines ?? [];
-  const modeTitle = modeSpecificSection?.title;
   const modeControls = modeSpecificSection?.controls;
   const hasMode = Boolean(
-    modeSpecificSection &&
-    (modeLines.length > 0 ||
-      modeControls != null ||
-      (modeTitle != null && modeTitle.trim().length > 0))
+    modeSpecificSection && (modeLines.length > 0 || modeControls != null)
   );
 
   const threadLines = threadSettingsSection?.lines ?? [];
@@ -460,11 +482,6 @@ function ModeAndThreadZones({
     <div className="space-y-4">
       {hasMode ? (
         <div className="space-y-2">
-          {modeTitle != null && modeTitle.trim().length > 0 ? (
-            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-              {modeTitle}
-            </p>
-          ) : null}
           {modeLines.length > 0 ? (
             <div className="space-y-0.5">
               {compactLines(modeLines, SECTION_LINE_LIMIT).map((line) => (
@@ -551,6 +568,7 @@ function PublishingSummaryRailBody({
   postStatusSummaryInline,
   publishSummaryOptionsLine,
   contentSummaryLines = [],
+  contentSummaryDisplay = "inline",
   publishPath,
   issues = [],
   warnings = [],
@@ -572,14 +590,13 @@ function PublishingSummaryRailBody({
     Boolean(
       modeSpecificSection &&
       (modeSpecificSection.controls != null ||
-        (modeSpecificSection.lines ?? []).length > 0 ||
-        modeSpecificSection.title.trim().length > 0)
+        (modeSpecificSection.lines ?? []).length > 0)
     ) ||
     Boolean(
       threadSettingsSection &&
       (threadSettingsSection.controls != null ||
         (threadSettingsSection.lines ?? []).length > 0 ||
-        threadSettingsSection.title.trim().length > 0)
+        (threadSettingsSection.title?.trim().length ?? 0) > 0)
     );
   const hasPublishOptions = Boolean(
     followUp != null || followUpSection != null || recyclableControl != null
@@ -621,6 +638,7 @@ function PublishingSummaryRailBody({
             postStatusSummaryInline={postStatusSummaryInline}
             publishSummaryOptionsLine={publishSummaryOptionsLine}
             contentSummaryLines={contentSummaryLines}
+            contentSummaryDisplay={contentSummaryDisplay}
             sessionStrip={sessionStrip}
             publishPath={publishPath}
             readiness={readiness}
@@ -721,6 +739,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
     postStatusSummaryInline: props.postStatusSummaryInline,
     publishSummaryOptionsLine: props.publishSummaryOptionsLine,
     contentSummaryLines: props.contentSummaryLines,
+    contentSummaryDisplay: props.contentSummaryDisplay,
     publishPath: props.publishPath,
     issues: props.issues,
     warnings: props.warnings,

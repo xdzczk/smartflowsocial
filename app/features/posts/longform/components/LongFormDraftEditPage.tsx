@@ -14,7 +14,7 @@ import {
   LongFormPreviewModal,
   useLongFormEditState,
 } from "~/features/posts/longform";
-import { ErrorMessage } from "~/features/posts/ui";
+import { ErrorMessage, RelaySelectorModal } from "~/features/posts/ui";
 import { getActionErrorMessage } from "~/lib/errors";
 
 export default function LongFormDraftEditPage() {
@@ -116,6 +116,17 @@ export default function LongFormDraftEditPage() {
     Array.isArray((loaderData as { versions?: unknown }).versions)
       ? (loaderData as { versions: unknown[] }).versions
       : [];
+  const relaysRaw =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "relays" in loaderData &&
+    Array.isArray((loaderData as { relays?: unknown }).relays)
+      ? (loaderData as { relays: unknown[] }).relays
+      : [];
+  const defaultRelays = relaysRaw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
   const versions = versionsRaw.filter(
     (
       v: unknown
@@ -159,6 +170,8 @@ export default function LongFormDraftEditPage() {
 
   const navigate = useNavigate();
   const [draftPickerOpen, setDraftPickerOpen] = useState(false);
+  const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
   const {
     displayedHashtags,
     showPreviewModal,
@@ -241,8 +254,27 @@ export default function LongFormDraftEditPage() {
           onHashtagPresetChange={(presetId) =>
             handleHashtagPresetChange(presetId ?? "")
           }
+          defaultRelays={defaultRelays}
+          relayOverride={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+          }
+          onRelayClick={() => setRelaySelectorOpen(true)}
         />
       </Form>
+
+      {relaySelectorOpen ? (
+        <RelaySelectorModal
+          defaultRelays={defaultRelays}
+          selectedRelays={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
+          }
+          onClose={() => setRelaySelectorOpen(false)}
+          onSave={(urls) => {
+            setSelectedRelayUrls(urls);
+            setRelaySelectorOpen(false);
+          }}
+        />
+      ) : null}
 
       {/* Preview Modal */}
       <LongFormPreviewModal

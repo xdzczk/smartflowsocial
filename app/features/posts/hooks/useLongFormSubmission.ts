@@ -94,6 +94,120 @@ export interface LongformQuoteEntry {
   caption: string;
 }
 
+interface LongformQuoteScheduleRow {
+  scheduledFor: number;
+  signedEvent: {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  caption?: string;
+}
+
+async function resolveEffectiveScheduledForLongform(params: {
+  actionType: "schedule" | "publish";
+  publishMode: ComposerPublishMode;
+  selectedQueueType: string;
+  scheduledFor: string | null;
+  calculateQueueScheduleTime?: (
+    queueTypeName: string
+  ) => Promise<string | null>;
+}): Promise<string | null> {
+  const {
+    actionType,
+    publishMode,
+    selectedQueueType,
+    scheduledFor,
+    calculateQueueScheduleTime,
+  } = params;
+  let effective = scheduledFor;
+  if (
+    actionType === "schedule" &&
+    publishMode === "queue" &&
+    selectedQueueType !== "unassigned" &&
+    selectedQueueType !== "Unassigned" &&
+    !effective &&
+    calculateQueueScheduleTime
+  ) {
+    const computed = await calculateQueueScheduleTime(selectedQueueType);
+    if (computed) effective = computed;
+  }
+  return effective;
+}
+
+async function buildSignedLongformQuoteSchedules(
+  alsoScheduleQuote: boolean,
+  quoteEntries: LongformQuoteEntry[],
+  uniqueTags: string[],
+  mainScheduledUnix: number,
+  signedMain: Parameters<typeof buildLongformQuoteEvent>[0]
+): Promise<
+  | { ok: true; schedules: LongformQuoteScheduleRow[] }
+  | { ok: false; error: string }
+> {
+  const quoteSchedules: LongformQuoteScheduleRow[] = [];
+  if (!alsoScheduleQuote || quoteEntries.length === 0) {
+    return { ok: true, schedules: quoteSchedules };
+  }
+  const tagArray = uniqueTags.length ? [["t", ...uniqueTags.slice(0, 5)]] : [];
+  for (const entry of quoteEntries) {
+    const delay = { value: entry.value, unit: entry.unit };
+    if (!isValidDelayAfterMain(delay)) {
+      return {
+        ok: false,
+        error:
+          "Each quote must be at least 1 (hour or minute) after the main post.",
+      };
+    }
+    const offsetSeconds = delayAfterMainToSeconds(delay);
+    const quoteScheduledUnix = mainScheduledUnix + offsetSeconds;
+    if (quoteScheduledUnix <= mainScheduledUnix) {
+      return {
+        ok: false,
+        error: "Quote must be scheduled after the main post.",
+      };
+    }
+    const quoteEvent = buildLongformQuoteEvent(
+      signedMain,
+      entry.caption,
+      quoteScheduledUnix,
+      tagArray
+    );
+    const { signedEvent: quoteSignedEvent } =
+      await nostrAdapter.signEventWithOneRetry({
+        content: quoteEvent.content,
+        created_at: quoteEvent.created_at,
+        kind: quoteEvent.kind,
+        tags: quoteEvent.tags,
+      });
+    quoteSchedules.push({
+      scheduledFor: quoteScheduledUnix,
+      signedEvent: quoteSignedEvent,
+      caption: entry.caption || undefined,
+    });
+  }
+  return { ok: true, schedules: quoteSchedules };
+}
+
+function submitDocumentPostForm(fields: Array<[string, string]>): void {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.style.display = "none";
+  fields.forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value || "";
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+}
+
 interface UseLongFormSubmissionProps {
   title: string;
   summary: string;
@@ -112,6 +226,8 @@ interface UseLongFormSubmissionProps {
   calculateQueueScheduleTime?: (
     queueTypeName: string
   ) => Promise<string | null>;
+  /** When set (user picked relays in composer), sent as `relays` JSON on submit. */
+  relayOverride?: string[] | null;
 }
 
 export function useLongFormSubmission({
@@ -130,6 +246,7 @@ export function useLongFormSubmission({
   userTimezone = "UTC",
   publishMode = "now",
   calculateQueueScheduleTime,
+  relayOverride = null,
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -178,18 +295,13 @@ export function useLongFormSubmission({
       const finalSummary = summary || generateSummaryFromMarkdown(content);
       const identifier = generateArticleIdentifier(title);
 
-      let effectiveScheduled = scheduledFor;
-      if (
-        actionType === "schedule" &&
-        publishMode === "queue" &&
-        selectedQueueType !== "unassigned" &&
-        selectedQueueType !== "Unassigned" &&
-        !effectiveScheduled &&
-        calculateQueueScheduleTime
-      ) {
-        const computed = await calculateQueueScheduleTime(selectedQueueType);
-        if (computed) effectiveScheduled = computed;
-      }
+      const effectiveScheduled = await resolveEffectiveScheduledForLongform({
+        actionType,
+        publishMode,
+        selectedQueueType,
+        scheduledFor,
+        calculateQueueScheduleTime,
+      });
 
       const scheduledTimestamp =
         actionType === "schedule" && effectiveScheduled
@@ -233,62 +345,18 @@ export function useLongFormSubmission({
           ? nowSeconds()
           : (scheduledTimestamp ?? nowSeconds());
 
-      const quoteSchedules: Array<{
-        scheduledFor: number;
-        signedEvent: {
-          id: string;
-          pubkey: string;
-          created_at: number;
-          kind: number;
-          content: string;
-          tags: string[][];
-          sig: string;
-        };
-        caption?: string;
-      }> = [];
-
-      if (alsoScheduleQuote && quoteEntries.length > 0) {
-        const tagArray = uniqueTags.length
-          ? [["t", ...uniqueTags.slice(0, 5)]]
-          : [];
-        for (const entry of quoteEntries) {
-          const delay = { value: entry.value, unit: entry.unit };
-          if (!isValidDelayAfterMain(delay)) {
-            setSigningError(
-              "Each quote must be at least 1 (hour or minute) after the main post."
-            );
-            return;
-          }
-          const offsetSeconds = delayAfterMainToSeconds(delay);
-          const quoteScheduledUnix = mainScheduledUnix + offsetSeconds;
-          if (quoteScheduledUnix <= mainScheduledUnix) {
-            setSigningError("Quote must be scheduled after the main post.");
-            return;
-          }
-          const quoteEvent = buildLongformQuoteEvent(
-            signedEvent,
-            entry.caption,
-            quoteScheduledUnix,
-            tagArray
-          );
-          const { signedEvent: quoteSignedEvent } =
-            await nostrAdapter.signEventWithOneRetry({
-              content: quoteEvent.content,
-              created_at: quoteEvent.created_at,
-              kind: quoteEvent.kind,
-              tags: quoteEvent.tags,
-            });
-          quoteSchedules.push({
-            scheduledFor: quoteScheduledUnix,
-            signedEvent: quoteSignedEvent,
-            caption: entry.caption || undefined,
-          });
-        }
+      const quoteResult = await buildSignedLongformQuoteSchedules(
+        alsoScheduleQuote,
+        quoteEntries,
+        uniqueTags,
+        mainScheduledUnix,
+        signedEvent
+      );
+      if (!quoteResult.ok) {
+        setSigningError(quoteResult.error);
+        return;
       }
-
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.style.display = "none";
+      const quoteSchedules = quoteResult.schedules;
 
       const fields: Array<[string, string]> = [
         [
@@ -314,16 +382,11 @@ export function useLongFormSubmission({
         fields.push(["alsoScheduleQuote", "on"]);
       }
 
-      fields.forEach(([name, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        input.value = value || "";
-        form.appendChild(input);
-      });
+      if (relayOverride && relayOverride.length > 0) {
+        fields.push(["relays", JSON.stringify(relayOverride)]);
+      }
 
-      document.body.appendChild(form);
-      form.submit();
+      submitDocumentPostForm(fields);
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(

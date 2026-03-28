@@ -9,6 +9,7 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { useState } from "react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -22,7 +23,7 @@ import {
   type QueueType,
 } from "~/features/posts/server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
-import { getQueueAccentHex } from "~/features/posts/ui";
+import { getQueueAccentHex, RelaySelectorModal } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 
@@ -174,6 +175,13 @@ function parseLoaderData(loaderData: unknown) {
       ? uploadProvider
       : null;
 
+  const relaysRaw = Array.isArray((raw as { relays?: unknown }).relays)
+    ? (raw as { relays: unknown[] }).relays
+    : [];
+  const defaultRelays = relaysRaw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
   return {
     queueTypes,
     scheduleIntervals,
@@ -181,6 +189,7 @@ function parseLoaderData(loaderData: unknown) {
     userTags,
     userTimezone,
     uploadProvider: uploadProviderStr,
+    defaultRelays,
   };
 }
 
@@ -193,7 +202,11 @@ export default function TemplateNewLongformPage() {
     userTags,
     userTimezone,
     uploadProvider,
+    defaultRelays,
   } = parseLoaderData(loaderData);
+
+  const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
 
   return (
     <div className="p-6">
@@ -214,7 +227,25 @@ export default function TemplateNewLongformPage() {
         uploadProvider={uploadProvider}
         hashTagPresets={hashTagPresets}
         onPreview={() => {}}
+        defaultRelays={defaultRelays}
+        relayOverride={
+          selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
+        }
+        onRelayClick={() => setRelaySelectorOpen(true)}
       />
+      {relaySelectorOpen ? (
+        <RelaySelectorModal
+          defaultRelays={defaultRelays}
+          selectedRelays={
+            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
+          }
+          onClose={() => setRelaySelectorOpen(false)}
+          onSave={(urls) => {
+            setSelectedRelayUrls(urls);
+            setRelaySelectorOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

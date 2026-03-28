@@ -13,13 +13,15 @@ import {
 import {
   resolveQueueTypeId,
   createPostWithOutbox,
+  getLongFormPost,
+  updateLongFormPost,
 } from "~/features/posts/server";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
 } from "~/features/posts/server/drafts";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { resolveExecutionRelaysFromForm } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
 import {
@@ -284,6 +286,12 @@ async function persistDraft(
   queueType: string,
   hashTagPresetId: string | null
 ): Promise<Response | { longFormPostId: string }> {
+  const longFormPostIdRaw = formData.get("longFormPostId");
+  const existingId =
+    longFormPostIdRaw != null && String(longFormPostIdRaw).trim() !== ""
+      ? String(longFormPostIdRaw).trim()
+      : null;
+
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -308,6 +316,31 @@ async function persistDraft(
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
+  if (existingId) {
+    const existing = await getLongFormPost({ id: existingId, userId });
+    if (!existing) {
+      return json({ error: "Draft not found" }, { status: 404 });
+    }
+    if (existing.currentState !== "DRAFT") {
+      return json(
+        { error: "Only draft articles can be updated from compose" },
+        { status: 400 }
+      );
+    }
+    await updateLongFormPost({
+      id: existingId,
+      userId,
+      title,
+      summary: finalSummary,
+      content: sanitizedContent,
+      image,
+      tags,
+      queueTypeId,
+      hashTagPresetId,
+    });
+    return { longFormPostId: existingId };
+  }
+
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   const result = await createLongFormPostUseCase.execute({
     userId,
@@ -326,7 +359,7 @@ async function persistDraft(
 }
 
 /**
- * Handle save draft action (redirects to drafts). Creates a version snapshot.
+ * Handle save draft action: version snapshot + JSON (stay on compose).
  */
 async function handleSaveDraft(
   userId: string,
@@ -368,7 +401,11 @@ async function handleSaveDraft(
     },
     userId
   );
-  return redirect("/dashboard/drafts?tab=longform");
+  return json({
+    ok: true,
+    draftSaved: true,
+    longFormPostId,
+  });
 }
 
 /**
@@ -724,7 +761,6 @@ export async function handleNewLongFormAction(
   }
   const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
-  const sanitizedRelays = await resolveExecutionRelays(userId);
 
   const contentType = request.headers.get("Content-Type") ?? "";
   let formData: FormData;
@@ -735,6 +771,11 @@ export async function handleNewLongFormAction(
   } else {
     formData = await request.formData();
   }
+
+  const sanitizedRelays = await resolveExecutionRelaysFromForm(
+    userId,
+    formData
+  );
 
   // Check for upload-image action first (handled separately)
   const _actionValue = formData.get("_action");

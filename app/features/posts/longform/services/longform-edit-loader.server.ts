@@ -5,6 +5,7 @@
 
 import { getLongFormPost } from "~/features/posts/server";
 import { getDraftVersions } from "~/features/posts/server/drafts";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -16,13 +17,14 @@ import {
  * Load longform edit page data
  */
 export async function loadLongFormEditData(userId: string, postId: string) {
-  const [post, scheduleIntervals, queueTypes, user, hashtagPresets] =
+  const [post, scheduleIntervals, queueTypes, user, hashtagPresets, relays] =
     await Promise.all([
       getLongFormPost({ id: postId, userId }),
       getScheduleInterval(userId),
       getQueueTypes(userId),
       getUserById(userId),
       getUserHashTagPresets(userId),
+      resolveExecutionRelays(userId),
     ]);
 
   if (!post) {
@@ -43,5 +45,6 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     userTimezone: user?.timezone ?? "Etc/GMT",
     hashtagPresets,
     versions,
+    relays,
   };
 }

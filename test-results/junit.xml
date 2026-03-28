@@ -1,36 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.010439958">
-    <testsuite name="tests/integration/subscription-loader.test.ts" timestamp="2026-03-28T07:40:21.459Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.010439958">
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Subscription Settings Loader &gt; should load subscription settings data for authenticated user" time="0.003677916">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.005946374">
+    <testsuite name="tests/integration/services/loaders/longform-edit-loader.test.ts" timestamp="2026-03-28T09:03:31.765Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.003326916">
+        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should load longform edit data" time="0.001493709">
         </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Subscription Settings Loader &gt; should return subscription data structure" time="0.000871125">
+        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should throw 404 if post not found" time="0.000930125">
         </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Subscription Settings Loader &gt; should handle free plan users (no subscription)" time="0.000425625">
+        <testcase classname="tests/integration/services/loaders/longform-edit-loader.test.ts" name="Longform Edit Loader &gt; should use default timezone if user timezone is missing" time="0.000158375">
         </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Subscription Settings Loader &gt; should handle expired subscription" time="0.000286208">
+    </testsuite>
+    <testsuite name="tests/integration/services/loaders/newlongform-loader.test.ts" timestamp="2026-03-28T09:03:31.765Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002619458">
+        <testcase classname="tests/integration/services/loaders/newlongform-loader.test.ts" name="New Longform Loader &gt; should load new longform data" time="0.001800916">
         </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Subscription Settings Loader &gt; should include payment history when available" time="0.000330958">
-        </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000278417">
-        </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Error Handling &gt; should handle subscription requirement errors" time="0.00013025">
-        </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000134584">
-        </testcase>
-        <testcase classname="tests/integration/subscription-loader.test.ts" name="Subscription/Billing Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.003538375">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Database error&apos;,
-  code: &apos;DATABASE_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/integration/services/loaders/newlongform-loader.test.ts" name="New Longform Loader &gt; should use default timezone if user timezone is missing" time="0.000176291">
         </testcase>
     </testsuite>
 </testsuites>

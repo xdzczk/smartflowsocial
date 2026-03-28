@@ -22,10 +22,15 @@ vi.mock("~/features/posts/repositories/draft-version-data.server", () => ({
   findDraftVersionsByLongFormPostId: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi.fn(),
+}));
+
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 
 import { getLongFormPost } from "~/features/posts/server";
 import { loadLongFormEditData } from "~/features/posts/server/longform";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -62,6 +67,9 @@ describe("Longform Edit Loader", () => {
       { id: "preset-1", name: "Default", tags: mockTags },
       ...mockHashTagPresets,
     ]);
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([
+      "wss://relay.test",
+    ]);
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
 
@@ -75,6 +83,7 @@ describe("Longform Edit Loader", () => {
       { id: "preset-1", name: "Default", tags: mockTags },
       ...mockHashTagPresets,
     ]);
+    expect(result.relays).toEqual(["wss://relay.test"]);
   });
 
   it("should throw 404 if post not found", async () => {
@@ -88,6 +97,7 @@ describe("Longform Edit Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     await expect(
       loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID)
@@ -106,6 +116,7 @@ describe("Longform Edit Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
 

@@ -94,10 +94,6 @@ export function LongFormPostFields({
           placeholder="Enter custom tags separated by commas (e.g. bitcoin, nostr, technology)"
           className="mt-1"
         />
-        <p className="text-muted-foreground dark:text-foreground mt-1 text-xs">
-          These tags will be added to the NOSTR event and combined with queue
-          type hashtags if any
-        </p>
       </div>
     </>
   );

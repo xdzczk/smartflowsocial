@@ -15,7 +15,7 @@ import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
 } from "~/features/posts/server/drafts";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { resolveExecutionRelaysFromForm } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import {
   getUserById,
@@ -559,7 +559,6 @@ export async function handleLongFormEditAction(
   }
   const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
-  const sanitizedRelays = await resolveExecutionRelays(userId);
 
   const contentType = request.headers.get("Content-Type") ?? "";
   let formData: FormData;
@@ -570,6 +569,11 @@ export async function handleLongFormEditAction(
   } else {
     formData = await request.formData();
   }
+
+  const sanitizedRelays = await resolveExecutionRelaysFromForm(
+    userId,
+    formData
+  );
 
   // Check for upload-image and restore-version first (handled separately)
   const _actionValue = formData.get("_action");

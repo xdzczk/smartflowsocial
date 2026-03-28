@@ -4,6 +4,7 @@
  */
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
   getTemplates,
@@ -32,6 +33,7 @@ export async function loadNewLongFormData(
     user,
     uploadProvider,
     templates,
+    relays,
   ] = await Promise.all([
     getScheduleInterval(userId),
     getQueueTypes(userId),
@@ -39,6 +41,7 @@ export async function loadNewLongFormData(
     getUserById(userId),
     getUserUploadProvider(userId),
     getTemplates({ userId }),
+    resolveExecutionRelays(userId),
   ]);
 
   const defaultPreset = hashTagPresets.find((p) => p.name === "Default");
@@ -50,6 +53,7 @@ export async function loadNewLongFormData(
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
+    relays,
     userTimezone: user?.timezone ?? "Etc/GMT",
     uploadProvider,
     templates: templates.filter(

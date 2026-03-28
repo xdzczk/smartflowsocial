@@ -317,6 +317,7 @@ export default function TemplateEditPage() {
             queueTypes?: unknown[];
             scheduleIntervals?: unknown[];
             hashTagPresets?: unknown[];
+            relays?: unknown[];
             userTimezone?: string;
             uploadProvider?: string | null;
             tags?: string;
@@ -372,6 +373,9 @@ export default function TemplateEditPage() {
             : undefined;
 
           const typedQueueTypes = queueTypesRaw.map((qt) => parseQueueType(qt));
+          const defaultRelays = (
+            Array.isArray(ctx.relays) ? ctx.relays : []
+          ).filter((r): r is string => typeof r === "string" && r.length > 0);
 
           return (
             <LongFormPost
@@ -389,6 +393,7 @@ export default function TemplateEditPage() {
                 longFormPostId,
               }}
               initialTemplateName={(template as { name?: string }).name ?? ""}
+              defaultRelays={defaultRelays}
             />
           );
         })()

@@ -85,7 +85,14 @@ describe("Save Draft Action", () => {
         title: "Test Post",
       })
     );
-    expect(response.status).toBe(302); // Redirect
+    expect(response.status).toBe(200);
+    const bodyRaw: unknown = await response.json();
+    const body =
+      bodyRaw && typeof bodyRaw === "object" && !Array.isArray(bodyRaw)
+        ? (bodyRaw as { draftSaved?: unknown; longFormPostId?: unknown })
+        : {};
+    expect(body.draftSaved).toBe(true);
+    expect(body.longFormPostId).toBe("longform-123");
   });
 
   it("should require title", async () => {

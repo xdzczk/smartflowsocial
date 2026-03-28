@@ -1,23 +1,20 @@
 import { Link, useFetcher } from "@remix-run/react";
-import { ChevronDown, ChevronUp, FolderOpen, Hash } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { FolderOpen, Hash } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import { requestNewSignerSession } from "~/features/auth/signer";
-import { ArticleDetailsCollapsible } from "~/features/posts/components/ArticleDetailsCollapsible";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
-import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
-import { WritingSurface } from "~/features/posts/components/WritingSurface";
 import { useComposerState, useLocalDraft } from "~/features/posts/composer";
 import {
-  buildArticleContentLines,
+  buildArticlePublishSummaryLines,
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
-  formatArticlePostStatusSummaryInline,
   formatPublishSummaryOptionsLine,
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
@@ -41,10 +38,13 @@ import {
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
+import { cn } from "~/lib/utils";
 import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
+import { LongFormContentEditor } from "./LongFormContentEditor";
+import { LongFormCoverImage } from "./LongFormCoverImage";
 import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
 
 interface QueueType {
@@ -110,6 +110,12 @@ interface LongFormPostProps {
   /** When true, show "Drafts / Templates" near the writing surface (new article flow). */
   showDraftTemplatesPicker?: boolean;
   onOpenDraftTemplatesPicker?: () => void;
+  /** Default relays from loader (count + relay modal seed). */
+  defaultRelays?: string[];
+  /** When user saved a custom set from the relay modal. */
+  relayOverride?: string[];
+  /** Opens relay selector (parent owns `RelaySelectorModal`). */
+  onRelayClick?: () => void;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
@@ -139,15 +145,31 @@ export default function LongFormPost({
   onDraftStateLabelChange,
   showDraftTemplatesPicker = false,
   onOpenDraftTemplatesPicker,
+  defaultRelays = [],
+  relayOverride: relayOverrideProp,
+  onRelayClick,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
+  const pendingLongformSaveDraftRef = useRef(false);
+  const longformFetcherWasBusyRef = useRef(false);
+  const [longformDraftSavedBaseline, setLongformDraftSavedBaseline] = useState<
+    string | null
+  >(null);
+  const [serverLongFormPostId, setServerLongFormPostId] = useState<
+    string | null
+  >(() => initialData?.id ?? null);
+
+  useEffect(() => {
+    setServerLongFormPostId(initialData?.id ?? null);
+  }, [initialData?.id]);
+
   const [templateName, setTemplateName] = useState(
     () => initialTemplateName ?? ""
   );
   const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
-  const [articlePreviewOpen, setArticlePreviewOpen] = useState(false);
+  const [bodyView, setBodyView] = useState<"edit" | "preview">("edit");
   const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
     {
@@ -177,6 +199,24 @@ export default function LongFormPost({
   const summary = form.watch("summary");
   const content = form.watch("content");
   const customTags = form.watch("customTags");
+
+  const titleFieldReg = form.register("title");
+  const titleRegisterRefRef = useRef(titleFieldReg.ref);
+  useEffect(() => {
+    titleRegisterRefRef.current = titleFieldReg.ref;
+  }, [titleFieldReg.ref]);
+  const stableTitleRef = useCallback((el: HTMLInputElement | null) => {
+    titleRegisterRefRef.current(el);
+  }, []);
+
+  const relayOverride =
+    relayOverrideProp && relayOverrideProp.length > 0
+      ? relayOverrideProp
+      : null;
+  const relayCount =
+    relayOverride != null
+      ? relayOverride.length
+      : Math.max(0, defaultRelays.length);
 
   // Use extracted hooks (Tiptap; markdown synced via debounce + flushSync)
   const {
@@ -442,6 +482,26 @@ export default function LongFormPost({
   }, [formQueueType, schedulingQueueType, updateDisplayedHashtags]);
 
   const selectedQueueType = schedulingQueueType;
+  const longformDraftFingerprint = useMemo(
+    () =>
+      JSON.stringify({
+        title: title,
+        summary: summary,
+        content: content,
+        image: image,
+        customTags: customTags,
+        queueType: schedulingQueueType,
+      }),
+    [title, summary, content, image, customTags, schedulingQueueType]
+  );
+
+  useEffect(() => {
+    setLongformDraftSavedBaseline((prev) => {
+      if (prev === null) return null;
+      return prev === longformDraftFingerprint ? prev : null;
+    });
+  }, [longformDraftFingerprint]);
+
   const scheduledFor = schedulingScheduledFor ?? null;
   const setScheduledFor = (value: string | null) => {
     if (value) {
@@ -498,6 +558,10 @@ export default function LongFormPost({
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
     formData.set("useHashtagPresets", String(useHashtagPresets));
     formData.set("hashTagPresetId", selectedHashtagPresetId ?? "");
+    if (serverLongFormPostId) {
+      formData.set("longFormPostId", serverLongFormPostId);
+    }
+    pendingLongformSaveDraftRef.current = true;
     fetcher.submit(formData, { method: "post" });
   };
 
@@ -520,6 +584,7 @@ export default function LongFormPost({
       userTimezone,
       publishMode,
       calculateQueueScheduleTime,
+      relayOverride,
     });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
@@ -584,10 +649,75 @@ export default function LongFormPost({
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
-    onDraftStateLabelChange(
-      fetcher.state === "idle" ? "Saved locally" : "Saving..."
-    );
-  }, [fetcher.state, onDraftStateLabelChange]);
+
+    const busy = fetcher.state !== "idle";
+
+    if (busy) {
+      longformFetcherWasBusyRef.current = true;
+      onDraftStateLabelChange(
+        pendingLongformSaveDraftRef.current ? "Saving draft…" : "Saving…"
+      );
+      return;
+    }
+
+    const completedNetworkRequest = longformFetcherWasBusyRef.current;
+    longformFetcherWasBusyRef.current = false;
+
+    if (completedNetworkRequest && pendingLongformSaveDraftRef.current) {
+      pendingLongformSaveDraftRef.current = false;
+      const data = fetcher.data as
+        | {
+            error?: unknown;
+            draftSaved?: boolean;
+            longFormPostId?: string;
+          }
+        | undefined;
+      const jsonError =
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        data.error != null &&
+        data.error !== "";
+      const serverSaved =
+        data &&
+        typeof data === "object" &&
+        data.draftSaved === true &&
+        typeof data.longFormPostId === "string" &&
+        data.longFormPostId.length > 0;
+      if (!jsonError && serverSaved) {
+        const savedId = (data as { longFormPostId: string }).longFormPostId;
+        queueMicrotask(() => {
+          setServerLongFormPostId(savedId);
+          setLongformDraftSavedBaseline(longformDraftFingerprint);
+          onDraftStateLabelChange("Draft saved");
+        });
+        return;
+      }
+    }
+
+    if (
+      longformDraftSavedBaseline !== null &&
+      longformDraftFingerprint === longformDraftSavedBaseline
+    ) {
+      onDraftStateLabelChange("Draft saved");
+      return;
+    }
+
+    if (!initialData && !skipLocalDraftRestore) {
+      onDraftStateLabelChange("Saved locally");
+      return;
+    }
+
+    onDraftStateLabelChange("");
+  }, [
+    fetcher.state,
+    fetcher.data,
+    longformDraftFingerprint,
+    longformDraftSavedBaseline,
+    initialData,
+    skipLocalDraftRestore,
+    onDraftStateLabelChange,
+  ]);
 
   const deferrableBlockers: string[] = [];
   if (!title.trim()) deferrableBlockers.push("Article title is missing.");
@@ -602,6 +732,9 @@ export default function LongFormPost({
   ) {
     deferrableBlockers.push("Choose a queue.");
   }
+  if (relayCount <= 0) {
+    deferrableBlockers.push("Select at least one relay.");
+  }
   const issueList = deferrableBlockers;
   const issueDisplayPhase = resolveComposerIssueDisplayPhase(
     publishAttempted,
@@ -613,7 +746,7 @@ export default function LongFormPost({
     issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
   const pristineHint =
     issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
-      ? "Content required to publish. Add title, body, and cover, then set schedule or queue to continue."
+      ? "Add title, body, and cover. Then choose publish mode on the right."
       : undefined;
   const idleStatusLabel =
     issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
@@ -628,15 +761,25 @@ export default function LongFormPost({
             headline: "Missing requirements",
           } as const)
         : getReadinessPresentation(publishMode, [], true);
-  const contentSummaryLines = [
-    ...buildArticleContentLines(
-      title.trim().length > 0,
-      wordCount,
-      Boolean(image),
-      0
-    ),
-  ];
-  const publishPath = buildPublishPathSummary(0, "NIP-07", selectedQueueType);
+  const queueAssigned =
+    selectedQueueType !== "unassigned" && selectedQueueType !== "Unassigned";
+
+  const contentSummaryLines = buildArticlePublishSummaryLines({
+    hasTitle: title.trim().length > 0,
+    hasSummary: Boolean((summary ?? "").trim()),
+    wordCount,
+    hasCover: Boolean(image),
+    customTags,
+    relayCount,
+    publishMode,
+    hasScheduleTime: Boolean(scheduledFor?.trim()),
+    queueAssigned,
+  });
+  const publishPath = buildPublishPathSummary(
+    relayCount,
+    "NIP-07",
+    selectedQueueType
+  );
 
   const selectedQueueTypeObj = queueTypes.find(
     (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
@@ -652,20 +795,14 @@ export default function LongFormPost({
 
   const outcomeSentence = buildPublishingOutcomeSentence({
     publishMode,
-    relayCount: 0,
+    relayCount,
     signerReady: true,
     scheduledFor: scheduledFor ?? "",
     hasScheduleTime: Boolean(scheduledFor?.trim()),
     selectedQueue: selectedQueueType,
     queueNextSlotLabel: longformQueueNextSlotLabel,
-    omitRelayRequirement: true,
+    omitRelayRequirement: false,
   });
-
-  const postStatusSummaryInline = formatArticlePostStatusSummaryInline(
-    wordCount,
-    Boolean(image),
-    customTags
-  );
 
   const longformFollowUpSummary = alsoScheduleQuote
     ? quoteEntries.length > 0
@@ -674,6 +811,15 @@ export default function LongFormPost({
     : "None";
 
   const primaryActionLoading = fetcher.state !== "idle" || isSigning;
+
+  const handleRelayRailClick = useCallback(() => {
+    setComposerTouched(true);
+    onRelayClick?.();
+  }, [onRelayClick]);
+
+  /** Template prefill (no id) → Preview; new blank, server id from props, or after first save → Save draft. */
+  const secondaryIsSaveDraft =
+    !initialData || initialData.id != null || serverLongFormPostId != null;
 
   useEffect(() => {
     if (issueList.length === 0 && publishAttempted) {
@@ -686,15 +832,28 @@ export default function LongFormPost({
       title.trim().length > 0 ||
       content.trim().length > 0 ||
       Boolean(image) ||
-      (customTags ?? "").trim().length > 0
+      (customTags ?? "").trim().length > 0 ||
+      (summary ?? "").trim().length > 0
     ) {
       setComposerTouched(true);
     }
-  }, [title, content, image, customTags]);
+  }, [title, content, image, customTags, summary]);
+
+  useEffect(() => {
+    if (!initialData) {
+      document
+        .getElementById("article-composer-title")
+        ?.focus({ preventScroll: true });
+    }
+  }, [initialData]);
 
   useEffect(() => {
     if (publishMode !== "now") setComposerTouched(true);
   }, [publishMode]);
+
+  useEffect(() => {
+    if (relayOverride && relayOverride.length > 0) setComposerTouched(true);
+  }, [relayOverride]);
 
   useEffect(() => {
     if (
@@ -709,125 +868,218 @@ export default function LongFormPost({
     if (scheduledFor?.trim()) setComposerTouched(true);
   }, [scheduledFor]);
 
+  const draftsTemplatesButton =
+    showDraftTemplatesPicker && onOpenDraftTemplatesPicker ? (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 text-xs"
+        onClick={onOpenDraftTemplatesPicker}
+        disabled={fetcher.state !== "idle"}
+        aria-label="Drafts / Templates"
+      >
+        <FolderOpen
+          className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
+        Drafts / Templates
+      </Button>
+    ) : null;
+
+  const editPreviewToggle = (
+    <div
+      className="border-border bg-background/80 inline-flex rounded-md border p-0.5"
+      role="group"
+      aria-label="Body view"
+    >
+      <button
+        type="button"
+        className={cn(
+          "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+          bodyView === "edit"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => setBodyView("edit")}
+        aria-pressed={bodyView === "edit"}
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+          bodyView === "preview"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => setBodyView("preview")}
+        aria-pressed={bodyView === "preview"}
+      >
+        Preview
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="flex min-h-screen flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
-          {/* Phase 1: Writing Surface (hero); key by draft id so editor remounts with new content */}
-          <div className="relative">
-            {showDraftTemplatesPicker && onOpenDraftTemplatesPicker ? (
-              <div className="pointer-events-none absolute top-6 right-4 z-10 flex justify-end sm:right-8">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="pointer-events-auto"
-                  onClick={onOpenDraftTemplatesPicker}
-                  disabled={fetcher.state !== "idle"}
-                  aria-label="Drafts / Templates"
-                >
-                  <FolderOpen
-                    className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  Drafts / Templates
-                </Button>
+          <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-5 px-4 pt-1 pb-5">
+            <div className="space-y-3">
+              <input
+                key={initialData?.id ?? "new"}
+                type="text"
+                id="article-composer-title"
+                placeholder="Write a title"
+                className="text-foreground placeholder:text-muted-foreground w-full border-0 bg-transparent text-3xl leading-tight font-semibold tracking-tight outline-none focus:ring-0 sm:text-[2rem] dark:text-white"
+                aria-label="Article title"
+                name={titleFieldReg.name}
+                onChange={(e) => void titleFieldReg.onChange(e)}
+                onBlur={(e) => void titleFieldReg.onBlur(e)}
+                ref={stableTitleRef}
+              />
+
+              <div>
+                <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+                  <Label htmlFor="article-composer-summary" className="text-sm">
+                    Summary
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground h-8 text-xs"
+                    onClick={handleGenerateSummary}
+                    disabled={!content}
+                  >
+                    Auto-generate
+                  </Button>
+                </div>
+                <Textarea
+                  id="article-composer-summary"
+                  name="summary"
+                  value={summary ?? ""}
+                  onChange={(e) =>
+                    form.setValue("summary", e.target.value, {
+                      shouldValidate: true,
+                    })
+                  }
+                  placeholder="Optional — a short line for previews and search."
+                  rows={3}
+                  className="resize-y text-[15px] leading-relaxed"
+                />
               </div>
-            ) : null}
-            <WritingSurface
-              key={initialData?.id ?? "new"}
-              register={form.register}
-              content={content}
-              uploadProvider={uploadProvider}
-              onOpenAssetBrowser={() => {}}
-              editorReady={editorReady}
-              editor={editor}
-            />
-          </div>
 
-          {/* Phase 2: Article Details (collapsible) */}
-          <ArticleDetailsCollapsible
-            summary={summary ?? ""}
-            customTags={customTags ?? ""}
-            content={content}
-            onSummaryChange={(value) => form.setValue("summary", value)}
-            onCustomTagsChange={(value) => form.setValue("customTags", value)}
-            onGenerateSummary={handleGenerateSummary}
-            image={image}
-            uploadError={uploadError}
-            uploadProvider={uploadProvider}
-            uploadFetcherState={uploadFetcherState}
-            onImageUpload={(file) => void handleImageUpload(file)}
-            onRemoveImage={() => setCoverImage("")}
-            onOpenAssetBrowser={() => {}}
-          />
+              <LongFormCoverImage
+                image={image}
+                uploadError={uploadError}
+                uploadProvider={uploadProvider}
+                uploadFetcherState={uploadFetcherState}
+                onImageUpload={(e) => void handleImageUpload(e)}
+                onRemove={() => setCoverImage("")}
+                onOpenAssetBrowser={() => {}}
+                softLabel
+              />
+            </div>
 
-          {!isTemplateMode ? (
-            <div className="border-border/60 mx-auto mt-4 max-w-[760px] border-t px-4 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
-                onClick={() => setArticlePreviewOpen((o) => !o)}
-                aria-expanded={articlePreviewOpen}
-              >
-                Article preview
-                {articlePreviewOpen ? (
-                  <ChevronUp
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                  />
-                ) : (
-                  <ChevronDown
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                  />
-                )}
-              </Button>
-              {articlePreviewOpen ? (
-                <div className="border-border/50 space-y-4 border-t py-3">
-                  {image ? (
-                    <div className="overflow-hidden rounded-lg border">
-                      <img
-                        src={image}
-                        alt=""
-                        className="max-h-56 w-full object-cover"
-                      />
-                    </div>
-                  ) : null}
-                  <div>
-                    <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-                      {title.trim() || "Untitled"}
-                    </h2>
-                    {(summary ?? "").trim() ? (
-                      <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                        {(summary ?? "").trim()}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="bg-muted/20 max-h-[min(70vh,32rem)] overflow-y-auto rounded-md border p-4">
-                    <MarkdownPreview
-                      source={content}
-                      className="prose prose-sm dark:prose-invert max-w-none"
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm font-medium">
+                Body
+              </Label>
+              <LongFormContentEditor
+                key={initialData?.id ?? "new"}
+                surface="editorial"
+                uploadProvider={uploadProvider}
+                onOpenAssetBrowser={() => {}}
+                editorReady={editorReady}
+                editor={editor}
+                bodyView={bodyView}
+                previewMarkdown={content}
+                chromeLeading={editPreviewToggle}
+                chromeTrailing={draftsTemplatesButton}
+              />
+            </div>
+
+            <div className="border-border/60 space-y-4 border-t pt-4">
+              <div>
+                <Label
+                  htmlFor="article-composer-custom-tags"
+                  className="text-sm"
+                >
+                  Custom tags
+                </Label>
+                <Input
+                  id="article-composer-custom-tags"
+                  {...form.register("customTags")}
+                  placeholder="e.g. bitcoin, nostr, technology"
+                  className="mt-1.5"
+                />
+              </div>
+
+              {!isTemplateMode && displayedHashtags ? (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    <Hash
+                      className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
                     />
-                  </div>
-                  {(customTags ?? "").trim() ? (
-                    <p className="text-muted-foreground text-xs">
-                      Tags: {(customTags ?? "").trim()}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-xs">Tags: none</p>
-                  )}
+                    {displayedHashtags}
+                  </Badge>
                 </div>
               ) : null}
-            </div>
-          ) : null}
 
-          {/* Phase 3: Publish Panel */}
+              <HashtagPresetToggle
+                presets={hashTagPresets}
+                selectedPresetId={selectedHashtagPresetId}
+                onSelect={
+                  onHashtagPresetChange ??
+                  ((_id, _tags) => {
+                    void _id;
+                    void _tags;
+                  })
+                }
+                useHashtagPresets={useHashtagPresets}
+                onUseHashtagPresetsChange={
+                  onUseHashtagPresetsChange ??
+                  (() => {
+                    void 0;
+                  })
+                }
+                showQueuePreset={true}
+                queueType={(() => {
+                  const qt = queueTypes.find(
+                    (q) =>
+                      (typeof q === "string" ? q : q.name) === selectedQueueType
+                  );
+                  if (qt && typeof qt === "object" && qt.id) {
+                    return qt as {
+                      id: string;
+                      name: string;
+                      hashTagPreset?: HashTagPreset | null;
+                    };
+                  }
+                  return null;
+                })()}
+              />
+              <input
+                type="hidden"
+                name="useHashtagPresets"
+                value={useHashtagPresets.toString()}
+              />
+              <input
+                type="hidden"
+                name="hashTagPresetId"
+                value={selectedHashtagPresetId ?? ""}
+              />
+            </div>
+          </div>
+
           <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
-            <div className="mx-auto w-full max-w-[760px] space-y-4 px-4">
+            <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-4 px-4">
               {isTemplateMode ? (
                 <>
                   <div className="space-y-2">
@@ -866,69 +1118,6 @@ export default function LongFormPost({
                 </>
               ) : (
                 <>
-                  {displayedHashtags ? (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        <Hash
-                          className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
-                          strokeWidth={INLINE_ICON_STROKE}
-                          aria-hidden
-                        />
-                        {displayedHashtags}
-                      </Badge>
-                    </div>
-                  ) : null}
-                  <HashtagPresetToggle
-                    presets={hashTagPresets}
-                    selectedPresetId={selectedHashtagPresetId}
-                    onSelect={
-                      onHashtagPresetChange ??
-                      ((_id, _tags) => {
-                        void _id;
-                        void _tags;
-                      })
-                    }
-                    useHashtagPresets={useHashtagPresets}
-                    onUseHashtagPresetsChange={
-                      onUseHashtagPresetsChange ??
-                      (() => {
-                        void 0;
-                      })
-                    }
-                    showQueuePreset={true}
-                    queueType={(() => {
-                      const qt = queueTypes.find(
-                        (q) =>
-                          (typeof q === "string" ? q : q.name) ===
-                          selectedQueueType
-                      );
-                      if (qt && typeof qt === "object" && qt.id) {
-                        return qt as {
-                          id: string;
-                          name: string;
-                          hashTagPreset?: HashTagPreset | null;
-                        };
-                      }
-                      return null;
-                    })()}
-                  />
-                  <input
-                    type="hidden"
-                    name="useHashtagPresets"
-                    value={useHashtagPresets.toString()}
-                  />
-                  <input
-                    type="hidden"
-                    name="hashTagPresetId"
-                    value={selectedHashtagPresetId ?? ""}
-                  />
-
-                  {!image ? (
-                    <p className="text-muted-foreground text-xs">
-                      Add a cover before publishing
-                    </p>
-                  ) : null}
-
                   {isSigning ? (
                     <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
                       <span>
@@ -990,14 +1179,14 @@ export default function LongFormPost({
           readiness={readinessForRail}
           sessionStrip={{
             composerStatus,
-            relayCount: 0,
+            relayCount,
             signerLabel: "NIP-07",
+            onRelayClick: onRelayClick ? handleRelayRailClick : undefined,
           }}
           modeSpecificSection={
             publishMode === "now"
               ? undefined
               : {
-                  title: publishMode === "queue" ? "Queue" : "Schedule",
                   lines:
                     publishMode === "queue"
                       ? [
@@ -1060,12 +1249,12 @@ export default function LongFormPost({
               />
             ),
           }}
-          postStatusSummaryInline={postStatusSummaryInline}
           publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
             followUpSummaryLine: longformFollowUpSummary,
             showRecyclable: false,
           })}
           contentSummaryLines={contentSummaryLines}
+          contentSummaryDisplay="stacked"
           publishPath={publishPath}
           issues={displayRedIssues}
           warnings={displayAmberIssues}
@@ -1088,12 +1277,11 @@ export default function LongFormPost({
             isSigning ||
             issueList.length > 0
           }
-          secondaryActionLabel={!initialData ? "Save draft" : "Preview"}
+          secondaryActionLabel={secondaryIsSaveDraft ? "Save draft" : "Preview"}
           onSecondaryAction={
-            !initialData
+            secondaryIsSaveDraft
               ? () => {
                   handleSaveDraft();
-                  onDraftStateLabelChange?.("Saved as draft");
                 }
               : onPreview
                 ? () =>

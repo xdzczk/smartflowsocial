@@ -23,10 +23,15 @@ vi.mock("~/features/templates/services/template-data.server", () => ({
   getTemplatePrefill: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi.fn(),
+}));
+
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -47,7 +52,11 @@ describe("New Longform Loader", () => {
     const mockQueueTypes = [{ id: "queue-1", name: "Queue 1" }];
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
     const mockUploadProvider = "s3";
+    const mockRelays = ["wss://relay.example.com"];
 
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockRelays
+    );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
@@ -82,6 +91,7 @@ describe("New Longform Loader", () => {
     ]);
     expect(result.userTimezone).toBe("America/New_York");
     expect(result.uploadProvider).toBe(mockUploadProvider);
+    expect(result.relays).toEqual(mockRelays);
   });
 
   it("should use default timezone if user timezone is missing", async () => {
@@ -96,8 +106,8 @@ describe("New Longform Loader", () => {
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue("s3");
+    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadNewLongFormData(TEST_USER_ID);
 

@@ -95,6 +95,8 @@ export interface UseComposerSubmitOptions {
   publishMode?: ComposerPublishMode;
   /** From `usePostScheduling`; used to resolve queue slot at submit when mode is queue. */
   calculateQueueScheduleTime?: (queueName: string) => Promise<string | null>;
+  /** Fires when the user submits a server draft save (`save-draft` / `draft-text`). */
+  onBeginSaveDraft?: () => void;
 }
 
 export function useComposerSubmit(options: UseComposerSubmitOptions) {
@@ -129,6 +131,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     embedContext,
     publishMode = "now",
     calculateQueueScheduleTime,
+    onBeginSaveDraft,
   } = options;
 
   const fetcherSubmitOptions = React.useMemo(
@@ -224,6 +227,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
       // Rail uses `value="save-draft"`; legacy buttons may use `draft-text`. Both skip signing.
       if (submitType === "draft-text" || submitType === "save-draft") {
+        onBeginSaveDraft?.();
         submitDraftSave();
         return;
       }
@@ -801,6 +805,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       embedContext,
       publishMode,
       calculateQueueScheduleTime,
+      onBeginSaveDraft,
     ]
   );
 

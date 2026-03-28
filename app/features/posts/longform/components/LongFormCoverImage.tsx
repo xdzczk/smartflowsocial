@@ -3,6 +3,7 @@ import { ImagePlus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+
 interface LongFormCoverImageProps {
   image: string;
   uploadError: string;
@@ -11,7 +12,7 @@ interface LongFormCoverImageProps {
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
   onOpenAssetBrowser: () => void;
-  /** When true, label is "Cover image" without asterisk (Article details). */
+  /** Softer label (no required asterisk in copy). */
   softLabel?: boolean;
 }
 
@@ -27,20 +28,23 @@ export function LongFormCoverImage({
 }: LongFormCoverImageProps) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <Label htmlFor="cover-image-input">
-          {softLabel ? "Cover image" : "Cover Image *"}
-        </Label>
+      <div className="mb-1.5 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <Label
+            htmlFor="cover-image-input"
+            className="text-foreground text-sm font-medium"
+          >
+            {softLabel ? "Cover" : "Cover *"}
+          </Label>
+          <p className="text-muted-foreground mt-0.5 max-w-xl text-[11px] leading-snug">
+            Wide images (~1200×630) work well for previews. PNG, JPG, or GIF up
+            to 5MB.
+          </p>
+        </div>
         {uploadProvider ? (
-          <div className="text-muted-foreground flex items-center gap-1 text-xs">
-            <span>Upload via:</span>
-            <span
-              className={`rounded px-2 py-1 text-xs font-medium ${
-                uploadProvider.includes("BLOSSOM")
-                  ? "bg-muted text-foreground"
-                  : "bg-muted text-foreground"
-              }`}
-            >
+          <div className="text-muted-foreground flex items-center gap-1 text-[11px]">
+            <span>Upload via</span>
+            <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-medium">
               {uploadProvider.includes("BLOSSOM")
                 ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
                 : "☁️ S3"}
@@ -50,25 +54,22 @@ export function LongFormCoverImage({
       </div>
 
       {uploadError ? (
-        <div className="border-destructive bg-destructive/10 text-destructive mt-1 rounded border p-2 text-sm">
+        <div className="border-destructive bg-destructive/10 text-destructive mt-1 rounded-md border p-2 text-sm">
           {uploadError}
         </div>
       ) : null}
 
       {!image ? (
-        <div className="border-border hover:border-border dark:border-border dark:hover:border-border relative mt-1 rounded-lg border-2 border-dashed p-6 text-center transition-colors">
-          {uploadFetcherState !== "idle" ? (
-            <div className="flex items-center justify-center gap-2">
-              <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
-              <p className="text-muted-foreground dark:text-foreground text-sm">
-                Uploading...
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Main upload area - clickable */}
+        <div className="border-border bg-muted/20 hover:bg-muted/30 relative mt-1 overflow-hidden rounded-xl border transition-colors">
+          <div className="aspect-[21/9] min-h-[140px] w-full">
+            {uploadFetcherState !== "idle" ? (
+              <div className="flex h-full items-center justify-center gap-2">
+                <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2" />
+                <p className="text-muted-foreground text-sm">Uploading…</p>
+              </div>
+            ) : (
               <div
-                className="relative cursor-pointer"
+                className="flex h-full cursor-pointer flex-col items-center justify-center gap-3 px-4 py-8"
                 onClick={() =>
                   document.getElementById("cover-image-input")?.click()
                 }
@@ -82,108 +83,93 @@ export function LongFormCoverImage({
                 tabIndex={0}
                 aria-label="Upload cover image"
               >
-                <div className="flex flex-col items-center justify-center gap-4">
-                  <ImagePlus
-                    className="text-foreground dark:text-muted-foreground h-12 w-12"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  <div className="text-center">
-                    <p className="text-foreground dark:text-foreground mb-1 text-sm font-medium">
-                      Click to upload cover image
-                    </p>
-                    <p className="text-foreground dark:text-muted-foreground text-xs">
-                      PNG, JPG, GIF up to 5MB
-                    </p>
-                  </div>
+                <ImagePlus
+                  className="text-muted-foreground h-10 w-10"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                <div className="text-center">
+                  <p className="text-foreground text-sm font-medium">
+                    Add a cover image
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Click to upload or choose from assets
+                  </p>
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAssetBrowser();
+                    }}
+                    className="text-xs"
+                  >
+                    Choose from Assets
+                  </Button>
                 </div>
               </div>
-
-              {/* Separator and Assets button - not clickable for file upload */}
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-foreground text-xs">or</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenAssetBrowser();
-                  }}
-                  className="text-xs"
-                >
-                  Choose from Assets
-                </Button>
-              </div>
-
-              {/* Hidden file input */}
-              <input
-                id="cover-image-input"
-                type="file"
-                accept="image/*"
-                onChange={onImageUpload}
-                className="hidden"
-                disabled={false}
-              />
-            </>
-          )}
+            )}
+          </div>
+          <input
+            id="cover-image-input"
+            type="file"
+            accept="image/*"
+            onChange={onImageUpload}
+            className="hidden"
+          />
         </div>
       ) : (
         <div className="mt-1">
-          {/* Cover Image Preview */}
-          <div className="dark:bg-card bg-muted relative overflow-hidden rounded-lg">
-            <img
-              src={image}
-              alt="Cover preview"
-              className="h-48 w-full object-cover"
-            />
-            <div className="bg-opacity-0 hover:bg-opacity-20 absolute inset-0 flex items-center justify-center bg-black opacity-0 transition-all duration-200 hover:opacity-100">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
+          <div className="border-border relative overflow-hidden rounded-xl border bg-black/5 dark:bg-white/5">
+            <div className="aspect-[21/9] max-h-[280px] min-h-[160px] w-full">
+              <img
+                src={image}
+                alt="Article cover preview"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-all hover:bg-black/40 hover:opacity-100">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={uploadFetcherState !== "idle"}
+                className="bg-background/95 text-foreground relative shadow-sm"
+              >
+                Replace
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onImageUpload}
+                  className="absolute inset-0 cursor-pointer opacity-0"
                   disabled={uploadFetcherState !== "idle"}
-                  className="text-foreground relative bg-white/90 hover:bg-white"
-                >
-                  Replace
-                  <input
-                    id="cover-image-replace-input"
-                    name="cover-image-replace"
-                    type="file"
-                    accept="image/*"
-                    onChange={onImageUpload}
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                    disabled={uploadFetcherState !== "idle"}
-                    aria-label="Replace cover image"
-                  />
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={onOpenAssetBrowser}
-                  disabled={uploadFetcherState !== "idle"}
-                  className="bg-primary/90 text-primary-foreground hover:bg-primary"
-                >
-                  Assets
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={onRemove}
-                  disabled={uploadFetcherState !== "idle"}
-                  className="bg-destructive/90 hover:bg-destructive text-white"
-                >
-                  Remove
-                </Button>
-              </div>
+                  aria-label="Replace cover image"
+                />
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={onOpenAssetBrowser}
+                disabled={uploadFetcherState !== "idle"}
+                className="bg-background/95"
+              >
+                Assets
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={onRemove}
+                disabled={uploadFetcherState !== "idle"}
+              >
+                Remove
+              </Button>
             </div>
           </div>
-          <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
-            Cover image • Hover to replace or remove
-          </p>
         </div>
       )}
 

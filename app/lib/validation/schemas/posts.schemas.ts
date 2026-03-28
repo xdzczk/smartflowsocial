@@ -189,6 +189,7 @@ export const saveDraftLongformSchema = newLongformPostBaseSchema.extend({
   _action: z.literal("save-draft"),
   title: z.string().optional(),
   content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
+  longFormPostId: z.string().optional(),
 });
 
 export const autosaveDraftLongformSchema = newLongformPostBaseSchema.extend({

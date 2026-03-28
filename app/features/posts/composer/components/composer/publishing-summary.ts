@@ -161,6 +161,50 @@ export function buildArticleContentLines(
   ];
 }
 
+function customArticleTagCount(tags: string | null | undefined): number {
+  if (!tags?.trim()) return 0;
+  return tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean).length;
+}
+
+/** Discrete checklist lines for the article composer publish rail (stacked display). */
+export function buildArticlePublishSummaryLines(input: {
+  hasTitle: boolean;
+  hasSummary: boolean;
+  wordCount: number;
+  hasCover: boolean;
+  customTags: string | null | undefined;
+  relayCount: number;
+  publishMode: ComposerPublishMode;
+  hasScheduleTime: boolean;
+  queueAssigned: boolean;
+}): string[] {
+  const tagN = customArticleTagCount(input.customTags ?? "");
+  const relayN = Math.max(0, input.relayCount);
+  const lines: string[] = [
+    input.hasTitle ? "Title set" : "Title missing",
+    input.hasSummary ? "Summary set" : "Summary optional",
+    input.hasCover ? "Cover set" : "Cover missing",
+    `Body: ${input.wordCount} word${input.wordCount === 1 ? "" : "s"}`,
+    `${tagN} custom tag${tagN === 1 ? "" : "s"}`,
+    `${relayN} relay${relayN === 1 ? "" : "s"} selected`,
+  ];
+  if (input.publishMode === "now") {
+    lines.push("Mode: Publish now");
+  } else if (input.publishMode === "schedule") {
+    lines.push(
+      input.hasScheduleTime
+        ? "Schedule: time set"
+        : "Schedule: pick date and time"
+    );
+  } else {
+    lines.push(input.queueAssigned ? "Queue: selected" : "Queue: choose one");
+  }
+  return lines;
+}
+
 export interface PublishPathSummary {
   relayCount: number;
   signerLabel: string | null;

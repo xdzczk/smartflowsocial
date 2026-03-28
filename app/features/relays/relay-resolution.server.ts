@@ -79,6 +79,29 @@ export async function resolveExecutionRelays(
 }
 
 /**
+ * When the client sends `relays` as a JSON string array (composer relay picker),
+ * use that list; otherwise {@link resolveExecutionRelays}.
+ */
+export async function resolveExecutionRelaysFromForm(
+  userId: string,
+  formData: FormData
+): Promise<string[]> {
+  const relayOverrideRaw = formData.get("relays");
+  if (relayOverrideRaw && typeof relayOverrideRaw === "string") {
+    try {
+      const parsed = JSON.parse(relayOverrideRaw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const urls = parsed.filter((r): r is string => typeof r === "string");
+        if (urls.length > 0) return normalizeRelays(urls);
+      }
+    } catch {
+      // fall through to server defaults
+    }
+  }
+  return resolveExecutionRelays(userId);
+}
+
+/**
  * Helper for mapping upstream publisher results into an ACK-like status.
  * (Used by ACK persistence plumbing; kept here so callers share a single mapping.)
  */
