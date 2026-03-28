@@ -4,16 +4,11 @@ import {
   findUserByNpub,
   updateUserProfileByNpub,
   upsertUserByNpub,
+  type UserWithHashTagPresetsRow,
 } from "../repositories/user-profile-data.server";
 
-export type UserWithHashTagPresets = User & {
-  hashTagPresets: Array<{
-    id: string;
-    name: string;
-    tags: string;
-    description?: string | null;
-  }>;
-};
+/** Shape returned by {@link findUserByIdWithHashTagPresets} (explicit select; not every Prisma `User` column). */
+export type UserWithHashTagPresets = UserWithHashTagPresetsRow;
 
 interface UpdateUserProfileParams {
   nostrProfile: string;
@@ -32,20 +27,13 @@ export function updateUserProfile({
 
 /**
  * Gets a user by ID with hashtag presets included.
- * Selects columns explicitly so the query works when optional columns
- * (e.g. runwaySettings) are not yet migrated in the database.
+ * Uses an explicit Prisma select so the app stays compatible when some DB columns
+ * exist in schema but are not yet migrated in every environment.
  */
 export async function getUserById(
   id: string
 ): Promise<UserWithHashTagPresets | null> {
-  const user = await findUserByIdWithHashTagPresets(id);
-  if (!user) return null;
-  const result: UserWithHashTagPresets = {
-    ...user,
-    runwaySettings: null,
-    primarySignerProfile: null,
-  };
-  return result;
+  return findUserByIdWithHashTagPresets(id);
 }
 
 /**
