@@ -1,7 +1,10 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useActionData, useLoaderData } from "@remix-run/react";
+import { defer, json, redirect } from "@remix-run/node";
+import { Await, useActionData, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import { GiveawayNewBuilder } from "~/features/giveaway";
 import { createGiveaway } from "~/features/giveaway/giveaway-actions.server";
@@ -20,6 +23,11 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import { getQueueTypes } from "~/features/user";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 function parseScopeReference(
   formData: FormData,
@@ -245,7 +253,7 @@ function parseFilters(formData: FormData): Record<string, unknown> | undefined {
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function loadGiveawayNewData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   const subscriptionData = await requireFeatureAccess(userId, "giveaways");
@@ -261,7 +269,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getRecentPostsForGiveawaySelector(userId),
   ]);
 
-  return json({
+  return {
     presets: presets.map((p) => ({
       id: p.id,
       name: p.name,
@@ -277,6 +285,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     planType,
     planDisplayName,
+  };
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  if (isRemixResourceRequest(request)) {
+    return json(await loadGiveawayNewData(request));
+  }
+  return defer({
+    giveawayNew: loadGiveawayNewData(request),
   });
 }
 
@@ -392,9 +409,41 @@ function pickActionError(actionData: unknown): string | undefined {
   return typeof err === "string" ? err : undefined;
 }
 
-export default function DashboardGiveawayNewPage() {
-  const data = useLoaderData<typeof loader>();
+type GiveawayNewLoaderPayload = Awaited<ReturnType<typeof loadGiveawayNewData>>;
+
+function DashboardGiveawayNewPageInner() {
+  const data = useDeferredRouteLoaderData() as GiveawayNewLoaderPayload;
   const actionData = useActionData<typeof action>();
   const actionError = pickActionError(actionData);
   return <GiveawayNewBuilder {...data} actionError={actionError} />;
+}
+
+export default function DashboardGiveawayNewPage() {
+  const { giveawayNew } = useLoaderData() as {
+    giveawayNew: Promise<GiveawayNewLoaderPayload>;
+  };
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="New giveaway"
+          subtitle="Scope, engagement rules, and winner count"
+        />
+      }
+    >
+      <Await
+        resolve={giveawayNew}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/giveaway/new" />
+        }
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <DashboardGiveawayNewPageInner />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
 }

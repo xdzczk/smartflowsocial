@@ -5,6 +5,7 @@
 
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -17,6 +18,8 @@ import {
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
 import { ENGAGEMENT_FEED_PAGE_SIZE } from "../constants";
+import { useEngagementResolvedLoaderData } from "../context/EngagementResolvedLoaderContext";
+import { ENGAGEMENT_LOADER_FALLBACK } from "../engagement-loader-fallback";
 import type { EventStats, GroupedNotification } from "../types";
 
 interface EngagementItemStateValue {
@@ -54,24 +57,7 @@ interface EngagementLinkedAction {
 
 /** Fallback when loader returns invalid or error payload so the app does not throw. */
 function getEmptyEngagementLoaderData(): EngagementLoaderData {
-  return {
-    posts: [],
-    stats: {},
-    user: null,
-    notifications: {
-      all: [],
-      replies: [],
-      mentions: [],
-      zaps: [],
-      quotes: [],
-    },
-    groupedNotifications: { replies: [], quotes: [], mentions: [] },
-    trustScores: {},
-    engagementItemStates: {},
-    engagementLinkedActions: {},
-    groupSummaries: {},
-    lastCheckedAt: null,
-  };
+  return ENGAGEMENT_LOADER_FALLBACK;
 }
 
 /**
@@ -142,13 +128,24 @@ export function useEngagementQuery() {
  * Hook to fetch engagement data with infinite scroll support
  */
 export function useEngagementInfiniteQuery() {
+  const resolvedFromDefer = useEngagementResolvedLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data; use empty fallback so we don't throw on error/500
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    engagementLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          engagementLoaderDataSchema
+        ) ?? resolvedFromDefer
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      engagementLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
+
   const initialData = validatedLoaderData ?? getEmptyEngagementLoaderData();
 
   return useInfiniteRemixQuery<EngagementLoaderData>({

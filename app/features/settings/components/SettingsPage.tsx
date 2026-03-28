@@ -41,6 +41,8 @@ import {
   validateSubscription,
 } from "~/lib/validation/settings-loader";
 
+import { useSettingsResolvedLoaderData } from "../context/SettingsResolvedLoaderContext";
+
 type QueueTypeSettings = QueueType & {
   isDefault: boolean;
   hashTagPreset?: {
@@ -297,7 +299,9 @@ function getTabsGridColsClass(input: {
 }
 
 export default function SettingsPage() {
-  const loaderDataRaw = useLoaderData<unknown>();
+  const resolvedFromDefer = useSettingsResolvedLoaderData();
+  const loaderDataFromRoute = useLoaderData<unknown>();
+  const loaderDataRaw = resolvedFromDefer ?? loaderDataFromRoute;
   const [searchParams] = useSearchParams();
   const data = loaderDataRaw as {
     timezone?: unknown;

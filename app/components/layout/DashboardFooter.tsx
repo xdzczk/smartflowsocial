@@ -5,6 +5,7 @@ import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { getSyncState, subscribeToSyncState } from "~/lib/sync-manager.client";
+import { cn } from "~/lib/utils";
 
 // Helper to extract city name from timezone (e.g., "Africa/Cairo" -> "Cairo")
 function getTimezoneShortName(timezone: string | undefined): string {
@@ -119,7 +120,12 @@ export default function Footer() {
           </span>
           <span className="hidden lg:inline">·</span>
           {/* min-w + text-end: stable width so justify-between layout does not jog as digits tick */}
-          <span className="inline-block min-w-[11ch] text-end">
+          <span
+            className={cn(
+              "inline-block text-end",
+              userTimeFormat === "24h" ? "min-w-[8ch]" : "min-w-[11ch]"
+            )}
+          >
             {timeString}
           </span>
           {userTimezone ? (

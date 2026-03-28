@@ -1,26 +1,37 @@
-import { json } from "@remix-run/node";
+import { defer, json } from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPage } from "~/features/posts/ui";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
 
+async function loadBulkPostsData(request: Request) {
+  const userId = await requireUserId(request);
+  await requireFeatureAccess(userId, "bulkScheduling");
+  const url = new URL(request.url);
+  const groupId = url.searchParams.get("groupId");
+  return getBulkPostsDashboardData(
+    userId,
+    groupId && groupId.length > 0 ? groupId : null
+  );
+}
+
 export async function loader({ request }: { request: Request }) {
   try {
-    const userId = await requireUserId(request);
-
-    // Check if user has access to bulk scheduling feature
-    await requireFeatureAccess(userId, "bulkScheduling");
-    const url = new URL(request.url);
-    const groupId = url.searchParams.get("groupId");
-    const data = await getBulkPostsDashboardData(
-      userId,
-      groupId && groupId.length > 0 ? groupId : null
-    );
-
-    return json(data);
+    if (isRemixResourceRequest(request)) {
+      return json(await loadBulkPostsData(request));
+    }
+    return defer({
+      bulkPosts: loadBulkPostsData(request),
+    });
   } catch (error) {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
@@ -31,4 +42,37 @@ export async function loader({ request }: { request: Request }) {
     });
   }
 }
-export default BulkPostsPage;
+
+interface BulkPostsDeferredLoaderData {
+  bulkPosts: Promise<Awaited<ReturnType<typeof getBulkPostsDashboardData>>>;
+}
+
+function BulkPostsFeedRoute() {
+  const { bulkPosts } = useLoaderData() as BulkPostsDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Bulk posts"
+          subtitle="Groups and multi-post scheduling"
+        />
+      }
+    >
+      <Await
+        resolve={bulkPosts}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/bulkposts" />
+        }
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <BulkPostsPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default BulkPostsFeedRoute;

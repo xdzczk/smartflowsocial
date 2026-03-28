@@ -1,42 +1,83 @@
+import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
+
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { PublishedPostsPage } from "~/features/posts/publishing";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import { getPublishedDashboardData } from "~/features/posts/server/publishing";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { publishedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-// Re-export action from server module
+import {
+  publishedPostsLoaderDataSchema,
+  type PublishedPostsLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 export { publishedPostsAction as action } from "~/features/posts/published.action.server";
 
-export async function loader({
-  request,
-  params,
-}: {
-  request: Request;
-  params: { queueType?: string };
-}) {
+async function loadPublishedData(
+  request: Request,
+  params: { queueType?: string }
+): Promise<PublishedPostsLoaderData> {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  const url = new URL(request.url);
+  const data = await getPublishedDashboardData({ userId, params, url });
+  return validateLoaderResponse(data, publishedPostsLoaderDataSchema);
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    const userId = await requireUserId(request);
-    // Require that the user has at least a subscription record
-    await requireAnySubscription(userId);
-
-    const url = new URL(request.url);
-
-    const data = await getPublishedDashboardData({ userId, params, url });
-
-    // Validate loader response with Zod schema
-    return validateLoaderResponse(data, publishedPostsLoaderDataSchema);
+    const p = params as { queueType?: string };
+    if (isRemixResourceRequest(request)) {
+      return json(await loadPublishedData(request, p));
+    }
+    return defer({
+      published: loadPublishedData(request, p),
+    });
   } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
       return error;
     }
-    // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {});
   }
 }
 
-type _LoaderData = Awaited<ReturnType<typeof loader>>;
+interface PublishedDeferredLoaderData {
+  published: Promise<PublishedPostsLoaderData>;
+}
 
-export default PublishedPostsPage;
+function PublishedFeedRoute() {
+  const { published } = useLoaderData() as PublishedDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Published"
+          subtitle="Posts from your publishing queues"
+        />
+      }
+    >
+      <Await
+        resolve={published}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/published" />
+        }
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <PublishedPostsPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default PublishedFeedRoute;

@@ -26,12 +26,24 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/settings/settings-loader.server", () => ({
-  loadSettingsData: vi.fn(),
-}));
+vi.mock(
+  "~/features/settings/settings-loader.server",
+  async (importOriginal) => {
+    const actual = await importOriginal<typeof SettingsLoaderServer>();
+    return {
+      ...actual,
+      loadSettingsData: vi.fn(),
+    };
+  }
+);
 
 vi.mock("~/features/settings", () => ({
   SettingsPage: () => null,
+  SettingsPageSkeleton: () => null,
+  SettingsAwaitError: () => null,
+  SettingsResolvedLoaderProvider: ({ children }: { children?: unknown }) =>
+    children ?? null,
+  handleSettingsAction: vi.fn(),
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -39,8 +51,18 @@ import {
   requireAnySubscription,
   requireFeatureAccess,
 } from "~/features/payments/subscriptions.server";
+import type * as SettingsLoaderServer from "~/features/settings/settings-loader.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import { loader } from "~/routes/dashboard.settings";
+
+/** Loader uses `defer` for document requests; `_data` forces synchronous JSON (tests). */
+function settingsLoaderJsonRequest(query: string) {
+  const u = new URL("http://localhost:3000/dashboard/settings");
+  const q = new URLSearchParams(query);
+  q.set("_data", "routes/dashboard.settings");
+  u.search = q.toString();
+  return new Request(u.toString());
+}
 
 describe("Subscription/Billing Loader Integration", () => {
   beforeEach(() => {
@@ -81,15 +103,13 @@ describe("Subscription/Billing Loader Integration", () => {
 
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = (await loader(loaderArgs)) as Response;
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -146,15 +166,13 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = (await loader(loaderArgs)) as Response;
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -200,15 +218,13 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = (await loader(loaderArgs)) as Response;
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -261,15 +277,13 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = (await loader(loaderArgs)) as Response;
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -320,15 +334,13 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = (await loader(loaderArgs)) as Response;
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -360,7 +372,11 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request, params: {}, context: {} });
+      const response = (await loader({
+        request,
+        params: {},
+        context: {},
+      })) as Response;
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(401);
     });
@@ -382,7 +398,11 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request, params: {}, context: {} });
+      const response = (await loader({
+        request,
+        params: {},
+        context: {},
+      })) as Response;
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -404,7 +424,11 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request, params: {}, context: {} });
+      const response = (await loader({
+        request,
+        params: {},
+        context: {},
+      })) as Response;
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -414,19 +438,17 @@ describe("Subscription/Billing Loader Integration", () => {
         new Error("Database error")
       );
 
-      const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
-      );
+      const request = settingsLoaderJsonRequest("tab=subscription");
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = (await loader({
+        request,
+        params: {},
+        context: {},
+      })) as Response;
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(500);
 
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
-      const dataRaw: unknown = await responseObj.json();
+      const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
           ? (dataRaw as { error?: { message?: string } })

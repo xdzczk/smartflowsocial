@@ -1,7 +1,10 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { defer, json, redirect } from "@remix-run/node";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   ContestDetailView,
@@ -24,6 +27,11 @@ import {
   requireFeatureAccess,
 } from "~/features/payments";
 import { featureFlags } from "~/lib/feature-flags.server";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 type ContestIntentResponse = Response;
 
@@ -201,7 +209,7 @@ async function handleContestDetailIntent(args: {
   }
 }
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+async function loadContestDetailData({ request, params }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
     throw new Response("Not found", { status: 404 });
   }
@@ -213,7 +221,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const data = await getContestDetailPageData(userId, id);
   if (!data) throw new Response("Not found", { status: 404 });
-  return json(data);
+  return data;
+}
+
+export async function loader(args: LoaderFunctionArgs) {
+  if (isRemixResourceRequest(args.request)) {
+    return json(await loadContestDetailData(args));
+  }
+  return defer({
+    contestDetail: loadContestDetailData(args),
+  });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -235,7 +252,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 }
 
-export default function ContestDetailRoute() {
-  const data = useLoaderData<typeof loader>();
+type ContestDetailLoaderPayload = Awaited<
+  ReturnType<typeof loadContestDetailData>
+>;
+
+function ContestDetailRouteInner() {
+  const data = useDeferredRouteLoaderData() as ContestDetailLoaderPayload;
   return <ContestDetailView data={data} />;
+}
+
+export default function ContestDetailRoute() {
+  const params = useParams();
+  const id = params["id"] ?? "";
+  const { contestDetail } = useLoaderData() as {
+    contestDetail: Promise<ContestDetailLoaderPayload>;
+  };
+  const retryTo =
+    id !== "" ? `/dashboard/contests/detail/${id}` : "/dashboard/contests";
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="detail"
+          title="Contest"
+          subtitle="Entries, leaderboard, and actions"
+        />
+      }
+    >
+      <Await
+        resolve={contestDetail}
+        errorElement={<DeferredRouteAwaitError retryTo={retryTo} />}
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <ContestDetailRouteInner />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
 }

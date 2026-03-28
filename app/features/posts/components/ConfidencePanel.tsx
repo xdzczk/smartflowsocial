@@ -136,7 +136,7 @@ function PublishingModeFusedHeader({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="bg-muted/25 dark:bg-muted/15 grid grid-cols-3 gap-0.5 p-1.5"
+      className="border-border/60 divide-border/60 grid grid-cols-3 divide-x border-b"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -148,10 +148,10 @@ function PublishingModeFusedHeader({
             aria-checked={active}
             aria-label={ariaLabels[m]}
             className={cn(
-              "min-h-10 rounded-md px-1 py-2 text-center text-xs transition-colors",
+              "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
               active
-                ? "bg-card text-foreground font-semibold shadow-sm"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium"
+                ? "text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
             )}
             onClick={() => onPublishModeChange(m)}
           >
@@ -587,7 +587,7 @@ function PublishingSummaryRailBody({
 
   return (
     <div className="flex flex-col text-xs">
-      <div className="border-border/60 shrink-0 border-b px-2 pt-2 pb-2">
+      <div className="shrink-0">
         <PublishingModeFusedHeader
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange}
@@ -730,7 +730,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
 
   return (
     <aside
-      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:w-[312px] xl:w-[344px]"
+      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-5.75rem)] lg:w-[312px] xl:w-[344px]"
       aria-label="Publish"
     >
       <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">

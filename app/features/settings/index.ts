@@ -16,6 +16,7 @@
 // ============================================================================
 
 export { loadSettingsData } from "./settings-loader.server";
+export type { SettingsLoaderData } from "./settings-loader.server";
 
 // ============================================================================
 // Settings Actions
@@ -27,4 +28,7 @@ export { handleSettingsAction } from "./settings-actions.server";
 // Components (Public API)
 // ============================================================================
 
+export { SettingsAwaitError } from "./components/SettingsAwaitError";
+export { SettingsPageSkeleton } from "./components/SettingsPageSkeleton";
 export { default as SettingsPage } from "./components/SettingsPage";
+export { SettingsResolvedLoaderProvider } from "./context/SettingsResolvedLoaderContext";

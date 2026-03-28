@@ -21,6 +21,7 @@ import {
   type BulkPostsLoaderData,
 } from "~/features/posts/utils/bulkposts-loader.utils";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { isVideoFile } from "~/utils/media-helpers";
 
 import { BulkPostsSubmitButton } from "./BulkPostsSubmitButton";
@@ -40,7 +41,9 @@ function getPageTitle(mode: string | null): string {
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Page component with many features; splitting would fragment state */
 export default function BulkPostsPage() {
-  const data = useLoaderData<unknown>();
+  const deferredData = useDeferredRouteLoaderData();
+  const loaderData = useLoaderData();
+  const data = deferredData ?? loaderData;
   const {
     tags,
     queueTypes,

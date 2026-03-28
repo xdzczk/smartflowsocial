@@ -1,5 +1,6 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useLocation } from "@remix-run/react";
+import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Await, Outlet, useLoaderData, useLocation } from "@remix-run/react";
+import { Suspense } from "react";
 
 import { requireUserId } from "~/features/auth";
 import type { ProfileData as _ProfileData } from "~/features/nostr/types";
@@ -7,69 +8,71 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
-import { SettingsPage } from "~/features/settings";
-import { handleSettingsAction } from "~/features/settings/settings-actions.server";
-import { loadSettingsData } from "~/features/settings/settings-loader.server";
+import {
+  SettingsAwaitError,
+  SettingsPage,
+  SettingsPageSkeleton,
+  SettingsResolvedLoaderProvider,
+  handleSettingsAction,
+} from "~/features/settings";
+import {
+  SETTINGS_LOADER_FALLBACK,
+  loadSettingsData,
+  type SettingsLoaderData,
+} from "~/features/settings/settings-loader.server";
 import { withCSRFProtection } from "~/lib/csrf";
-export async function loader({ request }: LoaderFunctionArgs) {
+import { logError } from "~/lib/error-logger.server";
+
+async function loadSettingsOrThrow(
+  userId: string
+): Promise<SettingsLoaderData> {
+  return loadSettingsData(userId);
+}
+
+async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  await requireFeatureAccess(userId, "settings");
+
+  const url = new URL(request.url);
+  const isDataRequest = url.searchParams.has("_data");
+
+  if (isDataRequest) {
+    try {
+      return json(await loadSettingsOrThrow(userId));
+    } catch (error) {
+      const { handleLoaderError } = await import("~/lib/error-handler.server");
+      return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
+    }
+  }
+
+  const settingsPromise = (async (): Promise<SettingsLoaderData> => {
+    try {
+      return await loadSettingsOrThrow(userId);
+    } catch (error: unknown) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message:
+          "Settings deferred load failed; returning SETTINGS_LOADER_FALLBACK",
+        userId,
+      });
+      return SETTINGS_LOADER_FALLBACK;
+    }
+  })();
+
+  return defer({
+    settings: settingsPromise,
+  });
+}
+
+export async function loader(args: LoaderFunctionArgs) {
   try {
-    const userId = await requireUserId(request);
-
-    // Require that the user has at least a subscription record
-    await requireAnySubscription(userId);
-    // Check if user has access to settings feature (requires active subscription)
-    await requireFeatureAccess(userId, "settings");
-
-    const data = await loadSettingsData(userId);
-    return json(data);
+    return await loaderImpl(args);
   } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId, requireAnySubscription, or requireFeatureAccess), return it
     if (error instanceof Response) {
       return error;
     }
-    // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
-    // Provide default data structure matching what the component expects
-    return handleLoaderError(error, {
-      timezone: "Etc/GMT",
-      relays: [],
-      managedRelays: [],
-      relayAcks: {},
-      giveawayBlacklist: [],
-      queueTypes: [],
-      uploadProvider: null,
-      enableMirrorBlossom: false,
-      mirrorUploadUrls: [],
-      hashTagPresets: [],
-      nwcEnabled: false,
-      maskedNwcString: null,
-      nwcLastUsed: null,
-      subscription: null,
-      availablePlans: [],
-      paymentHistory: [],
-      isChild: false,
-      hasAccountsAccess: false,
-      accounts: null,
-      mutedList: { npubs: [], lastSynced: new Date().toISOString() },
-      replyTemplates: [],
-      filterMuted: false,
-      hidePostsFromLowTrustUsers: false,
-      primarySignerProfile: null,
-      blastrRelayEnabled: true,
-      canToggleBlastr: false,
-      blastrPolicy: null,
-      blastrSystemRelays: [],
-      referral: {
-        referralLink: "",
-        commissionRatePercent: 20,
-        totalEarnedSats: 0,
-        paidSats: 0,
-        pendingSats: 0,
-        failedSats: 0,
-        payoutDestination: null,
-        payoutDestinationType: null,
-      },
-    });
+    return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
   }
 }
 
@@ -83,12 +86,12 @@ export const action = withCSRFProtection(
     } catch (error) {
       // Use centralized error handling
       const { handleActionError } = await import("~/lib/error-handler.server");
-      const { logError } = await import("~/lib/error-logger.server");
+      const { logError: logErr } = await import("~/lib/error-logger.server");
       const { normalizeError } = await import("~/lib/errors");
 
       // Log additional context for debugging
       const normalizedError = normalizeError(error);
-      logError(normalizedError, {
+      logErr(normalizedError, {
         userId,
         path: request.url,
         method: request.method,
@@ -100,6 +103,27 @@ export const action = withCSRFProtection(
     }
   }
 );
+
+interface SettingsDeferredLoaderData {
+  settings: Promise<SettingsLoaderData>;
+}
+
+function SettingsIndexRoute() {
+  const { settings } = useLoaderData<SettingsDeferredLoaderData>();
+
+  return (
+    <Suspense fallback={<SettingsPageSkeleton />}>
+      <Await resolve={settings} errorElement={<SettingsAwaitError />}>
+        {(data) => (
+          <SettingsResolvedLoaderProvider value={data as SettingsLoaderData}>
+            <SettingsPage />
+          </SettingsResolvedLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
 export default function DashboardSettingsRoute() {
   const location = useLocation();
 
@@ -109,5 +133,5 @@ export default function DashboardSettingsRoute() {
     return <Outlet />;
   }
 
-  return <SettingsPage />;
+  return <SettingsIndexRoute />;
 }

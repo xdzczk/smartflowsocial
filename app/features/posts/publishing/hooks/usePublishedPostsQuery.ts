@@ -30,6 +30,7 @@ import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import type { User as _User } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   publishedPostsLoaderDataSchema,
@@ -75,15 +76,24 @@ export function usePublishedPostsQuery() {
   const currentTab = searchParams.get("tab") ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
-  // Import loader dynamically to avoid circular dependency
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    publishedPostsLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          publishedPostsLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      publishedPostsLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   return useQuery({
     queryKey: publishedPostsKeys.list(queueType, currentTab, page),
@@ -162,13 +172,23 @@ export function usePublishedPostsInfiniteQuery() {
   const dateFrom = searchParams.get("dateFrom") ?? undefined;
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    publishedPostsLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          publishedPostsLoaderDataSchema
+        ) ?? null
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      publishedPostsLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   if (!validatedLoaderData) {
     throw new Error("Invalid loader data");

@@ -5,9 +5,10 @@
 
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   templatesLoaderDataSchema,
@@ -31,14 +32,22 @@ export const templatesKeys = {
  * Uses Remix loader data as initial data and enables client-side refetching
  */
 export function useTemplatesQuery() {
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
   const queryClient = useQueryClient();
 
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    templatesLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          templatesLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(loaderDataRaw, templatesLoaderDataSchema);
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   // Sync fresh loader data into the cache when it changes (e.g. after creating a
   // template and redirecting back to the list), so the new template appears without reload.
@@ -87,12 +96,20 @@ export function useTemplatesQuery() {
  * Hook to fetch templates with infinite scroll support (single page for now)
  */
 export function useTemplatesInfiniteQuery() {
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    templatesLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          templatesLoaderDataSchema
+        ) ?? null
+      );
+    }
+    return safeValidateLoaderResponse(loaderDataRaw, templatesLoaderDataSchema);
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   if (!validatedLoaderData) {
     throw new Error("Invalid loader data");

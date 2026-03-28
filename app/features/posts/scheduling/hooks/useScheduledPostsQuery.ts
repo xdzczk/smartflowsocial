@@ -10,6 +10,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { combineContent } from "~/features/posts/combined";
 import type { PostDTO, LongFormPostDTO } from "~/features/posts/dtos";
@@ -29,6 +30,7 @@ import type {
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -71,14 +73,24 @@ export function useScheduledPostsQuery() {
   const dateFrom = searchParams.get("dateFrom") ?? undefined;
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    scheduledPostsLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          scheduledPostsLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      scheduledPostsLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   const dateParams =
     dateFrom || dateTo
@@ -143,13 +155,23 @@ export function useScheduledPostsInfiniteQuery() {
   const dateFrom = searchParams.get("dateFrom") ?? undefined;
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    scheduledPostsLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          scheduledPostsLoaderDataSchema
+        ) ?? null
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      scheduledPostsLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   if (!validatedLoaderData) {
     throw new Error("Invalid loader data");

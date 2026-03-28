@@ -1,17 +1,21 @@
 import {
+  defer,
   json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import {
+  Await,
   Link,
   useFetcher,
   useLoaderData,
   useRevalidator,
   useSearchParams,
 } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -48,6 +52,11 @@ import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { retryDeadLetterJob } from "~/infra/queue/dead-letter-queue.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 const FOCUS_SECTION: Record<string, string> = {
   failures: "failures",
@@ -114,8 +123,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)
   );
-  const data = await getAdminOperationsPageData(preset);
-  return json(data);
+  if (isRemixResourceRequest(request)) {
+    return json(await getAdminOperationsPageData(preset));
+  }
+  return defer({
+    operations: getAdminOperationsPageData(preset),
+  });
 }
 
 export const action = withCSRFProtection(
@@ -213,8 +226,11 @@ export const action = withCSRFProtection(
   }
 );
 
-export default function AdminOperationsPage() {
-  const raw = useLoaderData<typeof loader>();
+type AdminOperationsLoaderPayload = Awaited<
+  ReturnType<typeof getAdminOperationsPageData>
+>;
+
+function AdminOperationsPageInner() {
   const fetcher = useFetcher<typeof action>();
   const cleanFetcher = useFetcher<typeof action>();
   const purgeFetcher = useFetcher<typeof action>();
@@ -322,11 +338,7 @@ export default function AdminOperationsPage() {
     }
   }, [purgeFetcher.state, purgeFetcher.data, revalidator]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- narrow from loose loader type
-  if (typeof raw === "object" && raw !== null && "error" in raw) {
-    return <div className="p-4">Access denied.</div>;
-  }
-  const d = raw as Awaited<ReturnType<typeof getAdminOperationsPageData>>;
+  const d = useDeferredRouteLoaderData() as AdminOperationsLoaderPayload;
 
   const failedJobs =
     d.failedPosts.length + d.deadLetters.length + d.failedPayouts.length;
@@ -939,5 +951,42 @@ export default function AdminOperationsPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+type AdminOperationsLoaderResult =
+  | { error: string }
+  | { operations: Promise<AdminOperationsLoaderPayload> };
+
+export default function AdminOperationsPage() {
+  const raw = useLoaderData() as AdminOperationsLoaderResult;
+  if ("error" in raw) {
+    return <div className="p-4">Access denied.</div>;
+  }
+  const { operations } = raw;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="adminDashboard"
+          title="Operations"
+          subtitle="Failures, dead letters, queues, and metrics"
+        />
+      }
+    >
+      <Await
+        resolve={operations}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/admin/operations" />
+        }
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <AdminOperationsPageInner />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
   );
 }

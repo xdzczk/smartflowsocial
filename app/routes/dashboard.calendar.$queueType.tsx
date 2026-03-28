@@ -1,5 +1,14 @@
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
+import {
+  defer,
+  json,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireSession, requireUserId } from "~/features/auth";
 import { CalendarQueuePage } from "~/features/posts/calendar";
 import type {
@@ -11,23 +20,36 @@ import {
   loadCalendarQueueData,
 } from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { calendarQueueLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import {
+  calendarQueueLoaderDataSchema,
+  type CalendarQueueLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
+async function loadCalendarQueueValidated(
+  request: Request,
+  params: LoaderFunctionArgs["params"]
+): Promise<CalendarQueueLoaderData> {
+  const userId = await requireUserId(request);
+  const queueType = params["queueType"] ?? "all";
+  const data = await loadCalendarQueueData(userId, queueType);
+  return validateLoaderResponse(data, calendarQueueLoaderDataSchema);
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    const userId = await requireUserId(request);
-    const queueType = params["queueType"] ?? "all";
-
-    const data = await loadCalendarQueueData(userId, queueType);
-
-    // Validate loader response with Zod schema
-    return validateLoaderResponse(data, calendarQueueLoaderDataSchema);
+    if (isRemixResourceRequest(request)) {
+      return json(await loadCalendarQueueValidated(request, params));
+    }
+    return defer({
+      calendarQueue: loadCalendarQueueValidated(request, params),
+    });
   } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
       return error;
     }
-    // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {});
   }
@@ -40,17 +62,43 @@ export const action = withCSRFProtection(
       const formData = await request.formData();
       return handleCalendarAction(formData, userId, pubkey);
     } catch (error) {
-      // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {
         return error;
       }
-      // Use dynamic import to avoid bundling issues
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
     }
   }
 );
 
-type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+interface CalendarQueueDeferredLoaderData {
+  calendarQueue: Promise<CalendarQueueLoaderData>;
+}
 
-export default CalendarQueuePage;
+function CalendarQueueFeedRoute() {
+  const { calendarQueue } = useLoaderData() as CalendarQueueDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Calendar"
+          subtitle="This queue in calendar view"
+        />
+      }
+    >
+      <Await
+        resolve={calendarQueue}
+        errorElement={<DeferredRouteAwaitError retryTo="/dashboard/calendar" />}
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <CalendarQueuePage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default CalendarQueueFeedRoute;

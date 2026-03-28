@@ -3,14 +3,23 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import { defer, json, redirect } from "@remix-run/node";
+import {
+  Await,
+  Form,
+  Link,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
+import { Suspense } from "react";
 
 import { BroadcastCampaignRowActions } from "~/components/broadcast/BroadcastCampaignRowActions";
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import type { BroadcastIndexFilters } from "~/features/broadcast";
 import {
   archiveBroadcastCampaign,
+  type BroadcastIndexFilters,
   broadcastStatusBadgeKind,
   cancelBroadcastCampaign,
   deleteBroadcastDraft,
@@ -27,6 +36,11 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 export const meta: MetaFunction = () => [{ title: "Broadcasts — Vibe" }];
@@ -103,7 +117,7 @@ function parseIndexFilters(url: URL): BroadcastIndexFilters {
 
 const BROADCASTS_INDEX_HREF = "/dashboard/broadcasts";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function loadBroadcastsIndexData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   await requireFeatureAccess(userId, "broadcasts");
@@ -115,7 +129,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     listBroadcastCampaignsForIndex(userId, filters),
   ]);
 
-  return json({ summary, campaigns, filters });
+  return { summary, campaigns, filters };
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  if (isRemixResourceRequest(request)) {
+    return json(await loadBroadcastsIndexData(request));
+  }
+  return defer({
+    broadcastsIndex: loadBroadcastsIndexData(request),
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -207,8 +230,13 @@ function statusBadgeClass(kind: string): string {
   }
 }
 
-export default function BroadcastsIndexRoute() {
-  const { summary, campaigns, filters } = useLoaderData<typeof loader>();
+type BroadcastsIndexPayload = Awaited<
+  ReturnType<typeof loadBroadcastsIndexData>
+>;
+
+function BroadcastsIndexPage() {
+  const data = useDeferredRouteLoaderData() as BroadcastsIndexPayload;
+  const { summary, campaigns, filters } = data;
   const [searchParams] = useSearchParams();
   const activeBucket = searchParams.get("bucket");
 
@@ -351,9 +379,7 @@ export default function BroadcastsIndexRoute() {
               name="from"
               defaultValue={
                 filters.dateFrom
-                  ? typeof filters.dateFrom === "string"
-                    ? filters.dateFrom.slice(0, 10)
-                    : new Date(filters.dateFrom).toISOString().slice(0, 10)
+                  ? filters.dateFrom.toISOString().slice(0, 10)
                   : ""
               }
               className="border-input bg-background rounded-md border px-2 py-1 text-sm"
@@ -365,11 +391,7 @@ export default function BroadcastsIndexRoute() {
               type="date"
               name="to"
               defaultValue={
-                filters.dateTo
-                  ? typeof filters.dateTo === "string"
-                    ? filters.dateTo.slice(0, 10)
-                    : new Date(filters.dateTo).toISOString().slice(0, 10)
-                  : ""
+                filters.dateTo ? filters.dateTo.toISOString().slice(0, 10) : ""
               }
               className="border-input bg-background rounded-md border px-2 py-1 text-sm"
             />
@@ -502,5 +524,38 @@ export default function BroadcastsIndexRoute() {
         </div>
       )}
     </div>
+  );
+}
+
+interface BroadcastsIndexDeferredLoaderData {
+  broadcastsIndex: Promise<BroadcastsIndexPayload>;
+}
+
+export default function BroadcastsIndexRoute() {
+  const { broadcastsIndex } =
+    useLoaderData() as BroadcastsIndexDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Broadcasts"
+          subtitle="Campaigns and delivery status"
+        />
+      }
+    >
+      <Await
+        resolve={broadcastsIndex}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/broadcasts" />
+        }
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <BroadcastsIndexPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
   );
 }

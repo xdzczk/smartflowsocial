@@ -16,6 +16,7 @@ import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostData, QueueType } from "~/features/posts/types";
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   calendarQueueLoaderDataSchema,
@@ -52,15 +53,24 @@ export function useCalendarQueueQuery() {
     [queueType]
   );
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
-  // Validate initial loader data
-  const validatedLoaderData = useMemo(
-    () =>
-      safeValidateLoaderResponse(loaderDataRaw, calendarQueueLoaderDataSchema),
-    [loaderDataRaw]
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          calendarQueueLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      calendarQueueLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   // Keep TanStack cache in sync when Remix loader data changes after actions.
   useEffect(() => {

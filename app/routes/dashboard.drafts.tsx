@@ -1,9 +1,14 @@
 import {
+  defer,
   json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
@@ -16,35 +21,44 @@ import {
   loadDraftsData,
 } from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { draftsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import {
+  draftsLoaderDataSchema,
+  type DraftsLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
+async function loadDraftsValidated(
+  request: Request,
+  params: LoaderFunctionArgs["params"]
+): Promise<DraftsLoaderData> {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  await requireFeatureAccess(userId, "drafts");
+
+  const url = new URL(request.url);
+  const queueType =
+    url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
+  const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+  const limit = 20;
+
+  const data = await loadDraftsData(userId, queueType, page, limit);
+  return validateLoaderResponse(data, draftsLoaderDataSchema);
+}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    const userId = await requireUserId(request);
-
-    // Require that the user has at least a subscription record
-    await requireAnySubscription(userId);
-    // Check if user has access to the drafts feature
-    await requireFeatureAccess(userId, "drafts");
-
-    // Get queueType from URL params (query string) or route params, default to "all"
-    const url = new URL(request.url);
-    const queueType =
-      url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
-    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
-    const limit = 20;
-
-    const data = await loadDraftsData(userId, queueType, page, limit);
-
-    // Validate loader response with Zod schema
-    return validateLoaderResponse(data, draftsLoaderDataSchema);
+    if (isRemixResourceRequest(request)) {
+      return json(await loadDraftsValidated(request, params));
+    }
+    return defer({
+      drafts: loadDraftsValidated(request, params),
+    });
   } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
       return error;
     }
-    // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {});
   }
@@ -57,12 +71,9 @@ export const action = withCSRFProtection(
       const formData = await request.formData();
       const result = await handleDraftsAction(formData, userId);
 
-      // Type narrowing: check if result is a Response
       if (result instanceof Response) {
         return result;
       }
-
-      // Type narrowing: check if result has error property
 
       if (typeof result === "object" && "error" in result && result.error) {
         return json(result, { status: 400 });
@@ -70,17 +81,43 @@ export const action = withCSRFProtection(
 
       return json(result);
     } catch (error) {
-      // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {
         return error;
       }
-      // Use dynamic import to avoid bundling issues
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
     }
   }
 );
 
-type _LoaderData = Awaited<ReturnType<typeof loader>>;
+interface DraftsDeferredLoaderData {
+  drafts: Promise<DraftsLoaderData>;
+}
 
-export default DraftsPage;
+function DraftsFeedRoute() {
+  const { drafts } = useLoaderData() as DraftsDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Drafts"
+          subtitle="Work in progress before publishing"
+        />
+      }
+    >
+      <Await
+        resolve={drafts}
+        errorElement={<DeferredRouteAwaitError retryTo="/dashboard/drafts" />}
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <DraftsPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default DraftsFeedRoute;

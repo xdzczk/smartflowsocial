@@ -1,5 +1,14 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  defer,
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
@@ -11,30 +20,39 @@ import {
   handleRecyclablePostAction,
 } from "~/features/posts/server/publishing";
 import { withCSRFProtection } from "~/lib/csrf";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { recyclablesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import {
+  recyclablesLoaderDataSchema,
+  type RecyclablesLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
+async function loadRecyclablesValidated(
+  request: Request,
+  params: LoaderFunctionArgs["params"]
+): Promise<RecyclablesLoaderData> {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  await requireFeatureAccess(userId, "recyclables");
+
+  const url = new URL(request.url);
+  const data = await getRecyclableDashboardData({ userId, params, url });
+  return validateLoaderResponse(data, recyclablesLoaderDataSchema);
+}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    const userId = await requireUserId(request);
-
-    // Require that the user has at least a subscription record
-    await requireAnySubscription(userId);
-    // Check if user has access to recyclables feature
-    await requireFeatureAccess(userId, "recyclables");
-
-    const url = new URL(request.url);
-
-    const data = await getRecyclableDashboardData({ userId, params, url });
-
-    // Validate loader response with Zod schema
-    return validateLoaderResponse(data, recyclablesLoaderDataSchema);
+    if (isRemixResourceRequest(request)) {
+      return json(await loadRecyclablesValidated(request, params));
+    }
+    return defer({
+      recyclables: loadRecyclablesValidated(request, params),
+    });
   } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
       return error;
     }
-    // Use dynamic import to avoid bundling issues
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {});
   }
@@ -45,20 +63,47 @@ export const action = withCSRFProtection(
     try {
       const userId = await requireUserId(request);
       const formData = await request.formData();
-
-      return handleRecyclablePostAction(formData, userId);
+      return await handleRecyclablePostAction(formData, userId);
     } catch (error) {
-      // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {
         return error;
       }
-      // Use dynamic import to avoid bundling issues
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
     }
   }
 );
 
-type _LoaderData = Awaited<ReturnType<typeof loader>>;
+interface RecyclablesDeferredLoaderData {
+  recyclables: Promise<RecyclablesLoaderData>;
+}
 
-export default RecyclablesPage;
+function RecyclablesFeedRoute() {
+  const { recyclables } = useLoaderData() as RecyclablesDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Recyclables"
+          subtitle="Repost, quote, or build on published posts"
+        />
+      }
+    >
+      <Await
+        resolve={recyclables}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/recyclables" />
+        }
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <RecyclablesPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default RecyclablesFeedRoute;

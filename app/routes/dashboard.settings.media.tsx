@@ -1,13 +1,17 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { defer, json, redirect } from "@remix-run/node";
 import {
+  Await,
   Form,
   Link,
   useActionData,
   useLoaderData,
   useNavigation,
 } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import {
   Card,
   CardContent,
@@ -30,13 +34,18 @@ import {
   listMediaForUser,
 } from "~/features/upload";
 import { withCSRFProtection } from "~/lib/csrf";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 const PAGE_SIZE = 50;
 interface ActionData {
   error?: string;
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   await requireFeatureAccess(userId, "settings");
@@ -61,13 +70,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     subscriptionData.currentSubscription?.planId ?? null
   );
 
-  return json({
+  return {
     items,
     totalCount,
     totalSize,
     storageLimitBytes: storageLimitBytes > 0 ? storageLimitBytes : null,
     page,
     totalPages: Math.ceil(totalCount / PAGE_SIZE),
+  };
+}
+
+export async function loader(args: LoaderFunctionArgs) {
+  if (isRemixResourceRequest(args.request)) {
+    return json(await loadSettingsMediaData(args));
+  }
+  return defer({
+    mediaSettings: loadSettingsMediaData(args),
   });
 }
 
@@ -118,9 +136,13 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i] ?? "B"}`;
 }
 
-export default function SettingsMediaPage() {
+type SettingsMediaLoaderPayload = Awaited<
+  ReturnType<typeof loadSettingsMediaData>
+>;
+
+function SettingsMediaPageInner() {
   const { items, totalCount, totalSize, storageLimitBytes, page, totalPages } =
-    useLoaderData<typeof loader>();
+    useDeferredRouteLoaderData() as SettingsMediaLoaderPayload;
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const isDeleting =
@@ -314,5 +336,36 @@ export default function SettingsMediaPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SettingsMediaPage() {
+  const { mediaSettings } = useLoaderData() as {
+    mediaSettings: Promise<SettingsMediaLoaderPayload>;
+  };
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="mediaGallery"
+          title="Media"
+          subtitle="Blossom usage and your uploads"
+        />
+      }
+    >
+      <Await
+        resolve={mediaSettings}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/settings/media" />
+        }
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <SettingsMediaPageInner />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
   );
 }

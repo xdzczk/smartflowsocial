@@ -23,6 +23,7 @@ import type {
 } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { validateUserData } from "~/lib/validation/user-data";
@@ -49,13 +50,20 @@ export function useCalendarQuery() {
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const queryKey = useMemo(() => calendarKeys.list(queueType), [queueType]);
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data
-  const validatedLoaderData = useMemo(
-    () => safeValidateLoaderResponse(loaderDataRaw, calendarLoaderDataSchema),
-    [loaderDataRaw]
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          calendarLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(loaderDataRaw, calendarLoaderDataSchema);
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   // Keep TanStack cache in sync when Remix loader data changes after actions.
   useEffect(() => {

@@ -10,6 +10,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -17,6 +18,7 @@ import type { PostStats as _PostStats } from "~/features/posts/stats.server";
 import type { PostData, QueueType } from "~/features/posts/types";
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   recyclablesLoaderDataSchema,
@@ -62,14 +64,24 @@ export function useRecyclablesQuery() {
   const dateTo = searchParams.get("dateTo") ?? "";
   const olderThan = searchParams.get("olderThan") ?? "";
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    recyclablesLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          recyclablesLoaderDataSchema
+        ) ?? undefined
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      recyclablesLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   const queryParams = new URLSearchParams({ page: String(page) });
   if (dateFrom) queryParams.set("dateFrom", dateFrom);
@@ -132,13 +144,23 @@ export function useRecyclablesInfiniteQuery() {
   const dateTo = searchParams.get("dateTo") ?? "";
   const olderThan = searchParams.get("olderThan") ?? "";
 
+  const resolvedFromDefer = useDeferredRouteLoaderData();
   const loaderDataRaw = useLoaderData();
 
-  // Validate initial loader data
-  const validatedLoaderData = safeValidateLoaderResponse(
-    loaderDataRaw,
-    recyclablesLoaderDataSchema
-  );
+  const validatedLoaderData = useMemo(() => {
+    if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {
+      return (
+        safeValidateLoaderResponse(
+          resolvedFromDefer,
+          recyclablesLoaderDataSchema
+        ) ?? null
+      );
+    }
+    return safeValidateLoaderResponse(
+      loaderDataRaw,
+      recyclablesLoaderDataSchema
+    );
+  }, [resolvedFromDefer, loaderDataRaw]);
 
   if (!validatedLoaderData) {
     throw new Error("Invalid loader data");

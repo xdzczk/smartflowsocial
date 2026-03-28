@@ -59,9 +59,13 @@ export { calculateTrustScore } from "./trust-score";
 export { MutedListSettings } from "./components/MutedListSettings";
 export { ReplyTemplatesSettings } from "./components/ReplyTemplatesSettings";
 export { EngagementContent } from "./components/EngagementContent";
+export { EngagementFeedAwaitError } from "./components/EngagementFeedAwaitError";
+export { EngagementFeedSkeleton } from "./components/EngagementFeedSkeleton";
 export { EngagementHeader } from "./components/EngagementHeader";
 export { EngagementTabs } from "./components/EngagementTabs";
 export { default as EngagementFeedPage } from "./components/EngagementFeedPage";
+export { EngagementResolvedLoaderProvider } from "./context/EngagementResolvedLoaderContext";
+export { ENGAGEMENT_LOADER_FALLBACK } from "./engagement-loader-fallback";
 
 // ============================================================================
 // Hooks (Public API)

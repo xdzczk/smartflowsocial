@@ -183,6 +183,66 @@ export interface SettingsLoaderData {
   };
 }
 
+/** Safe defaults when settings loader fails (matches dashboard.settings error fallback). */
+export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
+  timezone: "Etc/GMT",
+  relays: [],
+  managedRelays: [],
+  relayAcks: {},
+  showHashTagsInPosts: true,
+  giveawayBlacklist: [],
+  queueTypes: [],
+  uploadProvider: "",
+  customBlossomUrl: null,
+  enableMirrorBlossom: false,
+  mirrorUploadUrls: [],
+  hashTagPresets: [],
+  nwcEnabled: false,
+  maskedNwcString: null,
+  nwcLastUsed: null,
+  subscription: null,
+  availablePlans: [],
+  paymentHistory: [],
+  isChild: false,
+  hasAccountsAccess: false,
+  accounts: {
+    isChild: false,
+    parentNpub: null,
+    parentUser: null,
+    confirmedChildren: [],
+    pendingChildren: [],
+  },
+  mutedList: { npubs: [], lastSynced: new Date().toISOString() },
+  filterMuted: false,
+  hidePostsFromLowTrustUsers: false,
+  replyTemplates: [],
+  pushNotificationsEnabled: false,
+  pushNotifyPublishSuccess: false,
+  pushNotifyPublishFailure: false,
+  pushNotifyRunwayLow: false,
+  pushNotifyIncludePreview: false,
+  runwayNotifyBelowDays: null,
+  timeFormat: "12h",
+  dateFormat: "mmddyyyy",
+  preferredNostrClient: "",
+  customNostrClientBaseUrl: null,
+  primarySignerProfile: null,
+  blastrRelayEnabled: true,
+  canToggleBlastr: false,
+  blastrPolicy: null,
+  blastrSystemRelays: [],
+  referral: {
+    referralLink: "",
+    commissionRatePercent: 20,
+    totalEarnedSats: 0,
+    paidSats: 0,
+    pendingSats: 0,
+    failedSats: 0,
+    payoutDestination: null,
+    payoutDestinationType: null,
+  },
+};
+
 async function buildAccountsData(params: {
   userRecord: { isChild?: boolean | null; parentNpub?: string | null };
   myNpub: string;

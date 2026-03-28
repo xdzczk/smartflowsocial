@@ -1,9 +1,14 @@
 import {
+  defer,
   json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
@@ -15,20 +20,33 @@ import {
   loadTemplatesData,
 } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
+import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { templatesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import {
+  templatesLoaderDataSchema,
+  type TemplatesLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
+async function loadTemplatesValidated(
+  userId: string
+): Promise<TemplatesLoaderData> {
+  await requireAnySubscription(userId);
+  await requireFeatureAccess(userId, "templates");
+  const data = await loadTemplatesData(userId);
+  return validateLoaderResponse(data, templatesLoaderDataSchema);
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
-  // Check if user has access to templates feature
-  await requireFeatureAccess(userId, "templates");
+  if (isRemixResourceRequest(request)) {
+    return json(await loadTemplatesValidated(userId));
+  }
 
-  const data = await loadTemplatesData(userId);
-
-  // Validate loader response with Zod schema
-  return json(validateLoaderResponse(data, templatesLoaderDataSchema));
+  return defer({
+    templates: loadTemplatesValidated(userId),
+  });
 }
 
 export const action = withCSRFProtection(
@@ -38,12 +56,10 @@ export const action = withCSRFProtection(
       const formData = await request.formData();
       const result = await handleTemplatesAction(formData, userId);
 
-      // Type narrowing: check if result is a Response
       if (result instanceof Response) {
         return result;
       }
 
-      // Type narrowing: check if result has error property
       if (typeof result === "object" && "error" in result && result.error) {
         return json(result, { status: 400 });
       }
@@ -56,4 +72,36 @@ export const action = withCSRFProtection(
   }
 );
 
-export default TemplatesPage;
+interface TemplatesDeferredLoaderData {
+  templates: Promise<TemplatesLoaderData>;
+}
+
+function TemplatesFeedRoute() {
+  const { templates } = useLoaderData() as TemplatesDeferredLoaderData;
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Templates"
+          subtitle="Reusable posts and long-form layouts"
+        />
+      }
+    >
+      <Await
+        resolve={templates}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/templates" />
+        }
+      >
+        {(data) => (
+          <DeferredRouteLoaderProvider value={data}>
+            <TemplatesPage />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default TemplatesFeedRoute;

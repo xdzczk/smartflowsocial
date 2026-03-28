@@ -1,7 +1,10 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { defer, json, redirect } from "@remix-run/node";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
@@ -53,8 +56,13 @@ import {
 } from "~/features/payments/types";
 import { getUserNWC } from "~/features/user";
 import { ExternalServiceError } from "~/lib/errors";
+import {
+  DeferredRouteLoaderProvider,
+  useDeferredRouteLoaderData,
+} from "~/lib/remix/deferred-route-loader-context";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   await requireFeatureAccess(userId, "giveaways");
@@ -177,7 +185,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }).join("\n")
       : null;
 
-  return json({
+  return {
     nwc: {
       enabled: nwc.enabled,
       maskedString: nwc.maskedString ?? null,
@@ -228,6 +236,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     finalizationQuote,
     receiptSummaryLine,
     publicSummaryText,
+  };
+}
+
+export async function loader(args: LoaderFunctionArgs) {
+  if (isRemixResourceRequest(args.request)) {
+    return json(await loadGiveawayDetailData(args));
+  }
+  return defer({
+    giveawayDetail: loadGiveawayDetailData(args),
   });
 }
 
@@ -481,7 +498,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-export default function DashboardGiveawayDetailPage() {
+type GiveawayDetailLoaderPayload = Awaited<
+  ReturnType<typeof loadGiveawayDetailData>
+>;
+
+function DashboardGiveawayDetailPageInner() {
   const {
     nwc,
     giveaway,
@@ -492,7 +513,7 @@ export default function DashboardGiveawayDetailPage() {
     finalizationQuote,
     receiptSummaryLine,
     publicSummaryText,
-  } = useLoaderData<typeof loader>();
+  } = useDeferredRouteLoaderData() as GiveawayDetailLoaderPayload;
   return (
     <GiveawayDetailPage
       nwc={nwc}
@@ -537,6 +558,39 @@ export default function DashboardGiveawayDetailPage() {
       canUsePresets={giveawaysLimits.canUsePresets}
       maxWinnerCount={giveawaysLimits.maxWinnerCount}
     />
+  );
+}
+
+export default function DashboardGiveawayDetailPage() {
+  const params = useParams();
+  const id = params["id"] ?? "";
+  const { giveawayDetail } = useLoaderData() as {
+    giveawayDetail: Promise<GiveawayDetailLoaderPayload>;
+  };
+  const retryTo =
+    id !== "" ? `/dashboard/giveaway/detail/${id}` : "/dashboard/giveaway";
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="detail"
+          title="Giveaway"
+          subtitle="Winners, payouts, and activity"
+        />
+      }
+    >
+      <Await
+        resolve={giveawayDetail}
+        errorElement={<DeferredRouteAwaitError retryTo={retryTo} />}
+      >
+        {(loaded) => (
+          <DeferredRouteLoaderProvider value={loaded}>
+            <DashboardGiveawayDetailPageInner />
+          </DeferredRouteLoaderProvider>
+        )}
+      </Await>
+    </Suspense>
   );
 }
 /* eslint-enable sonarjs/cognitive-complexity */
