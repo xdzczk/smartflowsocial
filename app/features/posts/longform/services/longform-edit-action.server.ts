@@ -11,7 +11,6 @@ import {
 } from "@remix-run/node";
 
 import { updateLongFormPost } from "~/features/posts/server";
-import { effectiveAppendHashtagsToNoteBody } from "~/features/posts/server/composer";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
@@ -558,7 +557,6 @@ export async function handleLongFormEditAction(
   if (!user) {
     return new Response("User not found", { status: 404 });
   }
-  const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
 
   const contentType = request.headers.get("Content-Type") ?? "";
@@ -627,12 +625,8 @@ export async function handleLongFormEditAction(
     queueType
   );
 
-  const perPostIncludeHashtagsInBody =
-    validatedData.includeHashtagsInNoteBody ?? true;
-  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
-    showHashTagsinPosts,
-    perPostIncludeHashtagsInBody
-  );
+  const showHashTagsinPostsEffective =
+    validatedData.includeHashtagsInNoteBody !== false;
 
   // Handle different actions
   if (_action === "save-draft") {

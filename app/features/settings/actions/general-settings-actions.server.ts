@@ -7,7 +7,7 @@ import { json } from "@remix-run/node";
 import {
   updateGiveawayBlacklist,
   updateUserPushNotificationPreferences,
-  updateUserRelays,
+  updateUserRelayPublishingPreferences,
   updateUserBlastrRelayEnabled,
   updateUserTimezone,
   updateUserTimeFormat,
@@ -18,6 +18,7 @@ import {
   getLocaleDefaultsAppliedAt,
   applyLocaleDefaultsOnce,
 } from "~/features/user";
+import { invalidateRelayIntentCache } from "~/features/user/services/user-cache.server";
 import {
   updateTimezoneSchema,
   updateRelaysSchema,
@@ -126,7 +127,11 @@ export async function handleGeneralSettingsAction(
   if (action === "update_relays") {
     const result = validateFormDataOrRespond(formData, updateRelaysSchema);
     if (!result.success) return result.response;
-    await updateUserRelays(userId, result.data.relays);
+    await updateUserRelayPublishingPreferences(userId, {
+      relays: result.data.relays,
+      publishRelaySource: result.data.publishRelaySource,
+    });
+    await invalidateRelayIntentCache(userId);
     return json({ success: true });
   }
 

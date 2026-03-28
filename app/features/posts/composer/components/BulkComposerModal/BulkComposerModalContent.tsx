@@ -70,6 +70,10 @@ export interface BulkComposerModalContentProps {
   handleIsRecyclableChange: (index: number, checked: boolean) => void;
   handleRemovePost: (index: number) => void;
   handleQueueTypeChange: (index: number, value: string) => Promise<void>;
+  handleIncludeHashtagsInNoteBodyChange: (
+    index: number,
+    checked: boolean
+  ) => void;
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
@@ -117,6 +121,7 @@ export function BulkComposerModalContent({
   handleIsRecyclableChange,
   handleRemovePost,
   handleQueueTypeChange,
+  handleIncludeHashtagsInNoteBodyChange,
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
@@ -263,6 +268,9 @@ export function BulkComposerModalContent({
               handleIsRecyclableChange={handleIsRecyclableChange}
               handleRemovePost={handleRemovePost}
               handleQueueTypeChange={handleQueueTypeChange}
+              handleIncludeHashtagsInNoteBodyChange={
+                handleIncludeHashtagsInNoteBodyChange
+              }
               handleMediaClick={handleMediaClick}
               handleRowFileSelect={handleRowFileSelect}
               handleRowFileRemove={handleRowFileRemove}

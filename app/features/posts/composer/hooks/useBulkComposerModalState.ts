@@ -512,6 +512,17 @@ export function useBulkComposerModalState({
     []
   );
 
+  const handleIncludeHashtagsInNoteBodyChange = useCallback(
+    (index: number, checked: boolean) => {
+      setPosts((prev) =>
+        prev.map((p, i) =>
+          i === index ? { ...p, includeHashtagsInNoteBody: checked } : p
+        )
+      );
+    },
+    []
+  );
+
   const handleRowFileRemove = useCallback(
     (index: number, mediaIndex: number) => {
       setPosts((prev) =>
@@ -611,6 +622,7 @@ export function useBulkComposerModalState({
       handleScheduleIntervalClick,
       handleBulkQueueUpdate,
       handleQueueTypeChange,
+      handleIncludeHashtagsInNoteBodyChange,
       handleRowFileSelect,
       handleRowFileRemove,
       handleSuccessClose,

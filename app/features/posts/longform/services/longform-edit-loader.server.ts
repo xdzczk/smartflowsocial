@@ -43,7 +43,6 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     scheduleIntervals,
     queueTypes,
     userTimezone: user?.timezone ?? "Etc/GMT",
-    showHashTagsinPosts: user?.showHashTagsinPosts !== false,
     hashtagPresets,
     versions,
     relays,

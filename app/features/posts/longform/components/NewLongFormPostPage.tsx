@@ -45,7 +45,6 @@ export default function NewLongFormPostPage() {
     queueTypes,
     hashTagPresets,
     userTimezone,
-    showHashTagsinPosts,
     uploadProvider,
     defaultRelays,
     initialTemplateData,
@@ -240,7 +239,6 @@ export default function NewLongFormPostPage() {
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={safeUserTags}
-          accountAllowsHashtagsInNoteBody={showHashTagsinPosts}
           hashTagPresets={hashTagPresets}
           uploadProvider={
             typeof uploadProvider === "string" || uploadProvider === null

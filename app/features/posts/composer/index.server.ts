@@ -4,7 +4,4 @@
 export { CreatePostUseCase } from "./use-cases/create-post.use-case.server";
 export { loadNewPostData } from "./services/newpost-loader.server";
 export { handleNewPostAction } from "./services/newpost-action.server";
-export {
-  effectiveAppendHashtagsToNoteBody,
-  parseIncludeHashtagsInNoteBodyFromForm,
-} from "./services/newpost-action/hashtag-utils.server";
+export { parseIncludeHashtagsInNoteBodyFromForm } from "./services/newpost-action/hashtag-utils.server";

@@ -238,6 +238,10 @@ function asStringArray(value: unknown): string[] {
   return value.filter((v): v is string => typeof v === "string");
 }
 
+function asPublishRelaySource(value: unknown): "app" | "nip65_profile" {
+  return value === "nip65_profile" ? "nip65_profile" : "app";
+}
+
 function toIsoStringOrNow(value: unknown): string {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "string") return value;
@@ -306,6 +310,8 @@ export default function SettingsPage() {
   const data = loaderDataRaw as {
     timezone?: unknown;
     relays?: unknown;
+    publishRelaySource?: unknown;
+    profileRelays?: unknown;
     managedRelays?: unknown;
     relayAcks?: unknown;
     giveawayBlacklist?: unknown;
@@ -358,6 +364,8 @@ export default function SettingsPage() {
   const {
     timezone,
     relays,
+    publishRelaySource,
+    profileRelays,
     managedRelays,
     relayAcks,
     giveawayBlacklist,
@@ -467,6 +475,8 @@ export default function SettingsPage() {
 
   const timezoneValue = asStringOrNull(timezone);
   const relaysList = asStringArray(relays);
+  const publishRelaySourceValue = asPublishRelaySource(publishRelaySource);
+  const profileRelaysList = asStringArray(profileRelays);
   const managedRelaysList = parseManagedRelays(managedRelays);
   const relayAcksMap = parseRelayAcksMap(relayAcks);
   const giveawayBlacklistList = asStringArray(giveawayBlacklist);
@@ -632,6 +642,8 @@ export default function SettingsPage() {
           <div className="grid min-w-0 gap-6 md:grid-cols-1">
             <RelaysSettings
               relays={relaysList}
+              publishRelaySource={publishRelaySourceValue}
+              profileRelays={profileRelaysList}
               managedRelays={managedRelaysList}
               relayAcks={relayAcksMap}
               blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}

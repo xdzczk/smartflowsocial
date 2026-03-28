@@ -101,6 +101,7 @@ export default function DraftEditPage() {
         scheduleConfig?: unknown;
         isEnabled?: unknown;
         userId?: unknown;
+        includeHashtagsInNoteBody?: unknown;
       };
       return {
         id: raw.id,
@@ -128,6 +129,10 @@ export default function DraftEditPage() {
         isEnabled:
           typeof raw.isEnabled === "boolean" ? raw.isEnabled : undefined,
         userId: typeof raw.userId === "string" ? raw.userId : undefined,
+        includeHashtagsInNoteBody:
+          typeof raw.includeHashtagsInNoteBody === "boolean"
+            ? raw.includeHashtagsInNoteBody
+            : undefined,
       };
     });
 
@@ -200,7 +205,10 @@ export default function DraftEditPage() {
     setAlsoScheduleQuote,
     quoteEntries,
     setQuoteEntries,
+    includeHashtagsInNoteBody,
+    setIncludeHashtagsInNoteBody,
   } = useDraftEditState({
+    queueTypes: typedQueueTypes,
     post: typedPost
       ? {
           content: typedPost.content ?? null,
@@ -276,6 +284,8 @@ export default function DraftEditPage() {
             handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")
           }
           onUseHashtagPresetsChange={setUseHashtagPresets}
+          includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+          onIncludeHashtagsInNoteBodyChange={setIncludeHashtagsInNoteBody}
           onResumeClick={handleResumeClick}
           alsoScheduleRepost={alsoScheduleRepost}
           onAlsoScheduleRepostChange={setAlsoScheduleRepost}

@@ -14,6 +14,7 @@ const USER_SCALAR_SELECT = {
   isEnabled: true,
   timezone: true,
   userRelays: true,
+  publishRelaySource: true,
   giveawayBlackListed: true,
   uploadProvider: true,
   customBlossomUrl: true,

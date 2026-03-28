@@ -17,6 +17,7 @@ import {
 
 import type { BulkPostsHandlerDeps } from "../types";
 import {
+  defaultIncludeHashtagsForQueueSelection,
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
   isWeeklySlotsScheduleConfig,
@@ -321,6 +322,8 @@ export async function handleQueueTypeChange(
   const postToUpdate = updatedPosts[index];
   if (!postToUpdate) return;
   postToUpdate.queueType = value;
+  postToUpdate.includeHashtagsInNoteBody =
+    defaultIncludeHashtagsForQueueSelection(value, queueTypes);
 
   // Find the queue type object to get its ID
   const selectedQueueType = queueTypes.find(
@@ -513,6 +516,10 @@ export async function handleBulkQueueUpdate(
       ...post,
       queueType,
       scheduledFor,
+      includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+        queueType,
+        queueTypes
+      ),
     };
   });
 

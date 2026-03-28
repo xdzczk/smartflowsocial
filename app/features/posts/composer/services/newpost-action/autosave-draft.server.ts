@@ -22,10 +22,7 @@ import { CreatePostUseCase } from "../../use-cases/create-post.use-case.server";
 import { isContestEmbedRequest } from "./contest-embed-response.server";
 import { parseAttachmentMeta } from "./handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
-import {
-  effectiveAppendHashtagsToNoteBody,
-  parseIncludeHashtagsInNoteBodyFromForm,
-} from "./hashtag-utils.server";
+import { parseIncludeHashtagsInNoteBodyFromForm } from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
 
 function getFormString(formData: FormData, key: string): string {
@@ -39,8 +36,7 @@ function getFormString(formData: FormData, key: string): string {
  */
 export async function persistShortDraft(
   userId: string,
-  formData: FormData,
-  userShowHashTagsInPosts: boolean
+  formData: FormData
 ): Promise<{ draftId: string }> {
   const draftId = formData.get("draftId");
   const contentRaw = getFormString(formData, "content");
@@ -106,10 +102,9 @@ export async function persistShortDraft(
     typeof hashtagResult === "object"
       ? (hashtagResult as { tags: string }).tags
       : "";
-  const perPostInclude = parseIncludeHashtagsInNoteBodyFromForm(formData, true);
-  const appendTagsToBody = effectiveAppendHashtagsToNoteBody(
-    userShowHashTagsInPosts,
-    perPostInclude
+  const appendTagsToBody = parseIncludeHashtagsInNoteBodyFromForm(
+    formData,
+    true
   );
   const contentWithHashtags =
     appendTagsToBody && (tagsStr || hashTagPresetTags)
@@ -148,14 +143,9 @@ export async function persistShortDraft(
 /** Save draft (explicit click): persist, create version snapshot, return JSON for the composer. */
 export async function handleSaveDraft(
   userId: string,
-  formData: FormData,
-  userShowHashTagsInPosts: boolean
+  formData: FormData
 ): Promise<Response> {
-  const { draftId } = await persistShortDraft(
-    userId,
-    formData,
-    userShowHashTagsInPosts
-  );
+  const { draftId } = await persistShortDraft(userId, formData);
   const post = await findPostByIdAndUser(draftId, userId, {
     content: true,
     caption: true,
@@ -193,13 +183,8 @@ export async function handleSaveDraft(
 /** Autosave-draft: persists draft and returns JSON; used by composer autosave (useComposerAutosave). */
 export async function handleAutosaveDraft(
   userId: string,
-  formData: FormData,
-  userShowHashTagsInPosts: boolean
+  formData: FormData
 ): Promise<Response> {
-  const { draftId } = await persistShortDraft(
-    userId,
-    formData,
-    userShowHashTagsInPosts
-  );
+  const { draftId } = await persistShortDraft(userId, formData);
   return json({ draftId, saved: true });
 }

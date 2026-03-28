@@ -248,7 +248,12 @@ export function useBulkPostEvents({
         const tagsString = effectiveHashtags;
         const { fileUrl, scheduledFor: scheduledForValue } =
           getFileUrlFromFetcher(fetcher.data, index);
-        const content = buildContent(fileUrl, post.caption, tagsString, user);
+        const content = buildContent(
+          fileUrl,
+          post.caption,
+          tagsString,
+          post.includeHashtagsInNoteBody !== false
+        );
         const tagArray = convertTagsToArray(tagsString);
         const userTimezone = getUserTimezone(user);
         let scheduledTime = convertScheduledTime(
@@ -265,12 +270,7 @@ export function useBulkPostEvents({
         }
 
         const addTags =
-          user &&
-          typeof user === "object" &&
-          "showHashTagsinPosts" in user &&
-          user.showHashTagsinPosts
-            ? `${tagsString}`
-            : "";
+          post.includeHashtagsInNoteBody !== false ? `${tagsString}` : "";
 
         // Handle kind 6 reposts differently
         if (post.isKind6Repost) {

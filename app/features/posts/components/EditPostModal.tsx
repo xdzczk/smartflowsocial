@@ -150,10 +150,13 @@ export function EditPostModal({
     removeNewFile,
     handleHashtagPresetSelect,
     formatDateTimeForInput,
+    includeHashtagsInNoteBody,
+    setIncludeHashtagsInNoteBody,
   } = useEditPostModal({
     post,
     user,
     hashTagPresets,
+    queueTypes,
     isLongform,
   });
 
@@ -228,7 +231,7 @@ export function EditPostModal({
         selectedQueueType,
         selectedHashtagPresetId,
         scheduledFor,
-        user,
+        includeHashtagsInNoteBody,
       });
 
       const formData = "formData" in result ? result.formData : result;
@@ -332,6 +335,8 @@ export function EditPostModal({
                   selectedQueueType={selectedQueueType}
                   setSelectedQueueType={setSelectedQueueType}
                   queueTypes={queueTypes}
+                  includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                  setIncludeHashtagsInNoteBody={setIncludeHashtagsInNoteBody}
                 />
               )}
 

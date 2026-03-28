@@ -239,6 +239,24 @@ export interface QueueType {
   status?: "active" | "paused" | "full" | "manual" | null;
   isEnabled?: boolean;
   userId?: string;
+  /** Queue default for “include hashtags in note body”; unassigned uses true. */
+  includeHashtagsInNoteBody?: boolean;
+}
+
+/** Default for the per-post “include hashtags in note body” toggle when a queue is selected. */
+export function defaultIncludeHashtagsForQueueSelection(
+  queueKey: string,
+  queueTypes: Array<QueueType | string>
+): boolean {
+  if (queueKey === "" || queueKey === "unassigned") return true;
+  const qt = queueTypes.find((q) => {
+    if (typeof q === "string") return q === queueKey;
+    return q.id === queueKey || q.name === queueKey;
+  });
+  if (qt && typeof qt === "object" && qt.includeHashtagsInNoteBody != null) {
+    return qt.includeHashtagsInNoteBody !== false;
+  }
+  return true;
 }
 
 /**
@@ -284,6 +302,8 @@ export interface BulkPost {
     unit: "hours" | "minutes";
     caption?: string;
   }>;
+  /** Per-row: append hashtag line into signed note body (defaults from queue on queue change). */
+  includeHashtagsInNoteBody?: boolean;
 }
 
 /**
@@ -589,6 +609,7 @@ export interface BulkPostCardProps {
   onCaptionChange: (index: number, value: string) => void;
   onDateChange: (index: number, value: string) => void;
   onQueueTypeChange: (index: number, value: string) => void;
+  onIncludeHashtagsInNoteBodyChange: (index: number, checked: boolean) => void;
   onIsRecyclableChange: (index: number, checked: boolean) => void;
   onRemove: (index: number) => void;
   onMediaClick: (src: string) => void;
@@ -609,7 +630,6 @@ export interface UserData {
   dateFormat?: string | null;
   scheduleInterval?: number[];
   userRelays?: string[];
-  showHashTagsinPosts?: boolean;
   isEnabled?: boolean;
 }
 

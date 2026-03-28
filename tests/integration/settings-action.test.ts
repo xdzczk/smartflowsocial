@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock all dependencies
 vi.mock("~/features/user", () => ({
   updateUserTimezone: vi.fn(),
-  updateUserRelays: vi.fn(),
+  updateUserRelayPublishingPreferences: vi.fn(),
   updateGiveawayBlacklist: vi.fn(),
   updateScheduleInterval: vi.fn(),
   updateQueueType: vi.fn(),
@@ -40,6 +40,7 @@ vi.mock("~/features/payments/data", () => ({
 vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateHashTagPresetsCache: vi.fn().mockResolvedValue(undefined),
   invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
+  invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
@@ -53,7 +54,7 @@ import {
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import {
   updateUserTimezone,
-  updateUserRelays,
+  updateUserRelayPublishingPreferences,
   updateGiveawayBlacklist,
   updateScheduleInterval,
   updateQueueType,
@@ -106,13 +107,14 @@ describe("Settings Action Handler", () => {
 
     describe("Update Relays", () => {
       it("should update user relays", async () => {
-        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined
-        );
+        (
+          updateUserRelayPublishingPreferences as ReturnType<typeof vi.fn>
+        ).mockResolvedValue(undefined);
 
         const formData = createFormData({
           _action: "update_relays",
           relays: "wss://relay1.com\nwss://relay2.com\nwss://relay3.com",
+          publishRelaySource: "app",
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
@@ -122,18 +124,24 @@ describe("Settings Action Handler", () => {
             ? (dataRaw as { success?: unknown; error?: unknown })
             : {};
 
-        expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
-          "wss://relay1.com",
-          "wss://relay2.com",
-          "wss://relay3.com",
-        ]);
+        expect(updateUserRelayPublishingPreferences).toHaveBeenCalledWith(
+          TEST_USER_ID,
+          {
+            relays: [
+              "wss://relay1.com",
+              "wss://relay2.com",
+              "wss://relay3.com",
+            ],
+            publishRelaySource: "app",
+          }
+        );
         expect(data).toEqual({ success: true });
       });
 
       it("should filter out empty relay lines", async () => {
-        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined
-        );
+        (
+          updateUserRelayPublishingPreferences as ReturnType<typeof vi.fn>
+        ).mockResolvedValue(undefined);
 
         const formData = createFormData({
           _action: "update_relays",
@@ -147,11 +155,17 @@ describe("Settings Action Handler", () => {
             ? (dataRaw as { success?: unknown; error?: unknown })
             : {};
 
-        expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
-          "wss://relay1.com",
-          "wss://relay2.com",
-          "wss://relay3.com",
-        ]);
+        expect(updateUserRelayPublishingPreferences).toHaveBeenCalledWith(
+          TEST_USER_ID,
+          {
+            relays: [
+              "wss://relay1.com",
+              "wss://relay2.com",
+              "wss://relay3.com",
+            ],
+            publishRelaySource: "app",
+          }
+        );
         expect(data).toEqual({ success: true });
       });
     });

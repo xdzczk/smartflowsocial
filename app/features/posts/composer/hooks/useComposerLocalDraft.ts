@@ -16,6 +16,7 @@ export interface ComposerLocalSnapshot {
   scheduledFor: string;
   tags: string;
   hashTagPresetId: string | null;
+  includeHashtagsInNoteBody?: boolean;
   attachmentMeta: Array<{ localId: string; url: string; alt?: string }>;
   threadSegments?: Array<{
     id: string;

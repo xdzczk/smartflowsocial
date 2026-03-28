@@ -1,3 +1,6 @@
+import { convertToHex } from "~/lib/nostr-conversion";
+
+import { fetchAuthorNip65WriteRelays } from "./nip65-profile-relays.server";
 import { blastrRelay, DEFAULT_USER_WRITE_RELAYS } from "./relay-constants";
 import {
   getRelayIntentFromDb,
@@ -18,23 +21,71 @@ export interface RelayIntent {
   writeRelays: string[];
 }
 
+export type PublishRelaySource = "app" | "nip65_profile";
+
 function normalizeRelays(relays: string[]): string[] {
   return Array.from(new Set(relays.map((r) => r.trim()).filter(Boolean)));
 }
 
+function resolveAppWriteRelays(persistedAppRelays: string[]): string[] {
+  return persistedAppRelays.length > 0
+    ? normalizeRelays(persistedAppRelays)
+    : DEFAULT_USER_WRITE_RELAYS;
+}
+
 /**
- * Read persisted relay intent (write relays only, for now).
- * - Uses `User.userRelays` as the canonical persisted intent store.
- * - Applies `DEFAULT_USER_WRITE_RELAYS` only when the persisted list is empty.
+ * Settings loader: one DB read, one NIP-65 fetch, shared effective intent for ACK URLs + managed relays.
+ */
+export async function loadRelaySettingsLoaderSlice(userId: string): Promise<{
+  appRelays: string[];
+  publishRelaySource: PublishRelaySource;
+  npub: string;
+  relayIntent: RelayIntent;
+  profileRelays: string[];
+}> {
+  const row = await getRelayIntentFromDb(userId);
+  const appRelays = resolveAppWriteRelays(row.appRelays);
+  const hex = convertToHex(row.npub);
+  const profileRelays = hex ? await fetchAuthorNip65WriteRelays(hex) : [];
+
+  const relayIntent: RelayIntent =
+    row.publishRelaySource === "nip65_profile"
+      ? {
+          writeRelays:
+            profileRelays.length > 0
+              ? profileRelays
+              : DEFAULT_USER_WRITE_RELAYS,
+        }
+      : { writeRelays: appRelays };
+
+  return {
+    appRelays,
+    publishRelaySource: row.publishRelaySource,
+    npub: row.npub,
+    relayIntent,
+    profileRelays,
+  };
+}
+
+/**
+ * Read effective relay intent for publishing (write relays only).
+ * - `app`: uses `User.userRelays` with `DEFAULT_USER_WRITE_RELAYS` when empty.
+ * - `nip65_profile`: uses kind 10002 write relays for the user's npub; falls back to defaults when none found.
  * - NEVER injects managed relays here.
  */
 export async function getRelayIntent(userId: string): Promise<RelayIntent> {
-  const { writeRelays: persisted } = await getRelayIntentFromDb(userId);
-  const writeRelays =
-    persisted.length > 0
-      ? normalizeRelays(persisted)
-      : DEFAULT_USER_WRITE_RELAYS;
-  return { writeRelays };
+  const { appRelays, publishRelaySource, npub } =
+    await getRelayIntentFromDb(userId);
+
+  if (publishRelaySource === "nip65_profile") {
+    const hex = convertToHex(npub);
+    const fromProfile = hex ? await fetchAuthorNip65WriteRelays(hex) : [];
+    const writeRelays =
+      fromProfile.length > 0 ? fromProfile : DEFAULT_USER_WRITE_RELAYS;
+    return { writeRelays };
+  }
+
+  return { writeRelays: resolveAppWriteRelays(appRelays) };
 }
 
 /**
@@ -42,11 +93,14 @@ export async function getRelayIntent(userId: string): Promise<RelayIntent> {
  * - direct: user intent (persisted)
  * - managed: computed from feature access (Plan.enableRelayBlast + ACTIVE subscription)
  */
-export async function getEffectiveWriteRelays(userId: string): Promise<{
+export async function getEffectiveWriteRelays(
+  userId: string,
+  options?: { intent?: RelayIntent }
+): Promise<{
   direct: string[];
   managed: ManagedRelay[];
 }> {
-  const intent = await getRelayIntent(userId);
+  const intent = options?.intent ?? (await getRelayIntent(userId));
   const blastrEnabled = await isBlastrEnabledForUserFromDb(userId);
 
   const managed: ManagedRelay[] = [

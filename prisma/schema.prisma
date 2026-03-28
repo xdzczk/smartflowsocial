@@ -14,6 +14,8 @@ model User {
   isEnabled                  Boolean        @default(false)
   timezone                   String?        @default("Etc/GMT")
   userRelays                 String[]       @default(["wss://relay.bullishbounty.com", "wss://relay.snort.social", "wss://relay.primal.net", "wss://relay.damus.io", "wss://relay.nostr.band"])
+  /// "app" = use userRelays (SmartFlow list); "nip65_profile" = use kind 10002 write relays from the user npub
+  publishRelaySource         String         @default("app")
   giveawayBlackListed        String[]       @default([])
   uploadProvider             UploadProvider @default(S3)
   customBlossomUrl           String?
@@ -452,6 +454,8 @@ model QueueType {
   updatedAt       DateTime       @updatedAt
   userId          String
   hashTagPresetId String?
+  /// When true (default), new posts for this queue default to appending preset hashtags into the note body; per-post toggle can still override in the composer.
+  includeHashtagsInNoteBody Boolean @default(true)
   longFormPosts   LongFormPost[]
   posts           Post[]
   hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])

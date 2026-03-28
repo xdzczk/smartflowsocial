@@ -12,6 +12,7 @@ import {
   updateUserTimezoneRow,
   findUserTimezoneRow,
   updateUserRelaysRow,
+  updateUserRelayPublishingPreferencesRow,
   findUserRelaysRow,
   updateGiveawayBlacklistRow,
   findGiveawayBlacklistRow,
@@ -83,6 +84,21 @@ export function updateUserRelays(
   relays: string[]
 ): Promise<User> {
   return updateUserRelaysRow(userId, relays);
+}
+
+export type PublishRelaySource = "app" | "nip65_profile";
+
+/**
+ * Persists the SmartFlow app relay list and which source is active for publishing.
+ */
+export function updateUserRelayPublishingPreferences(
+  userId: string,
+  input: { relays: string[]; publishRelaySource: PublishRelaySource }
+): Promise<User> {
+  return updateUserRelayPublishingPreferencesRow(userId, {
+    userRelays: input.relays,
+    publishRelaySource: input.publishRelaySource,
+  });
 }
 
 /**

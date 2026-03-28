@@ -55,7 +55,6 @@ export async function loadNewLongFormData(
     hashTagPresets,
     relays,
     userTimezone: user?.timezone ?? "Etc/GMT",
-    showHashTagsinPosts: user?.showHashTagsinPosts !== false,
     uploadProvider,
     templates: templates.filter(
       (t) => (t as { templateType?: string }).templateType === "LONGFORM"

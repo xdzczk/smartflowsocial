@@ -20,7 +20,6 @@ import {
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 import {
   applyHashtags,
-  effectiveAppendHashtagsToNoteBody,
   parseIncludeHashtagsInNoteBodyFromForm,
 } from "./hashtag-utils.server";
 import { resolveContentWithTokens } from "./inline-tokens.server";
@@ -104,8 +103,7 @@ export async function handleThreadAction(
   userId: string,
   sessionPubkey: string,
   formData: FormData,
-  sanitizedRelays: string[],
-  userShowHashTagsInPosts: boolean
+  sanitizedRelays: string[]
 ): Promise<Response> {
   const action = formData.get("_action");
   const isSchedule = action === "schedule-thread";
@@ -180,10 +178,9 @@ export async function handleThreadAction(
 
   const threadGroupId = `thread_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
-  const perPostInclude = parseIncludeHashtagsInNoteBodyFromForm(formData, true);
-  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
-    userShowHashTagsInPosts,
-    perPostInclude
+  const showHashTagsinPostsEffective = parseIncludeHashtagsInNoteBodyFromForm(
+    formData,
+    true
   );
 
   const createPostUseCase = new CreatePostUseCase();

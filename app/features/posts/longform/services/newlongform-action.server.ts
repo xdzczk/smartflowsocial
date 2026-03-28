@@ -16,7 +16,6 @@ import {
   getLongFormPost,
   updateLongFormPost,
 } from "~/features/posts/server";
-import { effectiveAppendHashtagsToNoteBody } from "~/features/posts/server/composer";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
@@ -760,7 +759,6 @@ export async function handleNewLongFormAction(
   if (!user) {
     return new Response("User not found", { status: 404 });
   }
-  const { showHashTagsinPosts } = user;
   const sessionPubkey = user.npub;
 
   const contentType = request.headers.get("Content-Type") ?? "";
@@ -821,12 +819,8 @@ export async function handleNewLongFormAction(
   // Ensure hashTagPresetId is string | null (not undefined)
   const finalHashTagPresetId: string | null = hashTagPresetId ?? null;
 
-  const perPostIncludeHashtagsInBody =
-    validatedData.includeHashtagsInNoteBody ?? true;
-  const showHashTagsinPostsEffective = effectiveAppendHashtagsToNoteBody(
-    showHashTagsinPosts,
-    perPostIncludeHashtagsInBody
-  );
+  const showHashTagsinPostsEffective =
+    validatedData.includeHashtagsInNoteBody !== false;
 
   // Handle different actions
   if (_action === "save-draft") {

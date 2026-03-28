@@ -7,7 +7,7 @@ import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.clien
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { nowSeconds } from "~/lib/temporal";
 
-import type { PostData, LongFormPostData, UserData } from "../types";
+import type { PostData, LongFormPostData } from "../types";
 
 interface EditPostSubmitParams {
   post: PostData | LongFormPostData;
@@ -25,7 +25,8 @@ interface EditPostSubmitParams {
   selectedQueueType: string;
   selectedHashtagPresetId: string | null;
   scheduledFor: Date | null;
-  user?: UserData;
+  /** When false, hashtag line is not appended to signed note content (still in `t` tags when applicable). */
+  includeHashtagsInNoteBody?: boolean;
 }
 
 // ============================================================================
@@ -111,7 +112,7 @@ function buildRegularPostContent(
   caption: string | undefined,
   allImageUrls: string[],
   finalHashtags: string,
-  user: UserData | null | undefined
+  includeHashtagsInNoteBody: boolean
 ): string {
   let eventContent = caption ?? "";
 
@@ -122,7 +123,7 @@ function buildRegularPostContent(
       : imageContent;
   }
 
-  if (user?.showHashTagsinPosts && finalHashtags) {
+  if (includeHashtagsInNoteBody && finalHashtags) {
     eventContent = `${eventContent}\n${finalHashtags}`;
   }
 
@@ -160,7 +161,7 @@ export async function prepareEditPostSubmission({
   selectedQueueType,
   selectedHashtagPresetId,
   scheduledFor,
-  user,
+  includeHashtagsInNoteBody = true,
 }: EditPostSubmitParams) {
   const allImageUrls = await uploadNewFiles(newFiles, existingImages);
   await ensureMediaUrlsReady(allImageUrls);
@@ -182,7 +183,7 @@ export async function prepareEditPostSubmission({
       caption,
       allImageUrls,
       finalHashtags,
-      user
+      includeHashtagsInNoteBody
     );
     eventTags = buildHashtagTags(finalHashtags);
   }

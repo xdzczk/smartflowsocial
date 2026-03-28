@@ -103,9 +103,7 @@ interface TagsChipRowProps {
   disabled?: boolean;
   /** Optional: show queue default hint */
   queuePresetName?: string | null;
-  /** Account allows appending tag text to the note (Settings). When false, tags are metadata-only. */
-  accountAllowsHashtagsInNoteBody?: boolean;
-  /** Per-post: append resolved tags to signed note text (subject to account setting). */
+  /** Per-post: append resolved tags to signed note text. */
   includeHashtagsInNoteBody?: boolean;
   onIncludeHashtagsInNoteBodyChange?: (value: boolean) => void;
 }
@@ -118,7 +116,6 @@ export function TagsChipRow({
   onPresetSelect,
   disabled = false,
   queuePresetName,
-  accountAllowsHashtagsInNoteBody = true,
   includeHashtagsInNoteBody = true,
   onIncludeHashtagsInNoteBodyChange,
 }: TagsChipRowProps) {
@@ -252,21 +249,17 @@ export function TagsChipRow({
               Include tags in note text
             </Label>
             <p className="text-muted-foreground text-[11px] leading-snug">
-              {accountAllowsHashtagsInNoteBody
-                ? "On by default. Turn off to hide tags from the note text (they stay as topic metadata)."
-                : "Your account keeps tags out of note text (Settings)."}
+              On by default for new posts. Turn off to keep tags as topic
+              metadata only.
             </p>
           </div>
           <Switch
             id="tags-include-in-note-body"
-            checked={Boolean(
-              accountAllowsHashtagsInNoteBody && includeHashtagsInNoteBody
-            )}
+            checked={Boolean(includeHashtagsInNoteBody)}
             onCheckedChange={(v) => {
-              if (!accountAllowsHashtagsInNoteBody) return;
               onIncludeHashtagsInNoteBodyChange(v);
             }}
-            disabled={disabled || !accountAllowsHashtagsInNoteBody}
+            disabled={disabled}
             className="shrink-0"
           />
         </div>

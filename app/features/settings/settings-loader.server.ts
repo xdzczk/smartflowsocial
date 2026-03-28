@@ -23,12 +23,14 @@ import type {
 import { getReferralSettingsData } from "~/features/referral/referral-settings.server";
 import { BLASTR_KNOWN_SYSTEM_RELAYS } from "~/features/relays/relay-constants";
 import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
-import { getEffectiveWriteRelays } from "~/features/relays/relay-resolution.server";
+import {
+  getEffectiveWriteRelays,
+  loadRelaySettingsLoaderSlice,
+} from "~/features/relays/relay-resolution.server";
 import {
   getConfirmedChildrenForParent,
   getGiveawayBlacklist,
   getPendingChildrenForParent,
-  getShowHashTagsInPosts,
   getUserBasicInfo,
   getUserBlastrRelayEnabled,
   getUserByNpubWithProfile,
@@ -48,10 +50,7 @@ import {
   getUserTimezone,
   getQueueTypes,
 } from "~/features/user";
-import {
-  getRelayIntentCached,
-  getHashTagPresetsCached,
-} from "~/features/user/services/user-cache.server";
+import { getHashTagPresetsCached } from "~/features/user/services/user-cache.server";
 import {
   getUserPolicy as getBlastrUserPolicy,
   resolvePubkeyHex as resolveBlastrPubkeyHex,
@@ -81,13 +80,17 @@ export interface MutedList {
 
 export interface SettingsLoaderData {
   timezone: string | null;
+  /** SmartFlow app relay list (editable); defaults applied when DB empty. */
   relays: string[];
+  /** Which list is used for publishing: app list vs NIP-65 profile relays. */
+  publishRelaySource: "app" | "nip65_profile";
+  /** Write relays from latest kind 10002 for this npub (may be empty). */
+  profileRelays: string[];
   managedRelays: ManagedRelay[];
   relayAcks: Record<
     string,
     { status: string; createdAt: string; receivedAt: string | null }
   >;
-  showHashTagsInPosts: boolean;
   giveawayBlacklist: string[];
   queueTypes: QueueType[];
   uploadProvider: string;
@@ -187,9 +190,10 @@ export interface SettingsLoaderData {
 export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
   timezone: "Etc/GMT",
   relays: [],
+  publishRelaySource: "app",
+  profileRelays: [],
   managedRelays: [],
   relayAcks: {},
-  showHashTagsInPosts: true,
   giveawayBlacklist: [],
   queueTypes: [],
   uploadProvider: "",
@@ -300,13 +304,11 @@ export async function loadSettingsData(
     isChild || planName === "Founder" || planName === "Premium";
 
   // Load all settings data in parallel
-  // Use cached versions for rarely-changing data (queue types, hashtag presets, relay intent)
+  // Use cached versions for rarely-changing data (queue types, hashtag presets)
   const [
     timezone,
-    relayIntent,
-    effectiveWriteRelays,
+    relaySlice,
     giveawayBlacklist,
-    showHashTagsInPosts,
     queueTypes,
     uploadProviderSettings,
     enableMirrorBlossom,
@@ -326,10 +328,8 @@ export async function loadSettingsData(
     blastrRelayEnabled,
   ] = await Promise.all([
     getUserTimezone(userId),
-    getRelayIntentCached(userId),
-    getEffectiveWriteRelays(userId),
+    loadRelaySettingsLoaderSlice(userId),
     getGiveawayBlacklist(userId),
-    getShowHashTagsInPosts(userId),
     getQueueTypes(userId),
     getResolvedUploadProviderSettings(userId),
     getUserEnableMirrorBlossom(userId),
@@ -349,14 +349,24 @@ export async function loadSettingsData(
     getUserBlastrRelayEnabled(userId),
   ]);
 
-  const relays = relayIntent.writeRelays;
+  const effectiveWriteRelays = await getEffectiveWriteRelays(userId, {
+    intent: relaySlice.relayIntent,
+  });
+  const relays = relaySlice.appRelays;
+  const publishRelaySource = relaySlice.publishRelaySource;
+  const profileRelays = relaySlice.profileRelays;
   const managedRelays = effectiveWriteRelays.managed;
   const uploadProvider = uploadProviderSettings.provider;
   const customBlossomUrl = uploadProviderSettings.customBlossomUrl;
 
   // Latest ACK per relay (best-effort). Include managed relay URL even if disabled.
   const ackRelayUrls = Array.from(
-    new Set([...relays, ...managedRelays.map((m) => m.relayUrl)])
+    new Set([
+      ...effectiveWriteRelays.direct,
+      ...relays,
+      ...profileRelays,
+      ...managedRelays.map((m) => m.relayUrl),
+    ])
   );
   const ackRows =
     ackRelayUrls.length > 0
@@ -408,9 +418,10 @@ export async function loadSettingsData(
   return {
     timezone,
     relays,
+    publishRelaySource,
+    profileRelays,
     managedRelays,
     relayAcks,
-    showHashTagsInPosts,
     giveawayBlacklist,
     queueTypes: queueTypes.map((qt) => ({
       id: qt.id,
@@ -427,6 +438,7 @@ export async function loadSettingsData(
           : undefined,
       isEnabled: qt.isEnabled,
       userId: qt.userId,
+      includeHashtagsInNoteBody: qt.includeHashtagsInNoteBody !== false,
     })),
     uploadProvider,
     customBlossomUrl,

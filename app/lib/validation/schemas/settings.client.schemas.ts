@@ -19,6 +19,7 @@ const VALIDATION_TAGS_REQUIRED = "Tags are required";
  */
 export const updateRelaysClientSchema = z.object({
   relays: z.array(z.string()),
+  publishRelaySource: z.enum(["app", "nip65_profile"]),
 });
 
 /**
@@ -78,7 +79,6 @@ export const updateNWCClientSchema = z.object({
  */
 export const updateTagsClientSchema = z.object({
   hashtags: z.string().optional(),
-  showHashTagsInPosts: z.boolean().default(false),
 });
 
 /**
@@ -125,6 +125,7 @@ export const queueTypeClientSchema = z
       .max(15)
       .optional()
       .default(0),
+    includeHashtagsInNoteBody: z.boolean().optional().default(true),
   })
   .refine(
     (data) => {

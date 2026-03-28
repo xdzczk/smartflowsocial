@@ -18,14 +18,6 @@ export function parseIncludeHashtagsInNoteBodyFromForm(
   return defaultWhenAbsent;
 }
 
-/** Effective body append: account setting and per-post switch must both allow. */
-export function effectiveAppendHashtagsToNoteBody(
-  userAllows: boolean,
-  perPostInclude: boolean
-): boolean {
-  return userAllows && perPostInclude;
-}
-
 /**
  * Apply hashtags to content based on user preferences
  */

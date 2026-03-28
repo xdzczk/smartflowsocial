@@ -54,6 +54,8 @@ export const updateTimezoneSchema = z.object({
   timezone: z.string().min(1, ERROR_TIMEZONE_REQUIRED),
 });
 
+const publishRelaySourceSchema = z.enum(["app", "nip65_profile"]);
+
 /**
  * Relays update schema
  */
@@ -62,6 +64,7 @@ export const updateRelaysSchema = z.object({
     .string()
     .transform((val) => val.split("\n").filter((relay) => relay.trim()))
     .pipe(z.array(relayUrlSchema).min(1, "At least one relay is required")),
+  publishRelaySource: publishRelaySourceSchema.optional().default("app"),
 });
 
 /**
@@ -394,6 +397,13 @@ export const createQueueTypeSchema = z
       .optional()
       .transform((val) => (val === "" || val === undefined ? 0 : Number(val)))
       .pipe(z.number().int().min(0).max(15)),
+    includeHashtagsInNoteBody: z
+      .union([z.string(), z.boolean()])
+      .optional()
+      .transform((val) => {
+        if (val === undefined) return true;
+        return val === FORM_VALUE_ON || val === FORM_VALUE_TRUE || val === true;
+      }),
   })
   .refine(
     (data) => {
@@ -514,6 +524,13 @@ export const updateQueueTypeSchema = z
       .optional()
       .transform((val) => (val === "" || val === undefined ? 0 : Number(val)))
       .pipe(z.number().int().min(0).max(15)),
+    includeHashtagsInNoteBody: z
+      .union([z.string(), z.boolean()])
+      .optional()
+      .transform((val) => {
+        if (val === undefined) return true;
+        return val === FORM_VALUE_ON || val === FORM_VALUE_TRUE || val === true;
+      }),
   })
   .refine(
     (data) => {
@@ -620,7 +637,6 @@ export const updateNWCSchema = z.object({
  */
 export const updateTagsSchema = z.object({
   hashtags: z.string().optional(),
-  showHashTagsInPosts: z.coerce.boolean().default(false).optional(),
 });
 
 /**

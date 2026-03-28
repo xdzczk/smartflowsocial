@@ -105,6 +105,9 @@ export function BulkComposerModal({
             handleIsRecyclableChange={handlers.handleIsRecyclableChange}
             handleRemovePost={handlers.handleRemovePost}
             handleQueueTypeChange={handlers.handleQueueTypeChange}
+            handleIncludeHashtagsInNoteBodyChange={
+              handlers.handleIncludeHashtagsInNoteBodyChange
+            }
             handleMediaClick={handlers.handleMediaClick}
             handleRowFileSelect={handlers.handleRowFileSelect}
             handleRowFileRemove={handlers.handleRowFileRemove}

@@ -90,24 +90,34 @@ export default function LongFormDraftEditPage() {
         })
       : null;
 
-  const queueTypes = queueTypesRaw.filter(
-    (
-      qt: unknown
-    ): qt is {
-      id: string;
-      name: string;
-      color?: string | null;
-      scheduleType?: string;
-      scheduleConfig?: unknown;
-      isEnabled?: boolean;
-    } =>
-      typeof qt === "object" &&
-      qt !== null &&
-      "id" in qt &&
-      "name" in qt &&
-      typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-      typeof (qt as { id: unknown; name: unknown }).name === "string"
-  );
+  const queueTypes = queueTypesRaw
+    .filter(
+      (
+        qt: unknown
+      ): qt is {
+        id: string;
+        name: string;
+        color?: string | null;
+        scheduleType?: string;
+        scheduleConfig?: unknown;
+        isEnabled?: boolean;
+        includeHashtagsInNoteBody?: boolean;
+      } =>
+        typeof qt === "object" &&
+        qt !== null &&
+        "id" in qt &&
+        "name" in qt &&
+        typeof (qt as { id: unknown; name: unknown }).id === "string" &&
+        typeof (qt as { id: unknown; name: unknown }).name === "string"
+    )
+    .map((qt) => {
+      const inc = (qt as { includeHashtagsInNoteBody?: unknown })
+        .includeHashtagsInNoteBody;
+      return {
+        ...qt,
+        includeHashtagsInNoteBody: typeof inc === "boolean" ? inc : undefined,
+      };
+    });
 
   const versionsRaw =
     typeof loaderData === "object" &&
@@ -126,14 +136,6 @@ export default function LongFormDraftEditPage() {
   const defaultRelays = relaysRaw.filter(
     (r): r is string => typeof r === "string" && r.length > 0
   );
-
-  const accountAllowsHashtagsInNoteBody =
-    typeof loaderData === "object" &&
-    loaderData !== null &&
-    "showHashTagsinPosts" in loaderData
-      ? (loaderData as { showHashTagsinPosts?: unknown })
-          .showHashTagsinPosts !== false
-      : true;
 
   const versions = versionsRaw.filter(
     (
@@ -240,7 +242,6 @@ export default function LongFormDraftEditPage() {
           queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={userTags}
-          accountAllowsHashtagsInNoteBody={accountAllowsHashtagsInNoteBody}
           onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           onPreview={handlePreview}
           initialData={

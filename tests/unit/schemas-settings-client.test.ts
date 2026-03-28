@@ -22,12 +22,18 @@ describe("settings.client.schemas", () => {
     it("accepts array of strings", () => {
       const result = updateRelaysClientSchema.parse({
         relays: ["wss://relay.example.com"],
+        publishRelaySource: "app",
       });
       expect(result.relays).toEqual(["wss://relay.example.com"]);
+      expect(result.publishRelaySource).toBe("app");
     });
     it("accepts empty array", () => {
-      const result = updateRelaysClientSchema.parse({ relays: [] });
+      const result = updateRelaysClientSchema.parse({
+        relays: [],
+        publishRelaySource: "nip65_profile",
+      });
       expect(result.relays).toEqual([]);
+      expect(result.publishRelaySource).toBe("nip65_profile");
     });
   });
 
@@ -131,17 +137,15 @@ describe("settings.client.schemas", () => {
   });
 
   describe("updateTagsClientSchema", () => {
-    it("parses optional hashtags and showHashTagsInPosts default", () => {
+    it("parses empty object with optional hashtags", () => {
       const result = updateTagsClientSchema.parse({});
-      expect(result.showHashTagsInPosts).toBe(false);
+      expect(result.hashtags).toBeUndefined();
     });
     it("accepts hashtags string", () => {
       const result = updateTagsClientSchema.parse({
         hashtags: "#foo",
-        showHashTagsInPosts: true,
       });
       expect(result.hashtags).toBe("#foo");
-      expect(result.showHashTagsInPosts).toBe(true);
     });
   });
 

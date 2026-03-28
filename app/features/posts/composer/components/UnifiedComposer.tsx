@@ -51,7 +51,11 @@ import { cn } from "~/lib/utils";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
-import type { QueueType, ComposerAttachment } from "../../types";
+import {
+  defaultIncludeHashtagsForQueueSelection,
+  type QueueType,
+  type ComposerAttachment,
+} from "../../types";
 import {
   appendToken,
   removeToken,
@@ -372,7 +376,10 @@ export function UnifiedComposer({
       useHashtagPresets: !!initialDraft?.hashTagPresetId,
       hashTagPresetId:
         initialDraft?.hashTagPresetId ?? selectedHashTagPresetId ?? undefined,
-      includeHashtagsInNoteBody: user?.showHashTagsinPosts !== false,
+      includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+        initialDraft?.queueType ?? "unassigned",
+        queueTypes
+      ),
     },
   });
 
@@ -446,7 +453,13 @@ export function UnifiedComposer({
       isRecyclable: false,
       useHashtagPresets: !!localRestored.hashTagPresetId,
       hashTagPresetId: localRestored.hashTagPresetId ?? undefined,
-      includeHashtagsInNoteBody: user?.showHashTagsinPosts !== false,
+      includeHashtagsInNoteBody:
+        localRestored.includeHashtagsInNoteBody !== undefined
+          ? localRestored.includeHashtagsInNoteBody !== false
+          : defaultIncludeHashtagsForQueueSelection(
+              localRestored.queueType,
+              queueTypes
+            ),
     });
     setSelectedHashtags(localRestored.tags);
     setAttachments(
@@ -504,8 +517,20 @@ export function UnifiedComposer({
     setSelectedHashtags,
     setThreadSegments,
     setThreadDelayMinutes,
-    user?.showHashTagsinPosts,
+    queueTypes,
   ]);
+
+  const composerQueueDefaultEffectFirstRef = React.useRef(true);
+  React.useEffect(() => {
+    if (composerQueueDefaultEffectFirstRef.current) {
+      composerQueueDefaultEffectFirstRef.current = false;
+      return;
+    }
+    form.setValue(
+      "includeHashtagsInNoteBody",
+      defaultIncludeHashtagsForQueueSelection(selectedQueue, queueTypes)
+    );
+  }, [selectedQueue, queueTypes, form]);
 
   React.useEffect(() => {
     form.setValue("queueType", selectedQueue);
@@ -607,6 +632,7 @@ export function UnifiedComposer({
       scheduledFor: formScheduledFor ?? "",
       tags: selectedHashtags,
       hashTagPresetId: formSelectedHashtagPresetId ?? null,
+      includeHashtagsInNoteBody: includeHashtagsInNoteBody !== false,
       attachmentMeta: attachments
         .filter((a): a is typeof a & { url: string } => Boolean(a.url))
         .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt })),
@@ -634,6 +660,7 @@ export function UnifiedComposer({
     formScheduledFor,
     selectedHashtags,
     formSelectedHashtagPresetId,
+    includeHashtagsInNoteBody,
     attachments,
     isThreadMode,
     threadSegments,
@@ -718,7 +745,6 @@ export function UnifiedComposer({
       ? {
           id: user.id,
           timezone: user.timezone ?? undefined,
-          showHashTagsinPosts: user.showHashTagsinPosts,
         }
       : null,
     defaultTags: tags,
@@ -1507,9 +1533,6 @@ export function UnifiedComposer({
                     onHashtagPresetChange?.(presetId, mergedTags);
                   }}
                   disabled={fetcher.state !== "idle"}
-                  accountAllowsHashtagsInNoteBody={
-                    user?.showHashTagsinPosts !== false
-                  }
                   includeHashtagsInNoteBody={includeHashtagsInNoteBody}
                   onIncludeHashtagsInNoteBodyChange={(v) =>
                     form.setValue("includeHashtagsInNoteBody", v)

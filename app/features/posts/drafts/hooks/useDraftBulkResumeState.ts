@@ -7,6 +7,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 
 import type { QueueType, PostData } from "~/features/posts/types";
+import { defaultIncludeHashtagsForQueueSelection } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -31,6 +32,7 @@ export interface DraftBulkResumePost {
   postType?: string;
   queueType: string | QueueType;
   scheduledFor: string;
+  includeHashtagsInNoteBody: boolean;
 }
 
 export interface UseDraftBulkResumeStateProps {
@@ -60,6 +62,8 @@ export function useDraftBulkResumeState({
       const scheduledFor = formatForDateTimeLocal(scheduledZoned, userTimezone);
       const queueType =
         draft.queueType?.name ?? draft.queueType ?? "unassigned";
+      const queueKey =
+        typeof queueType === "string" ? queueType : queueType.name;
       return {
         id: draft.id,
         content: draft.content ?? draft.caption ?? undefined,
@@ -69,6 +73,10 @@ export function useDraftBulkResumeState({
         postType: draft.postType,
         queueType,
         scheduledFor,
+        includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+          queueKey,
+          queueTypes
+        ),
       };
     })
   );
@@ -149,6 +157,8 @@ export function useDraftBulkResumeState({
     if (!postToUpdate) return;
     postToUpdate.queueType = value;
     const queueTypeName = typeof value === "string" ? value : value.name;
+    postToUpdate.includeHashtagsInNoteBody =
+      defaultIncludeHashtagsForQueueSelection(queueTypeName, queueTypes);
     if (queueTypeName !== "unassigned") {
       const scheduledTime = await calculateQueueScheduleTime(queueTypeName, 0);
       if (scheduledTime) postToUpdate.scheduledFor = scheduledTime;
@@ -163,6 +173,17 @@ export function useDraftBulkResumeState({
     const postToUpdate = updatedPosts[index];
     if (!postToUpdate) return;
     postToUpdate.scheduledFor = value;
+    setPosts(updatedPosts);
+  };
+
+  const handleIncludeHashtagsInNoteBodyChange = (
+    index: number,
+    checked: boolean
+  ) => {
+    const updatedPosts = [...posts];
+    const postToUpdate = updatedPosts[index];
+    if (!postToUpdate) return;
+    postToUpdate.includeHashtagsInNoteBody = checked;
     setPosts(updatedPosts);
   };
 
@@ -196,7 +217,15 @@ export function useDraftBulkResumeState({
         } else {
           scheduledFor = "";
         }
-        return { ...post, queueType, scheduledFor };
+        return {
+          ...post,
+          queueType,
+          scheduledFor,
+          includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+            queueTypeName,
+            queueTypes
+          ),
+        };
       })
     );
     setPosts(updatedPosts);
@@ -276,7 +305,8 @@ export function useDraftBulkResumeState({
           .split(" ")
           .filter((tag) => tag.length > 0)
           .map((tag) => ["t", tag.replace("#", "")]);
-        const contentToSign = user?.showHashTagsinPosts
+        const appendTags = post.includeHashtagsInNoteBody !== false;
+        const contentToSign = appendTags
           ? `${post.content ?? ""}\n${tagsString}`
           : (post.content ?? "");
         const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
@@ -345,6 +375,7 @@ export function useDraftBulkResumeState({
       handleDateChange,
       handleScheduleIntervalClick,
       handleBulkQueueUpdate,
+      handleIncludeHashtagsInNoteBodyChange,
       handleSignAndResume,
     },
     user,

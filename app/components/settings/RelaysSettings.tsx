@@ -32,8 +32,13 @@ import {
   formDataToFormData,
 } from "~/lib/validation/utils.client-safe";
 
+type PublishRelaySource = "app" | "nip65_profile";
+
 interface RelaysSettingsProps {
   relays: string[];
+  publishRelaySource: PublishRelaySource;
+  /** NIP-65 write relays from kind 10002 (read-only preview). */
+  profileRelays: string[];
   managedRelays: Array<{
     id: string;
     role: string;
@@ -71,6 +76,8 @@ function formatAck(
 
 export function RelaysSettings({
   relays,
+  publishRelaySource: initialPublishRelaySource,
+  profileRelays,
   managedRelays,
   relayAcks,
   blastrRelayEnabled = true,
@@ -86,6 +93,7 @@ export function RelaysSettings({
   const form = useZodForm(updateRelaysClientSchema, {
     defaultValues: {
       relays: relays.length > 0 ? relays : [""],
+      publishRelaySource: initialPublishRelaySource,
     },
   });
 
@@ -99,7 +107,10 @@ export function RelaysSettings({
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedRelays = form.watch("relays");
-  const hasChanged = JSON.stringify(watchedRelays) !== JSON.stringify(relays);
+  const watchedSource = form.watch("publishRelaySource");
+  const hasChanged =
+    JSON.stringify(watchedRelays) !== JSON.stringify(relays) ||
+    watchedSource !== initialPublishRelaySource;
 
   const onSubmit = form.handleSubmit((data) => {
     // Filter out empty strings and validate
@@ -132,7 +143,10 @@ export function RelaysSettings({
     }
 
     const formData = formDataToFormData(
-      { relays: filteredRelays.join("\n") },
+      {
+        relays: filteredRelays.join("\n"),
+        publishRelaySource: data.publishRelaySource,
+      },
       "update_relays"
     );
 
@@ -144,11 +158,91 @@ export function RelaysSettings({
       <CardHeader>
         <CardTitle>Nostr Relays</CardTitle>
         <CardDescription>
-          Manage your relay intent for publishing posts. Managed relays (like
-          SmartFlowSocial fan-out) are shown separately.
+          Choose whether publishes use your Nostr profile relay list (NIP-65,
+          kind 10002) or the SmartFlow app list. Only one source is active.
+          Managed relays are separate.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-6 space-y-3">
+          <div className="text-sm font-medium">Publish using</div>
+          <div className="space-y-2">
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- radio nested in label */}
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="radio"
+                className="border-input mt-0.5"
+                value="nip65_profile"
+                checked={watchedSource === "nip65_profile"}
+                onChange={() =>
+                  form.setValue("publishRelaySource", "nip65_profile", {
+                    shouldValidate: true,
+                  })
+                }
+                disabled={isSubmitting}
+              />
+              <span>
+                <span className="font-medium">Nostr profile relays</span>
+                <span className="text-muted-foreground block text-xs font-normal">
+                  Fetched from your latest kind 10002 (write / unmarked{" "}
+                  <code className="text-xs">r</code> tags). Update them in your
+                  Nostr client.
+                </span>
+              </span>
+            </label>
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- radio nested in label */}
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="radio"
+                className="border-input mt-0.5"
+                value="app"
+                checked={watchedSource === "app"}
+                onChange={() =>
+                  form.setValue("publishRelaySource", "app", {
+                    shouldValidate: true,
+                  })
+                }
+                disabled={isSubmitting}
+              />
+              <span>
+                <span className="font-medium">SmartFlow app relay list</span>
+                <span className="text-muted-foreground block text-xs font-normal">
+                  Relays stored in SmartFlow (defaults until you change them).
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {watchedSource === "nip65_profile" ? (
+          <div className="bg-muted/30 mb-6 space-y-2 rounded-md border p-3">
+            <div className="text-sm font-medium">
+              Profile relays (read-only)
+            </div>
+            {profileRelays.length > 0 ? (
+              <ul className="space-y-2">
+                {profileRelays.map((url) => {
+                  const ack = relayAcks[url];
+                  return (
+                    <li key={url} className="min-w-0">
+                      <div className="font-mono text-sm break-all">{url}</div>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Last ACK: {formatAck(ack)}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No NIP-65 write relays found on your profile yet. Publishing
+                falls back to default relays until you publish a relay list from
+                a Nostr client.
+              </p>
+            )}
+          </div>
+        ) : null}
+
         {managedRelays.length > 0 ? (
           <div className="mb-6 space-y-3">
             <div className="text-sm font-medium">Managed relays</div>
@@ -233,6 +327,14 @@ export function RelaysSettings({
           }}
           className="space-y-4"
         >
+          <div className="text-sm font-medium">
+            SmartFlow app relay list
+            {watchedSource === "nip65_profile" ? (
+              <span className="text-muted-foreground ml-2 font-normal">
+                (inactive — edit anytime; switch above to use for publishing)
+              </span>
+            ) : null}
+          </div>
           <div className="space-y-2">
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-start space-x-2">

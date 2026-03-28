@@ -132,6 +132,12 @@ export function QueueTypeDialog({
             ? scheduleConfig.weeklySlots
             : undefined,
         scheduleRandomWindowMinutes: randomWindow,
+        includeHashtagsInNoteBody:
+          (
+            queueType as QueueType & {
+              includeHashtagsInNoteBody?: boolean;
+            }
+          ).includeHashtagsInNoteBody !== false,
       };
     }
     return {
@@ -141,6 +147,7 @@ export function QueueTypeDialog({
       hashTagPresetId: "none",
       scheduleType: "INTERVAL" as const,
       isEnabled: false,
+      includeHashtagsInNoteBody: true,
       useGlobalInterval: false,
       intervalHours: "",
       slots: "",
@@ -251,6 +258,7 @@ export function QueueTypeDialog({
       ...(typeof data.scheduleRandomWindowMinutes === "number"
         ? { scheduleRandomWindowMinutes: data.scheduleRandomWindowMinutes }
         : {}),
+      includeHashtagsInNoteBody: data.includeHashtagsInNoteBody !== false,
     };
 
     const formData = formDataToFormData(
@@ -366,6 +374,22 @@ export function QueueTypeDialog({
               Posts in this queue will automatically use the selected hashtag
               preset
             </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="includeHashtagsInNoteBody"
+              checked={form.watch("includeHashtagsInNoteBody") !== false}
+              onCheckedChange={(checked) => {
+                form.setValue("includeHashtagsInNoteBody", checked as boolean);
+              }}
+            />
+            <Label
+              htmlFor="includeHashtagsInNoteBody"
+              className="text-sm font-normal"
+            >
+              Default: include preset hashtags in note text
+            </Label>
           </div>
 
           {isEditing ? (

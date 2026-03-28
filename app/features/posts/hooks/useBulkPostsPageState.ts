@@ -494,6 +494,17 @@ export function useBulkPostsPageState({
     );
   };
 
+  const handleIncludeHashtagsInNoteBodyChange = (
+    index: number,
+    checked: boolean
+  ) => {
+    setPosts((prev) =>
+      prev.map((p, i) =>
+        i === index ? { ...p, includeHashtagsInNoteBody: checked } : p
+      )
+    );
+  };
+
   const handleQueueTypeChange = async (index: number, value: string) => {
     await handleQueueTypeChangeHandler(index, value, {
       posts,
@@ -551,6 +562,7 @@ export function useBulkPostsPageState({
           ? formatForDateTimeLocal(addHours(now, 1), userTimezone)
           : "",
       isRecyclable: false,
+      includeHashtagsInNoteBody: true,
     }));
     setPosts((prev) => [...prev, ...newPosts]);
   };
@@ -649,6 +661,7 @@ export function useBulkPostsPageState({
     handleRowFileRemove,
     handleSaveDraftFromTable,
     handleBulkFilesDropped,
+    handleIncludeHashtagsInNoteBodyChange,
   };
 
   return { state, handlers };

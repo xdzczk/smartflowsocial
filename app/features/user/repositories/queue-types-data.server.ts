@@ -15,6 +15,7 @@ export interface UpdateQueueTypeInput {
   description?: string;
   isEnabled?: boolean;
   hashTagPresetId?: string | null;
+  includeHashtagsInNoteBody?: boolean;
 }
 
 export function updateQueueType(
@@ -30,6 +31,7 @@ export function updateQueueType(
       colorToken,
       description: data.description,
       isEnabled: data.isEnabled ?? true,
+      includeHashtagsInNoteBody: data.includeHashtagsInNoteBody ?? true,
     };
     if (data.hashTagPresetId === null) {
       updateData.hashTagPreset = { disconnect: true };
@@ -49,6 +51,7 @@ export function updateQueueType(
     colorToken,
     description: data.description,
     isEnabled: data.isEnabled ?? true,
+    includeHashtagsInNoteBody: data.includeHashtagsInNoteBody ?? true,
   };
   if (data.hashTagPresetId) {
     createData.hashTagPreset = { connect: { id: data.hashTagPresetId } };

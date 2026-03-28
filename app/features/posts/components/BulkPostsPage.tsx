@@ -357,6 +357,9 @@ export default function BulkPostsPage() {
                 handleQueueTypeChange={(index, value) =>
                   void handlers.handleQueueTypeChange(index, value)
                 }
+                handleIncludeHashtagsInNoteBodyChange={
+                  handlers.handleIncludeHashtagsInNoteBodyChange
+                }
                 handleMediaClick={handlers.handleMediaClick}
                 validationErrorsByIndex={validationResult.byPost}
                 onRowFileSelect={

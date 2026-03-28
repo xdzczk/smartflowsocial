@@ -8,16 +8,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/user", () => ({
   updateUserTimezone: vi.fn(),
-  updateUserRelays: vi.fn(),
+  updateUserRelayPublishingPreferences: vi.fn(),
   updateGiveawayBlacklist: vi.fn(),
   updateScheduleInterval: vi.fn(),
+}));
+
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { handleGeneralSettingsAction } from "~/features/settings/actions/general-settings-actions.server";
 import {
-  updateUserRelays,
+  updateUserRelayPublishingPreferences,
   updateGiveawayBlacklist,
   updateScheduleInterval,
 } from "~/features/user";
@@ -29,9 +33,9 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
   describe("update_relays", () => {
     it("should filter out empty relay lines", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      (
+        updateUserRelayPublishingPreferences as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
 
       const formData = createFormData({
         _action: "update_relays",
@@ -55,18 +59,20 @@ describe("General Settings Action Handler - Edge Cases", () => {
           ? (jsonResultRaw as { success?: boolean; error?: string })
           : {};
 
-      expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
-        "wss://relay1.com",
-        "wss://relay2.com",
-        "wss://relay3.com",
-      ]);
+      expect(updateUserRelayPublishingPreferences).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        {
+          relays: ["wss://relay1.com", "wss://relay2.com", "wss://relay3.com"],
+          publishRelaySource: "app",
+        }
+      );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle single relay", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      (
+        updateUserRelayPublishingPreferences as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
 
       const formData = createFormData({
         _action: "update_relays",
@@ -90,16 +96,20 @@ describe("General Settings Action Handler - Edge Cases", () => {
           ? (jsonResultRaw as { success?: boolean; error?: string })
           : {};
 
-      expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
-        "wss://relay1.com",
-      ]);
+      expect(updateUserRelayPublishingPreferences).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        {
+          relays: ["wss://relay1.com"],
+          publishRelaySource: "app",
+        }
+      );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle empty relays string", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      (
+        updateUserRelayPublishingPreferences as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
 
       const formData = createFormData({
         _action: "update_relays",
@@ -123,7 +133,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
           ? (jsonResultRaw as { success?: boolean; error?: string })
           : {};
 
-      expect(updateUserRelays).not.toHaveBeenCalled();
+      expect(updateUserRelayPublishingPreferences).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
       expect(String(jsonResult.error)).toBeTruthy();
     });

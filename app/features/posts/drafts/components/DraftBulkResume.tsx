@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   requestNewSignerSession,
   tryBackgroundReconnect,
@@ -199,6 +200,7 @@ export default function DraftBulkResume({
                 <th className="p-4 text-left">Media</th>
                 <th className="p-4 text-left">Content</th>
                 <th className="p-4 text-left">Queue</th>
+                <th className="p-4 text-left">Tags in note</th>
                 <th className="p-4 text-left">Schedule</th>
               </tr>
             </thead>
@@ -273,6 +275,27 @@ export default function DraftBulkResume({
                           );
                         })}
                     </div>
+                  </td>
+                  <td className="p-4">
+                    <label
+                      htmlFor={`draft-bulk-tags-in-note-${post.id}`}
+                      className="flex cursor-pointer items-center gap-2 text-sm"
+                    >
+                      <Checkbox
+                        id={`draft-bulk-tags-in-note-${post.id}`}
+                        checked={post.includeHashtagsInNoteBody}
+                        onCheckedChange={(c) =>
+                          handlers.handleIncludeHashtagsInNoteBodyChange(
+                            index,
+                            c === true
+                          )
+                        }
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-muted-foreground dark:text-foreground">
+                        Include in text
+                      </span>
+                    </label>
                   </td>
                   <td className="p-4">
                     <input

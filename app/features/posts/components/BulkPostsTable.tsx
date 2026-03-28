@@ -309,6 +309,10 @@ interface BulkPostsTableProps {
   handleIsRecyclableChange: (index: number, checked: boolean) => void;
   handleRemovePost: (index: number) => void;
   handleQueueTypeChange: (index: number, value: string) => void;
+  handleIncludeHashtagsInNoteBodyChange: (
+    index: number,
+    checked: boolean
+  ) => void;
   handleMediaClick: (mediaSrc: string) => void;
   validationErrorsByIndex?: Record<number, string[]>;
   onRowFileSelect?: (index: number, file: File) => void;
@@ -328,6 +332,7 @@ export default function BulkPostsTable({
   handleIsRecyclableChange,
   handleRemovePost,
   handleQueueTypeChange,
+  handleIncludeHashtagsInNoteBodyChange,
   handleMediaClick,
   validationErrorsByIndex,
   onRowFileSelect,
@@ -495,6 +500,21 @@ export default function BulkPostsTable({
                       </button>
                     );
                   })}
+                  <div className="mt-2 flex items-center gap-2">
+                    <Checkbox
+                      id={`bulk-tags-in-note-${post.clientId}`}
+                      checked={post.includeHashtagsInNoteBody !== false}
+                      onCheckedChange={(c) =>
+                        handleIncludeHashtagsInNoteBodyChange(index, c === true)
+                      }
+                    />
+                    <label
+                      htmlFor={`bulk-tags-in-note-${post.clientId}`}
+                      className="text-muted-foreground text-xs"
+                    >
+                      Tags in note
+                    </label>
+                  </div>
                 </div>
                 <div className="min-w-0">
                   <input

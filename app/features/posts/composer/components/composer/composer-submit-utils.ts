@@ -22,14 +22,6 @@ export const ACTION_SCHEDULE_TEXT = "schedule-text";
 export const ACTION_POST_POLL = "post-poll";
 export const ACTION_SCHEDULE_POLL = "schedule-poll";
 
-/** Match server: tags are appended to signed note text only when account and per-post allow. */
-export function effectiveAppendHashtagsToNoteBody(
-  userAllows: boolean | undefined,
-  perPostInclude: boolean
-): boolean {
-  return Boolean(userAllows) && perPostInclude;
-}
-
 export interface SignedEventLike {
   id?: string;
   pubkey?: string;

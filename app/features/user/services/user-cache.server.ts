@@ -108,3 +108,16 @@ export async function getRelayIntentCached(
     compute: () => getRelayIntent(userId),
   });
 }
+
+export async function invalidateRelayIntentCache(
+  userId: string
+): Promise<void> {
+  const cacheKey = buildCacheKey({
+    namespace: USER_DATA_CACHE,
+    parts: { userId, type: "relayIntent" },
+  });
+  await deleteFromRedis({
+    cache: USER_DATA_CACHE,
+    key: cacheKey,
+  });
+}

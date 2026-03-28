@@ -30,6 +30,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     colorToken: null,
     description: null,
     hashTagPresetId: null,
+    includeHashtagsInNoteBody: true,
     lastPostTime: null,
     isDefault: false,
     ...overrides,

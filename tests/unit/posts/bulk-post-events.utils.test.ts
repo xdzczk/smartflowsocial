@@ -91,41 +91,27 @@ describe("bulk-post-events.utils", () => {
   });
 
   describe("buildContent", () => {
-    it("joins media, caption, and tags when user has showHashTagsinPosts", () => {
-      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal user fixture for test */
-      const user = { showHashTagsinPosts: true } as Parameters<
-        typeof buildContent
-      >[3];
+    it("joins media, caption, and tags when includeHashtagsInNoteBody is true", () => {
       const out = buildContent(
         ["https://img.com"],
         "My caption",
         "#tag1 #tag2",
-        user
+        true
       );
       expect(out).toContain("https://img.com");
       expect(out).toContain("My caption");
       expect(out).toContain("#tag1 #tag2");
     });
 
-    it("omits tags when user has no showHashTagsinPosts", () => {
-      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal user fixture for test */
-      const user = { showHashTagsinPosts: false } as Parameters<
-        typeof buildContent
-      >[3];
-      const out = buildContent([], "Caption", "#tag", user);
+    it("omits tags when includeHashtagsInNoteBody is false", () => {
+      const out = buildContent([], "Caption", "#tag", false);
       expect(out).toBe("Caption");
       expect(out).not.toContain("#tag");
     });
 
-    it("omits tags when user is null", () => {
-      const out = buildContent([], "Caption", "#tag", null);
-      expect(out).toBe("Caption");
-    });
-
     it("joins only non-empty parts", () => {
-      const user = null;
-      expect(buildContent([], "", "", user)).toBe("");
-      expect(buildContent(["u1", "u2"], "cap", "", user)).toBe("u1\nu2\ncap");
+      expect(buildContent([], "", "", false)).toBe("");
+      expect(buildContent(["u1", "u2"], "cap", "", false)).toBe("u1\nu2\ncap");
     });
   });
 

@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { updateTagsClientSchema } from "~/lib/validation";
@@ -16,7 +15,6 @@ import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface HashtagsSettingsProps {
   tags: string;
-  showHashTagsInPosts: boolean;
 }
 
 interface FetcherData {
@@ -24,23 +22,17 @@ interface FetcherData {
   error?: string;
 }
 
-export function HashtagsSettings({
-  tags,
-  showHashTagsInPosts,
-}: HashtagsSettingsProps) {
+export function HashtagsSettings({ tags }: HashtagsSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
   const form = useZodForm(updateTagsClientSchema, {
     defaultValues: {
       hashtags: tags,
-      showHashTagsInPosts: showHashTagsInPosts,
     },
   });
 
   const isSubmitting = fetcher.state === "submitting";
   const hashtags = form.watch("hashtags");
-  const showHashTagsState = form.watch("showHashTagsInPosts");
-  const hasChanged =
-    hashtags !== tags || showHashTagsState !== showHashTagsInPosts;
+  const hasChanged = hashtags !== tags;
 
   const onSubmit = form.handleSubmit((data) => {
     const formData = formDataToFormData(data, "update_tags");
@@ -72,23 +64,6 @@ export function HashtagsSettings({
               disabled={isSubmitting}
               rows={2}
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="showHashTagsInPosts"
-              checked={showHashTagsState}
-              onCheckedChange={(checked) => {
-                form.setValue("showHashTagsInPosts", checked as boolean);
-              }}
-              disabled={isSubmitting}
-            />
-            <Label
-              htmlFor="showHashTagsInPosts"
-              className="cursor-pointer text-sm font-normal"
-            >
-              Show hashtags in posts (tags will only be shown in post metadata)
-            </Label>
           </div>
 
           <Button

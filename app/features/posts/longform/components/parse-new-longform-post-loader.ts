@@ -5,8 +5,6 @@ import type { HashTagPreset, QueueType } from "~/features/posts/types";
 export interface NewLongFormPostLoaderParsed {
   userTags: unknown;
   userTimezone: unknown;
-  /** Account default: append hashtag line to stored article markdown when publishing. */
-  showHashTagsinPosts: boolean;
   uploadProvider: unknown;
   defaultRelays: string[];
   initialTemplateData: {
@@ -88,6 +86,8 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
             ? q.isEnabled
             : q.isEnabled !== false;
         const userIdVal = typeof q.userId === "string" ? q.userId : "";
+        const includeRaw = (q as { includeHashtagsInNoteBody?: unknown })
+          .includeHashtagsInNoteBody;
         const result: QueueType = {
           id,
           name,
@@ -99,6 +99,8 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
             scheduleConfig as unknown as QueueType["scheduleConfig"],
           isEnabled: isEnabled,
           userId: userIdVal,
+          includeHashtagsInNoteBody:
+            typeof includeRaw === "boolean" ? includeRaw : undefined,
         };
         return result;
       }
@@ -192,13 +194,6 @@ export function parseNewLongFormPostLoader(
     loaderData && typeof loaderData === "object" && "userTimezone" in loaderData
       ? (loaderData as { userTimezone?: unknown }).userTimezone
       : null;
-  const showHashTagsRaw =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "showHashTagsinPosts" in loaderData
-      ? (loaderData as { showHashTagsinPosts?: unknown }).showHashTagsinPosts
-      : true;
-  const showHashTagsinPosts = showHashTagsRaw !== false;
   const uploadProvider =
     loaderData &&
     typeof loaderData === "object" &&
@@ -250,7 +245,6 @@ export function parseNewLongFormPostLoader(
   return {
     userTags,
     userTimezone,
-    showHashTagsinPosts,
     uploadProvider,
     defaultRelays,
     initialTemplateData,

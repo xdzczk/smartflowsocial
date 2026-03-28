@@ -27,7 +27,6 @@ import {
   parseScheduledTime,
   buildRepostSchedules,
   buildQuoteSchedules,
-  effectiveAppendHashtagsToNoteBody,
   type SignedEventLike,
 } from "../components/composer/composer-submit-utils";
 import {
@@ -85,7 +84,6 @@ export interface UseComposerSubmitOptions {
   user: {
     id?: string;
     timezone?: string;
-    showHashTagsinPosts?: boolean;
   } | null;
   defaultTags?: string[];
   /** When set, all fetcher.submit calls POST to this path (e.g. `/dashboard/compose?type=post` when composer is embedded). */
@@ -479,10 +477,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       ): Promise<{ signedEvent: SignedEvent | null }> {
         const withUrl = seg.attachments.filter((a) => a.url);
         const contentToSign = resolveContentForSigning(seg.content, withUrl);
-        const appendTags = effectiveAppendHashtagsToNoteBody(
-          user?.showHashTagsinPosts,
-          Boolean(data.includeHashtagsInNoteBody)
-        );
+        const appendTags = data.includeHashtagsInNoteBody !== false;
         const contentWithTags = appendTags
           ? `${contentToSign}\n${effectiveHashtags}`
           : contentToSign;
@@ -653,10 +648,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             data.content,
             attachmentsWithUrl
           );
-          const appendTagsSingle = effectiveAppendHashtagsToNoteBody(
-            user?.showHashTagsinPosts,
-            Boolean(data.includeHashtagsInNoteBody)
-          );
+          const appendTagsSingle = data.includeHashtagsInNoteBody !== false;
           const contentToSign = appendTagsSingle
             ? `${contentResolvedForSign}\n${effectiveHashtags}`
             : contentResolvedForSign;

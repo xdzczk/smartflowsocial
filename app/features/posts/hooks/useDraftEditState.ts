@@ -8,11 +8,13 @@ import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 import { useZodForm } from "~/lib/validation/utils.client";
 
-import type {
-  UserData,
-  HashTagPreset,
-  PostData,
-  RepostConditions,
+import {
+  type UserData,
+  type HashTagPreset,
+  type PostData,
+  type QueueType,
+  type RepostConditions,
+  defaultIncludeHashtagsForQueueSelection,
 } from "../types";
 import {
   delayAfterMainToSeconds,
@@ -35,6 +37,7 @@ interface UseDraftEditStateProps {
   post: Post;
   user: UserData;
   hashTagPresets: HashTagPreset[];
+  queueTypes: QueueType[];
 }
 
 /**
@@ -44,23 +47,30 @@ export function useDraftEditState({
   post,
   user,
   hashTagPresets,
+  queueTypes,
 }: UseDraftEditStateProps) {
   const fetcher = useFetcher();
   const currentUser = useOptionalUser();
 
   // Initialize form with React Hook Form
+  const initialSelectedQueue =
+    typeof post.queueType === "object" && post.queueType?.name
+      ? post.queueType.name
+      : typeof post.queueType === "string"
+        ? post.queueType
+        : "unassigned";
+
   const form = useZodForm(draftEditClientSchema, {
     defaultValues: {
       content: post.content ?? "",
-      selectedQueue:
-        typeof post.queueType === "object" && post.queueType?.name
-          ? post.queueType.name
-          : typeof post.queueType === "string"
-            ? post.queueType
-            : "unassigned",
+      selectedQueue: initialSelectedQueue,
       scheduledFor: "",
       useHashtagPresets: !!post.hashTagPresetId,
       hashTagPresetId: post.hashTagPresetId ?? null,
+      includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+        initialSelectedQueue,
+        queueTypes
+      ),
     },
   });
 
@@ -70,6 +80,7 @@ export function useDraftEditState({
   const scheduledFor = form.watch("scheduledFor");
   const useHashtagPresets = form.watch("useHashtagPresets");
   const selectedHashtagPresetId = form.watch("hashTagPresetId");
+  const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
 
   // Use refs to stabilize dependencies for React compiler memoization
   const setScheduledForValueRef = useRef(
@@ -163,7 +174,6 @@ export function useDraftEditState({
               .map(Number)
               .filter((n) => !isNaN(n)),
             userRelays: currentUser.userRelays,
-            showHashTagsinPosts: currentUser.showHashTagsinPosts,
             isEnabled: currentUser.isEnabled,
           }
         : null;
@@ -179,6 +189,7 @@ export function useDraftEditState({
         currentUser: currentUserData,
         post: post as unknown as PostData,
         scheduleRandomWindowMinutes: 0, // TODO: pass from queue default when draft edit has queue types
+        includeHashtagsInNoteBody,
       });
 
       const formData = new FormData();
@@ -314,6 +325,13 @@ export function useDraftEditState({
     }
   }, [selectedQueue, calculateQueueScheduleTime]);
 
+  useEffect(() => {
+    form.setValue(
+      "includeHashtagsInNoteBody",
+      defaultIncludeHashtagsForQueueSelection(selectedQueue, queueTypes)
+    );
+  }, [selectedQueue, queueTypes, form]);
+
   // Initialize hashtag preset data on component mount
   useEffect(() => {
     if (post.hashTagPresetId && hashTagPresets.length > 0) {
@@ -335,6 +353,8 @@ export function useDraftEditState({
     form.setValue("scheduledFor", value);
   const setUseHashtagPresets = (value: boolean) =>
     form.setValue("useHashtagPresets", value);
+  const setIncludeHashtagsInNoteBody = (value: boolean) =>
+    form.setValue("includeHashtagsInNoteBody", value);
 
   return {
     content,
@@ -343,6 +363,7 @@ export function useDraftEditState({
     showResumeModal,
     useHashtagPresets,
     selectedHashtagPresetId,
+    includeHashtagsInNoteBody,
     isSubmitting,
     fetcher,
     form, // Expose form for direct access if needed
@@ -351,6 +372,7 @@ export function useDraftEditState({
     setScheduledFor,
     setShowResumeModal,
     setUseHashtagPresets,
+    setIncludeHashtagsInNoteBody,
     handleResumeClick,
     handleSignAndResume,
     handleHashtagPresetSelect,

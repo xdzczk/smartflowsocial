@@ -41,6 +41,8 @@ export {
   updateUserTimezone,
   getUserTimezone,
   updateUserRelays,
+  updateUserRelayPublishingPreferences,
+  type PublishRelaySource,
   getUserRelays,
   updateGiveawayBlacklist,
   getGiveawayBlacklist,

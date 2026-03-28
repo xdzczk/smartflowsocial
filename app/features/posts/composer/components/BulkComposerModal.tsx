@@ -109,6 +109,10 @@ interface BulkComposerFormTableSectionProps {
   handleIsRecyclableChange: (index: number, checked: boolean) => void;
   handleRemovePost: (index: number) => void;
   handleQueueTypeChange: (index: number, value: string) => Promise<void>;
+  handleIncludeHashtagsInNoteBodyChange: (
+    index: number,
+    checked: boolean
+  ) => void;
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
@@ -130,6 +134,7 @@ function BulkComposerFormTableSection({
   handleIsRecyclableChange,
   handleRemovePost,
   handleQueueTypeChange,
+  handleIncludeHashtagsInNoteBodyChange,
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
@@ -147,6 +152,9 @@ function BulkComposerFormTableSection({
         handleQueueTypeChange={(idx, value) => {
           void handleQueueTypeChange(idx, value);
         }}
+        handleIncludeHashtagsInNoteBodyChange={
+          handleIncludeHashtagsInNoteBodyChange
+        }
         handleMediaClick={handleMediaClick}
         validationErrorsByIndex={validationResult.byPost}
         onRowFileSelect={
@@ -248,6 +256,10 @@ interface BulkComposerModalContentProps {
   handleIsRecyclableChange: (index: number, checked: boolean) => void;
   handleRemovePost: (index: number) => void;
   handleQueueTypeChange: (index: number, value: string) => Promise<void>;
+  handleIncludeHashtagsInNoteBodyChange: (
+    index: number,
+    checked: boolean
+  ) => void;
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
@@ -295,6 +307,7 @@ function BulkComposerModalContent({
   handleIsRecyclableChange,
   handleRemovePost,
   handleQueueTypeChange,
+  handleIncludeHashtagsInNoteBodyChange,
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
@@ -441,6 +454,9 @@ function BulkComposerModalContent({
               handleIsRecyclableChange={handleIsRecyclableChange}
               handleRemovePost={handleRemovePost}
               handleQueueTypeChange={handleQueueTypeChange}
+              handleIncludeHashtagsInNoteBodyChange={
+                handleIncludeHashtagsInNoteBodyChange
+              }
               handleMediaClick={handleMediaClick}
               handleRowFileSelect={handleRowFileSelect}
               handleRowFileRemove={handleRowFileRemove}
@@ -928,6 +944,17 @@ export function BulkComposerModal({
     [posts, user, queueTypes, tags, scheduleIntervals]
   );
 
+  const handleIncludeHashtagsInNoteBodyChange = useCallback(
+    (index: number, checked: boolean) => {
+      setPosts((prev) =>
+        prev.map((p, i) =>
+          i === index ? { ...p, includeHashtagsInNoteBody: checked } : p
+        )
+      );
+    },
+    []
+  );
+
   const handleRowFileSelect = useCallback(
     async (index: number, file: File | null) => {
       if (!file) return;
@@ -1052,6 +1079,9 @@ export function BulkComposerModal({
             handleIsRecyclableChange={handleIsRecyclableChange}
             handleRemovePost={handleRemovePost}
             handleQueueTypeChange={handleQueueTypeChange}
+            handleIncludeHashtagsInNoteBodyChange={
+              handleIncludeHashtagsInNoteBodyChange
+            }
             handleMediaClick={handleMediaClick}
             handleRowFileSelect={handleRowFileSelect}
             handleRowFileRemove={handleRowFileRemove}

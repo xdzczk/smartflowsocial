@@ -1,4 +1,5 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import { Checkbox } from "~/components/ui/checkbox";
 
 import type { QueueType, HashTagPreset } from "../types";
 interface EditPostFormFieldsProps {
@@ -20,6 +21,8 @@ interface EditPostFormFieldsProps {
   selectedQueueType: string;
   setSelectedQueueType: (value: string) => void;
   queueTypes: QueueType[];
+  includeHashtagsInNoteBody: boolean;
+  setIncludeHashtagsInNoteBody: (value: boolean) => void;
 }
 
 export function EditPostFormFields({
@@ -41,6 +44,8 @@ export function EditPostFormFields({
   selectedQueueType,
   setSelectedQueueType,
   queueTypes,
+  includeHashtagsInNoteBody,
+  setIncludeHashtagsInNoteBody,
 }: EditPostFormFieldsProps) {
   return (
     <>
@@ -156,6 +161,20 @@ export function EditPostFormFields({
           />
         </div>
       ) : null}
+
+      <label
+        htmlFor="edit-include-hashtags-in-note"
+        className="flex cursor-pointer items-center gap-2"
+      >
+        <Checkbox
+          id="edit-include-hashtags-in-note"
+          checked={includeHashtagsInNoteBody}
+          onCheckedChange={(c) => setIncludeHashtagsInNoteBody(c === true)}
+        />
+        <span className="text-muted-foreground text-sm">
+          Include hashtags in note text
+        </span>
+      </label>
 
       <div>
         <label

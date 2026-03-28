@@ -30,6 +30,8 @@ interface SignDraftParams {
   post: PostData;
   /** Post at a random time within ±N minutes (0 = off). When > 0, nominal time is returned for queue "next slot". */
   scheduleRandomWindowMinutes?: number;
+  /** When true (default), append hashtag line to signed note content. */
+  includeHashtagsInNoteBody?: boolean;
 }
 
 /**
@@ -221,7 +223,8 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
       : imageUrlsText;
   }
 
-  const contentToSign = currentUser?.showHashTagsinPosts
+  const appendTags = params.includeHashtagsInNoteBody !== false;
+  const contentToSign = appendTags
     ? `${baseContent}\n${effectiveHashtags}`
     : baseContent;
 

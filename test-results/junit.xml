@@ -1,83 +1,117 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="39" failures="0" errors="0" time="0.009521375">
-    <testsuite name="tests/unit/posts-schemas.test.ts" timestamp="2026-03-28T16:59:00.052Z" hostname="Ivans-MacBook-Pro.local" tests="39" failures="0" errors="0" skipped="0" time="0.009521375">
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; accepts valid action values" time="0.00080375">
+<testsuites name="vitest tests" tests="55" failures="0" errors="0" time="0.016575709">
+    <testsuite name="tests/unit/schemas-settings-client.test.ts" timestamp="2026-03-28T17:43:29.516Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.007184334">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts array of strings" time="0.001541">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; rejects invalid action" time="0.000708">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts empty array" time="0.000147041">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; parses valid text post with required fields" time="0.000793458">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; accepts non-empty timezone" time="0.000268042">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; rejects empty content" time="0.000218125">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; rejects empty timezone" time="0.000748542">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; rejects content over 5000 chars" time="0.000175459">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlacklistClientSchema &gt; accepts array of strings" time="0.000214208">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; imagePostSchema &gt; parses valid image post with optional caption" time="0.0003315">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; parses name and tags" time="0.000237291">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; imagePostSchema &gt; rejects caption over 5000 chars" time="0.0001315">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty name" time="0.000157792">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; longformPostSchema &gt; parses valid longform with title and content" time="0.000285">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty tags" time="0.000123875">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; longformPostSchema &gt; rejects empty content" time="0.000144292">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; parses id, name, tags" time="0.000226042">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; bulkPostSchema &gt; parses valid bulk posts array" time="0.000673416">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; rejects empty id" time="0.000155667">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; bulkPostSchema &gt; rejects empty content in post" time="0.000142834">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlossomMirrorsClientSchema &gt; parses enableMirrorBlossom and mirrorUrls" time="0.000529875">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostBaseSchema &gt; applies defaults for optional fields" time="0.000284458">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; parses nwcEnabled and optional nwcString" time="0.000152208">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; draftTextPostSchema &gt; parses draft-text action with content" time="0.000281458">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; accepts nwcString" time="0.000061958">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postOrScheduleTextSchema &gt; parses post-text and schedule-text" time="0.000247625">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; parses empty object with optional hashtags" time="0.000087042">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; draftImagePostSchema &gt; parses draft-image, draft-images, draft-media" time="0.000252208">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; accepts hashtags string" time="0.000053375">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postOrScheduleImageSchema &gt; parses post-image and schedule-image variants" time="0.000116459">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with intervalHours" time="0.000482583">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; parses draft-text discriminated union member" time="0.000184041">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with useGlobalInterval" time="0.000053">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; parses post-image discriminated union member" time="0.000042584">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects INTERVAL without intervalHours or useGlobalInterval" time="0.000136667">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema &gt; rejects invalid _action" time="0.000095541">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses FIXED_SLOTS with slots" time="0.000060292">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadPreviewSchema &gt; parses upload-images-preview and upload-media-preview" time="0.000087875">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects FIXED_SLOTS without slots" time="0.000093333">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; transforms valid JSON uploadResults array" time="0.000498041">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses WEEKLY_SLOTS with weeklySlots" time="0.000315125">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; rejects when uploadResults is invalid JSON (transform catch returns [], then pipe min(1) fails)" time="0.000126666">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects WEEKLY_SLOTS without weeklySlots" time="0.000093916">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImagesPreviewSchema &gt; rejects when uploadResults parses to non-array (transform returns [], then pipe min(1) fails)" time="0.000113625">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects invalid colorToken" time="0.000215834">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostBaseSchema &gt; applies default queueType" time="0.000146375">
+    </testsuite>
+    <testsuite name="tests/unit/posts/bulk-post-events.utils.test.ts" timestamp="2026-03-28T17:43:29.518Z" hostname="Ivans-MacBook-Pro.local" tests="32" failures="0" errors="0" skipped="0" time="0.009391375">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns empty fileUrl and scheduledFor for null or non-object" time="0.001017417">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; saveDraftLongformSchema &gt; parses save-draft with content" time="0.000190292">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns fileUrl array and scheduledFor from fileUrls item" time="0.000183667">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; scheduleLongformSchema &gt; parses schedule-longform with scheduledFor" time="0.000182042">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; filters non-string entries from fileUrl array" time="0.000088709">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; scheduleLongformSchema &gt; rejects empty scheduledFor" time="0.000131833">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns empty for out-of-range index" time="0.000092709">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; postActionSchema &gt; accepts all action values including upload-image" time="0.000048917">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; joins media, caption, and tags when includeHashtagsInNoteBody is true" time="0.000202292">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; textPostSchema &gt; accepts scheduledFor and queueTypeId" time="0.000066208">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; omits tags when includeHashtagsInNoteBody is false" time="0.0001565">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses schedule-text" time="0.000062">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; joins only non-empty parts" time="0.000070417">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses draft-images and draft-media" time="0.000056584">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; returns empty for undefined or empty string" time="0.000083583">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; parses post-images and schedule-image" time="0.000060333">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; splits by space and maps to [t, tag] without leading #" time="0.00011475">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newPostActionSchema variants &gt; rejects invalid _action" time="0.000084791">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; filters empty tags" time="0.000082916">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; autosaveDraftLongformSchema &gt; parses autosave-draft with content" time="0.000166833">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertScheduledTime &gt; parses datetime-local and returns ms" time="0.001413583">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; publishLongformSchema &gt; parses publish with content" time="0.000166125">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertScheduledTime &gt; handles ISO-like string in fallback (no trailing Z)" time="0.000497958">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; uploadImageLongformSchema &gt; parses upload-image action" time="0.000067333">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns first element for array" time="0.000074459">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; parses save-draft member" time="0.00007375">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; parses JSON array string and returns first" time="0.000041334">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; parses publish and schedule-longform members" time="0.000064042">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns original string when not JSON array" time="0.000033292">
         </testcase>
-        <testcase classname="tests/unit/posts-schemas.test.ts" name="posts.schemas &gt; newLongformPostActionSchema &gt; rejects invalid _action" time="0.000081833">
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns original on parse error" time="0.00005325">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns fileUrl array when post has fileUrl array" time="0.000084">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns [url] when post has fileUrl string" time="0.000041666">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns from originalFileUrl for isKind6Repost" time="0.000043333">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns empty for missing fileUrl" time="0.000039541">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; createFakeFileUrlData &gt; maps posts to fileUrl, scheduledFor, queueType, isRecyclable" time="0.000461959">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getUserTimezone &gt; returns user timezone when present" time="0.000055208">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getUserTimezone &gt; returns UTC when user is null or missing timezone" time="0.000044709">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns empty when no originalFileUrl" time="0.000059167">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns first from JSON array string" time="0.000039917">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns first from array" time="0.000034333">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns string as-is when not array" time="0.000035709">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildUploadFormData &gt; appends fileUrls, scheduledDates, queueTypes, isRecyclable, _action" time="0.000275917">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildUploadFormData &gt; appends extraFormData when provided" time="0.000081667">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; calls setToast with error message for single error" time="0.001624916">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; calls setToast with combined message for multiple errors" time="0.000823166">
+        </testcase>
+        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; schedules setToast(null) after 5s" time="0.000383083">
         </testcase>
     </testsuite>
 </testsuites>

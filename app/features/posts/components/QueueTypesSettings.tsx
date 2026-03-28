@@ -77,6 +77,8 @@ function normalizeQueueTypeFromAction(
       raw["hashTagPreset"] && typeof raw["hashTagPreset"] === "object"
         ? (raw["hashTagPreset"] as QueueTypeSettings["hashTagPreset"])
         : null,
+    includeHashtagsInNoteBody:
+      raw["includeHashtagsInNoteBody"] === false ? false : true,
   };
 }
 

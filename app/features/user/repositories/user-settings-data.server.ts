@@ -76,6 +76,19 @@ export function updateUserRelaysRow(
   });
 }
 
+export function updateUserRelayPublishingPreferencesRow(
+  userId: string,
+  input: { userRelays: string[]; publishRelaySource: string }
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      userRelays: input.userRelays,
+      publishRelaySource: input.publishRelaySource,
+    },
+  });
+}
+
 export function findUserRelaysRow(
   userId: string
 ): Promise<{ userRelays: string[] } | null> {

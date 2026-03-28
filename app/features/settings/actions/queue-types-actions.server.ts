@@ -41,6 +41,7 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
     tags: string;
     description?: string | null;
   } | null;
+  includeHashtagsInNoteBody: boolean;
 } {
   /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for callers that may pass null/undefined */
   if (qt == null) {
@@ -75,6 +76,7 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
                 : null,
           }
         : null,
+    includeHashtagsInNoteBody: qt.includeHashtagsInNoteBody !== false,
   };
 }
 
@@ -228,6 +230,7 @@ async function handleCreateQueueType(
     colorToken: data.colorToken,
     description: data.description,
     hashTagPresetId: data.hashTagPresetId,
+    includeHashtagsInNoteBody: data.includeHashtagsInNoteBody,
   });
   await invalidateQueueTypesCache(userId);
   return json({
@@ -263,6 +266,7 @@ async function handleUpdateQueueType(
     description: data.description,
     isEnabled: data.isEnabled,
     hashTagPresetId: data.hashTagPresetId,
+    includeHashtagsInNoteBody: data.includeHashtagsInNoteBody,
   });
   await invalidateQueueTypesCache(userId);
   return json({

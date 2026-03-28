@@ -39,6 +39,8 @@ interface DraftEditFormProps {
   onScheduledForChange: (value: string) => void;
   onHashtagPresetSelect: (presetId: string | null, hashtags: string) => void;
   onUseHashtagPresetsChange: (value: boolean) => void;
+  includeHashtagsInNoteBody: boolean;
+  onIncludeHashtagsInNoteBodyChange: (value: boolean) => void;
   onResumeClick: () => void;
   alsoScheduleRepost?: boolean;
   onAlsoScheduleRepostChange?: (value: boolean) => void;
@@ -87,6 +89,8 @@ export function DraftEditForm({
   onScheduledForChange,
   onHashtagPresetSelect,
   onUseHashtagPresetsChange,
+  includeHashtagsInNoteBody,
+  onIncludeHashtagsInNoteBodyChange,
   onResumeClick,
   alsoScheduleRepost = false,
   onAlsoScheduleRepostChange,
@@ -208,6 +212,21 @@ export function DraftEditForm({
             (q) => (typeof q === "string" ? q : q.name) === selectedQueue
           )}
         />
+
+        <label
+          htmlFor="draft-include-hashtags-in-note"
+          className="mt-3 flex cursor-pointer items-center gap-2"
+        >
+          <Checkbox
+            id="draft-include-hashtags-in-note"
+            checked={includeHashtagsInNoteBody}
+            onCheckedChange={(c) =>
+              onIncludeHashtagsInNoteBodyChange(c === true)
+            }
+            disabled={isSubmitting}
+          />
+          <span className="text-sm">Include preset hashtags in note text</span>
+        </label>
 
         {/* Hidden inputs for hashtag preset data */}
         {useHashtagPresets && selectedHashtagPresetId ? (

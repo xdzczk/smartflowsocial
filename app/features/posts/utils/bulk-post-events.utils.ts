@@ -1,7 +1,6 @@
 import { nip19 } from "nostr-tools";
 
 import { type ToastMessage } from "~/components/types";
-import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
 import {
   fromISOString,
@@ -73,15 +72,9 @@ export function buildContent(
   fileUrls: string[],
   caption: string,
   tagsString: string,
-  user: User | null
+  includeHashtagsInNoteBody: boolean
 ): string {
-  const addTags =
-    user &&
-    typeof user === "object" &&
-    "showHashTagsinPosts" in user &&
-    user.showHashTagsinPosts
-      ? `${tagsString}`
-      : "";
+  const addTags = includeHashtagsInNoteBody ? `${tagsString}` : "";
 
   const mediaPart = fileUrls.length > 0 ? fileUrls.join("\n") : "";
   const contentParts = [mediaPart, caption, addTags].filter(
@@ -180,7 +173,9 @@ export function createFakeFileUrlData(posts: BulkPost[]): Array<{
   }));
 }
 
-export function getUserTimezone(user: User | null): string {
+export function getUserTimezone(
+  user: { timezone?: string | null } | null | undefined
+): string {
   return user &&
     typeof user === "object" &&
     "timezone" in user &&

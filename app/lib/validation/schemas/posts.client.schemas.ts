@@ -39,6 +39,7 @@ export const editPostClientSchema = z.object({
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().optional(),
   manualHashtags: z.string().optional(),
+  includeHashtagsInNoteBody: z.boolean().default(true),
 });
 
 /**
@@ -88,4 +89,5 @@ export const draftEditClientSchema = z.object({
   scheduledFor: z.string().optional(),
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().nullable().optional(),
+  includeHashtagsInNoteBody: z.boolean().default(true),
 });

@@ -105,6 +105,7 @@ export async function handlePostOrSchedulePoll(
     scheduledFor:
       action === "schedule-poll" ? signedEvent.created_at : undefined,
     nominalScheduledFor: undefined,
+    /** Client merges preset/tag line into signed poll question; do not append again server-side. */
     showHashTagsinPosts: false,
   });
 

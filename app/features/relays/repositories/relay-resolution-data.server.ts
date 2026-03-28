@@ -7,26 +7,31 @@ function sanitizeRelayStrings(relays: unknown): string[] {
     .filter((r) => r.length > 0);
 }
 
-export interface RelayIntent {
-  writeRelays: string[];
-}
+export type PublishRelaySourceDb = "app" | "nip65_profile";
 
 /**
- * Read persisted relay intent (write relays only).
- * Uses User.userRelays as the canonical store.
+ * Read persisted app relay list and publish source (NIP-65 vs app list).
  */
-export async function getRelayIntentFromDb(
-  userId: string
-): Promise<{ writeRelays: string[] }> {
+export async function getRelayIntentFromDb(userId: string): Promise<{
+  appRelays: string[];
+  publishRelaySource: PublishRelaySourceDb;
+  npub: string;
+}> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { userRelays: true },
+    select: { userRelays: true, publishRelaySource: true, npub: true },
   });
   if (!user) {
     throw new Error(`User ${userId} not found`);
   }
   const persisted = sanitizeRelayStrings(user.userRelays);
-  return { writeRelays: persisted };
+  const publishRelaySource: PublishRelaySourceDb =
+    user.publishRelaySource === "nip65_profile" ? "nip65_profile" : "app";
+  return {
+    appRelays: persisted,
+    publishRelaySource,
+    npub: user.npub,
+  };
 }
 
 export async function isBlastrEnabledForUserFromDb(

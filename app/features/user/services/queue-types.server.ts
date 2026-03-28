@@ -30,6 +30,7 @@ export function updateQueueType(
     description?: string;
     isEnabled?: boolean;
     hashTagPresetId?: string | null;
+    includeHashtagsInNoteBody?: boolean;
   }
 ): Promise<QueueType> {
   return updateQueueTypeRow(userId, queueTypeData);

@@ -43,6 +43,11 @@ import { cn } from "~/lib/utils";
 import { longformPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
+import {
+  type QueueType as PostsQueueType,
+  defaultIncludeHashtagsForQueueSelection,
+} from "../../types";
+
 import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
 import { LongFormContentEditor } from "./LongFormContentEditor";
 import { LongFormCoverImage } from "./LongFormCoverImage";
@@ -55,6 +60,7 @@ interface QueueType {
   hashtags?: string | null;
   scheduleType?: string;
   isEnabled?: boolean;
+  includeHashtagsInNoteBody?: boolean;
 }
 
 interface HashTagPreset {
@@ -105,8 +111,6 @@ interface LongFormPostProps {
   initialScheduledFor?: string | null;
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
-  /** From loader: account setting for appending tags into article markdown on publish. */
-  accountAllowsHashtagsInNoteBody?: boolean;
   publishMode?: ComposerPublishMode;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
@@ -140,7 +144,6 @@ export default function LongFormPost({
   initialTemplateName = null,
   initialScheduledFor = null,
   skipLocalDraftRestore = false,
-  accountAllowsHashtagsInNoteBody = true,
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
@@ -182,7 +185,10 @@ export default function LongFormPost({
       queueType: initialData?.queueType?.name ?? "unassigned",
       useHashtagPresets: useHashtagPresets,
       hashTagPresetId: selectedHashtagPresetId ?? undefined,
-      includeHashtagsInNoteBody: accountAllowsHashtagsInNoteBody,
+      includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+        initialData?.queueType?.name ?? "unassigned",
+        queueTypes as Array<string | PostsQueueType>
+      ),
     },
   });
 
@@ -437,6 +443,23 @@ export default function LongFormPost({
     formQueueTypeJustSetRef.current = true;
     form.setValue("queueType", schedulingQueueType);
   }, [schedulingQueueType, form]);
+
+  const prevQueueForIncludeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevQueueForIncludeRef.current === null) {
+      prevQueueForIncludeRef.current = schedulingQueueType;
+      return;
+    }
+    if (prevQueueForIncludeRef.current === schedulingQueueType) return;
+    prevQueueForIncludeRef.current = schedulingQueueType;
+    form.setValue(
+      "includeHashtagsInNoteBody",
+      defaultIncludeHashtagsForQueueSelection(
+        schedulingQueueType,
+        queueTypes as Array<string | PostsQueueType>
+      )
+    );
+  }, [schedulingQueueType, queueTypes, form]);
 
   const scheduledForJustSetFromHookRef = useRef(false);
   useEffect(() => {
@@ -1061,23 +1084,17 @@ export default function LongFormPost({
                     Include tags in article text
                   </Label>
                   <p className="text-muted-foreground text-[11px] leading-snug">
-                    {accountAllowsHashtagsInNoteBody
-                      ? "On by default. Turn off to hide tags from the article text (they stay on the event)."
-                      : "Your account keeps tags out of article text (Settings)."}
+                    On by default for new posts. Turn off to keep tags on the
+                    event only.
                   </p>
                 </div>
                 <Switch
                   id="longform-include-tags-in-body"
-                  checked={Boolean(
-                    accountAllowsHashtagsInNoteBody && includeHashtagsInNoteBody
-                  )}
+                  checked={Boolean(includeHashtagsInNoteBody)}
                   onCheckedChange={(v) => {
-                    if (!accountAllowsHashtagsInNoteBody) return;
                     form.setValue("includeHashtagsInNoteBody", v);
                   }}
-                  disabled={
-                    fetcher.state !== "idle" || !accountAllowsHashtagsInNoteBody
-                  }
+                  disabled={fetcher.state !== "idle"}
                   className="shrink-0"
                 />
               </div>

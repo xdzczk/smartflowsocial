@@ -16,17 +16,20 @@ import {
 } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client";
 
-import type {
-  PostData,
-  LongFormPostData,
-  UserData,
-  HashTagPreset,
+import {
+  type PostData,
+  type LongFormPostData,
+  type UserData,
+  type HashTagPreset,
+  type QueueType,
+  defaultIncludeHashtagsForQueueSelection,
 } from "../types";
 
 interface UseEditPostModalProps {
   post: PostData | LongFormPostData;
   user?: UserData;
   hashTagPresets?: HashTagPreset[];
+  queueTypes?: QueueType[];
   isLongform: boolean;
 }
 
@@ -188,6 +191,7 @@ export function useEditPostModal({
   post,
   user,
   hashTagPresets: _hashTagPresets = [],
+  queueTypes = [],
   isLongform,
 }: UseEditPostModalProps) {
   const { dateLocale } = useFormattedDate();
@@ -195,9 +199,23 @@ export function useEditPostModal({
   // Get initial values for form
   const getInitialValues = () => {
     if (isLongform && typeof post === "object" && "title" in post) {
-      return getLongformInitialValues(post);
+      const lf = getLongformInitialValues(post);
+      return {
+        ...lf,
+        includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+          lf.queueType,
+          queueTypes
+        ),
+      };
     }
-    return getRegularPostInitialValues(post);
+    const regular = getRegularPostInitialValues(post);
+    return {
+      ...regular,
+      includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
+        regular.queueType,
+        queueTypes
+      ),
+    };
   };
 
   // Initialize form with React Hook Form
@@ -338,6 +356,15 @@ export function useEditPostModal({
   const manualHashtags = isLongform
     ? ""
     : String(form.watch("manualHashtags") ?? "");
+  const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
+
+  useEffect(() => {
+    if (isLongform) return;
+    form.setValue(
+      "includeHashtagsInNoteBody",
+      defaultIncludeHashtagsForQueueSelection(selectedQueueType, queueTypes)
+    );
+  }, [selectedQueueType, queueTypes, isLongform, form]);
 
   // Setter functions for backward compatibility
   const setCaption = (value: string) => {
@@ -367,6 +394,9 @@ export function useEditPostModal({
   const setManualHashtags = (value: string) => {
     if (!isLongform) form.setValue("manualHashtags", value);
   };
+  const setIncludeHashtagsInNoteBody = (value: boolean) => {
+    form.setValue("includeHashtagsInNoteBody", value);
+  };
   const setContent = (value: string) => {
     if (isLongform) form.setValue("content", value);
   };
@@ -388,6 +418,7 @@ export function useEditPostModal({
     selectedHashtagPresetId,
     selectedHashtagPresetTags,
     manualHashtags,
+    includeHashtagsInNoteBody,
     // Setter functions (for backward compatibility)
     setCaption,
     setTitle,
@@ -397,6 +428,7 @@ export function useEditPostModal({
     setSelectedQueueType,
     setUseHashtagPresets,
     setManualHashtags,
+    setIncludeHashtagsInNoteBody,
     setContent,
     // Non-form state
     existingImages,

@@ -15,7 +15,10 @@ import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import { usePostScheduling } from "~/features/posts/scheduling";
-import type { QueueType } from "~/features/posts/types";
+import {
+  defaultIncludeHashtagsForQueueSelection,
+  type QueueType,
+} from "~/features/posts/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
@@ -45,7 +48,6 @@ import {
 import {
   ACTION_POST_POLL,
   ACTION_SCHEDULE_POLL,
-  effectiveAppendHashtagsToNoteBody,
   parseScheduledTime,
 } from "./composer/composer-submit-utils";
 
@@ -130,9 +132,8 @@ export function PollComposer({
   );
   const [endsAtLocal, setEndsAtLocal] = useState("");
   const [selectedHashtags, setSelectedHashtags] = useState("");
-  const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] = useState(
-    () => user?.showHashTagsinPosts !== false
-  );
+  const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] =
+    useState(true);
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
@@ -195,6 +196,17 @@ export function PollComposer({
   );
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+
+  const pollQueueEffectFirstRef = useRef(true);
+  useEffect(() => {
+    if (pollQueueEffectFirstRef.current) {
+      pollQueueEffectFirstRef.current = false;
+      return;
+    }
+    setIncludeHashtagsInNoteBody(
+      defaultIncludeHashtagsForQueueSelection(selectedQueue, queueTypes)
+    );
+  }, [selectedQueue, queueTypes]);
 
   const relayUrls =
     relayOverride && relayOverride.length > 0 ? relayOverride : defaultRelays;
@@ -264,10 +276,7 @@ export function PollComposer({
       return;
     }
     const tagLine = selectedHashtags.trim();
-    const appendTagsToQuestion = effectiveAppendHashtagsToNoteBody(
-      user?.showHashTagsinPosts,
-      includeHashtagsInNoteBody
-    );
+    const appendTagsToQuestion = includeHashtagsInNoteBody;
     const questionForEvent = pollQuestionForSignedEvent(
       q,
       tagLine,
@@ -820,9 +829,6 @@ export function PollComposer({
                 onHashtagPresetChange?.(id, tags);
               }}
               disabled={disabled}
-              accountAllowsHashtagsInNoteBody={
-                user?.showHashTagsinPosts !== false
-              }
               includeHashtagsInNoteBody={includeHashtagsInNoteBody}
               onIncludeHashtagsInNoteBodyChange={setIncludeHashtagsInNoteBody}
             />
