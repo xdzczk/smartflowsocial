@@ -35,14 +35,12 @@ export function useUnifiedComposerState({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [alsoScheduleRepost, setAlsoScheduleRepost] = useState(false);
   const [repostDelayList, setRepostDelayList] = useState<
     Array<{ id: string; value: number; unit: DelayAfterMain["unit"] }>
-  >([{ id: crypto.randomUUID(), value: 2, unit: "hours" }]);
+  >([]);
   const [repostConditions, setRepostConditions] =
     useState<RepostConditions | null>(null);
 
-  const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [quoteEntries, setQuoteEntries] = useState<
     Array<{
       id: string;
@@ -50,7 +48,7 @@ export function useUnifiedComposerState({
       unit: DelayAfterMain["unit"];
       caption: string;
     }>
-  >([{ id: crypto.randomUUID(), value: 2, unit: "hours", caption: "" }]);
+  >([]);
 
   const [postOptionsOpen, setPostOptionsOpen] = useState(false);
   const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
@@ -114,14 +112,10 @@ export function useUnifiedComposerState({
     attachments,
     setAttachments,
     fileInputRef,
-    alsoScheduleRepost,
-    setAlsoScheduleRepost,
     repostDelayList,
     setRepostDelayList,
     repostConditions,
     setRepostConditions,
-    alsoScheduleQuote,
-    setAlsoScheduleQuote,
     quoteEntries,
     setQuoteEntries,
     postOptionsOpen,

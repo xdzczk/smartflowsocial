@@ -26,6 +26,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
+import {
+  buildFollowUpCollapsedSummary,
+  countRepostConditionRules,
+} from "~/features/posts/components/follow-up";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import {
   RailChip,
@@ -260,14 +264,10 @@ export function UnifiedComposer({
     attachments,
     setAttachments,
     fileInputRef,
-    alsoScheduleRepost,
-    setAlsoScheduleRepost,
     repostDelayList,
     setRepostDelayList,
     repostConditions,
     setRepostConditions,
-    alsoScheduleQuote,
-    setAlsoScheduleQuote,
     quoteEntries,
     setQuoteEntries,
     scheduleRandomWindowMinutes,
@@ -281,6 +281,9 @@ export function UnifiedComposer({
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
+
+  const alsoScheduleRepost = repostDelayList.length > 0;
+  const alsoScheduleQuote = quoteEntries.length > 0;
 
   const [mediaUploadProvider, setMediaUploadProvider] = useState<
     string | undefined
@@ -661,6 +664,12 @@ export function UnifiedComposer({
       setSchedulingScheduledFor(formScheduledFor);
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
+
+  React.useEffect(() => {
+    if (repostDelayList.length === 0) {
+      setRepostConditions(null);
+    }
+  }, [repostDelayList.length, setRepostConditions]);
 
   const onBeginSaveDraft = useCallback(() => {
     pendingExplicitSaveDraftRef.current = true;
@@ -1201,23 +1210,11 @@ export function UnifiedComposer({
     queueNextSlotLabel: publishMode === "queue" ? queueNextSlotLabel : null,
   });
 
-  const followUpSummaryLine = (() => {
-    if (!alsoScheduleRepost && !alsoScheduleQuote) return "None";
-    const parts: string[] = [];
-    if (alsoScheduleRepost) {
-      parts.push(
-        repostDelayList.length > 0
-          ? `Repost (${repostDelayList.length})`
-          : "Repost"
-      );
-    }
-    if (alsoScheduleQuote) {
-      parts.push(
-        quoteEntries.length > 0 ? `Quote (${quoteEntries.length})` : "Quote"
-      );
-    }
-    return parts.join(" · ");
-  })();
+  const followUpSummaryLine = buildFollowUpCollapsedSummary({
+    repostCount: repostDelayList.length,
+    quoteCount: quoteEntries.length,
+    conditionRuleCount: countRepostConditionRules(repostConditions),
+  });
 
   const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
@@ -1660,14 +1657,10 @@ export function UnifiedComposer({
             summaryLine: followUpSummaryLine,
             children: (
               <AlsoScheduleBlock
-                alsoScheduleRepost={alsoScheduleRepost}
-                onAlsoScheduleRepostChange={setAlsoScheduleRepost}
                 repostDelayList={repostDelayList}
                 onRepostDelayListChange={setRepostDelayList}
                 repostConditions={repostConditions}
                 onRepostConditionsChange={setRepostConditions}
-                alsoScheduleQuote={alsoScheduleQuote}
-                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
                 quoteEntries={quoteEntries}
                 onQuoteEntriesChange={setQuoteEntries}
                 disabled={disabled}

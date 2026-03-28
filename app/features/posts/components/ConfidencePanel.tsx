@@ -164,7 +164,7 @@ function FollowUpRailCollapsible({
         }
       />
       {open ? (
-        <div className="border-border/50 mt-1 border-t border-dashed pt-2 pl-0">
+        <div className="divide-border/60 border-border/50 mt-1 border-t pt-2 pl-0">
           {children}
         </div>
       ) : null}

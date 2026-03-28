@@ -20,7 +20,7 @@ import {
   railSelectTriggerClassNames,
 } from "~/features/posts/components/publishing-rail";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
-import type { QueueType, RepostConditions } from "~/features/posts/types";
+import type { QueueType } from "~/features/posts/types";
 import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
@@ -58,18 +58,6 @@ export interface ComposerScheduleFieldProps<
   isRecyclable?: boolean;
   onRecyclableChange?: (v: boolean) => void;
   control?: Control<T>;
-  alsoScheduleRepost?: boolean;
-  onAlsoScheduleRepostChange?: (v: boolean) => void;
-  repostDelayList?: RepostDelayItem[];
-  onRepostDelayListChange?: React.Dispatch<
-    React.SetStateAction<RepostDelayItem[]>
-  >;
-  repostConditions?: RepostConditions | null;
-  onRepostConditionsChange?: (v: RepostConditions | null) => void;
-  alsoScheduleQuote?: boolean;
-  onAlsoScheduleQuoteChange?: (v: boolean) => void;
-  quoteEntries?: QuoteEntryItem[];
-  onQuoteEntriesChange?: React.Dispatch<React.SetStateAction<QuoteEntryItem[]>>;
   disabled?: boolean;
   userTimezone?: string;
   postOptionsSummary?: string;
@@ -90,9 +78,6 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
   onCalculateNextSlot,
   scheduleRandomWindowMinutes,
   onScheduleRandomWindowMinutesChange,
-  onRepostDelayListChange: _onRepostDelayListChange,
-  onRepostConditionsChange: _onRepostConditionsChange,
-  onQuoteEntriesChange: _onQuoteEntriesChange,
   disabled = false,
   userTimezone = "UTC",
   postOptionsSummary: _postOptionsSummary,

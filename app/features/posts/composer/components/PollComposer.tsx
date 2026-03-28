@@ -854,16 +854,6 @@ export function PollComposer({
                       onPostOptionsOpenChange={() => void 0}
                       isThreadMode={false}
                       onThreadModeChange={() => void 0}
-                      alsoScheduleRepost={false}
-                      onAlsoScheduleRepostChange={() => void 0}
-                      repostDelayList={[]}
-                      onRepostDelayListChange={(_value) => void _value}
-                      repostConditions={null}
-                      onRepostConditionsChange={() => void 0}
-                      alsoScheduleQuote={false}
-                      onAlsoScheduleQuoteChange={() => void 0}
-                      quoteEntries={[]}
-                      onQuoteEntriesChange={(_value) => void _value}
                       disabled={disabled}
                       userTimezone={userTimezone}
                       showThreadModeToggle={false}

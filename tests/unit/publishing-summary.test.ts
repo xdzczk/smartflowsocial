@@ -171,5 +171,11 @@ describe("publishing summary helpers", () => {
         showRecyclable: false,
       })
     ).toBe("Follow-up: Quote (1)");
+    expect(
+      formatPublishSummaryOptionsLine({
+        followUpSummaryLine: "Repost (1) · Conditions",
+        showRecyclable: false,
+      })
+    ).toBe("Follow-up: Repost (1) · Conditions");
   });
 });

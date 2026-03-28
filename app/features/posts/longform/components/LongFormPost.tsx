@@ -10,6 +10,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { requestNewSignerSession } from "~/features/auth/signer";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
+import { buildFollowUpCollapsedSummary } from "~/features/posts/components/follow-up";
 import { useComposerState, useLocalDraft } from "~/features/posts/composer";
 import {
   buildArticlePublishSummaryLines,
@@ -160,19 +161,11 @@ export default function LongFormPost({
   const [templateName, setTemplateName] = useState(
     () => initialTemplateName ?? ""
   );
-  const [alsoScheduleQuote, setAlsoScheduleQuote] = useState(false);
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
   const [bodyView, setBodyView] = useState<"edit" | "preview">("edit");
   const isTemplateMode = mode === "template";
-  const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>(() => [
-    {
-      id: crypto.randomUUID(),
-      value: 2,
-      unit: "hours",
-      caption: "",
-    },
-  ]);
+  const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>([]);
 
   // Initialize form with React Hook Form
   const form = useZodForm(longformPostClientSchema, {
@@ -573,7 +566,7 @@ export default function LongFormPost({
       displayedHashtags,
       useHashtagPresets,
       selectedHashtags,
-      alsoScheduleQuote,
+      alsoScheduleQuote: quoteEntries.length > 0,
       quoteEntries,
       userTimezone,
       publishMode,
@@ -798,11 +791,11 @@ export default function LongFormPost({
     omitRelayRequirement: false,
   });
 
-  const longformFollowUpSummary = alsoScheduleQuote
-    ? quoteEntries.length > 0
-      ? `Quote (${quoteEntries.length})`
-      : "Quote"
-    : "None";
+  const longformFollowUpSummary = buildFollowUpCollapsedSummary({
+    repostCount: 0,
+    quoteCount: quoteEntries.length,
+    conditionRuleCount: 0,
+  });
 
   const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
@@ -1215,8 +1208,6 @@ export default function LongFormPost({
             summaryLine: longformFollowUpSummary,
             children: (
               <AlsoScheduleLongformQuote
-                alsoScheduleQuote={alsoScheduleQuote}
-                onAlsoScheduleQuoteChange={setAlsoScheduleQuote}
                 quoteEntries={quoteEntries}
                 onQuoteEntriesChange={setQuoteEntries}
                 disabled={fetcher.state !== "idle" || isSigning}
