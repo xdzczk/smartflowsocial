@@ -138,7 +138,7 @@ function PublishingModeFusedHeader({
     <div
       role="radiogroup"
       aria-label="Publishing mode"
-      className="border-border/60 divide-border/60 relative grid grid-cols-3 divide-x border-b"
+      className="border-border/60 relative grid grid-cols-3 border-b"
     >
       {modes.map((m) => {
         const active = publishMode === m;
@@ -150,9 +150,9 @@ function PublishingModeFusedHeader({
             aria-checked={active}
             aria-label={ariaLabels[m]}
             className={cn(
-              "min-h-[44px] px-1 py-2.5 text-center text-xs transition-colors",
+              "border-border/60 min-h-[44px] border-e px-1 py-2.5 text-center text-xs transition-colors last:border-e-0",
               active
-                ? "text-foreground border-card bg-card relative z-[1] -mb-px border-b font-semibold"
+                ? "text-foreground bg-card border-b-card relative z-[1] -mb-px border-b font-semibold"
                 : "text-muted-foreground hover:text-foreground font-medium"
             )}
             onClick={() => onPublishModeChange(m)}

@@ -476,7 +476,6 @@ export function PollComposer({
     setScheduleRandomWindowMinutes(
       pollDraftRestored.scheduleRandomWindowMinutes ?? 0
     );
-    onDraftStateLabelChange?.("Restored from browser draft");
     trackComposerEvent("composer_draft_restored", {
       source: "poll",
       mode: "local",
@@ -486,7 +485,6 @@ export function PollComposer({
     setScheduledFor,
     setSelectedQueue,
     skipLocalDraftRestore,
-    onDraftStateLabelChange,
   ]);
 
   useEffect(() => {

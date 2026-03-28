@@ -32,6 +32,17 @@ interface HashTagPreset {
   description?: string | null;
 }
 
+function isUnassignedQueueType(name: string): boolean {
+  return name === "unassigned" || name === "Unassigned";
+}
+
+/** Radix Select value for the queue dropdown (must match a SelectItem). */
+function queueSelectControlValue(selectedQueueType: string): string {
+  return isUnassignedQueueType(selectedQueueType)
+    ? "__unassigned__"
+    : selectedQueueType;
+}
+
 interface LongFormPublishingOptionsProps {
   queueTypes: Array<string | QueueType>;
   selectedQueueType: string;
@@ -98,11 +109,7 @@ export function LongFormPublishingOptions({
         {/* Queue Type Selection - vertical */}
         <div className="space-y-2">
           <Select
-            value={
-              selectedQueueType === "unassigned"
-                ? "__unassigned__"
-                : selectedQueueType
-            }
+            value={queueSelectControlValue(selectedQueueType)}
             onValueChange={(value) =>
               onQueueTypeChange(
                 value === "__unassigned__" ? "unassigned" : value

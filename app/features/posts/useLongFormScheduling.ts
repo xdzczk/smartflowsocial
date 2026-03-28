@@ -24,15 +24,22 @@ interface UseLongFormSchedulingOptions {
   onQueueTypeChange?: (name: string) => void;
 }
 
+/** Canonical sentinel for "no queue" (matches LongFormPublishingOptions Select items). */
+function normalizeInitialQueueType(name: string): string {
+  return name === "Unassigned" || name === "unassigned" ? "unassigned" : name;
+}
+
 export function useLongFormScheduling({
   queueTypes,
   scheduleIntervals: _scheduleIntervals,
   userTags,
   userTimezone,
-  initialQueueType = "Unassigned",
+  initialQueueType = "unassigned",
   onQueueTypeChange,
 }: UseLongFormSchedulingOptions) {
-  const [selectedQueueType, setSelectedQueueType] = useState(initialQueueType);
+  const [selectedQueueType, setSelectedQueueType] = useState(() =>
+    normalizeInitialQueueType(initialQueueType)
+  );
   const [scheduledFor, setScheduledFor] = useState<string | null>("");
   const [displayedHashtags, setDisplayedHashtags] = useState(userTags);
 
