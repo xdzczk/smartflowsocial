@@ -1,4 +1,6 @@
+import { ActionRailLabel } from "~/components/action-rail";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Input } from "~/components/ui/input";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
   Popover,
@@ -6,6 +8,10 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  RailSettingsRow,
+  railFieldClassNames,
+} from "~/features/posts/components/publishing-rail";
 import {
   getDynamicQueueStyle,
   getQueueAccentHex,
@@ -63,116 +69,129 @@ function BulkComposerPostAdvancedBlock({
     }>
   ) => void;
 }) {
-  return (
-    <div className="border-border space-y-4 border-t pt-3">
-      <dl className="text-muted-foreground grid gap-3 text-xs sm:grid-cols-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <dt className="shrink-0">Queue</dt>
-          <dd>
-            <Popover>
-              <PopoverTrigger asChild>{queueTrigger}</PopoverTrigger>
-              <PopoverContent className="w-56 p-2" align="start">
-                <div className="max-h-56 space-y-1 overflow-y-auto">
-                  <button
-                    type="button"
-                    className="hover:bg-muted w-full rounded px-2 py-1.5 text-left text-sm"
-                    onClick={() => onQueueTypeChange(index, "unassigned")}
-                  >
-                    Unassigned
-                  </button>
-                  {queueTypes.map((queue) => {
-                    const name = typeof queue === "string" ? queue : queue.name;
-                    const colorToken =
-                      typeof queue === "object"
-                        ? (queue as { colorToken?: string | null }).colorToken
-                        : null;
-                    const accent =
-                      colorToken != null
-                        ? getQueueAccentHex(colorToken)
-                        : undefined;
-                    return (
-                      <button
-                        key={name}
-                        type="button"
-                        className={`w-full rounded px-2 py-1.5 text-left text-sm ${getDynamicQueueStyle(colorToken ?? null, post.queueType === name)}`}
-                        style={{
-                          backgroundColor:
-                            post.queueType === name ? accent : undefined,
-                        }}
-                        onClick={() => onQueueTypeChange(index, name)}
-                      >
-                        {name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </dd>
-        </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <dt>Schedule</dt>
-          <dd>
-            <input
-              type="datetime-local"
-              name="scheduledDates"
-              value={post.scheduledFor}
-              onChange={(e) => onDateChange(index, e.target.value)}
-              min={getNowForDateTimeLocal(userTimezone)}
-              className="border-border bg-background text-foreground w-full max-w-xs rounded-md border px-2 py-1.5 text-sm"
-            />
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2 sm:col-span-2">
-          <span>Follow-up</span>
-          <span className="text-foreground font-medium">
-            {followUpSummaryLine(
-              post,
-              bulkRepostConditions,
-              showBatchRepostConditions
-            )}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 sm:col-span-2">
-          <Checkbox
-            id={`bulk-rec-card-${post.clientId}`}
-            checked={post.isRecyclable}
-            onCheckedChange={(c) => onIsRecyclableChange(index, c === true)}
-          />
-          <label
-            htmlFor={`bulk-rec-card-${post.clientId}`}
-            className="text-foreground text-sm"
+  const scheduleInputId = `bulk-sched-${post.clientId}`;
+  const queuePopover = (
+    <Popover>
+      <PopoverTrigger asChild>{queueTrigger}</PopoverTrigger>
+      <PopoverContent className="w-56 p-2" align="start">
+        <div className="max-h-56 space-y-1 overflow-y-auto">
+          <button
+            type="button"
+            className="hover:bg-muted w-full rounded px-2 py-1.5 text-left text-sm"
+            onClick={() => onQueueTypeChange(index, "unassigned")}
           >
-            Recyclable
-          </label>
+            Unassigned
+          </button>
+          {queueTypes.map((queue) => {
+            const name = typeof queue === "string" ? queue : queue.name;
+            const colorToken =
+              typeof queue === "object"
+                ? (queue as { colorToken?: string | null }).colorToken
+                : null;
+            const accent =
+              colorToken != null ? getQueueAccentHex(colorToken) : undefined;
+            return (
+              <button
+                key={name}
+                type="button"
+                className={`w-full rounded px-2 py-1.5 text-left text-sm ${getDynamicQueueStyle(colorToken ?? null, post.queueType === name)}`}
+                style={{
+                  backgroundColor: post.queueType === name ? accent : undefined,
+                }}
+                onClick={() => onQueueTypeChange(index, name)}
+              >
+                {name}
+              </button>
+            );
+          })}
         </div>
-      </dl>
-      {showAlsoSchedule && onRepostSchedulesChange && onQuoteSchedulesChange ? (
-        <BulkAlsoScheduleCell
-          repostSchedules={post.repostSchedules ?? []}
-          quoteSchedules={post.quoteSchedules ?? []}
-          onRepostSchedulesChange={(list) =>
-            onRepostSchedulesChange(index, list)
-          }
-          onQuoteSchedulesChange={(list) => onQuoteSchedulesChange(index, list)}
-          rowLabelId={post.clientId}
-        />
-      ) : null}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={`bulk-tags-note-${post.clientId}`}
-          checked={post.includeHashtagsInNoteBody === false}
-          onCheckedChange={(c) =>
-            onIncludeHashtagsInNoteBodyChange(index, c !== true)
-          }
-        />
-        <label
-          htmlFor={`bulk-tags-note-${post.clientId}`}
-          className="text-muted-foreground text-sm"
-        >
-          Hide tags
-        </label>
+      </PopoverContent>
+    </Popover>
+  );
+
+  return (
+    <div className="border-border space-y-3 border-t pt-2">
+      <div className="space-y-2">
+        <ActionRailLabel className="normal-case">
+          Queue & schedule
+        </ActionRailLabel>
+        <div className="space-y-2">
+          <RailSettingsRow label="Queue" control={queuePopover} />
+          <RailSettingsRow
+            labelFor={scheduleInputId}
+            label="Schedule"
+            control={
+              <Input
+                id={scheduleInputId}
+                type="datetime-local"
+                name="scheduledDates"
+                value={post.scheduledFor}
+                onChange={(e) => onDateChange(index, e.target.value)}
+                min={getNowForDateTimeLocal(userTimezone)}
+                className={cn(railFieldClassNames, "h-9 w-full max-w-[12rem]")}
+              />
+            }
+          />
+        </div>
       </div>
+
+      <div className="border-border space-y-1.5 border-t pt-2">
+        <ActionRailLabel className="normal-case">Follow-up</ActionRailLabel>
+        <p className="text-foreground text-xs leading-snug font-medium">
+          {followUpSummaryLine(
+            post,
+            bulkRepostConditions,
+            showBatchRepostConditions
+          )}
+        </p>
+      </div>
+
+      <div className="border-border space-y-2 border-t pt-2">
+        <ActionRailLabel className="normal-case">Options</ActionRailLabel>
+        <RailSettingsRow
+          labelFor={`bulk-rec-card-${post.clientId}`}
+          label="Recyclable"
+          control={
+            <Checkbox
+              id={`bulk-rec-card-${post.clientId}`}
+              checked={post.isRecyclable}
+              onCheckedChange={(c) => onIsRecyclableChange(index, c === true)}
+            />
+          }
+        />
+        <RailSettingsRow
+          labelFor={`bulk-tags-note-${post.clientId}`}
+          label="Hide tags"
+          control={
+            <Checkbox
+              id={`bulk-tags-note-${post.clientId}`}
+              checked={post.includeHashtagsInNoteBody === false}
+              onCheckedChange={(c) =>
+                onIncludeHashtagsInNoteBodyChange(index, c !== true)
+              }
+            />
+          }
+        />
+      </div>
+
+      {showAlsoSchedule && onRepostSchedulesChange && onQuoteSchedulesChange ? (
+        <div className="border-border space-y-2 border-t pt-2">
+          <ActionRailLabel className="normal-case">
+            Also schedule
+          </ActionRailLabel>
+          <BulkAlsoScheduleCell
+            repostSchedules={post.repostSchedules ?? []}
+            quoteSchedules={post.quoteSchedules ?? []}
+            onRepostSchedulesChange={(list) =>
+              onRepostSchedulesChange(index, list)
+            }
+            onQuoteSchedulesChange={(list) =>
+              onQuoteSchedulesChange(index, list)
+            }
+            rowLabelId={post.clientId}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -236,14 +255,14 @@ export function BulkComposerPostCardBuildBody({
 }) {
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-wrap gap-2">
           {previewList.map((previewInfo, fileIndex) => (
             <div key={previewInfo.url} className="group relative">
               <MediaThumbnail
                 src={previewInfo.url}
                 alt=""
-                className="h-28 w-28 rounded-lg object-cover"
+                className="h-24 w-24 rounded-lg object-cover"
                 onClick={() => onMediaClick(previewInfo.url)}
                 forceType={previewInfo.isVideo ? "video" : "image"}
               />
@@ -264,7 +283,7 @@ export function BulkComposerPostCardBuildBody({
               <MediaThumbnail
                 src={url}
                 alt=""
-                className="h-28 w-28 rounded-lg object-cover"
+                className="h-24 w-24 rounded-lg object-cover"
                 onClick={() => onMediaClick(url)}
               />
               {onRowFileRemove ? (
@@ -284,7 +303,7 @@ export function BulkComposerPostCardBuildBody({
           {onRowFileSelect ? (
             <label
               className={cn(
-                "border-muted-foreground/30 text-muted-foreground flex h-28 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
+                "border-muted-foreground/30 text-muted-foreground flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
                 rowMediaUploadDisabled && "pointer-events-none opacity-50"
               )}
             >
@@ -309,7 +328,7 @@ export function BulkComposerPostCardBuildBody({
             value={post.caption}
             onChange={(e) => onCaptionChange(index, e.target.value)}
             disabled={post.isKind6Repost}
-            rows={5}
+            rows={4}
             placeholder={
               post.isKind6Repost
                 ? "Kind 6 repost…"
@@ -317,17 +336,10 @@ export function BulkComposerPostCardBuildBody({
                   ? "Comment on quote…"
                   : "Caption…"
             }
-            className="min-h-[120px] w-full resize-y text-base"
+            className="min-h-[96px] w-full resize-y text-base"
           />
         </div>
       </div>
-
-      {!advancedOpen ? (
-        <p className="text-muted-foreground border-border border-t pt-3 text-xs">
-          Queue, schedule, follow-up, recyclable, and tags are under{" "}
-          <span className="text-foreground font-medium">Advanced</span>.
-        </p>
-      ) : null}
 
       {advancedOpen ? (
         <BulkComposerPostAdvancedBlock

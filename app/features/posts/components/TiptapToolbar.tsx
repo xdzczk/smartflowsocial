@@ -20,9 +20,10 @@ interface TiptapToolbarProps {
   /** `editorial` — quieter chrome for article composer; `default` — modal / legacy. */
   density?: "default" | "editorial";
   /**
-   * When `density="editorial"` and `embedded`, toolbar sits inside article chrome — no bottom border.
+   * When `density="editorial`: `standalone` — own card strip; `embedded` — under mode row;
+   * `inComposerCanvas` — inside main composer card; slightly stronger band for the writing surface.
    */
-  editorialChrome?: "standalone" | "embedded";
+  editorialChrome?: "standalone" | "embedded" | "inComposerCanvas";
 }
 
 function ToolbarButton({
@@ -80,6 +81,7 @@ export function TiptapToolbar({
 
   const editorial = density === "editorial";
   const editorialEmbedded = editorial && editorialChrome === "embedded";
+  const editorialInCanvas = editorial && editorialChrome === "inComposerCanvas";
 
   const setLink = () => {
     const linkAttrs = editor.getAttributes("link") as { href?: string };
@@ -98,10 +100,12 @@ export function TiptapToolbar({
     <div
       className={cn(
         "flex flex-wrap items-center",
-        editorialEmbedded
-          ? "border-border/10 gap-x-1 gap-y-0.5 border-t bg-transparent px-2 py-1.5 sm:px-2.5"
-          : "gap-0.5 border-b",
-        editorial && !editorialEmbedded
+        editorialInCanvas
+          ? "border-border/25 bg-muted/10 gap-x-1 gap-y-0.5 border-t px-2.5 py-2 sm:px-3"
+          : editorialEmbedded
+            ? "border-border/10 gap-x-1 gap-y-0.5 border-t bg-transparent px-2 py-1.5 sm:px-2.5"
+            : "gap-0.5 border-b",
+        editorial && !editorialEmbedded && !editorialInCanvas
           ? "border-border/15 bg-transparent px-2 py-1"
           : !editorial && "border-border bg-muted/40 px-2 py-1.5"
       )}
@@ -176,11 +180,13 @@ export function TiptapToolbar({
         orientation="vertical"
         className={cn(
           "mx-1",
-          editorialEmbedded
-            ? "bg-border/20 h-[1.125rem]"
-            : editorial
-              ? "bg-border/25 h-5"
-              : "h-6"
+          editorialInCanvas
+            ? "bg-border/30 h-5"
+            : editorialEmbedded
+              ? "bg-border/20 h-[1.125rem]"
+              : editorial
+                ? "bg-border/25 h-5"
+                : "h-6"
         )}
       />
       <ToolbarButton

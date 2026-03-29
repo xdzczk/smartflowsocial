@@ -1,6 +1,8 @@
 export { RailChip, RailChipGroup } from "./RailChip";
 export { RailFeedbackBlock } from "./RailFeedbackBlock";
 export { RailSectionHeader } from "./RailSectionHeader";
+export { RailSegmentedTabGroup } from "./RailSegmentedTabGroup";
+export type { RailSegmentedTabItem } from "./RailSegmentedTabGroup";
 export { RailSegmentedTabs } from "./RailSegmentedTabs";
 export { RailSettingsRow, RailSettingsValueRow } from "./RailSettingsRow";
 export {

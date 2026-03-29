@@ -38,6 +38,10 @@ import {
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import {
+  applyThreadSegmentNumberingToSegments,
+  stripLeadingThreadSegmentNumber,
+} from "~/features/posts/composer/utils/thread-segment-numbering";
+import {
   DraftPickerModal,
   type ShortDraftFilter,
 } from "~/features/posts/drafts";
@@ -70,12 +74,12 @@ import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect"
 import { useComposerState } from "../hooks/useComposerState";
 import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
+import { UnifiedComposerPreviewBlock } from "../preview/UnifiedComposerPreviewBlock";
 
 import {
   ComposerCanvasDivider,
   ComposerErrors,
   ComposerLeftCanvas,
-  ComposerOutputPanel,
   ComposerQueueField,
   ComposerScheduleRandomWindowField,
   ComposerScheduleField,
@@ -287,9 +291,50 @@ export function UnifiedComposer({
     setThreadSegments,
     threadDelayMinutes,
     setThreadDelayMinutes,
+    threadAutoNumberSegments,
+    setThreadAutoNumberSegments,
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   } = composerState;
+
+  const mergeThreadSegments = useCallback(
+    (
+      updater: React.SetStateAction<
+        Array<{
+          id: string;
+          content: string;
+          attachments: ComposerAttachment[];
+        }>
+      >
+    ) => {
+      setThreadSegments((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        if (!threadAutoNumberSegments) return next;
+        return applyThreadSegmentNumberingToSegments(next);
+      });
+    },
+    [threadAutoNumberSegments, setThreadSegments]
+  );
+
+  const handleThreadAutoNumberSegmentsChange = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        setThreadAutoNumberSegments(true);
+        setThreadSegments((prev) =>
+          applyThreadSegmentNumberingToSegments(prev)
+        );
+        return;
+      }
+      setThreadAutoNumberSegments(false);
+      setThreadSegments((prev) =>
+        prev.map((s) => ({
+          ...s,
+          content: stripLeadingThreadSegmentNumber(s.content),
+        }))
+      );
+    },
+    [setThreadAutoNumberSegments, setThreadSegments]
+  );
 
   const alsoScheduleRepost = repostDelayList.length > 0;
   const alsoScheduleQuote = quoteEntries.length > 0;
@@ -403,6 +448,7 @@ export function UnifiedComposer({
   const content = form.watch("content");
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
   const formSelectedHashtagPresetId = form.watch("hashTagPresetId");
+  const useHashtagPresetsActive = !!form.watch("useHashtagPresets");
 
   const {
     selectedQueue,
@@ -491,6 +537,8 @@ export function UnifiedComposer({
       localRestored.contentType === "thread" &&
       localRestored.threadSegments
     ) {
+      const threadNumbering = localRestored.threadAutoNumberSegments === true;
+      setThreadAutoNumberSegments(threadNumbering);
       const mapped = localRestored.threadSegments.map((segment) => ({
         id: segment.id,
         content: segment.content,
@@ -509,7 +557,9 @@ export function UnifiedComposer({
           attachments: [],
         });
       }
-      setThreadSegments(padded);
+      setThreadSegments(
+        threadNumbering ? applyThreadSegmentNumberingToSegments(padded) : padded
+      );
       if (typeof localRestored.threadDelayMinutes === "number") {
         const d = localRestored.threadDelayMinutes;
         setThreadDelayMinutes(
@@ -534,6 +584,7 @@ export function UnifiedComposer({
     setSelectedHashtags,
     setThreadSegments,
     setThreadDelayMinutes,
+    setThreadAutoNumberSegments,
     queueTypes,
   ]);
 
@@ -615,6 +666,9 @@ export function UnifiedComposer({
             }))
           : undefined,
         threadDelayMinutes: isThreadMode ? threadDelayMinutes : undefined,
+        threadAutoNumberSegments: isThreadMode
+          ? threadAutoNumberSegments
+          : undefined,
       }),
     [
       content,
@@ -626,6 +680,7 @@ export function UnifiedComposer({
       isThreadMode,
       threadSegments,
       threadDelayMinutes,
+      threadAutoNumberSegments,
     ]
   );
 
@@ -665,6 +720,9 @@ export function UnifiedComposer({
           }))
         : undefined,
       threadDelayMinutes: isThreadMode ? threadDelayMinutes : undefined,
+      threadAutoNumberSegments: isThreadMode
+        ? threadAutoNumberSegments
+        : undefined,
     };
     lastLocalSnapshotRef.current = snapshot;
     saveLocalSnapshot(snapshot);
@@ -682,6 +740,7 @@ export function UnifiedComposer({
     isThreadMode,
     threadSegments,
     threadDelayMinutes,
+    threadAutoNumberSegments,
     saveLocalSnapshot,
   ]);
 
@@ -930,7 +989,7 @@ export function UnifiedComposer({
         file,
         mime: composerAttachmentMime(file),
       }));
-      setThreadSegments((prev) =>
+      mergeThreadSegments((prev) =>
         prev.map((p) => {
           if (p.id !== segmentId) return p;
           let newContent = p.content;
@@ -947,7 +1006,7 @@ export function UnifiedComposer({
       void (async () => {
         try {
           const results = await uploadMultipleFiles(accepted);
-          setThreadSegments((prev) =>
+          mergeThreadSegments((prev) =>
             prev.map((p) => {
               if (p.id !== segmentId) return p;
               return {
@@ -972,7 +1031,7 @@ export function UnifiedComposer({
             })
           );
         } catch {
-          setThreadSegments((prev) =>
+          mergeThreadSegments((prev) =>
             prev.map((p) => {
               if (p.id !== segmentId) return p;
               return {
@@ -989,7 +1048,7 @@ export function UnifiedComposer({
         }
       })();
     },
-    [blossomMediaBlocked, setThreadSegments]
+    [blossomMediaBlocked, mergeThreadSegments]
   );
 
   const handleAddAttachment = () => {
@@ -1223,6 +1282,9 @@ export function UnifiedComposer({
     ? [
         `Cadence: every ${threadDelayMinutes} min`,
         `Estimated duration: ${Math.max(threadSegments.length - 1, 0) * threadDelayMinutes} min`,
+        ...(threadAutoNumberSegments
+          ? ["Segment numbers in note text: on"]
+          : []),
       ]
     : [];
 
@@ -1504,7 +1566,11 @@ export function UnifiedComposer({
               onReorderAttachments={handleReorderAttachments}
               onFilesDroppedSingle={processNewFilesForSingleNote}
               threadSegments={threadSegments}
-              onThreadSegmentsChange={setThreadSegments}
+              onThreadSegmentsChange={mergeThreadSegments}
+              threadAutoNumberSegments={threadAutoNumberSegments}
+              onThreadAutoNumberSegmentsChange={
+                handleThreadAutoNumberSegmentsChange
+              }
               threadDelayMinutes={threadDelayMinutes}
               onFilesDroppedSegment={processNewFilesForSegment}
               onThreadSegmentFileClick={(segmentId) => {
@@ -1524,23 +1590,29 @@ export function UnifiedComposer({
               <>
                 <ComposerCanvasDivider />
                 <div className="flex flex-col gap-4 sm:gap-5">
-                  {!isThreadMode ? (
-                    <ComposerOutputPanel
-                      variant="embedded"
-                      content={content}
-                      attachments={attachments}
-                      tagsLine={selectedHashtags}
-                    />
-                  ) : (
-                    <ComposerOutputPanel
-                      variant="embedded"
-                      previewTone="thread"
-                      content={threadSegments[0]?.content ?? ""}
-                      attachments={threadSegments[0]?.attachments ?? []}
-                      tagsLine={selectedHashtags}
-                      previewLabel="Preview (first segment)"
-                    />
-                  )}
+                  <UnifiedComposerPreviewBlock
+                    isThreadMode={isThreadMode}
+                    content={content}
+                    attachments={attachments}
+                    selectedHashtags={selectedHashtags}
+                    useHashtagPresets={useHashtagPresetsActive}
+                    queueTypes={queueTypes}
+                    userId={user?.id}
+                    defaultTags={tags}
+                    includeHashtagsInNoteBody={
+                      includeHashtagsInNoteBody !== false
+                    }
+                    threadSegments={threadSegments}
+                    threadDelayMinutes={threadDelayMinutes}
+                    publishMode={publishMode}
+                    relayCount={relayCount}
+                    selectedQueue={selectedQueue}
+                    followUpSummaryLine={followUpSummaryLine}
+                    isRecyclable={isRecyclableVal}
+                    scheduledForLocal={
+                      formScheduledFor ?? schedulingScheduledFor
+                    }
+                  />
                   <ComposerCanvasDivider />
                   <TagsChipRow
                     tags={selectedHashtags}

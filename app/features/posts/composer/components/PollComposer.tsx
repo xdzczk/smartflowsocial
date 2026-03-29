@@ -21,11 +21,18 @@ import {
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
-import { nowMillis } from "~/lib/temporal";
+import {
+  formatForDateTimeLocal,
+  fromUnixTimestamp,
+  nowMillis,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import { useLocalDraft } from "../hooks/useComposerLocalDraft";
 import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
 import { useComposerState } from "../hooks/useComposerState";
+import { PollComposerPreviewBlock } from "../preview/PollComposerPreviewBlock";
 
 import {
   ComposerCanvasDivider,
@@ -35,7 +42,6 @@ import {
   ComposerQueueField,
   ComposerScheduleRandomWindowField,
   ComposerScheduleField,
-  PollOutputPanel,
   composerCanvasFieldStackClass,
   type ComposerPublishMode,
   buildPublishPathSummary,
@@ -60,6 +66,55 @@ const MIN_OPTIONS = 2;
 const COMPOSER_SCHEDULE_FUTURE = "Schedule time must be in the future.";
 
 const POLL_QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS = [5, 10, 15] as const;
+
+const MAX_HOURS_AFTER_PUBLISH = 8760;
+
+type PollEndMode = "absolute" | "relative";
+
+function randomScheduleHalfWidthSeconds(windowMinutes: number): number {
+  if (!Number.isFinite(windowMinutes) || windowMinutes <= 0) return 0;
+  return Math.min(Math.floor(windowMinutes * 60), 24 * 60 * 60);
+}
+
+async function resolvePollEndsAtUnixForSubmit(params: {
+  pollEndMode: PollEndMode;
+  pollEndHoursAfterPublish: number;
+  endsAtLocal: string;
+  createdUnix: number;
+  userTimezone: string;
+}): Promise<
+  { ok: true; endsAtUnix: number | undefined } | { ok: false; message: string }
+> {
+  if (params.pollEndMode === "relative") {
+    const hours = params.pollEndHoursAfterPublish;
+    if (
+      !Number.isFinite(hours) ||
+      hours < 1 ||
+      hours > MAX_HOURS_AFTER_PUBLISH
+    ) {
+      return {
+        ok: false,
+        message: `Hours after publish must be between 1 and ${MAX_HOURS_AFTER_PUBLISH}.`,
+      };
+    }
+    return {
+      ok: true,
+      endsAtUnix: params.createdUnix + Math.floor(hours * 3600),
+    };
+  }
+  if (!params.endsAtLocal.trim()) {
+    return { ok: true, endsAtUnix: undefined };
+  }
+  const endMs = await parseScheduledTime(
+    params.endsAtLocal,
+    params.userTimezone
+  );
+  const endsAtUnix = Math.floor(endMs / 1000);
+  if (endsAtUnix <= params.createdUnix) {
+    return { ok: false, message: "Poll end time must be after publish time." };
+  }
+  return { ok: true, endsAtUnix };
+}
 
 function newPollOptionRowId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -137,6 +192,8 @@ export function PollComposer({
     "singlechoice"
   );
   const [endsAtLocal, setEndsAtLocal] = useState("");
+  const [pollEndMode, setPollEndMode] = useState<PollEndMode>("absolute");
+  const [pollEndHoursAfterPublish, setPollEndHoursAfterPublish] = useState(24);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] =
     useState(true);
@@ -161,6 +218,8 @@ export function PollComposer({
     options: string[];
     pollType: "singlechoice" | "multiplechoice";
     endsAtLocal: string;
+    pollEndMode?: PollEndMode;
+    pollEndHoursAfterPublish?: number;
     selectedHashtags: string;
     hashTagPresetId: string | null;
     isRecyclable: boolean;
@@ -263,6 +322,42 @@ export function PollComposer({
   const hasScheduleTime = scheduledFor.trim().length > 0;
   const isSubmitting = fetcher.state !== "idle";
 
+  /** Latest possible `created_at` (unix sec) for validation: nominal + random window when scheduling. */
+  const latestPublishUnixSecForPollEnd =
+    publishMode === "now"
+      ? Math.floor(nowMillis() / 1000)
+      : scheduledFor.trim()
+        ? (() => {
+            try {
+              const zdt = parseDateTimeLocal(scheduledFor.trim(), userTimezone);
+              const nominal = Math.floor(toUnixTimestamp(zdt));
+              const w = randomScheduleHalfWidthSeconds(
+                scheduleRandomWindowMinutes
+              );
+              return nominal + w;
+            } catch {
+              return null;
+            }
+          })()
+        : null;
+
+  const nominalPublishUnixSecForPreview =
+    publishMode === "now"
+      ? Math.floor(nowMillis() / 1000)
+      : scheduledFor.trim()
+        ? (() => {
+            try {
+              return Math.floor(
+                toUnixTimestamp(
+                  parseDateTimeLocal(scheduledFor.trim(), userTimezone)
+                )
+              );
+            } catch {
+              return null;
+            }
+          })()
+        : null;
+
   const composerStatus = useComposerState({
     hasContent,
     canSubmit,
@@ -358,15 +453,18 @@ export function PollComposer({
       actionType !== ACTION_POST_POLL && effectiveRandomMinutes > 0
         ? applyRandomScheduleWindow(nominalUnix, effectiveRandomMinutes)
         : nominalUnix;
-    let endsAtUnix: number | undefined;
-    if (endsAtLocal.trim()) {
-      const endMs = await parseScheduledTime(endsAtLocal, userTimezone);
-      endsAtUnix = Math.floor(endMs / 1000);
-      if (endsAtUnix <= createdUnix) {
-        toast.error("Poll end time must be after publish time.");
-        return;
-      }
+    const endsResolved = await resolvePollEndsAtUnixForSubmit({
+      pollEndMode,
+      pollEndHoursAfterPublish,
+      endsAtLocal,
+      createdUnix,
+      userTimezone,
+    });
+    if (!endsResolved.ok) {
+      toast.error(endsResolved.message);
+      return;
     }
+    const endsAtUnix = endsResolved.endsAtUnix;
 
     setIsSigning(true);
     setPublishSubmitInFlight(true);
@@ -444,6 +542,38 @@ export function PollComposer({
   if (timeError) deferrableBlockers.push(timeError);
   if (relayCount <= 0) deferrableBlockers.push("No relays selected");
 
+  if (pollEndMode === "relative") {
+    if (
+      !Number.isFinite(pollEndHoursAfterPublish) ||
+      pollEndHoursAfterPublish < 1 ||
+      pollEndHoursAfterPublish > MAX_HOURS_AFTER_PUBLISH
+    ) {
+      deferrableBlockers.push(
+        `Poll end: set hours after publish (1–${MAX_HOURS_AFTER_PUBLISH})`
+      );
+    }
+  } else if (endsAtLocal.trim()) {
+    if (latestPublishUnixSecForPollEnd == null) {
+      if (publishMode === "queue" && selectedQueue !== "unassigned") {
+        deferrableBlockers.push(
+          "Poll end is set: waiting for queue slot (or pick schedule time)"
+        );
+      }
+    } else {
+      try {
+        const endZdt = parseDateTimeLocal(endsAtLocal.trim(), userTimezone);
+        const endUnix = Math.floor(toUnixTimestamp(endZdt));
+        if (endUnix <= latestPublishUnixSecForPollEnd) {
+          deferrableBlockers.push(
+            "Poll end must be after publish time (including schedule and random window)"
+          );
+        }
+      } catch {
+        deferrableBlockers.push("Poll end: invalid date and time");
+      }
+    }
+  }
+
   const blockers = deferrableBlockers;
   const issueDisplayPhase = resolveComposerIssueDisplayPhase(
     publishAttempted,
@@ -489,6 +619,33 @@ export function PollComposer({
   );
   const pollQueueNextSlotLabel = getQueueNextSlotLabel(scheduledFor);
 
+  const pollEndDatetimeLocalMin =
+    pollEndMode === "absolute" &&
+    latestPublishUnixSecForPollEnd != null &&
+    Number.isFinite(latestPublishUnixSecForPollEnd)
+      ? formatForDateTimeLocal(
+          fromUnixTimestamp(latestPublishUnixSecForPollEnd, userTimezone).add({
+            minutes: 1,
+          }),
+          userTimezone
+        )
+      : undefined;
+
+  const relativePollEndPreviewLabel =
+    pollEndMode === "relative" &&
+    nominalPublishUnixSecForPreview != null &&
+    Number.isFinite(pollEndHoursAfterPublish) &&
+    pollEndHoursAfterPublish >= 1
+      ? formatForDateTimeLocal(
+          fromUnixTimestamp(
+            nominalPublishUnixSecForPreview +
+              Math.floor(pollEndHoursAfterPublish * 3600),
+            userTimezone
+          ),
+          userTimezone
+        )
+      : null;
+
   const postStatusSummaryInline = formatPollPostStatusSummaryInline(
     question.trim().length,
     trimmedOptions.length,
@@ -530,6 +687,13 @@ export function PollComposer({
     );
     setPollType(pollDraftRestored.pollType);
     setEndsAtLocal(pollDraftRestored.endsAtLocal);
+    setPollEndMode(pollDraftRestored.pollEndMode ?? "absolute");
+    setPollEndHoursAfterPublish(
+      typeof pollDraftRestored.pollEndHoursAfterPublish === "number" &&
+        pollDraftRestored.pollEndHoursAfterPublish >= 1
+        ? pollDraftRestored.pollEndHoursAfterPublish
+        : 24
+    );
     setSelectedHashtags(pollDraftRestored.selectedHashtags);
     setIncludeHashtagsInNoteBody(
       pollDraftRestored.includeHashtagsInNoteBody !== false
@@ -558,6 +722,8 @@ export function PollComposer({
       options,
       pollType,
       endsAtLocal,
+      pollEndMode,
+      pollEndHoursAfterPublish,
       selectedHashtags,
       includeHashtagsInNoteBody,
       hashTagPresetId,
@@ -573,6 +739,8 @@ export function PollComposer({
     options,
     pollType,
     endsAtLocal,
+    pollEndMode,
+    pollEndHoursAfterPublish,
     selectedHashtags,
     includeHashtagsInNoteBody,
     hashTagPresetId,
@@ -591,6 +759,8 @@ export function PollComposer({
         options,
         pollType,
         endsAtLocal,
+        pollEndMode,
+        pollEndHoursAfterPublish,
         selectedHashtags,
         includeHashtagsInNoteBody,
         hashTagPresetId,
@@ -612,6 +782,8 @@ export function PollComposer({
     options,
     pollType,
     endsAtLocal,
+    pollEndMode,
+    pollEndHoursAfterPublish,
     selectedHashtags,
     includeHashtagsInNoteBody,
     hashTagPresetId,
@@ -862,36 +1034,119 @@ export function PollComposer({
             </div>
             <div className={composerCanvasFieldStackClass}>
               <label
-                htmlFor="poll-ends"
+                htmlFor="poll-end-mode"
                 className="text-muted-foreground text-xs font-medium"
               >
                 Poll end
+              </label>
+              <select
+                id="poll-end-mode"
+                value={pollEndMode}
+                onChange={(e) =>
+                  setPollEndMode(
+                    e.target.value === "relative" ? "relative" : "absolute"
+                  )
+                }
+                disabled={disabled}
+                className="border-border/50 bg-muted/10 text-muted-foreground h-9 w-full rounded-md border px-2.5 text-xs shadow-sm"
+              >
+                <option value="absolute">Date and time</option>
+                <option value="relative">Hours after publish</option>
+              </select>
+            </div>
+          </div>
+          {pollEndMode === "absolute" ? (
+            <div className={composerCanvasFieldStackClass}>
+              <label
+                htmlFor="poll-ends"
+                className="text-muted-foreground text-xs font-medium"
+              >
+                Closes at
               </label>
               <Input
                 id="poll-ends"
                 type="datetime-local"
                 value={endsAtLocal}
+                min={pollEndDatetimeLocalMin}
                 onChange={(e) => setEndsAtLocal(e.target.value)}
                 disabled={disabled}
                 className="border-border/50 bg-muted/10 h-9 text-xs shadow-sm"
               />
+              <p className="text-muted-foreground/80 text-[10px] leading-snug">
+                Must be after publish time from the rail (Now, Schedule, or
+                Queue), including any schedule random window.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className={composerCanvasFieldStackClass}>
+              <label
+                htmlFor="poll-ends-hours"
+                className="text-muted-foreground text-xs font-medium"
+              >
+                Hours after publish
+              </label>
+              <Input
+                id="poll-ends-hours"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_HOURS_AFTER_PUBLISH}
+                step={1}
+                value={pollEndHoursAfterPublish}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") return;
+                  const n = Number(raw);
+                  if (!Number.isFinite(n)) return;
+                  setPollEndHoursAfterPublish(n);
+                }}
+                disabled={disabled}
+                className="border-border/50 bg-muted/10 h-9 text-xs shadow-sm"
+              />
+              {relativePollEndPreviewLabel ? (
+                <p className="text-muted-foreground text-[10px] leading-snug">
+                  Estimated close (from current publish time):{" "}
+                  <span className="text-foreground font-medium tabular-nums">
+                    {relativePollEndPreviewLabel.replace("T", " ")}
+                  </span>
+                  {publishMode !== "now" && scheduleRandomWindowMinutes > 0 ? (
+                    <span>
+                      {" "}
+                      · closes {pollEndHoursAfterPublish} hour
+                      {pollEndHoursAfterPublish === 1 ? "" : "s"} after the
+                      actual publish moment (slot may shift slightly)
+                    </span>
+                  ) : null}
+                </p>
+              ) : (
+                <p className="text-muted-foreground/80 text-[10px] leading-snug">
+                  Uses the same publish time as in the rail (Now, Schedule, or
+                  Queue). The poll closes this many hours after the post goes
+                  live.
+                </p>
+              )}
+            </div>
+          )}
 
           <ComposerCanvasDivider />
 
           <div className="flex flex-col gap-4 sm:gap-5">
-            <PollOutputPanel
-              variant="embedded"
+            <PollComposerPreviewBlock
               question={question}
               options={options}
               optionRowIds={optionRowIds}
+              pollType={pollType}
               tagsLine={selectedHashtags}
-              pollTypeLabel={
-                pollType === "multiplechoice"
-                  ? "Multiple choice"
-                  : "Single choice"
-              }
+              includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+              pollEndMode={pollEndMode}
+              endsAtLocal={endsAtLocal}
+              pollEndHoursAfterPublish={pollEndHoursAfterPublish}
+              publishMode={publishMode}
+              scheduledFor={scheduledFor}
+              userTimezone={userTimezone}
+              relayCount={relayCount}
+              selectedQueue={selectedQueue}
+              isRecyclable={isRecyclable}
             />
             <ComposerCanvasDivider />
             <TagsChipRow
@@ -1050,6 +1305,8 @@ export function PollComposer({
             options,
             pollType,
             endsAtLocal,
+            pollEndMode,
+            pollEndHoursAfterPublish,
             selectedHashtags,
             includeHashtagsInNoteBody,
             hashTagPresetId,
@@ -1057,6 +1314,7 @@ export function PollComposer({
             selectedQueue,
             scheduledFor,
             publishMode,
+            scheduleRandomWindowMinutes,
           });
           trackComposerEvent("composer_draft_saved", {
             source: "poll",

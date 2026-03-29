@@ -65,6 +65,9 @@ export function useUnifiedComposerState({
     }))
   );
   const [threadDelayMinutes, setThreadDelayMinutes] = useState(1);
+  /** When true, each segment's text is kept prefixed with "1) ", "2) ", … in the stored body. */
+  const [threadAutoNumberSegments, setThreadAutoNumberSegments] =
+    useState(false);
 
   const [draggingOverSegmentId, setDraggingOverSegmentId] = useState<
     string | null
@@ -128,6 +131,8 @@ export function useUnifiedComposerState({
     setThreadSegments,
     threadDelayMinutes,
     setThreadDelayMinutes,
+    threadAutoNumberSegments,
+    setThreadAutoNumberSegments,
     draggingOverSegmentId,
     setDraggingOverSegmentId,
   };

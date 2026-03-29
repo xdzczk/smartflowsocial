@@ -13,6 +13,8 @@ import {
 import React from "react";
 
 import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
@@ -31,6 +33,9 @@ export interface ThreadSegment {
 export interface ComposerThreadFieldProps {
   segments: ThreadSegment[];
   onSegmentsChange: React.Dispatch<React.SetStateAction<ThreadSegment[]>>;
+  /** When true, segment bodies are prefixed with "1) ", "2) ", … (inserted into text). */
+  autoNumberSegments?: boolean;
+  onAutoNumberSegmentsChange?: (enabled: boolean) => void;
   threadDelayMinutes: number;
   onFilesDropped: (segmentId: string, files: File[]) => void;
   onAddSegmentClick: (segmentId: string) => void;
@@ -48,6 +53,8 @@ export interface ComposerThreadFieldProps {
 export function ComposerThreadField({
   segments,
   onSegmentsChange,
+  autoNumberSegments = false,
+  onAutoNumberSegmentsChange,
   threadDelayMinutes: _threadDelayMinutes,
   onFilesDropped,
   onAddSegmentClick,
@@ -77,6 +84,35 @@ export function ComposerThreadField({
       {signerConnectionNote ? (
         <div className="mb-1" role="note">
           {signerConnectionNote}
+        </div>
+      ) : null}
+      {onAutoNumberSegmentsChange ? (
+        <div className="border-border/25 bg-muted/[0.04] flex max-w-[min(100%,42rem)] items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+          <div className="min-w-0 space-y-0.5">
+            <Label
+              htmlFor="thread-auto-number-segments"
+              className="text-foreground/90 cursor-pointer text-xs leading-tight font-medium"
+            >
+              Number segments in text
+            </Label>
+            <p className="text-muted-foreground/80 text-[11px] leading-snug">
+              Inserts{" "}
+              <span className="text-muted-foreground font-mono tabular-nums">
+                1)
+              </span>{" "}
+              <span className="text-muted-foreground font-mono tabular-nums">
+                2)
+              </span>{" "}
+              … at the start of each segment. Updates when you reorder.
+            </p>
+          </div>
+          <Switch
+            id="thread-auto-number-segments"
+            checked={autoNumberSegments}
+            onCheckedChange={onAutoNumberSegmentsChange}
+            disabled={disabled}
+            aria-label="Number segments in text"
+          />
         </div>
       ) : null}
       {segments.map((seg, idx) => (

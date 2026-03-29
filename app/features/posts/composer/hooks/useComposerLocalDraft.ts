@@ -24,6 +24,8 @@ export interface ComposerLocalSnapshot {
     attachments: Array<{ localId: string; url?: string; alt?: string }>;
   }>;
   threadDelayMinutes?: number;
+  /** Prefix each thread segment body with "n) " when composing. */
+  threadAutoNumberSegments?: boolean;
   savedAt: number;
 }
 

@@ -135,18 +135,20 @@ export function BulkComposerPostCard({
           : ""
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-foreground text-sm font-semibold">
             Post {index + 1}
           </span>
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-medium",
+              "rounded-md border px-1.5 py-0.5 text-xs font-medium",
               status.variant === "amber" &&
-                "bg-amber-500/15 text-amber-800 dark:text-amber-200",
-              status.variant === "muted" && "bg-muted text-muted-foreground",
-              status.variant === "default" && "bg-primary/10 text-primary"
+                "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-100",
+              status.variant === "muted" &&
+                "border-border bg-muted/40 text-muted-foreground",
+              status.variant === "default" &&
+                "border-primary/30 bg-primary/5 text-primary"
             )}
           >
             {variant === "review" && reviewDisplay ? "Locked" : status.label}
@@ -174,6 +176,7 @@ export function BulkComposerPostCard({
                 className="text-muted-foreground h-8 px-2"
                 onClick={() => setAdvancedOpen((o) => !o)}
                 aria-expanded={advancedOpen}
+                title="Queue, schedule, follow-up, recyclable, and tags"
               >
                 Advanced
                 <ChevronDown
@@ -211,7 +214,7 @@ export function BulkComposerPostCard({
         </div>
       </div>
 
-      <div className="space-y-3 p-4">
+      <div className="space-y-2 p-3">
         {variant === "review" && reviewDisplay && preparedEvent ? (
           <BulkComposerPostCardReviewBody
             reviewDisplay={reviewDisplay}
@@ -252,7 +255,10 @@ export function BulkComposerPostCard({
         ) : null}
 
         {validationErrors?.length ? (
-          <ul className="text-destructive space-y-0.5 text-xs" role="alert">
+          <ul
+            className="text-destructive space-y-0.5 text-xs leading-snug"
+            role="alert"
+          >
             {validationErrors.map((err) => (
               <li key={err}>{err}</li>
             ))}

@@ -1,3 +1,6 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useMemo, useState } from "react";
+
 import {
   ActionRailLabel,
   ActionRailNotice,
@@ -11,15 +14,34 @@ import {
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { BulkBatchMode } from "~/features/posts/bulk-composer/types";
-import { RailFeedbackBlock } from "~/features/posts/components/publishing-rail/RailFeedbackBlock";
+import {
+  RailChip,
+  RailChipGroup,
+  RailFeedbackBlock,
+  RailSettingsRow,
+  RailSettingsValueRow,
+  railFieldClassNames,
+  railSelectTriggerClassNames,
+} from "~/features/posts/components/publishing-rail";
 import type { BulkPost, RepostConditions } from "~/features/posts/types";
-import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../BulkPostCard";
@@ -33,24 +55,27 @@ export const REPOST_CONDITION_FIELDS = [
   ["minSats", "Sats"],
 ] as const;
 
-export function bulkRailValidationLines(aggregateLines: {
+/** Grouped counts only — details stay on post cards. */
+export function bulkRailValidationSummaryLines(aggregate: {
   cap: number;
   sched: number;
-  lines: Array<{ text: string }>;
+  unassigned: number;
 }): string[] {
   const out: string[] = [];
-  if (aggregateLines.cap > 0) {
+  if (aggregate.cap > 0) {
     out.push(
-      `${aggregateLines.cap} missing caption${aggregateLines.cap !== 1 ? "s" : ""}`
+      `Missing caption${aggregate.cap !== 1 ? "s" : ""}: ${aggregate.cap}`
     );
   }
-  if (aggregateLines.sched > 0) {
+  if (aggregate.sched > 0) {
     out.push(
-      `${aggregateLines.sched} schedule issue${aggregateLines.sched !== 1 ? "s" : ""}`
+      `Schedule issue${aggregate.sched !== 1 ? "s" : ""}: ${aggregate.sched}`
     );
   }
-  for (const line of aggregateLines.lines.slice(0, 6)) {
-    out.push(line.text);
+  if (aggregate.unassigned > 0) {
+    out.push(
+      `Unassigned queue${aggregate.unassigned !== 1 ? "s" : ""}: ${aggregate.unassigned}`
+    );
   }
   return out;
 }
@@ -111,13 +136,14 @@ export function BulkSettingsRailBuildDefaultsBlock({
             onScheduleRandomWindowMinutesChange={
               setBulkScheduleRandomWindowMinutes
             }
+            onScheduleIntervalChipClick={handleScheduleIntervalClick}
           />
         ) : (
           <div className="space-y-2">
             <p className="text-muted-foreground text-[11px] leading-snug">
-              Assign a queue to all posts or pick per post on the cards.
+              Set all to a queue, or use Advanced on each card.
             </p>
-            <div className="flex flex-wrap gap-1">
+            <RailChipGroup>
               {queueTypes
                 .filter((q) => {
                   const n = typeof q === "string" ? q : q.name;
@@ -127,49 +153,33 @@ export function BulkSettingsRailBuildDefaultsBlock({
                   const queueName =
                     typeof queue === "string" ? queue : queue.name;
                   return (
-                    <Button
+                    <RailChip
                       key={queueName}
                       type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 text-xs"
                       disabled={isProcessing}
-                      onClick={() => handleBulkQueueUpdate(queueName)}
+                      onClick={() => {
+                        handleBulkQueueUpdate(queueName);
+                      }}
                     >
-                      Apply {queueName}
-                    </Button>
+                      {queueName}
+                    </RailChip>
                   );
                 })}
-            </div>
+            </RailChipGroup>
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="w-full text-xs"
               disabled={isProcessing || unassignedCount === 0}
-              onClick={() => handleBulkQueueUpdate("unassigned")}
+              onClick={() => {
+                handleBulkQueueUpdate("unassigned");
+              }}
             >
               Clear all queues
             </Button>
           </div>
         )}
-        {batchMode === "schedule" && scheduleIntervals ? (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {scheduleIntervals.map((interval) => (
-              <Button
-                key={interval}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                disabled={isProcessing}
-                onClick={() => handleScheduleIntervalClick(interval)}
-              >
-                {formatIntervalLabel(interval, { compact: true })}
-              </Button>
-            ))}
-          </div>
-        ) : null}
       </div>
     </ActionRailSection>
   );
@@ -250,28 +260,40 @@ export function BulkSettingsRepostAllPopover({
         </PopoverTrigger>
         <PopoverContent className="w-64" align="start">
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                value={repostAllValue}
-                onChange={(e) =>
-                  setRepostAllValue(
-                    Math.max(1, parseInt(e.target.value, 10) || 1)
-                  )
-                }
-                className="h-9 w-20"
-              />
-              <select
-                value={repostAllUnit}
-                onChange={(e) =>
-                  setRepostAllUnit(e.target.value as "hours" | "minutes")
-                }
-                className="border-border h-9 rounded border px-2 text-sm"
-              >
-                <option value="hours">hours</option>
-                <option value="minutes">minutes</option>
-              </select>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <Label className="text-muted-foreground text-xs">Delay</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={repostAllValue}
+                  onChange={(e) =>
+                    setRepostAllValue(
+                      Math.max(1, parseInt(e.target.value, 10) || 1)
+                    )
+                  }
+                  className={cn(railFieldClassNames, "h-9 w-20")}
+                />
+              </div>
+              <div className="flex min-w-[7rem] flex-col gap-1">
+                <Label className="text-muted-foreground text-xs">Unit</Label>
+                <Select
+                  value={repostAllUnit}
+                  onValueChange={(v) =>
+                    setRepostAllUnit(v as "hours" | "minutes")
+                  }
+                >
+                  <SelectTrigger
+                    className={cn(railSelectTriggerClassNames, "h-9")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hours">Hours</SelectItem>
+                    <SelectItem value="minutes">Minutes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               type="button"
@@ -291,6 +313,20 @@ export function BulkSettingsRepostAllPopover({
   );
 }
 
+function repostThresholdsSummary(
+  bulkRepostConditions: RepostConditions | null
+): string {
+  if (!bulkRepostConditions) return "None";
+  let active = 0;
+  for (const [key] of REPOST_CONDITION_FIELDS) {
+    const k = key as keyof RepostConditions;
+    const v = bulkRepostConditions[k];
+    if (typeof v === "number" && v > 0) active += 1;
+  }
+  if (active === 0) return "None";
+  return `${active} active`;
+}
+
 export function BulkSettingsRepostConditionsFields({
   bulkRepostConditions,
   setBulkRepostConditions,
@@ -300,40 +336,89 @@ export function BulkSettingsRepostConditionsFields({
     React.SetStateAction<RepostConditions | null>
   >;
 }) {
+  const [open, setOpen] = useState(false);
+  const summary = useMemo(
+    () => repostThresholdsSummary(bulkRepostConditions),
+    [bulkRepostConditions]
+  );
+
   return (
-    <div className="space-y-2">
-      <p className="text-muted-foreground text-[11px] leading-snug">
-        Only repost if original gets (all reposts)
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {REPOST_CONDITION_FIELDS.map(([key, label]) => (
-          <div key={key} className="flex flex-col gap-0.5">
-            <label className="text-muted-foreground text-[10px]">{label}</label>
-            <Input
-              type="number"
-              min={0}
-              placeholder="—"
-              value={bulkRepostConditions?.[key] ?? ""}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const v =
-                  raw.trim() === ""
-                    ? undefined
-                    : Math.max(0, parseInt(raw, 10) || 0);
-                setBulkRepostConditions((prev) => {
-                  if (v === undefined) {
-                    const next = prev ? { ...prev } : {};
-                    delete next[key];
-                    return Object.keys(next).length > 0 ? next : null;
-                  }
-                  return { ...prev, [key]: v };
-                });
-              }}
-              className="h-8 text-xs"
+    <div className="w-full">
+      <RailSettingsValueRow
+        label="Repost thresholds"
+        value={summary}
+        onClick={() => setOpen((o) => !o)}
+        ariaExpanded={open}
+        trailing={
+          open ? (
+            <ChevronUp
+              className={cn(
+                INLINE_ICON_SIZE_CLASS,
+                "text-muted-foreground shrink-0"
+              )}
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
             />
-          </div>
-        ))}
-      </div>
+          ) : (
+            <ChevronDown
+              className={cn(
+                INLINE_ICON_SIZE_CLASS,
+                "text-muted-foreground shrink-0"
+              )}
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
+          )
+        }
+      />
+      {open ? (
+        <div className="divide-border/60 border-border/50 mt-2 space-y-2 border-t pt-2">
+          <p className="text-muted-foreground text-[10px] leading-snug">
+            Only repost if the original reaches these minimums (all reposts in
+            this batch).
+          </p>
+          {REPOST_CONDITION_FIELDS.map(([key, label]) => {
+            const fieldKey = key as keyof RepostConditions;
+            const inputId = `bulk-rail-repost-${key}`;
+            return (
+              <RailSettingsRow
+                key={key}
+                labelFor={inputId}
+                label={label}
+                control={
+                  <Input
+                    id={inputId}
+                    type="number"
+                    min={0}
+                    placeholder="—"
+                    inputMode="numeric"
+                    value={bulkRepostConditions?.[fieldKey] ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const v =
+                        raw.trim() === ""
+                          ? undefined
+                          : Math.max(0, parseInt(raw, 10) || 0);
+                      setBulkRepostConditions((prev) => {
+                        if (v === undefined) {
+                          const next = prev ? { ...prev } : {};
+                          delete next[fieldKey];
+                          return Object.keys(next).length > 0 ? next : null;
+                        }
+                        return { ...prev, [fieldKey]: v };
+                      });
+                    }}
+                    className={cn(
+                      railFieldClassNames,
+                      "h-8 w-[4.5rem] text-xs tabular-nums"
+                    )}
+                  />
+                }
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -498,6 +583,8 @@ export function BulkSettingsRailBuildValidationBlock({
   posts,
   onJumpToPost,
   aggregateLines,
+  postsCount,
+  batchMode,
 }: {
   validationResult: {
     isValid: boolean;
@@ -508,17 +595,30 @@ export function BulkSettingsRailBuildValidationBlock({
   aggregateLines: {
     cap: number;
     sched: number;
-    lines: Array<{ text: string; index: number }>;
+    unassigned: number;
   };
+  postsCount: number;
+  batchMode: BulkBatchMode;
 }) {
-  const noticeLines = bulkRailValidationLines(aggregateLines);
+  const noticeLines = bulkRailValidationSummaryLines(aggregateLines);
+
+  if (postsCount === 0) {
+    return (
+      <ActionRailSection className="space-y-2">
+        <ActionRailLabel>Validation</ActionRailLabel>
+        <p className="text-muted-foreground text-[11px] leading-snug">
+          Add posts to validate this batch.
+        </p>
+      </ActionRailSection>
+    );
+  }
 
   return (
     <ActionRailSection className="space-y-2">
       <ActionRailLabel>Validation</ActionRailLabel>
       {validationResult.isValid ? (
         <p className="text-muted-foreground text-[11px] leading-snug">
-          All checks passed.
+          Ready to review.
         </p>
       ) : (
         <>
@@ -531,9 +631,10 @@ export function BulkSettingsRailBuildValidationBlock({
           ) : null}
           <div className={cn(RAIL_STACK_TIGHT, RAIL_SUMMARY_TO_FEEDBACK)}>
             {aggregateLines.cap > 0 ? (
-              <button
+              <Button
                 type="button"
-                className="text-primary block w-full text-left text-[11px] hover:underline"
+                variant="link"
+                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -544,12 +645,13 @@ export function BulkSettingsRailBuildValidationBlock({
                 }}
               >
                 Jump to first missing caption
-              </button>
+              </Button>
             ) : null}
             {aggregateLines.sched > 0 ? (
-              <button
+              <Button
                 type="button"
-                className="text-primary block w-full text-left text-[11px] hover:underline"
+                variant="link"
+                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -560,18 +662,23 @@ export function BulkSettingsRailBuildValidationBlock({
                 }}
               >
                 Jump to first schedule issue
-              </button>
+              </Button>
             ) : null}
-            {aggregateLines.lines.slice(0, 6).map((line) => (
-              <button
-                key={`${line.index}-${line.text}`}
+            {batchMode === "queue" && aggregateLines.unassigned > 0 ? (
+              <Button
                 type="button"
-                className="text-primary block w-full text-left text-[11px] hover:underline"
-                onClick={() => onJumpToPost(line.index)}
+                variant="link"
+                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+                onClick={() => {
+                  const idx = posts.findIndex(
+                    (p) => !p.queueType || p.queueType === "unassigned"
+                  );
+                  if (idx >= 0) onJumpToPost(idx);
+                }}
               >
-                {line.text}
-              </button>
-            ))}
+                Jump to first unassigned queue
+              </Button>
+            ) : null}
           </div>
         </>
       )}
@@ -579,29 +686,67 @@ export function BulkSettingsRailBuildValidationBlock({
   );
 }
 
+function firstBulkIssuePostIndex(
+  posts: BulkPost[],
+  validationResult: { byPost: Record<number, string[]> },
+  batchMode: BulkBatchMode
+): number {
+  const capIdx = posts.findIndex((_, i) =>
+    validationResult.byPost[i]?.some((e) => e.includes("Caption"))
+  );
+  if (capIdx >= 0) return capIdx;
+  const schedIdx = posts.findIndex((_, i) =>
+    validationResult.byPost[i]?.some((e) => e.includes("Schedule"))
+  );
+  if (schedIdx >= 0) return schedIdx;
+  if (batchMode === "queue") {
+    const qIdx = posts.findIndex(
+      (p) => !p.queueType || p.queueType === "unassigned"
+    );
+    if (qIdx >= 0) return qIdx;
+  }
+  return -1;
+}
+
 export function BulkSettingsRailReviewReadinessBlock({
   validationResult,
   postsCount,
   issueCount,
-  aggregateLines,
+  posts,
+  batchMode,
   onJumpToPost,
 }: {
-  validationResult: { isValid: boolean };
+  validationResult: { isValid: boolean; byPost: Record<number, string[]> };
   postsCount: number;
   issueCount: number;
-  aggregateLines: { lines: Array<{ text: string; index: number }> };
+  posts: BulkPost[];
+  batchMode: BulkBatchMode;
   onJumpToPost: (index: number) => void;
 }) {
+  const firstIssue = firstBulkIssuePostIndex(
+    posts,
+    validationResult,
+    batchMode
+  );
+
+  if (postsCount === 0) {
+    return (
+      <ActionRailSection className="space-y-2">
+        <ActionRailLabel>Readiness</ActionRailLabel>
+        <p className="text-muted-foreground text-[11px] leading-snug">
+          Add posts to see signing readiness.
+        </p>
+      </ActionRailSection>
+    );
+  }
+
   return (
     <ActionRailSection className="space-y-2">
       <ActionRailLabel>Readiness</ActionRailLabel>
       {validationResult.isValid ? (
-        <p className="text-muted-foreground text-[11px] leading-snug">
-          Ready to sign and schedule{" "}
-          <span className="text-foreground font-medium">
-            {postsCount} post{postsCount !== 1 ? "s" : ""}
-          </span>
-          .
+        <p className="text-foreground text-[11px] leading-snug font-medium">
+          Ready to sign and schedule {postsCount} post
+          {postsCount !== 1 ? "s" : ""}.
         </p>
       ) : (
         <>
@@ -609,17 +754,17 @@ export function BulkSettingsRailReviewReadinessBlock({
             variant="warning"
             title="Needs attention"
             lines={[
-              `${issueCount} post${issueCount !== 1 ? "s" : ""} still need fixes before signing.`,
+              `${issueCount} post${issueCount !== 1 ? "s" : ""} need fixes before signing.`,
             ]}
           />
-          {aggregateLines.lines[0] != null ? (
+          {firstIssue >= 0 ? (
             <Button
               type="button"
               variant="link"
-              className="text-primary h-auto px-0 py-0 text-[11px]"
-              onClick={() => onJumpToPost(aggregateLines.lines[0]!.index)}
+              className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+              onClick={() => onJumpToPost(firstIssue)}
             >
-              Edit first issue
+              Jump to first issue
             </Button>
           ) : null}
         </>

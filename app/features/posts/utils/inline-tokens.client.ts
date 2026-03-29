@@ -69,6 +69,12 @@ export function stripAttachmentTokens(content: string): string {
     .trimEnd();
 }
 
+/** True if content still contains inline `[attach:localId]` placeholders. */
+export function contentHasAttachmentTokens(content: string): boolean {
+  ATTACH_TOKEN_REGEX.lastIndex = 0;
+  return ATTACH_TOKEN_REGEX.test(content);
+}
+
 /**
  * Rebuild content so attachment tokens appear in `orderedLocalIds` order (block at end).
  * Preserves body text; typical composer flow appends tokens at the end.

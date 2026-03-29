@@ -9,10 +9,6 @@ export {
   composerCanvasBlockStackClass,
 } from "./composer-canvas-primitives";
 export type { ComposerCanvasSectionLabelProps } from "./composer-canvas-primitives";
-export { ComposerOutputPanel } from "./ComposerOutputPanel";
-export type { ComposerOutputPanelProps } from "./ComposerOutputPanel";
-export { PollOutputPanel } from "./PollOutputPanel";
-export type { PollOutputPanelProps } from "./PollOutputPanel";
 export { ComposerContentField } from "./ComposerContentField";
 export type { ComposerContentFieldProps } from "./ComposerContentField";
 export { ComposerMediaField } from "./ComposerMediaField";

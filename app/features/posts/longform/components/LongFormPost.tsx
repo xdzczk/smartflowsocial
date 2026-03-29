@@ -17,7 +17,9 @@ import {
   buildArticlePublishSummaryLines,
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
+  ComposerCanvasDivider,
   ComposerCanvasSectionLabel,
+  ComposerLeftCanvas,
   formatPublishSummaryOptionsLine,
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
@@ -893,6 +895,10 @@ export default function LongFormPost({
     if (scheduledFor?.trim()) setComposerTouched(true);
   }, [scheduledFor]);
 
+  const articleColumnClass = "mx-auto w-full max-w-[min(100%,42rem)]";
+  const showArticleFooterStrip =
+    isTemplateMode || isSigning || Boolean(signingError);
+
   const editPreviewToggle = (
     <div className="inline-flex gap-4" role="group" aria-label="Body view">
       <button
@@ -927,78 +933,85 @@ export default function LongFormPost({
   return (
     <>
       <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-10 px-4 pt-2 pb-5">
-            <div className="space-y-5">
-              <input
-                key={initialData?.id ?? "new"}
-                type="text"
-                id="article-composer-title"
-                placeholder="Write a title"
-                className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem] dark:text-white"
-                aria-label="Article title"
-                name={titleFieldReg.name}
-                onChange={(e) => void titleFieldReg.onChange(e)}
-                onBlur={(e) => void titleFieldReg.onBlur(e)}
-                ref={stableTitleRef}
-              />
+        <div className="mb-4 min-w-0 flex-1 lg:mb-0">
+          <ComposerLeftCanvas>
+            {/* Article identity: title, summary, cover */}
+            <div className={articleColumnClass}>
+              <div className="space-y-5">
+                <input
+                  key={initialData?.id ?? "new"}
+                  type="text"
+                  id="article-composer-title"
+                  placeholder="Write a title"
+                  className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem] dark:text-white"
+                  aria-label="Article title"
+                  name={titleFieldReg.name}
+                  onChange={(e) => void titleFieldReg.onChange(e)}
+                  onBlur={(e) => void titleFieldReg.onBlur(e)}
+                  ref={stableTitleRef}
+                />
 
-              <div className="pt-0.5">
-                <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <ComposerCanvasSectionLabel
-                    as="label"
-                    className="mb-0"
-                    htmlFor="article-composer-summary"
-                    tone="article"
-                  >
-                    Summary
-                  </ComposerCanvasSectionLabel>
-                  <button
-                    type="button"
-                    className={cn(
-                      "text-[10px] font-normal underline-offset-2 transition-colors",
-                      !content
-                        ? "text-muted-foreground/35 pointer-events-none cursor-not-allowed"
-                        : "text-muted-foreground/50 hover:text-muted-foreground/70 underline"
-                    )}
-                    onClick={handleGenerateSummary}
-                    disabled={!content}
-                  >
-                    Auto-generate
-                  </button>
+                <div className="pt-0.5">
+                  <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <ComposerCanvasSectionLabel
+                      as="label"
+                      className="mb-0"
+                      htmlFor="article-composer-summary"
+                      tone="article"
+                    >
+                      Summary
+                    </ComposerCanvasSectionLabel>
+                    <button
+                      type="button"
+                      className={cn(
+                        "text-[10px] font-normal underline-offset-2 transition-colors",
+                        !content
+                          ? "text-muted-foreground/35 pointer-events-none cursor-not-allowed"
+                          : "text-muted-foreground/50 hover:text-muted-foreground/70 underline"
+                      )}
+                      onClick={handleGenerateSummary}
+                      disabled={!content}
+                    >
+                      Auto-generate
+                    </button>
+                  </div>
+                  <Textarea
+                    id="article-composer-summary"
+                    name="summary"
+                    value={summary ?? ""}
+                    onChange={(e) =>
+                      form.setValue("summary", e.target.value, {
+                        shouldValidate: true,
+                      })
+                    }
+                    placeholder="Short line for previews and search (recommended)."
+                    rows={2}
+                    className="border-border/25 focus-visible:border-border/45 resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none transition-colors focus-visible:ring-0"
+                  />
                 </div>
-                <Textarea
-                  id="article-composer-summary"
-                  name="summary"
-                  value={summary ?? ""}
-                  onChange={(e) =>
-                    form.setValue("summary", e.target.value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  placeholder="Optional — a short line for previews and search."
-                  rows={2}
-                  className="border-border/25 focus-visible:border-border/45 resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none transition-colors focus-visible:ring-0"
+
+                <LongFormCoverImage
+                  image={image}
+                  uploadError={uploadError}
+                  uploadProvider={uploadProvider}
+                  uploadFetcherState={uploadFetcherState}
+                  onImageUpload={(e) => void handleImageUpload(e)}
+                  onRemove={() => setCoverImage("")}
+                  onOpenAssetBrowser={() => {}}
+                  softLabel
+                  coverFileUploadDisabled={mediaUploadBlocked}
                 />
               </div>
-
-              <LongFormCoverImage
-                image={image}
-                uploadError={uploadError}
-                uploadProvider={uploadProvider}
-                uploadFetcherState={uploadFetcherState}
-                onImageUpload={(e) => void handleImageUpload(e)}
-                onRemove={() => setCoverImage("")}
-                onOpenAssetBrowser={() => {}}
-                softLabel
-                coverFileUploadDisabled={mediaUploadBlocked}
-              />
             </div>
 
-            <div className="pt-2">
+            <ComposerCanvasDivider />
+
+            {/* Writing zone */}
+            <div className={articleColumnClass}>
               <LongFormContentEditor
                 key={initialData?.id ?? "new"}
                 surface="editorial"
+                containedInComposerCard
                 uploadProvider={uploadProvider}
                 onOpenAssetBrowser={() => {}}
                 editorReady={editorReady}
@@ -1009,7 +1022,10 @@ export default function LongFormPost({
               />
             </div>
 
-            <div className="border-border/12 space-y-3 border-t pt-9">
+            <ComposerCanvasDivider />
+
+            {/* Finishing zone */}
+            <div className={`${articleColumnClass} space-y-3`}>
               <div>
                 <ComposerCanvasSectionLabel
                   as="label"
@@ -1113,101 +1129,104 @@ export default function LongFormPost({
                 value={String(Boolean(includeHashtagsInNoteBody))}
               />
             </div>
-          </div>
 
-          <div className="border-border/60 bg-background/95 border-t py-4 backdrop-blur">
-            <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-4 px-4">
-              {isTemplateMode ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="template-name-longform">
-                      Template name
-                    </Label>
-                    <Input
-                      id="template-name-longform"
-                      type="text"
-                      value={templateName}
-                      onChange={(e) => setTemplateName(e.target.value)}
-                      placeholder="e.g. Weekly article"
-                      className="max-w-xs"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={handleSaveAsTemplate}
-                      disabled={
-                        fetcher.state !== "idle" ||
-                        !templateName.trim() ||
-                        !image
-                      }
-                    >
-                      {fetcher.state !== "idle"
-                        ? "Saving..."
-                        : editTemplateContext
-                          ? "Save"
-                          : "Save as template"}
-                    </Button>
-                    <Button type="button" variant="ghost" asChild>
-                      <Link to="/dashboard/templates">Cancel</Link>
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {isSigning ? (
-                    <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
-                      <span>
-                        Waiting for signer approval…
-                        {signAttempt ? (
-                          <>
-                            {" "}
-                            Attempt {signAttempt.attempt} of{" "}
-                            {signAttempt.maxAttempts} ·{" "}
-                            {formatAttemptElapsed(
-                              signElapsedSeconds,
-                              signAttempt.timeoutMs
-                            )}
-                          </>
-                        ) : null}
-                        {" — "}
-                        If you’re using a remote signer, open it to approve the
-                        request. To use a new session in the signer app, click
-                        &quot;Use new session&quot;.
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1">
+            {showArticleFooterStrip ? (
+              <>
+                <ComposerCanvasDivider />
+                <div className={`${articleColumnClass} space-y-4`}>
+                  {isTemplateMode ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="template-name-longform">
+                          Template name
+                        </Label>
+                        <Input
+                          id="template-name-longform"
+                          type="text"
+                          value={templateName}
+                          onChange={(e) => setTemplateName(e.target.value)}
+                          placeholder="e.g. Weekly article"
+                          className="max-w-xs"
+                        />
+                      </div>
+                      <div className="flex gap-2">
                         <Button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() =>
-                            void requestNewSignerSession(cancelSigning)
+                          onClick={handleSaveAsTemplate}
+                          disabled={
+                            fetcher.state !== "idle" ||
+                            !templateName.trim() ||
+                            !image
                           }
                         >
-                          Use new session
+                          {fetcher.state !== "idle"
+                            ? "Saving..."
+                            : editTemplateContext
+                              ? "Save"
+                              : "Save as template"}
                         </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={cancelSigning}
-                        >
-                          Cancel
+                        <Button type="button" variant="ghost" asChild>
+                          <Link to="/dashboard/templates">Cancel</Link>
                         </Button>
-                      </span>
-                    </div>
-                  ) : null}
-                  {signingError ? (
-                    <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
-                      {signingError}
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {isSigning ? (
+                        <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+                          <span>
+                            Waiting for signer approval…
+                            {signAttempt ? (
+                              <>
+                                {" "}
+                                Attempt {signAttempt.attempt} of{" "}
+                                {signAttempt.maxAttempts} ·{" "}
+                                {formatAttemptElapsed(
+                                  signElapsedSeconds,
+                                  signAttempt.timeoutMs
+                                )}
+                              </>
+                            ) : null}
+                            {" — "}
+                            If you’re using a remote signer, open it to approve
+                            the request. To use a new session in the signer app,
+                            click &quot;Use new session&quot;.
+                          </span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() =>
+                                void requestNewSignerSession(cancelSigning)
+                              }
+                            >
+                              Use new session
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={cancelSigning}
+                            >
+                              Cancel
+                            </Button>
+                          </span>
+                        </div>
+                      ) : null}
+                      {signingError ? (
+                        <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+                          {signingError}
+                        </div>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </ComposerLeftCanvas>
         </div>
         <PublishingSummaryRail
           publishMode={publishMode}

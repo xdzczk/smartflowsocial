@@ -119,10 +119,11 @@ export default function Footer() {
               : dateString.split(",")[0]}
           </span>
           <span className="hidden lg:inline">·</span>
-          {/* 12h: reserve width for AM/PM; clock row uses flex-1 justify-end so width ticks don’t slide the block vs copyright */}
+          {/* Fixed min-w + text-center: stable row width when digits change; avoids lopsided gap vs text-end + ch */}
           <span
             className={cn(
-              userTimeFormat === "12h" && "inline-block min-w-[11ch] text-end"
+              "inline-block text-center",
+              userTimeFormat === "24h" ? "min-w-[8ch]" : "min-w-[11ch]"
             )}
           >
             {timeString}

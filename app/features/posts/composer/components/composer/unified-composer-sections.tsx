@@ -47,6 +47,8 @@ export interface UnifiedComposerContentSectionProps {
   onDraggingOverSegmentIdChange: Dispatch<SetStateAction<string | null>>;
   blossomSignerMediaNote?: ReactNode;
   attachmentFailedTitleHint?: string;
+  threadAutoNumberSegments?: boolean;
+  onThreadAutoNumberSegmentsChange?: (enabled: boolean) => void;
 }
 
 export function UnifiedComposerContentSection({
@@ -70,12 +72,16 @@ export function UnifiedComposerContentSection({
   onDraggingOverSegmentIdChange,
   blossomSignerMediaNote,
   attachmentFailedTitleHint,
+  threadAutoNumberSegments = false,
+  onThreadAutoNumberSegmentsChange,
 }: UnifiedComposerContentSectionProps) {
   if (isThreadMode) {
     return (
       <ComposerThreadField
         segments={threadSegments}
         onSegmentsChange={onThreadSegmentsChange}
+        autoNumberSegments={threadAutoNumberSegments}
+        onAutoNumberSegmentsChange={onThreadAutoNumberSegmentsChange}
         threadDelayMinutes={threadDelayMinutes}
         onFilesDropped={onFilesDroppedSegment}
         onAddSegmentClick={(segmentId) => onThreadSegmentFileClick(segmentId)}

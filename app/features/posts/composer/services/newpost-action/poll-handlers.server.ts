@@ -85,6 +85,13 @@ export async function handlePostOrSchedulePoll(
     throw new Error("Invalid NIP-88 poll event");
   }
 
+  if (
+    parsedPoll.endsAt !== undefined &&
+    parsedPoll.endsAt <= signedEvent.created_at
+  ) {
+    throw new Error("Poll end must be after publish time");
+  }
+
   if (parsedPoll.question.trim() !== content) {
     throw new Error("Poll question does not match signed event content");
   }

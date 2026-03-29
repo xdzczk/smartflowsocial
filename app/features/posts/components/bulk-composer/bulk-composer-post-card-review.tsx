@@ -21,58 +21,65 @@ export function BulkComposerPostCardReviewBody({
   bulkRepostConditions: RepostConditions | null;
   showBatchRepostConditions: boolean;
 }) {
+  const hasMedia = reviewDisplay.mediaUrl.trim().length > 0;
+
+  const mediaBlock = hasMedia ? (
+    <MediaThumbnail
+      src={reviewDisplay.mediaUrl}
+      alt=""
+      className="max-h-40 w-full max-w-44 rounded-lg object-cover sm:h-24 sm:max-h-none sm:w-24"
+      onClick={() => onMediaClick(reviewDisplay.mediaUrl)}
+    />
+  ) : !reviewDisplay.caption ? (
+    <div className="bg-muted text-muted-foreground flex h-24 w-full max-w-44 items-center justify-center rounded-lg text-xs sm:w-24">
+      {reviewDisplay.isRepost ? "REPOST" : "TEXT"}
+    </div>
+  ) : null;
+
   return (
-    <>
-      <div className="space-y-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+      {mediaBlock != null ? (
+        <div className="flex min-w-0 shrink-0 flex-wrap gap-2">
+          {mediaBlock}
+        </div>
+      ) : null}
+      <div className="min-w-0 flex-1 space-y-2">
         {reviewDisplay.caption ? (
-          <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
+          <p className="text-foreground text-sm leading-snug whitespace-pre-wrap">
             {reviewDisplay.caption}
           </p>
         ) : null}
-        {reviewDisplay.mediaUrl ? (
-          <MediaThumbnail
-            src={reviewDisplay.mediaUrl}
-            alt=""
-            className="max-h-56 w-full rounded-lg object-cover"
-            onClick={() => onMediaClick(reviewDisplay.mediaUrl)}
-          />
-        ) : null}
-        {!reviewDisplay.caption && !reviewDisplay.mediaUrl ? (
-          <div className="bg-muted text-muted-foreground flex h-24 items-center justify-center rounded-lg text-sm">
-            {reviewDisplay.isRepost ? "REPOST" : "TEXT"}
+        <dl className="text-muted-foreground grid w-full gap-1 text-xs">
+          <div className="flex justify-between gap-2">
+            <dt>Scheduled</dt>
+            <dd className="text-foreground font-medium">
+              {reviewDisplay.scheduledLabel}
+            </dd>
           </div>
-        ) : null}
+          <div className="flex justify-between gap-2">
+            <dt>Queue</dt>
+            <dd className="text-foreground font-medium">
+              {preparedEvent.queueType}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Follow-up</dt>
+            <dd className="text-foreground text-right font-medium">
+              {followUpSummaryLine(
+                post,
+                bulkRepostConditions,
+                showBatchRepostConditions
+              )}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Hide tags</dt>
+            <dd className="text-foreground font-medium">
+              {post.includeHashtagsInNoteBody === false ? "On" : "Off"}
+            </dd>
+          </div>
+        </dl>
       </div>
-      <dl className="text-muted-foreground grid gap-1 text-xs">
-        <div className="flex justify-between gap-2">
-          <dt>Scheduled</dt>
-          <dd className="text-foreground font-medium">
-            {reviewDisplay.scheduledLabel}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Queue</dt>
-          <dd className="text-foreground font-medium">
-            {preparedEvent.queueType}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Follow-up</dt>
-          <dd className="text-foreground font-medium">
-            {followUpSummaryLine(
-              post,
-              bulkRepostConditions,
-              showBatchRepostConditions
-            )}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Hide tags</dt>
-          <dd className="text-foreground font-medium">
-            {post.includeHashtagsInNoteBody === false ? "On" : "Off"}
-          </dd>
-        </div>
-      </dl>
-    </>
+    </div>
   );
 }

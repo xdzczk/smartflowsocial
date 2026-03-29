@@ -35,6 +35,10 @@ interface LongFormContentEditorProps {
   editorReady?: boolean;
   /** Tiptap editor instance (null before client mount). */
   editor: React.ComponentProps<typeof EditorContent>["editor"];
+  /**
+   * When true with `surface="editorial"`, editor sits inside `ComposerLeftCanvas` — no nested card chrome.
+   */
+  containedInComposerCard?: boolean;
 }
 
 const EDITORIAL_EDITOR_MIN_HEIGHT = "min-h-[min(58vh,32rem)]";
@@ -57,6 +61,7 @@ function EditorialLongFormContentEditor({
   chromeTrailing,
   editorReady,
   editor,
+  containedInComposerCard = false,
 }: Pick<
   LongFormContentEditorProps,
   | "uploadProvider"
@@ -66,6 +71,7 @@ function EditorialLongFormContentEditor({
   | "chromeTrailing"
   | "editorReady"
   | "editor"
+  | "containedInComposerCard"
 >) {
   const showPlaceholder = !editor;
   const uploadHint =
@@ -91,12 +97,24 @@ function EditorialLongFormContentEditor({
     <div>
       <div
         className={cn(
-          "border-border/35 bg-card/40 overflow-hidden rounded-xl border",
-          "shadow-sm shadow-black/[0.02] dark:shadow-black/20",
-          "focus-within:border-border/55 focus-within:ring-border/20 focus-within:ring-1"
+          "overflow-hidden",
+          containedInComposerCard
+            ? "border-border/20 bg-muted/[0.04] rounded-lg border"
+            : [
+                "border-border/35 bg-card/40 rounded-xl border",
+                "shadow-sm shadow-black/[0.02] dark:shadow-black/20",
+                "focus-within:border-border/55 focus-within:ring-border/20 focus-within:ring-1",
+              ]
         )}
       >
-        <div className="border-border/15 bg-muted/[0.06] border-b">
+        <div
+          className={cn(
+            "border-b",
+            containedInComposerCard
+              ? "border-border/20 bg-muted/10"
+              : "border-border/15 bg-muted/[0.06]"
+          )}
+        >
           <div className="flex min-h-[2.35rem] flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 sm:px-3">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
               {chromeLeading}
@@ -113,12 +131,20 @@ function EditorialLongFormContentEditor({
               editor={editor}
               onInsertImage={undefined}
               density="editorial"
-              editorialChrome="embedded"
+              editorialChrome={
+                containedInComposerCard ? "inComposerCanvas" : "embedded"
+              }
             />
           ) : null}
         </div>
         <div
-          className={`bg-background/50 ${showPlaceholder ? EDITORIAL_PLACEHOLDER_MIN_HEIGHT : EDITORIAL_EDITOR_MIN_HEIGHT} ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          className={cn(
+            showPlaceholder
+              ? EDITORIAL_PLACEHOLDER_MIN_HEIGHT
+              : EDITORIAL_EDITOR_MIN_HEIGHT,
+            !editorReady && "pointer-events-none select-none",
+            containedInComposerCard ? "bg-background/60" : "bg-background/50"
+          )}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}
         >
@@ -269,6 +295,7 @@ export function LongFormContentEditor({
   chromeTrailing = null,
   editorReady = true,
   editor,
+  containedInComposerCard = false,
 }: LongFormContentEditorProps) {
   if (surface === "editorial") {
     return (
@@ -280,6 +307,7 @@ export function LongFormContentEditor({
         chromeTrailing={chromeTrailing}
         editorReady={editorReady}
         editor={editor}
+        containedInComposerCard={containedInComposerCard}
       />
     );
   }

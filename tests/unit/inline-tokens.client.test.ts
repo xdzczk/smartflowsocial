@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  contentHasAttachmentTokens,
   reorderAttachmentTokensInContent,
   stripAttachmentTokens,
 } from "~/features/posts/utils/inline-tokens.client";
@@ -21,5 +22,10 @@ describe("inline-tokens.client", () => {
     expect(reorderAttachmentTokensInContent("[attach:x]", ["x"])).toBe(
       "[attach:x]"
     );
+  });
+
+  it("contentHasAttachmentTokens detects placeholders", () => {
+    expect(contentHasAttachmentTokens("hi [attach:x]")).toBe(true);
+    expect(contentHasAttachmentTokens("no tokens")).toBe(false);
   });
 });

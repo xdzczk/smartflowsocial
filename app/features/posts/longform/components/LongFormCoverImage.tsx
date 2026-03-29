@@ -76,12 +76,12 @@ export function LongFormCoverImage({
       {!image ? (
         <div className="mt-2">
           {uploadFetcherState !== "idle" ? (
-            <div className="border-border/20 bg-muted/[0.03] flex min-h-[6.5rem] items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6">
+            <div className="border-border/15 bg-muted/[0.02] flex min-h-[6.5rem] items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6">
               <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-b-transparent" />
               <p className="text-muted-foreground/80 text-sm">Uploading…</p>
             </div>
           ) : (
-            <div className="border-border/20 bg-muted/[0.02] flex min-h-[6.75rem] flex-col justify-center gap-4 rounded-xl border border-dashed px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <div className="border-border/15 bg-muted/[0.015] flex min-h-[6.75rem] flex-col justify-center gap-4 rounded-xl border border-dashed px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
               <p className="text-muted-foreground/85 max-w-sm text-[13px] leading-relaxed">
                 Optional hero for feeds and link cards.
               </p>

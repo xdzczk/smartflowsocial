@@ -32,6 +32,28 @@ import {
 } from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf";
 
+/** When pending search drops `type` but we are still on article (or other) compose mode, keep discriminator so loader vs URL mode stay aligned. */
+function mergeComposeTypeFromLocation(
+  locationSearch: string,
+  pendingSearch: string
+): string {
+  const loc = new URLSearchParams(
+    locationSearch.startsWith("?") ? locationSearch.slice(1) : locationSearch
+  );
+  const locType = loc.get("type");
+  if (locType == null || locType === "") return pendingSearch;
+
+  const pendingRaw = pendingSearch.startsWith("?")
+    ? pendingSearch.slice(1)
+    : pendingSearch;
+  const pendingParams = new URLSearchParams(pendingRaw);
+  if (pendingParams.has("type")) return pendingSearch;
+
+  pendingParams.set("type", locType);
+  const merged = pendingParams.toString();
+  return merged.length > 0 ? `?${merged}` : locationSearch;
+}
+
 function useEffectiveComposeSearch(): string {
   const navigation = useNavigation();
   const location = useLocation();
@@ -45,7 +67,7 @@ function useEffectiveComposeSearch(): string {
       if (pending.length <= 1) {
         return location.search;
       }
-      return pending;
+      return mergeComposeTypeFromLocation(location.search, pending);
     }
     return nav.search || location.search;
   }

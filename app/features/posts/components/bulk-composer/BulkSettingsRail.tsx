@@ -143,13 +143,13 @@ export function BulkSettingsRail({
     const sched = validationResult.errors.filter((e) =>
       e.includes("Schedule time")
     ).length;
-    const lines: Array<{ text: string; index: number }> = [];
-    Object.entries(validationResult.byPost).forEach(([idx, errs]) => {
-      const i = parseInt(idx, 10);
-      if (errs[0]) lines.push({ text: `Post ${i + 1}: ${errs[0]}`, index: i });
-    });
-    return { cap, sched, lines };
-  }, [validationResult]);
+    const unassigned =
+      batchMode === "queue"
+        ? posts.filter((p) => !p.queueType || p.queueType === "unassigned")
+            .length
+        : 0;
+    return { cap, sched, unassigned };
+  }, [validationResult, batchMode, posts]);
 
   const reviewScheduleStartLabel = useMemo(
     () =>

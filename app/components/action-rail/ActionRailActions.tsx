@@ -10,6 +10,9 @@ export function ActionRailActions({
   onSecondaryClick,
   secondaryDisabled,
   secondaryButton,
+  secondSecondaryLabel,
+  onSecondSecondaryClick,
+  secondSecondaryDisabled,
   primaryLabel,
   onPrimaryClick,
   onPrimaryBlocked,
@@ -21,8 +24,12 @@ export function ActionRailActions({
   secondaryLabel?: string;
   onSecondaryClick?: () => void;
   secondaryDisabled?: boolean;
-  /** Full replacement for secondary slot (e.g. submit button with form attribute) */
+  /** Full replacement for first secondary slot (e.g. submit button with form attribute) */
   secondaryButton?: ReactNode;
+  /** Optional second ghost row above primary (e.g. bulk review: Save draft after Back) */
+  secondSecondaryLabel?: string;
+  onSecondSecondaryClick?: () => void;
+  secondSecondaryDisabled?: boolean;
   primaryLabel?: string;
   onPrimaryClick?: () => void;
   onPrimaryBlocked?: () => void;
@@ -37,21 +44,36 @@ export function ActionRailActions({
   const primaryInert = showLoading;
   const blocked = primaryInert || Boolean(primaryDisabled);
 
+  const firstSecondary =
+    secondaryButton ??
+    (secondaryLabel && onSecondaryClick ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={RAIL_SECONDARY_ACTION}
+        onClick={onSecondaryClick}
+        disabled={secondaryDisabled}
+      >
+        {secondaryLabel}
+      </Button>
+    ) : null);
+
   return (
     <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
-      {secondaryButton ??
-        (secondaryLabel && onSecondaryClick ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={RAIL_SECONDARY_ACTION}
-            onClick={onSecondaryClick}
-            disabled={secondaryDisabled}
-          >
-            {secondaryLabel}
-          </Button>
-        ) : null)}
+      {firstSecondary}
+      {secondSecondaryLabel && onSecondSecondaryClick ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={RAIL_SECONDARY_ACTION}
+          onClick={onSecondSecondaryClick}
+          disabled={secondSecondaryDisabled}
+        >
+          {secondSecondaryLabel}
+        </Button>
+      ) : null}
       <div className="p-0">
         {primaryButton ?? (
           <Button

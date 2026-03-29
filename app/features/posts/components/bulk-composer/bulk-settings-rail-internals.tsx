@@ -1,9 +1,6 @@
 import { Loader2 } from "lucide-react";
 
-import {
-  ActionRailActions,
-  RAIL_SECONDARY_ACTION,
-} from "~/components/action-rail";
+import { ActionRailActions } from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
 import type {
   BulkBatchMode,
@@ -25,10 +22,6 @@ import {
   BulkSettingsRailSummaryBlock,
 } from "./bulk-settings-rail-sections";
 import { BulkBatchModeTabs } from "./BulkBatchModeTabs";
-
-const RAIL_PRIMARY_BTN = cn(
-  "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
-);
 
 export interface BulkSettingsRailBodyProps {
   stage: BulkComposerStage;
@@ -73,7 +66,7 @@ export interface BulkSettingsRailBodyProps {
   aggregateLines: {
     cap: number;
     sched: number;
-    lines: Array<{ text: string; index: number }>;
+    unassigned: number;
   };
   reviewScheduleStartLabel: string;
   reviewScheduleIntervalLabel: string;
@@ -217,13 +210,16 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
             posts={posts}
             onJumpToPost={onJumpToPost}
             aggregateLines={aggregateLines}
+            postsCount={postsCount}
+            batchMode={batchMode}
           />
         ) : (
           <BulkSettingsRailReviewReadinessBlock
             validationResult={validationResult}
             postsCount={postsCount}
             issueCount={issueCount}
-            aggregateLines={aggregateLines}
+            posts={posts}
+            batchMode={batchMode}
             onJumpToPost={onJumpToPost}
           />
         )}
@@ -276,7 +272,11 @@ export function BulkSettingsRailFooter({
           isProcessing ||
           isPreviewSubmitting
         }
-        primaryLabel={`Review ${postsCount} post${postsCount !== 1 ? "s" : ""}`}
+        primaryLabel={
+          postsCount === 0
+            ? "Add posts to review"
+            : `Review ${postsCount} post${postsCount !== 1 ? "s" : ""}`
+        }
         onPrimaryClick={onReview}
         primaryDisabled={
           postsCount === 0 ||
@@ -295,35 +295,21 @@ export function BulkSettingsRailFooter({
     isSubmitting || isSigning || !validationResult.isValid || postsCount === 0;
 
   return (
-    <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className={RAIL_SECONDARY_ACTION}
-        disabled={isSubmitting || isSigning}
-        onClick={onBackToEdit}
-      >
-        Back to edit
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className={RAIL_SECONDARY_ACTION}
-        disabled={isSubmitting || isSigning}
-        onClick={onSaveDraftReview}
-      >
-        Save draft
-      </Button>
-      <div className="p-0">
+    <ActionRailActions
+      secondaryLabel="Back to edit"
+      onSecondaryClick={onBackToEdit}
+      secondaryDisabled={isSubmitting || isSigning}
+      secondSecondaryLabel="Save draft"
+      onSecondSecondaryClick={onSaveDraftReview}
+      secondSecondaryDisabled={isSubmitting || isSigning}
+      primaryButton={
         <Button
           type="button"
           size="sm"
           variant="default"
           aria-disabled={signBlocked}
           className={cn(
-            RAIL_PRIMARY_BTN,
+            "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             signBlocked
               ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -345,11 +331,13 @@ export function BulkSettingsRailFooter({
               <Loader2 className="size-4 animate-spin" aria-hidden />
               Submitting…
             </span>
+          ) : postsCount === 0 ? (
+            "Add posts to sign"
           ) : (
             `Sign and schedule ${postsCount} post${postsCount !== 1 ? "s" : ""}`
           )}
         </Button>
-      </div>
-    </div>
+      }
+    />
   );
 }

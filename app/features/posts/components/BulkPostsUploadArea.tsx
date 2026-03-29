@@ -241,6 +241,13 @@ export default function BulkPostsUploadArea({
           </div>
         </div>
       </label>
+      {hasPosts ? (
+        <p className="text-muted-foreground mt-2 text-[11px] leading-snug">
+          Per-post queue, schedule, follow-up, and tags: use{" "}
+          <span className="text-foreground font-medium">Advanced</span> on each
+          card.
+        </p>
+      ) : null}
     </div>
   );
 }
