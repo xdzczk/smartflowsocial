@@ -30,12 +30,16 @@ export async function checkPaymentStatusById(paymentId: string) {
     });
   }
 
+  let lastVerification: Awaited<
+    ReturnType<typeof manuallyVerifyPayment>
+  > | null = null;
+
   // If payment is still PENDING, try to manually verify it
   // This handles cases where the payment was received but onPaid callback didn't fire
   if (!paymentStatus.paid && paymentStatus.status === "PENDING") {
     try {
-      const verification = await manuallyVerifyPayment(paymentId);
-      if (verification.success && verification.paid) {
+      lastVerification = await manuallyVerifyPayment(paymentId);
+      if (lastVerification.success && lastVerification.paid) {
         // Re-check status after manual verification
         paymentStatus = await checkPaymentStatus(paymentId);
       }
@@ -67,6 +71,9 @@ export async function checkPaymentStatusById(paymentId: string) {
       success: true,
       paid: false,
       status: paymentStatus.status,
+      ...(lastVerification?.btcpayAwaitingConfirmations
+        ? { btcpayAwaitingConfirmations: true as const }
+        : {}),
     },
     {
       status: 200,

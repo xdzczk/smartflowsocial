@@ -133,9 +133,68 @@ export async function btcpayCreateInvoice(params: {
   return { id, checkoutLink, expirationTime };
 }
 
-export async function btcpayGetInvoice(
+/** Require at least this many on-chain confirmations before granting access (RBF / 0-conf risk). */
+export const BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS = 1;
+
+export interface BtcpayInvoiceOnChainSnapshot {
+  invoiceStatus: string;
+  maxOnChainConfirmations: number;
+  /** An on-chain payment row exists (tx seen in BTCPay, including 0-conf). */
+  hasOnChainPaymentStarted: boolean;
+}
+
+function isBtcpayOnChainPaymentMethodId(methodId: string): boolean {
+  const m = methodId.toLowerCase();
+  return m.includes("-onchain") || m.includes("_onchain");
+}
+
+/**
+ * Parse Greenfield GET invoice JSON for BTC on-chain progress.
+ * @see https://docs.btcpayserver.org/API/Greenfield/v1/
+ */
+export function parseBtcpayInvoiceOnChainSnapshot(
+  data: unknown
+): BtcpayInvoiceOnChainSnapshot {
+  const obj = asRecord(data);
+  const invoiceStatus = typeof obj["status"] === "string" ? obj["status"] : "";
+  const payments = obj["payments"];
+  let maxOnChainConfirmations = 0;
+  let hasOnChainPaymentStarted = false;
+
+  if (!Array.isArray(payments)) {
+    return {
+      invoiceStatus,
+      maxOnChainConfirmations: 0,
+      hasOnChainPaymentStarted: false,
+    };
+  }
+
+  for (const p of payments) {
+    if (!p || typeof p !== "object" || Array.isArray(p)) continue;
+    const pr = p as Record<string, unknown>;
+    const methodIdRaw =
+      (typeof pr["paymentMethodId"] === "string"
+        ? pr["paymentMethodId"]
+        : "") ||
+      (typeof pr["paymentMethod"] === "string" ? pr["paymentMethod"] : "");
+    if (!isBtcpayOnChainPaymentMethodId(methodIdRaw)) continue;
+
+    hasOnChainPaymentStarted = true;
+    const conf =
+      typeof pr["confirmations"] === "number" ? pr["confirmations"] : 0;
+    if (conf > maxOnChainConfirmations) maxOnChainConfirmations = conf;
+  }
+
+  return {
+    invoiceStatus,
+    maxOnChainConfirmations,
+    hasOnChainPaymentStarted,
+  };
+}
+
+export async function btcpayGetInvoiceSnapshot(
   btcpayInvoiceId: string
-): Promise<{ status: string }> {
+): Promise<BtcpayInvoiceOnChainSnapshot> {
   if (!isBtcpayConfigured()) {
     throw new Error("BTCPay is not configured");
   }
@@ -159,9 +218,7 @@ export async function btcpayGetInvoice(
     );
   }
 
-  const obj = asRecord(data);
-  const status = typeof obj["status"] === "string" ? obj["status"] : "";
-  return { status };
+  return parseBtcpayInvoiceOnChainSnapshot(data);
 }
 
 export function verifyBtcpayWebhookSignature(

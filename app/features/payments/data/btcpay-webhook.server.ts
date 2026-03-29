@@ -2,6 +2,10 @@
  * BTCPay webhook settlement (Prisma + subscription completion).
  */
 
+import {
+  BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS,
+  btcpayGetInvoiceSnapshot,
+} from "~/features/payments/btcpay.server";
 import { handlePaymentCompleted } from "~/features/payments/data/payment.handlers.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
@@ -38,11 +42,30 @@ function planIdFromPaymentId(paymentId: string): string | null {
 }
 
 /**
- * Completes subscription if this BTCPay invoice matches a pending Payment row.
+ * Completes subscription if this BTCPay invoice matches a pending Payment row
+ * and on-chain confirmations meet {@link BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS}.
  */
 export async function settleSubscriptionFromBtcpayInvoiceId(
   btcpayInvoiceId: string
 ): Promise<void> {
+  let snap;
+  try {
+    snap = await btcpayGetInvoiceSnapshot(btcpayInvoiceId);
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      btcpayInvoiceId,
+      message: "BTCPay webhook: invoice snapshot failed",
+    });
+    return;
+  }
+
+  if (
+    snap.maxOnChainConfirmations < BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS ||
+    !snap.hasOnChainPaymentStarted
+  ) {
+    return;
+  }
+
   const payment = await prisma.payment.findFirst({
     where: {
       btcpayInvoiceId,
@@ -81,6 +104,8 @@ export async function processBtcpayWebhookPayload(
     return;
   }
 
+  // 0-conf: do not grant access here — polling / later webhooks complete after ≥1 conf.
+  // InvoiceSettled: usually matches store speed policy; we still require confirmations via snapshot.
   if (type === "InvoiceSettled") {
     await settleSubscriptionFromBtcpayInvoiceId(invoiceId);
     return;

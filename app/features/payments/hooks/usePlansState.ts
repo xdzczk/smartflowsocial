@@ -1,9 +1,22 @@
 import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  clearBtcpayConfirmationWatch,
+  clearBtcpayConfirmationWatchIfMatches,
+  readBtcpayConfirmationWatch,
+  writeBtcpayConfirmationWatch,
+} from "~/features/payments/btcpay-confirmation-watch-storage";
 import type { InvoiceCheckoutKind } from "~/features/payments/types";
 
-import { usePaymentPolling } from "./usePaymentPolling";
+import {
+  PAYMENT_POLL_BTCPAY_INTERVAL_MS,
+  PAYMENT_POLL_BTCPAY_MAX_MS,
+  PAYMENT_POLL_DEFAULT_INTERVAL_MS,
+  PAYMENT_POLL_DEFAULT_MAX_MS,
+  type PaymentStatusPayload,
+  usePaymentPolling,
+} from "./usePaymentPolling";
 
 interface InvoiceData {
   invoice: string;
@@ -50,16 +63,50 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const processedPaymentIdRef = useRef<string | null>(null);
+  const [btcpayAwaitingConfirmations, setBtcpayAwaitingConfirmations] =
+    useState(false);
+  const invoiceDataRef = useRef<InvoiceData | null>(null);
+
+  useEffect(() => {
+    invoiceDataRef.current = invoiceData;
+  }, [invoiceData]);
 
   const handlePaymentComplete = useCallback(() => {
+    const pid = invoiceDataRef.current?.paymentId;
+    if (pid) {
+      clearBtcpayConfirmationWatchIfMatches(pid);
+    }
+    setBtcpayAwaitingConfirmations(false);
     setPaymentComplete(true);
     setShowInvoice(false);
   }, []);
 
+  const onPaymentStatusPayload = useCallback((p: PaymentStatusPayload) => {
+    if (p.paid) {
+      setBtcpayAwaitingConfirmations(false);
+      return;
+    }
+    if (p.btcpayAwaitingConfirmations === true) {
+      setBtcpayAwaitingConfirmations(true);
+      return;
+    }
+    if (p.status === "EXPIRED") {
+      setBtcpayAwaitingConfirmations(false);
+    }
+  }, []);
+
+  const isBtcpayCheckout = invoiceData?.checkoutKind === "btcpay";
   const { isPolling, startPaymentPolling, checkPaymentStatusNow } =
     usePaymentPolling({
       paymentId: invoiceData?.paymentId ?? null,
       onPaymentComplete: handlePaymentComplete,
+      maxPollingDurationMs: isBtcpayCheckout
+        ? PAYMENT_POLL_BTCPAY_MAX_MS
+        : PAYMENT_POLL_DEFAULT_MAX_MS,
+      pollingIntervalMs: isBtcpayCheckout
+        ? PAYMENT_POLL_BTCPAY_INTERVAL_MS
+        : PAYMENT_POLL_DEFAULT_INTERVAL_MS,
+      onPaymentStatusPayload,
     });
 
   // Store startPaymentPolling in a ref to avoid dependency issues
@@ -119,6 +166,11 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
           };
           // Defer to avoid cascading renders
           setTimeout(() => {
+            const w = readBtcpayConfirmationWatch();
+            if (w && w.paymentId !== invoice.paymentId) {
+              clearBtcpayConfirmationWatch();
+            }
+            setBtcpayAwaitingConfirmations(false);
             setInvoiceData(invoice);
             setShowInvoice(true);
             // Set initial time remaining
@@ -183,10 +235,22 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   };
 
   const handleCloseModal = useCallback(() => {
+    const data = invoiceDataRef.current;
+    if (
+      data?.checkoutKind === "btcpay" &&
+      btcpayAwaitingConfirmations &&
+      data.paymentId
+    ) {
+      writeBtcpayConfirmationWatch({
+        paymentId: data.paymentId,
+        expiresAt: data.expiresAt,
+      });
+    }
+    setBtcpayAwaitingConfirmations(false);
     setShowInvoice(false);
     setInvoiceData(null);
     processedPaymentIdRef.current = null;
-  }, []);
+  }, [btcpayAwaitingConfirmations]);
 
   const handleOpenCheckout = useCallback(
     (planId: string) => {
@@ -212,6 +276,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     selectedPlan,
     timeRemaining,
     isPolling,
+    btcpayAwaitingConfirmations,
     setSelectedPlan,
     handlePlanSelection,
     handleOpenCheckout,

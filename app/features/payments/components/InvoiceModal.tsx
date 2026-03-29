@@ -23,6 +23,8 @@ interface InvoiceModalProps {
   modalTitle?: string;
   timeRemaining: number;
   isPolling: boolean;
+  /** BTCPay: payment seen on-chain but fewer than required confirmations yet. */
+  btcpayAwaitingConfirmations?: boolean;
   onCopy: (text: string) => void;
   onCheckPayment?: (paymentId: string) => void;
   onClose?: () => void;
@@ -35,6 +37,7 @@ export function InvoiceModal({
   modalTitle = "Complete payment",
   timeRemaining,
   isPolling,
+  btcpayAwaitingConfirmations = false,
   onCopy,
   onCheckPayment,
   onClose,
@@ -123,8 +126,9 @@ export function InvoiceModal({
               Open BTCPay checkout
             </a>
             <p className="text-muted-foreground mt-2 text-center text-xs">
-              After paying on-chain, return here — we detect settlement
-              automatically (or use Check payment).
+              After paying on-chain, return here — we detect the first
+              confirmation automatically (or use Check payment). Your plan
+              activates only after one on-chain confirmation.
             </p>
           </div>
         ) : null}
@@ -143,9 +147,19 @@ export function InvoiceModal({
             />
           </div>
           {isPolling ? (
-            <div className="text-muted-foreground flex items-center justify-center text-sm">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Waiting for payment...
+            <div className="text-muted-foreground flex flex-col items-center justify-center gap-1 text-sm">
+              <div className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isBtcpay && btcpayAwaitingConfirmations
+                  ? "Payment received — waiting for 1st confirmation..."
+                  : "Waiting for payment..."}
+              </div>
+              {isBtcpay && btcpayAwaitingConfirmations ? (
+                <span className="text-muted-foreground max-w-xs text-center text-xs">
+                  You can close this window; a slim bar will stay at the top
+                  until your transaction confirms.
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>

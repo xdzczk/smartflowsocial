@@ -19,6 +19,7 @@ import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { getUser, refreshUserProfileIfEmpty } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
+import { BtcpayConfirmationWatchBar } from "~/features/payments/components/BtcpayConfirmationWatchBar";
 // Import migration to run on app load
 import "~/features/auth/signer/remote-signer-sessions-migration.client";
 import { handleLoaderError } from "~/lib/error-handler.server";
@@ -200,6 +201,7 @@ export default function App() {
         <QueryProvider>
           <TooltipProvider>
             <Toaster position="top-right" />
+            <BtcpayConfirmationWatchBar />
             <LifecycleHandler />
             <PrefetchManager />
             <RemoteSignerReconnectController />

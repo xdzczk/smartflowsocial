@@ -153,6 +153,7 @@ export function PlansPage(): ReactNode {
     selectedPlan,
     timeRemaining,
     isPolling,
+    btcpayAwaitingConfirmations,
     setSelectedPlan,
     handleOpenCheckout,
     handleCloseCheckout,
@@ -281,6 +282,7 @@ export function PlansPage(): ReactNode {
           }}
           timeRemaining={timeRemaining}
           isPolling={isPolling}
+          btcpayAwaitingConfirmations={btcpayAwaitingConfirmations}
           onCopy={copyToClipboard}
           onCheckPayment={(id) => {
             void checkPaymentStatusNow(id);

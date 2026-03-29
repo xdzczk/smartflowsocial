@@ -10,7 +10,10 @@ import { quoteGiveawayFinalization } from "~/features/giveaway/giveaway-finaliza
 import { findGiveawayByIdAndUser } from "~/features/giveaway/repositories/giveaway-actions-data.server";
 import { expireStaleFinalizationPaymentsForGiveaway } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import { getBitcoinRate } from "~/features/payments/btc.rate";
-import { btcpayGetInvoice } from "~/features/payments/btcpay.server";
+import {
+  BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS,
+  btcpayGetInvoiceSnapshot,
+} from "~/features/payments/btcpay.server";
 import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import type {
   CreateInvoiceParams,
@@ -691,6 +694,11 @@ interface ManualVerifyPaymentRow {
   Subscription: { planId: string | null } | null;
 }
 
+function isBtcpayInvoiceTerminalFailure(status: string): boolean {
+  const s = status.trim().toLowerCase();
+  return s === "expired" || s === "invalid";
+}
+
 function resolvePlanIdForManualVerify(
   payment: Pick<ManualVerifyPaymentRow, "purpose" | "Subscription">,
   paymentId: string
@@ -714,7 +722,12 @@ async function verifyBtcpayPaymentManually(params: {
   planId: string;
   btcpayInvoiceId: string;
   expiresAt: Date | null;
-}): Promise<{ success: boolean; paid: boolean; message: string }> {
+}): Promise<{
+  success: boolean;
+  paid: boolean;
+  message: string;
+  btcpayAwaitingConfirmations?: boolean;
+}> {
   const graceEnd =
     params.expiresAt != null
       ? new Date(params.expiresAt.getTime() + 48 * 60 * 60 * 1000)
@@ -729,8 +742,22 @@ async function verifyBtcpayPaymentManually(params: {
   }
 
   try {
-    const { status } = await btcpayGetInvoice(params.btcpayInvoiceId);
-    if (status === "Settled") {
+    const snap = await btcpayGetInvoiceSnapshot(params.btcpayInvoiceId);
+    const { invoiceStatus: status } = snap;
+
+    if (isBtcpayInvoiceTerminalFailure(status)) {
+      await handlePaymentTimeout(params.paymentId);
+      return {
+        success: true,
+        paid: false,
+        message: "Invoice expired or was invalidated",
+      };
+    }
+
+    const confOk =
+      snap.maxOnChainConfirmations >= BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS;
+
+    if (snap.hasOnChainPaymentStarted && confOk) {
       await handlePaymentCompleted(
         params.paymentId,
         params.userId,
@@ -742,18 +769,20 @@ async function verifyBtcpayPaymentManually(params: {
         message: "Payment verified and completed",
       };
     }
-    if (status === "Expired" || status === "Invalid") {
-      await handlePaymentTimeout(params.paymentId);
+
+    if (snap.hasOnChainPaymentStarted && !confOk) {
       return {
         success: true,
         paid: false,
-        message: "Invoice expired or was invalidated",
+        btcpayAwaitingConfirmations: true,
+        message: "Payment seen; waiting for first on-chain confirmation",
       };
     }
+
     return {
       success: true,
       paid: false,
-      message: "Payment not settled yet",
+      message: "Payment not received yet",
     };
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
@@ -868,6 +897,7 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
   success: boolean;
   paid: boolean;
   message: string;
+  btcpayAwaitingConfirmations?: boolean;
 }> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },

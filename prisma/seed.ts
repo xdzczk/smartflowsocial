@@ -168,7 +168,7 @@ async function main() {
     {
       id: "founder",
       name: "Founder",
-      price: 20, // test pricing — restore before production
+      price: 2600,
       description: "For early supporters and power users",
       features: {
         basicScheduling: true,

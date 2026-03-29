@@ -731,64 +731,64 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         </Link>
       </div>
 
-      <div className="space-y-1">
-        <h1 className="text-foreground text-2xl font-bold tracking-tight">
-          New contest
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Build your contest in steps. You can save a draft, then launch when
-          ready.
-        </p>
-      </div>
-
-      {actionData?.error ? (
-        <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
-          {actionData.error}
-        </div>
-      ) : null}
-
-      {presetDefaults?.id ? (
-        <p className="text-muted-foreground border-border bg-muted/30 rounded-md border px-3 py-2 text-sm">
-          Loaded a saved preset — choose your source post and contest end time,
-          then save or launch.
-        </p>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSourceMode("create");
-          }}
-          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-            sourceMode === "create"
-              ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
-              : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
-          }`}
-        >
-          Create new contest post
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSourceMode("existing");
-          }}
-          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-            sourceMode === "existing"
-              ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
-              : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
-          }`}
-        >
-          Use existing published post
-        </button>
-      </div>
-
       <Form
         id="dashboard-contest-new-form"
         method="post"
         className="lg:grid lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 xl:grid-cols-[1fr_min(100%,344px)]"
       >
         <div className="min-w-0 space-y-8">
+          <div className="space-y-1">
+            <h1 className="text-foreground text-2xl font-bold tracking-tight">
+              New contest
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Build your contest in steps. You can save a draft, then launch
+              when ready.
+            </p>
+          </div>
+
+          {actionData?.error ? (
+            <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
+              {actionData.error}
+            </div>
+          ) : null}
+
+          {presetDefaults?.id ? (
+            <p className="text-muted-foreground border-border bg-muted/30 rounded-md border px-3 py-2 text-sm">
+              Loaded a saved preset — choose your source post and contest end
+              time, then save or launch.
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("create");
+              }}
+              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                sourceMode === "create"
+                  ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
+                  : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
+              }`}
+            >
+              Create new contest post
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("existing");
+              }}
+              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                sourceMode === "existing"
+                  ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
+                  : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
+              }`}
+            >
+              Use existing published post
+            </button>
+          </div>
+
           <input
             type="hidden"
             name="sourcePostId"
