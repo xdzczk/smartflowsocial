@@ -1,19 +1,21 @@
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, type FetcherWithComponents } from "@remix-run/react";
 import { useEffect, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
 import { DraftPickerModal } from "~/features/posts/drafts";
+import { useBulkPostSigning } from "~/features/posts/hooks/useBulkPostSigning";
 import { useBulkPostsPageState } from "~/features/posts/hooks/useBulkPostsPageState";
-import {
-  BulkPostsActionButtons,
-  BulkPostsSchedulingPanel,
-  BulkPostsTable,
-  BulkPostsUploadArea,
-  PostConfirmation,
-  PublishResultModal,
-} from "~/features/posts/ui";
+import { PublishResultModal } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
 import {
@@ -25,7 +27,10 @@ import { useBlossomUploadGate } from "~/features/upload";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { isVideoFile } from "~/utils/media-helpers";
 
-import { BulkPostsSubmitButton } from "./BulkPostsSubmitButton";
+import { BulkComposerPostCard } from "./bulk-composer/BulkComposerPostCard";
+import { BulkComposerShell } from "./bulk-composer/BulkComposerShell";
+import { BulkSettingsRail } from "./bulk-composer/BulkSettingsRail";
+import BulkPostsUploadArea from "./BulkPostsUploadArea";
 
 function getPageTitle(mode: string | null): string {
   if (mode === "recycle") {
@@ -40,7 +45,6 @@ function getPageTitle(mode: string | null): string {
   return "Bulk Schedule Posts";
 }
 
-/* eslint-disable-next-line sonarjs/cognitive-complexity -- Page component with many features; splitting would fragment state */
 export default function BulkPostsPage() {
   const deferredData = useDeferredRouteLoaderData();
   const loaderData = useLoaderData();
@@ -70,15 +74,18 @@ export default function BulkPostsPage() {
     setPosts,
     preparedEvents,
     setPreparedEvents,
-    showConfirmation,
-    setShowConfirmation,
+    bulkComposerStage,
+    setBulkComposerStage,
+    bulkBatchMode,
+    setBulkBatchMode,
+    focusPostIndex,
+    setFocusPostIndex,
     isProcessing,
     setIsProcessing,
     isPreviewSubmitting,
     setIsPreviewSubmitting,
     preparationProgress,
     setPreparationProgress,
-    firstItemTimeManuallyChanged: _firstItemTimeManuallyChanged,
     toast,
     setToast,
     selectedMedia,
@@ -117,7 +124,7 @@ export default function BulkPostsPage() {
   } = state;
 
   useBulkPostsState({ mode, posts, setPosts });
-  const { prepareEvents, validatePostsForPreview } = useBulkPostEvents({
+  const { startPrepareFlow, validatePostsForPreview } = useBulkPostEvents({
     posts,
     fetcher,
     user,
@@ -126,11 +133,19 @@ export default function BulkPostsPage() {
     selectedHashtags,
     setToast,
     setPreparedEvents,
-    setShowConfirmation,
+    setBulkComposerStage,
     setIsPreviewSubmitting,
     setIsProcessing,
     setPreparationProgress,
     scheduleRandomWindowMinutes: bulkScheduleRandomWindowMinutes,
+  });
+
+  const signing = useBulkPostSigning({
+    preparedEvents,
+    posts,
+    groupId,
+    repostConditions: bulkRepostConditions,
+    fetcher: fetcher as FetcherWithComponents<{ error?: string }>,
   });
 
   const validationResult = useMemo(
@@ -139,14 +154,14 @@ export default function BulkPostsPage() {
   );
 
   const previewData = useMemo(() => {
-    const data = new Map<
+    const map = new Map<
       number,
       Array<{ url: string; isVideo: boolean; file: File }>
     >();
     posts.forEach((post, index) => {
       const files = post.files;
       if (files.length > 0) {
-        data.set(
+        map.set(
           index,
           files.map((file) => {
             const url = URL.createObjectURL(file);
@@ -156,10 +171,9 @@ export default function BulkPostsPage() {
         );
       }
     });
-    return data;
+    return map;
   }, [posts]);
 
-  // Cleanup object URLs when component unmounts or posts change
   useEffect(() => {
     return () => {
       previewData.forEach((arr) => {
@@ -172,291 +186,317 @@ export default function BulkPostsPage() {
     };
   }, [previewData]);
 
-  return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{getPageTitle(mode)}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          {mode !== "repost" && mode !== "quote" ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handlers.addEmptyRows(1)}
-                disabled={isProcessing}
-              >
-                + Add 1 Post
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handlers.addEmptyRows(5)}
-                disabled={isProcessing}
-              >
-                + Add 5
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handlers.addEmptyRows(10)}
-                disabled={isProcessing}
-              >
-                + Add 10
-              </Button>
-            </>
-          ) : null}
+  useEffect(() => {
+    if (focusPostIndex === null || bulkComposerStage !== "build") return;
+    const el = document.querySelector(
+      `[data-bulk-post-index="${focusPostIndex}"]`
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFocusPostIndex(null);
+  }, [focusPostIndex, bulkComposerStage, setFocusPostIndex]);
+
+  const showActions = mode !== "repost" && mode !== "quote";
+  const userTimezone = user?.timezone ?? "UTC";
+  const userTimeFormat = user?.timeFormat === "24h" ? "24h" : "12h";
+
+  const jumpToPost = (index: number) => {
+    setBulkComposerStage("build");
+    setFocusPostIndex(index);
+  };
+
+  const headerActions = (
+    <>
+      {showActions ? (
+        <>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setBulkDraftPickerOpen(true)}
+            onClick={() => handlers.addEmptyRows(1)}
+            disabled={isProcessing}
           >
-            Open draft
+            Add 1 Post
           </Button>
-        </div>
-      </div>
-      <DraftPickerModal
-        open={bulkDraftPickerOpen}
-        onClose={() => setBulkDraftPickerOpen(false)}
-        type="bulk"
-        onSelect={(id) => navigate(`/dashboard/bulkposts?groupId=${id}`)}
-      />
-      {!showConfirmation ? (
-        <fetcher.Form
-          onSubmit={(e) => {
-            void prepareEvents(e);
-          }}
-          className="w-full"
-          encType="multipart/form-data"
-        >
-          {mode !== "repost" && mode !== "quote" ? (
-            <BulkPostsUploadArea
-              isProcessing={isProcessing}
-              processingProgress={processingProgress}
-              onFileChange={handlers.handleFileChange}
-              onFilesDropped={handlers.handleBulkFilesDropped}
-              uploadProvider={uploadProvider}
-              mediaUploadBlocked={mediaUploadBlocked}
-            />
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handlers.addEmptyRows(5)}
+            disabled={isProcessing}
+          >
+            Add 5
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handlers.addEmptyRows(10)}
+            disabled={isProcessing}
+          >
+            Add 10
+          </Button>
+        </>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setBulkDraftPickerOpen(true)}
+      >
+        Open draft
+      </Button>
+    </>
+  );
 
-          <BulkPostsActionButtons
+  return (
+    <>
+      <BulkComposerShell
+        title={getPageTitle(mode)}
+        headerActions={headerActions}
+        workspace={
+          <>
+            <DraftPickerModal
+              open={bulkDraftPickerOpen}
+              onClose={() => setBulkDraftPickerOpen(false)}
+              type="bulk"
+              onSelect={(id) => navigate(`/dashboard/bulkposts?groupId=${id}`)}
+            />
+
+            {bulkComposerStage === "build" && showActions ? (
+              <BulkPostsUploadArea
+                isProcessing={isProcessing}
+                processingProgress={processingProgress}
+                onFileChange={handlers.handleFileChange}
+                onFilesDropped={handlers.handleBulkFilesDropped}
+                uploadProvider={uploadProvider}
+                mediaUploadBlocked={mediaUploadBlocked}
+                postCount={posts.length}
+              />
+            ) : null}
+
+            {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
+              <div className="border-border bg-muted/30 rounded-lg border p-6 text-center">
+                <p className="text-foreground mb-2 font-medium">
+                  No posts to schedule.
+                </p>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Select regular posts (not articles) from Published and try
+                  &quot;Schedule {mode === "quote" ? "quote" : "repost"}&quot;
+                  again.
+                </p>
+                <a
+                  href="/dashboard/published"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Go to Published
+                </a>
+              </div>
+            ) : null}
+
+            {signing.isSigning ? (
+              <div className="bg-muted text-muted-foreground mb-3 flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Waiting for signer approval…
+                  {signing.signAttempt ? (
+                    <>
+                      {" "}
+                      Attempt {signing.signAttempt.attempt} of{" "}
+                      {signing.signAttempt.maxAttempts} ·{" "}
+                      {signing.formatAttemptElapsed(
+                        signing.signElapsedSeconds,
+                        signing.signAttempt.timeoutMs
+                      )}
+                    </>
+                  ) : null}
+                  {signing.signingProgress ? (
+                    <span className="ml-1">
+                      (post {signing.signingProgress.current}/
+                      {signing.signingProgress.total})
+                    </span>
+                  ) : null}
+                </span>
+                <span className="flex shrink-0 flex-wrap gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      void signing.requestNewSignerSession(
+                        signing.cancelSigningState
+                      )
+                    }
+                  >
+                    New session
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      signing.cancelSigningState();
+                      void signing.tryBackgroundReconnect();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </span>
+              </div>
+            ) : null}
+
+            {(signing.signingError ?? signing.actionError) &&
+            bulkComposerStage === "review" ? (
+              <div className="border-destructive bg-destructive/10 text-destructive mb-3 rounded-md border p-3 text-sm">
+                {signing.signingError ?? signing.actionError}
+              </div>
+            ) : null}
+
+            <Dialog
+              open={signing.partialSignState !== null}
+              onOpenChange={(open) => {
+                if (!open) signing.setPartialSignState(null);
+              }}
+            >
+              <DialogContent className="sm:max-w-md" hideCloseButton={false}>
+                <DialogHeader>
+                  <DialogTitle>Some posts could not be signed</DialogTitle>
+                  <DialogDescription>
+                    {signing.partialSignState
+                      ? `${signing.partialSignState.failedIndices.length} of ${preparedEvents.length} posts failed to sign after retry.`
+                      : ""}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => signing.setPartialSignState(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void signing.handleRetryFailedSigning()}
+                  >
+                    Retry failed
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={signing.handleScheduleSuccessfulOnly}
+                  >
+                    Schedule{" "}
+                    {signing.partialSignState?.signedEntries.length ?? 0} posts
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <div
+              className={
+                bulkComposerStage === "review"
+                  ? "space-y-3 opacity-95"
+                  : "space-y-4"
+              }
+            >
+              {posts.map((post, index) => (
+                <BulkComposerPostCard
+                  key={post.clientId}
+                  index={index}
+                  post={post}
+                  variant={bulkComposerStage === "review" ? "review" : "build"}
+                  queueTypes={queueTypes}
+                  previewData={previewData}
+                  preparedEvent={preparedEvents[index]}
+                  validationErrors={validationResult.byPost[index]}
+                  userTimezone={userTimezone}
+                  userTimeFormat={userTimeFormat}
+                  showAlsoSchedule={showActions}
+                  rowMediaUploadDisabled={mediaUploadBlocked}
+                  onCaptionChange={handlers.handleCaptionChange}
+                  onDateChange={handlers.handleDateChange}
+                  onQueueTypeChange={(i, v) => {
+                    void handlers.handleQueueTypeChange(i, v);
+                  }}
+                  onIsRecyclableChange={handlers.handleIsRecyclableChange}
+                  onRemove={handlers.handleRemovePost}
+                  onDuplicate={handlers.duplicatePost}
+                  onIncludeHashtagsInNoteBodyChange={
+                    handlers.handleIncludeHashtagsInNoteBodyChange
+                  }
+                  onMediaClick={handlers.handleMediaClick}
+                  onRowFileSelect={
+                    showActions ? handlers.handleRowFileSelect : undefined
+                  }
+                  onRowFileRemove={
+                    showActions ? handlers.handleRowFileRemove : undefined
+                  }
+                  onRepostSchedulesChange={
+                    showActions
+                      ? handlers.handleRepostSchedulesChange
+                      : undefined
+                  }
+                  onQuoteSchedulesChange={
+                    showActions
+                      ? handlers.handleQuoteSchedulesChange
+                      : undefined
+                  }
+                  onEditFromReview={(i) => jumpToPost(i)}
+                  bulkRepostConditions={bulkRepostConditions}
+                  showBatchRepostConditions={showActions}
+                />
+              ))}
+            </div>
+          </>
+        }
+        rail={
+          <BulkSettingsRail
+            stage={bulkComposerStage}
+            batchMode={bulkBatchMode}
+            onBatchModeChange={setBulkBatchMode}
             posts={posts}
-            isProcessing={isProcessing}
-            scheduleIntervals={scheduleIntervals}
+            setPosts={setPosts}
             queueTypes={queueTypes}
             hashTagPresets={hashTagPresets}
             selectedHashtagPresetId={selectedHashtagPresetId}
             useHashtagPresets={useHashtagPresets}
-            handleScheduleIntervalClick={handlers.handleScheduleIntervalClick}
-            handleBulkQueueUpdate={(queueType) =>
-              void handlers.handleBulkQueueUpdate(queueType)
-            }
-            handleHashtagPresetSelect={handlers.handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
-            handleBulkRecyclableToggle={handlers.handleBulkRecyclableToggle}
-            onRepostAll={
-              mode !== "repost" && mode !== "quote"
-                ? handlers.handleRepostAll
-                : undefined
+            scheduleIntervals={scheduleIntervals}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            isProcessing={isProcessing}
+            bulkScheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+            setBulkScheduleRandomWindowMinutes={
+              setBulkScheduleRandomWindowMinutes
             }
+            bulkRepostConditions={bulkRepostConditions}
+            setBulkRepostConditions={setBulkRepostConditions}
+            showRepostConditions={showActions}
+            validationResult={validationResult}
+            onJumpToPost={jumpToPost}
+            handleScheduleIntervalClick={handlers.handleScheduleIntervalClick}
+            handleBulkQueueUpdate={(qt) => {
+              void handlers.handleBulkQueueUpdate(qt);
+            }}
+            handleHashtagPresetSelect={handlers.handleHashtagPresetSelect}
+            handleBulkRecyclableToggle={handlers.handleBulkRecyclableToggle}
+            onRepostAll={showActions ? handlers.handleRepostAll : undefined}
+            onSaveDraft={() => handlers.handleSaveDraftFromTable(groupId)}
+            onReview={() => void startPrepareFlow()}
+            onBackToEdit={() => setBulkComposerStage("build")}
+            onSign={() => void signing.handleSignAndSubmit()}
+            onSaveDraftReview={signing.handleSaveAsDraft}
+            isSubmitting={isSubmitting}
+            isPreviewSubmitting={isPreviewSubmitting}
+            preparationProgress={preparationProgress}
+            postsCount={posts.length}
+            isSigning={signing.isSigning}
+            signingProgress={signing.signingProgress}
           />
+        }
+      />
 
-          {posts.length > 0 && mode !== "repost" && mode !== "quote" ? (
-            <BulkPostsSchedulingPanel
-              posts={posts}
-              setPosts={setPosts}
-              scheduleIntervals={scheduleIntervals}
-              userTimezone={user?.timezone ?? "UTC"}
-              disabled={isProcessing}
-              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
-              onScheduleRandomWindowMinutesChange={
-                setBulkScheduleRandomWindowMinutes
-              }
-            />
-          ) : null}
-
-          {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
-            <div className="border-border bg-muted/30 rounded-lg border p-6 text-center">
-              <p className="text-foreground mb-2 font-medium">
-                No posts to schedule.
-              </p>
-              <p className="text-muted-foreground mb-4 text-sm">
-                Select regular posts (not articles) from Published and try
-                &quot;Schedule {mode === "quote" ? "quote" : "repost"}&quot;
-                again.
-              </p>
-              <a
-                href="/dashboard/published"
-                className="text-primary font-medium hover:underline"
-              >
-                Go to Published
-              </a>
-            </div>
-          ) : null}
-
-          {posts.length > 0 ? (
-            <>
-              {mode !== "repost" && mode !== "quote" ? (
-                <div className="border-border bg-muted/30 mb-4 rounded-lg border p-4">
-                  <span className="text-muted-foreground mb-2 block text-sm font-medium">
-                    Only repost if original gets (applies to all reposts)
-                  </span>
-                  <div className="flex flex-wrap items-center gap-3 gap-y-2">
-                    {[
-                      { key: "minReactions" as const, label: "Reactions" },
-                      { key: "minZaps" as const, label: "Zaps" },
-                      { key: "minComments" as const, label: "Comments" },
-                      { key: "minReposts" as const, label: "Reposts" },
-                      { key: "minSats" as const, label: "Sats" },
-                    ].map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-1.5">
-                        <label
-                          htmlFor={`bulk-repost-cond-${key}`}
-                          className="text-muted-foreground text-xs whitespace-nowrap"
-                        >
-                          {label}
-                        </label>
-                        <input
-                          id={`bulk-repost-cond-${key}`}
-                          type="number"
-                          min={0}
-                          placeholder="—"
-                          value={bulkRepostConditions?.[key] ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            const v =
-                              raw.trim() === ""
-                                ? undefined
-                                : Math.max(0, parseInt(raw, 10) || 0);
-                            setBulkRepostConditions((prev) => {
-                              if (v === undefined) {
-                                const next = prev ? { ...prev } : {};
-                                delete next[key];
-                                return Object.keys(next).length > 0
-                                  ? next
-                                  : null;
-                              }
-                              return { ...prev, [key]: v };
-                            });
-                          }}
-                          className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
-                          aria-label={`Min ${label.toLowerCase()}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <BulkPostsTable
-                posts={posts}
-                queueTypes={queueTypes}
-                previewData={previewData}
-                handleCaptionChange={handlers.handleCaptionChange}
-                handleDateChange={handlers.handleDateChange}
-                handleIsRecyclableChange={handlers.handleIsRecyclableChange}
-                handleRemovePost={handlers.handleRemovePost}
-                handleQueueTypeChange={(index, value) =>
-                  void handlers.handleQueueTypeChange(index, value)
-                }
-                handleIncludeHashtagsInNoteBodyChange={
-                  handlers.handleIncludeHashtagsInNoteBodyChange
-                }
-                handleMediaClick={handlers.handleMediaClick}
-                validationErrorsByIndex={validationResult.byPost}
-                onRowFileSelect={
-                  mode !== "repost" && mode !== "quote"
-                    ? (idx, file) =>
-                        void handlers.handleRowFileSelect(idx, file)
-                    : undefined
-                }
-                onRowFileRemove={
-                  mode !== "repost" && mode !== "quote"
-                    ? handlers.handleRowFileRemove
-                    : undefined
-                }
-                onRepostSchedulesChange={
-                  mode !== "repost" && mode !== "quote"
-                    ? handlers.handleRepostSchedulesChange
-                    : undefined
-                }
-                onQuoteSchedulesChange={
-                  mode !== "repost" && mode !== "quote"
-                    ? handlers.handleQuoteSchedulesChange
-                    : undefined
-                }
-                showAlsoSchedule={Boolean(
-                  mode !== "repost" && mode !== "quote"
-                )}
-                userTimezone={user?.timezone ?? "UTC"}
-                rowMediaUploadDisabled={mediaUploadBlocked}
-              />
-
-              {validationResult.isValid === false ? (
-                <div
-                  className="mt-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200"
-                  role="alert"
-                >
-                  <p className="font-medium">
-                    Fix the following before preview:
-                  </p>
-                  <ul className="mt-1 list-inside list-disc">
-                    {validationResult.errors.slice(0, 5).map((err) => (
-                      <li key={err}>{err}</li>
-                    ))}
-                    {validationResult.errors.length > 5 ? (
-                      <li>… and {validationResult.errors.length - 5} more</li>
-                    ) : null}
-                  </ul>
-                </div>
-              ) : null}
-
-              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={
-                    posts.length === 0 ||
-                    isSubmitting ||
-                    isProcessing ||
-                    isPreviewSubmitting
-                  }
-                  onClick={() => handlers.handleSaveDraftFromTable(groupId)}
-                  className="w-full sm:w-auto"
-                >
-                  Save as draft
-                </Button>
-                <BulkPostsSubmitButton
-                  isSubmitting={isSubmitting}
-                  isProcessing={isProcessing}
-                  isPreviewSubmitting={isPreviewSubmitting}
-                  postsCount={posts.length}
-                  preparationProgress={preparationProgress}
-                  validationInvalid={!validationResult.isValid}
-                />
-              </div>
-            </>
-          ) : null}
-        </fetcher.Form>
-      ) : (
-        <PostConfirmation
-          preparedEvents={preparedEvents}
-          posts={posts}
-          postsCount={posts.length}
-          groupId={groupId}
-          userTimezone={user?.timezone ?? "UTC"}
-          userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
-          repostConditions={bulkRepostConditions}
-        />
-      )}
-
-      {/* Toast Notification */}
       {toast ? <Toast toast={toast} onClose={() => setToast(null)} /> : null}
 
-      {/* Media Modal */}
       {selectedMedia ? (
         <MediaModal
           src={selectedMedia}
@@ -466,12 +506,11 @@ export default function BulkPostsPage() {
         />
       ) : null}
 
-      {/* Bulk Scheduling Success Modal */}
       {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
         <PublishResultModal
           isOpen={showPublishModal}
           postId={modalPostId}
-          publishAttemptId={null} // Scheduled posts don't have publishAttemptId yet
+          publishAttemptId={null}
           action="schedule"
           postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
           scheduledFor={
@@ -490,10 +529,9 @@ export default function BulkPostsPage() {
             setBulkPostCount(null);
             setBulkSuccessLastAt(null);
             setBulkSuccessQueueSummary(null);
-            // Reset form state and navigate to fresh bulk post page
             setPosts([]);
             setPreparedEvents([]);
-            setShowConfirmation(false);
+            setBulkComposerStage("build");
             navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`, {
               replace: true,
             });
@@ -520,6 +558,6 @@ export default function BulkPostsPage() {
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }

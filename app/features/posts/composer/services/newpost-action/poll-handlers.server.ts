@@ -89,6 +89,17 @@ export async function handlePostOrSchedulePoll(
     throw new Error("Poll question does not match signed event content");
   }
 
+  const nominalScheduledForRaw = formData.get("nominalScheduledFor");
+  const nominalScheduledForParsed =
+    nominalScheduledForRaw != null &&
+    String(nominalScheduledForRaw).trim() !== ""
+      ? parseInt(String(nominalScheduledForRaw), 10)
+      : NaN;
+  const nominalScheduledFor =
+    action === "schedule-poll" && Number.isFinite(nominalScheduledForParsed)
+      ? nominalScheduledForParsed
+      : undefined;
+
   const createPostUseCase = new CreatePostUseCase();
   const result = await createPostUseCase.execute({
     userId,
@@ -104,7 +115,7 @@ export async function handlePostOrSchedulePoll(
     nostrEvent,
     scheduledFor:
       action === "schedule-poll" ? signedEvent.created_at : undefined,
-    nominalScheduledFor: undefined,
+    nominalScheduledFor,
     /** Client merges preset/tag line into signed poll question; do not append again server-side. */
     showHashTagsinPosts: false,
   });

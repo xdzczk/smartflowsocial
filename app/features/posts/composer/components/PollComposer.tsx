@@ -33,6 +33,7 @@ import {
   ComposerErrors,
   ComposerLeftCanvas,
   ComposerQueueField,
+  ComposerScheduleRandomWindowField,
   ComposerScheduleField,
   PollOutputPanel,
   composerCanvasFieldStackClass,
@@ -57,6 +58,8 @@ import {
 const MAX_OPTIONS = 10;
 const MIN_OPTIONS = 2;
 const COMPOSER_SCHEDULE_FUTURE = "Schedule time must be in the future.";
+
+const POLL_QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS = [5, 10, 15] as const;
 
 function newPollOptionRowId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -200,6 +203,34 @@ export function PollComposer({
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;
 
+  const applyQueueDefaultScheduleRandom = useCallback(
+    (queueName: string) => {
+      const qt = queueTypes.find(
+        (q) => (typeof q === "string" ? q : q.name) === queueName
+      );
+      const window =
+        typeof qt === "object" &&
+        qt.scheduleConfig &&
+        typeof qt.scheduleConfig === "object" &&
+        "scheduleRandomWindowMinutes" in qt.scheduleConfig
+          ? ((qt.scheduleConfig as { scheduleRandomWindowMinutes?: number })
+              .scheduleRandomWindowMinutes ?? 0)
+          : 0;
+      setScheduleRandomWindowMinutes(
+        typeof window === "number" && window >= 0 && window <= 15 ? window : 0
+      );
+    },
+    [queueTypes]
+  );
+
+  const handlePollQueueChange = useCallback(
+    (queueName: string) => {
+      setSelectedQueue(queueName);
+      applyQueueDefaultScheduleRandom(queueName);
+    },
+    [applyQueueDefaultScheduleRandom, setSelectedQueue]
+  );
+
   const pollQueueEffectFirstRef = useRef(true);
   useEffect(() => {
     if (pollQueueEffectFirstRef.current) {
@@ -322,8 +353,7 @@ export function PollComposer({
     }
 
     const nominalUnix = Math.floor(scheduledTimeMs / 1000);
-    const effectiveRandomMinutes =
-      publishMode === "queue" ? 0 : scheduleRandomWindowMinutes;
+    const effectiveRandomMinutes = scheduleRandomWindowMinutes;
     const createdUnix =
       actionType !== ACTION_POST_POLL && effectiveRandomMinutes > 0
         ? applyRandomScheduleWindow(nominalUnix, effectiveRandomMinutes)
@@ -371,6 +401,9 @@ export function PollComposer({
       fd.set("nostrEvent", JSON.stringify(nostrEvent));
       if (relayOverride && relayOverride.length > 0) {
         fd.set("relays", JSON.stringify(relayOverride));
+      }
+      if (actionType === ACTION_SCHEDULE_POLL && effectiveRandomMinutes > 0) {
+        fd.set("nominalScheduledFor", String(nominalUnix));
       }
 
       fetcher.submit(fd, { method: "post" });
@@ -915,11 +948,11 @@ export function PollComposer({
                     : [],
                 controls:
                   publishMode === "queue" ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <ComposerQueueField
                         queueTypes={queueTypes}
                         value={selectedQueue}
-                        onChange={setSelectedQueue}
+                        onChange={handlePollQueueChange}
                         disabled={disabled}
                         nextSlot={
                           selectedQueueType &&
@@ -930,6 +963,23 @@ export function PollComposer({
                             : undefined
                         }
                       />
+                      {selectedQueue !== "unassigned" ? (
+                        <ComposerScheduleRandomWindowField
+                          scheduleRandomWindowMinutes={
+                            scheduleRandomWindowMinutes
+                          }
+                          onScheduleRandomWindowMinutesChange={
+                            setScheduleRandomWindowMinutes
+                          }
+                          disabled={disabled}
+                          windowOptions={
+                            POLL_QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS
+                          }
+                          label="Randomize within queue slot"
+                          idPrefix="poll-queue-schedule-randomize"
+                          description="Optional jitter around the next slot time. Queue settings load a default; change here for this post only."
+                        />
+                      ) : null}
                     </div>
                   ) : (
                     <ComposerScheduleField

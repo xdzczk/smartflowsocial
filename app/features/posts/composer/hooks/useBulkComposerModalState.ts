@@ -7,6 +7,10 @@ import { useFetcher } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
+import type {
+  BulkBatchMode,
+  BulkComposerStage,
+} from "~/features/posts/bulk-composer/types";
 import {
   type BulkPost,
   type PreparedEvent,
@@ -22,6 +26,8 @@ import {
 } from "~/features/posts/server";
 import type { RepostConditions } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
+import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
+import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import {
   BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
   useBlossomUploadGate,
@@ -62,7 +68,14 @@ export function useBulkComposerModalState({
     Array.isArray(tagsProp) ? tagsProp.join(" ") : ""
   );
   const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bulkComposerStage, setBulkComposerStage] =
+    useState<BulkComposerStage>("build");
+  const [bulkBatchMode, setBulkBatchMode] = useState<BulkBatchMode>("schedule");
+  const [focusPostIndex, setFocusPostIndex] = useState<number | null>(null);
+  const [processingProgress] = useState({
+    current: 0,
+    total: 0,
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [repostConditions, setRepostConditions] =
     useState<RepostConditions | null>(null);
@@ -162,9 +175,9 @@ export function useBulkComposerModalState({
     mode !== "reschedule"
       ? `/dashboard/bulkposts?mode=${mode}`
       : "/dashboard/bulkposts";
-  const extraFormData = { _inModal: "1" };
+  const extraFormData = useMemo(() => ({ _inModal: "1" }), []);
 
-  const { prepareEvents } = useBulkPostEvents({
+  const { prepareEvents, startPrepareFlow } = useBulkPostEvents({
     posts,
     fetcher: submitFetcher,
     user: user as User | null,
@@ -173,7 +186,7 @@ export function useBulkComposerModalState({
     selectedHashtags,
     setToast,
     setPreparedEvents,
-    setShowConfirmation,
+    setBulkComposerStage,
     setIsPreviewSubmitting,
     setIsProcessing,
     setPreparationProgress,
@@ -248,7 +261,7 @@ export function useBulkComposerModalState({
   useEffect(() => {
     if (!open) return;
     setPosts(initialPosts.length > 0 ? initialPosts : []);
-    setShowConfirmation(false);
+    setBulkComposerStage("build");
     setPreparedEvents([]);
     setToast(null);
     setShowPublishModal(false);
@@ -564,6 +577,84 @@ export function useBulkComposerModalState({
     []
   );
 
+  const duplicatePost = useCallback(
+    (index: number) => {
+      const p = posts[index];
+      if (!p) return;
+      const copy: BulkPost = {
+        ...p,
+        clientId: createBulkPostClientId(),
+        files: [...p.files],
+      };
+      setPosts((prev) => {
+        const next = [...prev];
+        next.splice(index + 1, 0, copy);
+        return next;
+      });
+    },
+    [posts]
+  );
+
+  const handleRepostSchedulesChange = useCallback(
+    (
+      index: number,
+      list: Array<{ value: number; unit: "hours" | "minutes" }>
+    ) => {
+      setPosts((prev) =>
+        prev.map((p, i) => (i === index ? { ...p, repostSchedules: list } : p))
+      );
+    },
+    []
+  );
+
+  const handleQuoteSchedulesChange = useCallback(
+    (
+      index: number,
+      list: Array<{
+        value: number;
+        unit: "hours" | "minutes";
+        caption?: string;
+      }>
+    ) => {
+      setPosts((prev) =>
+        prev.map((p, i) => (i === index ? { ...p, quoteSchedules: list } : p))
+      );
+    },
+    []
+  );
+
+  const handleRepostAll = useCallback(
+    (delay: { value: number; unit: "hours" | "minutes" }) => {
+      setPosts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          repostSchedules: [{ value: delay.value, unit: delay.unit }],
+        }))
+      );
+    },
+    []
+  );
+
+  const handleSaveBulkDraft = useCallback(() => {
+    if (posts.length === 0) return;
+    const formData = new FormData();
+    posts.forEach((p) => {
+      formData.append("fileUrl", JSON.stringify(getFileUrlArrayForDraft(p)));
+      formData.append("caption", JSON.stringify(p.caption));
+      formData.append("queueType", p.queueType);
+      formData.append("scheduledFor", p.scheduledFor);
+      formData.append("isRecyclable", p.isRecyclable ? "true" : "false");
+      formData.append("originalPostId", p.originalPostId ?? "");
+    });
+    formData.append("_action", "save_as_draft");
+    Object.entries(extraFormData).forEach(([k, v]) => formData.append(k, v));
+    submitFetcher.submit(formData, {
+      method: "post",
+      encType: "multipart/form-data",
+      action: submitAction,
+    });
+  }, [posts, submitFetcher, submitAction, extraFormData]);
+
   const handleSuccessClose = useCallback(() => {
     setShowPublishModal(false);
     setModalPostId(null);
@@ -574,7 +665,7 @@ export function useBulkComposerModalState({
     setBulkSuccessQueueSummary(null);
     setPosts([]);
     setPreparedEvents([]);
-    setShowConfirmation(false);
+    setBulkComposerStage("build");
     onSuccess?.();
     onClose();
   }, [onSuccess, onClose]);
@@ -590,7 +681,13 @@ export function useBulkComposerModalState({
       posts,
       displayedHashtags,
       preparedEvents,
-      showConfirmation,
+      bulkComposerStage,
+      setBulkComposerStage,
+      bulkBatchMode,
+      setBulkBatchMode,
+      focusPostIndex,
+      setFocusPostIndex,
+      processingProgress,
       isProcessing,
       repostConditions,
       setRepostConditions,
@@ -627,6 +724,11 @@ export function useBulkComposerModalState({
     },
     handlers: {
       prepareEvents,
+      startPrepareFlow,
+      duplicatePost,
+      handleRepostSchedulesChange,
+      handleQuoteSchedulesChange,
+      handleRepostAll,
       handleCaptionChange,
       handleDateChange,
       handleIsRecyclableChange,
@@ -642,6 +744,7 @@ export function useBulkComposerModalState({
       handleRowFileSelect,
       handleRowFileRemove,
       handleSuccessClose,
+      handleSaveBulkDraft,
     },
     submitFetcher,
     contextFetcher,

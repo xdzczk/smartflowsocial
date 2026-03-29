@@ -34,6 +34,10 @@ interface AttachmentsStripProps {
   emptyWellHint?: string;
   /** Smaller tiles and add control (e.g. per thread segment). */
   density?: "default" | "compact";
+  /**
+   * `minimal` — ghost-style add control for thread segments (lighter than outline tile).
+   */
+  addControlTone?: "default" | "minimal";
   className?: string;
 }
 
@@ -48,14 +52,18 @@ export function AttachmentsStrip({
   emptyAffordance = "default",
   emptyWellHint = "Images and videos",
   density = "default",
+  addControlTone = "default",
   className,
 }: AttachmentsStripProps) {
   const compact = density === "compact";
+  const minimalAdd = addControlTone === "minimal";
   const tileClass = compact
     ? "h-12 w-12 rounded border-border/40"
     : "h-16 w-16 rounded border-border";
   const addBtnClass = compact ? "h-12 w-12 shrink-0" : "h-16 w-16 shrink-0";
   const plusClass = compact ? "h-4 w-4" : "h-6 w-6";
+  const minimalAddBtnClass =
+    "h-9 w-9 shrink-0 rounded-md border border-dashed border-border/30 bg-transparent text-muted-foreground/55 hover:border-border/45 hover:bg-muted/40 hover:text-muted-foreground";
 
   const useComposerWell =
     variant === "inline" &&
@@ -203,18 +211,18 @@ export function AttachmentsStrip({
       ))}
       <Button
         type="button"
-        variant="outline"
+        variant={minimalAdd ? "ghost" : "outline"}
         size="sm"
         onClick={onAdd}
         disabled={disabled}
         className={cn(
-          addBtnClass,
-          compact && "border-border/40 text-muted-foreground"
+          minimalAdd ? minimalAddBtnClass : addBtnClass,
+          !minimalAdd && compact && "border-border/40 text-muted-foreground"
         )}
         aria-label="Add attachment"
       >
         <Plus
-          className={plusClass}
+          className={minimalAdd ? "h-3.5 w-3.5" : plusClass}
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />

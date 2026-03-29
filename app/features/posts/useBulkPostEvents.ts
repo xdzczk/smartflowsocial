@@ -2,6 +2,7 @@ import { type FetcherWithComponents } from "@remix-run/react";
 import { useEffect, useRef, useCallback, type FormEvent } from "react";
 
 import { type ToastMessage } from "~/components/types";
+import type { BulkComposerStage } from "~/features/posts/bulk-composer/types";
 import type { User } from "~/features/user";
 import { safeConsoleInfo } from "~/lib/safe-console.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
@@ -52,7 +53,7 @@ interface UseBulkPostEventsProps {
   selectedHashtags: string;
   setToast: (toast: ToastMessage | null) => void;
   setPreparedEvents: (events: PreparedEvent[]) => void;
-  setShowConfirmation: (show: boolean) => void;
+  setBulkComposerStage: (stage: BulkComposerStage) => void;
   setIsPreviewSubmitting: (isSubmitting: boolean) => void;
   setIsProcessing: (isProcessing: boolean) => void;
   setPreparationProgress?: (progress: {
@@ -77,7 +78,7 @@ export function useBulkPostEvents({
   selectedHashtags,
   setToast,
   setPreparedEvents,
-  setShowConfirmation,
+  setBulkComposerStage,
   setIsPreviewSubmitting,
   setIsProcessing: _setIsProcessing,
   setPreparationProgress,
@@ -312,7 +313,7 @@ export function useBulkPostEvents({
     // Step 4: Finalize
     updateProgress("Finalizing...", 4);
     setPreparedEvents(events);
-    setShowConfirmation(true);
+    setBulkComposerStage("review");
 
     const totalTime = nowMillis() - processStartTime;
     devLog(`[BulkPosts] processEvents completed in ${totalTime}ms total`);
@@ -332,14 +333,13 @@ export function useBulkPostEvents({
     tags,
     fetcher,
     setPreparedEvents,
-    setShowConfirmation,
+    setBulkComposerStage,
     setIsPreviewSubmitting,
     setPreparationProgress,
     scheduleRandomWindowMinutes,
   ]);
 
-  const prepareEvents = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  async function startPrepareFlow() {
     devLog(
       "[BulkPosts] Starting preparation at",
       nowUTC().toInstant().toString()
@@ -399,6 +399,11 @@ export function useBulkPostEvents({
       setTimeout(() => setToast(null), 5000);
       setIsPreviewSubmitting(false);
     }
+  }
+
+  const prepareEvents = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void startPrepareFlow();
   };
 
   // Add event listener for repost events
@@ -472,5 +477,5 @@ export function useBulkPostEvents({
     }
   }, [fetcher.state, fetcher.data, processEvents, setPreparationProgress]);
 
-  return { prepareEvents, validatePostsForPreview };
+  return { prepareEvents, startPrepareFlow, validatePostsForPreview };
 }

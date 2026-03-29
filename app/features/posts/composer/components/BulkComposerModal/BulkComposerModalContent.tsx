@@ -1,21 +1,34 @@
 /**
- * Main content area of the bulk composer modal (form or confirmation).
+ * Bulk composer modal: same V2 layout as the page (canvas + settings rail).
  */
 
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Hash, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import type {
+  BulkBatchMode,
+  BulkComposerStage,
+} from "~/features/posts/bulk-composer/types";
+import { BulkComposerPostCard } from "~/features/posts/components/bulk-composer/BulkComposerPostCard";
+import { BulkComposerShell } from "~/features/posts/components/bulk-composer/BulkComposerShell";
+import { BulkSettingsRail } from "~/features/posts/components/bulk-composer/BulkSettingsRail";
+import { useBulkPostSigning } from "~/features/posts/hooks/useBulkPostSigning";
 import {
   type BulkPost,
   type PreparedEvent,
   type QueueType,
 } from "~/features/posts/server";
 import type { RepostConditions } from "~/features/posts/types";
-import {
-  BulkPostsActionButtons,
-  BulkPostsSchedulingPanel,
-  PostConfirmation,
-} from "~/features/posts/ui";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import {
@@ -24,15 +37,18 @@ import {
   type BulkComposerUser,
 } from "../../utils/bulk-composer-modal.utils";
 
-import { BulkComposerFormTableSection } from "./BulkComposerFormTableSection";
-
 export interface BulkComposerModalContentProps {
   isLoadingContext: boolean;
   displayedHashtags: string | string[];
-  showConfirmation: boolean;
+  bulkComposerStage: BulkComposerStage;
+  setBulkComposerStage: (s: BulkComposerStage) => void;
+  bulkBatchMode: BulkBatchMode;
+  setBulkBatchMode: (m: BulkBatchMode) => void;
+  focusPostIndex: number | null;
+  setFocusPostIndex: (i: number | null) => void;
+  processingProgress: { current: number; total: number };
   mode: BulkComposerMode;
   posts: BulkPost[];
-  prepareEvents: (e: React.FormEvent<HTMLFormElement>) => void;
   validationResult: {
     isValid: boolean;
     errors: string[];
@@ -85,17 +101,40 @@ export interface BulkComposerModalContentProps {
   setBulkScheduleRandomWindowMinutes: React.Dispatch<
     React.SetStateAction<0 | 5 | 10 | 15>
   >;
-  /** Blossom media uploads blocked without NIP-07 / NIP-46 signer. */
   rowMediaUploadDisabled?: boolean;
+  startPrepareFlow: () => Promise<void>;
+  duplicatePost: (index: number) => void;
+  handleRepostSchedulesChange: (
+    index: number,
+    list: Array<{ value: number; unit: "hours" | "minutes" }>
+  ) => void;
+  handleQuoteSchedulesChange: (
+    index: number,
+    list: Array<{
+      value: number;
+      unit: "hours" | "minutes";
+      caption?: string;
+    }>
+  ) => void;
+  handleRepostAll: (delay: {
+    value: number;
+    unit: "hours" | "minutes";
+  }) => void;
+  handleSaveBulkDraft: () => void;
 }
 
 export function BulkComposerModalContent({
   isLoadingContext,
   displayedHashtags,
-  showConfirmation,
+  bulkComposerStage,
+  setBulkComposerStage,
+  bulkBatchMode,
+  setBulkBatchMode,
+  focusPostIndex,
+  setFocusPostIndex,
+  processingProgress: _processingProgress,
   mode,
   posts,
-  prepareEvents,
   validationResult,
   preparationProgress,
   isProcessing,
@@ -132,9 +171,40 @@ export function BulkComposerModalContent({
   bulkScheduleRandomWindowMinutes,
   setBulkScheduleRandomWindowMinutes,
   rowMediaUploadDisabled = false,
+  startPrepareFlow,
+  duplicatePost,
+  handleRepostSchedulesChange,
+  handleQuoteSchedulesChange,
+  handleRepostAll,
+  handleSaveBulkDraft,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
+  const userTimeFormat = user?.timeFormat === "24h" ? "24h" : "12h";
+
+  const signing = useBulkPostSigning({
+    preparedEvents,
+    posts,
+    groupId: null,
+    submitAction,
+    extraFormData,
+    repostConditions,
+    fetcher: submitFetcher as FetcherWithComponents<{ error?: string }>,
+  });
+
+  useEffect(() => {
+    if (focusPostIndex === null || bulkComposerStage !== "build") return;
+    const el = document.querySelector(
+      `[data-bulk-post-index="${focusPostIndex}"]`
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFocusPostIndex(null);
+  }, [focusPostIndex, bulkComposerStage, setFocusPostIndex]);
+
+  const jumpToPost = (index: number) => {
+    setBulkComposerStage("build");
+    setFocusPostIndex(index);
+  };
 
   if (isLoadingContext) {
     return (
@@ -147,7 +217,7 @@ export function BulkComposerModalContent({
   return (
     <>
       {displayedHashtags && String(displayedHashtags).length <= 80 ? (
-        <div className="bg-muted text-foreground mb-4 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
+        <div className="bg-muted text-foreground mb-3 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
           <Hash
             className="inline-block size-4 opacity-75"
             strokeWidth={INLINE_ICON_STROKE}
@@ -157,143 +227,178 @@ export function BulkComposerModalContent({
         </div>
       ) : null}
 
-      {!showConfirmation ? (
-        <form
-          onSubmit={prepareEvents}
-          className="w-full"
-          encType="multipart/form-data"
-        >
-          {showActions ? (
-            <BulkPostsActionButtons
-              posts={posts}
-              isProcessing={isProcessing}
-              scheduleIntervals={scheduleIntervals}
-              queueTypes={queueTypes}
-              hashTagPresets={hashTagPresets}
-              selectedHashtagPresetId={selectedHashtagPresetId}
-              useHashtagPresets={useHashtagPresets}
-              handleScheduleIntervalClick={handleScheduleIntervalClick}
-              handleBulkQueueUpdate={(qt) => {
-                void handleBulkQueueUpdate(qt);
-              }}
-              handleHashtagPresetSelect={handleHashtagPresetSelect}
-              setUseHashtagPresets={setUseHashtagPresets}
-              handleBulkRecyclableToggle={handleBulkRecyclableToggle}
-              onRepostAll={(delay) =>
-                setPosts((prev) =>
-                  prev.map((p) => ({
-                    ...p,
-                    repostSchedules: [{ value: delay.value, unit: delay.unit }],
-                  }))
-                )
-              }
-            />
-          ) : null}
-
-          {posts.length > 0 && showActions ? (
-            <BulkPostsSchedulingPanel
-              posts={posts}
-              setPosts={setPosts}
-              scheduleIntervals={scheduleIntervals}
-              userTimezone={userTimezone}
-              disabled={isProcessing}
-              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
-              onScheduleRandomWindowMinutesChange={
-                setBulkScheduleRandomWindowMinutes
-              }
-            />
-          ) : null}
-
-          {posts.length > 0 && showActions ? (
-            <div className="border-border bg-muted/30 mb-4 rounded-lg border p-4">
-              <span className="text-muted-foreground mb-2 block text-sm font-medium">
-                Only repost if original gets (applies to all reposts)
-              </span>
-              <div className="flex flex-wrap items-center gap-3 gap-y-2">
-                {[
-                  { key: "minReactions" as const, label: "Reactions" },
-                  { key: "minZaps" as const, label: "Zaps" },
-                  { key: "minComments" as const, label: "Comments" },
-                  { key: "minReposts" as const, label: "Reposts" },
-                  { key: "minSats" as const, label: "Sats" },
-                ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center gap-1.5">
-                    <label
-                      htmlFor={`bulk-modal-repost-cond-${key}`}
-                      className="text-muted-foreground text-xs whitespace-nowrap"
-                    >
-                      {label}
-                    </label>
-                    <input
-                      id={`bulk-modal-repost-cond-${key}`}
-                      type="number"
-                      min={0}
-                      placeholder="—"
-                      value={repostConditions?.[key] ?? ""}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const v =
-                          raw.trim() === ""
-                            ? undefined
-                            : Math.max(0, parseInt(raw, 10) || 0);
-                        setRepostConditions((prev) => {
-                          if (v === undefined) {
-                            const next = prev ? { ...prev } : {};
-                            delete next[key];
-                            return Object.keys(next).length > 0 ? next : null;
-                          }
-                          return { ...prev, [key]: v };
-                        });
-                      }}
-                      className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
-                      aria-label={`Min ${label.toLowerCase()}`}
-                    />
-                  </div>
-                ))}
+      <BulkComposerShell
+        title=""
+        headerActions={null}
+        workspace={
+          <>
+            {signing.isSigning ? (
+              <div className="bg-muted text-muted-foreground mb-3 flex flex-col gap-2 rounded-lg border p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Waiting for signer…
+                  {signing.signingProgress ? (
+                    <span className="ml-1">
+                      ({signing.signingProgress.current}/
+                      {signing.signingProgress.total})
+                    </span>
+                  ) : null}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signing.cancelSigningState()}
+                >
+                  Cancel
+                </Button>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {posts.length > 0 ? (
-            <BulkComposerFormTableSection
-              posts={posts}
-              validationResult={validationResult}
-              preparationProgress={preparationProgress}
-              isSubmitting={isSubmitting}
-              isProcessing={isProcessing}
-              isPreviewSubmitting={isPreviewSubmitting}
-              queueTypes={queueTypes}
-              previewData={previewData}
-              showActions={showActions}
-              userTimezone={userTimezone}
-              handleCaptionChange={handleCaptionChange}
-              handleDateChange={handleDateChange}
-              handleIsRecyclableChange={handleIsRecyclableChange}
-              handleRemovePost={handleRemovePost}
-              handleQueueTypeChange={handleQueueTypeChange}
-              handleIncludeHashtagsInNoteBodyChange={
-                handleIncludeHashtagsInNoteBodyChange
+            {(signing.signingError ?? signing.actionError) &&
+            bulkComposerStage === "review" ? (
+              <div className="border-destructive bg-destructive/10 text-destructive mb-3 rounded-md border p-2 text-xs">
+                {signing.signingError ?? signing.actionError}
+              </div>
+            ) : null}
+
+            <Dialog
+              open={signing.partialSignState !== null}
+              onOpenChange={(open) => {
+                if (!open) signing.setPartialSignState(null);
+              }}
+            >
+              <DialogContent className="sm:max-w-md" hideCloseButton={false}>
+                <DialogHeader>
+                  <DialogTitle>Some posts could not be signed</DialogTitle>
+                  <DialogDescription>
+                    {signing.partialSignState
+                      ? `${signing.partialSignState.failedIndices.length} of ${preparedEvents.length} failed after retry.`
+                      : ""}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => signing.setPartialSignState(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void signing.handleRetryFailedSigning()}
+                  >
+                    Retry failed
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={signing.handleScheduleSuccessfulOnly}
+                  >
+                    Schedule{" "}
+                    {signing.partialSignState?.signedEntries.length ?? 0}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <div
+              className={
+                bulkComposerStage === "review" ? "space-y-2" : "space-y-3"
               }
-              handleMediaClick={handleMediaClick}
-              handleRowFileSelect={handleRowFileSelect}
-              handleRowFileRemove={handleRowFileRemove}
-              rowMediaUploadDisabled={rowMediaUploadDisabled}
-            />
-          ) : null}
-        </form>
-      ) : (
-        <PostConfirmation
-          preparedEvents={preparedEvents}
-          posts={posts}
-          postsCount={posts.length}
-          submitAction={submitAction}
-          extraFormData={extraFormData}
-          repostConditions={repostConditions}
-          fetcher={submitFetcher}
-          userTimezone={userTimezone}
-          userTimeFormat={user?.timeFormat === "24h" ? "24h" : "12h"}
-        />
-      )}
+            >
+              {posts.map((post, index) => (
+                <BulkComposerPostCard
+                  key={post.clientId}
+                  index={index}
+                  post={post}
+                  variant={bulkComposerStage === "review" ? "review" : "build"}
+                  queueTypes={queueTypes}
+                  previewData={previewData}
+                  preparedEvent={preparedEvents[index]}
+                  validationErrors={validationResult.byPost[index]}
+                  userTimezone={userTimezone}
+                  userTimeFormat={userTimeFormat}
+                  showAlsoSchedule={showActions}
+                  rowMediaUploadDisabled={rowMediaUploadDisabled}
+                  onCaptionChange={handleCaptionChange}
+                  onDateChange={handleDateChange}
+                  onQueueTypeChange={(i, v) => {
+                    void handleQueueTypeChange(i, v);
+                  }}
+                  onIsRecyclableChange={handleIsRecyclableChange}
+                  onRemove={handleRemovePost}
+                  onDuplicate={duplicatePost}
+                  onIncludeHashtagsInNoteBodyChange={
+                    handleIncludeHashtagsInNoteBodyChange
+                  }
+                  onMediaClick={handleMediaClick}
+                  onRowFileSelect={
+                    showActions ? handleRowFileSelect : undefined
+                  }
+                  onRowFileRemove={
+                    showActions ? handleRowFileRemove : undefined
+                  }
+                  onRepostSchedulesChange={
+                    showActions ? handleRepostSchedulesChange : undefined
+                  }
+                  onQuoteSchedulesChange={
+                    showActions ? handleQuoteSchedulesChange : undefined
+                  }
+                  onEditFromReview={(i) => jumpToPost(i)}
+                  bulkRepostConditions={repostConditions}
+                  showBatchRepostConditions={showActions}
+                />
+              ))}
+            </div>
+          </>
+        }
+        rail={
+          <BulkSettingsRail
+            stage={bulkComposerStage}
+            batchMode={bulkBatchMode}
+            onBatchModeChange={setBulkBatchMode}
+            posts={posts}
+            setPosts={setPosts}
+            queueTypes={queueTypes}
+            hashTagPresets={hashTagPresets}
+            selectedHashtagPresetId={selectedHashtagPresetId}
+            useHashtagPresets={useHashtagPresets}
+            setUseHashtagPresets={setUseHashtagPresets}
+            scheduleIntervals={scheduleIntervals}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            isProcessing={isProcessing}
+            bulkScheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+            setBulkScheduleRandomWindowMinutes={
+              setBulkScheduleRandomWindowMinutes
+            }
+            bulkRepostConditions={repostConditions}
+            setBulkRepostConditions={setRepostConditions}
+            showRepostConditions={showActions}
+            validationResult={validationResult}
+            onJumpToPost={jumpToPost}
+            handleScheduleIntervalClick={handleScheduleIntervalClick}
+            handleBulkQueueUpdate={(qt) => {
+              void handleBulkQueueUpdate(qt);
+            }}
+            handleHashtagPresetSelect={handleHashtagPresetSelect}
+            handleBulkRecyclableToggle={handleBulkRecyclableToggle}
+            onRepostAll={showActions ? handleRepostAll : undefined}
+            onSaveDraft={handleSaveBulkDraft}
+            onReview={() => void startPrepareFlow()}
+            onBackToEdit={() => setBulkComposerStage("build")}
+            onSign={() => void signing.handleSignAndSubmit()}
+            onSaveDraftReview={signing.handleSaveAsDraft}
+            isSubmitting={isSubmitting}
+            isPreviewSubmitting={isPreviewSubmitting}
+            preparationProgress={preparationProgress}
+            postsCount={posts.length}
+            isSigning={signing.isSigning}
+            signingProgress={signing.signingProgress}
+          />
+        }
+      />
     </>
   );
 }

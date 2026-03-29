@@ -1,9 +1,15 @@
 /**
  * Presentational thread mode field: segment list, add segment, delay between posts.
- * V3: continuous thread canvas — light segment shells, quiet reorder, compact media.
+ * Narrative-first layout: quiet utility row, dominant textarea, grouped support actions.
  */
 
-import { ChevronDown, ChevronUp, CornerDownRight, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CornerDownRight,
+  ListPlus,
+  Trash2,
+} from "lucide-react";
 import React from "react";
 
 import { Button } from "~/components/ui/button";
@@ -54,242 +60,269 @@ export function ComposerThreadField({
 }: ComposerThreadFieldProps) {
   const attachmentsBlocked = disabled || attachmentsDisabled;
 
+  const insertSegmentBelow = (afterIndex: number) => {
+    onSegmentsChange((prev) => {
+      const next = [...prev];
+      next.splice(afterIndex + 1, 0, {
+        id: crypto.randomUUID(),
+        content: "",
+        attachments: [],
+      });
+      return next;
+    });
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {signerConnectionNote ? (
         <div className="mb-1" role="note">
           {signerConnectionNote}
         </div>
       ) : null}
       {segments.map((seg, idx) => (
-        <div
-          key={seg.id}
-          role="button"
-          tabIndex={-1}
-          aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
-          className={cn(
-            "group border-l-primary/20 relative rounded-r-md border-l-2 pl-3 transition-colors",
-            "hover:bg-muted/[0.04] focus-within:bg-muted/[0.05]"
-          )}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDraggingOverSegmentIdChange(seg.id);
-          }}
-          onDragLeave={(e) => {
-            e.preventDefault();
-            const related = e.relatedTarget;
-            if (related == null || !e.currentTarget.contains(related as Node)) {
-              onDraggingOverSegmentIdChange(null);
-            }
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            onDraggingOverSegmentIdChange(null);
-            if (attachmentsBlocked) return;
-            const files = Array.from(e.dataTransfer.files);
-            if (files.length > 0) onFilesDropped(seg.id, files);
-          }}
-          onKeyDown={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.closest("textarea") || target.closest("input")) {
-              return;
-            }
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              if (!attachmentsBlocked) onAddSegmentClick(seg.id);
-            }
-          }}
-        >
-          {draggingOverSegmentId === seg.id ? (
-            <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-r-md border-2 border-dashed">
-              <span className="text-muted-foreground text-xs">
-                Drop to add media
-              </span>
-            </div>
-          ) : null}
-          <div className="flex items-center justify-between gap-2 pt-0.5 pb-1.5">
-            <span
-              className="text-muted-foreground/70 border-border/40 inline-flex h-6 min-w-[1.25rem] items-center justify-center rounded border bg-transparent px-1 text-xs font-medium tabular-nums"
+        <div key={seg.id} className="relative">
+          {idx > 0 ? (
+            <div
+              className="bg-border/35 mb-4 h-px w-full max-w-[min(100%,42rem)]"
               aria-hidden
-            >
-              {idx + 1}
-            </span>
-            {segments.length > 1 ? (
-              <div className="flex items-center gap-0.5">
-                <div
-                  className={cn(
-                    "flex items-center gap-0 transition-opacity",
-                    "opacity-40 group-focus-within:opacity-100 group-hover:opacity-100",
-                    "max-sm:opacity-100"
-                  )}
-                >
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground h-7 w-7"
-                    aria-label={`Move segment ${idx + 1} up`}
-                    disabled={disabled || idx === 0}
-                    onClick={() =>
-                      onSegmentsChange((prev) => {
-                        if (idx === 0) return prev;
-                        const next = [...prev];
-                        const [item] = next.splice(idx, 1);
-                        if (!item) return prev;
-                        next.splice(idx - 1, 0, item);
-                        return next;
-                      })
-                    }
-                  >
-                    <ChevronUp
-                      className="h-4 w-4"
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground h-7 w-7"
-                    aria-label={`Move segment ${idx + 1} down`}
-                    disabled={disabled || idx >= segments.length - 1}
-                    onClick={() =>
-                      onSegmentsChange((prev) => {
-                        if (idx >= prev.length - 1) return prev;
-                        const next = [...prev];
-                        const [item] = next.splice(idx, 1);
-                        if (!item) return prev;
-                        next.splice(idx + 1, 0, item);
-                        return next;
-                      })
-                    }
-                  >
-                    <ChevronDown
-                      className="h-4 w-4"
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                  </Button>
-                </div>
-                {segments.length > MIN_THREAD_SEGMENTS ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive/75 hover:text-destructive hover:bg-destructive/10 h-7 w-7"
-                    onClick={() =>
-                      onSegmentsChange((prev) =>
-                        prev.filter((p) => p.id !== seg.id)
-                      )
-                    }
-                    disabled={disabled}
-                    aria-label={`Remove segment ${idx + 1}`}
-                  >
-                    <Trash2
-                      className="h-3.5 w-3.5"
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                  </Button>
-                ) : null}
+            />
+          ) : null}
+          <div
+            role="button"
+            tabIndex={-1}
+            aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
+            className={cn(
+              "group border-border/20 relative border-l pl-3 transition-[background-color,border-color] duration-150",
+              "hover:bg-muted/[0.025]",
+              "focus-within:border-primary/30 focus-within:bg-muted/[0.04]"
+            )}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDraggingOverSegmentIdChange(seg.id);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              const related = e.relatedTarget;
+              if (
+                related == null ||
+                !e.currentTarget.contains(related as Node)
+              ) {
+                onDraggingOverSegmentIdChange(null);
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              onDraggingOverSegmentIdChange(null);
+              if (attachmentsBlocked) return;
+              const files = Array.from(e.dataTransfer.files);
+              if (files.length > 0) onFilesDropped(seg.id, files);
+            }}
+            onKeyDown={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest("textarea") || target.closest("input")) {
+                return;
+              }
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                if (!attachmentsBlocked) onAddSegmentClick(seg.id);
+              }
+            }}
+          >
+            {draggingOverSegmentId === seg.id ? (
+              <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center border border-dashed">
+                <span className="text-muted-foreground text-xs">
+                  Drop to add media
+                </span>
               </div>
             ) : null}
-          </div>
 
-          <div className="focus-within:bg-muted/[0.06] focus-within:ring-border/20 -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-colors focus-within:ring-1">
-            <div className="relative">
-              <Textarea
-                value={seg.content}
-                onChange={(e) =>
+            {/* Utility row: index + reorder + remove */}
+            <div className="flex items-center justify-between gap-2 pb-1.5">
+              <span
+                className="text-muted-foreground/45 text-[11px] font-medium tracking-tight tabular-nums"
+                aria-hidden
+              >
+                {idx + 1}
+              </span>
+              {segments.length > 1 ? (
+                <div className="flex items-center gap-0">
+                  <div
+                    className={cn(
+                      "flex items-center gap-0 transition-opacity duration-150",
+                      "opacity-25 group-focus-within:opacity-100 group-hover:opacity-100",
+                      "max-sm:opacity-100"
+                    )}
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground/70 hover:text-muted-foreground h-8 w-8"
+                      aria-label={`Move segment ${idx + 1} up`}
+                      disabled={disabled || idx === 0}
+                      onClick={() =>
+                        onSegmentsChange((prev) => {
+                          if (idx === 0) return prev;
+                          const next = [...prev];
+                          const [item] = next.splice(idx, 1);
+                          if (!item) return prev;
+                          next.splice(idx - 1, 0, item);
+                          return next;
+                        })
+                      }
+                    >
+                      <ChevronUp
+                        className="h-3.5 w-3.5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground/70 hover:text-muted-foreground h-8 w-8"
+                      aria-label={`Move segment ${idx + 1} down`}
+                      disabled={disabled || idx >= segments.length - 1}
+                      onClick={() =>
+                        onSegmentsChange((prev) => {
+                          if (idx >= prev.length - 1) return prev;
+                          const next = [...prev];
+                          const [item] = next.splice(idx, 1);
+                          if (!item) return prev;
+                          next.splice(idx + 1, 0, item);
+                          return next;
+                        })
+                      }
+                    >
+                      <ChevronDown
+                        className="h-3.5 w-3.5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    </Button>
+                  </div>
+                  {segments.length > MIN_THREAD_SEGMENTS ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground/45 hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+                      onClick={() =>
+                        onSegmentsChange((prev) =>
+                          prev.filter((p) => p.id !== seg.id)
+                        )
+                      }
+                      disabled={disabled}
+                      aria-label={`Remove segment ${idx + 1}`}
+                    >
+                      <Trash2
+                        className="h-3.5 w-3.5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Main writing field */}
+            <div
+              className={cn(
+                "focus-within:bg-muted/[0.07] focus-within:ring-border/25 -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-[background-color,box-shadow] duration-150",
+                "focus-within:ring-1"
+              )}
+            >
+              <div className="relative">
+                <Textarea
+                  value={seg.content}
+                  onChange={(e) =>
+                    onSegmentsChange((prev) =>
+                      prev.map((p) =>
+                        p.id === seg.id ? { ...p, content: e.target.value } : p
+                      )
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    if (
+                      (e.metaKey || e.ctrlKey) &&
+                      e.shiftKey &&
+                      e.key === "Enter"
+                    ) {
+                      e.preventDefault();
+                      insertSegmentBelow(idx);
+                    }
+                  }}
+                  placeholder="Write this part of the thread…"
+                  rows={3}
+                  disabled={disabled}
+                  className="text-foreground placeholder:text-muted-foreground/55 min-h-[4.25rem] resize-y border-0 bg-transparent px-0 pt-0 pb-3.5 text-base leading-relaxed shadow-none focus-visible:ring-0"
+                />
+                <p
+                  className={cn(
+                    "pointer-events-none absolute right-0 bottom-0 text-[9px] tabular-nums transition-colors duration-150",
+                    "text-muted-foreground/18 group-focus-within:text-muted-foreground/32"
+                  )}
+                >
+                  {seg.content.length} chars
+                </p>
+              </div>
+            </div>
+
+            {/* Support row: media + insert below */}
+            <div
+              className={cn(
+                "mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5",
+                "opacity-90 transition-opacity duration-150",
+                "group-focus-within:opacity-100 group-hover:opacity-100",
+                "max-sm:opacity-100"
+              )}
+            >
+              <AttachmentsStrip
+                variant="inline"
+                density="compact"
+                addControlTone="minimal"
+                className="min-w-0 flex-1"
+                attachments={seg.attachments}
+                onRemove={(localId) =>
                   onSegmentsChange((prev) =>
                     prev.map((p) =>
-                      p.id === seg.id ? { ...p, content: e.target.value } : p
+                      p.id === seg.id
+                        ? {
+                            ...p,
+                            content: removeToken(p.content, localId),
+                            attachments: p.attachments.filter(
+                              (a) => a.localId !== localId
+                            ),
+                          }
+                        : p
                     )
                   )
                 }
-                onKeyDown={(e) => {
-                  if (
-                    (e.metaKey || e.ctrlKey) &&
-                    e.shiftKey &&
-                    e.key === "Enter"
-                  ) {
-                    e.preventDefault();
-                    onSegmentsChange((prev) => {
-                      const next = [...prev];
-                      next.splice(idx + 1, 0, {
-                        id: crypto.randomUUID(),
-                        content: "",
-                        attachments: [],
-                      });
-                      return next;
-                    });
-                  }
-                }}
-                placeholder="Segment content…"
-                rows={3}
+                onAdd={() => onAddSegmentClick(seg.id)}
+                disabled={attachmentsBlocked}
+                failedStatusTitle={attachmentFailedTitle}
+              />
+              <button
+                type="button"
+                className={cn(
+                  "text-muted-foreground/65 hover:text-muted-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-normal transition-colors",
+                  "hover:bg-muted/50 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                  "disabled:pointer-events-none disabled:opacity-50"
+                )}
                 disabled={disabled}
-                className="text-foreground placeholder:text-muted-foreground/65 min-h-[5rem] resize-y border-0 bg-transparent px-0 pt-0 pb-4 text-base leading-relaxed shadow-none focus-visible:ring-0"
-              />
-              <p className="text-muted-foreground/35 pointer-events-none absolute right-0 bottom-0.5 text-[9px] tabular-nums">
-                {seg.content.length} chars
-              </p>
+                onClick={() => insertSegmentBelow(idx)}
+              >
+                <CornerDownRight
+                  className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                Insert below
+              </button>
             </div>
-          </div>
-
-          <div className="mt-1.5">
-            <AttachmentsStrip
-              variant="inline"
-              density="compact"
-              attachments={seg.attachments}
-              onRemove={(localId) =>
-                onSegmentsChange((prev) =>
-                  prev.map((p) =>
-                    p.id === seg.id
-                      ? {
-                          ...p,
-                          content: removeToken(p.content, localId),
-                          attachments: p.attachments.filter(
-                            (a) => a.localId !== localId
-                          ),
-                        }
-                      : p
-                  )
-                )
-              }
-              onAdd={() => onAddSegmentClick(seg.id)}
-              disabled={attachmentsBlocked}
-              failedStatusTitle={attachmentFailedTitle}
-            />
-          </div>
-
-          <div className="mt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-muted-foreground h-7 px-1 text-xs font-normal"
-              onClick={() =>
-                onSegmentsChange((prev) => {
-                  const next = [...prev];
-                  next.splice(idx + 1, 0, {
-                    id: crypto.randomUUID(),
-                    content: "",
-                    attachments: [],
-                  });
-                  return next;
-                })
-              }
-              disabled={disabled}
-            >
-              <CornerDownRight
-                className="text-muted-foreground/60 mr-1 h-3.5 w-3.5"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-              Add below
-            </Button>
           </div>
         </div>
       ))}
@@ -309,10 +342,15 @@ export function ComposerThreadField({
           ])
         }
         className={cn(
-          "border-border/35 text-muted-foreground hover:text-foreground hover:bg-muted/[0.04] w-full rounded-lg border border-dashed px-3 py-2.5 text-left text-xs transition-colors",
+          "text-muted-foreground/70 hover:text-foreground/85 hover:bg-muted/45 mt-1 inline-flex min-h-10 max-w-full items-center gap-2 rounded-md px-1.5 py-2 text-left text-xs transition-colors",
           "disabled:pointer-events-none disabled:opacity-50"
         )}
       >
+        <ListPlus
+          className="text-muted-foreground/50 h-4 w-4 shrink-0"
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
         Add another segment
       </button>
     </div>

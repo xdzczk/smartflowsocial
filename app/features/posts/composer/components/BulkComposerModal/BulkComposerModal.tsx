@@ -41,7 +41,13 @@ export function BulkComposerModal({
   const {
     posts,
     displayedHashtags,
-    showConfirmation,
+    bulkComposerStage,
+    setBulkComposerStage,
+    bulkBatchMode,
+    setBulkBatchMode,
+    focusPostIndex,
+    setFocusPostIndex,
+    processingProgress,
     preparationProgress,
     isProcessing,
     toast,
@@ -71,13 +77,15 @@ export function BulkComposerModal({
           <BulkComposerModalContent
             isLoadingContext={restState.isLoadingContext}
             displayedHashtags={displayedHashtags}
-            showConfirmation={showConfirmation}
+            bulkComposerStage={bulkComposerStage}
+            setBulkComposerStage={setBulkComposerStage}
+            bulkBatchMode={bulkBatchMode}
+            setBulkBatchMode={setBulkBatchMode}
+            focusPostIndex={focusPostIndex}
+            setFocusPostIndex={setFocusPostIndex}
+            processingProgress={processingProgress}
             mode={mode}
             posts={posts}
-            prepareEvents={(e) => {
-              e.preventDefault();
-              void handlers.prepareEvents(e);
-            }}
             validationResult={restState.validationResult}
             preparationProgress={preparationProgress}
             isProcessing={isProcessing}
@@ -120,6 +128,12 @@ export function BulkComposerModal({
               restState.setBulkScheduleRandomWindowMinutes
             }
             rowMediaUploadDisabled={restState.blossomMediaUploadBlocked}
+            startPrepareFlow={handlers.startPrepareFlow}
+            duplicatePost={handlers.duplicatePost}
+            handleRepostSchedulesChange={handlers.handleRepostSchedulesChange}
+            handleQuoteSchedulesChange={handlers.handleQuoteSchedulesChange}
+            handleRepostAll={handlers.handleRepostAll}
+            handleSaveBulkDraft={handlers.handleSaveBulkDraft}
           />
         </div>
 

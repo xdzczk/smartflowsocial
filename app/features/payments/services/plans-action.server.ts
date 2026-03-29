@@ -219,6 +219,29 @@ async function handleSelectPlanIntent(
     };
   }
 
+  if (selectData.planId === "free") {
+    const invoice = await createInvoiceForSelection({
+      planId: "free",
+      userId: user.id,
+      billingCadence: "monthly",
+      accessDurationMonths: 1,
+      billingPaymentMethod: "lightning_one_time",
+      priceUsd: 0,
+    });
+    if (invoice.invoice === "free_plan") {
+      return {
+        redirect:
+          "/dashboard?planActivated=true&message=" +
+          encodeURIComponent("Free plan activated successfully!"),
+      };
+    }
+    return {
+      success: false,
+      error: "Could not activate the free plan.",
+      status: 500,
+    };
+  }
+
   const cadence = selectData.billingCadence;
   const durationMonths = resolveDurationMonths({
     billingCadence: cadence,
@@ -256,14 +279,6 @@ async function handleSelectPlanIntent(
     billingPaymentMethod,
     priceUsd,
   });
-
-  if (invoice.invoice === "free_plan") {
-    return {
-      redirect:
-        "/dashboard?planActivated=true&message=" +
-        encodeURIComponent("Free plan activated successfully!"),
-    };
-  }
 
   if (selectData.paymentMode === "auto_renew") {
     const immediate = await attemptImmediateNwcPayment({

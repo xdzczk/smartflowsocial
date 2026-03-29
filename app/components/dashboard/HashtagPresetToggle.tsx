@@ -8,6 +8,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
+
+/** Shared label emphasis (sonarjs/no-duplicate-string). */
+const CN_MUTED_EMPHASIS = "text-muted-foreground dark:text-foreground";
+const CN_TEXT_SM_MEDIUM = "text-sm font-medium";
+
+function queuePresetLabelTypography(subdued: boolean): string {
+  return subdued ? "text-[11px] font-normal" : CN_TEXT_SM_MEDIUM;
+}
+
+function outlineHashtagBadgeClass(subdued: boolean): string {
+  return subdued ? "px-1.5 py-px text-[10px]" : "px-2 py-0.5";
+}
 
 interface HashTagPreset {
   id: string;
@@ -31,6 +44,8 @@ interface HashtagPresetToggleProps {
   queueType?: QueueType | null;
   useHashtagPresets?: boolean;
   onUseHashtagPresetsChange?: (enabled: boolean) => void;
+  /** Quieter spacing and typography (e.g. article composer footnotes). */
+  presentation?: "default" | "subdued";
 }
 
 export function HashtagPresetToggle({
@@ -42,7 +57,9 @@ export function HashtagPresetToggle({
   queueType = null,
   useHashtagPresets = false,
   onUseHashtagPresetsChange,
+  presentation = "default",
 }: HashtagPresetToggleProps) {
+  const subdued = presentation === "subdued";
   const selectedPreset = presets.find((p) => p.id === selectedPresetId);
 
   const handlePresetChange = (value: string) => {
@@ -74,27 +91,51 @@ export function HashtagPresetToggle({
 
     return (
       <div
-        className={`rounded-lg p-3 ${
+        className={cn(
+          "rounded-lg",
+          subdued ? "border-border/35 p-2.5" : "p-3",
           useHashtagPresets
-            ? "dark:bg-card border-border bg-muted dark:border-border border"
-            : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
-        }`}
+            ? subdued
+              ? "dark:bg-card/50 bg-muted/25 dark:border-border/60 border"
+              : "dark:bg-card border-border bg-muted dark:border-border border"
+            : subdued
+              ? "border-success/35 bg-success/[0.06] dark:border-success/40 dark:bg-success/[0.08] border"
+              : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
+        )}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span
+              className={cn(
+                CN_MUTED_EMPHASIS,
+                queuePresetLabelTypography(subdued)
+              )}
+            >
               {useHashtagPresets ? "Queue Default:" : "Using Queue Default:"}
             </span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-xs",
+                subdued && outlineHashtagBadgeClass(true)
+              )}
+            >
               {queuePreset.name}
             </Badge>
-            <span className="text-muted-foreground dark:text-foreground text-xs">
+            <span
+              className={cn(
+                CN_MUTED_EMPHASIS,
+                subdued ? "text-[10px]" : "text-xs"
+              )}
+            >
               ({tagCount} tags)
             </span>
           </div>
         </div>
         {!useHashtagPresets && tags ? (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div
+            className={cn("flex flex-wrap gap-1", subdued ? "mt-1.5" : "mt-2")}
+          >
             {tags
               .split(/\s+/)
               .filter((tag) => tag.startsWith("#") && tag.length > 1)
@@ -103,13 +144,16 @@ export function HashtagPresetToggle({
                 <Badge
                   key={tag}
                   variant="outline"
-                  className="px-2 py-0.5 text-xs"
+                  className={cn("text-xs", outlineHashtagBadgeClass(subdued))}
                 >
                   {tag}
                 </Badge>
               ))}
             {tagCount > 4 ? (
-              <Badge variant="outline" className="px-2 py-0.5 text-xs">
+              <Badge
+                variant="outline"
+                className={cn("text-xs", outlineHashtagBadgeClass(subdued))}
+              >
                 +{tagCount - 4} more
               </Badge>
             ) : null}
@@ -128,17 +172,39 @@ export function HashtagPresetToggle({
     const tagCount = countHashtags(tags);
 
     return (
-      <div className="dark:bg-card border-border bg-muted dark:border-border rounded-lg border p-3">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+      <div
+        className={cn(
+          "dark:bg-card rounded-lg border",
+          subdued
+            ? "border-border/35 bg-muted/20 dark:border-border/50 p-2.5"
+            : "border-border bg-muted dark:border-border p-3"
+        )}
+      >
+        <div
+          className={cn("flex items-center gap-2", subdued ? "mb-1.5" : "mb-2")}
+        >
+          <span
+            className={cn(
+              CN_MUTED_EMPHASIS,
+              subdued ? "text-xs font-medium" : CN_TEXT_SM_MEDIUM
+            )}
+          >
             {selectedPreset.name}
           </span>
-          <Badge variant="secondary" className="text-xs">
+          <Badge
+            variant="secondary"
+            className={cn("text-xs", subdued && outlineHashtagBadgeClass(true))}
+          >
             {tagCount} tags
           </Badge>
         </div>
         {selectedPreset.description ? (
-          <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
+          <p
+            className={cn(
+              CN_MUTED_EMPHASIS,
+              subdued ? "mb-1.5 text-[10px] leading-snug" : "mb-2 text-xs"
+            )}
+          >
             {selectedPreset.description}
           </p>
         ) : null}
@@ -152,14 +218,17 @@ export function HashtagPresetToggle({
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="px-2 py-0.5 text-xs"
+                    className={cn("text-xs", outlineHashtagBadgeClass(subdued))}
                   >
                     {tag}
                   </Badge>
                 ))
             : null}
           {tagCount > 6 ? (
-            <Badge variant="outline" className="px-2 py-0.5 text-xs">
+            <Badge
+              variant="outline"
+              className={cn("text-xs", outlineHashtagBadgeClass(subdued))}
+            >
               +{tagCount - 6} more
             </Badge>
           ) : null}
@@ -169,7 +238,7 @@ export function HashtagPresetToggle({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={subdued ? "space-y-2.5" : "space-y-4"}>
       {/* Toggle checkbox for hashtag presets */}
       <div className="flex items-center space-x-2">
         <Checkbox
@@ -181,7 +250,12 @@ export function HashtagPresetToggle({
         />
         <Label
           htmlFor="use-hashtag-presets"
-          className="text-muted-foreground dark:text-foreground cursor-pointer text-sm font-medium"
+          className={cn(
+            `${CN_MUTED_EMPHASIS} cursor-pointer`,
+            subdued
+              ? "text-muted-foreground/80 text-[11px] font-normal"
+              : CN_TEXT_SM_MEDIUM
+          )}
         >
           Use Hashtag Presets
         </Label>
@@ -192,20 +266,35 @@ export function HashtagPresetToggle({
 
       {/* Hashtag preset selector */}
       {useHashtagPresets ? (
-        <div className="space-y-3">
+        <div className={subdued ? "space-y-2" : "space-y-3"}>
           {presets.length === 0 ? (
-            <div className="dark:border-border dark:bg-muted rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-              <p className="dark:text-foreground text-sm text-yellow-700">
+            <div
+              className={cn(
+                "dark:border-border rounded-lg border border-yellow-200 bg-yellow-50",
+                subdued ? "dark:bg-muted/40 p-2" : "dark:bg-muted p-3"
+              )}
+            >
+              <p
+                className={cn(
+                  "dark:text-foreground text-yellow-700",
+                  subdued ? "text-[11px] leading-snug" : "text-sm"
+                )}
+              >
                 No hashtag presets available. Create some in Settings to reuse
                 hashtags across your posts.
               </p>
             </div>
           ) : (
             <>
-              <div className="space-y-2">
+              <div className={subdued ? "space-y-1" : "space-y-2"}>
                 <Label
                   htmlFor="hashtag-preset-select"
-                  className="text-muted-foreground dark:text-foreground text-sm font-medium"
+                  className={cn(
+                    CN_MUTED_EMPHASIS,
+                    subdued
+                      ? "text-muted-foreground/75 text-[11px] font-normal"
+                      : CN_TEXT_SM_MEDIUM
+                  )}
                 >
                   Choose Hashtag Preset
                 </Label>
@@ -215,7 +304,10 @@ export function HashtagPresetToggle({
                   disabled={disabled}
                   name="hashtag-preset-select"
                 >
-                  <SelectTrigger id="hashtag-preset-select" className="w-full">
+                  <SelectTrigger
+                    id="hashtag-preset-select"
+                    className={cn("w-full", subdued && "h-8 text-xs")}
+                  >
                     <SelectValue placeholder="Select a hashtag preset" />
                   </SelectTrigger>
                   <SelectContent>

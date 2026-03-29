@@ -19,6 +19,10 @@ interface TiptapToolbarProps {
   onInsertImage?: () => void;
   /** `editorial` — quieter chrome for article composer; `default` — modal / legacy. */
   density?: "default" | "editorial";
+  /**
+   * When `density="editorial"` and `embedded`, toolbar sits inside article chrome — no bottom border.
+   */
+  editorialChrome?: "standalone" | "embedded";
 }
 
 function ToolbarButton({
@@ -56,8 +60,8 @@ function ToolbarButton({
             : "text-muted-foreground hover:bg-muted hover:text-foreground"),
         editorial &&
           (active
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"),
+            ? "bg-muted/45 text-foreground/95"
+            : "text-muted-foreground/85 hover:bg-muted/40 hover:text-foreground"),
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
@@ -70,10 +74,12 @@ export function TiptapToolbar({
   editor,
   onInsertImage,
   density = "default",
+  editorialChrome = "standalone",
 }: TiptapToolbarProps) {
   if (!editor) return null;
 
   const editorial = density === "editorial";
+  const editorialEmbedded = editorial && editorialChrome === "embedded";
 
   const setLink = () => {
     const linkAttrs = editor.getAttributes("link") as { href?: string };
@@ -91,10 +97,13 @@ export function TiptapToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-0.5 border-b",
-        editorial
-          ? "border-border/20 bg-transparent px-2 py-1"
-          : "border-border bg-muted/40 px-2 py-1.5"
+        "flex flex-wrap items-center",
+        editorialEmbedded
+          ? "border-border/10 gap-x-1 gap-y-0.5 border-t bg-transparent px-2 py-1.5 sm:px-2.5"
+          : "gap-0.5 border-b",
+        editorial && !editorialEmbedded
+          ? "border-border/15 bg-transparent px-2 py-1"
+          : !editorial && "border-border bg-muted/40 px-2 py-1.5"
       )}
     >
       <ToolbarButton
@@ -165,7 +174,14 @@ export function TiptapToolbar({
       </ToolbarButton>
       <Separator
         orientation="vertical"
-        className={cn("mx-1", editorial ? "bg-border/30 h-5" : "h-6")}
+        className={cn(
+          "mx-1",
+          editorialEmbedded
+            ? "bg-border/20 h-[1.125rem]"
+            : editorial
+              ? "bg-border/25 h-5"
+              : "h-6"
+        )}
       />
       <ToolbarButton
         editorial={editorial}

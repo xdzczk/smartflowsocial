@@ -84,6 +84,17 @@ describe("Bulk Posts Upload", () => {
     });
   });
 
+  describe("Bulk composer V2", () => {
+    beforeEach(() => {
+      cy.visitAndCheck("/dashboard/bulkposts");
+    });
+
+    it("shows Review CTA in batch settings after adding a post", () => {
+      cy.contains("button", "Add 1 Post").click();
+      cy.contains("button", /Review \d+ post/).should("exist");
+    });
+  });
+
   describe("Scheduling Configuration", () => {
     beforeEach(() => {
       cy.visitAndCheck("/dashboard/bulkposts");

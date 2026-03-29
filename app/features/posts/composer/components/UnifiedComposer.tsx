@@ -77,6 +77,7 @@ import {
   ComposerLeftCanvas,
   ComposerOutputPanel,
   ComposerQueueField,
+  ComposerScheduleRandomWindowField,
   ComposerScheduleField,
   type ComposerPublishMode,
   getTextSubmitActionForMode,
@@ -100,6 +101,9 @@ import { UnifiedComposerContentSection } from "./composer/unified-composer-secti
 
 /** Minute spacing options for thread cadence (publish rail). */
 const THREAD_CADENCE_MINUTES_CHIPS = [1, 2, 3, 4, 5] as const;
+
+/** Matches queue-type settings (`scheduleRandomWindowMinutes`). */
+const QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS = [5, 10, 15] as const;
 
 export interface ContestEmbedPublishPayload {
   ok: true;
@@ -1530,6 +1534,7 @@ export function UnifiedComposer({
                   ) : (
                     <ComposerOutputPanel
                       variant="embedded"
+                      previewTone="thread"
                       content={threadSegments[0]?.content ?? ""}
                       attachments={threadSegments[0]?.attachments ?? []}
                       tagsLine={selectedHashtags}
@@ -1667,7 +1672,7 @@ export function UnifiedComposer({
                       : [],
                   controls:
                     publishMode === "queue" ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <ComposerQueueField
                           queueTypes={queueTypes}
                           value={selectedQueue}
@@ -1684,6 +1689,21 @@ export function UnifiedComposer({
                               : undefined
                           }
                         />
+                        {selectedQueue !== "unassigned" ? (
+                          <ComposerScheduleRandomWindowField
+                            scheduleRandomWindowMinutes={
+                              scheduleRandomWindowMinutes
+                            }
+                            onScheduleRandomWindowMinutesChange={
+                              setScheduleRandomWindowMinutes
+                            }
+                            disabled={disabled}
+                            windowOptions={QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS}
+                            label="Randomize within queue slot"
+                            idPrefix="queue-schedule-randomize"
+                            description="Optional jitter around the next slot time. Cadence still follows the nominal slot. Queue settings load a default; change here for this post only."
+                          />
+                        ) : null}
                       </div>
                     ) : (
                       <div className="space-y-2">

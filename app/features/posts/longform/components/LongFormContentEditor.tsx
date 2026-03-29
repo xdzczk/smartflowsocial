@@ -37,8 +37,10 @@ interface LongFormContentEditorProps {
   editor: React.ComponentProps<typeof EditorContent>["editor"];
 }
 
-const EDITOR_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
-const PLACEHOLDER_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
+const EDITORIAL_EDITOR_MIN_HEIGHT = "min-h-[min(58vh,32rem)]";
+const EDITORIAL_PLACEHOLDER_MIN_HEIGHT = "min-h-[min(58vh,32rem)]";
+const LEGACY_EDITOR_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
+const LEGACY_PLACEHOLDER_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
 
 function blossomOrS3BadgeLabel(uploadProvider: string): string {
   if (!uploadProvider.includes("BLOSSOM")) return "☁️ S3";
@@ -68,66 +70,84 @@ function EditorialLongFormContentEditor({
   const showPlaceholder = !editor;
   const uploadHint =
     uploadProvider != null ? (
-      <div className="text-muted-foreground/80 hidden items-center gap-1 text-[10px] sm:flex">
-        <span>Images</span>
-        <span className="bg-muted/60 text-foreground/90 rounded px-1 py-px font-medium">
+      <div className="text-muted-foreground/40 hidden items-center gap-1.5 text-[10px] sm:flex">
+        <span className="text-muted-foreground/50">Images</span>
+        <span className="font-medium tabular-nums">
           {blossomOrS3BadgeLabel(uploadProvider)}
         </span>
       </div>
     ) : null;
 
+  const editorProseClasses =
+    "prose prose-lg dark:prose-invert max-w-none px-5 py-5 sm:px-6 sm:py-6 " +
+    "[&_.ProseMirror]:min-h-[min(54vh,28rem)] [&_.ProseMirror]:outline-none " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:pointer-events-none " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:float-left " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:h-0 " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:text-muted-foreground/45 " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:content-[attr(data-placeholder)]";
+
   return (
     <div>
       <div
         className={cn(
-          "border-border/40 bg-card overflow-hidden rounded-lg border",
-          "focus-within:border-border/60 focus-within:ring-border/30 focus-within:ring-1"
+          "border-border/35 bg-card/40 overflow-hidden rounded-xl border",
+          "shadow-sm shadow-black/[0.02] dark:shadow-black/20",
+          "focus-within:border-border/55 focus-within:ring-border/20 focus-within:ring-1"
         )}
       >
-        <div className="border-border/20 bg-muted/10 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2 border-b px-2 py-1 sm:px-3">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-            {chromeLeading}
-            {uploadHint}
-          </div>
-          {chromeTrailing ? (
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-              {chromeTrailing}
+        <div className="border-border/15 bg-muted/[0.06] border-b">
+          <div className="flex min-h-[2.35rem] flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 sm:px-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+              {chromeLeading}
+              {uploadHint}
             </div>
+            {chromeTrailing ? (
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                {chromeTrailing}
+              </div>
+            ) : null}
+          </div>
+          {!showPlaceholder && bodyView === "edit" ? (
+            <TiptapToolbar
+              editor={editor}
+              onInsertImage={undefined}
+              density="editorial"
+              editorialChrome="embedded"
+            />
           ) : null}
         </div>
         <div
-          className={`${showPlaceholder ? PLACEHOLDER_MIN_HEIGHT : EDITOR_MIN_HEIGHT} ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          className={`bg-background/50 ${showPlaceholder ? EDITORIAL_PLACEHOLDER_MIN_HEIGHT : EDITORIAL_EDITOR_MIN_HEIGHT} ${!editorReady ? "pointer-events-none select-none" : ""}`}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}
         >
           {showPlaceholder ? (
             <div
-              className="text-muted-foreground px-5 py-4 text-sm"
+              className="text-muted-foreground/70 flex h-full flex-col justify-center px-6 py-8 text-sm leading-relaxed"
               role="status"
               aria-label="Article content"
             >
-              Loading editor…
+              <p className="text-foreground/80 font-medium tracking-tight">
+                Preparing your writing surface…
+              </p>
+              <p className="text-muted-foreground/65 mt-1 max-w-md text-[13px]">
+                The editor loads in a moment. Your draft stays in this page.
+              </p>
             </div>
           ) : bodyView === "preview" ? (
-            <div className="max-h-[min(70vh,36rem)] overflow-y-auto px-5 py-4">
+            <div className="max-h-[min(72vh,38rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
               <MarkdownPreview
                 source={previewMarkdown ?? ""}
                 className="prose prose-lg dark:prose-invert max-w-none"
               />
             </div>
           ) : (
-            <>
-              <TiptapToolbar
-                editor={editor}
-                onInsertImage={undefined}
-                density="editorial"
-              />
-              <EditorContent
-                editor={editor}
-                className="prose prose-lg dark:prose-invert max-w-none px-5 py-4 [&_.ProseMirror]:min-h-[min(52vh,26rem)] [&_.ProseMirror]:outline-none"
-                aria-label="Article content"
-              />
-            </>
+            <EditorContent
+              editor={editor}
+              className={editorProseClasses}
+              aria-label="Article content"
+            />
           )}
         </div>
       </div>
@@ -205,7 +225,7 @@ function LegacyLongFormContentEditor({
         }
       >
         <div
-          className={`${showPlaceholder ? PLACEHOLDER_MIN_HEIGHT : EDITOR_MIN_HEIGHT} p-4 ${!editorReady ? "pointer-events-none select-none" : ""}`}
+          className={`${showPlaceholder ? LEGACY_PLACEHOLDER_MIN_HEIGHT : LEGACY_EDITOR_MIN_HEIGHT} p-4 ${!editorReady ? "pointer-events-none select-none" : ""}`}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}
         >

@@ -23,6 +23,8 @@ export type {
   RepostDelayItem,
   QuoteEntryItem,
 } from "./ComposerScheduleField";
+export { ComposerScheduleRandomWindowField } from "./ComposerScheduleRandomWindowField";
+export type { ComposerScheduleRandomWindowFieldProps } from "./ComposerScheduleRandomWindowField";
 export { ComposerQueueField } from "./ComposerQueueField";
 export type { ComposerQueueFieldProps } from "./ComposerQueueField";
 export { MIN_THREAD_SEGMENTS } from "./thread-constants";

@@ -35,3 +35,32 @@ export function buildFollowUpCollapsedSummary(input: {
   }
   return parts.join(" · ");
 }
+
+/**
+ * Bulk composer card / review line: per-post follow-up vs batch repost conditions.
+ */
+export function buildBulkComposerFollowUpLine(input: {
+  repostScheduleCount: number;
+  quoteScheduleCount: number;
+  showBatchRepostConditions: boolean;
+  batchHasRepostConditionRules: boolean;
+}): string {
+  const {
+    repostScheduleCount,
+    quoteScheduleCount,
+    showBatchRepostConditions,
+    batchHasRepostConditionRules,
+  } = input;
+  const hasOverride = repostScheduleCount > 0 || quoteScheduleCount > 0;
+  if (hasOverride) {
+    const r = repostScheduleCount > 0 ? "Repost" : null;
+    const q = quoteScheduleCount > 0 ? "Quote" : null;
+    if (r && q) return "Override active (Repost + Quote)";
+    if (r) return "Override active (Repost)";
+    return "Override active (Quote)";
+  }
+  if (showBatchRepostConditions && batchHasRepostConditionRules) {
+    return "Inherits batch follow-up";
+  }
+  return "None";
+}

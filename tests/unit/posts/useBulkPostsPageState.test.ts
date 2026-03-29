@@ -83,7 +83,7 @@ describe("useBulkPostsPageState", () => {
     expect(result.current).toHaveProperty("handlers");
   });
 
-  it("state includes posts, toast, isProcessing, scheduleIntervals", () => {
+  it("state includes posts, toast, isProcessing, scheduleIntervals, bulkComposerStage", () => {
     const { result } = renderHook(() => useBulkPostsPageState(defaultProps));
 
     const { state } = result.current;
@@ -92,6 +92,8 @@ describe("useBulkPostsPageState", () => {
     expect(state.toast).toBeNull();
     expect(state.isProcessing).toBe(false);
     expect(state.scheduleIntervals).toEqual([2]);
+    expect(state.bulkComposerStage).toBe("build");
+    expect(state.bulkBatchMode).toBe("schedule");
   });
 
   it("handlers include handleCaptionChange, handleDateChange, handleBulkQueueUpdate", () => {
@@ -104,5 +106,6 @@ describe("useBulkPostsPageState", () => {
     expect(typeof handlers.handleQueueTypeChange).toBe("function");
     expect(typeof handlers.handleRemovePost).toBe("function");
     expect(typeof handlers.handleScheduleIntervalClick).toBe("function");
+    expect(typeof handlers.duplicatePost).toBe("function");
   });
 });

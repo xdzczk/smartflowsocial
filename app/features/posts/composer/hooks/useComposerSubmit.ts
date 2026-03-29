@@ -38,6 +38,9 @@ import {
 import type { ComposerPublishMode } from "../components/composer/publish-mode";
 import { MIN_THREAD_SEGMENTS } from "../components/composer/thread-constants";
 
+const COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED =
+  "Schedule time is required, or select a queue so we can pick the next slot.";
+
 export type TextPostFormData = z.infer<typeof textPostClientSchema>;
 
 export interface ThreadSegment {
@@ -301,12 +304,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             submitType === ACTION_SCHEDULE_TEXT &&
             !threadScheduleInput.trim()
           ) {
-            setSigningError(
-              "Schedule time is required, or select a queue so we can pick the next slot."
-            );
+            setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
             return;
           }
-          const baseTime =
+          const nominalThreadBase =
             submitType === ACTION_POST_TEXT
               ? Math.floor(Date.now() / 1000)
               : Math.floor(
@@ -315,6 +316,21 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
                     userTimezone
                   )) / 1000
                 );
+          if (
+            submitType === ACTION_SCHEDULE_TEXT &&
+            nominalThreadBase * 1000 < Date.now()
+          ) {
+            setSigningError(COMPOSER_SCHEDULE_FUTURE);
+            return;
+          }
+          const threadRandomMinutes = scheduleRandomWindowMinutes;
+          const threadSignBase =
+            submitType === ACTION_SCHEDULE_TEXT && threadRandomMinutes > 0
+              ? applyRandomScheduleWindow(
+                  nominalThreadBase,
+                  threadRandomMinutes
+                )
+              : nominalThreadBase;
           const effectiveHashtags = await getEffectiveHashtagsForSubmit(
             data.useHashtagPresets,
             selectedHashtags,
@@ -334,7 +350,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           const { signedByIndex, failedIndices } =
             await signThreadSegmentsWithRetry(
               threadSegments,
-              baseTime,
+              threadSignBase,
               tagArray,
               effectiveHashtags
             );
@@ -365,7 +381,14 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             segmentsToSubmit,
             signedEvents,
             data,
-            submitType
+            submitType,
+            submitType === ACTION_SCHEDULE_TEXT
+              ? {
+                  scheduledFirstUnix: threadSignBase,
+                  nominalFirstUnix:
+                    threadRandomMinutes > 0 ? nominalThreadBase : undefined,
+                }
+              : undefined
           );
           if (!threadPayload) return;
 
@@ -509,7 +532,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         segmentsToSubmit: ThreadSegment[],
         signedEvents: SignedEvent[],
         formData: TextPostFormData,
-        actionSubmitType: string
+        actionSubmitType: string,
+        threadSchedule?: {
+          scheduledFirstUnix: number;
+          nominalFirstUnix?: number;
+        }
       ): Promise<FormData | null> {
         const threadPayload = new FormData();
         threadPayload.set(
@@ -543,20 +570,24 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (formData.hashTagPresetId)
           threadPayload.set("hashTagPresetId", formData.hashTagPresetId);
         if (actionSubmitType === ACTION_SCHEDULE_TEXT) {
-          const resolved = await resolveScheduleLocalInput(
-            formData,
-            ACTION_SCHEDULE_TEXT
-          );
-          if (resolved.trim()) {
-            const unix = Math.floor(
-              (await parseScheduledTime(resolved, user?.timezone ?? "UTC")) /
-                1000
+          if (!threadSchedule) {
+            setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
+            return null;
+          }
+          const unix = threadSchedule.scheduledFirstUnix;
+          if (unix < Math.floor(Date.now() / 1000)) {
+            setSigningError(COMPOSER_SCHEDULE_FUTURE);
+            return null;
+          }
+          threadPayload.set("scheduledFor", String(unix));
+          if (
+            threadSchedule.nominalFirstUnix != null &&
+            threadSchedule.nominalFirstUnix !== unix
+          ) {
+            threadPayload.set(
+              "nominalScheduledFor",
+              String(threadSchedule.nominalFirstUnix)
             );
-            if (unix < Math.floor(Date.now() / 1000)) {
-              setSigningError(COMPOSER_SCHEDULE_FUTURE);
-              return null;
-            }
-            threadPayload.set("scheduledFor", String(unix));
           }
         }
         if (relayOverride && relayOverride.length > 0)
@@ -608,9 +639,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             submitType === ACTION_SCHEDULE_TEXT &&
             !scheduledForInput.trim()
           ) {
-            setSigningError(
-              "Schedule time is required, or select a queue so we can pick the next slot."
-            );
+            setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
             return;
           }
           const scheduledTime =
@@ -623,8 +652,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             setSigningError(COMPOSER_SCHEDULE_FUTURE);
             return;
           }
-          const effectiveRandomMinutes =
-            publishMode === "queue" ? 0 : scheduleRandomWindowMinutes;
+          const effectiveRandomMinutes = scheduleRandomWindowMinutes;
           const scheduledForUnix =
             isSchedule && effectiveRandomMinutes > 0
               ? applyRandomScheduleWindow(nominalUnix, effectiveRandomMinutes)
@@ -879,13 +907,19 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     if (queueTypeId) threadPayload.set("queueTypeId", queueTypeId);
     if (state.data.hashTagPresetId)
       threadPayload.set("hashTagPresetId", state.data.hashTagPresetId);
-    if (state.submitType === ACTION_SCHEDULE_TEXT && state.data.scheduledFor) {
-      const userTimezone = user?.timezone ?? "UTC";
-      const unix = Math.floor(
-        (await parseScheduledTime(state.data.scheduledFor, userTimezone)) / 1000
-      );
-      if (unix >= Math.floor(Date.now() / 1000)) {
-        threadPayload.set("scheduledFor", String(unix));
+    if (state.submitType === ACTION_SCHEDULE_TEXT && state.signedEvents[0]) {
+      const actualFirst = state.signedEvents[0].created_at;
+      if (actualFirst >= Math.floor(Date.now() / 1000)) {
+        threadPayload.set("scheduledFor", String(actualFirst));
+        const tz = user?.timezone ?? "UTC";
+        if (state.data.scheduledFor?.trim()) {
+          const nominalUnix = Math.floor(
+            (await parseScheduledTime(state.data.scheduledFor, tz)) / 1000
+          );
+          if (Number.isFinite(nominalUnix) && nominalUnix !== actualFirst) {
+            threadPayload.set("nominalScheduledFor", String(nominalUnix));
+          }
+        }
       }
     }
     if (relayOverride && relayOverride.length > 0)

@@ -376,20 +376,27 @@ export function QueueTypeDialog({
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-start gap-2">
             <Checkbox
               id="includeHashtagsInNoteBody"
-              checked={form.watch("includeHashtagsInNoteBody") !== false}
-              onCheckedChange={(checked) => {
-                form.setValue("includeHashtagsInNoteBody", checked as boolean);
+              className="mt-0.5"
+              checked={form.watch("includeHashtagsInNoteBody") === false}
+              onCheckedChange={(c) => {
+                form.setValue("includeHashtagsInNoteBody", c !== true);
               }}
             />
-            <Label
-              htmlFor="includeHashtagsInNoteBody"
-              className="text-sm font-normal"
-            >
-              Default: include preset hashtags in note text
-            </Label>
+            <div className="min-w-0 space-y-0.5">
+              <Label
+                htmlFor="includeHashtagsInNoteBody"
+                className="text-sm font-normal"
+              >
+                Hide tags
+              </Label>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Off by default for new posts in this queue. Turn on to keep
+                preset hashtags out of the note text (metadata only).
+              </p>
+            </div>
           </div>
 
           {isEditing ? (
@@ -520,8 +527,9 @@ export function QueueTypeDialog({
               </SelectContent>
             </Select>
             <p className="text-muted-foreground text-xs">
-              Default for posts in this queue. Keeps queue slots and intervals
-              from drifting.
+              Default when scheduling or using queue mode in the composer. Keeps
+              queue slots and intervals from drifting; you can override per post
+              in the composer.
             </p>
           </div>
 

@@ -26,6 +26,8 @@ export interface ComposerOutputPanelProps {
    * `standalone` — legacy top border when used alone.
    */
   variant?: "embedded" | "standalone";
+  /** Quieter chrome for thread first-segment preview. */
+  previewTone?: "default" | "thread";
 }
 
 function bodyLooksRich(text: string): boolean {
@@ -38,7 +40,9 @@ export function ComposerOutputPanel({
   tagsLine,
   previewLabel = "Preview",
   variant = "embedded",
+  previewTone = "default",
 }: ComposerOutputPanelProps) {
+  const threadTone = previewTone === "thread";
   const [open, setOpen] = useState(false);
   const body = stripAttachmentTokens(content).trim();
   const withUrl = attachments.filter((a) => a.url);
@@ -87,7 +91,12 @@ export function ComposerOutputPanel({
         type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground/90 hover:text-muted-foreground hover:bg-muted/35 h-7 min-h-7 w-full justify-between gap-2 px-1.5 py-0 text-[11px] font-normal"
+        className={cn(
+          "h-7 min-h-7 w-full justify-between gap-2 px-1.5 py-0 font-normal",
+          threadTone
+            ? "text-muted-foreground/55 hover:text-muted-foreground/80 hover:bg-muted/25 text-[10px] tracking-wide"
+            : "text-muted-foreground/90 hover:text-muted-foreground hover:bg-muted/35 text-[11px]"
+        )}
         onClick={toggleOpen}
         aria-expanded={open}
       >
@@ -105,13 +114,18 @@ export function ComposerOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="space-y-2.5 pt-2">
+        <div className={cn("pt-2", threadTone ? "space-y-2" : "space-y-2.5")}>
           {withUrl.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {withUrl.map((a) => (
                 <div
                   key={a.localId}
-                  className="border-border h-20 w-20 overflow-hidden rounded-md border"
+                  className={cn(
+                    "overflow-hidden rounded-md border",
+                    threadTone
+                      ? "border-border/50 h-14 w-14"
+                      : "border-border h-20 w-20"
+                  )}
                 >
                   {a.mime?.startsWith("video/") ? (
                     <video
@@ -131,7 +145,14 @@ export function ComposerOutputPanel({
               ))}
             </div>
           ) : null}
-          <div className="bg-muted/25 max-h-48 overflow-y-auto rounded-md p-3 text-sm whitespace-pre-wrap">
+          <div
+            className={cn(
+              "max-h-48 overflow-y-auto rounded-md whitespace-pre-wrap",
+              threadTone
+                ? "bg-muted/15 p-2 text-[13px] leading-snug"
+                : "bg-muted/25 p-3 text-sm"
+            )}
+          >
             {body ? (
               body
             ) : (
@@ -140,11 +161,23 @@ export function ComposerOutputPanel({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {tagsLine.trim() ? (
-              <span className="text-muted-foreground text-xs">
+              <span
+                className={cn(
+                  "text-muted-foreground",
+                  threadTone ? "text-[10px]" : "text-xs"
+                )}
+              >
                 Tags: {tagsLine.trim()}
               </span>
             ) : (
-              <span className="text-muted-foreground text-xs">Tags: none</span>
+              <span
+                className={cn(
+                  "text-muted-foreground",
+                  threadTone ? "text-[10px]" : "text-xs"
+                )}
+              >
+                Tags: none
+              </span>
             )}
           </div>
         </div>

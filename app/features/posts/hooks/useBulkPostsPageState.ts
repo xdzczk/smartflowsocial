@@ -7,6 +7,10 @@ import { useFetcher, useNavigate, useSearchParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
+import type {
+  BulkBatchMode,
+  BulkComposerStage,
+} from "~/features/posts/bulk-composer/types";
 import { useLocalDraft } from "~/features/posts/composer";
 import {
   type BulkPost,
@@ -87,7 +91,10 @@ export function useBulkPostsPageState({
     : undefined;
 
   const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bulkComposerStage, setBulkComposerStage] =
+    useState<BulkComposerStage>("build");
+  const [bulkBatchMode, setBulkBatchMode] = useState<BulkBatchMode>("schedule");
+  const [focusPostIndex, setFocusPostIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({
     current: 0,
@@ -329,8 +336,12 @@ export function useBulkPostsPageState({
     setSelectedQueueType,
     preparedEvents,
     setPreparedEvents,
-    showConfirmation,
-    setShowConfirmation,
+    bulkComposerStage,
+    setBulkComposerStage,
+    bulkBatchMode,
+    setBulkBatchMode,
+    focusPostIndex,
+    setFocusPostIndex,
     isProcessing,
     setIsProcessing,
     processingProgress,
@@ -645,6 +656,21 @@ export function useBulkPostsPageState({
     );
   };
 
+  const duplicatePost = (index: number) => {
+    const p = posts[index];
+    if (!p) return;
+    const copy: BulkPost = {
+      ...p,
+      clientId: createBulkPostClientId(),
+      files: [...p.files],
+    };
+    setPosts((prev) => {
+      const next = [...prev];
+      next.splice(index + 1, 0, copy);
+      return next;
+    });
+  };
+
   const handleSaveDraftFromTable = (groupIdParam: string | null) => {
     if (posts.length === 0) return;
     const formData = new FormData();
@@ -691,6 +717,7 @@ export function useBulkPostsPageState({
     handleSaveDraftFromTable,
     handleBulkFilesDropped,
     handleIncludeHashtagsInNoteBodyChange,
+    duplicatePost,
   };
 
   return { state, handlers };

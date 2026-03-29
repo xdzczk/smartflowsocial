@@ -894,18 +894,14 @@ export default function LongFormPost({
   }, [scheduledFor]);
 
   const editPreviewToggle = (
-    <div
-      className="bg-muted/40 inline-flex rounded-md p-0.5"
-      role="group"
-      aria-label="Body view"
-    >
+    <div className="inline-flex gap-4" role="group" aria-label="Body view">
       <button
         type="button"
         className={cn(
-          "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
+          "pb-1 text-[10px] font-medium tracking-wide transition-colors",
           bodyView === "edit"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
+            ? "text-foreground/90 border-foreground/35 -mb-px border-b-2"
+            : "text-muted-foreground/55 hover:text-muted-foreground/85 border-b-2 border-transparent"
         )}
         onClick={() => setBodyView("edit")}
         aria-pressed={bodyView === "edit"}
@@ -915,10 +911,10 @@ export default function LongFormPost({
       <button
         type="button"
         className={cn(
-          "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
+          "pb-1 text-[10px] font-medium tracking-wide transition-colors",
           bodyView === "preview"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
+            ? "text-foreground/90 border-foreground/35 -mb-px border-b-2"
+            : "text-muted-foreground/55 hover:text-muted-foreground/85 border-b-2 border-transparent"
         )}
         onClick={() => setBodyView("preview")}
         aria-pressed={bodyView === "preview"}
@@ -932,14 +928,14 @@ export default function LongFormPost({
     <>
       <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-8 px-4 pt-1 pb-5">
-            <div className="space-y-2">
+          <div className="mx-auto w-full max-w-[min(100%,52rem)] space-y-10 px-4 pt-2 pb-5">
+            <div className="space-y-5">
               <input
                 key={initialData?.id ?? "new"}
                 type="text"
                 id="article-composer-title"
                 placeholder="Write a title"
-                className="text-foreground placeholder:text-muted-foreground focus:border-border/20 w-full border-0 border-b border-transparent bg-transparent pb-2 text-3xl leading-tight font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] dark:text-white"
+                className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem] dark:text-white"
                 aria-label="Article title"
                 name={titleFieldReg.name}
                 onChange={(e) => void titleFieldReg.onChange(e)}
@@ -947,24 +943,29 @@ export default function LongFormPost({
                 ref={stableTitleRef}
               />
 
-              <div>
-                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <div className="pt-0.5">
+                <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <ComposerCanvasSectionLabel
                     as="label"
                     className="mb-0"
                     htmlFor="article-composer-summary"
+                    tone="article"
                   >
                     Summary
                   </ComposerCanvasSectionLabel>
-                  <Button
+                  <button
                     type="button"
-                    variant="link"
-                    className="text-muted-foreground hover:text-muted-foreground h-auto p-0 text-[11px] font-normal"
+                    className={cn(
+                      "text-[10px] font-normal underline-offset-2 transition-colors",
+                      !content
+                        ? "text-muted-foreground/35 pointer-events-none cursor-not-allowed"
+                        : "text-muted-foreground/50 hover:text-muted-foreground/70 underline"
+                    )}
                     onClick={handleGenerateSummary}
                     disabled={!content}
                   >
                     Auto-generate
-                  </Button>
+                  </button>
                 </div>
                 <Textarea
                   id="article-composer-summary"
@@ -977,7 +978,7 @@ export default function LongFormPost({
                   }
                   placeholder="Optional — a short line for previews and search."
                   rows={2}
-                  className="border-border/40 bg-muted/10 resize-y text-sm leading-relaxed shadow-sm"
+                  className="border-border/25 focus-visible:border-border/45 resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none transition-colors focus-visible:ring-0"
                 />
               </div>
 
@@ -994,10 +995,7 @@ export default function LongFormPost({
               />
             </div>
 
-            <div className="space-y-2 pt-2">
-              <ComposerCanvasSectionLabel as="span" className="mb-0">
-                Body
-              </ComposerCanvasSectionLabel>
+            <div className="pt-2">
               <LongFormContentEditor
                 key={initialData?.id ?? "new"}
                 surface="editorial"
@@ -1011,12 +1009,13 @@ export default function LongFormPost({
               />
             </div>
 
-            <div className="border-border/30 space-y-4 border-t pt-6">
+            <div className="border-border/12 space-y-3 border-t pt-9">
               <div>
                 <ComposerCanvasSectionLabel
                   as="label"
                   className="mb-0"
                   htmlFor="article-composer-custom-tags"
+                  tone="article"
                 >
                   Custom tags
                 </ComposerCanvasSectionLabel>
@@ -1024,7 +1023,7 @@ export default function LongFormPost({
                   id="article-composer-custom-tags"
                   {...form.register("customTags")}
                   placeholder="e.g. bitcoin, nostr, technology"
-                  className="border-border/50 bg-muted/10 mt-1.5 text-sm shadow-sm"
+                  className="border-border/30 bg-background/40 mt-1.5 text-sm shadow-none"
                 />
               </div>
 
@@ -1058,6 +1057,7 @@ export default function LongFormPost({
                     void 0;
                   })
                 }
+                presentation="subdued"
                 showQueuePreset={true}
                 queueType={(() => {
                   const qt = queueTypes.find(
@@ -1084,23 +1084,24 @@ export default function LongFormPost({
                 name="hashTagPresetId"
                 value={selectedHashtagPresetId ?? ""}
               />
-              <div className="flex items-start justify-between gap-3 pt-0.5">
+              <div className="flex items-start justify-between gap-3 pt-1">
                 <div className="min-w-0 space-y-0.5">
                   <Label
                     htmlFor="longform-include-tags-in-body"
-                    className="text-muted-foreground text-xs leading-snug font-medium"
+                    className="text-muted-foreground/75 text-[11px] leading-snug font-normal"
                   >
-                    Include tags in article text
+                    Hide tags
                   </Label>
-                  <p className="text-muted-foreground/75 text-[10px] leading-snug">
-                    On by default. Turn off to keep tags on the event only.
+                  <p className="text-muted-foreground/50 text-[10px] leading-snug">
+                    Off by default. Turn on to keep tags out of the article text
+                    (event tags only).
                   </p>
                 </div>
                 <Switch
                   id="longform-include-tags-in-body"
-                  checked={Boolean(includeHashtagsInNoteBody)}
-                  onCheckedChange={(v) => {
-                    form.setValue("includeHashtagsInNoteBody", v);
+                  checked={includeHashtagsInNoteBody === false}
+                  onCheckedChange={(hide) => {
+                    form.setValue("includeHashtagsInNoteBody", !hide);
                   }}
                   disabled={fetcher.state !== "idle"}
                   className="mt-0.5 shrink-0"

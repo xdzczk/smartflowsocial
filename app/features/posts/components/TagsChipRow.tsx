@@ -249,17 +249,18 @@ export function TagsChipRow({
               htmlFor="tags-include-in-note-body"
               className="text-muted-foreground text-xs leading-snug font-medium"
             >
-              Include tags in note text
+              Hide tags
             </Label>
             <p className="text-muted-foreground/75 text-[10px] leading-snug">
-              On by default. Turn off to keep tags as topic metadata only.
+              Off by default. Turn on to keep tags out of the note text (topic
+              metadata only).
             </p>
           </div>
           <Switch
             id="tags-include-in-note-body"
-            checked={Boolean(includeHashtagsInNoteBody)}
-            onCheckedChange={(v) => {
-              onIncludeHashtagsInNoteBodyChange(v);
+            checked={includeHashtagsInNoteBody === false}
+            onCheckedChange={(hide) => {
+              onIncludeHashtagsInNoteBodyChange(!hide);
             }}
             disabled={disabled}
             className="mt-0.5 shrink-0"

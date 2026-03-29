@@ -309,7 +309,6 @@ describe("Plans Action Handler", () => {
         planName: "Free Plan",
         planId: "free",
       });
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -319,6 +318,17 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
+      expect(createPlanInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          planId: "free",
+          userId: TEST_USER_ID,
+          billingCadence: "monthly",
+          accessDurationMonths: 1,
+          billingPaymentMethod: "lightning_one_time",
+          amountUsdOverride: 0,
+        })
+      );
+      expect(getPlanPriceUsd).not.toHaveBeenCalled();
       expect(result).toEqual({
         redirect:
           "/dashboard?planActivated=true&message=" +

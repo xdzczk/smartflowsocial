@@ -1,6 +1,7 @@
 import {
   useActionData,
   useLoaderData,
+  useNavigate,
   useNavigation,
   useSubmit,
 } from "@remix-run/react";
@@ -129,6 +130,7 @@ export function PlansPage(): ReactNode {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
   const actionData = useActionData<typeof plansAction>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
   const submit = useSubmit();
 
   type BillingCadence = "monthly" | "yearly";
@@ -232,6 +234,21 @@ export function PlansPage(): ReactNode {
                 billingCadence={billingCadence}
                 onPlanSelect={(planId) => {
                   if (subscriptionCheckoutV2Enabled) {
+                    if (planId === "free") {
+                      if (!user) {
+                        navigate("/login", { replace: true });
+                        return;
+                      }
+                      setSelectedPlan(planId);
+                      const formData = new FormData();
+                      formData.set("intent", "select_plan");
+                      formData.set("planId", planId);
+                      formData.set("paymentMode", "manual");
+                      formData.set("billingCadence", "monthly");
+                      formData.set("accessDurationMonths", "1");
+                      submit(formData, { method: "post" });
+                      return;
+                    }
                     handleOpenCheckout(planId);
                     return;
                   }

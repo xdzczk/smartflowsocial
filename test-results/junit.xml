@@ -1,151 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="18" failures="0" errors="0" time="0.022362583">
-    <testsuite name="tests/integration/plans-action.test.ts" timestamp="2026-03-29T06:45:05.504Z" hostname="Ivans-MacBook-Pro.local" tests="18" failures="0" errors="0" skipped="0" time="0.022362583">
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should check payment status without authentication" time="0.003354917">
-            <system-out>
-ℹ️  Info: product_event:checkout_payment_status_checked { paymentId: &apos;payment-123&apos; }
-
-            </system-out>
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.005588249">
+    <testsuite name="tests/unit/bulk-settings-rail-stats.test.ts" timestamp="2026-03-29T12:15:22.031Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.003700833">
+        <testcase classname="tests/unit/bulk-settings-rail-stats.test.ts" name="bulk-settings-rail-stats &gt; reviewBatchQueueDefaultLabel" time="0.000776167">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return unpaid status when payment not completed" time="0.000422042">
-            <system-out>
-ℹ️  Info: product_event:checkout_payment_status_checked { paymentId: &apos;payment-123&apos; }
-
-            </system-out>
+        <testcase classname="tests/unit/bulk-settings-rail-stats.test.ts" name="bulk-settings-rail-stats &gt; inferUniformScheduleIntervalHours" time="0.002236209">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return error when paymentId is missing" time="0.002939375">
+    </testsuite>
+    <testsuite name="tests/unit/follow-up-summary.test.ts" timestamp="2026-03-29T12:15:22.032Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001887416">
+        <testcase classname="tests/unit/follow-up-summary.test.ts" name="follow-up summary helpers &gt; countRepostConditionRules counts set thresholds only" time="0.000789958">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should handle payment status check errors gracefully" time="0.007144959">
-            <system-out>
-ℹ️  Info: product_event:checkout_payment_status_checked { paymentId: &apos;invalid-payment&apos; }
-
-            </system-out>
-            <system-err>
-
-❌ Error: {
-  message: &apos;Payment not found&apos;,
-  code: &apos;INTERNAL_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/unit/follow-up-summary.test.ts" name="follow-up summary helpers &gt; buildFollowUpCollapsedSummary" time="0.000224834">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create invoice for selected plan" time="0.001887">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;manual&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should attempt auto-renew payment via NWC when selected" time="0.000709292">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;auto_renew&apos; }
-
-ℹ️  Info: product_event:first_payment_succeeded { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;auto_renew&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create manual invoice for monthly 6-month prepay" time="0.000324416">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;manual&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return redirect for free plan" time="0.000217458">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;free&apos;, paymentMode: &apos;manual&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return error when planId is missing" time="0.000374541">
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle invoice creation errors" time="0.000647709">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;invalid-plan&apos;, paymentMode: &apos;manual&apos; }
-
-            </system-out>
-            <system-err>
-
-❌ Error: {
-  message: &apos;Plan not found&apos;,
-  code: &apos;UNKNOWN_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: &apos;user-123&apos;,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle generic errors in invoice creation" time="0.000327541">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;manual&apos; }
-
-            </system-out>
-            <system-err>
-
-❌ Error: {
-  message: &apos;Unknown error&apos;,
-  code: &apos;UNKNOWN_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: &apos;user-123&apos;,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should reject btc_onchain when billing is not yearly (validation)" time="0.000386">
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should reject btc_onchain for free plan" time="0.000159583">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;free&apos;, paymentMode: &apos;btc_onchain&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should reject btc_onchain when BTCPay env is not configured" time="0.000148">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;founder&apos;, paymentMode: &apos;btc_onchain&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create BTCPay checkout for founder yearly when BTCPay is configured" time="0.001097708">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;founder&apos;, paymentMode: &apos;btc_onchain&apos; }
-
-ℹ️  Info: product_event:checkout_btcpay_invoice_created { userId: &apos;user-123&apos;, planId: &apos;founder&apos;, paymentId: &apos;founder_1_u&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create BTCPay checkout for basic yearly when BTCPay is configured" time="0.000805208">
-            <system-out>
-ℹ️  Info: product_event:checkout_lane_selected { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentMode: &apos;btc_onchain&apos; }
-
-ℹ️  Info: product_event:checkout_btcpay_invoice_created { userId: &apos;user-123&apos;, planId: &apos;basic&apos;, paymentId: &apos;basic_12_u&apos; }
-
-            </system-out>
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should return error for invalid intent" time="0.000243417">
-        </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should handle authentication errors for select_plan" time="0.000302958">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Authentication required&apos;,
-  code: &apos;UNKNOWN_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
+        <testcase classname="tests/unit/follow-up-summary.test.ts" name="follow-up summary helpers &gt; buildBulkComposerFollowUpLine" time="0.000184125">
         </testcase>
     </testsuite>
 </testsuites>

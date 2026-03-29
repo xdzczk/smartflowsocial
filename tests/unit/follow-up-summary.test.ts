@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildBulkComposerFollowUpLine,
   buildFollowUpCollapsedSummary,
   countRepostConditionRules,
 } from "~/features/posts/components/follow-up";
@@ -58,5 +59,52 @@ describe("follow-up summary helpers", () => {
         conditionRuleCount: 1,
       })
     ).toBe("Repost (1) · Conditions · Quote (2)");
+  });
+
+  it("buildBulkComposerFollowUpLine", () => {
+    expect(
+      buildBulkComposerFollowUpLine({
+        repostScheduleCount: 0,
+        quoteScheduleCount: 0,
+        showBatchRepostConditions: false,
+        batchHasRepostConditionRules: false,
+      })
+    ).toBe("None");
+
+    expect(
+      buildBulkComposerFollowUpLine({
+        repostScheduleCount: 1,
+        quoteScheduleCount: 0,
+        showBatchRepostConditions: true,
+        batchHasRepostConditionRules: true,
+      })
+    ).toBe("Override active (Repost)");
+
+    expect(
+      buildBulkComposerFollowUpLine({
+        repostScheduleCount: 0,
+        quoteScheduleCount: 2,
+        showBatchRepostConditions: true,
+        batchHasRepostConditionRules: false,
+      })
+    ).toBe("Override active (Quote)");
+
+    expect(
+      buildBulkComposerFollowUpLine({
+        repostScheduleCount: 1,
+        quoteScheduleCount: 1,
+        showBatchRepostConditions: false,
+        batchHasRepostConditionRules: false,
+      })
+    ).toBe("Override active (Repost + Quote)");
+
+    expect(
+      buildBulkComposerFollowUpLine({
+        repostScheduleCount: 0,
+        quoteScheduleCount: 0,
+        showBatchRepostConditions: true,
+        batchHasRepostConditionRules: true,
+      })
+    ).toBe("Inherits batch follow-up");
   });
 });

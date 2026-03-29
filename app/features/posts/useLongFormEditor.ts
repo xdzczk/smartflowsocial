@@ -4,6 +4,7 @@
  */
 
 import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "@tiptap/markdown";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -57,6 +58,9 @@ export function useLongFormEditor({
           smartLists: true,
           smartypants: false,
         },
+      }),
+      Placeholder.configure({
+        placeholder: "Start writing your article…",
       }),
       Image,
     ],

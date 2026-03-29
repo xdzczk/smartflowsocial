@@ -200,7 +200,7 @@ export default function DraftBulkResume({
                 <th className="p-4 text-left">Media</th>
                 <th className="p-4 text-left">Content</th>
                 <th className="p-4 text-left">Queue</th>
-                <th className="p-4 text-left">Tags in note</th>
+                <th className="p-4 text-left">Hide tags</th>
                 <th className="p-4 text-left">Schedule</th>
               </tr>
             </thead>
@@ -283,17 +283,17 @@ export default function DraftBulkResume({
                     >
                       <Checkbox
                         id={`draft-bulk-tags-in-note-${post.id}`}
-                        checked={post.includeHashtagsInNoteBody}
+                        checked={post.includeHashtagsInNoteBody === false}
                         onCheckedChange={(c) =>
                           handlers.handleIncludeHashtagsInNoteBodyChange(
                             index,
-                            c === true
+                            c !== true
                           )
                         }
                         disabled={isSubmitting}
                       />
                       <span className="text-muted-foreground dark:text-foreground">
-                        Include in text
+                        Hide tags
                       </span>
                     </label>
                   </td>

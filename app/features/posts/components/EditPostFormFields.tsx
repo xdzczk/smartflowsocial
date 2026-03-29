@@ -178,12 +178,10 @@ export function EditPostFormFields({
       >
         <Checkbox
           id="edit-include-hashtags-in-note"
-          checked={includeHashtagsInNoteBody}
-          onCheckedChange={(c) => setIncludeHashtagsInNoteBody(c === true)}
+          checked={includeHashtagsInNoteBody === false}
+          onCheckedChange={(c) => setIncludeHashtagsInNoteBody(c !== true)}
         />
-        <span className="text-muted-foreground text-sm">
-          Include hashtags in note text
-        </span>
+        <span className="text-muted-foreground text-sm">Hide tags</span>
       </label>
 
       <div>

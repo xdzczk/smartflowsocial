@@ -1,0 +1,264 @@
+import { ChevronDown, Copy, Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { Button } from "~/components/ui/button";
+import type { PreparedEvent, RepostConditions } from "~/features/posts/types";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
+
+import type { BulkPost, QueueType } from "../BulkPostCard";
+
+import { BulkComposerPostCardBuildBody } from "./bulk-composer-post-card-build";
+import { computeBulkComposerReviewDisplay } from "./bulk-composer-post-card-display";
+import { BulkComposerPostCardReviewBody } from "./bulk-composer-post-card-review";
+import { buildBulkPostStatusLabel } from "./bulk-composer-post-card-utils";
+
+interface BulkComposerPostCardProps {
+  index: number;
+  post: BulkPost;
+  variant: "build" | "review";
+  queueTypes: QueueType[];
+  previewData: Map<
+    number,
+    Array<{ url: string; isVideo: boolean; file: File }>
+  >;
+  preparedEvent?: PreparedEvent;
+  validationErrors?: string[];
+  userTimezone: string;
+  userTimeFormat: "12h" | "24h";
+  showAlsoSchedule: boolean;
+  rowMediaUploadDisabled?: boolean;
+  onCaptionChange: (index: number, value: string) => void;
+  onDateChange: (index: number, value: string) => void;
+  onQueueTypeChange: (index: number, value: string) => void;
+  onIsRecyclableChange: (index: number, checked: boolean) => void;
+  onRemove: (index: number) => void;
+  onDuplicate?: (index: number) => void;
+  onIncludeHashtagsInNoteBodyChange: (index: number, checked: boolean) => void;
+  onMediaClick: (src: string) => void;
+  onRowFileSelect?: (index: number, file: File | null) => Promise<void>;
+  onRowFileRemove?: (index: number, mediaIndex: number) => void;
+  onRepostSchedulesChange?: (
+    index: number,
+    list: Array<{ value: number; unit: "hours" | "minutes" }>
+  ) => void;
+  onQuoteSchedulesChange?: (
+    index: number,
+    list: Array<{
+      value: number;
+      unit: "hours" | "minutes";
+      caption?: string;
+    }>
+  ) => void;
+  onEditFromReview?: (index: number) => void;
+  bulkRepostConditions?: RepostConditions | null;
+  showBatchRepostConditions?: boolean;
+}
+
+export function BulkComposerPostCard({
+  index,
+  post,
+  variant,
+  queueTypes,
+  previewData,
+  preparedEvent,
+  validationErrors,
+  userTimezone,
+  userTimeFormat,
+  showAlsoSchedule,
+  rowMediaUploadDisabled = false,
+  onCaptionChange,
+  onDateChange,
+  onQueueTypeChange,
+  onIsRecyclableChange,
+  onRemove,
+  onDuplicate,
+  onIncludeHashtagsInNoteBodyChange,
+  onMediaClick,
+  onRowFileSelect,
+  onRowFileRemove,
+  onRepostSchedulesChange,
+  onQuoteSchedulesChange,
+  onEditFromReview,
+  bulkRepostConditions = null,
+  showBatchRepostConditions = false,
+}: BulkComposerPostCardProps) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const { dateLocale } = useFormattedDate();
+  const status = buildBulkPostStatusLabel(post, validationErrors);
+
+  const reviewDisplay = useMemo(() => {
+    if (!preparedEvent) return null;
+    return computeBulkComposerReviewDisplay(
+      preparedEvent,
+      userTimezone,
+      userTimeFormat,
+      dateLocale
+    );
+  }, [preparedEvent, userTimezone, userTimeFormat, dateLocale]);
+
+  const previewList = previewData.get(index) ?? [];
+  const fileUrlsFromDraft = Array.isArray(post.fileUrl)
+    ? post.fileUrl
+    : post.fileUrl
+      ? [post.fileUrl]
+      : [];
+
+  const queueTrigger = (
+    <button
+      type="button"
+      disabled={variant === "review"}
+      className={cn(
+        "border-border text-foreground hover:bg-muted/80 inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium",
+        variant === "review" && "pointer-events-none opacity-90"
+      )}
+    >
+      <span className="truncate">
+        {post.queueType && post.queueType !== "unassigned"
+          ? post.queueType
+          : "Unassigned"}
+      </span>
+      {variant === "build" ? (
+        <ChevronDown className="size-3 shrink-0 opacity-60" aria-hidden />
+      ) : null}
+    </button>
+  );
+
+  return (
+    <article
+      data-bulk-post-index={index}
+      className={cn(
+        "border-border bg-card rounded-xl border shadow-sm",
+        validationErrors?.length && variant === "build"
+          ? "ring-1 ring-amber-500/30"
+          : ""
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-foreground text-sm font-semibold">
+            Post {index + 1}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs font-medium",
+              status.variant === "amber" &&
+                "bg-amber-500/15 text-amber-800 dark:text-amber-200",
+              status.variant === "muted" && "bg-muted text-muted-foreground",
+              status.variant === "default" && "bg-primary/10 text-primary"
+            )}
+          >
+            {variant === "review" && reviewDisplay ? "Locked" : status.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {variant === "build" ? (
+            <>
+              {onDuplicate ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground h-8 px-2"
+                  onClick={() => onDuplicate(index)}
+                  aria-label="Duplicate post"
+                >
+                  <Copy className="size-4" strokeWidth={INLINE_ICON_STROKE} />
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground h-8 px-2"
+                onClick={() => setAdvancedOpen((o) => !o)}
+                aria-expanded={advancedOpen}
+              >
+                Advanced
+                <ChevronDown
+                  className={cn(
+                    "ml-1 size-4 transition-transform",
+                    advancedOpen && "rotate-180"
+                  )}
+                />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive h-8 px-2"
+                onClick={() => onRemove(index)}
+              >
+                Remove
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => onEditFromReview?.(index)}
+            >
+              <Pencil
+                className="mr-1 size-3.5"
+                strokeWidth={INLINE_ICON_STROKE}
+              />
+              Edit
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-3 p-4">
+        {variant === "review" && reviewDisplay && preparedEvent ? (
+          <BulkComposerPostCardReviewBody
+            reviewDisplay={reviewDisplay}
+            preparedEvent={preparedEvent}
+            post={post}
+            onMediaClick={onMediaClick}
+            bulkRepostConditions={bulkRepostConditions}
+            showBatchRepostConditions={showBatchRepostConditions}
+          />
+        ) : null}
+        {variant === "build" ? (
+          <BulkComposerPostCardBuildBody
+            index={index}
+            post={post}
+            queueTypes={queueTypes}
+            previewList={previewList}
+            fileUrlsFromDraft={fileUrlsFromDraft}
+            userTimezone={userTimezone}
+            rowMediaUploadDisabled={rowMediaUploadDisabled}
+            advancedOpen={advancedOpen}
+            queueTrigger={queueTrigger}
+            showAlsoSchedule={showAlsoSchedule}
+            bulkRepostConditions={bulkRepostConditions}
+            showBatchRepostConditions={showBatchRepostConditions}
+            onCaptionChange={onCaptionChange}
+            onDateChange={onDateChange}
+            onQueueTypeChange={onQueueTypeChange}
+            onIsRecyclableChange={onIsRecyclableChange}
+            onIncludeHashtagsInNoteBodyChange={
+              onIncludeHashtagsInNoteBodyChange
+            }
+            onMediaClick={onMediaClick}
+            onRowFileSelect={onRowFileSelect}
+            onRowFileRemove={onRowFileRemove}
+            onRepostSchedulesChange={onRepostSchedulesChange}
+            onQuoteSchedulesChange={onQuoteSchedulesChange}
+          />
+        ) : null}
+
+        {validationErrors?.length ? (
+          <ul className="text-destructive space-y-0.5 text-xs" role="alert">
+            {validationErrors.map((err) => (
+              <li key={err}>{err}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </article>
+  );
+}

@@ -38,17 +38,15 @@ export function LongFormCoverImage({
             as="label"
             className="mb-0"
             htmlFor="cover-image-input"
+            tone="article"
           >
             {softLabel ? "Cover" : "Cover *"}
           </ComposerCanvasSectionLabel>
-          <p className="text-muted-foreground/80 mt-0.5 max-w-xl text-[11px] leading-snug">
-            ~1200×630 for link previews · PNG, JPG, or GIF up to 5MB
-          </p>
         </div>
         {uploadProvider ? (
-          <div className="text-muted-foreground/70 flex shrink-0 items-center gap-1 text-[10px]">
+          <div className="text-muted-foreground/45 flex shrink-0 items-center gap-1 text-[10px]">
             <span>via</span>
-            <span className="bg-muted/50 text-foreground/85 rounded px-1 py-px font-medium">
+            <span className="text-muted-foreground/70 rounded px-1 py-px font-medium">
               {uploadProvider.includes("BLOSSOM")
                 ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
                 : "☁️ S3"}
@@ -76,51 +74,53 @@ export function LongFormCoverImage({
       ) : null}
 
       {!image ? (
-        <div className="mt-1">
+        <div className="mt-2">
           {uploadFetcherState !== "idle" ? (
-            <div className="border-border/25 bg-muted/[0.04] flex min-h-[4.5rem] items-center justify-center gap-2 rounded-lg border px-4 py-3">
+            <div className="border-border/20 bg-muted/[0.03] flex min-h-[6.5rem] items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6">
               <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-b-transparent" />
-              <p className="text-muted-foreground text-sm">Uploading…</p>
+              <p className="text-muted-foreground/80 text-sm">Uploading…</p>
             </div>
           ) : (
-            <div
-              className={cn(
-                "border-border/25 bg-muted/[0.04] flex min-h-[4.75rem] flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
-              )}
-            >
-              <p className="text-muted-foreground max-w-[20rem] text-xs leading-snug">
-                Optional hero image for feeds and link cards.
+            <div className="border-border/20 bg-muted/[0.02] flex min-h-[6.75rem] flex-col justify-center gap-4 rounded-xl border border-dashed px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <p className="text-muted-foreground/85 max-w-sm text-[13px] leading-relaxed">
+                Optional hero for feeds and link cards.
               </p>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <Button
+              <div
+                className="border-border/35 bg-background/60 flex h-9 shrink-0 overflow-hidden rounded-md border shadow-none"
+                role="group"
+                aria-label="Cover image source"
+              >
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  className="border-border/50 h-8 text-xs"
                   disabled={coverFileUploadDisabled}
                   onClick={() =>
                     document.getElementById("cover-image-input")?.click()
                   }
+                  className={cn(
+                    "text-foreground/90 border-border/35 inline-flex items-center border-r px-3 text-xs font-medium transition-colors",
+                    "hover:bg-muted/40 disabled:pointer-events-none disabled:opacity-45"
+                  )}
                 >
                   <Upload
-                    className="mr-1 h-3.5 w-3.5"
+                    className="text-muted-foreground mr-1.5 h-3.5 w-3.5"
                     strokeWidth={INLINE_ICON_STROKE}
                     aria-hidden
                   />
                   Upload
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground h-8 text-xs"
                   onClick={onOpenAssetBrowser}
+                  className="text-muted-foreground hover:text-foreground/90 hover:bg-muted/30 px-3 text-xs font-medium transition-colors"
                 >
                   From assets
-                </Button>
+                </button>
               </div>
             </div>
           )}
+          <p className="text-muted-foreground/45 mt-2 max-w-xl text-[10px] leading-snug">
+            ~1200×630 for link previews · PNG, JPG, or GIF up to 5MB
+          </p>
           <input
             id="cover-image-input"
             type="file"

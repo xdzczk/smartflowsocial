@@ -219,13 +219,13 @@ export function DraftEditForm({
         >
           <Checkbox
             id="draft-include-hashtags-in-note"
-            checked={includeHashtagsInNoteBody}
+            checked={includeHashtagsInNoteBody === false}
             onCheckedChange={(c) =>
-              onIncludeHashtagsInNoteBodyChange(c === true)
+              onIncludeHashtagsInNoteBodyChange(c !== true)
             }
             disabled={isSubmitting}
           />
-          <span className="text-sm">Include preset hashtags in note text</span>
+          <span className="text-sm">Hide tags</span>
         </label>
 
         {/* Hidden inputs for hashtag preset data */}

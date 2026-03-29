@@ -99,49 +99,52 @@ function threadSegmentsValidationError(
   return null;
 }
 
-export async function handleThreadAction(
-  userId: string,
-  sessionPubkey: string,
-  formData: FormData,
-  sanitizedRelays: string[]
-): Promise<Response> {
-  const action = formData.get("_action");
-  const isSchedule = action === "schedule-thread";
-
-  const segments = parseSegments(formData);
-  const signedEvents = parseSignedEvents(formData);
-
-  const segmentError = threadSegmentsValidationError(segments, signedEvents);
-  if (segmentError) {
-    return json(segmentError, { status: 400 });
-  }
-
+function threadDelaySecondsFromForm(formData: FormData): number {
   const rawDelay = formData.get("threadDelaySeconds");
   const parsedDelay = parseInt(String(rawDelay ?? DEFAULT_DELAY_SECONDS), 10);
   const rawSeconds = Number.isNaN(parsedDelay)
     ? DEFAULT_DELAY_SECONDS
     : parsedDelay;
-  // Only allow minute-based spacing (round to nearest minute, clamp 1–120 min)
-  const delaySeconds = Math.max(
-    60,
-    Math.min(7200, Math.round(rawSeconds / 60) * 60)
-  );
+  return Math.max(60, Math.min(7200, Math.round(rawSeconds / 60) * 60));
+}
 
-  let baseTime: number;
-  if (isSchedule) {
-    const scheduledForStr = formData.get("scheduledFor");
-    const n = scheduledForStr ? parseInt(String(scheduledForStr), 10) : NaN;
-    if (Number.isNaN(n) || n < 0) {
-      return json(
-        { error: "Schedule time required for schedule-thread" },
-        { status: 400 }
-      );
-    }
-    baseTime = n;
-  } else {
-    baseTime = Math.floor(Date.now() / 1000);
+function threadScheduleBaseFromForm(
+  formData: FormData,
+  isSchedule: boolean
+):
+  | { ok: true; baseTime: number; nominalFirstUnix?: number }
+  | { ok: false; error: string } {
+  if (!isSchedule) {
+    return { ok: true, baseTime: Math.floor(Date.now() / 1000) };
   }
+  const scheduledForStr = formData.get("scheduledFor");
+  const n = scheduledForStr ? parseInt(String(scheduledForStr), 10) : NaN;
+  if (Number.isNaN(n) || n < 0) {
+    return { ok: false, error: "Schedule time required for schedule-thread" };
+  }
+  let nominalFirstUnix: number | undefined;
+  const nominalRaw = formData.get("nominalScheduledFor");
+  const nominalParsed =
+    nominalRaw != null && String(nominalRaw).trim() !== ""
+      ? parseInt(String(nominalRaw), 10)
+      : NaN;
+  if (Number.isFinite(nominalParsed) && nominalParsed >= 0) {
+    nominalFirstUnix = nominalParsed;
+  }
+  return { ok: true, baseTime: n, nominalFirstUnix };
+}
 
+async function resolveThreadQueueAndHashtagContext(
+  userId: string,
+  formData: FormData
+): Promise<{
+  queueType: string;
+  queueTypeId: string | null;
+  hashTagPresetId: string | null;
+  hashTagPresetTags: string;
+  hashTagPresetIdResolved: string | null;
+  resolvedQueueTypeId: string | null;
+}> {
   const queueType = String(formData.get("queueType") ?? "unassigned");
   const queueTypeIdRaw = formData.get("queueTypeId");
   const queueTypeId =
@@ -175,6 +178,48 @@ export async function handleThreadAction(
     queueTypeId,
     queueType
   );
+
+  return {
+    queueType,
+    queueTypeId,
+    hashTagPresetId,
+    hashTagPresetTags,
+    hashTagPresetIdResolved,
+    resolvedQueueTypeId,
+  };
+}
+
+export async function handleThreadAction(
+  userId: string,
+  sessionPubkey: string,
+  formData: FormData,
+  sanitizedRelays: string[]
+): Promise<Response> {
+  const action = formData.get("_action");
+  const isSchedule = action === "schedule-thread";
+
+  const segments = parseSegments(formData);
+  const signedEvents = parseSignedEvents(formData);
+
+  const segmentError = threadSegmentsValidationError(segments, signedEvents);
+  if (segmentError) {
+    return json(segmentError, { status: 400 });
+  }
+
+  const delaySeconds = threadDelaySecondsFromForm(formData);
+
+  const scheduleBase = threadScheduleBaseFromForm(formData, isSchedule);
+  if (!scheduleBase.ok) {
+    return json({ error: scheduleBase.error }, { status: 400 });
+  }
+  const { baseTime, nominalFirstUnix } = scheduleBase;
+
+  const {
+    queueType,
+    hashTagPresetTags,
+    hashTagPresetIdResolved,
+    resolvedQueueTypeId,
+  } = await resolveThreadQueueAndHashtagContext(userId, formData);
 
   const threadGroupId = `thread_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
@@ -230,6 +275,8 @@ export async function handleThreadAction(
       signedEvent,
       nostrEvent: signedEvent as unknown as NostrEvent,
       scheduledFor: scheduledForUnix,
+      nominalScheduledFor:
+        i === 0 && nominalFirstUnix != null ? nominalFirstUnix : undefined,
       hashTagPresetTags,
       showHashTagsinPosts: showHashTagsinPostsEffective,
       postKind: "THREAD",
