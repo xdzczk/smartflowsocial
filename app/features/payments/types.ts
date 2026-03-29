@@ -408,8 +408,14 @@ export interface CreateInvoiceParams {
   amountUsdOverride?: number;
   billingCadence?: "monthly" | "yearly";
   accessDurationMonths?: number;
-  billingPaymentMethod?: "nwc_auto_renew" | "lightning_one_time";
+  billingPaymentMethod?:
+    | "nwc_auto_renew"
+    | "lightning_one_time"
+    | "btc_btcpay_onchain";
 }
+
+/** Lightning bolt11 vs BTCPay hosted checkout URL */
+export type InvoiceCheckoutKind = "lightning" | "btcpay";
 
 /**
  * Invoice response from payment creation
@@ -423,6 +429,8 @@ export interface InvoiceResponse {
   paymentId: string;
   planName?: string;
   planId?: string;
+  /** BTCPay checkout link flow vs Lightning bolt11 */
+  checkoutKind?: InvoiceCheckoutKind;
 }
 
 /**

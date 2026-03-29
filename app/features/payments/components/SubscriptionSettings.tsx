@@ -128,6 +128,7 @@ function formatCadence(cadence: string | undefined) {
 function formatBillingPaymentMethod(method: string | undefined) {
   if (method === "nwc_auto_renew") return "Connected wallet (auto-renew)";
   if (method === "lightning_one_time") return "Manual Lightning invoice";
+  if (method === "btc_btcpay_onchain") return "Bitcoin on-chain (BTCPay)";
   return "Manual Lightning invoice";
 }
 

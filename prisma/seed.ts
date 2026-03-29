@@ -207,7 +207,10 @@ async function main() {
     planId: string;
     billingCadence: "monthly" | "yearly";
     accessDurationMonths: number;
-    paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+    paymentMethod:
+      | "nwc_auto_renew"
+      | "lightning_one_time"
+      | "btc_btcpay_onchain";
     priceUsd: number;
   }> = [];
 
@@ -291,6 +294,33 @@ async function main() {
       },
       update: {
         priceUsd: row.priceUsd,
+        isActive: true,
+      },
+    });
+  }
+
+  const founderPlan = plans.find((p) => p.id === "founder");
+  if (founderPlan) {
+    const founderUsd = Number(founderPlan.price);
+    await prisma.planPrice.upsert({
+      where: {
+        planId_billingCadence_accessDurationMonths_paymentMethod: {
+          planId: "founder",
+          billingCadence: "monthly",
+          accessDurationMonths: 1,
+          paymentMethod: "btc_btcpay_onchain",
+        },
+      },
+      create: {
+        planId: "founder",
+        billingCadence: "monthly",
+        accessDurationMonths: 1,
+        paymentMethod: "btc_btcpay_onchain",
+        priceUsd: founderUsd,
+        isActive: true,
+      },
+      update: {
+        priceUsd: founderUsd,
         isActive: true,
       },
     });

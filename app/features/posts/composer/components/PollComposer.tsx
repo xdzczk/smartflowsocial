@@ -9,7 +9,6 @@ import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
@@ -29,10 +28,14 @@ import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect"
 import { useComposerState } from "../hooks/useComposerState";
 
 import {
+  ComposerCanvasDivider,
+  ComposerCanvasSectionLabel,
   ComposerErrors,
+  ComposerLeftCanvas,
   ComposerQueueField,
   ComposerScheduleField,
   PollOutputPanel,
+  composerCanvasFieldStackClass,
   type ComposerPublishMode,
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
@@ -655,47 +658,137 @@ export function PollComposer({
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="border-border bg-card/30 min-w-0 flex-1 rounded-xl border p-6">
-        <div className="space-y-4">
-          <ComposerErrors
-            isSigning={isSigning}
-            signerLabel={null}
-            onCancelSigning={clearSigningState}
-            signingError={signingError}
-            onDismissSigningError={() => {
-              setSigningError(null);
-              setLastPublishFailed(false);
-            }}
-            onRetry={() => {
-              void submitPoll(pollAction);
-            }}
-            disabled={disabled}
-            signerReady={user != null}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="poll-question">Question</Label>
-            <textarea
-              id="poll-question"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+      <div className="mb-4 min-w-0 flex-1 lg:mb-0">
+        <ComposerLeftCanvas>
+          <div className="flex flex-col gap-4">
+            <ComposerErrors
+              isSigning={isSigning}
+              signerLabel={null}
+              onCancelSigning={clearSigningState}
+              signingError={signingError}
+              onDismissSigningError={() => {
+                setSigningError(null);
+                setLastPublishFailed(false);
+              }}
+              onRetry={() => {
+                void submitPoll(pollAction);
+              }}
               disabled={disabled}
-              rows={3}
-              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="What do you want to ask?"
+              signerReady={user != null}
             />
+            <div className={composerCanvasFieldStackClass}>
+              <ComposerCanvasSectionLabel
+                as="label"
+                className="mb-0"
+                htmlFor="poll-question"
+              >
+                Question
+              </ComposerCanvasSectionLabel>
+              <div className="focus-within:bg-muted/[0.07] focus-within:ring-border/25 rounded-md transition-colors focus-within:ring-1">
+                <textarea
+                  id="poll-question"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  disabled={disabled}
+                  rows={4}
+                  className="text-foreground placeholder:text-muted-foreground/65 min-h-[7.5rem] w-full resize-y border-0 bg-transparent px-0.5 pt-0.5 pb-1 text-base leading-relaxed shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="What do you want to ask?"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>
-                Options ({options.length}/{MAX_OPTIONS})
-              </Label>
+          <ComposerCanvasDivider />
+
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-0.5">
+              <ComposerCanvasSectionLabel as="span" className="mb-0">
+                Options
+              </ComposerCanvasSectionLabel>
+              <p className="text-muted-foreground/80 text-[10px] leading-snug">
+                {options.length} of {MAX_OPTIONS} · paste multiple lines to fill
+                options
+              </p>
+            </div>
+            <div className="border-border/35 bg-muted/[0.06] border-l-primary/30 overflow-hidden rounded-lg border border-l-2">
+              <ul className="divide-border/25 divide-y">
+                {options.map((opt, i) => (
+                  <li
+                    key={optionRowIds[i] ?? `opt-fallback-${i}`}
+                    className="flex items-center gap-2 py-2 pr-1 pl-2 sm:pl-2.5"
+                  >
+                    <span
+                      className="text-muted-foreground/45 w-5 shrink-0 text-center text-[11px] tabular-nums"
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
+                    <Input
+                      value={opt}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setOptions((prev) =>
+                          prev.map((p, j) => (j === i ? v : p))
+                        );
+                      }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData.getData("text");
+                        if (!pasted.includes("\n")) return;
+                        e.preventDefault();
+                        const rows = pasted
+                          .split("\n")
+                          .map((r) => r.trim())
+                          .filter(Boolean)
+                          .slice(0, MAX_OPTIONS);
+                        if (rows.length < 2) return;
+                        setOptions(rows);
+                        setOptionRowIds(rows.map(() => newPollOptionRowId()));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (options.length >= MAX_OPTIONS) return;
+                        if (i !== options.length - 1) return;
+                        setOptions((prev) => [...prev, ""]);
+                        setOptionRowIds((ids) => [
+                          ...ids,
+                          newPollOptionRowId(),
+                        ]);
+                      }}
+                      disabled={disabled}
+                      placeholder={`Option ${i + 1}`}
+                      className="border-border/40 bg-background/70 h-8 flex-1 border text-sm shadow-none"
+                      aria-label={`Poll option ${i + 1}`}
+                    />
+                    {options.length > MIN_OPTIONS ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={disabled}
+                        aria-label={`Remove option ${i + 1}`}
+                        className="text-muted-foreground h-8 w-8 shrink-0 opacity-70 hover:opacity-100"
+                        onClick={() => {
+                          setOptions((prev) => prev.filter((_, j) => j !== i));
+                          setOptionRowIds((prev) =>
+                            prev.filter((_, j) => j !== i)
+                          );
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <span className="w-8 shrink-0" aria-hidden />
+                    )}
+                  </li>
+                ))}
+              </ul>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 disabled={disabled || options.length >= MAX_OPTIONS}
+                className="text-muted-foreground hover:text-foreground border-border/30 h-9 w-full rounded-none rounded-b-lg border-t border-dashed text-xs font-normal"
                 onClick={() => {
                   setOptions((o) => [...o, ""]);
                   setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
@@ -705,70 +798,18 @@ export function PollComposer({
                 Add option
               </Button>
             </div>
-            <ul className="space-y-2">
-              {options.map((opt, i) => (
-                <li
-                  key={optionRowIds[i] ?? `opt-fallback-${i}`}
-                  className="flex gap-2"
-                >
-                  <Input
-                    value={opt}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setOptions((prev) =>
-                        prev.map((p, j) => (j === i ? v : p))
-                      );
-                    }}
-                    onPaste={(e) => {
-                      const pasted = e.clipboardData.getData("text");
-                      if (!pasted.includes("\n")) return;
-                      e.preventDefault();
-                      const rows = pasted
-                        .split("\n")
-                        .map((r) => r.trim())
-                        .filter(Boolean)
-                        .slice(0, MAX_OPTIONS);
-                      if (rows.length < 2) return;
-                      setOptions(rows);
-                      setOptionRowIds(rows.map(() => newPollOptionRowId()));
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      e.preventDefault();
-                      if (options.length >= MAX_OPTIONS) return;
-                      if (i !== options.length - 1) return;
-                      setOptions((prev) => [...prev, ""]);
-                      setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
-                    }}
-                    disabled={disabled}
-                    placeholder={`Option ${i + 1}`}
-                    className="flex-1"
-                  />
-                  {options.length > MIN_OPTIONS ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={disabled}
-                      aria-label={`Remove option ${i + 1}`}
-                      onClick={() => {
-                        setOptions((prev) => prev.filter((_, j) => j !== i));
-                        setOptionRowIds((prev) =>
-                          prev.filter((_, j) => j !== i)
-                        );
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="poll-type">Voting mode</Label>
+          <ComposerCanvasDivider />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className={composerCanvasFieldStackClass}>
+              <label
+                htmlFor="poll-type"
+                className="text-muted-foreground text-xs font-medium"
+              >
+                Voting mode
+              </label>
               <select
                 id="poll-type"
                 value={pollType}
@@ -780,37 +821,46 @@ export function PollComposer({
                   )
                 }
                 disabled={disabled}
-                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+                className="border-border/50 bg-muted/10 text-muted-foreground h-9 w-full rounded-md border px-2.5 text-xs shadow-sm"
               >
                 <option value="singlechoice">Single choice</option>
                 <option value="multiplechoice">Multiple choice</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="poll-ends">Poll end</Label>
+            <div className={composerCanvasFieldStackClass}>
+              <label
+                htmlFor="poll-ends"
+                className="text-muted-foreground text-xs font-medium"
+              >
+                Poll end
+              </label>
               <Input
                 id="poll-ends"
                 type="datetime-local"
                 value={endsAtLocal}
                 onChange={(e) => setEndsAtLocal(e.target.value)}
                 disabled={disabled}
+                className="border-border/50 bg-muted/10 h-9 text-xs shadow-sm"
               />
             </div>
           </div>
 
-          <PollOutputPanel
-            question={question}
-            options={options}
-            optionRowIds={optionRowIds}
-            tagsLine={selectedHashtags}
-            pollTypeLabel={
-              pollType === "multiplechoice"
-                ? "Multiple choice"
-                : "Single choice"
-            }
-          />
+          <ComposerCanvasDivider />
 
-          <div className="mt-4">
+          <div className="flex flex-col gap-4 sm:gap-5">
+            <PollOutputPanel
+              variant="embedded"
+              question={question}
+              options={options}
+              optionRowIds={optionRowIds}
+              tagsLine={selectedHashtags}
+              pollTypeLabel={
+                pollType === "multiplechoice"
+                  ? "Multiple choice"
+                  : "Single choice"
+              }
+            />
+            <ComposerCanvasDivider />
             <TagsChipRow
               tags={selectedHashtags}
               onTagsChange={(t) => {
@@ -833,7 +883,7 @@ export function PollComposer({
               onIncludeHashtagsInNoteBodyChange={setIncludeHashtagsInNoteBody}
             />
           </div>
-        </div>
+        </ComposerLeftCanvas>
       </div>
 
       <PublishingSummaryRail

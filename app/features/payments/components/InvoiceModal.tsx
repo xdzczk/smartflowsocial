@@ -1,8 +1,11 @@
 /**
- * Invoice modal component for payment
+ * Invoice modal for Lightning bolt11 or BTCPay checkout URL
  */
 
 import { Loader2 } from "lucide-react";
+
+import type { InvoiceCheckoutKind } from "~/features/payments/types";
+
 interface InvoiceModalProps {
   isOpen: boolean;
   invoiceData: {
@@ -15,6 +18,7 @@ interface InvoiceModalProps {
     contextLabel: string;
     paymentId?: string;
   };
+  checkoutKind?: InvoiceCheckoutKind;
   /** Modal title; default Complete payment */
   modalTitle?: string;
   timeRemaining: number;
@@ -27,6 +31,7 @@ interface InvoiceModalProps {
 export function InvoiceModal({
   isOpen,
   invoiceData,
+  checkoutKind = "lightning",
   modalTitle = "Complete payment",
   timeRemaining,
   isPolling,
@@ -36,12 +41,14 @@ export function InvoiceModal({
 }: InvoiceModalProps) {
   if (!isOpen) return null;
 
+  const isBtcpay = checkoutKind === "btcpay";
+
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="dark:bg-card mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4">
           <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
-            {modalTitle}
+            {isBtcpay ? "Pay with Bitcoin (on-chain)" : modalTitle}
           </h3>
           <div className="bg-muted dark:bg-muted/30 rounded-lg p-3">
             <p className="text-foreground dark:text-foreground text-sm font-medium">
@@ -57,14 +64,23 @@ export function InvoiceModal({
               <span className="font-medium">${invoiceData.amountUsd} USD</span>
             </div>
           ) : null}
-          <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
-            <span>Lightning amount:</span>
-            <span className="font-medium">
-              {invoiceData.amount.toLocaleString()} sats
-            </span>
-          </div>
+          {!isBtcpay ? (
+            <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
+              <span>Lightning amount:</span>
+              <span className="font-medium">
+                {invoiceData.amount.toLocaleString()} sats
+              </span>
+            </div>
+          ) : (
+            <div className="dark:text-muted-foreground text-foreground mb-2 flex justify-between text-sm">
+              <span>Estimated:</span>
+              <span className="font-medium">
+                ~{invoiceData.amount.toLocaleString()} sats (reference)
+              </span>
+            </div>
+          )}
           <div className="text-foreground dark:text-foreground mb-4 flex justify-between text-sm">
-            <span>Expires:</span>
+            <span>{isBtcpay ? "Checkout valid until:" : "Expires:"}</span>
             <span className="font-medium">
               {new Date(invoiceData.expiresAt).toLocaleString()}
             </span>
@@ -73,20 +89,21 @@ export function InvoiceModal({
 
         <div className="mb-4">
           <label
-            htmlFor="lightning-invoice"
+            htmlFor="payment-target"
             className="dark:text-foreground text-muted-foreground mb-2 block text-sm font-medium"
           >
-            Lightning Invoice:
+            {isBtcpay ? "BTCPay checkout link" : "Lightning invoice"}
           </label>
           <div className="flex">
             <input
-              id="lightning-invoice"
+              id="payment-target"
               type="text"
               value={invoiceData.invoice}
               readOnly
               className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground focus:border-primary focus:ring-ring min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             />
             <button
+              type="button"
               onClick={() => onCopy(invoiceData.invoice)}
               className="border-border dark:border-border bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             >
@@ -95,15 +112,33 @@ export function InvoiceModal({
           </div>
         </div>
 
+        {isBtcpay ? (
+          <div className="mb-4">
+            <a
+              href={invoiceData.invoice}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring block w-full rounded-lg px-4 py-3 text-center text-sm font-medium focus:ring-1 focus:outline-none"
+            >
+              Open BTCPay checkout
+            </a>
+            <p className="text-muted-foreground mt-2 text-center text-xs">
+              After paying on-chain, return here — we detect settlement
+              automatically (or use Check payment).
+            </p>
+          </div>
+        ) : null}
+
         <div className="mb-4 text-center">
           <p className="text-foreground dark:text-foreground mb-2 text-sm">
-            Scan QR code or copy the invoice to your Lightning wallet
+            {isBtcpay
+              ? "Scan the QR or open the checkout in your browser"
+              : "Scan QR code or copy the invoice to your Lightning wallet"}
           </p>
-          {/* QR Code */}
           <div className="mb-4 flex justify-center">
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(invoiceData.invoice)}`}
-              alt="Lightning Invoice QR Code"
+              alt={isBtcpay ? "Checkout QR code" : "Lightning invoice QR code"}
               className="border-border dark:border-border rounded border"
             />
           </div>
@@ -122,7 +157,8 @@ export function InvoiceModal({
           <div className="dark:text-muted-foreground text-foreground mb-4 text-xs">
             {timeRemaining > 0 ? (
               <>
-                Payment expires in {Math.floor(timeRemaining / (1000 * 60))}:
+                {isBtcpay ? "Checkout " : "Payment "}expires in{" "}
+                {Math.floor(timeRemaining / (1000 * 60))}:
                 {String(
                   Math.floor((timeRemaining % (1000 * 60)) / 1000)
                 ).padStart(2, "0")}

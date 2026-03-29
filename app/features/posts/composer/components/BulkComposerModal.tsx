@@ -36,6 +36,10 @@ import {
 } from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
+import {
+  BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+  useBlossomUploadGate,
+} from "~/features/upload";
 import type { User } from "~/features/user";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { UserData } from "~/lib/validation/user-data";
@@ -116,6 +120,7 @@ interface BulkComposerFormTableSectionProps {
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
+  rowMediaUploadDisabled?: boolean;
 }
 
 function BulkComposerFormTableSection({
@@ -138,6 +143,7 @@ function BulkComposerFormTableSection({
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
+  rowMediaUploadDisabled = false,
 }: BulkComposerFormTableSectionProps) {
   return (
     <>
@@ -169,6 +175,7 @@ function BulkComposerFormTableSection({
         onQuoteSchedulesChange={undefined}
         showAlsoSchedule={showActions}
         userTimezone={userTimezone}
+        rowMediaUploadDisabled={rowMediaUploadDisabled}
       />
       {!validationResult.isValid ? (
         <div
@@ -271,6 +278,8 @@ interface BulkComposerModalContentProps {
   setBulkScheduleRandomWindowMinutes: React.Dispatch<
     React.SetStateAction<0 | 5 | 10 | 15>
   >;
+  /** Blossom media uploads blocked without NIP-07 / NIP-46 signer. */
+  rowMediaUploadDisabled?: boolean;
 }
 
 function BulkComposerModalContent({
@@ -315,6 +324,7 @@ function BulkComposerModalContent({
   setRepostConditions,
   bulkScheduleRandomWindowMinutes,
   setBulkScheduleRandomWindowMinutes,
+  rowMediaUploadDisabled = false,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
@@ -460,6 +470,7 @@ function BulkComposerModalContent({
               handleMediaClick={handleMediaClick}
               handleRowFileSelect={handleRowFileSelect}
               handleRowFileRemove={handleRowFileRemove}
+              rowMediaUploadDisabled={rowMediaUploadDisabled}
             />
           ) : null}
         </form>
@@ -541,6 +552,9 @@ export function BulkComposerModal({
     scheduledAtUtc?: string | null;
   } | null>(null);
   const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
+
+  const { mediaUploadBlocked: blossomMediaUploadBlocked } =
+    useBlossomUploadGate();
 
   const contextFetcher = useFetcher<{
     tags?: string[];
@@ -958,6 +972,14 @@ export function BulkComposerModal({
   const handleRowFileSelect = useCallback(
     async (index: number, file: File | null) => {
       if (!file) return;
+      if (blossomMediaUploadBlocked) {
+        setToast({
+          type: "error",
+          message: BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+        });
+        setTimeout(() => setToast(null), 5000);
+        return;
+      }
       const { isVideoFile } = await import("~/utils/media-helpers");
       const MAX_IMAGE = 10 * 1024 * 1024;
       const MAX_VIDEO = 100 * 1024 * 1024;
@@ -981,7 +1003,7 @@ export function BulkComposerModal({
         )
       );
     },
-    []
+    [blossomMediaUploadBlocked]
   );
 
   const handleRowFileRemove = useCallback(
@@ -1091,6 +1113,7 @@ export function BulkComposerModal({
             setBulkScheduleRandomWindowMinutes={
               setBulkScheduleRandomWindowMinutes
             }
+            rowMediaUploadDisabled={blossomMediaUploadBlocked}
           />
         </div>
 

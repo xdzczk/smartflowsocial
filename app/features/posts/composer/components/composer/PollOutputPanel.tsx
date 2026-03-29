@@ -10,6 +10,7 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 const SNIPPET_LEN = 160;
 
@@ -20,6 +21,11 @@ export interface PollOutputPanelProps {
   optionRowIds: string[];
   tagsLine: string;
   pollTypeLabel: string;
+  /**
+   * `embedded` — inside ComposerLeftCanvas after ComposerCanvasDivider (no top border).
+   * `standalone` — legacy top border when used alone.
+   */
+  variant?: "embedded" | "standalone";
 }
 
 export function PollOutputPanel({
@@ -28,6 +34,7 @@ export function PollOutputPanel({
   optionRowIds,
   tagsLine,
   pollTypeLabel,
+  variant = "embedded",
 }: PollOutputPanelProps) {
   const [open, setOpen] = useState(false);
   const q = question.trim();
@@ -79,17 +86,19 @@ export function PollOutputPanel({
     });
   };
 
+  const standalone = variant === "standalone";
+
   return (
-    <div className="border-border/60 border-t pt-2">
+    <div className={cn(standalone && "border-border/40 border-t pt-1.5")}>
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
+        className="text-muted-foreground/90 hover:text-muted-foreground hover:bg-muted/35 h-7 min-h-7 w-full justify-between gap-2 px-1.5 py-0 text-[11px] font-normal"
         onClick={toggleOpen}
         aria-expanded={open}
       >
-        Preview
+        <span className="truncate">Preview</span>
         {open ? (
           <ChevronUp
             className={INLINE_ICON_SIZE_CLASS}
@@ -103,7 +112,7 @@ export function PollOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="border-border/50 space-y-3 border-t py-3 text-sm">
+        <div className="border-border/30 space-y-2.5 border-t pt-2 text-sm">
           <div>
             <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
               Question

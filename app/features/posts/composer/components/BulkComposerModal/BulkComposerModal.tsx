@@ -119,6 +119,7 @@ export function BulkComposerModal({
             setBulkScheduleRandomWindowMinutes={
               restState.setBulkScheduleRandomWindowMinutes
             }
+            rowMediaUploadDisabled={restState.blossomMediaUploadBlocked}
           />
         </div>
 

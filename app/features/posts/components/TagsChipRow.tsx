@@ -20,6 +20,7 @@ import {
   RailChip,
   RailChipGroup,
 } from "~/features/posts/components/publishing-rail";
+import { ComposerCanvasSectionLabel } from "~/features/posts/composer/components/composer/composer-canvas-primitives";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 const RECENT_TAGS_STORAGE_KEY = "sfs-composer-recent-tags";
@@ -170,8 +171,10 @@ export function TagsChipRow({
   };
 
   return (
-    <div className="space-y-2">
-      <span className="text-foreground text-sm font-semibold">Tags</span>
+    <div className="flex flex-col gap-3">
+      <ComposerCanvasSectionLabel as="span" className="mb-0">
+        Tags
+      </ComposerCanvasSectionLabel>
 
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -182,7 +185,7 @@ export function TagsChipRow({
           }}
           disabled={disabled || presets.length === 0}
         >
-          <SelectTrigger className="h-9 w-auto min-w-[7.5rem] shrink-0">
+          <SelectTrigger className="border-border/50 bg-muted/10 h-8 w-auto min-w-[7.5rem] shrink-0 text-xs shadow-none">
             <SelectValue placeholder="Preset" />
           </SelectTrigger>
           <SelectContent>
@@ -206,7 +209,7 @@ export function TagsChipRow({
           onKeyDown={onManualKeyDown}
           disabled={disabled}
           placeholder="Add tag — Enter or comma"
-          className="min-w-0 flex-1 basis-[12rem]"
+          className="border-border/50 bg-muted/10 h-8 min-w-0 flex-1 basis-[12rem] text-xs shadow-sm"
           aria-label="Add hashtag"
         />
       </div>
@@ -240,17 +243,16 @@ export function TagsChipRow({
       ) : null}
 
       {onIncludeHashtagsInNoteBodyChange ? (
-        <div className="border-border/60 flex items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+        <div className="flex items-start justify-between gap-3 pt-0.5">
           <div className="min-w-0 space-y-0.5">
             <Label
               htmlFor="tags-include-in-note-body"
-              className="text-foreground text-sm leading-none font-medium"
+              className="text-muted-foreground text-xs leading-snug font-medium"
             >
               Include tags in note text
             </Label>
-            <p className="text-muted-foreground text-[11px] leading-snug">
-              On by default for new posts. Turn off to keep tags as topic
-              metadata only.
+            <p className="text-muted-foreground/75 text-[10px] leading-snug">
+              On by default. Turn off to keep tags as topic metadata only.
             </p>
           </div>
           <Switch
@@ -260,7 +262,7 @@ export function TagsChipRow({
               onIncludeHashtagsInNoteBodyChange(v);
             }}
             disabled={disabled}
-            className="shrink-0"
+            className="mt-0.5 shrink-0"
           />
         </div>
       ) : null}

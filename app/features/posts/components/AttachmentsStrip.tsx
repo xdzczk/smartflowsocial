@@ -26,6 +26,14 @@ interface AttachmentsStripProps {
    * `boxed` — legacy bordered wrapper.
    */
   variant?: "inline" | "boxed";
+  /**
+   * When empty + inline: full-width dashed well (composer main canvas) vs compact add tile only.
+   */
+  emptyAffordance?: "default" | "composerWell";
+  /** Shown beside add control when `emptyAffordance="composerWell"`. */
+  emptyWellHint?: string;
+  /** Smaller tiles and add control (e.g. per thread segment). */
+  density?: "default" | "compact";
   className?: string;
 }
 
@@ -37,8 +45,57 @@ export function AttachmentsStrip({
   failedStatusTitle,
   onReorder,
   variant = "inline",
+  emptyAffordance = "default",
+  emptyWellHint = "Images and videos",
+  density = "default",
   className,
 }: AttachmentsStripProps) {
+  const compact = density === "compact";
+  const tileClass = compact
+    ? "h-12 w-12 rounded border-border/40"
+    : "h-16 w-16 rounded border-border";
+  const addBtnClass = compact ? "h-12 w-12 shrink-0" : "h-16 w-16 shrink-0";
+  const plusClass = compact ? "h-4 w-4" : "h-6 w-6";
+
+  const useComposerWell =
+    variant === "inline" &&
+    emptyAffordance === "composerWell" &&
+    attachments.length === 0;
+
+  if (useComposerWell) {
+    return (
+      <div
+        className={cn(
+          "border-border/35 bg-muted/[0.06] flex min-h-[3.25rem] w-full items-center gap-3 rounded-lg border border-dashed px-3 py-2.5",
+          compact && "min-h-[2.75rem] gap-2 py-2",
+          className
+        )}
+      >
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onAdd}
+          disabled={disabled}
+          className={cn(
+            "border-border/50 text-muted-foreground hover:text-foreground shrink-0 p-0",
+            compact ? "h-9 w-9" : "h-11 w-11"
+          )}
+          aria-label="Add attachment"
+        >
+          <Plus
+            className={cn(compact ? "h-4 w-4" : "h-5 w-5")}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+        </Button>
+        <span className="text-muted-foreground text-xs leading-snug">
+          {emptyWellHint}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -51,7 +108,10 @@ export function AttachmentsStrip({
       {attachments.map((att, index) => (
         <div
           key={att.localId}
-          className="border-border bg-muted/50 relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded border"
+          className={cn(
+            "bg-muted/50 relative flex shrink-0 items-center justify-center overflow-hidden border",
+            tileClass
+          )}
         >
           {att.status === "done" && att.url ? (
             <>
@@ -94,13 +154,13 @@ export function AttachmentsStrip({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-5 w-5"
+                className={compact ? "h-4 w-4" : "h-5 w-5"}
                 aria-label="Move earlier"
                 disabled={disabled || index === 0}
                 onClick={() => onReorder(index, index - 1)}
               >
                 <ChevronUp
-                  className="h-3 w-3"
+                  className={compact ? "h-2.5 w-2.5" : "h-3 w-3"}
                   strokeWidth={INLINE_ICON_STROKE}
                 />
               </Button>
@@ -108,13 +168,13 @@ export function AttachmentsStrip({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-5 w-5"
+                className={compact ? "h-4 w-4" : "h-5 w-5"}
                 aria-label="Move later"
                 disabled={disabled || index === attachments.length - 1}
                 onClick={() => onReorder(index, index + 1)}
               >
                 <ChevronDown
-                  className="h-3 w-3"
+                  className={compact ? "h-2.5 w-2.5" : "h-3 w-3"}
                   strokeWidth={INLINE_ICON_STROKE}
                 />
               </Button>
@@ -124,14 +184,17 @@ export function AttachmentsStrip({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0 h-6 w-6 rounded-full opacity-90"
+            className={cn(
+              "absolute top-0 right-0 rounded-full opacity-90",
+              compact ? "h-5 w-5" : "h-6 w-6"
+            )}
             aria-label="Remove attachment"
             onClick={() => onRemove(att.localId)}
             disabled={disabled}
           >
             <span className="sr-only">Remove</span>
             <X
-              className="h-3.5 w-3.5"
+              className={compact ? "h-3 w-3" : "h-3.5 w-3.5"}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
@@ -144,11 +207,14 @@ export function AttachmentsStrip({
         size="sm"
         onClick={onAdd}
         disabled={disabled}
-        className="h-16 w-16 shrink-0"
+        className={cn(
+          addBtnClass,
+          compact && "border-border/40 text-muted-foreground"
+        )}
         aria-label="Add attachment"
       >
         <Plus
-          className="h-6 w-6"
+          className={plusClass}
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />

@@ -47,6 +47,7 @@ function parseActionData(typedActionData: Record<string, unknown> | null): {
   expiresAt?: string;
   planName?: string;
   planId?: string;
+  checkoutKind?: "lightning" | "btcpay";
   error?: string;
 } | null {
   if (!typedActionData) {
@@ -102,6 +103,12 @@ function parseActionData(typedActionData: Record<string, unknown> | null): {
       typeof typedActionData["planId"] === "string"
         ? typedActionData["planId"]
         : undefined,
+    checkoutKind:
+      "checkoutKind" in typedActionData &&
+      (typedActionData["checkoutKind"] === "lightning" ||
+        typedActionData["checkoutKind"] === "btcpay")
+        ? typedActionData["checkoutKind"]
+        : undefined,
     error:
       "error" in typedActionData && typeof typedActionData["error"] === "string"
         ? typedActionData["error"]
@@ -117,6 +124,7 @@ export function PlansPage(): ReactNode {
     nwc,
     subscriptionCheckoutV2Enabled,
     manualDurationsByCadence,
+    btcpayFounderEnabled,
   } = useLoaderData<typeof plansLoader>();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
   const actionData = useActionData<typeof plansAction>();
@@ -262,6 +270,7 @@ export function PlansPage(): ReactNode {
       {invoiceData ? (
         <InvoiceModal
           isOpen={showInvoice}
+          checkoutKind={invoiceData.checkoutKind}
           invoiceData={{
             invoice: invoiceData.invoice,
             amount: invoiceData.amount,
@@ -341,6 +350,18 @@ export function PlansPage(): ReactNode {
           handleCloseCheckout();
         }}
         onClose={handleCloseCheckout}
+        btcpayFounderEnabled={btcpayFounderEnabled}
+        onSelectBtcOnchain={() => {
+          if (!selectedPlanObj || selectedPlanObj.id !== "founder") return;
+          const formData = new FormData();
+          formData.set("intent", "select_plan");
+          formData.set("planId", selectedPlanObj.id);
+          formData.set("paymentMode", "btc_onchain");
+          formData.set("billingCadence", "monthly");
+          formData.set("accessDurationMonths", "1");
+          submit(formData, { method: "post" });
+          handleCloseCheckout();
+        }}
       />
 
       {/* Error Message */}

@@ -1,7 +1,10 @@
 import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { InvoiceCheckoutKind } from "~/features/payments/types";
+
 import { usePaymentPolling } from "./usePaymentPolling";
+
 interface InvoiceData {
   invoice: string;
   paymentHash: string;
@@ -12,6 +15,7 @@ interface InvoiceData {
   planName: string;
   planId: string;
   contextLabel: string;
+  checkoutKind: InvoiceCheckoutKind;
 }
 
 interface ActionData {
@@ -25,6 +29,7 @@ interface ActionData {
   expiresAt?: string;
   planName?: string;
   planId?: string;
+  checkoutKind?: InvoiceCheckoutKind;
   error?: string;
 }
 
@@ -110,6 +115,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
             planName: actionData.planName,
             planId: actionData.planId,
             contextLabel: `Selected plan: ${actionData.planName}`,
+            checkoutKind: actionData.checkoutKind ?? "lightning",
           };
           // Defer to avoid cascading renders
           setTimeout(() => {

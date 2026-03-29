@@ -85,6 +85,8 @@ export interface BulkComposerModalContentProps {
   setBulkScheduleRandomWindowMinutes: React.Dispatch<
     React.SetStateAction<0 | 5 | 10 | 15>
   >;
+  /** Blossom media uploads blocked without NIP-07 / NIP-46 signer. */
+  rowMediaUploadDisabled?: boolean;
 }
 
 export function BulkComposerModalContent({
@@ -129,6 +131,7 @@ export function BulkComposerModalContent({
   setRepostConditions,
   bulkScheduleRandomWindowMinutes,
   setBulkScheduleRandomWindowMinutes,
+  rowMediaUploadDisabled = false,
 }: BulkComposerModalContentProps) {
   const showActions = !isRepostOrQuote(mode);
   const userTimezone = user?.timezone ?? "UTC";
@@ -274,6 +277,7 @@ export function BulkComposerModalContent({
               handleMediaClick={handleMediaClick}
               handleRowFileSelect={handleRowFileSelect}
               handleRowFileRemove={handleRowFileRemove}
+              rowMediaUploadDisabled={rowMediaUploadDisabled}
             />
           ) : null}
         </form>

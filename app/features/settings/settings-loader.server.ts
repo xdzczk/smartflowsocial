@@ -21,6 +21,7 @@ import type {
   ScheduleConfig,
 } from "~/features/posts/types";
 import { getReferralSettingsData } from "~/features/referral/referral-settings.server";
+import type { Nip65ProfileRelayEntry } from "~/features/relays/nip65-relay-entry";
 import { BLASTR_KNOWN_SYSTEM_RELAYS } from "~/features/relays/relay-constants";
 import type { ManagedRelay } from "~/features/relays/relay-resolution.server";
 import {
@@ -86,6 +87,8 @@ export interface SettingsLoaderData {
   publishRelaySource: "app" | "nip65_profile";
   /** Write relays from latest kind 10002 for this npub (may be empty). */
   profileRelays: string[];
+  /** Full NIP-65 `r` tag rows from kind 10002 (order preserved). */
+  profileRelayEntries: Nip65ProfileRelayEntry[];
   managedRelays: ManagedRelay[];
   relayAcks: Record<
     string,
@@ -192,6 +195,7 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
   relays: [],
   publishRelaySource: "app",
   profileRelays: [],
+  profileRelayEntries: [],
   managedRelays: [],
   relayAcks: {},
   giveawayBlacklist: [],
@@ -355,6 +359,7 @@ export async function loadSettingsData(
   const relays = relaySlice.appRelays;
   const publishRelaySource = relaySlice.publishRelaySource;
   const profileRelays = relaySlice.profileRelays;
+  const profileRelayEntries = relaySlice.profileRelayEntries;
   const managedRelays = effectiveWriteRelays.managed;
   const uploadProvider = uploadProviderSettings.provider;
   const customBlossomUrl = uploadProviderSettings.customBlossomUrl;
@@ -365,6 +370,7 @@ export async function loadSettingsData(
       ...effectiveWriteRelays.direct,
       ...relays,
       ...profileRelays,
+      ...profileRelayEntries.map((e) => e.url),
       ...managedRelays.map((m) => m.relayUrl),
     ])
   );
@@ -420,6 +426,7 @@ export async function loadSettingsData(
     relays,
     publishRelaySource,
     profileRelays,
+    profileRelayEntries,
     managedRelays,
     relayAcks,
     giveawayBlacklist,

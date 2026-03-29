@@ -38,6 +38,7 @@ export interface BulkComposerFormTableSectionProps {
   handleMediaClick: (mediaSrc: string) => void;
   handleRowFileSelect: (index: number, file: File | null) => Promise<void>;
   handleRowFileRemove: (index: number, mediaIndex: number) => void;
+  rowMediaUploadDisabled?: boolean;
 }
 
 export function BulkComposerFormTableSection({
@@ -60,6 +61,7 @@ export function BulkComposerFormTableSection({
   handleMediaClick,
   handleRowFileSelect,
   handleRowFileRemove,
+  rowMediaUploadDisabled = false,
 }: BulkComposerFormTableSectionProps) {
   return (
     <>
@@ -91,6 +93,7 @@ export function BulkComposerFormTableSection({
         onQuoteSchedulesChange={undefined}
         showAlsoSchedule={showActions}
         userTimezone={userTimezone}
+        rowMediaUploadDisabled={rowMediaUploadDisabled}
       />
       {!validationResult.isValid ? (
         <div

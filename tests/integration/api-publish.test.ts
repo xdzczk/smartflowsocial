@@ -24,6 +24,10 @@ vi.mock("~/features/relays/publish-relay-acks.server", () => ({
   persistPublishRelayAcks: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/user-cache.server", () => ({
+  invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("~/lib/feature-flags.server", async (importOriginal) => {
   const actualUnknown: unknown = await importOriginal();
   if (
@@ -55,10 +59,12 @@ import {
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireSession } from "~/features/auth";
+import { KIND_RELAY_LIST_NIP65 } from "~/features/nostr/nostr-event-kinds";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import { buildPollTags, KIND_VOTE } from "~/features/polls";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { invalidateRelayIntentCache } from "~/features/user/services/user-cache.server";
 import { action } from "~/routes/api.publish";
 
 describe("API: Publish", () => {
@@ -128,6 +134,35 @@ describe("API: Publish", () => {
         eventId: mockEvent.id,
         results: [],
       });
+      expect(data).toEqual({ success: true });
+    });
+
+    it("should publish kind 10002 and invalidate relay intent cache", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: KIND_RELAY_LIST_NIP65,
+        content: "",
+        tags: [["r", "wss://relay.example.com"]],
+      });
+
+      const request = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: mockEvent }),
+      });
+
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+      });
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown })
+          : {};
+
+      expect(publishSignedEventToRelays).toHaveBeenCalled();
+      expect(invalidateRelayIntentCache).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ success: true });
     });
 

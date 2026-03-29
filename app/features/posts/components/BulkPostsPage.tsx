@@ -21,6 +21,7 @@ import {
   type BulkPostsLoaderData,
 } from "~/features/posts/utils/bulkposts-loader.utils";
 import { getPostTypeFromPost } from "~/features/posts/utils/publish-result.utils";
+import { useBlossomUploadGate } from "~/features/upload";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -53,12 +54,15 @@ export default function BulkPostsPage() {
     bulkDraftGroupPosts,
   }: BulkPostsLoaderData = extractLoaderData(data);
 
+  const { mediaUploadBlocked } = useBlossomUploadGate();
+
   const { state, handlers } = useBulkPostsPageState({
     tags,
     queueTypes,
     hashTagPresets,
     mode,
     groupId,
+    blossomMediaUploadBlocked: mediaUploadBlocked,
     bulkDraftGroupPosts,
   });
   const {
@@ -235,6 +239,7 @@ export default function BulkPostsPage() {
               onFileChange={handlers.handleFileChange}
               onFilesDropped={handlers.handleBulkFilesDropped}
               uploadProvider={uploadProvider}
+              mediaUploadBlocked={mediaUploadBlocked}
             />
           ) : null}
 
@@ -387,6 +392,7 @@ export default function BulkPostsPage() {
                   mode !== "repost" && mode !== "quote"
                 )}
                 userTimezone={user?.timezone ?? "UTC"}
+                rowMediaUploadDisabled={mediaUploadBlocked}
               />
 
               {validationResult.isValid === false ? (

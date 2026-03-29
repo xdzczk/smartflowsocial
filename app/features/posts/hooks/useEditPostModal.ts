@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
+import {
+  BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+  useBlossomUploadGate,
+} from "~/features/upload";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -195,6 +199,7 @@ export function useEditPostModal({
   isLongform,
 }: UseEditPostModalProps) {
   const { dateLocale } = useFormattedDate();
+  const { mediaUploadBlocked } = useBlossomUploadGate();
 
   // Get initial values for form
   const getInitialValues = () => {
@@ -282,6 +287,11 @@ export function useEditPostModal({
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (mediaUploadBlocked) {
+      e.target.value = "";
+      toast.error(BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE);
+      return;
+    }
     const selectedFiles = Array.from(e.target.files ?? []);
     if (selectedFiles.length === 0) return;
 
@@ -443,5 +453,6 @@ export function useEditPostModal({
     removeNewFile,
     handleHashtagPresetSelect,
     formatDateTimeForInput,
+    mediaUploadBlocked,
   };
 }

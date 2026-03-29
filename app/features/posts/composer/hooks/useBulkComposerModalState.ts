@@ -22,6 +22,10 @@ import {
 } from "~/features/posts/server";
 import type { RepostConditions } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
+import {
+  BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+  useBlossomUploadGate,
+} from "~/features/upload";
 import type { User } from "~/features/user";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -103,6 +107,9 @@ export function useBulkComposerModalState({
     scheduledAtUtc?: string | null;
   } | null>(null);
   const [bulkPostCount, setBulkPostCount] = useState<number | null>(null);
+
+  const { mediaUploadBlocked: blossomMediaUploadBlocked } =
+    useBlossomUploadGate();
 
   const contextFetcher = useFetcher<{
     tags?: string[];
@@ -485,6 +492,14 @@ export function useBulkComposerModalState({
   const handleRowFileSelect = useCallback(
     async (index: number, file: File | null) => {
       if (!file) return;
+      if (blossomMediaUploadBlocked) {
+        setToast({
+          type: "error",
+          message: BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+        });
+        setTimeout(() => setToast(null), 5000);
+        return;
+      }
       const { isVideoFile: isVideoFileFn } =
         await import("~/utils/media-helpers");
       const MAX_IMAGE = 10 * 1024 * 1024;
@@ -509,7 +524,7 @@ export function useBulkComposerModalState({
         )
       );
     },
-    []
+    [blossomMediaUploadBlocked]
   );
 
   const handleIncludeHashtagsInNoteBodyChange = useCallback(
@@ -608,6 +623,7 @@ export function useBulkComposerModalState({
       isLoadingContext,
       bulkScheduleRandomWindowMinutes,
       setBulkScheduleRandomWindowMinutes,
+      blossomMediaUploadBlocked,
     },
     handlers: {
       prepareEvents,

@@ -21,6 +21,7 @@ vi.mock("~/features/user", () => ({
   updateHashTagPreset: vi.fn(),
   deleteHashTagPreset: vi.fn(),
   hashTagPresetExistsForUser: vi.fn(),
+  invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
   getUserBasicInfo: vi.fn().mockResolvedValue({
     npub: "npub1test",
     isChild: false,
@@ -40,7 +41,6 @@ vi.mock("~/features/payments/data", () => ({
 vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateHashTagPresetsCache: vi.fn().mockResolvedValue(undefined),
   invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
-  invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";

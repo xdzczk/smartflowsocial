@@ -5,20 +5,20 @@
 import { json } from "@remix-run/node";
 
 import {
+  applyLocaleDefaultsOnce,
+  getLocaleDefaultsAppliedAt,
+  getUserDateFormat,
+  getUserTimeFormat,
+  invalidateRelayIntentCache,
   updateGiveawayBlacklist,
-  updateUserPushNotificationPreferences,
-  updateUserRelayPublishingPreferences,
   updateUserBlastrRelayEnabled,
-  updateUserTimezone,
-  updateUserTimeFormat,
   updateUserDateFormat,
   updateUserPreferredNostrClient,
-  getUserTimeFormat,
-  getUserDateFormat,
-  getLocaleDefaultsAppliedAt,
-  applyLocaleDefaultsOnce,
+  updateUserPushNotificationPreferences,
+  updateUserRelayPublishingPreferences,
+  updateUserTimezone,
+  updateUserTimeFormat,
 } from "~/features/user";
-import { invalidateRelayIntentCache } from "~/features/user/services/user-cache.server";
 import {
   updateTimezoneSchema,
   updateRelaysSchema,

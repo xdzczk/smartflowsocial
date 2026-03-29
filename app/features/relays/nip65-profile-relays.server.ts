@@ -1,5 +1,5 @@
 /**
- * Fetch NIP-65 (kind 10002) relay list metadata for an author — write relays for publishing.
+ * Fetch NIP-65 (kind 10002) relay list metadata for an author.
  */
 
 import { DEFAULT_USER_WRITE_RELAYS } from "~/features/relays/relay-constants";
@@ -21,6 +21,16 @@ import { SimplePool } from "nostr-tools";
 
 import { logWarning } from "~/lib/error-logger.server";
 
+import type {
+  Nip65ProfileRelayEntry,
+  Nip65RelayScope,
+} from "./nip65-relay-entry";
+
+export type {
+  Nip65ProfileRelayEntry,
+  Nip65RelayScope,
+} from "./nip65-relay-entry";
+
 interface NostrPoolLike {
   get?: (relays: string[], filter: unknown) => Promise<unknown>;
   list?: (relays: string[], filters: unknown[]) => Promise<unknown[]>;
@@ -37,31 +47,49 @@ function isValidWssRelayUrl(url: string): boolean {
   );
 }
 
-/** NIP-65 `r` tags: unmarked or explicit "write" markers count as publish targets. */
-export function parseNip65WriteRelaysFromEventTags(tags: unknown): string[] {
+/**
+ * Parse all valid `r` tags from kind 10002 tags (order preserved).
+ */
+export function parseNip65ProfileRelayEntriesFromEventTags(
+  tags: unknown
+): Nip65ProfileRelayEntry[] {
   if (!Array.isArray(tags)) return [];
-  const relays: string[] = [];
+  const out: Nip65ProfileRelayEntry[] = [];
   for (const t of tags) {
-    if (!Array.isArray(t)) continue;
-    if (t[0] !== "r") continue;
+    if (!Array.isArray(t) || t[0] !== "r") continue;
     const url = typeof t[1] === "string" ? t[1].trim() : "";
     if (!url || !isValidWssRelayUrl(url)) continue;
-    const marker = typeof t[2] === "string" ? t[2].toLowerCase() : "";
-    if (marker === "" || marker === "write") {
-      relays.push(url);
-    }
+    const markerRaw = typeof t[2] === "string" ? t[2].trim().toLowerCase() : "";
+    const scope: Nip65RelayScope =
+      markerRaw === "read" ? "read" : markerRaw === "write" ? "write" : "both";
+    out.push({ url, scope });
   }
-  return relays;
+  return out;
+}
+
+/** URLs where the author may publish (unmarked or `write`). */
+export function nip65ProfileEntriesToWriteUrls(
+  entries: Nip65ProfileRelayEntry[]
+): string[] {
+  return normalizeRelays(
+    entries
+      .filter((e) => e.scope === "both" || e.scope === "write")
+      .map((e) => e.url)
+  );
+}
+
+/** NIP-65 `r` tags: unmarked or explicit "write" markers count as publish targets. */
+export function parseNip65WriteRelaysFromEventTags(tags: unknown): string[] {
+  return nip65ProfileEntriesToWriteUrls(
+    parseNip65ProfileRelayEntriesFromEventTags(tags)
+  );
 }
 
 const KIND10002_TIMEOUT_MS = 2500;
 
-/**
- * Best-effort fetch of the author's latest kind 10002 and extract write relay URLs.
- */
-export async function fetchAuthorNip65WriteRelays(
+async function fetchAuthorKind10002Tags(
   authorPubkeyHex: string
-): Promise<string[]> {
+): Promise<unknown[] | null> {
   const bootstrapRelays = normalizeRelays(DEFAULT_USER_WRITE_RELAYS);
   const pool = new SimplePool();
 
@@ -92,17 +120,14 @@ export async function fetchAuthorNip65WriteRelays(
         ? (evt as { tags?: unknown })
         : null;
 
-    const relays = eventObj?.tags
-      ? parseNip65WriteRelaysFromEventTags(eventObj.tags)
-      : [];
-
-    return normalizeRelays(relays);
+    const raw = eventObj?.tags;
+    return Array.isArray(raw) ? raw : null;
   } catch (error) {
     logWarning("Failed to fetch author NIP-65 relay list (kind 10002)", {
       authorPubkeyHex,
       error: error instanceof Error ? error.message : String(error),
     });
-    return [];
+    return null;
   } finally {
     try {
       const poolLike = pool as unknown as NostrPoolLike;
@@ -113,4 +138,30 @@ export async function fetchAuthorNip65WriteRelays(
       // ignore
     }
   }
+}
+
+export async function fetchAuthorNip65Kind10002RelayData(
+  authorPubkeyHex: string
+): Promise<{
+  entries: Nip65ProfileRelayEntry[];
+  writeRelayUrls: string[];
+}> {
+  const tags = await fetchAuthorKind10002Tags(authorPubkeyHex);
+  if (!tags) {
+    return { entries: [], writeRelayUrls: [] };
+  }
+  const entries = parseNip65ProfileRelayEntriesFromEventTags(tags);
+  const writeRelayUrls = nip65ProfileEntriesToWriteUrls(entries);
+  return { entries, writeRelayUrls };
+}
+
+/**
+ * Best-effort fetch of the author's latest kind 10002 and extract write relay URLs.
+ */
+export async function fetchAuthorNip65WriteRelays(
+  authorPubkeyHex: string
+): Promise<string[]> {
+  const { writeRelayUrls } =
+    await fetchAuthorNip65Kind10002RelayData(authorPubkeyHex);
+  return writeRelayUrls;
 }

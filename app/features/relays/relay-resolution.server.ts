@@ -1,6 +1,14 @@
 import { convertToHex } from "~/lib/nostr-conversion";
 
-import { fetchAuthorNip65WriteRelays } from "./nip65-profile-relays.server";
+import type {
+  AccountPublishRelaySource,
+  ComposerRelayLists,
+} from "./composer-relay-lists";
+import {
+  fetchAuthorNip65Kind10002RelayData,
+  fetchAuthorNip65WriteRelays,
+} from "./nip65-profile-relays.server";
+import type { Nip65ProfileRelayEntry } from "./nip65-relay-entry";
 import { blastrRelay, DEFAULT_USER_WRITE_RELAYS } from "./relay-constants";
 import {
   getRelayIntentFromDb,
@@ -21,7 +29,7 @@ export interface RelayIntent {
   writeRelays: string[];
 }
 
-export type PublishRelaySource = "app" | "nip65_profile";
+export type PublishRelaySource = AccountPublishRelaySource;
 
 function normalizeRelays(relays: string[]): string[] {
   return Array.from(new Set(relays.map((r) => r.trim()).filter(Boolean)));
@@ -42,11 +50,19 @@ export async function loadRelaySettingsLoaderSlice(userId: string): Promise<{
   npub: string;
   relayIntent: RelayIntent;
   profileRelays: string[];
+  profileRelayEntries: Nip65ProfileRelayEntry[];
 }> {
   const row = await getRelayIntentFromDb(userId);
   const appRelays = resolveAppWriteRelays(row.appRelays);
   const hex = convertToHex(row.npub);
-  const profileRelays = hex ? await fetchAuthorNip65WriteRelays(hex) : [];
+  const nip65 = hex
+    ? await fetchAuthorNip65Kind10002RelayData(hex)
+    : {
+        entries: [] as Nip65ProfileRelayEntry[],
+        writeRelayUrls: [] as string[],
+      };
+  const profileRelays = nip65.writeRelayUrls;
+  const profileRelayEntries = nip65.entries;
 
   const relayIntent: RelayIntent =
     row.publishRelaySource === "nip65_profile"
@@ -64,6 +80,7 @@ export async function loadRelaySettingsLoaderSlice(userId: string): Promise<{
     npub: row.npub,
     relayIntent,
     profileRelays,
+    profileRelayEntries,
   };
 }
 
@@ -130,6 +147,53 @@ export async function resolveExecutionRelays(
     .filter((m) => m.enabled)
     .map((m) => m.relayUrl);
   return normalizeRelays([...enabledManagedRelays, ...direct]);
+}
+
+/**
+ * Relay lists for the composer “Post target” modal: account default, forced app list,
+ * and forced NIP-65 profile list (each includes Blastr when enabled).
+ */
+export async function loadComposerRelayLists(
+  userId: string
+): Promise<
+  { accountPublishRelaySource: AccountPublishRelaySource } & ComposerRelayLists
+> {
+  const row = await getRelayIntentFromDb(userId);
+  const appIntent: RelayIntent = {
+    writeRelays: resolveAppWriteRelays(row.appRelays),
+  };
+  const hex = convertToHex(row.npub);
+  const fromProfile = hex ? await fetchAuthorNip65WriteRelays(hex) : [];
+  const profileIntent: RelayIntent = {
+    writeRelays:
+      fromProfile.length > 0 ? fromProfile : DEFAULT_USER_WRITE_RELAYS,
+  };
+  const defaultIntent: RelayIntent =
+    row.publishRelaySource === "nip65_profile" ? profileIntent : appIntent;
+
+  const blastrEnabled = await isBlastrEnabledForUserFromDb(userId);
+  const managed: ManagedRelay[] = [
+    {
+      id: "blastr",
+      role: "fanout",
+      enabled: blastrEnabled,
+      relayUrl: blastrRelay,
+    },
+  ];
+
+  const flatten = (intent: RelayIntent): string[] => {
+    const enabledManagedRelays = managed
+      .filter((m) => m.enabled)
+      .map((m) => m.relayUrl);
+    return normalizeRelays([...enabledManagedRelays, ...intent.writeRelays]);
+  };
+
+  return {
+    accountPublishRelaySource: row.publishRelaySource,
+    default: flatten(defaultIntent),
+    app: flatten(appIntent),
+    nip65Profile: flatten(profileIntent),
+  };
 }
 
 /**

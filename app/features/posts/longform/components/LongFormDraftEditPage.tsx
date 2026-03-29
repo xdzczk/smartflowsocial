@@ -15,6 +15,7 @@ import {
   useLongFormEditState,
 } from "~/features/posts/longform";
 import { ErrorMessage, RelaySelectorModal } from "~/features/posts/ui";
+import type { AccountPublishRelaySource } from "~/features/relays/composer-relay-lists";
 import { getActionErrorMessage } from "~/lib/errors";
 
 export default function LongFormDraftEditPage() {
@@ -137,6 +138,35 @@ export default function LongFormDraftEditPage() {
     (r): r is string => typeof r === "string" && r.length > 0
   );
 
+  const relaysAppRaw =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "relaysApp" in loaderData &&
+    Array.isArray((loaderData as { relaysApp?: unknown }).relaysApp)
+      ? (loaderData as { relaysApp: unknown[] }).relaysApp
+      : [];
+  const relaysApp = relaysAppRaw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
+  const relaysNip65Raw =
+    typeof loaderData === "object" &&
+    loaderData !== null &&
+    "relaysNip65Profile" in loaderData &&
+    Array.isArray(
+      (loaderData as { relaysNip65Profile?: unknown }).relaysNip65Profile
+    )
+      ? (loaderData as { relaysNip65Profile: unknown[] }).relaysNip65Profile
+      : [];
+  const relaysNip65Profile = relaysNip65Raw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
+  const prs = (loaderData as { publishRelaySource?: unknown } | null)
+    ?.publishRelaySource;
+  const accountPublishRelaySource: AccountPublishRelaySource =
+    prs === "nip65_profile" ? "nip65_profile" : "app";
+
   const versions = versionsRaw.filter(
     (
       v: unknown
@@ -181,7 +211,9 @@ export default function LongFormDraftEditPage() {
   const navigate = useNavigate();
   const [draftPickerOpen, setDraftPickerOpen] = useState(false);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
-  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
+    null
+  );
   const {
     displayedHashtags,
     showPreviewModal,
@@ -265,19 +297,21 @@ export default function LongFormDraftEditPage() {
             handleHashtagPresetChange(presetId ?? "")
           }
           defaultRelays={defaultRelays}
-          relayOverride={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-          }
+          relayOverride={selectedRelayUrls ?? undefined}
           onRelayClick={() => setRelaySelectorOpen(true)}
         />
       </Form>
 
       {relaySelectorOpen ? (
         <RelaySelectorModal
-          defaultRelays={defaultRelays}
-          selectedRelays={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
-          }
+          relayLists={{
+            default: defaultRelays,
+            app: relaysApp,
+            nip65Profile: relaysNip65Profile,
+          }}
+          accountPublishRelaySource={accountPublishRelaySource}
+          inheritRelays={selectedRelayUrls === null}
+          selectedRelays={selectedRelayUrls ?? defaultRelays}
           onClose={() => setRelaySelectorOpen(false)}
           onSave={(urls) => {
             setSelectedRelayUrls(urls);

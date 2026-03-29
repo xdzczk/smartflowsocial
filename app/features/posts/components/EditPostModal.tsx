@@ -152,6 +152,7 @@ export function EditPostModal({
     formatDateTimeForInput,
     includeHashtagsInNoteBody,
     setIncludeHashtagsInNoteBody,
+    mediaUploadBlocked,
   } = useEditPostModal({
     post,
     user,
@@ -337,6 +338,7 @@ export function EditPostModal({
                   queueTypes={queueTypes}
                   includeHashtagsInNoteBody={includeHashtagsInNoteBody}
                   setIncludeHashtagsInNoteBody={setIncludeHashtagsInNoteBody}
+                  mediaAddDisabled={mediaUploadBlocked}
                 />
               )}
 

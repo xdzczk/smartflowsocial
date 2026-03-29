@@ -18,6 +18,10 @@ vi.mock("~/features/payments/data", () => ({
   getPlanPriceUsd: vi.fn(),
 }));
 
+vi.mock("~/features/payments/btcpay.server", () => ({
+  isBtcpayConfigured: vi.fn(() => false),
+}));
+
 vi.mock("~/features/user", () => ({
   updateUserNWC: vi.fn(),
   getDecryptedUserNWC: vi.fn(),
@@ -34,6 +38,7 @@ vi.mock("@getalby/sdk", () => ({
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUser } from "~/features/auth/session.server";
+import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
 import {
   createPlanInvoice,
   checkPaymentStatus,
@@ -52,6 +57,7 @@ describe("Plans Action Handler", () => {
       id: TEST_USER_ID,
       npub: "test-npub",
     });
+    (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(false);
   });
 
   describe("Check Payment Status", () => {
@@ -190,6 +196,7 @@ describe("Plans Action Handler", () => {
         expiresAt: mockInvoice.expiresAt.toISOString(),
         planName: "Basic Plan",
         planId: "basic",
+        checkoutKind: "lightning",
       });
     });
 
@@ -287,6 +294,7 @@ describe("Plans Action Handler", () => {
         expiresAt: mockInvoice.expiresAt.toISOString(),
         planName: "Basic Plan",
         planId: "basic",
+        checkoutKind: "lightning",
       });
     });
 
@@ -376,6 +384,103 @@ describe("Plans Action Handler", () => {
         status: 500,
       });
     });
+
+    it("should reject btc_onchain for non-founder plans", async () => {
+      (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "basic",
+        paymentMode: "btc_onchain",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(result).toEqual({
+        success: false,
+        error:
+          "Bitcoin on-chain checkout is only available for the Founder plan.",
+        status: 400,
+      });
+      expect(createPlanInvoice).not.toHaveBeenCalled();
+    });
+
+    it("should reject btc_onchain when BTCPay env is not configured", async () => {
+      (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "founder",
+        paymentMode: "btc_onchain",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(result).toEqual({
+        success: false,
+        error: "Bitcoin on-chain checkout is not available right now.",
+        status: 503,
+      });
+      expect(createPlanInvoice).not.toHaveBeenCalled();
+    });
+
+    it("should create BTCPay checkout for founder when BTCPay is configured", async () => {
+      (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(2600);
+      const exp = new Date("2030-01-01T00:00:00.000Z");
+      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
+        invoice: "https://pay.example/checkout/abc",
+        paymentHash: "btcpay:abc",
+        amount: 50_000,
+        amountUsd: 2600,
+        expiresAt: exp,
+        paymentId: "founder_1_u",
+        planName: "Founder",
+        planId: "founder",
+        checkoutKind: "btcpay",
+      });
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "founder",
+        paymentMode: "btc_onchain",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(createPlanInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          planId: "founder",
+          userId: TEST_USER_ID,
+          billingPaymentMethod: "btc_btcpay_onchain",
+          billingCadence: "monthly",
+          accessDurationMonths: 1,
+          amountUsdOverride: 2600,
+        })
+      );
+      expect(result).toEqual({
+        success: true,
+        paymentMode: "btc_onchain",
+        invoice: "https://pay.example/checkout/abc",
+        paymentHash: "btcpay:abc",
+        amount: 50_000,
+        amountUsd: 2600,
+        paymentId: "founder_1_u",
+        expiresAt: exp.toISOString(),
+        planName: "Founder",
+        planId: "founder",
+        checkoutKind: "btcpay",
+      });
+    });
   });
 
   describe("Error Handling", () => {
@@ -408,9 +513,11 @@ describe("Plans Action Handler", () => {
 
       const request = new Request("http://localhost:3000/plans");
 
-      await expect(handlePlansAction(formData, request)).rejects.toThrow(
-        "Authentication required"
-      );
+      const result = await handlePlansAction(formData, request);
+      expect(result).toEqual({
+        error: "Authentication required",
+        status: 500,
+      });
     });
   });
 });

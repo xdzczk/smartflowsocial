@@ -1,8 +1,9 @@
-import { ImagePlus } from "lucide-react";
+import { Upload } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
+import { ComposerCanvasSectionLabel } from "~/features/posts/composer/components/composer";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 interface LongFormCoverImageProps {
   image: string;
@@ -14,6 +15,8 @@ interface LongFormCoverImageProps {
   onOpenAssetBrowser: () => void;
   /** Softer label (no required asterisk in copy). */
   softLabel?: boolean;
+  /** Blossom file upload disabled (no extension / remote signer). */
+  coverFileUploadDisabled?: boolean;
 }
 
 export function LongFormCoverImage({
@@ -25,26 +28,27 @@ export function LongFormCoverImage({
   onRemove,
   onOpenAssetBrowser,
   softLabel = false,
+  coverFileUploadDisabled = false,
 }: LongFormCoverImageProps) {
   return (
     <div>
-      <div className="mb-1.5 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <Label
+      <div className="mb-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <div className="min-w-0">
+          <ComposerCanvasSectionLabel
+            as="label"
+            className="mb-0"
             htmlFor="cover-image-input"
-            className="text-foreground text-sm font-medium"
           >
             {softLabel ? "Cover" : "Cover *"}
-          </Label>
-          <p className="text-muted-foreground mt-0.5 max-w-xl text-[11px] leading-snug">
-            Wide images (~1200×630) work well for previews. PNG, JPG, or GIF up
-            to 5MB.
+          </ComposerCanvasSectionLabel>
+          <p className="text-muted-foreground/80 mt-0.5 max-w-xl text-[11px] leading-snug">
+            ~1200×630 for link previews · PNG, JPG, or GIF up to 5MB
           </p>
         </div>
         {uploadProvider ? (
-          <div className="text-muted-foreground flex items-center gap-1 text-[11px]">
-            <span>Upload via</span>
-            <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-medium">
+          <div className="text-muted-foreground/70 flex shrink-0 items-center gap-1 text-[10px]">
+            <span>via</span>
+            <span className="bg-muted/50 text-foreground/85 rounded px-1 py-px font-medium">
               {uploadProvider.includes("BLOSSOM")
                 ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
                 : "☁️ S3"}
@@ -59,85 +63,92 @@ export function LongFormCoverImage({
         </div>
       ) : null}
 
+      {coverFileUploadDisabled && uploadProvider?.includes("BLOSSOM") ? (
+        <div
+          className="mt-1 rounded-md border border-amber-500/55 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-snug text-amber-950 dark:text-amber-50"
+          role="note"
+        >
+          Cover file upload needs a NIP-07 browser extension or connected remote
+          signer (NIP-46). Open Settings to connect. You can still use{" "}
+          <span className="font-medium">From assets</span> if you have hosted
+          images.
+        </div>
+      ) : null}
+
       {!image ? (
-        <div className="border-border bg-muted/20 hover:bg-muted/30 relative mt-1 overflow-hidden rounded-xl border transition-colors">
-          <div className="aspect-[21/9] min-h-[140px] w-full">
-            {uploadFetcherState !== "idle" ? (
-              <div className="flex h-full items-center justify-center gap-2">
-                <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2" />
-                <p className="text-muted-foreground text-sm">Uploading…</p>
-              </div>
-            ) : (
-              <div
-                className="flex h-full cursor-pointer flex-col items-center justify-center gap-3 px-4 py-8"
-                onClick={() =>
-                  document.getElementById("cover-image-input")?.click()
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    document.getElementById("cover-image-input")?.click();
+        <div className="mt-1">
+          {uploadFetcherState !== "idle" ? (
+            <div className="border-border/25 bg-muted/[0.04] flex min-h-[4.5rem] items-center justify-center gap-2 rounded-lg border px-4 py-3">
+              <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-b-transparent" />
+              <p className="text-muted-foreground text-sm">Uploading…</p>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "border-border/25 bg-muted/[0.04] flex min-h-[4.75rem] flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
+              )}
+            >
+              <p className="text-muted-foreground max-w-[20rem] text-xs leading-snug">
+                Optional hero image for feeds and link cards.
+              </p>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-border/50 h-8 text-xs"
+                  disabled={coverFileUploadDisabled}
+                  onClick={() =>
+                    document.getElementById("cover-image-input")?.click()
                   }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload cover image"
-              >
-                <ImagePlus
-                  className="text-muted-foreground h-10 w-10"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-                <div className="text-center">
-                  <p className="text-foreground text-sm font-medium">
-                    Add a cover image
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Click to upload or choose from assets
-                  </p>
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenAssetBrowser();
-                    }}
-                    className="text-xs"
-                  >
-                    Choose from Assets
-                  </Button>
-                </div>
+                >
+                  <Upload
+                    className="mr-1 h-3.5 w-3.5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                  Upload
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground h-8 text-xs"
+                  onClick={onOpenAssetBrowser}
+                >
+                  From assets
+                </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
           <input
             id="cover-image-input"
             type="file"
             accept="image/*"
             onChange={onImageUpload}
             className="hidden"
+            disabled={coverFileUploadDisabled}
           />
         </div>
       ) : (
         <div className="mt-1">
-          <div className="border-border relative overflow-hidden rounded-xl border bg-black/5 dark:bg-white/5">
-            <div className="aspect-[21/9] max-h-[280px] min-h-[160px] w-full">
+          <div className="border-border/35 relative overflow-hidden rounded-lg border bg-black/5 dark:bg-white/5">
+            <div className="aspect-[21/9] max-h-[260px] min-h-[140px] w-full">
               <img
                 src={image}
                 alt="Article cover preview"
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-all hover:bg-black/40 hover:opacity-100">
+            <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/0 opacity-0 transition-all hover:bg-black/35 hover:opacity-100">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={uploadFetcherState !== "idle"}
-                className="bg-background/95 text-foreground relative shadow-sm"
+                disabled={
+                  uploadFetcherState !== "idle" || coverFileUploadDisabled
+                }
+                className="bg-background/90 text-foreground relative h-8 text-xs shadow-sm backdrop-blur-sm"
               >
                 Replace
                 <input
@@ -145,26 +156,29 @@ export function LongFormCoverImage({
                   accept="image/*"
                   onChange={onImageUpload}
                   className="absolute inset-0 cursor-pointer opacity-0"
-                  disabled={uploadFetcherState !== "idle"}
+                  disabled={
+                    uploadFetcherState !== "idle" || coverFileUploadDisabled
+                  }
                   aria-label="Replace cover image"
                 />
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 size="sm"
                 onClick={onOpenAssetBrowser}
                 disabled={uploadFetcherState !== "idle"}
-                className="bg-background/95"
+                className="bg-background/85 text-foreground h-8 text-xs backdrop-blur-sm"
               >
                 Assets
               </Button>
               <Button
                 type="button"
-                variant="destructive"
+                variant="ghost"
                 size="sm"
                 onClick={onRemove}
                 disabled={uploadFetcherState !== "idle"}
+                className="text-destructive hover:text-destructive h-8 text-xs"
               >
                 Remove
               </Button>

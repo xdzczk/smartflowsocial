@@ -121,6 +121,8 @@ export async function loadPlansData(request: Request) {
     user: user ? { id: user.id, isEnabled: user.isEnabled } : null,
     nwc: user ? nwc : null,
     subscriptionCheckoutV2Enabled: featureFlags.subscriptionCheckoutV2Enabled,
+    /** Founder Bitcoin lane is always shown in v2 checkout; BTCPAY_* env still required to create invoices. */
+    btcpayFounderEnabled: true,
     billingCadences: ["monthly", "yearly"] as const,
     manualDurationsByCadence: {
       monthly: [1, 3, 6],

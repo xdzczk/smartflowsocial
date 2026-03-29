@@ -5,7 +5,7 @@
 
 import { getLongFormPost } from "~/features/posts/server";
 import { getDraftVersions } from "~/features/posts/server/drafts";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -17,15 +17,21 @@ import {
  * Load longform edit page data
  */
 export async function loadLongFormEditData(userId: string, postId: string) {
-  const [post, scheduleIntervals, queueTypes, user, hashtagPresets, relays] =
-    await Promise.all([
-      getLongFormPost({ id: postId, userId }),
-      getScheduleInterval(userId),
-      getQueueTypes(userId),
-      getUserById(userId),
-      getUserHashTagPresets(userId),
-      resolveExecutionRelays(userId),
-    ]);
+  const [
+    post,
+    scheduleIntervals,
+    queueTypes,
+    user,
+    hashtagPresets,
+    composerRelays,
+  ] = await Promise.all([
+    getLongFormPost({ id: postId, userId }),
+    getScheduleInterval(userId),
+    getQueueTypes(userId),
+    getUserById(userId),
+    getUserHashTagPresets(userId),
+    loadComposerRelayLists(userId),
+  ]);
 
   if (!post) {
     throw new Response("Post not found", { status: 404 });
@@ -45,6 +51,9 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     userTimezone: user?.timezone ?? "Etc/GMT",
     hashtagPresets,
     versions,
-    relays,
+    relays: composerRelays.default,
+    relaysApp: composerRelays.app,
+    relaysNip65Profile: composerRelays.nip65Profile,
+    publishRelaySource: composerRelays.accountPublishRelaySource,
   };
 }

@@ -24,14 +24,14 @@ vi.mock("~/features/templates/services/template-data.server", () => ({
 }));
 
 vi.mock("~/features/relays/relay-resolution.server", () => ({
-  resolveExecutionRelays: vi.fn(),
+  loadComposerRelayLists: vi.fn(),
 }));
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -54,9 +54,12 @@ describe("New Longform Loader", () => {
     const mockUploadProvider = "s3";
     const mockRelays = ["wss://relay.example.com"];
 
-    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockRelays
-    );
+    (loadComposerRelayLists as ReturnType<typeof vi.fn>).mockResolvedValue({
+      accountPublishRelaySource: "app",
+      default: mockRelays,
+      app: mockRelays,
+      nip65Profile: ["wss://nip65.example.com"],
+    });
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
@@ -107,7 +110,12 @@ describe("New Longform Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue("s3");
-    (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (loadComposerRelayLists as ReturnType<typeof vi.fn>).mockResolvedValue({
+      accountPublishRelaySource: "app",
+      default: [],
+      app: [],
+      nip65Profile: [],
+    });
 
     const result = await loadNewLongFormData(TEST_USER_ID);
 

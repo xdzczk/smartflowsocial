@@ -92,6 +92,8 @@ export {
   type RunwayMode,
 } from "./services/user-settings.server";
 
+export { invalidateRelayIntentCache } from "./services/user-cache.server";
+
 // Queue Types
 export {
   createDefaultQueueTypes,

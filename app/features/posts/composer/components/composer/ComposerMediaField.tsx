@@ -8,6 +8,8 @@ import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
 import { cn } from "~/lib/utils";
 
+import { ComposerCanvasSectionLabel } from "./composer-canvas-primitives";
+
 export interface ComposerMediaFieldProps {
   attachments: ComposerAttachment[];
   onRemove: (localId: string) => void;
@@ -63,6 +65,7 @@ export function ComposerMediaField({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
     const target = e.target as HTMLElement;
     if (target.closest("textarea") || target.closest("input")) return;
     if (e.key === "Enter" || e.key === " ") {
@@ -72,14 +75,13 @@ export function ComposerMediaField({
   };
 
   const empty = attachments.length === 0;
+  const dropEnabled = Boolean(onFilesDropped) && !disabled;
 
   return (
     <div className={className}>
-      <h3 className="text-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-        Media
-      </h3>
+      <ComposerCanvasSectionLabel>Media</ComposerCanvasSectionLabel>
       {signerConnectionNote ? (
-        <div className="mb-2" role="note">
+        <div className="mb-1.5" role="note">
           {signerConnectionNote}
         </div>
       ) : null}
@@ -90,17 +92,17 @@ export function ComposerMediaField({
         className={cn(
           "relative rounded-lg transition-colors",
           empty && !isDraggingOver && "min-h-0",
-          !empty && "bg-muted/15 -mx-1 rounded-md px-1 py-1.5 sm:px-1.5",
+          !empty && "bg-muted/10 rounded-md px-1 py-1.5 sm:px-1.5",
           isDraggingOver &&
-            onFilesDropped &&
+            dropEnabled &&
             "bg-primary/5 ring-primary/40 ring-dashed ring-2"
         )}
-        onDragOver={onFilesDropped ? handleDragOver : undefined}
-        onDragLeave={onFilesDropped ? handleDragLeave : undefined}
-        onDrop={onFilesDropped ? handleDrop : undefined}
+        onDragOver={dropEnabled ? handleDragOver : undefined}
+        onDragLeave={dropEnabled ? handleDragLeave : undefined}
+        onDrop={dropEnabled ? handleDrop : undefined}
         onKeyDown={handleKeyDown}
       >
-        {isDraggingOver && onFilesDropped ? (
+        {isDraggingOver && dropEnabled ? (
           <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex min-h-[3.5rem] items-center justify-center rounded-md border-2 border-dashed">
             <span className="text-muted-foreground text-sm">
               Drop to add images or videos
@@ -109,6 +111,8 @@ export function ComposerMediaField({
         ) : null}
         <AttachmentsStrip
           variant="inline"
+          emptyAffordance="composerWell"
+          emptyWellHint="Add images or videos"
           attachments={attachments}
           onRemove={onRemove}
           onAdd={onAdd}
@@ -117,7 +121,7 @@ export function ComposerMediaField({
           failedStatusTitle={attachmentFailedTitle}
         />
         {empty && !isDraggingOver && emptyHint ? (
-          <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug sm:mt-2">
+          <p className="text-muted-foreground/80 mt-1 text-[10px] leading-snug">
             {emptyHint}
           </p>
         ) : null}

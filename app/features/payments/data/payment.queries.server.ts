@@ -28,7 +28,10 @@ export async function listActivePlanPricesForPlans(planIds: string[]): Promise<
     planId: string;
     billingCadence: "monthly" | "yearly";
     accessDurationMonths: number;
-    paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+    paymentMethod:
+      | "nwc_auto_renew"
+      | "lightning_one_time"
+      | "btc_btcpay_onchain";
     priceUsd: number;
   }>
 > {
@@ -56,7 +59,7 @@ export async function getPlanPriceUsd(params: {
   planId: string;
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
-  paymentMethod: "nwc_auto_renew" | "lightning_one_time";
+  paymentMethod: "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 }): Promise<number | null> {
   const row = await prisma.planPrice.findFirst({
     where: {

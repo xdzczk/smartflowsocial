@@ -5,6 +5,8 @@ import { resizeImage } from "~/features/upload/image-resize";
 interface UseCoverImageUploadOptions {
   uploadProvider: string | null;
   initialImage?: string;
+  /** When true and provider is Blossom, file upload handler no-ops (use UI to explain). */
+  mediaUploadBlocked?: boolean;
 }
 
 interface SelectedAsset {
@@ -15,6 +17,7 @@ interface SelectedAsset {
 export function useCoverImageUpload({
   uploadProvider,
   initialImage = "",
+  mediaUploadBlocked = false,
 }: UseCoverImageUploadOptions) {
   const uploadFetcher = useFetcher<{
     success?: boolean;
@@ -44,6 +47,13 @@ export function useCoverImageUpload({
       try {
         // Process the image to remove all metadata for privacy
         const processedFile = await resizeImage(file);
+
+        if (uploadProvider?.includes("BLOSSOM") && mediaUploadBlocked) {
+          setUploadError(
+            "Connect a NIP-07 extension or NIP-46 remote signer in Settings to upload cover images."
+          );
+          return;
+        }
 
         // Check if user has Blossom provider selected
         if (uploadProvider?.includes("BLOSSOM")) {
@@ -83,7 +93,7 @@ export function useCoverImageUpload({
         setUploadError("Error uploading image. Please try again.");
       }
     },
-    [uploadProvider, uploadFetcher]
+    [uploadProvider, uploadFetcher, mediaUploadBlocked]
   );
 
   const handleCoverImageAssets = useCallback(

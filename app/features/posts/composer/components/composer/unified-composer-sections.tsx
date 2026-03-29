@@ -19,6 +19,8 @@ export interface UnifiedComposerContentSectionProps {
   onContentChange: (v: string) => void;
   contentError: string | undefined;
   disabled: boolean;
+  /** When true, media pick/drop/paste is blocked (e.g. Blossom without signer). Text stays editable. */
+  mediaUploadDisabled?: boolean;
   attachments: ComposerAttachment[];
   onRemoveAttachment: (localId: string) => void;
   onAddAttachment: () => void;
@@ -53,6 +55,7 @@ export function UnifiedComposerContentSection({
   onContentChange,
   contentError,
   disabled,
+  mediaUploadDisabled = false,
   attachments,
   onRemoveAttachment,
   onAddAttachment,
@@ -77,6 +80,7 @@ export function UnifiedComposerContentSection({
         onFilesDropped={onFilesDroppedSegment}
         onAddSegmentClick={(segmentId) => onThreadSegmentFileClick(segmentId)}
         disabled={disabled}
+        attachmentsDisabled={disabled || mediaUploadDisabled}
         draggingOverSegmentId={draggingOverSegmentId}
         onDraggingOverSegmentIdChange={onDraggingOverSegmentIdChange}
         signerConnectionNote={blossomSignerMediaNote}
@@ -85,7 +89,7 @@ export function UnifiedComposerContentSection({
     );
   }
   return (
-    <>
+    <div className="flex flex-col gap-3 sm:gap-4">
       <ComposerContentField
         value={content}
         onChange={onContentChange}
@@ -99,10 +103,10 @@ export function UnifiedComposerContentSection({
         onAdd={onAddAttachment}
         onReorder={onReorderAttachments}
         onFilesDropped={onFilesDroppedSingle}
-        disabled={disabled}
+        disabled={disabled || mediaUploadDisabled}
         signerConnectionNote={blossomSignerMediaNote}
         attachmentFailedTitle={attachmentFailedTitleHint}
       />
-    </>
+    </div>
   );
 }

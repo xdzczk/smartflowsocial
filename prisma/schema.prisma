@@ -1058,6 +1058,8 @@ model Payment {
   contestFinalizationPayment  ContestFinalizationPayment?
   contestPayoutForId String?
   contestPayoutFor Contest? @relation("ContestPayoutPayment", fields: [contestPayoutForId], references: [id], onDelete: SetNull)
+  /** BTCPay Greenfield invoice id (Founder on-chain checkout). */
+  btcpayInvoiceId String? @unique
 }
 
 model Plan {
@@ -1101,6 +1103,7 @@ enum BillingCadence {
 enum BillingPaymentMethod {
   nwc_auto_renew
   lightning_one_time
+  btc_btcpay_onchain
 }
 
 model PlanPrice {

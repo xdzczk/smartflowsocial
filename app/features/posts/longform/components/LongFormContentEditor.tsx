@@ -14,6 +14,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 interface LongFormContentEditorProps {
   uploadProvider?: string | null;
@@ -28,7 +29,7 @@ interface LongFormContentEditorProps {
   previewMarkdown?: string;
   /** Leading chrome (e.g. Edit / Preview control). */
   chromeLeading?: React.ReactNode;
-  /** Trailing chrome (e.g. Insert Assets, Drafts / Templates). */
+  /** Trailing chrome (e.g. Drafts / Templates). */
   chromeTrailing?: React.ReactNode;
   /** When false, block pointer events on editor area until editor is ready. */
   editorReady?: boolean;
@@ -36,8 +37,8 @@ interface LongFormContentEditorProps {
   editor: React.ComponentProps<typeof EditorContent>["editor"];
 }
 
-const EDITOR_MIN_HEIGHT = "min-h-[min(55vh,28rem)]";
-const PLACEHOLDER_MIN_HEIGHT = "min-h-[min(55vh,28rem)]";
+const EDITOR_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
+const PLACEHOLDER_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
 
 function blossomOrS3BadgeLabel(uploadProvider: string): string {
   if (!uploadProvider.includes("BLOSSOM")) return "☁️ S3";
@@ -48,7 +49,6 @@ function blossomOrS3BadgeLabel(uploadProvider: string): string {
 
 function EditorialLongFormContentEditor({
   uploadProvider,
-  onOpenAssetBrowser,
   bodyView,
   previewMarkdown,
   chromeLeading,
@@ -58,7 +58,6 @@ function EditorialLongFormContentEditor({
 }: Pick<
   LongFormContentEditorProps,
   | "uploadProvider"
-  | "onOpenAssetBrowser"
   | "bodyView"
   | "previewMarkdown"
   | "chromeLeading"
@@ -69,9 +68,9 @@ function EditorialLongFormContentEditor({
   const showPlaceholder = !editor;
   const uploadHint =
     uploadProvider != null ? (
-      <div className="text-muted-foreground hidden items-center gap-1 text-[11px] sm:flex">
-        <span>Images via</span>
-        <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-medium">
+      <div className="text-muted-foreground/80 hidden items-center gap-1 text-[10px] sm:flex">
+        <span>Images</span>
+        <span className="bg-muted/60 text-foreground/90 rounded px-1 py-px font-medium">
           {blossomOrS3BadgeLabel(uploadProvider)}
         </span>
       </div>
@@ -79,29 +78,22 @@ function EditorialLongFormContentEditor({
 
   return (
     <div>
-      <div className="border-border bg-card focus-within:border-primary focus-within:ring-ring overflow-hidden rounded-lg border focus-within:ring-1">
-        <div className="border-border bg-muted/30 flex min-h-[2.75rem] flex-wrap items-center justify-between gap-2 border-b px-2 py-1.5 sm:px-3">
+      <div
+        className={cn(
+          "border-border/40 bg-card overflow-hidden rounded-lg border",
+          "focus-within:border-border/60 focus-within:ring-border/30 focus-within:ring-1"
+        )}
+      >
+        <div className="border-border/20 bg-muted/10 flex min-h-[2.5rem] flex-wrap items-center justify-between gap-2 border-b px-2 py-1 sm:px-3">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             {chromeLeading}
             {uploadHint}
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={onOpenAssetBrowser}
-            >
-              <FolderOpen
-                className={`mr-1 ${SMALL_ICON_SIZE_CLASS}`}
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-              Insert Assets
-            </Button>
-            {chromeTrailing}
-          </div>
+          {chromeTrailing ? (
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+              {chromeTrailing}
+            </div>
+          ) : null}
         </div>
         <div
           className={`${showPlaceholder ? PLACEHOLDER_MIN_HEIGHT : EDITOR_MIN_HEIGHT} ${!editorReady ? "pointer-events-none select-none" : ""}`}
@@ -110,14 +102,14 @@ function EditorialLongFormContentEditor({
         >
           {showPlaceholder ? (
             <div
-              className="text-muted-foreground p-4 text-sm"
+              className="text-muted-foreground px-5 py-4 text-sm"
               role="status"
               aria-label="Article content"
             >
               Loading editor…
             </div>
           ) : bodyView === "preview" ? (
-            <div className="max-h-[min(70vh,36rem)] overflow-y-auto p-4">
+            <div className="max-h-[min(70vh,36rem)] overflow-y-auto px-5 py-4">
               <MarkdownPreview
                 source={previewMarkdown ?? ""}
                 className="prose prose-lg dark:prose-invert max-w-none"
@@ -127,11 +119,12 @@ function EditorialLongFormContentEditor({
             <>
               <TiptapToolbar
                 editor={editor}
-                onInsertImage={onOpenAssetBrowser}
+                onInsertImage={undefined}
+                density="editorial"
               />
               <EditorContent
                 editor={editor}
-                className="prose prose-lg dark:prose-invert max-w-none px-4 py-3 [&_.ProseMirror]:min-h-[min(50vh,24rem)] [&_.ProseMirror]:outline-none"
+                className="prose prose-lg dark:prose-invert max-w-none px-5 py-4 [&_.ProseMirror]:min-h-[min(52vh,26rem)] [&_.ProseMirror]:outline-none"
                 aria-label="Article content"
               />
             </>
@@ -261,7 +254,6 @@ export function LongFormContentEditor({
     return (
       <EditorialLongFormContentEditor
         uploadProvider={uploadProvider}
-        onOpenAssetBrowser={onOpenAssetBrowser}
         bodyView={bodyView}
         previewMarkdown={previewMarkdown}
         chromeLeading={chromeLeading}

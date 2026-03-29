@@ -6,6 +6,7 @@
 import { NWCClient } from "@getalby/sdk";
 
 import { requireUser } from "~/features/auth/session.server";
+import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
 import {
   checkPaymentStatus,
   createPlanInvoice,
@@ -63,7 +64,10 @@ async function createInvoiceForSelection(params: {
   userId: string;
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
-  billingPaymentMethod: "nwc_auto_renew" | "lightning_one_time";
+  billingPaymentMethod:
+    | "nwc_auto_renew"
+    | "lightning_one_time"
+    | "btc_btcpay_onchain";
   priceUsd: number;
 }) {
   return createPlanInvoice({
@@ -143,6 +147,71 @@ async function handleSelectPlanIntent(
     planId: selectData.planId,
     paymentMode: selectData.paymentMode,
   });
+
+  if (selectData.paymentMode === "btc_onchain") {
+    if (selectData.planId !== "founder") {
+      return {
+        success: false,
+        error:
+          "Bitcoin on-chain checkout is only available for the Founder plan.",
+        status: 400,
+      };
+    }
+    if (!isBtcpayConfigured()) {
+      return {
+        success: false,
+        error: "Bitcoin on-chain checkout is not available right now.",
+        status: 503,
+      };
+    }
+
+    const cadence = "monthly" as const;
+    const durationMonths = 1;
+    const billingPaymentMethod = "btc_btcpay_onchain" as const;
+    const priceUsd = await getPlanPriceUsd({
+      planId: selectData.planId,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      paymentMethod: billingPaymentMethod,
+    });
+
+    if (priceUsd == null) {
+      return {
+        success: false,
+        error: "Founder Bitcoin price is not configured.",
+        status: 400,
+      };
+    }
+
+    const invoice = await createInvoiceForSelection({
+      planId: selectData.planId,
+      userId: user.id,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      billingPaymentMethod,
+      priceUsd,
+    });
+
+    trackProductEvent("checkout_btcpay_invoice_created", {
+      userId: user.id,
+      planId: selectData.planId,
+      paymentId: invoice.paymentId,
+    });
+
+    return {
+      success: true,
+      paymentMode: selectData.paymentMode,
+      invoice: invoice.invoice,
+      paymentHash: invoice.paymentHash,
+      amount: invoice.amount,
+      amountUsd: invoice.amountUsd,
+      paymentId: invoice.paymentId,
+      expiresAt: invoice.expiresAt.toISOString(),
+      planName: invoice.planName,
+      planId: invoice.planId,
+      checkoutKind: invoice.checkoutKind ?? "btcpay",
+    };
+  }
 
   const cadence = selectData.billingCadence;
   const durationMonths = resolveDurationMonths({
@@ -238,6 +307,7 @@ async function handleSelectPlanIntent(
     expiresAt: invoice.expiresAt.toISOString(),
     planName: invoice.planName,
     planId: invoice.planId,
+    checkoutKind: invoice.checkoutKind ?? "lightning",
   };
 }
 

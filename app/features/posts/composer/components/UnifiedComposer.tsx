@@ -42,6 +42,7 @@ import {
   type ShortDraftFilter,
 } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
+import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate.client";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
@@ -320,12 +321,24 @@ export function UnifiedComposer({
   const blossomMediaUploads =
     mediaUploadProviderKnown && isBlossomProvider(mediaUploadProvider);
 
+  const blossomMediaBlocked = useMemo(
+    () =>
+      isBlossomMediaUploadBlocked({
+        uploadProviderKnown: mediaUploadProviderKnown,
+        uploadProvider: mediaUploadProvider,
+        signerReady,
+        windowNostrBridgePresent,
+      }),
+    [
+      mediaUploadProviderKnown,
+      mediaUploadProvider,
+      signerReady,
+      windowNostrBridgePresent,
+    ]
+  );
+
   const blossomSignerMediaNote = useMemo(() => {
-    if (
-      !blossomMediaUploads ||
-      signerReady !== false ||
-      windowNostrBridgePresent
-    ) {
+    if (!blossomMediaUploads || !blossomMediaBlocked) {
       return;
     }
     return (
@@ -335,9 +348,9 @@ export function UnifiedComposer({
           "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
         )}
       >
-        <span className="font-medium">No active Nostr signer</span>
+        <span className="font-medium">Media uploads disabled</span>
         {" — "}
-        Blossom media uploads need a{" "}
+        Blossom storage needs a{" "}
         <span className="font-medium">browser extension</span> (NIP-07) or a{" "}
         <span className="font-medium">connected remote signer</span> (NIP-46).
         Open{" "}
@@ -347,13 +360,13 @@ export function UnifiedComposer({
         >
           Settings
         </Link>{" "}
-        to connect or reconnect your signer.
+        to connect. Text-only posts still work.
       </div>
     );
-  }, [blossomMediaUploads, signerReady, windowNostrBridgePresent]);
+  }, [blossomMediaUploads, blossomMediaBlocked]);
 
   const attachmentFailedTitleHint =
-    blossomMediaUploads && signerReady === false && !windowNostrBridgePresent
+    blossomMediaUploads && blossomMediaBlocked
       ? "Upload failed. Reconnect your Nostr signer in Settings, remove this file, and add it again."
       : undefined;
 
@@ -852,6 +865,7 @@ export function UnifiedComposer({
 
   const processNewFilesForSingleNote = React.useCallback(
     (files: File[]) => {
+      if (blossomMediaBlocked) return;
       const accepted = filterMediaFiles(files);
       if (accepted.length === 0) return;
       const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
@@ -898,11 +912,12 @@ export function UnifiedComposer({
         }
       })();
     },
-    [content, form, setAttachments]
+    [blossomMediaBlocked, content, form, setAttachments]
   );
 
   const processNewFilesForSegment = React.useCallback(
     (segmentId: string, files: File[]) => {
+      if (blossomMediaBlocked) return;
       const accepted = filterMediaFiles(files);
       if (accepted.length === 0) return;
       const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
@@ -970,10 +985,11 @@ export function UnifiedComposer({
         }
       })();
     },
-    [setThreadSegments]
+    [blossomMediaBlocked, setThreadSegments]
   );
 
   const handleAddAttachment = () => {
+    if (blossomMediaBlocked) return;
     fileInputRef.current?.click();
   };
 
@@ -981,11 +997,13 @@ export function UnifiedComposer({
     const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = "";
     if (files.length === 0) return;
+    if (blossomMediaBlocked) return;
     processNewFilesForSingleNote(files);
   };
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
+      if (blossomMediaBlocked) return;
       const items = e.clipboardData?.items;
       if (!items) return;
       const raw: File[] = [];
@@ -1009,6 +1027,7 @@ export function UnifiedComposer({
     document.addEventListener("paste", onPaste);
     return () => document.removeEventListener("paste", onPaste);
   }, [
+    blossomMediaBlocked,
     isThreadMode,
     threadSegments,
     processNewFilesForSingleNote,
@@ -1404,6 +1423,7 @@ export function UnifiedComposer({
           multiple
           className="hidden"
           aria-hidden
+          disabled={blossomMediaBlocked}
           onChange={onFileChange}
         />
         <ComposerErrors
@@ -1484,6 +1504,7 @@ export function UnifiedComposer({
               threadDelayMinutes={threadDelayMinutes}
               onFilesDroppedSegment={processNewFilesForSegment}
               onThreadSegmentFileClick={(segmentId) => {
+                if (blossomMediaBlocked) return;
                 (
                   window as unknown as { __threadSegmentId?: string }
                 ).__threadSegmentId = segmentId;
@@ -1493,66 +1514,69 @@ export function UnifiedComposer({
               onDraggingOverSegmentIdChange={setDraggingOverSegmentId}
               blossomSignerMediaNote={blossomSignerMediaNote}
               attachmentFailedTitleHint={attachmentFailedTitleHint}
+              mediaUploadDisabled={blossomMediaBlocked}
             />
             {!isTemplateMode ? (
               <>
                 <ComposerCanvasDivider />
-                {!isThreadMode ? (
-                  <ComposerOutputPanel
-                    variant="embedded"
-                    content={content}
-                    attachments={attachments}
-                    tagsLine={selectedHashtags}
-                  />
-                ) : (
-                  <ComposerOutputPanel
-                    variant="embedded"
-                    content={threadSegments[0]?.content ?? ""}
-                    attachments={threadSegments[0]?.attachments ?? []}
-                    tagsLine={selectedHashtags}
-                    previewLabel="Preview (first segment)"
-                  />
-                )}
-                <ComposerCanvasDivider />
-                <TagsChipRow
-                  tags={selectedHashtags}
-                  onTagsChange={(newTags) => {
-                    setSelectedHashtags(newTags);
-                    if (!newTags.trim()) {
-                      form.setValue("useHashtagPresets", false);
-                      form.setValue("hashTagPresetId", undefined);
-                      onHashtagPresetChange?.(null, "");
+                <div className="flex flex-col gap-4 sm:gap-5">
+                  {!isThreadMode ? (
+                    <ComposerOutputPanel
+                      variant="embedded"
+                      content={content}
+                      attachments={attachments}
+                      tagsLine={selectedHashtags}
+                    />
+                  ) : (
+                    <ComposerOutputPanel
+                      variant="embedded"
+                      content={threadSegments[0]?.content ?? ""}
+                      attachments={threadSegments[0]?.attachments ?? []}
+                      tagsLine={selectedHashtags}
+                      previewLabel="Preview (first segment)"
+                    />
+                  )}
+                  <ComposerCanvasDivider />
+                  <TagsChipRow
+                    tags={selectedHashtags}
+                    onTagsChange={(newTags) => {
+                      setSelectedHashtags(newTags);
+                      if (!newTags.trim()) {
+                        form.setValue("useHashtagPresets", false);
+                        form.setValue("hashTagPresetId", undefined);
+                        onHashtagPresetChange?.(null, "");
+                      }
+                    }}
+                    presets={hashTagPresets}
+                    selectedPresetId={formSelectedHashtagPresetId}
+                    onPresetSelect={(presetId, mergedTags) => {
+                      setSelectedHashtags(mergedTags);
+                      form.setValue("useHashtagPresets", true);
+                      form.setValue("hashTagPresetId", presetId ?? undefined);
+                      onHashtagPresetChange?.(presetId, mergedTags);
+                    }}
+                    disabled={fetcher.state !== "idle"}
+                    includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                    onIncludeHashtagsInNoteBodyChange={(v) =>
+                      form.setValue("includeHashtagsInNoteBody", v)
                     }
-                  }}
-                  presets={hashTagPresets}
-                  selectedPresetId={formSelectedHashtagPresetId}
-                  onPresetSelect={(presetId, mergedTags) => {
-                    setSelectedHashtags(mergedTags);
-                    form.setValue("useHashtagPresets", true);
-                    form.setValue("hashTagPresetId", presetId ?? undefined);
-                    onHashtagPresetChange?.(presetId, mergedTags);
-                  }}
-                  disabled={fetcher.state !== "idle"}
-                  includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-                  onIncludeHashtagsInNoteBodyChange={(v) =>
-                    form.setValue("includeHashtagsInNoteBody", v)
-                  }
-                  queuePresetName={
-                    selectedQueue !== "unassigned"
-                      ? ((
-                          queueTypes.find(
-                            (q) =>
-                              (typeof q === "string" ? q : q.name) ===
-                              selectedQueue
-                          ) as
-                            | (QueueType & {
-                                hashTagPreset?: { name: string } | null;
-                              })
-                            | undefined
-                        )?.hashTagPreset?.name ?? undefined)
-                      : undefined
-                  }
-                />
+                    queuePresetName={
+                      selectedQueue !== "unassigned"
+                        ? ((
+                            queueTypes.find(
+                              (q) =>
+                                (typeof q === "string" ? q : q.name) ===
+                                selectedQueue
+                            ) as
+                              | (QueueType & {
+                                  hashTagPreset?: { name: string } | null;
+                                })
+                              | undefined
+                          )?.hashTagPreset?.name ?? undefined)
+                        : undefined
+                    }
+                  />
+                </div>
               </>
             ) : null}
           </ComposerLeftCanvas>
@@ -1564,6 +1588,7 @@ export function UnifiedComposer({
           multiple
           className="hidden"
           aria-hidden
+          disabled={blossomMediaBlocked}
           onChange={(e) => {
             const segmentId = (
               window as unknown as { __threadSegmentId?: string }
@@ -1571,6 +1596,7 @@ export function UnifiedComposer({
             const files = e.target.files ? Array.from(e.target.files) : [];
             e.target.value = "";
             if (!segmentId || files.length === 0) return;
+            if (blossomMediaBlocked) return;
             processNewFilesForSegment(segmentId, files);
           }}
         />

@@ -1,117 +1,77 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="55" failures="0" errors="0" time="0.016575709">
-    <testsuite name="tests/unit/schemas-settings-client.test.ts" timestamp="2026-03-28T17:43:29.516Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.007184334">
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts array of strings" time="0.001541">
+<testsuites name="vitest tests" tests="10" failures="0" errors="0" time="0.041366">
+    <testsuite name="tests/integration/api-publish.test.ts" timestamp="2026-03-29T05:22:18.507Z" hostname="Ivans-MacBook-Pro.local" tests="10" failures="0" errors="0" skipped="0" time="0.041366">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should publish event via feature service" time="0.011171709">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts empty array" time="0.000147041">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should publish kind 10002 and invalidate relay intent cache" time="0.004090875">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; accepts non-empty timezone" time="0.000268042">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should allow missing relays (defaults handled by publisher)" time="0.003195958">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; rejects empty timezone" time="0.000748542">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should merge execution relays with poll relay tags for NIP-88 kind 1018" time="0.006244875">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlacklistClientSchema &gt; accepts array of strings" time="0.000214208">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Successful Requests &gt; should dedupe overlapping execution and poll relays for kind 1018" time="0.005552541">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; parses name and tags" time="0.000237291">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should reject non-POST methods" time="0.002984708">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Method not allowed&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty name" time="0.000157792">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should require authentication" time="0.000257333">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty tags" time="0.000123875">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should return validation error for invalid JSON" time="0.000473708">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Invalid JSON in request body&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; parses id, name, tags" time="0.000226042">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should return validation error when event is missing" time="0.000476875">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Event is required&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; rejects empty id" time="0.000155667">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlossomMirrorsClientSchema &gt; parses enableMirrorBlossom and mirrorUrls" time="0.000529875">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; parses nwcEnabled and optional nwcString" time="0.000152208">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; accepts nwcString" time="0.000061958">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; parses empty object with optional hashtags" time="0.000087042">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; accepts hashtags string" time="0.000053375">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with intervalHours" time="0.000482583">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with useGlobalInterval" time="0.000053">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects INTERVAL without intervalHours or useGlobalInterval" time="0.000136667">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses FIXED_SLOTS with slots" time="0.000060292">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects FIXED_SLOTS without slots" time="0.000093333">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses WEEKLY_SLOTS with weeklySlots" time="0.000315125">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects WEEKLY_SLOTS without weeklySlots" time="0.000093916">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects invalid colorToken" time="0.000215834">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/bulk-post-events.utils.test.ts" timestamp="2026-03-28T17:43:29.518Z" hostname="Ivans-MacBook-Pro.local" tests="32" failures="0" errors="0" skipped="0" time="0.009391375">
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns empty fileUrl and scheduledFor for null or non-object" time="0.001017417">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns fileUrl array and scheduledFor from fileUrls item" time="0.000183667">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; filters non-string entries from fileUrl array" time="0.000088709">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlFromFetcher &gt; returns empty for out-of-range index" time="0.000092709">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; joins media, caption, and tags when includeHashtagsInNoteBody is true" time="0.000202292">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; omits tags when includeHashtagsInNoteBody is false" time="0.0001565">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildContent &gt; joins only non-empty parts" time="0.000070417">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; returns empty for undefined or empty string" time="0.000083583">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; splits by space and maps to [t, tag] without leading #" time="0.00011475">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertTagsToArray &gt; filters empty tags" time="0.000082916">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertScheduledTime &gt; parses datetime-local and returns ms" time="0.001413583">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; convertScheduledTime &gt; handles ISO-like string in fallback (no trailing Z)" time="0.000497958">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns first element for array" time="0.000074459">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; parses JSON array string and returns first" time="0.000041334">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns original string when not JSON array" time="0.000033292">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; parseOriginalFileUrl &gt; returns original on parse error" time="0.00005325">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns fileUrl array when post has fileUrl array" time="0.000084">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns [url] when post has fileUrl string" time="0.000041666">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns from originalFileUrl for isKind6Repost" time="0.000043333">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getFileUrlArray &gt; returns empty for missing fileUrl" time="0.000039541">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; createFakeFileUrlData &gt; maps posts to fileUrl, scheduledFor, queueType, isRecyclable" time="0.000461959">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getUserTimezone &gt; returns user timezone when present" time="0.000055208">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getUserTimezone &gt; returns UTC when user is null or missing timezone" time="0.000044709">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns empty when no originalFileUrl" time="0.000059167">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns first from JSON array string" time="0.000039917">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns first from array" time="0.000034333">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; getDisplayFileUrl &gt; returns string as-is when not array" time="0.000035709">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildUploadFormData &gt; appends fileUrls, scheduledDates, queueTypes, isRecyclable, _action" time="0.000275917">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; buildUploadFormData &gt; appends extraFormData when provided" time="0.000081667">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; calls setToast with error message for single error" time="0.001624916">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; calls setToast with combined message for multiple errors" time="0.000823166">
-        </testcase>
-        <testcase classname="tests/unit/posts/bulk-post-events.utils.test.ts" name="bulk-post-events.utils &gt; showValidationErrorToast &gt; schedules setToast(null) after 5s" time="0.000383083">
+        <testcase classname="tests/integration/api-publish.test.ts" name="API: Publish &gt; Error Handling &gt; should reject kind 1018 without pollEvent" time="0.006151625">
+            <system-err>
+
+❌ Error: {
+  message: &apos;pollEvent is required for kind 1018 (NIP-88 vote)&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
     </testsuite>
 </testsuites>

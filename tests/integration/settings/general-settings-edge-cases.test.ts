@@ -11,9 +11,6 @@ vi.mock("~/features/user", () => ({
   updateUserRelayPublishingPreferences: vi.fn(),
   updateGiveawayBlacklist: vi.fn(),
   updateScheduleInterval: vi.fn(),
-}));
-
-vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
 }));
 

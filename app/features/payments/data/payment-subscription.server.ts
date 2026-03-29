@@ -39,7 +39,11 @@ export async function updateUserSubscription(
     amountUsd: unknown;
     billingCadence: "monthly" | "yearly" | null;
     accessDurationMonths: number | null;
-    billingPaymentMethod: "nwc_auto_renew" | "lightning_one_time" | null;
+    billingPaymentMethod:
+      | "nwc_auto_renew"
+      | "lightning_one_time"
+      | "btc_btcpay_onchain"
+      | null;
   } | null = null;
 
   if (paymentId && !paymentId.startsWith("free_")) {
@@ -82,7 +86,11 @@ export async function updateUserSubscription(
       select: { nwcEnabled: true, encryptedNwc: true },
     });
     const renewalMode =
-      userRow?.nwcEnabled && userRow.encryptedNwc ? "auto_renew" : "manual";
+      payment?.billingPaymentMethod === "btc_btcpay_onchain"
+        ? "manual"
+        : userRow?.nwcEnabled && userRow.encryptedNwc
+          ? "auto_renew"
+          : "manual";
 
     const subscription = await tx.subscription.upsert({
       where: { userId },
@@ -173,7 +181,11 @@ export async function extendUserSubscriptionFromPayment(
     amountUsd: unknown;
     billingCadence: "monthly" | "yearly" | null;
     accessDurationMonths: number | null;
-    billingPaymentMethod: "nwc_auto_renew" | "lightning_one_time" | null;
+    billingPaymentMethod:
+      | "nwc_auto_renew"
+      | "lightning_one_time"
+      | "btc_btcpay_onchain"
+      | null;
   } | null = null;
 
   if (paymentId && !paymentId.startsWith("free_")) {
@@ -212,7 +224,11 @@ export async function extendUserSubscriptionFromPayment(
     ]);
 
     const renewalMode =
-      userRow?.nwcEnabled && userRow.encryptedNwc ? "auto_renew" : "manual";
+      payment?.billingPaymentMethod === "btc_btcpay_onchain"
+        ? "manual"
+        : userRow?.nwcEnabled && userRow.encryptedNwc
+          ? "auto_renew"
+          : "manual";
 
     const base =
       existingSub?.currentPeriodEnd && existingSub.currentPeriodEnd > now

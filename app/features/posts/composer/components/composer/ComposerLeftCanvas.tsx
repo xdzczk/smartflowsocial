@@ -47,7 +47,8 @@ export function ComposerLeftCanvas({
             <div className="shrink-0">{headerTrailing}</div>
           </div>
         ) : null}
-        <div className="flex flex-col gap-5 sm:gap-6">{children}</div>
+        {/* Direct children should be major blocks (composition vs utilities); use gap-6 for clear rhythm. */}
+        <div className="flex flex-col gap-6 sm:gap-7">{children}</div>
       </div>
     </div>
   );

@@ -82,16 +82,16 @@ export function ComposerOutputPanel({
   const standalone = variant === "standalone";
 
   return (
-    <div className={cn(standalone && "border-border/60 border-t pt-2")}>
+    <div className={cn(standalone && "border-border/40 border-t pt-1.5")}>
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/40 -mx-1 h-8 w-full justify-between px-2 text-xs font-normal"
+        className="text-muted-foreground/90 hover:text-muted-foreground hover:bg-muted/35 h-7 min-h-7 w-full justify-between gap-2 px-1.5 py-0 text-[11px] font-normal"
         onClick={toggleOpen}
         aria-expanded={open}
       >
-        {previewLabel}
+        <span className="truncate">{previewLabel}</span>
         {open ? (
           <ChevronUp
             className={INLINE_ICON_SIZE_CLASS}
@@ -105,7 +105,7 @@ export function ComposerOutputPanel({
         )}
       </Button>
       {open ? (
-        <div className="space-y-3 pt-3">
+        <div className="space-y-2.5 pt-2">
           {withUrl.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {withUrl.map((a) => (

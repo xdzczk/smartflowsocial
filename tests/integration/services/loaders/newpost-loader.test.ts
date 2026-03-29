@@ -16,9 +16,12 @@ vi.mock("~/features/user", () => ({
 }));
 
 vi.mock("~/features/relays/relay-resolution.server", () => ({
-  resolveExecutionRelays: vi
-    .fn()
-    .mockResolvedValue(["wss://relay.example.com"]),
+  loadComposerRelayLists: vi.fn().mockResolvedValue({
+    accountPublishRelaySource: "app",
+    default: ["wss://relay.example.com"],
+    app: ["wss://relay.example.com"],
+    nip65Profile: ["wss://profile.relay.example.com"],
+  }),
 }));
 
 vi.mock("~/features/templates/services/template-data.server", () => ({

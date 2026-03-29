@@ -47,6 +47,9 @@ export default function NewLongFormPostPage() {
     userTimezone,
     uploadProvider,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
     initialTemplateData,
     templatesRaw,
   } = parsedLoader;
@@ -94,7 +97,9 @@ export default function NewLongFormPostPage() {
   }>({ open: false, mode: "drafts" });
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
-  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
+    null
+  );
 
   const openRelaySelector = useCallback(() => {
     setRelaySelectorOpen(true);
@@ -258,19 +263,21 @@ export default function NewLongFormPostPage() {
           skipLocalDraftRestore={Boolean(publishResultToken)}
           onDraftStateLabelChange={setSaveStateLabel}
           defaultRelays={defaultRelays}
-          relayOverride={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-          }
+          relayOverride={selectedRelayUrls ?? undefined}
           onRelayClick={openRelaySelector}
         />
       </Form>
 
       {relaySelectorOpen ? (
         <RelaySelectorModal
-          defaultRelays={defaultRelays}
-          selectedRelays={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
-          }
+          relayLists={{
+            default: defaultRelays,
+            app: relaysApp,
+            nip65Profile: relaysNip65Profile,
+          }}
+          accountPublishRelaySource={accountPublishRelaySource}
+          inheritRelays={selectedRelayUrls === null}
+          selectedRelays={selectedRelayUrls ?? defaultRelays}
           onClose={() => setRelaySelectorOpen(false)}
           onSave={(urls) => {
             setSelectedRelayUrls(urls);

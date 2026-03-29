@@ -10,6 +10,7 @@ import { quoteGiveawayFinalization } from "~/features/giveaway/giveaway-finaliza
 import { findGiveawayByIdAndUser } from "~/features/giveaway/repositories/giveaway-actions-data.server";
 import { expireStaleFinalizationPaymentsForGiveaway } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import { getBitcoinRate } from "~/features/payments/btc.rate";
+import { btcpayGetInvoice } from "~/features/payments/btcpay.server";
 import { FREE_PLAN_ID } from "~/features/payments/plan-ids";
 import type {
   CreateInvoiceParams,
@@ -23,6 +24,7 @@ import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
 import { prisma } from "~/lib/prisma.server";
 
+import { createBtcpayFounderInvoice } from "./btcpay-plan-invoice.server";
 import {
   getOwnerNwcWithRelayOverrides,
   isLikelyWebsocketRelayError,
@@ -200,6 +202,18 @@ export async function createPlanInvoice({
 
   if (Number(plan.price) === 0) {
     return handleFreePlanInvoice(userId, planId, description);
+  }
+
+  if (billingPaymentMethod === "btc_btcpay_onchain") {
+    return createBtcpayFounderInvoice({
+      planId,
+      userId,
+      description,
+      amountUsdOverride,
+      billingCadence,
+      accessDurationMonths,
+      billingPaymentMethod,
+    });
   }
 
   const credentials = env.OWNER_NWC;
@@ -665,6 +679,188 @@ export async function ensureUserHasFreePlan(userId: string): Promise<void> {
   });
 }
 
+interface ManualVerifyPaymentRow {
+  status: string;
+  userId: string;
+  purpose: string;
+  billingPaymentMethod: string | null;
+  btcpayInvoiceId: string | null;
+  expiresAt: Date | null;
+  createdAt: Date;
+  paymentHash: string;
+  Subscription: { planId: string | null } | null;
+}
+
+function resolvePlanIdForManualVerify(
+  payment: Pick<ManualVerifyPaymentRow, "purpose" | "Subscription">,
+  paymentId: string
+): string | null {
+  if (payment.purpose === "GIVEAWAY_FINALIZATION") {
+    return "__giveaway_finalization__";
+  }
+  if (payment.Subscription?.planId) {
+    return payment.Subscription.planId;
+  }
+  const parts = paymentId.split("_");
+  if (parts.length >= 3) {
+    return parts[0] ?? null;
+  }
+  return null;
+}
+
+async function verifyBtcpayPaymentManually(params: {
+  paymentId: string;
+  userId: string;
+  planId: string;
+  btcpayInvoiceId: string;
+  expiresAt: Date | null;
+}): Promise<{ success: boolean; paid: boolean; message: string }> {
+  const graceEnd =
+    params.expiresAt != null
+      ? new Date(params.expiresAt.getTime() + 48 * 60 * 60 * 1000)
+      : null;
+  if (graceEnd != null && graceEnd < new Date()) {
+    return {
+      success: false,
+      paid: false,
+      message:
+        "Payment window has ended. Please contact support if you already paid.",
+    };
+  }
+
+  try {
+    const { status } = await btcpayGetInvoice(params.btcpayInvoiceId);
+    if (status === "Settled") {
+      await handlePaymentCompleted(
+        params.paymentId,
+        params.userId,
+        params.planId
+      );
+      return {
+        success: true,
+        paid: true,
+        message: "Payment verified and completed",
+      };
+    }
+    if (status === "Expired" || status === "Invalid") {
+      await handlePaymentTimeout(params.paymentId);
+      return {
+        success: true,
+        paid: false,
+        message: "Invoice expired or was invalidated",
+      };
+    }
+    return {
+      success: true,
+      paid: false,
+      message: "Payment not settled yet",
+    };
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      paymentId: params.paymentId,
+      message: "Failed to verify BTCPay invoice",
+    });
+    return {
+      success: false,
+      paid: false,
+      message: "Failed to verify payment",
+    };
+  }
+}
+
+async function verifyNwcPaymentManually(params: {
+  paymentId: string;
+  userId: string;
+  planId: string;
+  paymentHash: string;
+  createdAt: Date;
+}): Promise<{ success: boolean; paid: boolean; message: string }> {
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+  if (params.createdAt <= thirtyMinutesAgo) {
+    return {
+      success: false,
+      paid: false,
+      message: "Payment is too old to auto-verify. Please contact support.",
+    };
+  }
+
+  const ownerNwc = env.OWNER_NWC;
+  if (!ownerNwc) {
+    return {
+      success: false,
+      paid: false,
+      message: OWNER_NWC_MISSING,
+    };
+  }
+
+  const { credentials: ownerNwcCredentials, relays: ownerRelays } =
+    getOwnerNwcWithRelayOverrides(ownerNwc);
+
+  const nwcClient = new NWCClient({
+    nostrWalletConnectUrl: ownerNwcCredentials,
+  });
+
+  try {
+    const tx = (await nwcClient.lookupInvoice({
+      payment_hash: params.paymentHash,
+    })) as unknown;
+
+    const txObj: Record<string, unknown> =
+      tx && typeof tx === "object" && !Array.isArray(tx)
+        ? (tx as Record<string, unknown>)
+        : {};
+
+    const state = typeof txObj["state"] === "string" ? txObj["state"] : "";
+    const settledAt =
+      typeof txObj["settled_at"] === "number" ? txObj["settled_at"] : 0;
+    const preimage =
+      typeof txObj["preimage"] === "string" ? txObj["preimage"] : null;
+
+    const isSettled =
+      state === "settled" || (settledAt > 0 && typeof preimage === "string");
+
+    if (!isSettled) {
+      return {
+        success: true,
+        paid: false,
+        message: "Payment not settled yet",
+      };
+    }
+
+    await handlePaymentCompleted(
+      params.paymentId,
+      params.userId,
+      params.planId
+    );
+
+    if (preimage) {
+      await prisma.payment.update({
+        where: { id: params.paymentId },
+        data: { preimage },
+      });
+    }
+
+    return {
+      success: true,
+      paid: true,
+      message: "Payment verified and completed",
+    };
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      paymentId: params.paymentId,
+      ownerRelays,
+      message: "Failed to verify payment via lookup_invoice",
+    });
+    return {
+      success: false,
+      paid: false,
+      message: "Failed to verify payment",
+    };
+  } finally {
+    nwcClient.close();
+  }
+}
+
 /**
  * Manually verify and complete a payment if it was received but not detected
  */
@@ -700,37 +896,7 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
     };
   }
 
-  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-  const isRecent = payment.createdAt > thirtyMinutesAgo;
-
-  if (!isRecent) {
-    return {
-      success: false,
-      paid: false,
-      message: "Payment is too old to auto-verify. Please contact support.",
-    };
-  }
-
-  const ownerNwc = env.OWNER_NWC;
-  if (!ownerNwc) {
-    return {
-      success: false,
-      paid: false,
-      message: OWNER_NWC_MISSING,
-    };
-  }
-
-  let planId: string | null = null;
-  if (payment.purpose === "GIVEAWAY_FINALIZATION") {
-    planId = "__giveaway_finalization__";
-  } else if (payment.Subscription?.planId) {
-    planId = payment.Subscription.planId;
-  } else {
-    const parts = paymentId.split("_");
-    if (parts.length >= 3) {
-      planId = parts[0] ?? null;
-    }
-  }
+  const planId = resolvePlanIdForManualVerify(payment, paymentId);
 
   if (!planId) {
     return {
@@ -748,66 +914,24 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
     };
   }
 
-  const { credentials: ownerNwcCredentials, relays: ownerRelays } =
-    getOwnerNwcWithRelayOverrides(ownerNwc);
-
-  const nwcClient = new NWCClient({
-    nostrWalletConnectUrl: ownerNwcCredentials,
-  });
-
-  try {
-    const tx = (await nwcClient.lookupInvoice({
-      payment_hash: payment.paymentHash,
-    })) as unknown;
-
-    const txObj: Record<string, unknown> =
-      tx && typeof tx === "object" && !Array.isArray(tx)
-        ? (tx as Record<string, unknown>)
-        : {};
-
-    const state = typeof txObj["state"] === "string" ? txObj["state"] : "";
-    const settledAt =
-      typeof txObj["settled_at"] === "number" ? txObj["settled_at"] : 0;
-    const preimage =
-      typeof txObj["preimage"] === "string" ? txObj["preimage"] : null;
-
-    const isSettled =
-      state === "settled" || (settledAt > 0 && typeof preimage === "string");
-
-    if (!isSettled) {
-      return {
-        success: true,
-        paid: false,
-        message: "Payment not settled yet",
-      };
-    }
-
-    await handlePaymentCompleted(paymentId, payment.userId, planId);
-
-    if (preimage) {
-      await prisma.payment.update({
-        where: { id: paymentId },
-        data: { preimage },
-      });
-    }
-
-    return {
-      success: true,
-      paid: true,
-      message: "Payment verified and completed",
-    };
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
+  if (
+    payment.billingPaymentMethod === "btc_btcpay_onchain" &&
+    payment.btcpayInvoiceId
+  ) {
+    return verifyBtcpayPaymentManually({
       paymentId,
-      ownerRelays,
-      message: "Failed to verify payment via lookup_invoice",
+      userId: payment.userId,
+      planId,
+      btcpayInvoiceId: payment.btcpayInvoiceId,
+      expiresAt: payment.expiresAt,
     });
-    return {
-      success: false,
-      paid: false,
-      message: "Failed to verify payment",
-    };
-  } finally {
-    nwcClient.close();
   }
+
+  return verifyNwcPaymentManually({
+    paymentId,
+    userId: payment.userId,
+    planId,
+    paymentHash: payment.paymentHash,
+    createdAt: payment.createdAt,
+  });
 }

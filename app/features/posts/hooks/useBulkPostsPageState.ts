@@ -25,6 +25,7 @@ import {
 import type { RepostConditions } from "~/features/posts/types";
 import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
+import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addHours,
@@ -38,6 +39,8 @@ export interface UseBulkPostsPageStateProps {
   hashTagPresets: Array<{ id: string; name: string; tags: string }>;
   mode: string | null;
   groupId: string | null;
+  /** When true, row / bulk file pickers are blocked for Blossom (no signer). */
+  blossomMediaUploadBlocked?: boolean;
   bulkDraftGroupPosts: Array<{
     id: string;
     caption: string;
@@ -57,6 +60,7 @@ export function useBulkPostsPageState({
   hashTagPresets: _hashTagPresets,
   mode: _mode,
   groupId,
+  blossomMediaUploadBlocked = false,
   bulkDraftGroupPosts,
 }: UseBulkPostsPageStateProps) {
   const [posts, setPosts] = useState<BulkPost[]>([]);
@@ -397,10 +401,27 @@ export function useBulkPostsPageState({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (blossomMediaUploadBlocked) {
+      e.target.value = "";
+      setToast({
+        type: "error",
+        message: BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+      });
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
     void handleFileChangeHandler(e, bulkFileUploadDeps);
   };
 
   const handleBulkFilesDropped = (files: File[]) => {
+    if (blossomMediaUploadBlocked) {
+      setToast({
+        type: "error",
+        message: BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+      });
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
     void processBulkSelectedFiles(files, bulkFileUploadDeps);
   };
 
@@ -569,6 +590,14 @@ export function useBulkPostsPageState({
 
   const handleRowFileSelect = async (index: number, file: File | null) => {
     if (!file) return;
+    if (blossomMediaUploadBlocked) {
+      setToast({
+        type: "error",
+        message: BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+      });
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
     const { isVideoFile } = await import("~/utils/media-helpers");
     const MAX_IMAGE = 10 * 1024 * 1024;
     const MAX_VIDEO = 100 * 1024 * 1024;

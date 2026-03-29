@@ -5,7 +5,7 @@
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadDraftEditData } from "~/features/posts/server/drafts";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
   getTemplates,
@@ -28,20 +28,28 @@ export async function loadNewPostData(
 ) {
   await requireAnySubscription(userId);
 
-  const [scheduleIntervals, queueTypes, hashTagPresets, relays, templates] =
-    await Promise.all([
-      getScheduleInterval(userId),
-      getQueueTypes(userId),
-      getUserHashTagPresets(userId),
-      resolveExecutionRelays(userId),
-      getTemplates({ userId }),
-    ]);
+  const [
+    scheduleIntervals,
+    queueTypes,
+    hashTagPresets,
+    composerRelays,
+    templates,
+  ] = await Promise.all([
+    getScheduleInterval(userId),
+    getQueueTypes(userId),
+    getUserHashTagPresets(userId),
+    loadComposerRelayLists(userId),
+    getTemplates({ userId }),
+  ]);
 
   const base = {
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
-    relays,
+    relays: composerRelays.default,
+    relaysApp: composerRelays.app,
+    relaysNip65Profile: composerRelays.nip65Profile,
+    publishRelaySource: composerRelays.accountPublishRelaySource,
     nip88PollsEnabled: featureFlags.nip88PollsEnabled,
     templates: templates.filter(
       (t) => (t as { templateType?: string }).templateType === "POST"

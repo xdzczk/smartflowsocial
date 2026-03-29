@@ -4,7 +4,7 @@
  */
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
   getTemplates,
@@ -33,7 +33,7 @@ export async function loadNewLongFormData(
     user,
     uploadProvider,
     templates,
-    relays,
+    composerRelays,
   ] = await Promise.all([
     getScheduleInterval(userId),
     getQueueTypes(userId),
@@ -41,7 +41,7 @@ export async function loadNewLongFormData(
     getUserById(userId),
     getUserUploadProvider(userId),
     getTemplates({ userId }),
-    resolveExecutionRelays(userId),
+    loadComposerRelayLists(userId),
   ]);
 
   const defaultPreset = hashTagPresets.find((p) => p.name === "Default");
@@ -53,7 +53,10 @@ export async function loadNewLongFormData(
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
-    relays,
+    relays: composerRelays.default,
+    relaysApp: composerRelays.app,
+    relaysNip65Profile: composerRelays.nip65Profile,
+    publishRelaySource: composerRelays.accountPublishRelaySource,
     userTimezone: user?.timezone ?? "Etc/GMT",
     uploadProvider,
     templates: templates.filter(

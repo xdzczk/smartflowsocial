@@ -15,6 +15,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 import { getDynamicQueueStyle, getQueueAccentHex } from "../queue-colors";
 
@@ -137,7 +138,8 @@ function renderMediaCell(
   >,
   handleMediaClick: (mediaSrc: string) => void,
   onRowFileSelect?: (index: number, file: File) => void,
-  onRowFileRemove?: (index: number, fileIndex: number) => void
+  onRowFileRemove?: (index: number, fileIndex: number) => void,
+  rowFileUploadDisabled = false
 ): React.ReactNode {
   // Kind 6 reposts
   if (post.isKind6Repost) {
@@ -269,11 +271,19 @@ function renderMediaCell(
           </div>
         ))}
         {onRowFileSelect ? (
-          <label className="border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-0.5 rounded border border-dashed text-xs transition-colors">
+          <label
+            className={cn(
+              "border-muted-foreground/30 text-muted-foreground flex h-24 w-24 flex-col items-center justify-center gap-0.5 rounded border border-dashed text-xs transition-colors",
+              rowFileUploadDisabled
+                ? "pointer-events-none cursor-not-allowed opacity-50"
+                : "hover:border-muted-foreground/50 hover:text-foreground cursor-pointer"
+            )}
+          >
             <input
               type="file"
               accept="image/*,video/*"
               className="sr-only"
+              disabled={rowFileUploadDisabled}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) onRowFileSelect(index, file);
@@ -317,6 +327,8 @@ interface BulkPostsTableProps {
   validationErrorsByIndex?: Record<number, string[]>;
   onRowFileSelect?: (index: number, file: File) => void;
   onRowFileRemove?: (index: number, mediaIndex: number) => void;
+  /** Disables per-row “+ Add” when Blossom uploads require a signer. */
+  rowMediaUploadDisabled?: boolean;
   onRepostSchedulesChange?: (index: number, list: RepostScheduleItem[]) => void;
   onQuoteSchedulesChange?: (index: number, list: QuoteScheduleItem[]) => void;
   showAlsoSchedule?: boolean;
@@ -341,6 +353,7 @@ export default function BulkPostsTable({
   onQuoteSchedulesChange,
   showAlsoSchedule,
   userTimezone = "UTC",
+  rowMediaUploadDisabled = false,
 }: BulkPostsTableProps) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   /** Fixed + capped tracks so Caption does not steal all space; Also column ≥ 200px to match cell content. */
@@ -410,7 +423,8 @@ export default function BulkPostsTable({
                     previewData,
                     handleMediaClick,
                     onRowFileSelect,
-                    onRowFileRemove
+                    onRowFileRemove,
+                    rowMediaUploadDisabled
                   )}
                   {rowErrors?.length ? (
                     <Tooltip>

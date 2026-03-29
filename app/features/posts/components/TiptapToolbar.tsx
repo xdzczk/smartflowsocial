@@ -12,10 +12,13 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 interface TiptapToolbarProps {
   editor: Editor | null;
   onInsertImage?: () => void;
+  /** `editorial` — quieter chrome for article composer; `default` — modal / legacy. */
+  density?: "default" | "editorial";
 }
 
 function ToolbarButton({
@@ -25,6 +28,7 @@ function ToolbarButton({
   title,
   children,
   "aria-label": ariaLabel,
+  editorial,
 }: {
   onClick: () => void;
   active?: boolean;
@@ -32,6 +36,7 @@ function ToolbarButton({
   title: string;
   children: ReactNode;
   "aria-label": string;
+  editorial?: boolean;
 }) {
   return (
     <button
@@ -40,19 +45,35 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       aria-label={ariaLabel}
-      className={`rounded-md px-2 py-1.5 text-sm transition-colors ${
-        active
-          ? "bg-primary/15 text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      className={cn(
+        "transition-colors",
+        editorial
+          ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-md px-1.5 py-1 text-xs"
+          : "rounded-md px-2 py-1.5 text-sm",
+        !editorial &&
+          (active
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"),
+        editorial &&
+          (active
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"),
+        disabled && "cursor-not-allowed opacity-50"
+      )}
     >
       {children}
     </button>
   );
 }
 
-export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
+export function TiptapToolbar({
+  editor,
+  onInsertImage,
+  density = "default",
+}: TiptapToolbarProps) {
   if (!editor) return null;
+
+  const editorial = density === "editorial";
 
   const setLink = () => {
     const linkAttrs = editor.getAttributes("link") as { href?: string };
@@ -68,8 +89,16 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
   };
 
   return (
-    <div className="border-border bg-muted/40 flex flex-wrap items-center gap-0.5 border-b px-2 py-1.5">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-0.5 border-b",
+        editorial
+          ? "border-border/20 bg-transparent px-2 py-1"
+          : "border-border bg-muted/40 px-2 py-1.5"
+      )}
+    >
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().setParagraph().run()}
         active={
           editor.isActive("paragraph") && !editor.isActive("heading")
@@ -82,6 +111,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
         <span className="text-xs font-medium">¶</span>
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         active={editor.isActive("heading", { level: 2 })}
         title="Heading 2"
@@ -90,6 +120,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
         <span className="text-xs font-semibold">H2</span>
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         active={editor.isActive("heading", { level: 3 })}
         title="Heading 3"
@@ -98,22 +129,29 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
         <span className="text-xs font-semibold">H3</span>
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive("bold")}
         title="Bold"
         aria-label="Bold"
       >
-        <span className="text-sm font-bold">B</span>
+        <span className={cn("font-bold", editorial ? "text-xs" : "text-sm")}>
+          B
+        </span>
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         active={editor.isActive("italic")}
         title="Italic"
         aria-label="Italic"
       >
-        <span className="text-sm italic">I</span>
+        <span className={cn("italic", editorial ? "text-xs" : "text-sm")}>
+          I
+        </span>
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         active={editor.isActive("blockquote")}
         title="Quote"
@@ -125,8 +163,12 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
           aria-hidden
         />
       </ToolbarButton>
-      <Separator orientation="vertical" className="mx-1 h-6" />
+      <Separator
+        orientation="vertical"
+        className={cn("mx-1", editorial ? "bg-border/30 h-5" : "h-6")}
+      />
       <ToolbarButton
+        editorial={editorial}
         onClick={setLink}
         active={editor.isActive("link")}
         title="Link"
@@ -139,6 +181,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
         />
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => {
           if (onInsertImage) {
             onInsertImage();
@@ -157,6 +200,7 @@ export function TiptapToolbar({ editor, onInsertImage }: TiptapToolbarProps) {
         />
       </ToolbarButton>
       <ToolbarButton
+        editorial={editorial}
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
         title="Divider"
         aria-label="Insert horizontal divider"

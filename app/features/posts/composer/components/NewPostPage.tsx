@@ -21,6 +21,7 @@ import {
   type QueueType,
 } from "~/features/posts/types";
 import { PublishResultModal, RelaySelectorModal } from "~/features/posts/ui";
+import type { AccountPublishRelaySource } from "~/features/relays/composer-relay-lists";
 
 import {
   getPostTypeFromPost,
@@ -181,6 +182,9 @@ export interface NewPostLoaderParsed {
   typedHashTagPresets: HashTagPreset[];
   scheduleIntervals: number[];
   defaultRelays: string[];
+  relaysApp: string[];
+  relaysNip65Profile: string[];
+  accountPublishRelaySource: AccountPublishRelaySource;
   initialDraft: InitialDraftShape | null;
   initialDraftId: string | null;
   templates: Array<{ id: string; name: string | null }>;
@@ -237,6 +241,26 @@ export function parseNewPostLoaderData(
         )
       : [];
 
+  const relaysApp =
+    "relaysApp" in loaderData && Array.isArray(loaderData["relaysApp"])
+      ? (loaderData["relaysApp"] as unknown[]).filter(
+          (r): r is string => typeof r === "string"
+        )
+      : [];
+
+  const relaysNip65Profile =
+    "relaysNip65Profile" in loaderData &&
+    Array.isArray(loaderData["relaysNip65Profile"])
+      ? (loaderData["relaysNip65Profile"] as unknown[]).filter(
+          (r): r is string => typeof r === "string"
+        )
+      : [];
+
+  const accountPublishRelaySource: AccountPublishRelaySource =
+    loaderData["publishRelaySource"] === "nip65_profile"
+      ? "nip65_profile"
+      : "app";
+
   const initialDraft =
     "initialDraft" in loaderData &&
     loaderData["initialDraft"] !== null &&
@@ -265,6 +289,9 @@ export function parseNewPostLoaderData(
     typedHashTagPresets,
     scheduleIntervals,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
     initialDraft,
     initialDraftId,
     templates,
@@ -279,6 +306,9 @@ export default function NewPostPage() {
     typedHashTagPresets,
     scheduleIntervals,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
     initialDraft,
     initialDraftId,
     templates,
@@ -312,7 +342,9 @@ export default function NewPostPage() {
     scheduledAtUtc?: string | Date | null;
   } | null>(null);
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
-  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
+    null
+  );
   const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
   const [shortDraftPicker, setShortDraftPicker] = useState<{
     open: boolean;
@@ -349,7 +381,7 @@ export default function NewPostPage() {
   }, [publishMode]);
 
   const relayCount =
-    selectedRelayUrls.length > 0
+    selectedRelayUrls !== null
       ? selectedRelayUrls.length
       : defaultRelays.length;
 
@@ -446,10 +478,14 @@ export default function NewPostPage() {
       <div>
         {relaySelectorOpen ? (
           <RelaySelectorModal
-            defaultRelays={defaultRelays}
-            selectedRelays={
-              selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
-            }
+            relayLists={{
+              default: defaultRelays,
+              app: relaysApp,
+              nip65Profile: relaysNip65Profile,
+            }}
+            accountPublishRelaySource={accountPublishRelaySource}
+            inheritRelays={selectedRelayUrls === null}
+            selectedRelays={selectedRelayUrls ?? defaultRelays}
             onClose={() => setRelaySelectorOpen(false)}
             onSave={(urls) => {
               setSelectedRelayUrls(urls);
@@ -472,9 +508,7 @@ export default function NewPostPage() {
               presetId: string | null,
               _hashtags: string
             ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-            relayOverride={
-              selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-            }
+            relayOverride={selectedRelayUrls ?? undefined}
             relayCount={relayCount}
             onRelayClick={() => setRelaySelectorOpen(true)}
             defaultRelays={defaultRelays}
@@ -498,9 +532,7 @@ export default function NewPostPage() {
               presetId: string | null,
               _hashtags: string
             ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-            relayOverride={
-              selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-            }
+            relayOverride={selectedRelayUrls ?? undefined}
             relayCount={relayCount}
             onRelayClick={() => setRelaySelectorOpen(true)}
             initialDraft={initialDraft}

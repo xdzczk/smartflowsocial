@@ -24,6 +24,7 @@ import {
 } from "~/features/posts/server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
 import { getQueueAccentHex, RelaySelectorModal } from "~/features/posts/ui";
+import type { AccountPublishRelaySource } from "~/features/relays/composer-relay-lists";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 
@@ -182,6 +183,26 @@ function parseLoaderData(loaderData: unknown) {
     (r): r is string => typeof r === "string" && r.length > 0
   );
 
+  const relaysAppRaw = Array.isArray((raw as { relaysApp?: unknown }).relaysApp)
+    ? (raw as { relaysApp: unknown[] }).relaysApp
+    : [];
+  const relaysApp = relaysAppRaw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
+  const relaysNip65Raw = Array.isArray(
+    (raw as { relaysNip65Profile?: unknown }).relaysNip65Profile
+  )
+    ? (raw as { relaysNip65Profile: unknown[] }).relaysNip65Profile
+    : [];
+  const relaysNip65Profile = relaysNip65Raw.filter(
+    (r): r is string => typeof r === "string" && r.length > 0
+  );
+
+  const prs = (raw as { publishRelaySource?: unknown }).publishRelaySource;
+  const accountPublishRelaySource: AccountPublishRelaySource =
+    prs === "nip65_profile" ? "nip65_profile" : "app";
+
   return {
     queueTypes,
     scheduleIntervals,
@@ -190,6 +211,9 @@ function parseLoaderData(loaderData: unknown) {
     userTimezone,
     uploadProvider: uploadProviderStr,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
   };
 }
 
@@ -203,10 +227,15 @@ export default function TemplateNewLongformPage() {
     userTimezone,
     uploadProvider,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
   } = parseLoaderData(loaderData);
 
   const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
-  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[]>([]);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
+    null
+  );
 
   return (
     <div className="p-6">
@@ -228,17 +257,19 @@ export default function TemplateNewLongformPage() {
         hashTagPresets={hashTagPresets}
         onPreview={() => {}}
         defaultRelays={defaultRelays}
-        relayOverride={
-          selectedRelayUrls.length > 0 ? selectedRelayUrls : undefined
-        }
+        relayOverride={selectedRelayUrls ?? undefined}
         onRelayClick={() => setRelaySelectorOpen(true)}
       />
       {relaySelectorOpen ? (
         <RelaySelectorModal
-          defaultRelays={defaultRelays}
-          selectedRelays={
-            selectedRelayUrls.length > 0 ? selectedRelayUrls : defaultRelays
-          }
+          relayLists={{
+            default: defaultRelays,
+            app: relaysApp,
+            nip65Profile: relaysNip65Profile,
+          }}
+          accountPublishRelaySource={accountPublishRelaySource}
+          inheritRelays={selectedRelayUrls === null}
+          selectedRelays={selectedRelayUrls ?? defaultRelays}
           onClose={() => setRelaySelectorOpen(false)}
           onSave={(urls) => {
             setSelectedRelayUrls(urls);

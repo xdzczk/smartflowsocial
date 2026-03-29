@@ -1,8 +1,8 @@
 /**
- * Subscription checkout modal (dual-lane)
+ * Subscription checkout modal (dual-lane + optional Founder BTCPay)
  */
 
-import { Loader2, Wallet, Zap } from "lucide-react";
+import { Bitcoin, Loader2, Wallet, Zap } from "lucide-react";
 
 interface SubscriptionCheckoutModalProps {
   isOpen: boolean;
@@ -18,6 +18,9 @@ interface SubscriptionCheckoutModalProps {
   onNwcStringChange: (value: string) => void;
   onSelectManual: () => void;
   onSelectAutoRenew: () => void;
+  /** When set with Founder plan, shows third checkout lane (requires env BTCPAY_*). */
+  btcpayFounderEnabled?: boolean;
+  onSelectBtcOnchain?: () => void;
   onClose: () => void;
 }
 
@@ -35,15 +38,21 @@ export function SubscriptionCheckoutModal({
   onNwcStringChange,
   onSelectManual,
   onSelectAutoRenew,
+  btcpayFounderEnabled,
+  onSelectBtcOnchain,
   onClose,
 }: SubscriptionCheckoutModalProps) {
   if (!isOpen || !plan) return null;
 
   const showManualDurationPicker = billingCadence === "monthly";
+  const showBtcpayLane =
+    plan.id === "founder" &&
+    Boolean(btcpayFounderEnabled) &&
+    typeof onSelectBtcOnchain === "function";
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="dark:bg-card mx-4 w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+      <div className="dark:bg-card mx-4 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-foreground text-xl font-semibold">Checkout</h3>
@@ -61,7 +70,9 @@ export function SubscriptionCheckoutModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div
+          className={`grid grid-cols-1 gap-4 ${showBtcpayLane ? "lg:grid-cols-3" : "md:grid-cols-2"}`}
+        >
           <div className="border-border bg-card relative rounded-lg border p-4">
             <div className="bg-primary/10 text-primary absolute top-3 right-3 rounded-full px-2 py-1 text-xs font-medium">
               Recommended
@@ -183,10 +194,42 @@ export function SubscriptionCheckoutModal({
               )}
             </div>
           </button>
+
+          {showBtcpayLane ? (
+            <button
+              type="button"
+              onClick={onSelectBtcOnchain}
+              disabled={isSubmitting}
+              className="border-border bg-card hover:bg-muted/40 focus:ring-ring rounded-lg border p-4 text-left transition-colors focus:ring-1 focus:outline-none disabled:opacity-50"
+            >
+              <div className="flex items-center gap-2">
+                <Bitcoin className="text-muted-foreground h-5 w-5" />
+                <span className="text-foreground font-semibold">
+                  Bitcoin on-chain
+                </span>
+              </div>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Pay with BTC on-chain via BTCPay (Founder lifetime access). You
+                will open our secure checkout page; we activate your plan when
+                the invoice is settled.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-sm font-medium">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Preparing checkout…</span>
+                  </>
+                ) : (
+                  <span className="text-foreground">Continue to BTCPay</span>
+                )}
+              </div>
+            </button>
+          ) : null}
         </div>
 
         <div className="text-muted-foreground mt-4 text-xs">
-          SmartFlow never holds your funds. Payments are requested from your
+          SmartFlow never holds your funds. Lightning payments are requested
+          from your wallet; on-chain payments go through BTCPay to our store
           wallet.
         </div>
       </div>

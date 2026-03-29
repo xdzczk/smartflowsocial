@@ -6,6 +6,7 @@
 import { Loader2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 
+import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 interface BulkPostsUploadAreaProps {
@@ -14,6 +15,8 @@ interface BulkPostsUploadAreaProps {
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFilesDropped: (files: File[]) => void;
   uploadProvider: string | null;
+  /** Blossom uploads blocked without NIP-07 / NIP-46 signer. */
+  mediaUploadBlocked?: boolean;
 }
 
 function isImageOrVideoFile(file: File): boolean {
@@ -27,16 +30,18 @@ export default function BulkPostsUploadArea({
   onFileChange,
   onFilesDropped,
   uploadProvider,
+  mediaUploadBlocked = false,
 }: BulkPostsUploadAreaProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const uploadDisabled = isProcessing || mediaUploadBlocked;
 
   const handleDragEnter = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!isProcessing) setIsDragging(true);
+      if (!uploadDisabled) setIsDragging(true);
     },
-    [isProcessing]
+    [uploadDisabled]
   );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -51,9 +56,9 @@ export default function BulkPostsUploadArea({
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!isProcessing) e.dataTransfer.dropEffect = "copy";
+      if (!uploadDisabled) e.dataTransfer.dropEffect = "copy";
     },
-    [isProcessing]
+    [uploadDisabled]
   );
 
   const handleDrop = useCallback(
@@ -61,14 +66,14 @@ export default function BulkPostsUploadArea({
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-      if (isProcessing) return;
+      if (uploadDisabled) return;
       const list = e.dataTransfer.files;
       const dropped = Array.from(list).filter((file) =>
         isImageOrVideoFile(file)
       );
       if (dropped.length > 0) onFilesDropped(dropped);
     },
-    [isProcessing, onFilesDropped]
+    [uploadDisabled, onFilesDropped]
   );
 
   return (
@@ -97,12 +102,12 @@ export default function BulkPostsUploadArea({
       <label
         htmlFor="bulk-posts-file-input"
         className={`relative block rounded-lg border-2 border-dashed transition-colors ${
-          isProcessing
+          uploadDisabled
             ? "dark:bg-card border-border bg-muted dark:border-border"
             : isDragging
               ? "border-primary bg-primary/5"
               : "border-border"
-        } ${isProcessing ? "cursor-not-allowed" : "cursor-pointer"}`}
+        } ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
         aria-label="Upload media files"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -133,7 +138,13 @@ export default function BulkPostsUploadArea({
               </>
             ) : (
               <>
-                <div className="text-success">
+                <div
+                  className={
+                    mediaUploadBlocked
+                      ? "text-muted-foreground opacity-50"
+                      : "text-success"
+                  }
+                >
                   <Upload
                     className="h-12 w-12"
                     strokeWidth={INLINE_ICON_STROKE}
@@ -142,7 +153,9 @@ export default function BulkPostsUploadArea({
                 </div>
                 <div>
                   <p className="text-muted-foreground dark:text-foreground text-xl font-medium">
-                    Click or drag and drop images and videos (max 100MB total)
+                    {mediaUploadBlocked
+                      ? BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE
+                      : "Click or drag and drop images and videos (max 100MB total)"}
                   </p>
                 </div>
               </>
@@ -155,7 +168,7 @@ export default function BulkPostsUploadArea({
               onChange={onFileChange}
               multiple
               accept="image/*,video/*"
-              disabled={isProcessing}
+              disabled={uploadDisabled}
             />
           </div>
         </div>

@@ -3,6 +3,12 @@ export {
   ComposerCanvasDivider,
 } from "./ComposerLeftCanvas";
 export type { ComposerLeftCanvasProps } from "./ComposerLeftCanvas";
+export {
+  ComposerCanvasSectionLabel,
+  composerCanvasFieldStackClass,
+  composerCanvasBlockStackClass,
+} from "./composer-canvas-primitives";
+export type { ComposerCanvasSectionLabelProps } from "./composer-canvas-primitives";
 export { ComposerOutputPanel } from "./ComposerOutputPanel";
 export type { ComposerOutputPanelProps } from "./ComposerOutputPanel";
 export { PollOutputPanel } from "./PollOutputPanel";

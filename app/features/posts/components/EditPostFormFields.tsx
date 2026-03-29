@@ -1,5 +1,6 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Checkbox } from "~/components/ui/checkbox";
+import { cn } from "~/lib/utils";
 
 import type { QueueType, HashTagPreset } from "../types";
 interface EditPostFormFieldsProps {
@@ -23,6 +24,8 @@ interface EditPostFormFieldsProps {
   queueTypes: QueueType[];
   includeHashtagsInNoteBody: boolean;
   setIncludeHashtagsInNoteBody: (value: boolean) => void;
+  /** Blossom media add blocked without NIP-07 / NIP-46 signer. */
+  mediaAddDisabled?: boolean;
 }
 
 export function EditPostFormFields({
@@ -46,6 +49,7 @@ export function EditPostFormFields({
   queueTypes,
   includeHashtagsInNoteBody,
   setIncludeHashtagsInNoteBody,
+  mediaAddDisabled = false,
 }: EditPostFormFieldsProps) {
   return (
     <>
@@ -97,7 +101,12 @@ export function EditPostFormFields({
           })}
           <label
             htmlFor="edit-post-file-input"
-            className="border-border hover:border-border flex h-24 w-24 cursor-pointer items-center justify-center rounded border-2 border-dashed"
+            className={cn(
+              "border-border flex h-24 w-24 items-center justify-center rounded border-2 border-dashed",
+              mediaAddDisabled
+                ? "pointer-events-none cursor-not-allowed opacity-50"
+                : "hover:border-border cursor-pointer"
+            )}
           >
             <input
               id="edit-post-file-input"
@@ -106,6 +115,7 @@ export function EditPostFormFields({
               className="hidden"
               accept="image/*,video/*"
               multiple
+              disabled={mediaAddDisabled}
               onChange={onFileChange}
             />
             <span className="text-muted-foreground text-3xl">+</span>

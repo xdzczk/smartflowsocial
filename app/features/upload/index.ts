@@ -54,6 +54,11 @@ export {
 // ============================================================================
 
 export { useBlossomAwareUpload } from "./useBlossomAwareUpload";
+export {
+  BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
+  isBlossomMediaUploadBlocked,
+  useBlossomUploadGate,
+} from "./blossom-upload-gate.client";
 
 // ============================================================================
 // Media metadata (Blossom uploads)

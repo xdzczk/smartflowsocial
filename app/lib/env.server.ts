@@ -75,6 +75,13 @@ interface EnvConfig {
   /** When true, use dual-lane subscription checkout (auto-renew + one-time). */
   SUBSCRIPTION_CHECKOUT_V2_ENABLED?: string;
 
+  /** BTCPay Greenfield (Founder on-chain); all three required to enable checkout. */
+  BTCPAY_URL?: string;
+  BTCPAY_API_KEY?: string;
+  BTCPAY_STORE_ID?: string;
+  /** Webhook HMAC secret from BTCPay (Settings → Webhooks). */
+  BTCPAY_WEBHOOK_SECRET?: string;
+
   // Blossom (vibe-cdn) internal API: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
   BLOSSOM_SFS_API_URL?: string;
@@ -218,6 +225,10 @@ function addOptionalConfig(config: EnvConfig): void {
     "NIP88_POLLS_ENABLED",
     "CONTESTS_V1_ENABLED",
     "SUBSCRIPTION_CHECKOUT_V2_ENABLED",
+    "BTCPAY_URL",
+    "BTCPAY_API_KEY",
+    "BTCPAY_STORE_ID",
+    "BTCPAY_WEBHOOK_SECRET",
     "BLOSSOM_INTERNAL_SECRET",
     "BLOSSOM_SFS_API_URL",
     "BLOSSOM_UPLOAD_TOKEN_SECRET",

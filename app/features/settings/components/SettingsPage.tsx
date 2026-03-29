@@ -29,6 +29,10 @@ import {
   QueueTypesSettings,
 } from "~/features/posts/ui";
 import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
+import type {
+  Nip65ProfileRelayEntry,
+  Nip65RelayScope,
+} from "~/features/relays/nip65-relay-entry";
 import {
   BlossomMediaMirrorsSettings,
   UploadProviderSettings,
@@ -254,6 +258,21 @@ function toIsoStringOrNull(value: unknown): string | null {
   return null;
 }
 
+function parseProfileRelayEntries(value: unknown): Nip65ProfileRelayEntry[] {
+  if (!Array.isArray(value)) return [];
+  const scopes = new Set<Nip65RelayScope>(["both", "read", "write"]);
+  return value
+    .map((e) => {
+      if (!e || typeof e !== "object" || Array.isArray(e)) return null;
+      const obj = e as Record<string, unknown>;
+      const url = typeof obj["url"] === "string" ? obj["url"] : null;
+      const scope = typeof obj["scope"] === "string" ? obj["scope"] : null;
+      if (!url || !scope || !scopes.has(scope as Nip65RelayScope)) return null;
+      return { url, scope: scope as Nip65RelayScope };
+    })
+    .filter((v): v is Nip65ProfileRelayEntry => v !== null);
+}
+
 function parseManagedRelays(value: unknown): ManagedRelay[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -312,6 +331,7 @@ export default function SettingsPage() {
     relays?: unknown;
     publishRelaySource?: unknown;
     profileRelays?: unknown;
+    profileRelayEntries?: unknown;
     managedRelays?: unknown;
     relayAcks?: unknown;
     giveawayBlacklist?: unknown;
@@ -365,7 +385,7 @@ export default function SettingsPage() {
     timezone,
     relays,
     publishRelaySource,
-    profileRelays,
+    profileRelayEntries,
     managedRelays,
     relayAcks,
     giveawayBlacklist,
@@ -476,7 +496,7 @@ export default function SettingsPage() {
   const timezoneValue = asStringOrNull(timezone);
   const relaysList = asStringArray(relays);
   const publishRelaySourceValue = asPublishRelaySource(publishRelaySource);
-  const profileRelaysList = asStringArray(profileRelays);
+  const profileRelayEntriesList = parseProfileRelayEntries(profileRelayEntries);
   const managedRelaysList = parseManagedRelays(managedRelays);
   const relayAcksMap = parseRelayAcksMap(relayAcks);
   const giveawayBlacklistList = asStringArray(giveawayBlacklist);
@@ -643,7 +663,7 @@ export default function SettingsPage() {
             <RelaysSettings
               relays={relaysList}
               publishRelaySource={publishRelaySourceValue}
-              profileRelays={profileRelaysList}
+              profileRelayEntries={profileRelayEntriesList}
               managedRelays={managedRelaysList}
               relayAcks={relayAcksMap}
               blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}

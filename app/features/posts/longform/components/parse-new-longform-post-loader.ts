@@ -1,12 +1,16 @@
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { HashTagPreset, QueueType } from "~/features/posts/types";
+import type { AccountPublishRelaySource } from "~/features/relays/composer-relay-lists";
 
 export interface NewLongFormPostLoaderParsed {
   userTags: unknown;
   userTimezone: unknown;
   uploadProvider: unknown;
   defaultRelays: string[];
+  relaysApp: string[];
+  relaysNip65Profile: string[];
+  accountPublishRelaySource: AccountPublishRelaySource;
   initialTemplateData: {
     title?: string;
     summary?: string;
@@ -209,6 +213,33 @@ export function parseNewLongFormPostLoader(
         (r): r is string => typeof r === "string" && r.length > 0
       )
     : [];
+
+  const relaysAppRaw =
+    loaderData && typeof loaderData === "object" && "relaysApp" in loaderData
+      ? (loaderData as { relaysApp?: unknown }).relaysApp
+      : [];
+  const relaysApp = Array.isArray(relaysAppRaw)
+    ? relaysAppRaw.filter(
+        (r): r is string => typeof r === "string" && r.length > 0
+      )
+    : [];
+
+  const relaysNip65Raw =
+    loaderData &&
+    typeof loaderData === "object" &&
+    "relaysNip65Profile" in loaderData
+      ? (loaderData as { relaysNip65Profile?: unknown }).relaysNip65Profile
+      : [];
+  const relaysNip65Profile = Array.isArray(relaysNip65Raw)
+    ? relaysNip65Raw.filter(
+        (r): r is string => typeof r === "string" && r.length > 0
+      )
+    : [];
+
+  const prs = (loaderData as { publishRelaySource?: unknown } | null)
+    ?.publishRelaySource;
+  const accountPublishRelaySource: AccountPublishRelaySource =
+    prs === "nip65_profile" ? "nip65_profile" : "app";
   const initialTemplateData =
     loaderData &&
     typeof loaderData === "object" &&
@@ -247,6 +278,9 @@ export function parseNewLongFormPostLoader(
     userTimezone,
     uploadProvider,
     defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
     initialTemplateData,
     templatesRaw,
     scheduleIntervals: parseScheduleIntervals(scheduleIntervalsRaw),
