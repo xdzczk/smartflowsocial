@@ -1,20 +1,27 @@
-import { Link, useNavigation } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { Link, useFetcher, useNavigate, useNavigation } from "@remix-run/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  ActionRail,
+  ActionRailActions,
+  ActionRailLabel,
+  ActionRailNotice,
+  ActionRailOutcome,
+  ActionRailRow,
+  ActionRailSection,
+  RAIL_MAJOR_DIVIDE,
+  RAIL_SECONDARY_ACTION,
+  RAIL_STACK_ROWS,
+  RAIL_SUMMARY_TO_FEEDBACK,
+} from "~/components/action-rail";
+import { Button } from "~/components/ui/button";
 import { PublishedPostPickerGrid } from "~/features/campaign-ui";
 import {
   computeFinalizationFeeSats,
   getFinalizationFeeRateBps,
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { PlanType } from "~/features/payments/types";
+import { cn } from "~/lib/utils";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
@@ -123,6 +130,7 @@ export interface GiveawayNewBuilderProps {
   actionError?: string;
 }
 
+/* eslint-disable sonarjs/cognitive-complexity -- rail aggregates many builder fields */
 function GiveawayNewBuilderStickySummary({
   scopeType,
   periodMode,
@@ -130,14 +138,16 @@ function GiveawayNewBuilderStickySummary({
   winnerCount,
   rewardMode,
   simpleSats,
-  summary,
   selectionMode,
   planDisplayName,
   plannedPayoutForFee,
   feePreview,
   isFollowGraphScope,
+  selectedSinglePostId,
   actionError,
-  isSubmitting,
+  fetcherError,
+  isBusy,
+  onSaveDraft,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -145,11 +155,6 @@ function GiveawayNewBuilderStickySummary({
   winnerCount: number;
   rewardMode: "simple" | "advanced";
   simpleSats: number;
-  summary: {
-    maxPayout: number | null;
-    avg: number | null;
-    engagementLine: string;
-  };
   selectionMode: "UNIQUE_USER" | "WEIGHTED_BY_ENGAGEMENT";
   planDisplayName: string;
   plannedPayoutForFee: number | null;
@@ -159,130 +164,194 @@ function GiveawayNewBuilderStickySummary({
     rateBps: number;
   } | null;
   isFollowGraphScope: boolean;
+  selectedSinglePostId: string;
   actionError?: string;
-  isSubmitting: boolean;
+  fetcherError?: string;
+  isBusy: boolean;
+  onSaveDraft: () => void;
 }) {
+  const entryValue = isFollowGraphScope
+    ? "Random from accounts (after filters)"
+    : selectedTypes.length
+      ? selectedTypes.join(", ")
+      : "None selected";
+
+  const rewardsValue =
+    rewardMode === "simple"
+      ? simpleSats > 0
+        ? `${simpleSats.toLocaleString()} sats × ${winnerCount} → ${(simpleSats * winnerCount).toLocaleString()} max`
+        : "Selection only (no sats)"
+      : "Advanced per-type";
+
+  const selectionValue = isFollowGraphScope
+    ? "Uniform random"
+    : selectionMode === "UNIQUE_USER"
+      ? "Unique user"
+      : "Weighted";
+
+  const missingLines: string[] = [];
+  if (scopeType === "SINGLE_POST" && !selectedSinglePostId.trim()) {
+    missingLines.push("Select a post for single-post scope.");
+  }
+  if (!isFollowGraphScope && selectedTypes.length === 0) {
+    missingLines.push("Select at least one entry method.");
+  }
+
+  const warnLines: string[] = [];
+  if (rewardMode === "simple" && simpleSats <= 0) {
+    warnLines.push("No sats pledged — selection-only giveaway.");
+  }
+  if (winnerCount > 50) {
+    warnLines.push("Winner count is high — confirm your plan cap.");
+  }
+
+  const serverErr = actionError ?? fetcherError;
+  const outcomeLine =
+    plannedPayoutForFee != null && plannedPayoutForFee > 0
+      ? `Up to ${plannedPayoutForFee.toLocaleString()} sats across ${winnerCount} winner${winnerCount !== 1 ? "s" : ""}`
+      : `Selection-focused · ${winnerCount} winner${winnerCount !== 1 ? "s" : ""}`;
+
+  const plannedPayoutDisplay =
+    rewardMode === "advanced"
+      ? "—"
+      : plannedPayoutForFee != null
+        ? `${plannedPayoutForFee.toLocaleString()} sats`
+        : "0 sats";
+
+  let finalizationDisplay: string;
+  let dueAtLockDisplay: string;
+  if (rewardMode === "advanced") {
+    finalizationDisplay = "At preview";
+    dueAtLockDisplay = "—";
+  } else if (plannedPayoutForFee != null && feePreview) {
+    finalizationDisplay =
+      plannedPayoutForFee <= 0
+        ? "0 sats"
+        : feePreview.waivedByPlan
+          ? "Included in plan"
+          : `${feePreview.rateBps / 100}% (${feePreview.feeSats.toLocaleString()} sats)`;
+    dueAtLockDisplay =
+      plannedPayoutForFee <= 0
+        ? "0 sats"
+        : feePreview.waivedByPlan
+          ? "0 sats"
+          : `${feePreview.feeSats.toLocaleString()} sats`;
+  } else {
+    finalizationDisplay = "—";
+    dueAtLockDisplay = "—";
+  }
+
   return (
-    <aside className="sticky top-20 mt-10 h-fit w-full min-w-0 space-y-4 self-start lg:mt-0">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Giveaway summary</CardTitle>
-          <CardDescription>Updates as you adjust the builder</CardDescription>
-        </CardHeader>
-        <CardContent className="text-muted-foreground space-y-3 text-sm">
-          <div>
-            <span className="text-foreground font-medium">Scope · </span>
-            {asideScopeLine(scopeType, periodMode)}
-          </div>
-          <div>
-            <span className="text-foreground font-medium">Entries · </span>
-            {isFollowGraphScope
-              ? "Random from accounts (after filters)"
-              : selectedTypes.length
-                ? selectedTypes.join(", ")
-                : "None selected"}
-          </div>
-          <div>
-            <span className="text-foreground font-medium">Winners · </span>
-            {winnerCount} total
-          </div>
-          <div>
-            <span className="text-foreground font-medium">Rewards · </span>
-            {rewardMode === "simple" ? (
-              simpleSats > 0 ? (
-                <>
-                  {simpleSats.toLocaleString()} sats × {winnerCount} →{" "}
-                  <span className="text-foreground font-semibold">
-                    {(simpleSats * winnerCount).toLocaleString()} sats max
-                  </span>
-                </>
-              ) : (
-                "Selection only (no sats)"
-              )
-            ) : (
-              "Advanced per-type"
-            )}
-          </div>
-          {summary.avg != null ? (
-            <div>
-              <span className="text-foreground font-medium">
-                Avg per winner ·{" "}
-              </span>
-              {summary.avg.toLocaleString()} sats
-            </div>
-          ) : null}
-          <div>
-            <span className="text-foreground font-medium">Selection · </span>
-            {isFollowGraphScope
-              ? "Uniform random"
-              : selectionMode === "UNIQUE_USER"
-                ? "Unique user"
-                : "Weighted"}
-          </div>
-          <div>
-            <span className="text-foreground font-medium">Plan · </span>
-            {planDisplayName}
-          </div>
-          {plannedPayoutForFee != null && feePreview ? (
-            <>
-              <div>
-                <span className="text-foreground font-medium">
-                  Planned payout ·{" "}
-                </span>
-                {plannedPayoutForFee.toLocaleString()} sats
-              </div>
-              <div>
-                <span className="text-foreground font-medium">
-                  Finalization fee ·{" "}
-                </span>
-                {plannedPayoutForFee <= 0
-                  ? "0 sats"
-                  : feePreview.waivedByPlan
-                    ? "Included in your plan"
-                    : `${feePreview.feeSats.toLocaleString()} sats (${feePreview.rateBps / 100}%)`}
-              </div>
-              <div>
-                <span className="text-foreground font-medium">
-                  Due at lock ·{" "}
-                </span>
-                {plannedPayoutForFee <= 0
-                  ? "0 sats"
-                  : feePreview.waivedByPlan
-                    ? "0 sats"
-                    : `${feePreview.feeSats.toLocaleString()} sats`}
-              </div>
-            </>
-          ) : rewardMode === "advanced" ? (
-            <div>
-              <span className="text-foreground font-medium">
-                Finalization ·{" "}
-              </span>
-              Fee is calculated from your per-type rewards when you preview.
-            </div>
-          ) : null}
-          {winnerCount > 50 ? (
-            <p className="text-destructive text-xs">
-              Winner count exceeds typical limits — check your plan cap.
-            </p>
-          ) : null}
-          <div className="border-border space-y-3 border-t pt-3">
-            {actionError ? (
-              <p className="text-destructive text-sm">{actionError}</p>
-            ) : null}
+    <ActionRail
+      ariaLabel="Giveaway summary"
+      className="mt-10 self-start lg:mt-0"
+      footer={
+        <ActionRailActions
+          secondaryButton={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={RAIL_SECONDARY_ACTION}
+              onClick={onSaveDraft}
+              disabled={isBusy}
+            >
+              Save draft
+            </Button>
+          }
+          primaryButton={
             <Button
               type="submit"
-              size="lg"
-              className="w-full"
-              disabled={isSubmitting}
+              size="sm"
+              variant="default"
+              disabled={isBusy}
+              className={cn(
+                "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
+                "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
             >
               Create draft & continue to preview
             </Button>
+          }
+        />
+      }
+    >
+      <div className={cn("flex flex-col text-xs", RAIL_MAJOR_DIVIDE)}>
+        <ActionRailSection>
+          <ActionRailLabel>Giveaway options</ActionRailLabel>
+          <div className={RAIL_STACK_ROWS}>
+            <ActionRailRow
+              label="Scope"
+              value={asideScopeLine(scopeType, periodMode)}
+            />
+            <ActionRailRow
+              label="Entry methods"
+              value={entryValue}
+              placeholder={
+                !isFollowGraphScope ? selectedTypes.length === 0 : false
+              }
+            />
+            <ActionRailRow label="Winners" value={`${winnerCount} total`} />
+            <ActionRailRow label="Rewards" value={rewardsValue} />
+            <ActionRailRow label="Selection" value={selectionValue} />
+            <ActionRailRow label="Plan" value={planDisplayName} />
           </div>
-        </CardContent>
-      </Card>
-    </aside>
+        </ActionRailSection>
+
+        <ActionRailSection>
+          <ActionRailLabel>Giveaway summary</ActionRailLabel>
+          <div className={RAIL_STACK_ROWS}>
+            <ActionRailRow
+              label="Planned payout"
+              value={plannedPayoutDisplay}
+            />
+            <ActionRailRow
+              label="Finalization fee"
+              value={finalizationDisplay}
+            />
+            <ActionRailRow label="Due at lock" value={dueAtLockDisplay} />
+          </div>
+        </ActionRailSection>
+
+        <ActionRailSection className="space-y-2">
+          {missingLines.length > 0 ? (
+            <ActionRailNotice
+              variant="warning"
+              title="Missing requirements"
+              lines={missingLines}
+              className={RAIL_SUMMARY_TO_FEEDBACK}
+            />
+          ) : null}
+          {warnLines.length > 0 ? (
+            <ActionRailNotice
+              variant="warning"
+              title="Before you submit"
+              lines={warnLines}
+              className={
+                missingLines.length > 0 ? RAIL_SUMMARY_TO_FEEDBACK : undefined
+              }
+            />
+          ) : null}
+          {serverErr ? (
+            <ActionRailNotice
+              variant="error"
+              title="Could not save"
+              lines={[serverErr]}
+              className={RAIL_SUMMARY_TO_FEEDBACK}
+            />
+          ) : null}
+
+          <ActionRailOutcome
+            className={RAIL_SUMMARY_TO_FEEDBACK}
+            headline="Ready to continue"
+            outcomeLine={outcomeLine}
+          />
+        </ActionRailSection>
+      </div>
+    </ActionRail>
   );
 }
+/* eslint-enable sonarjs/cognitive-complexity */
 
 function GiveawayNewBuilderPresetTemplates({
   planLimits,
@@ -404,7 +473,43 @@ export function GiveawayNewBuilder({
   actionError,
 }: GiveawayNewBuilderProps) {
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
+  const saveFetcher = useFetcher<{
+    ok?: boolean;
+    giveawayId?: string;
+    error?: string;
+  }>();
+
+  useEffect(() => {
+    const d = saveFetcher.data;
+    if (d && d.ok === true && typeof d.giveawayId === "string") {
+      navigate(`/dashboard/giveaway/detail/${d.giveawayId}`, {
+        replace: true,
+      });
+    }
+  }, [saveFetcher.data, navigate]);
+
   const isSubmitting = navigation.state === "submitting";
+  const isSaveSubmitting = saveFetcher.state !== "idle";
+  const isBusy = isSubmitting || isSaveSubmitting;
+
+  const fetcherError =
+    navigation.state === "submitting"
+      ? undefined
+      : saveFetcher.state === "idle" &&
+          saveFetcher.data &&
+          "error" in saveFetcher.data &&
+          typeof saveFetcher.data.error === "string"
+        ? saveFetcher.data.error
+        : undefined;
+
+  const handleSaveDraft = () => {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    fd.set("responseMode", "json");
+    saveFetcher.submit(fd, { method: "post" });
+  };
 
   const [scopeType, setScopeType] = useState<
     "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING"
@@ -439,27 +544,6 @@ export function GiveawayNewBuilder({
   const selectedTypes = ENGAGEMENT_META.filter(
     (m) => effectiveEngagement[m.value]
   ).map((m) => m.value);
-  const summary = useMemo(() => {
-    const maxPayout =
-      effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
-    const avg =
-      effectiveRewardMode === "simple" && winnerCount > 0 && simpleSats > 0
-        ? simpleSats
-        : null;
-    return {
-      maxPayout,
-      avg,
-      engagementLine: isFollowGraphScope
-        ? "Random from follower/following list"
-        : selectedTypes.join(", ") || "—",
-    };
-  }, [
-    effectiveRewardMode,
-    winnerCount,
-    simpleSats,
-    selectedTypes,
-    isFollowGraphScope,
-  ]);
 
   const plannedPayoutForFee =
     effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
@@ -494,8 +578,9 @@ export function GiveawayNewBuilder({
       </div>
 
       <form
+        ref={formRef}
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 xl:grid-cols-[1fr_min(100%,344px)]"
       >
         <input type="hidden" name="intent" value="create" />
         <input type="hidden" name="rewardMode" value={effectiveRewardMode} />
@@ -1008,14 +1093,16 @@ export function GiveawayNewBuilder({
           winnerCount={winnerCount}
           rewardMode={effectiveRewardMode}
           simpleSats={simpleSats}
-          summary={summary}
           selectionMode={effectiveSelectionMode}
           planDisplayName={planDisplayName}
           plannedPayoutForFee={plannedPayoutForFee}
           feePreview={feePreview}
           isFollowGraphScope={isFollowGraphScope}
+          selectedSinglePostId={selectedSinglePostId}
           actionError={actionError}
-          isSubmitting={isSubmitting}
+          fetcherError={fetcherError}
+          isBusy={isBusy}
+          onSaveDraft={handleSaveDraft}
         />
       </form>
 

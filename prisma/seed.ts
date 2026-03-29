@@ -1,6 +1,32 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
 
-const prisma: PrismaClient = new PrismaClient();
+const databaseUrl = process.env["DATABASE_URL"]?.trim();
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required to run prisma seed");
+}
+
+const pool = new Pool({
+  connectionString: databaseUrl,
+  max: 5,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+});
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+  log:
+    process.env["NODE_ENV"] === "development" ? ["warn", "error"] : ["error"],
+});
+
+async function disconnectSeedClient(): Promise<void> {
+  try {
+    await prisma.$disconnect();
+  } finally {
+    await pool.end();
+  }
+}
 
 async function main() {
   console.log("🌱 Starting seed...");
@@ -335,11 +361,11 @@ async function main() {
 
 main()
   .then(async () => {
-    await prisma.$disconnect();
+    await disconnectSeedClient();
   })
   .catch(async (e) => {
     console.error("❌ Seed failed:");
     console.error(e);
-    await prisma.$disconnect();
+    await disconnectSeedClient();
     process.exit(1);
   });

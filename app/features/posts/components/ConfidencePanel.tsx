@@ -6,7 +6,8 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { Button } from "~/components/ui/button";
+import { ActionRail } from "~/components/action-rail/ActionRail";
+import { ActionRailActions } from "~/components/action-rail/ActionRailActions";
 import { Switch } from "~/components/ui/switch";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import {
@@ -22,7 +23,6 @@ import {
   RAIL_MAJOR_DIVIDE,
   RAIL_MODE_THREAD_GAP,
   RAIL_PAD_X,
-  RAIL_SECONDARY_ACTION,
   RAIL_STACK_ROWS,
   RAIL_STACK_TIGHT,
   RAIL_SUMMARY_TO_FEEDBACK,
@@ -267,7 +267,7 @@ function PublishSummarySection({
     ? null
     : (postStatusSummaryInline ?? fallbackInline ?? "—");
   const outcomeLine = deriveSummaryOutcomeLine(publishMode, outcomeSentence);
-  const hasBlocking = compactIssues.length > 0 || compactWarnings.length > 0;
+  const hasHardBlockers = compactIssues.length > 0;
 
   return (
     <div className={RAIL_STACK_ROWS}>
@@ -333,15 +333,6 @@ function PublishSummarySection({
         ) : null}
       </div>
 
-      {!hasBlocking ? (
-        <RailSummaryOutcomeBlock
-          className={RAIL_SUMMARY_TO_FEEDBACK}
-          headline={readiness.headline}
-          outcomeLine={outcomeLine || null}
-          pristineHint={pristineHint ?? null}
-        />
-      ) : null}
-
       {compactIssues.length > 0 ? (
         <RailFeedbackBlock
           className={RAIL_SUMMARY_TO_FEEDBACK}
@@ -356,6 +347,15 @@ function PublishSummarySection({
           variant="warning"
           title="Missing requirements"
           lines={compactWarnings}
+        />
+      ) : null}
+
+      {!hasHardBlockers ? (
+        <RailSummaryOutcomeBlock
+          className={RAIL_SUMMARY_TO_FEEDBACK}
+          headline={readiness.headline}
+          outcomeLine={outcomeLine || null}
+          pristineHint={pristineHint ?? null}
         />
       ) : null}
     </div>
@@ -564,77 +564,6 @@ function PublishingSummaryRailBody({
   );
 }
 
-function PublishingSummaryRailActions({
-  primaryActionLabel,
-  onPrimaryAction,
-  onPrimaryActionBlocked,
-  primaryActionDisabled,
-  primaryActionLoading,
-  primaryActionLoadingLabel,
-  secondaryActionLabel,
-  onSecondaryAction,
-  secondaryActionDisabled,
-}: Pick<
-  PublishingSummaryRailProps,
-  | "primaryActionLabel"
-  | "onPrimaryAction"
-  | "onPrimaryActionBlocked"
-  | "primaryActionDisabled"
-  | "primaryActionLoading"
-  | "primaryActionLoadingLabel"
-  | "secondaryActionLabel"
-  | "onSecondaryAction"
-  | "secondaryActionDisabled"
->) {
-  const showLoading = Boolean(
-    primaryActionLoading && primaryActionLoadingLabel
-  );
-  const label = showLoading ? primaryActionLoadingLabel! : primaryActionLabel;
-  const primaryInert = showLoading;
-  const blocked = primaryInert || Boolean(primaryActionDisabled);
-
-  return (
-    <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
-      {secondaryActionLabel && onSecondaryAction ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={RAIL_SECONDARY_ACTION}
-          onClick={onSecondaryAction}
-          disabled={secondaryActionDisabled}
-        >
-          {secondaryActionLabel}
-        </Button>
-      ) : null}
-      <div className="p-0">
-        <Button
-          type="button"
-          size="sm"
-          variant="default"
-          aria-disabled={blocked}
-          className={cn(
-            "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
-            blocked
-              ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
-          )}
-          onClick={() => {
-            if (primaryInert) return;
-            if (primaryActionDisabled) {
-              onPrimaryActionBlocked?.();
-              return;
-            }
-            onPrimaryAction();
-          }}
-        >
-          {label}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   const bodyProps = {
     publishMode: props.publishMode,
@@ -660,28 +589,23 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   };
 
   return (
-    <aside
-      className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-5.75rem)] lg:w-[312px] xl:w-[344px]"
-      aria-label="Publish"
+    <ActionRail
+      ariaLabel="Publish"
+      footer={
+        <ActionRailActions
+          secondaryLabel={props.secondaryActionLabel}
+          onSecondaryClick={props.onSecondaryAction}
+          secondaryDisabled={props.secondaryActionDisabled}
+          primaryLabel={props.primaryActionLabel}
+          onPrimaryClick={props.onPrimaryAction}
+          onPrimaryBlocked={props.onPrimaryActionBlocked}
+          primaryDisabled={props.primaryActionDisabled}
+          primaryLoading={props.primaryActionLoading}
+          primaryLoadingLabel={props.primaryActionLoadingLabel}
+        />
+      }
     >
-      <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <PublishingSummaryRailBody {...bodyProps} />
-        </div>
-        <div className="shrink-0">
-          <PublishingSummaryRailActions
-            primaryActionLabel={props.primaryActionLabel}
-            onPrimaryAction={props.onPrimaryAction}
-            onPrimaryActionBlocked={props.onPrimaryActionBlocked}
-            primaryActionDisabled={props.primaryActionDisabled}
-            primaryActionLoading={props.primaryActionLoading}
-            primaryActionLoadingLabel={props.primaryActionLoadingLabel}
-            secondaryActionLabel={props.secondaryActionLabel}
-            onSecondaryAction={props.onSecondaryAction}
-            secondaryActionDisabled={props.secondaryActionDisabled}
-          />
-        </div>
-      </div>
-    </aside>
+      <PublishingSummaryRailBody {...bodyProps} />
+    </ActionRail>
   );
 }

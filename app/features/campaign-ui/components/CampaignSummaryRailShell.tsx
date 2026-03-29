@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
 
+/**
+ * @deprecated Prefer `ActionRail` and related primitives from
+ * `~/components/action-rail` for sticky summary rails (unified with Composer).
+ */
 export interface CampaignSummaryRow {
   label: string;
   value: ReactNode;

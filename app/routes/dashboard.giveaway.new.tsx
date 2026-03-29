@@ -394,6 +394,9 @@ export async function action({ request }: ActionFunctionArgs) {
       selectionMode: selectionModeResolved,
       filters: filters ?? undefined,
     });
+    if (formData.get("responseMode") === "json") {
+      return json({ ok: true as const, giveawayId: giveaway.id });
+    }
     return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
   } catch (err) {
     const message =

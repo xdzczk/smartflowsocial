@@ -20,6 +20,11 @@ import {
   type SetStateAction,
 } from "react";
 
+import {
+  ActionRailActions,
+  RAIL_SECONDARY_ACTION,
+} from "~/components/action-rail";
+import { Button } from "~/components/ui/button";
 import { requireUserId } from "~/features/auth";
 import { PublishedPostPickerGrid } from "~/features/campaign-ui";
 import {
@@ -46,6 +51,7 @@ import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getPostById, getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
@@ -778,8 +784,9 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       </div>
 
       <Form
+        id="dashboard-contest-new-form"
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,320px)] lg:items-start lg:gap-8"
+        className="lg:grid lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 xl:grid-cols-[1fr_min(100%,344px)]"
       >
         <div className="min-w-0 space-y-8">
           <input
@@ -888,7 +895,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           />
         </div>
 
-        <div className="mt-10 w-full min-w-0 self-start lg:sticky lg:top-20 lg:mt-0">
+        <div className="mt-10 w-full min-w-0 self-start lg:mt-0">
           <ContestBuilderSummaryRail
             planType={planType}
             planLabel={planLabel}
@@ -909,26 +916,41 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
               minFollowers,
             }}
             footerActions={
-              <div className="flex flex-col gap-2">
-                <button
-                  type="submit"
-                  name="launchNow"
-                  value="0"
-                  disabled={isSubmitting}
-                  className="border-border bg-background rounded-md border px-4 py-2 text-sm disabled:pointer-events-none disabled:opacity-50"
-                >
-                  Save draft
-                </button>
-                <button
-                  type="submit"
-                  name="launchNow"
-                  value="1"
-                  disabled={!canSubmit || isSubmitting}
-                  className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
-                >
-                  Launch contest
-                </button>
-              </div>
+              <ActionRailActions
+                secondaryButton={
+                  <Button
+                    type="submit"
+                    form="dashboard-contest-new-form"
+                    name="launchNow"
+                    value="0"
+                    variant="ghost"
+                    size="sm"
+                    className={RAIL_SECONDARY_ACTION}
+                    disabled={isSubmitting}
+                  >
+                    Save draft
+                  </Button>
+                }
+                primaryButton={
+                  <Button
+                    type="submit"
+                    form="dashboard-contest-new-form"
+                    name="launchNow"
+                    value="1"
+                    size="sm"
+                    variant="default"
+                    disabled={!canSubmit || isSubmitting}
+                    className={cn(
+                      "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
+                      !canSubmit || isSubmitting
+                        ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    )}
+                  >
+                    Launch contest
+                  </Button>
+                }
+              />
             }
           />
         </div>

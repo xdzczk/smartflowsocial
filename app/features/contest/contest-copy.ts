@@ -20,24 +20,19 @@ export const contestCopy = {
   bannerCancelled: "Cancelled — this contest is no longer active.",
   bannerPayout:
     "Payouts in progress — sending from your connected wallet or manual fallback.",
-  builderSummary: "Launch summary",
-  builderSummaryHint: "Planned pool and fee update as you edit the form.",
   railSourceOk: "Selected",
   railSourceMissing: "Not selected",
   railEndPlaceholder: "—",
-  railWarningsTitle: "Before you submit",
   railWarnNoSourceCreate:
-    "Publish a note with the embedded composer, then confirm the post is selected.",
-  railWarnNoSourceExisting: "Choose a published post as the contest source.",
-  railWarnEndInvalid: "Set a valid contest end time.",
+    "Publish with the embedded composer, then select the post.",
+  railWarnNoSourceExisting: "Choose a published post as the source.",
+  railWarnEndInvalid: "Set a valid end time.",
   railWarnEndPast: "End time is in the past.",
-  railWarnEndSoon:
-    "End time is within the next hour — confirm that is intended.",
-  railWarnZeroPayout: "Planned prize pool is 0 sats.",
-  railWarnRankedIncomplete:
-    "Rank-based mode needs at least one rank prize above 0.",
+  railWarnEndSoon: "Ends within 1 hour — confirm that is intended.",
+  railWarnZeroPayout: "Prize pool is 0 sats.",
+  railWarnRankedIncomplete: "Add at least one rank prize above 0.",
   railWarnNoFairness:
-    "No eligibility filters are enabled — consider exclusions for muted/blocked/low-trust accounts.",
+    "No eligibility filters — consider muted / blocked / low-trust exclusions.",
   completeWithPendingConfirm:
     "Some payouts are still pending. Mark the contest complete anyway?",
   leaderboard: "Leaderboard",

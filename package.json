@@ -49,7 +49,7 @@
     "start": "cross-env NODE_ENV=production node ./build/server.js & cross-env NODE_ENV=production node ./build/worker.js & wait",
     "start:server": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "prisma db seed",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
