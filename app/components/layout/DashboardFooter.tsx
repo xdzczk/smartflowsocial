@@ -95,11 +95,11 @@ export default function Footer() {
       id="page-footer"
       className="border-border bg-card sticky bottom-0 z-10 flex flex-none items-center border-t"
     >
-      <div className="max-w-10xl mx-auto flex w-full flex-col gap-2 px-3 py-2 text-center text-xs sm:flex-row sm:justify-between sm:gap-0 sm:px-4 sm:py-2.5 sm:text-left sm:text-sm md:px-6 lg:px-8">
-        <div className="text-muted-foreground">
+      <div className="max-w-10xl mx-auto flex w-full flex-col gap-2 px-3 py-2 text-center text-xs sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-2.5 sm:text-left sm:text-sm md:px-6 lg:px-8">
+        <div className="text-muted-foreground shrink-0">
           SmartFlow Social © {new Date().getFullYear()}
         </div>
-        <div className="text-muted-foreground flex items-center justify-center gap-1.5 tabular-nums sm:gap-2">
+        <div className="text-muted-foreground flex min-w-0 items-center justify-center gap-1.5 tabular-nums sm:flex-1 sm:justify-end sm:gap-2">
           <SignerStatusIndicator />
           {syncNeedsAttention ? (
             <>
@@ -119,11 +119,10 @@ export default function Footer() {
               : dateString.split(",")[0]}
           </span>
           <span className="hidden lg:inline">·</span>
-          {/* Monospace + fixed ch width: stable box for justify-between; ch aligns to char cells unlike proportional + tabular-nums */}
+          {/* 12h: reserve width for AM/PM; clock row uses flex-1 justify-end so width ticks don’t slide the block vs copyright */}
           <span
             className={cn(
-              "inline-block text-center font-mono",
-              userTimeFormat === "24h" ? "w-[8ch]" : "w-[11ch]"
+              userTimeFormat === "12h" && "inline-block min-w-[11ch] text-end"
             )}
           >
             {timeString}
