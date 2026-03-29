@@ -124,7 +124,7 @@ export function PlansPage(): ReactNode {
     nwc,
     subscriptionCheckoutV2Enabled,
     manualDurationsByCadence,
-    btcpayFounderEnabled,
+    btcpayYearlyOnChainEnabled,
   } = useLoaderData<typeof plansLoader>();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
   const actionData = useActionData<typeof plansAction>();
@@ -352,15 +352,15 @@ export function PlansPage(): ReactNode {
           handleCloseCheckout();
         }}
         onClose={handleCloseCheckout}
-        btcpayFounderEnabled={btcpayFounderEnabled}
+        btcpayYearlyOnChainEnabled={btcpayYearlyOnChainEnabled}
         onSelectBtcOnchain={() => {
-          if (!selectedPlanObj || selectedPlanObj.id !== "founder") return;
+          if (!selectedPlanObj || selectedPlanObj.id === "free") return;
           const formData = new FormData();
           formData.set("intent", "select_plan");
           formData.set("planId", selectedPlanObj.id);
           formData.set("paymentMode", "btc_onchain");
-          formData.set("billingCadence", "monthly");
-          formData.set("accessDurationMonths", "1");
+          formData.set("billingCadence", "yearly");
+          formData.set("accessDurationMonths", "12");
           submit(formData, { method: "post" });
           handleCloseCheckout();
         }}

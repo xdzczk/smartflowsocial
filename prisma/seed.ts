@@ -227,6 +227,7 @@ async function main() {
   // Allowed combinations:
   // - NWC auto-renew: monthly(1), yearly(12)
   // - Manual Lightning: monthly(1/3/6), yearly(12)
+  // - BTC on-chain (BTCPay): yearly(12) only; USD matches Lightning yearly
   //
   // IMPORTANT: Update these numbers to match your intended discount ladder.
   const priceMatrix: Array<{
@@ -296,6 +297,13 @@ async function main() {
         accessDurationMonths: 12,
         paymentMethod: "lightning_one_time",
         priceUsd: yearly,
+      },
+      {
+        planId: plan.id,
+        billingCadence: "yearly",
+        accessDurationMonths: 12,
+        paymentMethod: "btc_btcpay_onchain",
+        priceUsd: yearly,
       }
     );
   }
@@ -320,33 +328,6 @@ async function main() {
       },
       update: {
         priceUsd: row.priceUsd,
-        isActive: true,
-      },
-    });
-  }
-
-  const founderPlan = plans.find((p) => p.id === "founder");
-  if (founderPlan) {
-    const founderUsd = Number(founderPlan.price);
-    await prisma.planPrice.upsert({
-      where: {
-        planId_billingCadence_accessDurationMonths_paymentMethod: {
-          planId: "founder",
-          billingCadence: "monthly",
-          accessDurationMonths: 1,
-          paymentMethod: "btc_btcpay_onchain",
-        },
-      },
-      create: {
-        planId: "founder",
-        billingCadence: "monthly",
-        accessDurationMonths: 1,
-        paymentMethod: "btc_btcpay_onchain",
-        priceUsd: founderUsd,
-        isActive: true,
-      },
-      update: {
-        priceUsd: founderUsd,
         isActive: true,
       },
     });

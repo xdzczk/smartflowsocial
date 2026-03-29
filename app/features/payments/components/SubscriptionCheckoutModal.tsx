@@ -1,5 +1,5 @@
 /**
- * Subscription checkout modal (dual-lane + optional Founder BTCPay)
+ * Subscription checkout modal (NWC, Lightning, optional yearly BTC on-chain)
  */
 
 import { Bitcoin, Loader2, Wallet, Zap } from "lucide-react";
@@ -18,8 +18,8 @@ interface SubscriptionCheckoutModalProps {
   onNwcStringChange: (value: string) => void;
   onSelectManual: () => void;
   onSelectAutoRenew: () => void;
-  /** When set with Founder plan, shows third checkout lane (requires env BTCPAY_*). */
-  btcpayFounderEnabled?: boolean;
+  /** When set and billing is yearly, shows Bitcoin on-chain lane (requires env BTCPAY_*). */
+  btcpayYearlyOnChainEnabled?: boolean;
   onSelectBtcOnchain?: () => void;
   onClose: () => void;
 }
@@ -38,7 +38,7 @@ export function SubscriptionCheckoutModal({
   onNwcStringChange,
   onSelectManual,
   onSelectAutoRenew,
-  btcpayFounderEnabled,
+  btcpayYearlyOnChainEnabled,
   onSelectBtcOnchain,
   onClose,
 }: SubscriptionCheckoutModalProps) {
@@ -46,8 +46,10 @@ export function SubscriptionCheckoutModal({
 
   const showManualDurationPicker = billingCadence === "monthly";
   const showBtcpayLane =
-    plan.id === "founder" &&
-    Boolean(btcpayFounderEnabled) &&
+    billingCadence === "yearly" &&
+    plan.id !== "free" &&
+    plan.price > 0 &&
+    Boolean(btcpayYearlyOnChainEnabled) &&
     typeof onSelectBtcOnchain === "function";
 
   return (
@@ -209,9 +211,9 @@ export function SubscriptionCheckoutModal({
                 </span>
               </div>
               <p className="text-muted-foreground mt-2 text-sm">
-                Pay with BTC on-chain via BTCPay (Founder lifetime access). You
-                will open our secure checkout page; we activate your plan when
-                the invoice is settled.
+                Pay yearly with BTC on-chain via BTCPay. You will open our
+                secure checkout page; we grant access after the required
+                on-chain confirmations.
               </p>
               <div className="mt-3 flex items-center gap-2 text-sm font-medium">
                 {isSubmitting ? (

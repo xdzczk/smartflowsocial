@@ -149,11 +149,10 @@ async function handleSelectPlanIntent(
   });
 
   if (selectData.paymentMode === "btc_onchain") {
-    if (selectData.planId !== "founder") {
+    if (selectData.planId === "free") {
       return {
         success: false,
-        error:
-          "Bitcoin on-chain checkout is only available for the Founder plan.",
+        error: "Bitcoin on-chain checkout is not available for the free plan.",
         status: 400,
       };
     }
@@ -165,8 +164,14 @@ async function handleSelectPlanIntent(
       };
     }
 
-    const cadence = "monthly" as const;
-    const durationMonths = 1;
+    const cadence = "yearly" as const;
+    const durationMonths = resolveDurationMonths({
+      billingCadence: cadence,
+      accessDurationMonths:
+        typeof selectData.accessDurationMonths === "number"
+          ? selectData.accessDurationMonths
+          : undefined,
+    });
     const billingPaymentMethod = "btc_btcpay_onchain" as const;
     const priceUsd = await getPlanPriceUsd({
       planId: selectData.planId,
@@ -178,7 +183,8 @@ async function handleSelectPlanIntent(
     if (priceUsd == null) {
       return {
         success: false,
-        error: "Founder Bitcoin price is not configured.",
+        error:
+          "Bitcoin on-chain price is not configured for this plan (yearly).",
         status: 400,
       };
     }
