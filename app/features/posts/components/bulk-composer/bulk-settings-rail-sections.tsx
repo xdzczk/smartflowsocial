@@ -1,3 +1,13 @@
+import {
+  ActionRailLabel,
+  ActionRailNotice,
+  ActionRailRow,
+  ActionRailSection,
+  RAIL_MAJOR_DIVIDE,
+  RAIL_STACK_ROWS,
+  RAIL_STACK_TIGHT,
+  RAIL_SUMMARY_TO_FEEDBACK,
+} from "~/components/action-rail";
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -6,10 +16,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import type {
-  BulkBatchMode,
-  BulkComposerStage,
-} from "~/features/posts/bulk-composer/types";
+import type { BulkBatchMode } from "~/features/posts/bulk-composer/types";
+import { RailFeedbackBlock } from "~/features/posts/components/publishing-rail/RailFeedbackBlock";
 import type { BulkPost, RepostConditions } from "~/features/posts/types";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import { cn } from "~/lib/utils";
@@ -25,87 +33,37 @@ export const REPOST_CONDITION_FIELDS = [
   ["minSats", "Sats"],
 ] as const;
 
-export function RailSection({
-  title,
+export function bulkRailValidationLines(aggregateLines: {
+  cap: number;
+  sched: number;
+  lines: Array<{ text: string }>;
+}): string[] {
+  const out: string[] = [];
+  if (aggregateLines.cap > 0) {
+    out.push(
+      `${aggregateLines.cap} missing caption${aggregateLines.cap !== 1 ? "s" : ""}`
+    );
+  }
+  if (aggregateLines.sched > 0) {
+    out.push(
+      `${aggregateLines.sched} schedule issue${aggregateLines.sched !== 1 ? "s" : ""}`
+    );
+  }
+  for (const line of aggregateLines.lines.slice(0, 6)) {
+    out.push(line.text);
+  }
+  return out;
+}
+
+export function BulkSettingsRailScrollBody({
   children,
-  className,
 }: {
-  title: string;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <div
-      className={cn("border-border space-y-2 border-b px-3 py-3", className)}
-    >
-      <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-        {title}
-      </h3>
+    <div className={cn("flex flex-col text-xs", RAIL_MAJOR_DIVIDE)}>
       {children}
     </div>
-  );
-}
-
-export function ReadonlyRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex justify-between gap-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-foreground text-right font-medium">{value}</span>
-    </div>
-  );
-}
-
-export function BulkSettingsRailModeBlock({
-  stage,
-  batchMode,
-  onBatchModeChange,
-}: {
-  stage: BulkComposerStage;
-  batchMode: BulkBatchMode;
-  onBatchModeChange: (m: BulkBatchMode) => void;
-}) {
-  return (
-    <RailSection title="Mode">
-      {stage === "build" ? (
-        <div className="bg-muted/50 flex gap-1 rounded-lg p-1">
-          <button
-            type="button"
-            className={cn(
-              "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-              batchMode === "schedule"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => onBatchModeChange("schedule")}
-          >
-            Schedule
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-              batchMode === "queue"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => onBatchModeChange("queue")}
-          >
-            Queue
-          </button>
-        </div>
-      ) : (
-        <ReadonlyRow
-          label="Mode"
-          value={batchMode === "schedule" ? "Schedule" : "Queue"}
-        />
-      )}
-    </RailSection>
   );
 }
 
@@ -139,78 +97,81 @@ export function BulkSettingsRailBuildDefaultsBlock({
   handleScheduleIntervalClick: (interval: number) => void;
 }) {
   return (
-    <RailSection title="Batch defaults">
-      {batchMode === "schedule" ? (
-        <BulkPostsSchedulingPanel
-          posts={posts}
-          setPosts={setPosts}
-          scheduleIntervals={scheduleIntervals}
-          userTimezone={userTimezone}
-          disabled={isProcessing}
-          scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
-          onScheduleRandomWindowMinutesChange={
-            setBulkScheduleRandomWindowMinutes
-          }
-        />
-      ) : (
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-xs">
-            Assign a queue to all posts or pick per post on the cards.
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {queueTypes
-              .filter((q) => {
-                const n = typeof q === "string" ? q : q.name;
-                return n !== "Unassigned";
-              })
-              .map((queue) => {
-                const queueName =
-                  typeof queue === "string" ? queue : queue.name;
-                return (
-                  <Button
-                    key={queueName}
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-8 text-xs"
-                    disabled={isProcessing}
-                    onClick={() => handleBulkQueueUpdate(queueName)}
-                  >
-                    Apply {queueName}
-                  </Button>
-                );
-              })}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full text-xs"
-            disabled={isProcessing || unassignedCount === 0}
-            onClick={() => handleBulkQueueUpdate("unassigned")}
-          >
-            Clear all queues
-          </Button>
-        </div>
-      )}
-      {batchMode === "schedule" && scheduleIntervals ? (
-        <div className="flex flex-wrap gap-1 pt-2">
-          {scheduleIntervals.map((interval) => (
+    <ActionRailSection>
+      <ActionRailLabel>Batch defaults</ActionRailLabel>
+      <div className={RAIL_STACK_ROWS}>
+        {batchMode === "schedule" ? (
+          <BulkPostsSchedulingPanel
+            posts={posts}
+            setPosts={setPosts}
+            scheduleIntervals={scheduleIntervals}
+            userTimezone={userTimezone}
+            disabled={isProcessing}
+            scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+            onScheduleRandomWindowMinutesChange={
+              setBulkScheduleRandomWindowMinutes
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-[11px] leading-snug">
+              Assign a queue to all posts or pick per post on the cards.
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {queueTypes
+                .filter((q) => {
+                  const n = typeof q === "string" ? q : q.name;
+                  return n !== "Unassigned";
+                })
+                .map((queue) => {
+                  const queueName =
+                    typeof queue === "string" ? queue : queue.name;
+                  return (
+                    <Button
+                      key={queueName}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={isProcessing}
+                      onClick={() => handleBulkQueueUpdate(queueName)}
+                    >
+                      Apply {queueName}
+                    </Button>
+                  );
+                })}
+            </div>
             <Button
-              key={interval}
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 px-2 text-xs"
-              disabled={isProcessing}
-              onClick={() => handleScheduleIntervalClick(interval)}
+              className="w-full text-xs"
+              disabled={isProcessing || unassignedCount === 0}
+              onClick={() => handleBulkQueueUpdate("unassigned")}
             >
-              {formatIntervalLabel(interval, { compact: true })}
+              Clear all queues
             </Button>
-          ))}
-        </div>
-      ) : null}
-    </RailSection>
+          </div>
+        )}
+        {batchMode === "schedule" && scheduleIntervals ? (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {scheduleIntervals.map((interval) => (
+              <Button
+                key={interval}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs"
+                disabled={isProcessing}
+                onClick={() => handleScheduleIntervalClick(interval)}
+              >
+                {formatIntervalLabel(interval, { compact: true })}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </ActionRailSection>
   );
 }
 
@@ -228,20 +189,29 @@ export function BulkSettingsRailReviewDefaultsBlock({
   randomizationLabel: string;
 }) {
   return (
-    <RailSection title="Batch defaults">
-      {batchMode === "schedule" ? (
-        <>
-          <ReadonlyRow label="Start" value={reviewScheduleStartLabel} />
-          <ReadonlyRow label="Interval" value={reviewScheduleIntervalLabel} />
-          <ReadonlyRow label="Randomization" value={randomizationLabel} />
-        </>
-      ) : (
-        <>
-          <ReadonlyRow label="Default queue" value={reviewQueueDefaultLabel} />
-          <ReadonlyRow label="Randomization" value={randomizationLabel} />
-        </>
-      )}
-    </RailSection>
+    <ActionRailSection>
+      <ActionRailLabel>Batch defaults</ActionRailLabel>
+      <div className={RAIL_STACK_ROWS}>
+        {batchMode === "schedule" ? (
+          <>
+            <ActionRailRow label="Start" value={reviewScheduleStartLabel} />
+            <ActionRailRow
+              label="Interval"
+              value={reviewScheduleIntervalLabel}
+            />
+            <ActionRailRow label="Randomization" value={randomizationLabel} />
+          </>
+        ) : (
+          <>
+            <ActionRailRow
+              label="Default queue"
+              value={reviewQueueDefaultLabel}
+            />
+            <ActionRailRow label="Randomization" value={randomizationLabel} />
+          </>
+        )}
+      </div>
+    </ActionRailSection>
   );
 }
 
@@ -332,7 +302,7 @@ export function BulkSettingsRepostConditionsFields({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-muted-foreground text-[11px] leading-snug">
         Only repost if original gets (all reposts)
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -413,51 +383,54 @@ export function BulkSettingsRailBuildOptionsBlock({
   handleBulkRecyclableToggle: () => void;
 }) {
   return (
-    <RailSection title="Batch options">
-      {onRepostAll ? (
-        <BulkSettingsRepostAllPopover
-          isProcessing={isProcessing}
-          repostAllOpen={repostAllOpen}
-          setRepostAllOpen={setRepostAllOpen}
-          repostAllValue={repostAllValue}
-          setRepostAllValue={setRepostAllValue}
-          repostAllUnit={repostAllUnit}
-          setRepostAllUnit={setRepostAllUnit}
-          onRepostAll={onRepostAll}
+    <ActionRailSection>
+      <ActionRailLabel>Batch options</ActionRailLabel>
+      <div className={RAIL_STACK_ROWS}>
+        {onRepostAll ? (
+          <BulkSettingsRepostAllPopover
+            isProcessing={isProcessing}
+            repostAllOpen={repostAllOpen}
+            setRepostAllOpen={setRepostAllOpen}
+            repostAllValue={repostAllValue}
+            setRepostAllValue={setRepostAllValue}
+            repostAllUnit={repostAllUnit}
+            setRepostAllUnit={setRepostAllUnit}
+            onRepostAll={onRepostAll}
+          />
+        ) : null}
+        {showRepostConditions ? (
+          <BulkSettingsRepostConditionsFields
+            bulkRepostConditions={bulkRepostConditions}
+            setBulkRepostConditions={setBulkRepostConditions}
+          />
+        ) : null}
+        <HashtagPresetToggle
+          presets={hashTagPresets.map((p) => ({
+            id: p.id,
+            name: p.name,
+            tags: p.tags,
+          }))}
+          selectedPresetId={selectedHashtagPresetId}
+          onSelect={handleHashtagPresetSelect}
+          disabled={isProcessing}
+          useHashtagPresets={useHashtagPresets}
+          onUseHashtagPresetsChange={setUseHashtagPresets}
+          showQueuePreset={false}
         />
-      ) : null}
-      {showRepostConditions ? (
-        <BulkSettingsRepostConditionsFields
-          bulkRepostConditions={bulkRepostConditions}
-          setBulkRepostConditions={setBulkRepostConditions}
-        />
-      ) : null}
-      <HashtagPresetToggle
-        presets={hashTagPresets.map((p) => ({
-          id: p.id,
-          name: p.name,
-          tags: p.tags,
-        }))}
-        selectedPresetId={selectedHashtagPresetId}
-        onSelect={handleHashtagPresetSelect}
-        disabled={isProcessing}
-        useHashtagPresets={useHashtagPresets}
-        onUseHashtagPresetsChange={setUseHashtagPresets}
-        showQueuePreset={false}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="mt-2 w-full text-xs"
-        disabled={isProcessing}
-        onClick={handleBulkRecyclableToggle}
-      >
-        {posts.every((post) => post.isRecyclable)
-          ? "Mark all non-recyclable"
-          : "Mark all recyclable"}
-      </Button>
-    </RailSection>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full text-xs"
+          disabled={isProcessing}
+          onClick={handleBulkRecyclableToggle}
+        >
+          {posts.every((p) => p.isRecyclable)
+            ? "Mark all non-recyclable"
+            : "Mark all recyclable"}
+        </Button>
+      </div>
+    </ActionRailSection>
   );
 }
 
@@ -469,16 +442,19 @@ export function BulkSettingsRailReviewBatchOptionsBlock({
   useHashtagPresets: boolean;
 }) {
   return (
-    <RailSection title="Batch options">
-      <ReadonlyRow
-        label="Hashtag presets"
-        value={useHashtagPresets ? "On" : "Off"}
-      />
-      <ReadonlyRow
-        label="Recyclable"
-        value={posts.every((p) => p.isRecyclable) ? "All on" : "Mixed"}
-      />
-    </RailSection>
+    <ActionRailSection>
+      <ActionRailLabel>Batch options</ActionRailLabel>
+      <div className={RAIL_STACK_ROWS}>
+        <ActionRailRow
+          label="Hashtag presets"
+          value={useHashtagPresets ? "On" : "Off"}
+        />
+        <ActionRailRow
+          label="Recyclable"
+          value={posts.every((p) => p.isRecyclable) ? "All on" : "Mixed"}
+        />
+      </div>
+    </ActionRailSection>
   );
 }
 
@@ -496,18 +472,24 @@ export function BulkSettingsRailSummaryBlock({
   reviewSummaryRows: Array<{ label: string; value: string }>;
 }) {
   return (
-    <RailSection title="Summary">
-      <ReadonlyRow label="Total posts" value={String(postsCount)} />
-      <ReadonlyRow label="Ready" value={String(readyCount)} />
-      <ReadonlyRow
-        label="Needs attention"
-        value={String(Math.max(0, issueCount))}
-      />
-      <ReadonlyRow label="Unassigned queue" value={String(unassignedCount)} />
-      {reviewSummaryRows.map((row) => (
-        <ReadonlyRow key={row.label} label={row.label} value={row.value} />
-      ))}
-    </RailSection>
+    <ActionRailSection>
+      <ActionRailLabel>Summary</ActionRailLabel>
+      <div className={RAIL_STACK_ROWS}>
+        <ActionRailRow label="Total posts" value={String(postsCount)} />
+        <ActionRailRow label="Ready" value={String(readyCount)} />
+        <ActionRailRow
+          label="Needs attention"
+          value={String(Math.max(0, issueCount))}
+        />
+        <ActionRailRow
+          label="Unassigned queue"
+          value={String(unassignedCount)}
+        />
+        {reviewSummaryRows.map((row) => (
+          <ActionRailRow key={row.label} label={row.label} value={row.value} />
+        ))}
+      </div>
+    </ActionRailSection>
   );
 }
 
@@ -529,17 +511,29 @@ export function BulkSettingsRailBuildValidationBlock({
     lines: Array<{ text: string; index: number }>;
   };
 }) {
+  const noticeLines = bulkRailValidationLines(aggregateLines);
+
   return (
-    <RailSection title="Validation">
+    <ActionRailSection className="space-y-2">
+      <ActionRailLabel>Validation</ActionRailLabel>
       {validationResult.isValid ? (
-        <p className="text-muted-foreground text-sm">All checks passed.</p>
+        <p className="text-muted-foreground text-[11px] leading-snug">
+          All checks passed.
+        </p>
       ) : (
-        <ul className="max-h-36 space-y-1 overflow-y-auto text-xs">
-          {aggregateLines.cap > 0 ? (
-            <li>
+        <>
+          {noticeLines.length > 0 ? (
+            <RailFeedbackBlock
+              variant="warning"
+              title="Missing requirements"
+              lines={noticeLines}
+            />
+          ) : null}
+          <div className={cn(RAIL_STACK_TIGHT, RAIL_SUMMARY_TO_FEEDBACK)}>
+            {aggregateLines.cap > 0 ? (
               <button
                 type="button"
-                className="text-primary text-left hover:underline"
+                className="text-primary block w-full text-left text-[11px] hover:underline"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -549,16 +543,13 @@ export function BulkSettingsRailBuildValidationBlock({
                   if (idx >= 0) onJumpToPost(idx);
                 }}
               >
-                {aggregateLines.cap} missing caption
-                {aggregateLines.cap !== 1 ? "s" : ""}
+                Jump to first missing caption
               </button>
-            </li>
-          ) : null}
-          {aggregateLines.sched > 0 ? (
-            <li>
+            ) : null}
+            {aggregateLines.sched > 0 ? (
               <button
                 type="button"
-                className="text-primary text-left hover:underline"
+                className="text-primary block w-full text-left text-[11px] hover:underline"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -568,25 +559,23 @@ export function BulkSettingsRailBuildValidationBlock({
                   if (idx >= 0) onJumpToPost(idx);
                 }}
               >
-                {aggregateLines.sched} schedule issue
-                {aggregateLines.sched !== 1 ? "s" : ""}
+                Jump to first schedule issue
               </button>
-            </li>
-          ) : null}
-          {aggregateLines.lines.slice(0, 6).map((line) => (
-            <li key={`${line.index}-${line.text}`}>
+            ) : null}
+            {aggregateLines.lines.slice(0, 6).map((line) => (
               <button
+                key={`${line.index}-${line.text}`}
                 type="button"
-                className="text-primary text-left hover:underline"
+                className="text-primary block w-full text-left text-[11px] hover:underline"
                 onClick={() => onJumpToPost(line.index)}
               >
                 {line.text}
               </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </>
       )}
-    </RailSection>
+    </ActionRailSection>
   );
 }
 
@@ -604,22 +593,37 @@ export function BulkSettingsRailReviewReadinessBlock({
   onJumpToPost: (index: number) => void;
 }) {
   return (
-    <RailSection title="Readiness">
-      <p className="text-foreground text-sm font-medium">
-        {validationResult.isValid
-          ? `Ready to sign and schedule ${postsCount} post${postsCount !== 1 ? "s" : ""}.`
-          : `${issueCount} post${issueCount !== 1 ? "s" : ""} still need attention.`}
-      </p>
-      {!validationResult.isValid && aggregateLines.lines[0] != null ? (
-        <Button
-          type="button"
-          variant="link"
-          className="text-primary h-auto px-0 py-1 text-xs"
-          onClick={() => onJumpToPost(aggregateLines.lines[0]!.index)}
-        >
-          Edit first issue
-        </Button>
-      ) : null}
-    </RailSection>
+    <ActionRailSection className="space-y-2">
+      <ActionRailLabel>Readiness</ActionRailLabel>
+      {validationResult.isValid ? (
+        <p className="text-muted-foreground text-[11px] leading-snug">
+          Ready to sign and schedule{" "}
+          <span className="text-foreground font-medium">
+            {postsCount} post{postsCount !== 1 ? "s" : ""}
+          </span>
+          .
+        </p>
+      ) : (
+        <>
+          <ActionRailNotice
+            variant="warning"
+            title="Needs attention"
+            lines={[
+              `${issueCount} post${issueCount !== 1 ? "s" : ""} still need fixes before signing.`,
+            ]}
+          />
+          {aggregateLines.lines[0] != null ? (
+            <Button
+              type="button"
+              variant="link"
+              className="text-primary h-auto px-0 py-0 text-[11px]"
+              onClick={() => onJumpToPost(aggregateLines.lines[0]!.index)}
+            >
+              Edit first issue
+            </Button>
+          ) : null}
+        </>
+      )}
+    </ActionRailSection>
   );
 }

@@ -269,7 +269,7 @@ export function BulkSettingsRail({
             <div className="mt-4 min-h-0 flex-1 overflow-y-auto pb-24">
               {body}
             </div>
-            <div className="bg-background fixed right-0 bottom-0 left-0 border-t p-3">
+            <div className="bg-background fixed right-0 bottom-0 left-0 border-t">
               {footer}
             </div>
           </SheetContent>

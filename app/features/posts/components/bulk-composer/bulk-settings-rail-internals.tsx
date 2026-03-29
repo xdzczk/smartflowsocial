@@ -1,11 +1,16 @@
 import { Loader2 } from "lucide-react";
 
+import {
+  ActionRailActions,
+  RAIL_SECONDARY_ACTION,
+} from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
 import type {
   BulkBatchMode,
   BulkComposerStage,
 } from "~/features/posts/bulk-composer/types";
 import type { BulkPost, RepostConditions } from "~/features/posts/types";
+import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../BulkPostCard";
 
@@ -13,12 +18,17 @@ import {
   BulkSettingsRailBuildDefaultsBlock,
   BulkSettingsRailBuildOptionsBlock,
   BulkSettingsRailBuildValidationBlock,
-  BulkSettingsRailModeBlock,
   BulkSettingsRailReviewBatchOptionsBlock,
   BulkSettingsRailReviewDefaultsBlock,
   BulkSettingsRailReviewReadinessBlock,
+  BulkSettingsRailScrollBody,
   BulkSettingsRailSummaryBlock,
 } from "./bulk-settings-rail-sections";
+import { BulkBatchModeTabs } from "./BulkBatchModeTabs";
+
+const RAIL_PRIMARY_BTN = cn(
+  "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
+);
 
 export interface BulkSettingsRailBodyProps {
   stage: BulkComposerStage;
@@ -125,97 +135,100 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
   } = props;
 
   return (
-    <>
-      <BulkSettingsRailModeBlock
-        stage={stage}
-        batchMode={batchMode}
-        onBatchModeChange={onBatchModeChange}
-      />
-
-      {stage === "build" && posts.length > 0 ? (
-        <BulkSettingsRailBuildDefaultsBlock
-          batchMode={batchMode}
-          posts={posts}
-          setPosts={setPosts}
-          scheduleIntervals={scheduleIntervals}
-          userTimezone={userTimezone}
-          isProcessing={isProcessing}
-          bulkScheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
-          setBulkScheduleRandomWindowMinutes={
-            setBulkScheduleRandomWindowMinutes
-          }
-          queueTypes={queueTypes}
-          unassignedCount={unassignedCount}
-          handleBulkQueueUpdate={handleBulkQueueUpdate}
-          handleScheduleIntervalClick={handleScheduleIntervalClick}
+    <div className="flex flex-col text-xs">
+      <div className="shrink-0">
+        <BulkBatchModeTabs
+          value={batchMode}
+          disabled={stage === "review"}
+          onValueChange={onBatchModeChange}
         />
-      ) : null}
+      </div>
+      <BulkSettingsRailScrollBody>
+        {stage === "build" && posts.length > 0 ? (
+          <BulkSettingsRailBuildDefaultsBlock
+            batchMode={batchMode}
+            posts={posts}
+            setPosts={setPosts}
+            scheduleIntervals={scheduleIntervals}
+            userTimezone={userTimezone}
+            isProcessing={isProcessing}
+            bulkScheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+            setBulkScheduleRandomWindowMinutes={
+              setBulkScheduleRandomWindowMinutes
+            }
+            queueTypes={queueTypes}
+            unassignedCount={unassignedCount}
+            handleBulkQueueUpdate={handleBulkQueueUpdate}
+            handleScheduleIntervalClick={handleScheduleIntervalClick}
+          />
+        ) : null}
 
-      {stage === "review" && posts.length > 0 ? (
-        <BulkSettingsRailReviewDefaultsBlock
-          batchMode={batchMode}
-          reviewScheduleStartLabel={reviewScheduleStartLabel}
-          reviewScheduleIntervalLabel={reviewScheduleIntervalLabel}
-          reviewQueueDefaultLabel={reviewQueueDefaultLabel}
-          randomizationLabel={randomizationLabel}
-        />
-      ) : null}
+        {stage === "review" && posts.length > 0 ? (
+          <BulkSettingsRailReviewDefaultsBlock
+            batchMode={batchMode}
+            reviewScheduleStartLabel={reviewScheduleStartLabel}
+            reviewScheduleIntervalLabel={reviewScheduleIntervalLabel}
+            reviewQueueDefaultLabel={reviewQueueDefaultLabel}
+            randomizationLabel={randomizationLabel}
+          />
+        ) : null}
 
-      {stage === "build" && posts.length > 0 ? (
-        <BulkSettingsRailBuildOptionsBlock
-          posts={posts}
-          isProcessing={isProcessing}
-          onRepostAll={onRepostAll}
-          repostAllOpen={repostAllOpen}
-          setRepostAllOpen={setRepostAllOpen}
-          repostAllValue={repostAllValue}
-          setRepostAllValue={setRepostAllValue}
-          repostAllUnit={repostAllUnit}
-          setRepostAllUnit={setRepostAllUnit}
-          showRepostConditions={showRepostConditions}
-          bulkRepostConditions={bulkRepostConditions}
-          setBulkRepostConditions={setBulkRepostConditions}
-          hashTagPresets={hashTagPresets}
-          selectedHashtagPresetId={selectedHashtagPresetId}
-          handleHashtagPresetSelect={handleHashtagPresetSelect}
-          useHashtagPresets={useHashtagPresets}
-          setUseHashtagPresets={setUseHashtagPresets}
-          handleBulkRecyclableToggle={handleBulkRecyclableToggle}
-        />
-      ) : null}
+        {stage === "build" && posts.length > 0 ? (
+          <BulkSettingsRailBuildOptionsBlock
+            posts={posts}
+            isProcessing={isProcessing}
+            onRepostAll={onRepostAll}
+            repostAllOpen={repostAllOpen}
+            setRepostAllOpen={setRepostAllOpen}
+            repostAllValue={repostAllValue}
+            setRepostAllValue={setRepostAllValue}
+            repostAllUnit={repostAllUnit}
+            setRepostAllUnit={setRepostAllUnit}
+            showRepostConditions={showRepostConditions}
+            bulkRepostConditions={bulkRepostConditions}
+            setBulkRepostConditions={setBulkRepostConditions}
+            hashTagPresets={hashTagPresets}
+            selectedHashtagPresetId={selectedHashtagPresetId}
+            handleHashtagPresetSelect={handleHashtagPresetSelect}
+            useHashtagPresets={useHashtagPresets}
+            setUseHashtagPresets={setUseHashtagPresets}
+            handleBulkRecyclableToggle={handleBulkRecyclableToggle}
+          />
+        ) : null}
 
-      {stage === "review" ? (
-        <BulkSettingsRailReviewBatchOptionsBlock
-          posts={posts}
-          useHashtagPresets={useHashtagPresets}
-        />
-      ) : null}
+        {stage === "review" ? (
+          <BulkSettingsRailReviewBatchOptionsBlock
+            posts={posts}
+            useHashtagPresets={useHashtagPresets}
+          />
+        ) : null}
 
-      <BulkSettingsRailSummaryBlock
-        postsCount={postsCount}
-        readyCount={readyCount}
-        issueCount={issueCount}
-        unassignedCount={unassignedCount}
-        reviewSummaryRows={reviewSummaryRows}
-      />
-
-      {stage === "build" ? (
-        <BulkSettingsRailBuildValidationBlock
-          validationResult={validationResult}
-          posts={posts}
-          onJumpToPost={onJumpToPost}
-          aggregateLines={aggregateLines}
-        />
-      ) : (
-        <BulkSettingsRailReviewReadinessBlock
-          validationResult={validationResult}
+        <BulkSettingsRailSummaryBlock
           postsCount={postsCount}
+          readyCount={readyCount}
           issueCount={issueCount}
-          aggregateLines={aggregateLines}
-          onJumpToPost={onJumpToPost}
+          unassignedCount={unassignedCount}
+          reviewSummaryRows={reviewSummaryRows}
         />
-      )}
-    </>
+
+        {stage === "build" ? (
+          <BulkSettingsRailBuildValidationBlock
+            validationResult={validationResult}
+            posts={posts}
+            onJumpToPost={onJumpToPost}
+            aggregateLines={aggregateLines}
+          />
+        ) : (
+          <BulkSettingsRailReviewReadinessBlock
+            validationResult={validationResult}
+            postsCount={postsCount}
+            issueCount={issueCount}
+            aggregateLines={aggregateLines}
+            onJumpToPost={onJumpToPost}
+          />
+        )}
+      </BulkSettingsRailScrollBody>
+    </div>
   );
 }
 
@@ -252,96 +265,91 @@ export function BulkSettingsRailFooter({
   onSaveDraftReview,
   onSign,
 }: BulkSettingsRailFooterProps) {
+  if (stage === "build") {
+    return (
+      <ActionRailActions
+        secondaryLabel="Save draft"
+        onSecondaryClick={onSaveDraft}
+        secondaryDisabled={
+          postsCount === 0 ||
+          isSubmitting ||
+          isProcessing ||
+          isPreviewSubmitting
+        }
+        primaryLabel={`Review ${postsCount} post${postsCount !== 1 ? "s" : ""}`}
+        onPrimaryClick={onReview}
+        primaryDisabled={
+          postsCount === 0 ||
+          isSubmitting ||
+          isProcessing ||
+          isPreviewSubmitting ||
+          !validationResult.isValid
+        }
+        primaryLoading={isPreviewSubmitting}
+        primaryLoadingLabel={preparationProgress.stage || "Preparing…"}
+      />
+    );
+  }
+
+  const signBlocked =
+    isSubmitting || isSigning || !validationResult.isValid || postsCount === 0;
+
   return (
-    <div className="border-border bg-card/80 space-y-2 border-t p-3 backdrop-blur-sm">
-      {stage === "build" ? (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={
-              postsCount === 0 ||
-              isSubmitting ||
-              isProcessing ||
-              isPreviewSubmitting
-            }
-            onClick={onSaveDraft}
-          >
-            Save draft
-          </Button>
-          <Button
-            type="button"
-            className="w-full"
-            disabled={
-              postsCount === 0 ||
-              isSubmitting ||
-              isProcessing ||
-              isPreviewSubmitting ||
-              !validationResult.isValid
-            }
-            onClick={onReview}
-          >
-            {isPreviewSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                {preparationProgress.stage || "Preparing…"}
-              </span>
-            ) : (
-              `Review ${postsCount} post${postsCount !== 1 ? "s" : ""}`
-            )}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={isSubmitting || isSigning}
-            onClick={onBackToEdit}
-          >
-            Back to edit
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={isSubmitting || isSigning}
-            onClick={onSaveDraftReview}
-          >
-            Save draft
-          </Button>
-          <Button
-            type="button"
-            className="w-full"
-            disabled={
-              isSubmitting ||
-              isSigning ||
-              !validationResult.isValid ||
-              postsCount === 0
-            }
-            onClick={() => onSign()}
-          >
-            {isSigning ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Signing…
-                {signingProgress
-                  ? ` (${signingProgress.current}/${signingProgress.total})`
-                  : ""}
-              </span>
-            ) : isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Submitting…
-              </span>
-            ) : (
-              `Sign and schedule ${postsCount} post${postsCount !== 1 ? "s" : ""}`
-            )}
-          </Button>
-        </>
-      )}
+    <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={RAIL_SECONDARY_ACTION}
+        disabled={isSubmitting || isSigning}
+        onClick={onBackToEdit}
+      >
+        Back to edit
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={RAIL_SECONDARY_ACTION}
+        disabled={isSubmitting || isSigning}
+        onClick={onSaveDraftReview}
+      >
+        Save draft
+      </Button>
+      <div className="p-0">
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          aria-disabled={signBlocked}
+          className={cn(
+            RAIL_PRIMARY_BTN,
+            signBlocked
+              ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
+          )}
+          onClick={() => {
+            if (!signBlocked) onSign();
+          }}
+        >
+          {isSigning ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Signing…
+              {signingProgress
+                ? ` (${signingProgress.current}/${signingProgress.total})`
+                : ""}
+            </span>
+          ) : isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Submitting…
+            </span>
+          ) : (
+            `Sign and schedule ${postsCount} post${postsCount !== 1 ? "s" : ""}`
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

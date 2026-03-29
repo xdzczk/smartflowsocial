@@ -119,11 +119,11 @@ export default function Footer() {
               : dateString.split(",")[0]}
           </span>
           <span className="hidden lg:inline">·</span>
-          {/* min-w + text-end: stable width so justify-between layout does not jog as digits tick */}
+          {/* Monospace + fixed ch width: stable box for justify-between; ch aligns to char cells unlike proportional + tabular-nums */}
           <span
             className={cn(
-              "inline-block text-end",
-              userTimeFormat === "24h" ? "min-w-[8ch]" : "min-w-[11ch]"
+              "inline-block text-center font-mono",
+              userTimeFormat === "24h" ? "w-[8ch]" : "w-[11ch]"
             )}
           >
             {timeString}
