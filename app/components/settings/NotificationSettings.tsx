@@ -16,7 +16,10 @@ import {
   isPushSupported,
   getPushPermission,
 } from "~/features/notifications/push-manager.client";
-import { PreferenceSection } from "~/features/settings/components/patterns";
+import {
+  PreferenceSection,
+  ToggleRowSection,
+} from "~/features/settings/components/patterns";
 
 interface NotificationSettingsProps {
   pushNotificationsEnabled: boolean;
@@ -439,37 +442,37 @@ export function NotificationSettings({
       description="Get notified when your posts are published or fail. Enable on each device (e.g. this browser and your phone) to receive notifications everywhere."
     >
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 space-y-0.5">
-            <Label htmlFor="push-enabled">Enable Push Notifications</Label>
-            <p className="text-muted-foreground text-xs break-words">
-              {pushConfiguredOnServer === false
-                ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
-                : isChecking
-                  ? "Checking subscription..."
-                  : isSubscribing
-                    ? "Subscribing..."
-                    : isSubscribed
-                      ? "Subscribed and ready"
-                      : permission === "denied"
-                        ? "Permission denied. Please enable in browser settings."
-                        : "Click to subscribe"}
-            </p>
-          </div>
-          <Switch
-            id="push-enabled"
-            checked={isSubscribed}
-            onCheckedChange={(checked) => {
-              void handleTogglePushNotifications(checked);
-            }}
-            disabled={
-              pushConfiguredOnServer === false ||
-              isChecking ||
-              isSubscribing ||
-              permission === "denied"
-            }
-          />
-        </div>
+        <ToggleRowSection
+          label="Enable push notifications"
+          description={
+            pushConfiguredOnServer === false
+              ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
+              : isChecking
+                ? "Checking subscription..."
+                : isSubscribing
+                  ? "Subscribing..."
+                  : isSubscribed
+                    ? "Subscribed and ready"
+                    : permission === "denied"
+                      ? "Permission denied. Please enable in browser settings."
+                      : "Click to subscribe"
+          }
+          control={
+            <Switch
+              id="push-enabled"
+              checked={isSubscribed}
+              onCheckedChange={(checked) => {
+                void handleTogglePushNotifications(checked);
+              }}
+              disabled={
+                pushConfiguredOnServer === false ||
+                isChecking ||
+                isSubscribing ||
+                permission === "denied"
+              }
+            />
+          }
+        />
 
         {isSubscribed ? (
           <>

@@ -54,6 +54,8 @@ model User {
   primarySignerProfile       Json?
   // When the user last opened the Engagement Feed (for time-based "unread")
   engagementLastCheckedAt    DateTime?
+  /// Default zap amount (sats) for engagement surfaces; null = use app default (21)
+  defaultZapAmountSats       Int?
   // Use SFS Blastr relay when eligible (paid + plan has enableRelayBlast); default true
   blastrRelayEnabled         Boolean        @default(true)
   // Child/parent self-relation via npub
@@ -1315,8 +1317,6 @@ model OutboxEvent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Prevent duplicate events for same aggregate + event type + scheduled time
-  @@unique([eventType, aggregateId, scheduledFor])
   @@index([eventType, processedAt])
   @@index([scheduledFor, processedAt])
   @@index([aggregateId, eventType])

@@ -1092,7 +1092,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         ref={formRef}
         id="dashboard-contest-new-form"
         method="post"
-        className="lg:grid lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 xl:grid-cols-[1fr_min(100%,344px)]"
+        className="lg:grid lg:min-h-0 lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 lg:overflow-visible xl:grid-cols-[1fr_min(100%,344px)]"
       >
         <div className="min-w-0 space-y-8">
           <div className="space-y-1">
@@ -1270,8 +1270,9 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           />
         </div>
 
-        <div className="mt-10 w-full min-w-0 self-start lg:mt-0">
+        <div className="mt-10 w-full min-w-0 self-start lg:sticky lg:top-[4.75rem] lg:z-20 lg:mt-0 lg:self-start">
           <ContestBuilderSummaryRail
+            className="lg:static lg:min-h-0"
             planType={planType}
             planLabel={planLabel}
             sourceMode={sourceMode}

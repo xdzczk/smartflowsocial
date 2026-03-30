@@ -15,6 +15,8 @@ import {
   findUserHidePostsFromLowTrustUsersRow,
   findUserTimeFormatRow,
   updateUserTimeFormatRow,
+  findUserDefaultZapAmountSatsRow,
+  updateUserDefaultZapAmountSatsRow,
   findUserPrimarySignerProfileRow,
   updateUserPrimarySignerProfileRow,
   findUserByIdRow,
@@ -32,6 +34,7 @@ import {
   updateRunwaySettingsRow,
   findUserForRunwayFallbackRow,
 } from "~/features/user/repositories/user-settings-data.server";
+import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 
 /**
  * Updates user's muted list
@@ -174,6 +177,37 @@ export function updateUserTimeFormat(
   timeFormat: "12h" | "24h"
 ): Promise<User> {
   return updateUserTimeFormatRow(userId, timeFormat);
+}
+
+export { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
+
+/**
+ * Raw stored value for settings UI (null = use fallback until user saves).
+ */
+export async function getUserDefaultZapAmountSatsStored(
+  userId: string
+): Promise<number | null> {
+  const row = await findUserDefaultZapAmountSatsRow(userId);
+  const v = row?.defaultZapAmountSats;
+  if (typeof v !== "number" || !Number.isInteger(v) || v < 1) {
+    return null;
+  }
+  return v;
+}
+
+/** Resolved amount for prefilling zaps (never null). */
+export async function getUserDefaultZapAmountSats(
+  userId: string
+): Promise<number> {
+  const stored = await getUserDefaultZapAmountSatsStored(userId);
+  return stored ?? DEFAULT_ZAP_AMOUNT_SATS_FALLBACK;
+}
+
+export function updateUserDefaultZapAmountSats(
+  userId: string,
+  defaultZapAmountSats: number
+): Promise<User> {
+  return updateUserDefaultZapAmountSatsRow(userId, defaultZapAmountSats);
 }
 
 export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";

@@ -14,17 +14,18 @@ import {
   ReplyTemplatesSettings,
 } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
-import { NWCSettings, SubscriptionSettings } from "~/features/payments";
 import type { HashTagPreset } from "~/features/posts/server";
 import {
   HashtagPresetsSettings,
   QueueTypesSettings,
 } from "~/features/posts/ui";
-import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
 import type { Nip65ProfileRelayEntry } from "~/features/relays/nip65-relay-entry";
+import { BillingSettings } from "~/features/settings/components/BillingSettings";
+import { DefaultZapAmountSettings } from "~/features/settings/components/DefaultZapAmountSettings";
 import { PreferenceSection } from "~/features/settings/components/patterns";
 import { SettingsShell } from "~/features/settings/components/SettingsShell";
 import {
+  billingSegmentForNormalizedTab,
   getVisibleSettingsSections,
   resolveSettingsTab,
   type SettingsTabId,
@@ -117,6 +118,7 @@ function renderSettingsPanel(
       payoutDestination: string | null;
       payoutDestinationType: string | null;
     };
+    defaultZapAmountSats: number | null;
   }
 ) {
   const {
@@ -162,12 +164,65 @@ function renderSettingsPanel(
     maskedNwcStringValue,
     nwcLastUsedValue,
     referral,
+    defaultZapAmountSats,
   } = ctx;
+
+  const relaysPanel = (
+    <RelaysSettings
+      relays={relaysList}
+      publishRelaySource={publishRelaySourceValue}
+      profileRelayEntries={profileRelayEntriesList}
+      managedRelays={managedRelaysList}
+      relayAcks={relayAcksMap}
+      blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
+      canToggleBlastr={asBoolean(canToggleBlastr, false)}
+      canShowBlastrPolicyModal={
+        asBoolean(canToggleBlastr, false) && blastrPolicyRaw != null
+          ? Array.isArray(blastrSystemRelaysRaw)
+          : undefined
+      }
+      blastrPolicy={
+        typeof blastrPolicyRaw === "object" &&
+        blastrPolicyRaw != null &&
+        "policy" in blastrPolicyRaw &&
+        (blastrPolicyRaw as { policy: unknown }).policy != null
+          ? (
+              blastrPolicyRaw as {
+                policy: {
+                  mode: "blacklist" | "whitelist";
+                  enabled: boolean;
+                } | null;
+              }
+            ).policy
+          : null
+      }
+      blastrPolicyRelays={
+        typeof blastrPolicyRaw === "object" &&
+        blastrPolicyRaw != null &&
+        "relays" in blastrPolicyRaw &&
+        Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
+          ? (
+              blastrPolicyRaw as {
+                relays: Array<{
+                  relay_url: string;
+                  action: "allow" | "block";
+                }>;
+              }
+            ).relays
+          : []
+      }
+      blastrSystemRelays={
+        Array.isArray(blastrSystemRelaysRaw)
+          ? (blastrSystemRelaysRaw as string[])
+          : []
+      }
+    />
+  );
 
   switch (tab) {
     case "general":
       return (
-        <div className="flex min-w-0 flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-6">
           <TimezoneSettings timezone={timezoneValue} />
           <TimeFormatSettings
             timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
@@ -203,12 +258,11 @@ function renderSettingsPanel(
                 : null
             }
           />
-          <RemoteSignerSettings primarySignerProfile={primarySignerProfile} />
         </div>
       );
-    case "content":
+    case "publishing":
       return (
-        <div className="flex min-w-0 flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-6">
           <QueueTypesSettings
             queueTypes={queueTypes}
             hashTagPresets={hashTagPresets.map((p) => ({
@@ -230,72 +284,39 @@ function renderSettingsPanel(
           />
         </div>
       );
-    case "network":
+    case "engagement":
       return (
-        <div className="flex min-w-0 flex-col gap-8">
-          <RelaysSettings
-            relays={relaysList}
-            publishRelaySource={publishRelaySourceValue}
-            profileRelayEntries={profileRelayEntriesList}
-            managedRelays={managedRelaysList}
-            relayAcks={relayAcksMap}
-            blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
-            canToggleBlastr={asBoolean(canToggleBlastr, false)}
-            canShowBlastrPolicyModal={
-              asBoolean(canToggleBlastr, false) && blastrPolicyRaw != null
-                ? Array.isArray(blastrSystemRelaysRaw)
-                : undefined
-            }
-            blastrPolicy={
-              typeof blastrPolicyRaw === "object" &&
-              blastrPolicyRaw != null &&
-              "policy" in blastrPolicyRaw &&
-              (blastrPolicyRaw as { policy: unknown }).policy != null
-                ? (
-                    blastrPolicyRaw as {
-                      policy: {
-                        mode: "blacklist" | "whitelist";
-                        enabled: boolean;
-                      } | null;
-                    }
-                  ).policy
-                : null
-            }
-            blastrPolicyRelays={
-              typeof blastrPolicyRaw === "object" &&
-              blastrPolicyRaw != null &&
-              "relays" in blastrPolicyRaw &&
-              Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
-                ? (
-                    blastrPolicyRaw as {
-                      relays: Array<{
-                        relay_url: string;
-                        action: "allow" | "block";
-                      }>;
-                    }
-                  ).relays
-                : []
-            }
-            blastrSystemRelays={
-              Array.isArray(blastrSystemRelaysRaw)
-                ? (blastrSystemRelaysRaw as string[])
-                : []
-            }
+        <div className="flex min-w-0 flex-col gap-6">
+          <DefaultZapAmountSettings
+            defaultZapAmountSats={defaultZapAmountSats}
           />
+          <ReplyTemplatesSettings templates={replyTemplates} />
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight">
+                Feed filtering
+              </h3>
+              <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                Control how muted accounts and trust signals affect what you
+                see.
+              </p>
+            </div>
+            <MutedListSettings
+              mutedList={mutedList}
+              filterMuted={filterMutedValue}
+              hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
+            />
+          </div>
           <GiveawayBlacklistSettings
             giveawayBlacklist={giveawayBlacklistList}
           />
-          <MutedListSettings
-            mutedList={mutedList}
-            filterMuted={filterMutedValue}
-            hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
-          />
-          <ReplyTemplatesSettings templates={replyTemplates} />
         </div>
       );
-    case "storage":
+    case "relays":
+      return <div className="flex min-w-0 flex-col gap-6">{relaysPanel}</div>;
+    case "media":
       return (
-        <div className="flex min-w-0 flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-6">
           <UploadProviderSettings
             uploadProvider={uploadProviderValue}
             customBlossomUrl={customBlossomUrlValue}
@@ -319,43 +340,29 @@ function renderSettingsPanel(
           </PreferenceSection>
         </div>
       );
-    case "subscription":
-      if (isChildBool) return null;
+    case "signers":
       return (
-        <div className="flex min-w-0 flex-col gap-8">
-          <SubscriptionSettings
-            subscription={subscription}
-            availablePlans={availablePlans}
-            paymentHistory={paymentHistory}
-            nwcEnabled={nwcEnabledValue}
-          />
-          <NWCSettings
-            nwcEnabled={nwcEnabledValue}
-            maskedNwcString={maskedNwcStringValue}
-            nwcLastUsed={nwcLastUsedValue}
-          />
+        <div className="flex min-w-0 flex-col gap-6">
+          <RemoteSignerSettings primarySignerProfile={primarySignerProfile} />
         </div>
       );
-    case "referral":
+    case "billing":
       if (isChildBool) return null;
       return (
-        <div className="flex min-w-0 flex-col gap-8">
-          <ReferralSettings
-            referralLink={referral.referralLink}
-            commissionRatePercent={referral.commissionRatePercent}
-            totalEarnedSats={referral.totalEarnedSats}
-            paidSats={referral.paidSats}
-            pendingSats={referral.pendingSats}
-            failedSats={referral.failedSats}
-            payoutDestination={referral.payoutDestination}
-            payoutDestinationType={referral.payoutDestinationType}
-          />
-        </div>
+        <BillingSettings
+          subscription={subscription}
+          availablePlans={availablePlans}
+          paymentHistory={paymentHistory}
+          nwcEnabled={nwcEnabledValue}
+          maskedNwcString={maskedNwcStringValue}
+          nwcLastUsed={nwcLastUsedValue}
+          referral={referral}
+        />
       );
     case "accounts":
       if (!hasAccountsAccessBool) return null;
       return (
-        <div className="flex min-w-0 flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-6">
           {accounts ? (
             <AccountsSettings
               parentNpub={accounts.parentNpub}
@@ -434,6 +441,7 @@ export default function SettingsPage() {
       payoutDestination: string | null;
       payoutDestinationType: string | null;
     };
+    defaultZapAmountSats?: unknown;
   };
 
   const {
@@ -479,6 +487,7 @@ export default function SettingsPage() {
     blastrPolicy: blastrPolicyRaw,
     blastrSystemRelays: blastrSystemRelaysRaw,
     referral: referralRaw,
+    defaultZapAmountSats: defaultZapAmountSatsRaw,
   } = data;
 
   function parseReplyTemplates(
@@ -525,10 +534,26 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const requested = searchParams.get("tab");
-    if (!requested || requested === activeTab) return;
     const next = new URLSearchParams(searchParams);
-    next.set("tab", activeTab);
-    setSearchParams(next, { replace: true, preventScrollReset: true });
+    let changed = false;
+
+    if (requested && requested !== activeTab) {
+      next.set("tab", activeTab);
+      changed = true;
+    }
+
+    if (
+      activeTab === "billing" &&
+      billingSegmentForNormalizedTab(requested, activeTab) === "referral" &&
+      next.get("billing") !== "referral"
+    ) {
+      next.set("billing", "referral");
+      changed = true;
+    }
+
+    if (changed) {
+      setSearchParams(next, { replace: true, preventScrollReset: true });
+    }
   }, [activeTab, searchParams, setSearchParams]);
 
   const referral =
@@ -576,6 +601,13 @@ export default function SettingsPage() {
     primarySignerProfileRaw
   );
 
+  const defaultZapAmountSats =
+    typeof defaultZapAmountSatsRaw === "number" &&
+    Number.isInteger(defaultZapAmountSatsRaw) &&
+    defaultZapAmountSatsRaw >= 1
+      ? defaultZapAmountSatsRaw
+      : null;
+
   return (
     <SettingsShell sections={settingsSections} activeTab={activeTab}>
       {renderSettingsPanel(activeTab, {
@@ -621,6 +653,7 @@ export default function SettingsPage() {
         maskedNwcStringValue,
         nwcLastUsedValue,
         referral,
+        defaultZapAmountSats,
       })}
     </SettingsShell>
   );

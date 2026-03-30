@@ -16,7 +16,7 @@ export function ActionRail({
   return (
     <aside
       className={cn(
-        "border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-5.75rem)] lg:w-[312px] lg:self-start xl:w-[344px]",
+        "border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-[4.75rem] lg:z-10 lg:max-h-[calc(100dvh-5.75rem)] lg:w-[312px] lg:self-start xl:w-[344px]",
         className
       )}
       aria-label={ariaLabel}

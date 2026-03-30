@@ -43,19 +43,11 @@ export function getFirstMediaFromFileUrl(post: CalendarPost): string | null {
     return parseFileUrl(firstFileUrl);
   } catch (error) {
     handleErrorSafely(error, {
-      component: "RescheduleModal",
-      action: "getFirstMedia",
+      component: "reschedule-modal.utils",
+      action: "getFirstMediaFromFileUrl",
     });
     return null;
   }
-}
-
-export function getFirstMedia(data: RescheduleData): string | null {
-  const { post, isLongform } = data;
-  if (isLongform && post.image) {
-    return post.image;
-  }
-  return getFirstMediaFromFileUrl(post);
 }
 
 export function formatDateTime(
@@ -110,26 +102,4 @@ export function formatDateTimeForInput(
 ): string {
   const zonedDateTime = fromDate(date, userTimezone);
   return formatForDateTimeLocal(zonedDateTime, userTimezone);
-}
-
-export function getRescheduleHeaderTitle(
-  isEdit: boolean,
-  wasAutoScheduled: boolean
-): string {
-  if (isEdit) return "Edit Post Schedule";
-  if (wasAutoScheduled) return "Override Queue Logic?";
-  return "Update Post Time?";
-}
-
-export function getConfirmButtonLabel(
-  isEdit: boolean,
-  wasAutoScheduled: boolean,
-  isSigningEvent: boolean,
-  fetcherState: string
-): string {
-  if (isSigningEvent) return "Signing Event...";
-  if (fetcherState === "submitting") return "Updating...";
-  if (isEdit) return "Save Changes";
-  if (wasAutoScheduled) return "Convert to Manual";
-  return "Confirm";
 }

@@ -103,7 +103,7 @@ describe("Subscription/Billing Loader Integration", () => {
 
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -166,7 +166,7 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -218,7 +218,7 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -277,7 +277,7 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -334,7 +334,7 @@ describe("Subscription/Billing Loader Integration", () => {
         mockData
       );
 
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -368,7 +368,7 @@ describe("Subscription/Billing Loader Integration", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
+        "http://localhost:3000/dashboard/settings?tab=billing"
       );
 
       // Loader catches Response errors and returns them
@@ -394,7 +394,7 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
+        "http://localhost:3000/dashboard/settings?tab=billing"
       );
 
       // Loader catches Response errors and returns them
@@ -420,7 +420,7 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription"
+        "http://localhost:3000/dashboard/settings?tab=billing"
       );
 
       // Loader catches Response errors and returns them
@@ -438,7 +438,7 @@ describe("Subscription/Billing Loader Integration", () => {
         new Error("Database error")
       );
 
-      const request = settingsLoaderJsonRequest("tab=subscription");
+      const request = settingsLoaderJsonRequest("tab=billing");
 
       const response = (await loader({
         request,

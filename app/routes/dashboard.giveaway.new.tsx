@@ -23,7 +23,7 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import { loadNewPostData } from "~/features/posts/server/composer";
-import { getQueueTypes } from "~/features/user";
+import { getQueueTypes, getUserById } from "~/features/user";
 import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
@@ -264,12 +264,14 @@ async function loadGiveawayNewData(request: Request) {
     subscriptionData.currentSubscription
   );
 
-  const [presets, queueTypes, recentPosts, composerLoader] = await Promise.all([
-    getGiveawayPresetsByUser(userId),
-    getQueueTypes(userId),
-    getRecentPostsForGiveawaySelector(userId),
-    loadNewPostData(userId, null, null),
-  ]);
+  const [presets, queueTypes, recentPosts, composerLoader, userRow] =
+    await Promise.all([
+      getGiveawayPresetsByUser(userId),
+      getQueueTypes(userId),
+      getRecentPostsForGiveawaySelector(userId),
+      loadNewPostData(userId, null, null),
+      getUserById(userId),
+    ]);
 
   return {
     presets: presets.map((p) => ({
@@ -288,6 +290,7 @@ async function loadGiveawayNewData(request: Request) {
     planType,
     planDisplayName,
     composerLoader,
+    userTimezone: userRow?.timezone ?? "UTC",
   };
 }
 

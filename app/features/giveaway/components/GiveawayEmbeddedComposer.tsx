@@ -6,16 +6,25 @@ import { useNewPostState } from "~/features/posts/composer/hooks/useNewPostState
 type GiveawayLoaderLike = Record<string, unknown>;
 
 const embedHint =
-  "Compose your giveaway announcement, then publish — entries count on this note only.";
+  "Compose your giveaway announcement; publish or schedule from the summary rail on the right.";
 
 export function GiveawayEmbeddedComposer({
   loaderData,
   composerKey,
   onEmbedPublishSuccess,
+  contestRailLaunchMode,
+  contestRailScheduledFor,
+  onEmbedActionsReady,
 }: {
   loaderData: GiveawayLoaderLike;
   composerKey: number;
   onEmbedPublishSuccess: (payload: ContestEmbedPublishPayload) => void;
+  contestRailLaunchMode: "now" | "schedule";
+  contestRailScheduledFor: string;
+  onEmbedActionsReady?: (api: {
+    publishNow: () => void;
+    schedulePost: () => void;
+  }) => void;
 }) {
   const parsed = parseNewPostLoaderData(loaderData);
   const {
@@ -25,7 +34,7 @@ export function GiveawayEmbeddedComposer({
   } = useNewPostState();
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       <p className="text-muted-foreground text-xs">{embedHint}</p>
       <UnifiedComposer
         key={composerKey}
@@ -45,9 +54,12 @@ export function GiveawayEmbeddedComposer({
         formAction="/dashboard/compose?type=post"
         localDraftStorageKey="composer-giveaway-embedded-draft"
         embedContext="contest"
-        embeddedDensity="full"
-        contestRailLaunchMode="now"
-        contestRailScheduledFor={null}
+        embeddedDensity="source-post"
+        contestRailLaunchMode={contestRailLaunchMode}
+        contestRailScheduledFor={
+          contestRailLaunchMode === "schedule" ? contestRailScheduledFor : null
+        }
+        onEmbedActionsReady={onEmbedActionsReady}
         onEmbedPublishSuccess={onEmbedPublishSuccess}
         skipLocalDraftRestore={false}
         suppressBuiltInDraftPicker

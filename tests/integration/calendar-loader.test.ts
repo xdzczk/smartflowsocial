@@ -47,9 +47,19 @@ vi.mock("~/features/posts/calendar/Calendar/MonthlyView", () => ({
   MonthlyView: () => null,
 }));
 
-vi.mock("~/features/posts/calendar/Calendar/RescheduleModal", () => ({
-  RescheduleModal: () => null,
-}));
+vi.mock(
+  "~/features/posts/scheduling/components/RescheduleScheduledPostModal",
+  () => ({
+    RescheduleScheduledPostModal: () => null,
+  })
+);
+
+vi.mock(
+  "~/features/posts/scheduling/components/EditScheduledPostModal",
+  () => ({
+    EditScheduledPostModal: () => null,
+  })
+);
 
 vi.mock("~/features/posts/queueColors", () => ({
   getQueueColor: vi.fn(),

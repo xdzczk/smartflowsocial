@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import {
   Form,
   Link,
+  useActionData,
   useLoaderData,
   useNavigate,
   useSearchParams,
@@ -177,8 +178,17 @@ function contestRowTitle(title: string | null | undefined, id: string): string {
   return trimmed;
 }
 
+function contestCanDeleteFromList(status: string): boolean {
+  return (
+    status !== "LOCKED" &&
+    status !== "PAYOUT_IN_PROGRESS" &&
+    status !== "COMPLETED"
+  );
+}
+
 export default function ContestsIndexRoute() {
   const data = useLoaderData<typeof loader>();
+  const actionData = useActionData<{ error?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -206,6 +216,14 @@ export default function ContestsIndexRoute() {
 
   return (
     <div className="space-y-6">
+      {actionData?.error ? (
+        <div
+          role="alert"
+          className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm"
+        >
+          {actionData.error}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-foreground text-2xl font-semibold tracking-tight">
@@ -394,128 +412,151 @@ export default function ContestsIndexRoute() {
                 </tr>
               </thead>
               <tbody className="divide-border divide-y">
-                {data.contests.map((contest) => (
-                  <tr
-                    key={contest.id}
-                    className="hover:bg-muted/40 cursor-pointer transition-colors"
-                    onClick={() => {
-                      navigate(`/dashboard/contests/detail/${contest.id}`);
-                    }}
-                  >
-                    <td className="w-12 px-2 py-2 align-middle">
-                      <div className="border-border bg-muted/50 size-9 overflow-hidden rounded-md border">
-                        {contest.sourceThumbUrl ? (
-                          <img
-                            src={contest.sourceThumbUrl}
-                            alt=""
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <div className="text-muted-foreground flex size-full items-center justify-center text-[10px]">
-                            —
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-foreground font-medium">
-                        {contestRowTitle(contest.title, contest.id)}
-                      </span>
-                      <p className="text-muted-foreground text-xs">
-                        Ends{" "}
-                        {new Date(contest.endAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
-                      >
-                        <span
-                          className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
-                          aria-hidden
-                        />
-                        {contest.statusLabel}
-                      </span>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
-                      {contest.metric.toLowerCase()}
-                    </td>
-                    <td className="px-4 py-3 text-xs tabular-nums">
-                      {contest.entries.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-xs tabular-nums">
-                      {contest.winners} winners
-                      <br />
-                      <span className="text-muted-foreground">
-                        {contest.plannedPayoutSats.toLocaleString()} sats
-                        planned
-                      </span>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
-                      {new Date(contest.updatedAt).toLocaleDateString(
-                        undefined,
-                        {
-                          month: "short",
-                          day: "numeric",
-                        }
-                      )}
-                    </td>
-                    <td
-                      className="px-4 py-3 text-right"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                {data.contests.map((contest) => {
+                  const canDelete = contestCanDeleteFromList(contest.status);
+                  return (
+                    <tr
+                      key={contest.id}
+                      className="hover:bg-muted/40 cursor-pointer transition-colors"
+                      onClick={() => {
+                        navigate(`/dashboard/contests/detail/${contest.id}`);
                       }}
                     >
-                      <div className="flex flex-wrap justify-end gap-1">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/dashboard/contests/detail/${contest.id}`}>
-                            Open
-                          </Link>
-                        </Button>
-                        <Form method="post" className="inline">
-                          <input
-                            type="hidden"
-                            name="intent"
-                            value="duplicate"
+                      <td className="w-12 px-2 py-2 align-middle">
+                        <div className="border-border bg-muted/50 size-9 overflow-hidden rounded-md border">
+                          {contest.sourceThumbUrl ? (
+                            <img
+                              src={contest.sourceThumbUrl}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-muted-foreground flex size-full items-center justify-center text-[10px]">
+                              —
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-foreground font-medium">
+                          {contestRowTitle(contest.title, contest.id)}
+                        </span>
+                        <p className="text-muted-foreground text-xs">
+                          Ends{" "}
+                          {new Date(contest.endAt).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                        >
+                          <span
+                            className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
+                            aria-hidden
                           />
-                          <input
-                            type="hidden"
-                            name="contestId"
-                            value={contest.id}
-                          />
-                          <Button type="submit" variant="ghost" size="sm">
-                            {contestCopy.duplicate}
+                          {contest.statusLabel}
+                        </span>
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 text-xs">
+                        {contest.metric.toLowerCase()}
+                      </td>
+                      <td className="px-4 py-3 text-xs tabular-nums">
+                        {contest.entries.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-xs tabular-nums">
+                        {contest.winners} winners
+                        <br />
+                        <span className="text-muted-foreground">
+                          {contest.plannedPayoutSats.toLocaleString()} sats
+                          planned
+                        </span>
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 text-xs">
+                        {new Date(contest.updatedAt).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-right"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link
+                              to={`/dashboard/contests/detail/${contest.id}`}
+                            >
+                              Open
+                            </Link>
                           </Button>
-                        </Form>
-                        <Form method="post" className="inline">
-                          <input type="hidden" name="intent" value="delete" />
-                          <input
-                            type="hidden"
-                            name="contestId"
-                            value={contest.id}
-                          />
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
+                          <Form
+                            method="post"
+                            action="/dashboard/contests"
+                            className="inline"
                           >
-                            Delete
-                          </Button>
-                        </Form>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                            <input
+                              type="hidden"
+                              name="intent"
+                              value="duplicate"
+                            />
+                            <input
+                              type="hidden"
+                              name="contestId"
+                              value={contest.id}
+                            />
+                            <Button type="submit" variant="ghost" size="sm">
+                              {contestCopy.duplicate}
+                            </Button>
+                          </Form>
+                          <Form
+                            method="post"
+                            action="/dashboard/contests"
+                            className="inline"
+                          >
+                            <input type="hidden" name="intent" value="delete" />
+                            <input
+                              type="hidden"
+                              name="contestId"
+                              value={contest.id}
+                            />
+                            <Button
+                              type="submit"
+                              variant="ghost"
+                              size="sm"
+                              disabled={!canDelete}
+                              title={
+                                canDelete
+                                  ? undefined
+                                  : "Cannot delete locked, payout-in-progress, or completed contests"
+                              }
+                              className="text-destructive hover:text-destructive disabled:opacity-50"
+                            >
+                              Delete
+                            </Button>
+                          </Form>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <ul className="border-border bg-card divide-border divide-y rounded-lg border md:hidden">
             {data.contests.map((contest) => {
+              const canDelete = contestCanDeleteFromList(contest.status);
               return (
                 /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- whole card opens detail; action strip stops propagation */
                 <li
@@ -577,7 +618,11 @@ export default function ContestsIndexRoute() {
                         Open
                       </Link>
                     </Button>
-                    <Form method="post" className="inline">
+                    <Form
+                      method="post"
+                      action="/dashboard/contests"
+                      className="inline"
+                    >
                       <input type="hidden" name="intent" value="duplicate" />
                       <input
                         type="hidden"
@@ -588,7 +633,11 @@ export default function ContestsIndexRoute() {
                         {contestCopy.duplicate}
                       </Button>
                     </Form>
-                    <Form method="post" className="inline">
+                    <Form
+                      method="post"
+                      action="/dashboard/contests"
+                      className="inline"
+                    >
                       <input type="hidden" name="intent" value="delete" />
                       <input
                         type="hidden"
@@ -599,7 +648,13 @@ export default function ContestsIndexRoute() {
                         type="submit"
                         size="sm"
                         variant="outline"
-                        className="text-destructive"
+                        disabled={!canDelete}
+                        title={
+                          canDelete
+                            ? undefined
+                            : "Cannot delete locked, payout-in-progress, or completed contests"
+                        }
+                        className="text-destructive disabled:opacity-50"
                       >
                         Delete
                       </Button>

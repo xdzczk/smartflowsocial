@@ -45,6 +45,7 @@ const USER_SCALAR_SELECT = {
   localeDefaultsAppliedAt: true,
   primarySignerProfile: true,
   engagementLastCheckedAt: true,
+  defaultZapAmountSats: true,
   blastrRelayEnabled: true,
   broadcastSettings: true,
 } as const;

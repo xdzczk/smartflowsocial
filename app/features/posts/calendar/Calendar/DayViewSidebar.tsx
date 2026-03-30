@@ -57,6 +57,7 @@ function getStatusLabel(post: CalendarPost): string {
 interface DayViewSidebarProps {
   selectedPost: CalendarPost | null;
   onEditPost: (post: CalendarPost) => void;
+  onReschedulePost: (post: CalendarPost) => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
@@ -69,6 +70,7 @@ interface DayViewSidebarProps {
 export function DayViewSidebar({
   selectedPost,
   onEditPost,
+  onReschedulePost,
   user,
   queueTypes,
   isLongform = false,
@@ -85,6 +87,7 @@ export function DayViewSidebar({
           <DayViewPostDetailCard
             post={selectedPost}
             onEdit={() => onEditPost(selectedPost)}
+            onReschedule={() => onReschedulePost(selectedPost)}
             user={user}
             queueTypes={queueTypes}
             isLongform={isLongform}
@@ -108,6 +111,7 @@ export function DayViewSidebar({
 interface DayViewPostDetailCardProps {
   post: CalendarPost;
   onEdit: () => void;
+  onReschedule: () => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform: boolean;
@@ -119,6 +123,7 @@ interface DayViewPostDetailCardProps {
 function DayViewPostDetailCard({
   post,
   onEdit,
+  onReschedule,
   isLongform,
   isAll,
   userTimezone,
@@ -267,14 +272,23 @@ function DayViewPostDetailCard({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onEdit}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--calendar-radius-sm)] px-3 py-2 text-sm font-medium"
-        >
-          <Pencil className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
-          Edit post
-        </button>
+        <div className="mt-auto flex w-full flex-col gap-2">
+          <button
+            type="button"
+            onClick={onReschedule}
+            className="border-border bg-background text-foreground hover:bg-muted/50 inline-flex w-full items-center justify-center rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
+          >
+            Reschedule
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="border-border bg-background text-foreground hover:bg-muted/50 inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
+          >
+            <Pencil className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
+            Edit post
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,10 @@
-import { Link, useFetcher, useNavigate, useNavigation } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -16,6 +22,7 @@ import {
   getFinalizationFeeRateBps,
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
@@ -46,16 +53,24 @@ export function GiveawayNewBuilder({
   planType,
   planDisplayName,
   composerLoader,
+  userTimezone,
   actionError,
 }: GiveawayNewBuilderProps) {
   const navigation = useNavigation();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const formRef = useRef<HTMLFormElement>(null);
+  const embedApiRef = useRef<{
+    publishNow: () => void;
+    schedulePost: () => void;
+  } | null>(null);
+  const pendingGiveawaySubmitRef = useRef(false);
   const saveFetcher = useFetcher<{
     ok?: boolean;
     giveawayId?: string;
     error?: string;
   }>();
+  const createAfterPublishFetcher = useFetcher<{ error?: string }>();
 
   useEffect(() => {
     const d = saveFetcher.data;
@@ -68,7 +83,10 @@ export function GiveawayNewBuilder({
 
   const isSubmitting = navigation.state === "submitting";
   const isSaveSubmitting = saveFetcher.state !== "idle";
-  const isBusy = isSubmitting || isSaveSubmitting;
+  const isCreateAfterPublishSubmitting =
+    createAfterPublishFetcher.state !== "idle";
+  const isBusy =
+    isSubmitting || isSaveSubmitting || isCreateAfterPublishSubmitting;
 
   const fetcherError =
     navigation.state === "submitting"
@@ -79,6 +97,16 @@ export function GiveawayNewBuilder({
           typeof saveFetcher.data.error === "string"
         ? saveFetcher.data.error
         : undefined;
+
+  const createAfterPublishError =
+    createAfterPublishFetcher.state === "idle" &&
+    createAfterPublishFetcher.data &&
+    "error" in createAfterPublishFetcher.data &&
+    typeof createAfterPublishFetcher.data.error === "string"
+      ? createAfterPublishFetcher.data.error
+      : undefined;
+
+  const combinedFetcherError = fetcherError ?? createAfterPublishError;
 
   const handleSaveDraft = () => {
     if (!formRef.current) return;
@@ -96,21 +124,13 @@ export function GiveawayNewBuilder({
     "create" | "existing"
   >("existing");
   const [composerSessionKey, setComposerSessionKey] = useState(0);
-
-  const onGiveawayEmbedPublish = useCallback(
-    (payload: ContestEmbedPublishPayload) => {
-      if (payload.postId) {
-        setSelectedSinglePostId(payload.postId);
-      }
-      setComposerSessionKey((k) => k + 1);
-      try {
-        localStorage.removeItem("composer-giveaway-embedded-draft");
-      } catch {
-        /* ignore */
-      }
-    },
-    []
+  const [sourcePostLaunchMode, setSourcePostLaunchMode] = useState<
+    "now" | "schedule"
+  >("now");
+  const [scheduledSourcePostFor, setScheduledSourcePostFor] = useState(() =>
+    getNowForDateTimeLocal(userTimezone)
   );
+  const [scheduleCheckNow] = useState(() => Date.now());
 
   const [engagement, setEngagement] = useState<Record<string, boolean>>({
     REACTION: true,
@@ -140,6 +160,85 @@ export function GiveawayNewBuilder({
   const selectedTypes = ENGAGEMENT_META.filter(
     (m) => effectiveEngagement[m.value]
   ).map((m) => m.value);
+
+  useEffect(() => {
+    if (scopeType !== "SINGLE_POST" || singlePostSourceMode !== "create") {
+      pendingGiveawaySubmitRef.current = false;
+    }
+  }, [scopeType, singlePostSourceMode]);
+
+  const useRailPublishPrimary =
+    scopeType === "SINGLE_POST" && singlePostSourceMode === "create";
+
+  const scheduleTimeOk =
+    scheduledSourcePostFor.trim() !== "" &&
+    new Date(scheduledSourcePostFor).getTime() > scheduleCheckNow;
+  const scheduleOk = sourcePostLaunchMode === "now" || scheduleTimeOk;
+
+  const publishPrimaryDisabled = useMemo(() => {
+    if (!useRailPublishPrimary) return false;
+    if (sourcePostLaunchMode === "schedule" && !scheduleOk) return true;
+    if (!isFollowGraphScope && selectedTypes.length === 0) return true;
+    return false;
+  }, [
+    useRailPublishPrimary,
+    sourcePostLaunchMode,
+    scheduleOk,
+    isFollowGraphScope,
+    selectedTypes.length,
+  ]);
+
+  const publishPrimaryLabel = useMemo(() => {
+    if (!useRailPublishPrimary) return "Create draft & continue to preview";
+    return sourcePostLaunchMode === "now"
+      ? "Publish post & create draft"
+      : "Schedule post & create draft";
+  }, [useRailPublishPrimary, sourcePostLaunchMode]);
+
+  const railOutcomeHeadline = useMemo(() => {
+    if (!useRailPublishPrimary) return "Ready to continue";
+    return sourcePostLaunchMode === "now"
+      ? "Publishes the source post now, then opens giveaway preview."
+      : "Schedules the announcement; preview opens after the note publishes.";
+  }, [useRailPublishPrimary, sourcePostLaunchMode]);
+
+  const onGiveawayEmbedPublish = useCallback(
+    (payload: ContestEmbedPublishPayload) => {
+      if (payload.postId) {
+        setSelectedSinglePostId(payload.postId);
+      }
+      setComposerSessionKey((k) => k + 1);
+      try {
+        localStorage.removeItem("composer-giveaway-embedded-draft");
+      } catch {
+        /* ignore */
+      }
+      if (
+        pendingGiveawaySubmitRef.current &&
+        formRef.current &&
+        typeof payload.postId === "string"
+      ) {
+        pendingGiveawaySubmitRef.current = false;
+        const fd = new FormData(formRef.current);
+        fd.set("postId", payload.postId);
+        fd.set("intent", "create");
+        fd.delete("responseMode");
+        createAfterPublishFetcher.submit(fd, { method: "post" });
+      }
+      revalidator.revalidate();
+    },
+    [createAfterPublishFetcher, revalidator]
+  );
+
+  const handlePublishPrimaryClick = useCallback(() => {
+    if (publishPrimaryDisabled || isBusy) return;
+    pendingGiveawaySubmitRef.current = true;
+    if (sourcePostLaunchMode === "now") {
+      embedApiRef.current?.publishNow();
+    } else {
+      embedApiRef.current?.schedulePost();
+    }
+  }, [publishPrimaryDisabled, isBusy, sourcePostLaunchMode]);
 
   const plannedPayoutForFee =
     effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
@@ -384,6 +483,11 @@ export function GiveawayNewBuilder({
                       <GiveawayEmbeddedComposer
                         loaderData={composerLoader}
                         composerKey={composerSessionKey}
+                        contestRailLaunchMode={sourcePostLaunchMode}
+                        contestRailScheduledFor={scheduledSourcePostFor}
+                        onEmbedActionsReady={(api) => {
+                          embedApiRef.current = api;
+                        }}
                         onEmbedPublishSuccess={onGiveawayEmbedPublish}
                       />
                       {selectedSinglePostId.trim() ? (
@@ -727,9 +831,19 @@ export function GiveawayNewBuilder({
           selectedSinglePostId={selectedSinglePostId}
           singlePostSourceMode={singlePostSourceMode}
           actionError={actionError}
-          fetcherError={fetcherError}
+          fetcherError={combinedFetcherError}
           isBusy={isBusy}
           onSaveDraft={handleSaveDraft}
+          userTimezone={userTimezone}
+          sourcePostLaunchMode={sourcePostLaunchMode}
+          onSourcePostLaunchModeChange={setSourcePostLaunchMode}
+          scheduledSourcePostFor={scheduledSourcePostFor}
+          onScheduledSourcePostForChange={setScheduledSourcePostFor}
+          useRailPublishPrimary={useRailPublishPrimary}
+          publishPrimaryLabel={publishPrimaryLabel}
+          publishPrimaryDisabled={publishPrimaryDisabled}
+          onPublishPrimaryClick={handlePublishPrimaryClick}
+          outcomeHeadline={railOutcomeHeadline}
         />
       </form>
 

@@ -37,7 +37,13 @@ export {
   getVisibleSettingsSections,
   getSettingsDefaultTab,
   resolveSettingsTab,
+  groupVisibleSettingsSections,
+  normalizeSettingsTabParam,
+  parseBillingSegmentParam,
+  billingSegmentForNormalizedTab,
   type SettingsTabId,
   type SettingsSectionDef,
+  type SettingsSectionGroupId,
+  type BillingSegmentId,
 } from "./settings-sections";
 export { SettingsResolvedLoaderProvider } from "./context/SettingsResolvedLoaderContext";

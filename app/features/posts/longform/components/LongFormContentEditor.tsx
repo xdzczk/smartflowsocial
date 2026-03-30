@@ -165,7 +165,7 @@ function EditorialLongFormContentEditor({
             <div className="max-h-[min(72vh,38rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
               <MarkdownPreview
                 source={previewMarkdown ?? ""}
-                className="prose prose-lg dark:prose-invert max-w-none"
+                className="longform-markdown-preview max-w-none text-base leading-relaxed"
               />
             </div>
           ) : (

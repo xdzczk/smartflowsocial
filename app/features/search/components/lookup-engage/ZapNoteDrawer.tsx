@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 import {
   zapRecipient,
   ZAP_FLOW_ERROR_NO_LUD16,
@@ -30,6 +31,8 @@ export interface ZapNoteDrawerProps {
   /** Hex event id for note-scoped zap request. */
   eventIdHex: string;
   publishRelays: string[];
+  /** From Settings → Engagement; falls back to app default. */
+  defaultAmountSats?: number;
 }
 
 export function ZapNoteDrawer({
@@ -38,12 +41,26 @@ export function ZapNoteDrawer({
   authorNpub,
   eventIdHex,
   publishRelays,
+  defaultAmountSats,
 }: ZapNoteDrawerProps) {
   const wide = useLookupSheetWide();
-  const [amountSats, setAmountSats] = useState<number>(100);
+  const resolvedDefault =
+    typeof defaultAmountSats === "number" &&
+    Number.isInteger(defaultAmountSats) &&
+    defaultAmountSats >= 1
+      ? defaultAmountSats
+      : DEFAULT_ZAP_AMOUNT_SATS_FALLBACK;
+  const [amountSats, setAmountSats] = useState<number>(resolvedDefault);
   const [custom, setCustom] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setAmountSats(resolvedDefault);
+      setCustom("");
+    }
+  }, [open, resolvedDefault]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
@@ -159,7 +176,7 @@ export function ZapNoteDrawer({
           <p className="text-muted-foreground text-[11px] leading-snug">
             Uses WebLN when available. Configure wallet under{" "}
             <Link
-              to="/dashboard/settings"
+              to="/dashboard/settings?tab=engagement"
               className="text-primary underline-offset-2 hover:underline"
             >
               Settings

@@ -92,6 +92,7 @@ function CurrentInnerBody({
       contextLine={contextLine}
       compact={compact}
       bodyEmphasis={emphasizeText ? "strong" : "default"}
+      detailType={type}
     />
   );
 }

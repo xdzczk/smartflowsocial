@@ -391,6 +391,26 @@ export function updateUserTimeFormatRow(
   });
 }
 
+// --- Default zap amount (sats, engagement) ---
+export function findUserDefaultZapAmountSatsRow(
+  userId: string
+): Promise<{ defaultZapAmountSats: number | null } | null> {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { defaultZapAmountSats: true },
+  });
+}
+
+export function updateUserDefaultZapAmountSatsRow(
+  userId: string,
+  defaultZapAmountSats: number
+): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { defaultZapAmountSats },
+  });
+}
+
 // --- Primary signer profile ---
 export function findUserPrimarySignerProfileRow(
   userId: string

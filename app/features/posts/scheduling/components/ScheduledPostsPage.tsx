@@ -20,8 +20,9 @@ import {
 } from "~/features/posts/longform";
 import type { BulkComposerPayload } from "~/features/posts/publishing";
 import {
+  EditScheduledPostModal,
+  RescheduleScheduledPostModal,
   ScheduledPostsTable,
-  SimpleRescheduleModal,
   useScheduledState,
   useScheduledPostsInfiniteData,
 } from "~/features/posts/scheduling";
@@ -29,7 +30,6 @@ import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
   AllContentListing,
-  EditPostModal,
   PostDetailsModal,
   PublishingFilterRow,
   PublishingLibraryContentSegments,
@@ -598,6 +598,14 @@ export default function ScheduledPostsPage() {
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
           onDeleted={refreshPostViews}
+          onEdit={(p) => {
+            setSelectedPost(null);
+            handleEditPost(p as PostData | LongFormPostData);
+          }}
+          onReschedule={(p) => {
+            setSelectedPost(null);
+            handleReschedulePost(p as PostData | LongFormPostData);
+          }}
           showSignedEvent={true}
           type="scheduled"
           userTimezone={userTimezone}
@@ -621,6 +629,14 @@ export default function ScheduledPostsPage() {
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           onDeleted={refreshPostViews}
+          onEdit={(p) => {
+            setSelectedLongFormPost(null);
+            handleEditPost(p as PostData | LongFormPostData);
+          }}
+          onReschedule={(p) => {
+            setSelectedLongFormPost(null);
+            handleReschedulePost(p as PostData | LongFormPostData);
+          }}
           type="scheduled"
           showSignedEvent={true}
           userTimezone={userTimezone}
@@ -630,7 +646,7 @@ export default function ScheduledPostsPage() {
 
       {/* Edit Post Modal */}
       {showEditModal && postToEdit ? (
-        <EditPostModal
+        <EditScheduledPostModal
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
@@ -651,10 +667,13 @@ export default function ScheduledPostsPage() {
 
       {/* Reschedule Post Modal */}
       {showRescheduleModal && postToReschedule ? (
-        <SimpleRescheduleModal
+        <RescheduleScheduledPostModal
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
-          onConfirm={handleModalSuccess}
+          onSuccess={() => {
+            handleCloseRescheduleModal();
+            handleModalSuccess();
+          }}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
         />

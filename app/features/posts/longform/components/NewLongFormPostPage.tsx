@@ -154,10 +154,21 @@ export default function NewLongFormPostPage() {
             newSearchParams.delete("published");
             newSearchParams.delete("scheduled");
             setSearchParams(newSearchParams, { replace: true });
+          } else {
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("published");
+            newSearchParams.delete("scheduled");
+            setSearchParams(newSearchParams, { replace: true });
+            setTimeout(() => {
+              setModalPostId(null);
+            }, 0);
           }
         } catch (error) {
           console.error("Failed to fetch post data:", error);
-          // Reset state on error
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("published");
+          newSearchParams.delete("scheduled");
+          setSearchParams(newSearchParams, { replace: true });
           setTimeout(() => {
             setModalPostId(null);
           }, 0);

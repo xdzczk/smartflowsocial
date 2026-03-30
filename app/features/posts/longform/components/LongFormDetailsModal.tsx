@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
+import { getDeleteButtonLabel } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import { PostDetailHeader } from "~/features/posts/components/post-detail-modal/PostDetailHeader";
 import { DetailModalReplySnippet } from "~/features/posts/components/post-detail-modal/rail/DetailModalReplySnippet";
 import {
@@ -17,6 +18,7 @@ import {
   RAIL_ZONE_PY,
 } from "~/features/posts/components/publishing-rail";
 import { getQueueColor } from "~/features/posts/queue-colors";
+import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 import type {
   LongFormPostType,
   LongFormPostData,
@@ -385,6 +387,7 @@ function getLongFormNostrArticleId(
   return "";
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- article detail: delete, nostr, media, actions
 export default function LongFormDetailsModal({
   post,
   onClose,
@@ -501,16 +504,16 @@ export default function LongFormDetailsModal({
       <input type="hidden" name="_action" value="deleteLongForm" />
       <Button
         type="submit"
-        variant="outline"
+        variant="ghost"
         size="sm"
         disabled={deleteFetcher.state !== "idle"}
-        className="border-destructive text-destructive hover:bg-destructive/10"
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
       >
         {deleteFetcher.state !== "idle" &&
         deleteFetcher.formData?.get("postId") === post.id
           ? "Deleting..."
           : type === "scheduled"
-            ? "Delete Scheduled Article"
+            ? getDeleteButtonLabel("scheduled")
             : type === "draft"
               ? "Delete Draft"
               : "Delete Article"}
@@ -605,64 +608,54 @@ export default function LongFormDetailsModal({
           />
         </div>
 
-        <div className="border-border bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {type === "published" && openOnNostrUrl ? (
-              <Button variant="default" size="sm" asChild>
-                <Link
-                  to={openOnNostrUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open on Nostr (opens in new tab)"
-                >
-                  Open on Nostr
-                </Link>
-              </Button>
-            ) : null}
-            {type === "published" && eventIdForThread ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  to={viewThreadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="View thread (opens in new tab)"
-                >
-                  View thread
-                </Link>
-              </Button>
-            ) : null}
-            {type === "scheduled" && onEdit ? (
-              <Button
-                variant="default"
-                size="sm"
-                type="button"
-                onClick={() => onEdit(post)}
-              >
-                Edit
-              </Button>
-            ) : null}
-            {type === "scheduled" && onReschedule ? (
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => onReschedule(post)}
-              >
-                Reschedule
-              </Button>
-            ) : null}
-            {type === "draft" ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/dashboard/drafts/longform/edit/${post.id}`}>
-                  Edit Draft
-                </Link>
-              </Button>
-            ) : null}
-            <div className="border-border ml-1 flex items-center border-l border-dashed pl-3">
-              {deleteForm}
+        {type === "scheduled" ? (
+          <ScheduledPostActionBar
+            onEdit={onEdit ? () => onEdit(post) : undefined}
+            onReschedule={onReschedule ? () => onReschedule(post) : undefined}
+            openFullEditorHref={`/dashboard/compose?scheduled=${post.id}`}
+            openFullEditorLabel="Open in full editor"
+            deleteForm={deleteForm}
+          />
+        ) : (
+          <div className="border-border bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {type === "published" && openOnNostrUrl ? (
+                <Button variant="default" size="sm" asChild>
+                  <Link
+                    to={openOnNostrUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open on Nostr (opens in new tab)"
+                  >
+                    Open on Nostr
+                  </Link>
+                </Button>
+              ) : null}
+              {type === "published" && eventIdForThread ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    to={viewThreadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View thread (opens in new tab)"
+                  >
+                    View thread
+                  </Link>
+                </Button>
+              ) : null}
+              {type === "draft" ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/dashboard/drafts/longform/edit/${post.id}`}>
+                    Edit Draft
+                  </Link>
+                </Button>
+              ) : null}
+              <div className="border-border ml-1 flex items-center border-l border-dashed pl-3">
+                {deleteForm}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -136,7 +136,11 @@ describe("Calendar View", () => {
         }
         cy.wrap($btns.first()).click();
         cy.get("[role=dialog]", { timeout: 5000 }).should("be.visible");
-        cy.contains("button", /Confirm|Save|Reschedule/i).click();
+        cy.get("[role=dialog]").within(() => {
+          cy.contains("button", "Reschedule").click();
+        });
+        cy.get("[role=dialog]", { timeout: 5000 }).should("be.visible");
+        cy.contains("button", /Confirm reschedule/i).click();
         cy.get("[role=dialog]", { timeout: 10000 }).should("not.exist");
         cy.get(
           "[data-testid=calendar-view-week], [data-testid=calendar-view-day], [data-testid=calendar-view-month]"

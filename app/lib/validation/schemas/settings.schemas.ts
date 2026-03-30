@@ -620,6 +620,10 @@ export const toggleHideLowTrustSchema = z.object({
     .pipe(z.boolean()),
 });
 
+export const updateDefaultZapAmountSchema = z.object({
+  defaultZapAmountSats: z.coerce.number().int().min(1).max(1_000_000),
+});
+
 /**
  * NWC (Nostr Wallet Connect) action schemas
  */

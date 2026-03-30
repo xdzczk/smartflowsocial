@@ -31,13 +31,19 @@ export function generateCreationIdempotencyKey(
  * Generate a deterministic idempotency key for job enqueueing
  * @param postId - The post ID
  * @param scheduledFor - Scheduled timestamp (Unix seconds)
+ * @param nostrEventId - When set (e.g. signed Nostr event id), included so re-signing
+ *   the same slot produces a distinct key and concurrent duplicate submits dedupe safely.
  * @returns SHA-256 hash of the input
  */
 export function generateEnqueueIdempotencyKey(
   postId: string,
-  scheduledFor: number
+  scheduledFor: number,
+  nostrEventId?: string
 ): string {
-  const input = `${postId}:${scheduledFor}`;
+  const input =
+    nostrEventId != null && nostrEventId !== ""
+      ? `${postId}:${scheduledFor}:${nostrEventId}`
+      : `${postId}:${scheduledFor}`;
   return createHash("sha256").update(input).digest("hex");
 }
 

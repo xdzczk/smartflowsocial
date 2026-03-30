@@ -301,14 +301,22 @@ export function BroadcastNewDraftForm({
   ]);
 
   const advisories = useMemo(() => {
-    const out: string[] = [];
-    if (audienceMode === "selected") {
-      out.push("Recipient counts may change at send time.");
+    return [
+      "Suppressed recipients are excluded automatically.",
+      "Only eligible recipients are included at send time.",
+    ];
+  }, []);
+
+  const outcomeHeadline = useMemo(() => {
+    if (
+      effectiveCommitMode === "schedule" &&
+      hasScheduleTimeForSubmit &&
+      scheduleTimeLabel
+    ) {
+      return "Scheduled";
     }
-    out.push("Suppressed recipients are excluded automatically.");
-    out.push("Only eligible recipients are included at send time.");
-    return out;
-  }, [audienceMode]);
+    return "After review";
+  }, [effectiveCommitMode, hasScheduleTimeForSubmit, scheduleTimeLabel]);
 
   const outcomeLine = useMemo(() => {
     if (
@@ -316,16 +324,16 @@ export function BroadcastNewDraftForm({
       hasScheduleTimeForSubmit &&
       scheduleTimeLabel
     ) {
-      return `Scheduled for ${scheduleTimeLabel}`;
+      return `for ${scheduleTimeLabel}`;
     }
-    return "Sends to eligible recipients after review.";
+    return "Sends to eligible recipients";
   }, [effectiveCommitMode, hasScheduleTimeForSubmit, scheduleTimeLabel]);
 
   return (
     <Form
       method="post"
       key={savedForNew?.id ?? "new-draft"}
-      className="grid gap-10 lg:grid-cols-[1fr_minmax(280px,320px)] lg:items-start"
+      className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-6"
     >
       <input type="hidden" name="audienceType" value={effectiveAudienceType} />
       <input type="hidden" name="customNpubs" value={hiddenCustomNpubs} />
@@ -338,7 +346,7 @@ export function BroadcastNewDraftForm({
         />
       ) : null}
 
-      <div className="space-y-12">
+      <div className="min-w-0 flex-1 space-y-12">
         {actionError ? (
           <div
             role="alert"
@@ -587,7 +595,7 @@ export function BroadcastNewDraftForm({
         draftDisabled={busy || !canContinue}
         blockers={blockers}
         advisories={advisories}
-        outcomeHeadline={null}
+        outcomeHeadline={outcomeHeadline}
         outcomeLine={outcomeLine}
       />
     </Form>

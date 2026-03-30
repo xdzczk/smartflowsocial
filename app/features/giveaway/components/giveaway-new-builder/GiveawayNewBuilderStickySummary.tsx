@@ -1,15 +1,37 @@
+import type { ReactNode } from "react";
+import { useState } from "react";
+
 import {
   ActionRailActions,
+  ActionRailLabel,
+  ActionRailSection,
   RAIL_SECONDARY_ACTION,
+  railFieldClassNames,
 } from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   buildGiveawayOutcomeLine,
   CampaignActionRail,
 } from "~/features/campaign-ui";
+import { RailSegmentedTabGroup } from "~/features/posts/components/publishing-rail/RailSegmentedTabGroup";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import type { BuilderScopeType } from "./giveaway-new-builder-constants";
 import { asideScopeLine } from "./giveaway-new-builder-constants";
+
+const SOURCE_POST_LAUNCH_TABS = [
+  { id: "now", label: "Now", ariaLabel: "Publish now" },
+  { id: "schedule", label: "Schedule", ariaLabel: "Schedule for later" },
+] as const;
+
+function giveawaySourcePostLaunchHint(launchMode: "now" | "schedule"): string {
+  if (launchMode === "now") {
+    return "Publishes the giveaway announcement note now, then continues to preview.";
+  }
+  return "Schedules the announcement note; after it publishes, your giveaway draft is created.";
+}
 
 /* eslint-disable sonarjs/cognitive-complexity -- rail aggregates many builder fields */
 export function GiveawayNewBuilderStickySummary({
@@ -30,6 +52,16 @@ export function GiveawayNewBuilderStickySummary({
   fetcherError,
   isBusy,
   onSaveDraft,
+  userTimezone,
+  sourcePostLaunchMode,
+  onSourcePostLaunchModeChange,
+  scheduledSourcePostFor,
+  onScheduledSourcePostForChange,
+  useRailPublishPrimary,
+  publishPrimaryLabel,
+  publishPrimaryDisabled,
+  onPublishPrimaryClick,
+  outcomeHeadline,
 }: {
   scopeType: BuilderScopeType;
   periodMode: "days" | "custom";
@@ -52,7 +84,18 @@ export function GiveawayNewBuilderStickySummary({
   fetcherError?: string;
   isBusy: boolean;
   onSaveDraft: () => void;
+  userTimezone: string;
+  sourcePostLaunchMode: "now" | "schedule";
+  onSourcePostLaunchModeChange: (next: "now" | "schedule") => void;
+  scheduledSourcePostFor: string;
+  onScheduledSourcePostForChange: (next: string) => void;
+  useRailPublishPrimary: boolean;
+  publishPrimaryLabel: string;
+  publishPrimaryDisabled: boolean;
+  onPublishPrimaryClick: () => void;
+  outcomeHeadline: ReactNode;
 }) {
+  const [now] = useState(() => Date.now());
   const entryValue = isFollowGraphScope
     ? "Random from accounts (after filters)"
     : selectedTypes.length
@@ -76,9 +119,17 @@ export function GiveawayNewBuilderStickySummary({
   if (scopeType === "SINGLE_POST" && !selectedSinglePostId.trim()) {
     missingLines.push(
       singlePostSourceMode === "create"
-        ? "Publish the giveaway post from the composer."
+        ? "Use the summary rail to publish or schedule the giveaway post."
         : "Select a post for single-post scope."
     );
+  }
+  if (
+    useRailPublishPrimary &&
+    sourcePostLaunchMode === "schedule" &&
+    (scheduledSourcePostFor.trim() === "" ||
+      new Date(scheduledSourcePostFor).getTime() <= now)
+  ) {
+    missingLines.push("Set a future publish time in the rail.");
   }
   if (!isFollowGraphScope && selectedTypes.length === 0) {
     missingLines.push("Select at least one entry method.");
@@ -99,6 +150,54 @@ export function GiveawayNewBuilderStickySummary({
       : null;
 
   const serverErr = actionError ?? fetcherError;
+
+  const minSchedule = getNowForDateTimeLocal(userTimezone);
+
+  const prependSections = useRailPublishPrimary ? (
+    <>
+      <ActionRailSection className="pt-0">
+        <RailSegmentedTabGroup
+          items={[...SOURCE_POST_LAUNCH_TABS]}
+          value={sourcePostLaunchMode}
+          onValueChange={(id) => {
+            onSourcePostLaunchModeChange(id as "now" | "schedule");
+          }}
+          columns={2}
+          radiogroupAriaLabel="Giveaway source post publish timing"
+        />
+        <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug">
+          {giveawaySourcePostLaunchHint(sourcePostLaunchMode)}
+        </p>
+      </ActionRailSection>
+
+      {sourcePostLaunchMode === "schedule" ? (
+        <ActionRailSection className="space-y-2">
+          <ActionRailLabel>Publish time</ActionRailLabel>
+          <Label
+            htmlFor="giveaway-rail-scheduled-source-post"
+            className="text-muted-foreground text-[11px] font-medium"
+          >
+            Date and time
+          </Label>
+          <Input
+            id="giveaway-rail-scheduled-source-post"
+            type="datetime-local"
+            className={railFieldClassNames}
+            value={scheduledSourcePostFor}
+            min={minSchedule}
+            onChange={(e) => {
+              const v = e.target.value || "";
+              onScheduledSourcePostForChange(v < minSchedule ? minSchedule : v);
+            }}
+          />
+          <p className="text-muted-foreground text-[11px] leading-snug">
+            {userTimezone} · When the announcement note should go out.
+          </p>
+        </ActionRailSection>
+      ) : null}
+    </>
+  ) : null;
+
   const outcomeLine = buildGiveawayOutcomeLine({
     plannedPayoutSats:
       plannedPayoutForFee != null && plannedPayoutForFee > 0
@@ -141,6 +240,7 @@ export function GiveawayNewBuilderStickySummary({
     <CampaignActionRail
       ariaLabel="Giveaway summary"
       className="mt-10 self-start lg:mt-0"
+      prependSections={prependSections}
       snapshotLabel="Snapshot"
       snapshotRows={[
         {
@@ -177,7 +277,7 @@ export function GiveawayNewBuilderStickySummary({
       ]}
       blocker={blocker}
       serverError={serverErr ?? null}
-      outcomeHeadline="Ready to continue"
+      outcomeHeadline={outcomeHeadline}
       outcomeLine={outcomeLine}
       outcomeHint={cautionHint}
       footer={
@@ -195,15 +295,28 @@ export function GiveawayNewBuilderStickySummary({
             </Button>
           }
           primaryButton={
-            <Button
-              type="submit"
-              size="sm"
-              variant="default"
-              disabled={isBusy}
-              className="h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
-            >
-              Create draft & continue to preview
-            </Button>
+            useRailPublishPrimary ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                disabled={isBusy || publishPrimaryDisabled}
+                onClick={onPublishPrimaryClick}
+                className="h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
+              >
+                {publishPrimaryLabel}
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                size="sm"
+                variant="default"
+                disabled={isBusy}
+                className="h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
+              >
+                Create draft & continue to preview
+              </Button>
+            )
           }
         />
       }

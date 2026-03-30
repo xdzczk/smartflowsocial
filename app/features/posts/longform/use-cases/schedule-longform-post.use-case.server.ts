@@ -38,9 +38,14 @@ export class ScheduleLongFormPostUseCase {
     // Convert Temporal to Unix timestamp for legacy field
     const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
+    const nostrEventId =
+      typeof input.signedEvent.id === "string"
+        ? input.signedEvent.id
+        : undefined;
     const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
       input.postId,
-      scheduledForUnix
+      scheduledForUnix,
+      nostrEventId
     );
 
     await runScheduleLongFormPostInTransaction(

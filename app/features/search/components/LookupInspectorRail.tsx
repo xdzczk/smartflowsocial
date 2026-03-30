@@ -33,6 +33,7 @@ export interface LookupInspectorRailProps {
   onScheduleRepost: () => void;
   noteOrNeventDisplay: string | null;
   publishRelays: string[];
+  defaultZapAmountSats?: number;
   className?: string;
 }
 
@@ -46,6 +47,7 @@ export function LookupInspectorRail({
   onScheduleRepost,
   noteOrNeventDisplay,
   publishRelays,
+  defaultZapAmountSats,
   className,
 }: LookupInspectorRailProps) {
   const [idExpanded, setIdExpanded] = useState(false);
@@ -74,6 +76,7 @@ export function LookupInspectorRail({
           authorPubkey={result.pubkey}
           authorDisplayName={result.authorName}
           publishRelays={publishRelays}
+          defaultZapAmountSats={defaultZapAmountSats}
         />
       </div>
 

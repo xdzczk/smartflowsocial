@@ -3,6 +3,7 @@ import { FileText, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { richContentToPlainPreview } from "~/lib/html-to-plain-text";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 interface Template {
@@ -77,7 +78,7 @@ export function TemplateDetailsModal({
           <div className="mb-4">
             <h3 className="mb-2 font-semibold">Content</h3>
             <p className="dark:text-foreground text-muted-foreground max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
-              {template.text}
+              {richContentToPlainPreview(template.text)}
             </p>
           </div>
         ) : null}

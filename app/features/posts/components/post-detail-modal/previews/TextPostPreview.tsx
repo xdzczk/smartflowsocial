@@ -14,6 +14,7 @@ export function TextPostPreview({
   ultraCompact,
   bodyEmphasis = "default",
   relationshipType = "original",
+  detailType,
   replyParentHint,
   quotedSnippet,
   quotedAuthorHint,
@@ -26,6 +27,8 @@ export function TextPostPreview({
   ultraCompact?: boolean;
   bodyEmphasis?: "default" | "strong";
   relationshipType?: PostDetailRelationshipType;
+  /** When scheduled, empty body shows “No caption” instead of “Empty post”. */
+  detailType?: "draft" | "published" | "scheduled";
   replyParentHint?: string | null;
   quotedSnippet?: string | null;
   quotedAuthorHint?: string | null;
@@ -116,7 +119,9 @@ export function TextPostPreview({
         primary ? (
           <p className={primaryClass}>{primary}</p>
         ) : showEmptyBody ? (
-          <p className="text-muted-foreground text-sm italic">Empty post</p>
+          <p className="text-muted-foreground text-sm italic">
+            {detailType === "scheduled" ? "No caption" : "Empty post"}
+          </p>
         ) : null
       ) : null}
 

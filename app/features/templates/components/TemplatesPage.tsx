@@ -47,6 +47,7 @@ import {
 } from "~/features/posts/ui";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { richContentToPlainPreview } from "~/lib/html-to-plain-text";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import { useTemplatesQuery, templatesKeys } from "../hooks/useTemplatesQuery";
@@ -156,7 +157,8 @@ function previewSnippet(
 ): string {
   const p = templateToDetailPayload(t);
   if (p.text && p.text.length > 0) {
-    const oneLine = p.text.replace(/\s+/g, " ").trim();
+    const plain = richContentToPlainPreview(p.text);
+    const oneLine = plain.replace(/\s+/g, " ").trim();
     return oneLine.length > 140 ? `${oneLine.slice(0, 140)}…` : oneLine;
   }
   return "No preview yet";
@@ -592,7 +594,7 @@ export default function TemplatesPage() {
                       <div>
                         <p className="mb-1 text-xs font-medium">Preview</p>
                         <p className="text-muted-foreground max-h-56 overflow-y-auto text-sm whitespace-pre-wrap">
-                          {detail.text}
+                          {richContentToPlainPreview(detail.text)}
                         </p>
                       </div>
                     ) : (

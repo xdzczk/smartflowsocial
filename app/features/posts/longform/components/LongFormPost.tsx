@@ -809,7 +809,10 @@ export default function LongFormPost({
             ? "text-foreground/90 border-foreground/35 -mb-px border-b-2"
             : "text-muted-foreground/55 hover:text-muted-foreground/85 border-b-2 border-transparent"
         )}
-        onClick={() => setBodyView("preview")}
+        onClick={() => {
+          flushSync();
+          setBodyView("preview");
+        }}
         aria-pressed={bodyView === "preview"}
       >
         Preview

@@ -160,7 +160,7 @@ function SettingsMediaPageInner() {
           </p>
         </div>
         <Link
-          to="/dashboard/settings?tab=storage"
+          to="/dashboard/settings?tab=media"
           className="text-primary text-sm hover:underline"
         >
           Back to Settings

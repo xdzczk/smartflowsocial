@@ -50,6 +50,7 @@ import {
   getUserCustomNostrClientBaseUrl,
   getUserTimezone,
   getQueueTypes,
+  getUserDefaultZapAmountSatsStored,
 } from "~/features/user";
 import { getHashTagPresetsCached } from "~/features/user/services/user-cache.server";
 import {
@@ -187,6 +188,8 @@ export interface SettingsLoaderData {
     payoutDestination: string | null;
     payoutDestinationType: string | null;
   };
+  /** Persisted default zap (sats); null until user saves (UI uses fallback 21). */
+  defaultZapAmountSats: number | null;
 }
 
 /** Safe defaults when settings loader fails (matches dashboard.settings error fallback). */
@@ -249,6 +252,7 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
     payoutDestination: null,
     payoutDestinationType: null,
   },
+  defaultZapAmountSats: null,
 };
 
 async function buildAccountsData(params: {
@@ -330,6 +334,7 @@ export async function loadSettingsData(
     customNostrClientBaseUrl,
     primarySignerProfile,
     blastrRelayEnabled,
+    defaultZapAmountSats,
   ] = await Promise.all([
     getUserTimezone(userId),
     loadRelaySettingsLoaderSlice(userId),
@@ -351,6 +356,7 @@ export async function loadSettingsData(
     getUserCustomNostrClientBaseUrl(userId),
     getUserPrimarySignerProfile(userId),
     getUserBlastrRelayEnabled(userId),
+    getUserDefaultZapAmountSatsStored(userId),
   ]);
 
   const effectiveWriteRelays = await getEffectiveWriteRelays(userId, {
@@ -562,5 +568,6 @@ export async function loadSettingsData(
     blastrPolicy,
     blastrSystemRelays,
     referral,
+    defaultZapAmountSats,
   };
 }

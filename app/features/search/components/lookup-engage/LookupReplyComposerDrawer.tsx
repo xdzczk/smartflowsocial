@@ -120,7 +120,7 @@ export function LookupReplyComposerDrawer({
         <p className="text-muted-foreground px-4 pb-3 text-[11px]">
           Need relays or signing? Check{" "}
           <Link
-            to="/dashboard/settings"
+            to="/dashboard/settings?tab=relays"
             className="text-primary underline-offset-2 hover:underline"
           >
             Settings

@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
+import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 
 export function PostDetailFooterBar({
   type,
@@ -13,6 +14,9 @@ export function PostDetailFooterBar({
   onEdit,
   onReschedule,
   deleteForm,
+  scheduledEditDisabled,
+  scheduledEditDisabledReason,
+  scheduledOpenFullEditorHref,
 }: {
   type: "draft" | "published" | "scheduled";
   showOpenOnNostr: boolean;
@@ -24,7 +28,23 @@ export function PostDetailFooterBar({
   onEdit?: () => void;
   onReschedule?: () => void;
   deleteForm: React.ReactNode;
+  scheduledEditDisabled?: boolean;
+  scheduledEditDisabledReason?: string;
+  scheduledOpenFullEditorHref?: string | null;
 }) {
+  if (type === "scheduled") {
+    return (
+      <ScheduledPostActionBar
+        onEdit={onEdit}
+        onReschedule={onReschedule}
+        editDisabled={Boolean(scheduledEditDisabled)}
+        editDisabledReason={scheduledEditDisabledReason}
+        openFullEditorHref={scheduledOpenFullEditorHref ?? undefined}
+        deleteForm={deleteForm}
+      />
+    );
+  }
+
   return (
     <div className="border-border/60 bg-card/95 shrink-0 border-t px-5 py-3.5 backdrop-blur-sm">
       <div className="flex flex-wrap items-center justify-end gap-2">
@@ -62,21 +82,6 @@ export function PostDetailFooterBar({
             >
               {viewThreadLabel}
             </Link>
-          </Button>
-        ) : null}
-        {type === "scheduled" && onEdit ? (
-          <Button variant="default" size="sm" type="button" onClick={onEdit}>
-            Edit
-          </Button>
-        ) : null}
-        {type === "scheduled" && onReschedule ? (
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={onReschedule}
-          >
-            Reschedule
           </Button>
         ) : null}
         <div className="border-border/60 ml-1 flex items-center border-l border-dashed pl-3">

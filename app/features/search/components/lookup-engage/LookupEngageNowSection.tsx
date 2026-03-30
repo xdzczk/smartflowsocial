@@ -15,6 +15,8 @@ export interface LookupEngageNowSectionProps {
   authorPubkey: string;
   authorDisplayName: string;
   publishRelays: string[];
+  /** Resolved default zap amount (sats) from user settings. */
+  defaultZapAmountSats?: number;
   className?: string;
 }
 
@@ -23,6 +25,7 @@ export function LookupEngageNowSection({
   authorPubkey,
   authorDisplayName,
   publishRelays,
+  defaultZapAmountSats,
   className,
 }: LookupEngageNowSectionProps) {
   const [replyOpen, setReplyOpen] = useState(false);
@@ -123,6 +126,7 @@ export function LookupEngageNowSection({
           authorNpub={authorNpub}
           eventIdHex={eventId}
           publishRelays={publishRelays}
+          defaultAmountSats={defaultZapAmountSats}
         />
       ) : null}
     </div>

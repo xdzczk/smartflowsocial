@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   Popover,
@@ -13,7 +13,21 @@ import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
 import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { LongFormDetailsModal } from "~/features/posts/longform";
-import type { QueueType, UserData } from "~/features/posts/types";
+import {
+  calendarPostAsLongFormEntity,
+  calendarPostAsPostData,
+  scheduledPostViewModelFromCalendarPost,
+} from "~/features/posts/scheduled";
+import {
+  EditScheduledPostModal,
+  RescheduleScheduledPostModal,
+} from "~/features/posts/scheduling";
+import type {
+  LongFormPostData,
+  PostData,
+  QueueType,
+  UserData,
+} from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
@@ -28,6 +42,7 @@ import {
   nowUTC,
   toDate,
 } from "~/lib/temporal";
+import { validateUserData } from "~/lib/validation/user-data";
 
 import { getPostIsLongform, isSameCalendarSlot } from "./calendar-helpers";
 import { CalendarErrorBoundary } from "./CalendarErrorBoundary";
@@ -35,7 +50,7 @@ import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
 import { getPostScheduleInstant } from "./PostBlock.utils";
-import { type RescheduleData, RescheduleModal } from "./RescheduleModal";
+import type { RescheduleData } from "./utils/reschedule-modal.utils";
 import { DayView } from "./views/DayView";
 import { WeekView } from "./views/WeekView";
 
@@ -88,6 +103,7 @@ function parseInitialDate(
     : parsed;
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- calendar shell: modals, drag/drop, view state
 export function Calendar({
   scheduledPosts,
   pastPosts = [],
@@ -121,6 +137,10 @@ export function Calendar({
   const [detailModalPost, setDetailModalPost] = useState<CalendarPost | null>(
     null
   );
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<
+    PostData | LongFormPostData | null
+  >(null);
   const [calendarLiveMessage, setCalendarLiveMessage] = useState("");
   const isLg = useIsLg();
   const queryClient = useQueryClient();
@@ -191,7 +211,7 @@ export function Calendar({
   // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showRescheduleModal || isDetailModalOpen) return;
+      if (showRescheduleModal || isDetailModalOpen || showEditModal) return;
       const target = document.activeElement;
       if (
         target &&
@@ -235,7 +255,14 @@ export function Calendar({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showRescheduleModal, isDetailModalOpen, currentDate, view, userTimezone]);
+  }, [
+    showRescheduleModal,
+    isDetailModalOpen,
+    showEditModal,
+    currentDate,
+    view,
+    userTimezone,
+  ]);
 
   const handlePostEdit = useCallback(
     (post: CalendarPost) => {
@@ -302,6 +329,24 @@ export function Calendar({
     },
     [view, isLg]
   );
+
+  const handleContentEditFromCalendar = useCallback(
+    (cp: CalendarPost) => {
+      const lf = getPostIsLongform(cp, isLongform, isAll);
+      setPostToEdit(
+        lf ? calendarPostAsLongFormEntity(cp) : calendarPostAsPostData(cp)
+      );
+      setShowEditModal(true);
+    },
+    [isLongform, isAll]
+  );
+
+  const detailModalVm = useMemo(() => {
+    if (!detailModalPost) return null;
+    return scheduledPostViewModelFromCalendarPost(detailModalPost, {
+      treatAsLongform: detailModalPostIsLongform,
+    });
+  }, [detailModalPost, detailModalPostIsLongform]);
 
   const userTimeFormat =
     user && typeof user === "object" && "timeFormat" in user
@@ -574,7 +619,8 @@ export function Calendar({
               <div className="hidden flex-shrink-0 lg:flex">
                 <DayViewSidebar
                   selectedPost={selectedPost}
-                  onEditPost={handlePostEdit}
+                  onEditPost={(p) => handleContentEditFromCalendar(p)}
+                  onReschedulePost={(p) => handlePostEdit(p)}
                   user={user}
                   queueTypes={queueTypes}
                   isLongform={isLongform}
@@ -602,19 +648,46 @@ export function Calendar({
 
       {/* Reschedule Modal */}
       {showRescheduleModal && rescheduleData ? (
-        <RescheduleModal
-          data={rescheduleData}
-          user={user}
+        <RescheduleScheduledPostModal
+          post={
+            rescheduleData.isLongform
+              ? calendarPostAsLongFormEntity(rescheduleData.post)
+              : calendarPostAsPostData(rescheduleData.post)
+          }
+          user={user ?? undefined}
           queueTypes={queueTypes}
+          initialDateTime={rescheduleData.newDateTime}
+          wasAutoScheduled={rescheduleData.wasAutoScheduled}
+          userTimeFormat={userTimeFormat}
           onClose={() => {
             setShowRescheduleModal(false);
             setRescheduleData(null);
           }}
-          onConfirm={() => {
+          onSuccess={() => {
             setShowRescheduleModal(false);
             setRescheduleData(null);
             void queryClient.refetchQueries({ queryKey: calendarKeys.all });
+            refreshPostViews();
           }}
+        />
+      ) : null}
+
+      {showEditModal && postToEdit ? (
+        <EditScheduledPostModal
+          post={postToEdit}
+          onClose={() => {
+            setShowEditModal(false);
+            setPostToEdit(null);
+          }}
+          onConfirm={() => {
+            setShowEditModal(false);
+            setPostToEdit(null);
+            void queryClient.refetchQueries({ queryKey: calendarKeys.all });
+            refreshPostViews();
+          }}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
+          queueTypes={queueTypes ?? []}
+          hashTagPresets={[]}
         />
       ) : null}
 
@@ -626,10 +699,15 @@ export function Calendar({
           }
           onClose={() => setDetailModalPost(null)}
           onDeleted={refreshPostViews}
+          onEdit={(post) => {
+            setDetailModalPost(null);
+            handleContentEditFromCalendar(post as CalendarPost);
+          }}
           onReschedule={(post) => {
             setDetailModalPost(null);
             handlePostEdit(post as CalendarPost);
           }}
+          scheduledCapabilities={detailModalVm?.capabilities}
           showSignedEvent={true}
           type={detailModalType}
           userTimezone={userTimezone}
@@ -645,6 +723,10 @@ export function Calendar({
           }
           onClose={() => setDetailModalPost(null)}
           onDeleted={refreshPostViews}
+          onEdit={(post) => {
+            setDetailModalPost(null);
+            handleContentEditFromCalendar(post as unknown as CalendarPost);
+          }}
           onReschedule={(post) => {
             setDetailModalPost(null);
             handlePostEdit(post as unknown as CalendarPost);

@@ -123,11 +123,11 @@ export function useReschedulePostMutation() {
     }) => {
       const formData = new FormData();
       formData.append(
-        "_action",
+        "action",
         isLongform ? "rescheduleLongform" : "reschedule"
       );
       formData.append("postId", postId);
-      formData.append("scheduledFor", scheduledFor);
+      formData.append("newTime", scheduledFor);
       if (queueTypeId) {
         formData.append("queueTypeId", queueTypeId);
       }

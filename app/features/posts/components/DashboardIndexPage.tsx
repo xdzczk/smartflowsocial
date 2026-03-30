@@ -19,15 +19,15 @@ import {
 } from "~/components/ui/select";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
+  EditScheduledPostModal,
+  RescheduleScheduledPostModal,
   ScheduleNext7DaysCard,
   ScheduleOverviewTargetModal,
-  SimpleRescheduleModal,
 } from "~/features/posts/scheduling";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
 import {
   ContentListPageHeader,
-  EditPostModal,
   FlowView,
   PostDetailsModal,
   QueueHealth,
@@ -320,7 +320,9 @@ export default function DashboardIndexPage() {
     : [];
 
   const hashTagPresetsArray = Array.isArray(hashTagPresets)
-    ? (hashTagPresets as Parameters<typeof EditPostModal>[0]["hashTagPresets"])
+    ? (hashTagPresets as Parameters<
+        typeof EditScheduledPostModal
+      >[0]["hashTagPresets"])
     : [];
 
   const [nowMs, setNowMs] = useState<number | null>(null);
@@ -562,7 +564,7 @@ export default function DashboardIndexPage() {
       ) : null}
 
       {showEditModal && postToEdit ? (
-        <EditPostModal
+        <EditScheduledPostModal
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
@@ -573,10 +575,13 @@ export default function DashboardIndexPage() {
       ) : null}
 
       {showRescheduleModal && postToReschedule ? (
-        <SimpleRescheduleModal
+        <RescheduleScheduledPostModal
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
-          onConfirm={handleModalSuccess}
+          onSuccess={() => {
+            handleCloseRescheduleModal();
+            handleModalSuccess();
+          }}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypesFiltered}
           userTimeFormat={userTimeFormat}

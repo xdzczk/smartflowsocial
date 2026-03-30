@@ -40,14 +40,14 @@ describe("User Settings", () => {
       cy.visitAndCheck("/dashboard/settings?tab=general");
       cy.viewport(1280, 800);
       cy.get('[data-testid="settings-section-rail"]').should("be.visible");
-      cy.get('[data-testid="settings-nav-item-network"]').click();
-      cy.location("search").should("include", "tab=network");
+      cy.get('[data-testid="settings-nav-item-relays"]').click();
+      cy.location("search").should("include", "tab=relays");
       cy.get('[data-testid="settings-active-panel"]').should("be.visible");
     });
 
     it("supports deep link to subscription when available", () => {
-      cy.visitAndCheck("/dashboard/settings?tab=subscription");
-      cy.location("search").should("include", "tab=subscription");
+      cy.visitAndCheck("/dashboard/settings?tab=billing");
+      cy.location("search").should("include", "tab=billing");
       cy.get('[data-testid="settings-active-panel"]').should("be.visible");
     });
   });

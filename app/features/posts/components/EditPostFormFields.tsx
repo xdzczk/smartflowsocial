@@ -26,6 +26,8 @@ interface EditPostFormFieldsProps {
   setIncludeHashtagsInNoteBody: (value: boolean) => void;
   /** Blossom media add blocked without NIP-07 / NIP-46 signer. */
   mediaAddDisabled?: boolean;
+  /** Hide queue selector (scheduling moved to reschedule flow). */
+  hideQueueField?: boolean;
 }
 
 export function EditPostFormFields({
@@ -50,6 +52,7 @@ export function EditPostFormFields({
   includeHashtagsInNoteBody,
   setIncludeHashtagsInNoteBody,
   mediaAddDisabled = false,
+  hideQueueField = false,
 }: EditPostFormFieldsProps) {
   return (
     <>
@@ -184,28 +187,30 @@ export function EditPostFormFields({
         <span className="text-muted-foreground text-sm">Hide tags</span>
       </label>
 
-      <div>
-        <label
-          htmlFor="edit-post-queue-type"
-          className="text-muted-foreground mb-2 block text-sm font-medium"
-        >
-          Queue Type
-        </label>
-        <select
-          id="edit-post-queue-type"
-          name="edit-post-queue-type"
-          value={selectedQueueType}
-          onChange={(e) => setSelectedQueueType(e.target.value)}
-          className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
-        >
-          <option value="">Manual (No Queue)</option>
-          {queueTypes.map((queueType) => (
-            <option key={queueType.id} value={queueType.id}>
-              {queueType.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {hideQueueField ? null : (
+        <div>
+          <label
+            htmlFor="edit-post-queue-type"
+            className="text-muted-foreground mb-2 block text-sm font-medium"
+          >
+            Queue
+          </label>
+          <select
+            id="edit-post-queue-type"
+            name="edit-post-queue-type"
+            value={selectedQueueType}
+            onChange={(e) => setSelectedQueueType(e.target.value)}
+            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+          >
+            <option value="">Manual (No Queue)</option>
+            {queueTypes.map((queueType) => (
+              <option key={queueType.id} value={queueType.id}>
+                {queueType.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </>
   );
 }

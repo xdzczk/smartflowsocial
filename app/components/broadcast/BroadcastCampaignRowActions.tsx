@@ -1,6 +1,6 @@
 "use client";
 
-import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+
+const BROADCASTS_INDEX_ACTION = "/dashboard/broadcasts";
 
 type BroadcastCampaignStatus =
   | "DRAFT"
@@ -34,6 +36,9 @@ export function BroadcastCampaignRowActions(props: {
 }) {
   const { campaignId, status, isArchived, totalRecipients, failedCount } =
     props;
+  const fetcher = useFetcher();
+  const busy = fetcher.state !== "idle";
+
   const draftLike = status === "DRAFT" || status === "AWAITING_SIGNATURE";
   const canPreSignReview = draftLike && totalRecipients > 0;
   const canCancel =
@@ -47,6 +52,13 @@ export function BroadcastCampaignRowActions(props: {
     status === "FAILED" ||
     status === "CANCELLED";
 
+  function postIntent(intent: string) {
+    fetcher.submit(
+      { intent, campaignId },
+      { method: "post", action: BROADCASTS_INDEX_ACTION }
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -56,6 +68,7 @@ export function BroadcastCampaignRowActions(props: {
           size="icon"
           className="h-8 w-8"
           aria-label="Campaign actions"
+          disabled={busy}
         >
           <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
         </Button>
@@ -83,93 +96,69 @@ export function BroadcastCampaignRowActions(props: {
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
-        <Form method="post" className="contents">
-          <input type="hidden" name="campaignId" value={campaignId} />
-          <DropdownMenuItem asChild>
-            <button
-              type="submit"
-              name="intent"
-              value="duplicate"
-              className="w-full"
-            >
-              Duplicate
-            </button>
-          </DropdownMenuItem>
-        </Form>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          disabled={busy}
+          onSelect={() => {
+            postIntent("duplicate");
+          }}
+        >
+          Duplicate
+        </DropdownMenuItem>
         {failedCount > 0 && terminal ? (
-          <Form method="post" className="contents">
-            <input type="hidden" name="campaignId" value={campaignId} />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                name="intent"
-                value="retry_failed"
-                className="w-full"
-              >
-                Retry failed recipients
-              </button>
-            </DropdownMenuItem>
-          </Form>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={busy}
+            onSelect={() => {
+              postIntent("retry_failed");
+            }}
+          >
+            Retry failed recipients
+          </DropdownMenuItem>
         ) : null}
         {canCancel ? (
-          <Form method="post" className="contents">
-            <input type="hidden" name="campaignId" value={campaignId} />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                name="intent"
-                value="cancel"
-                className="w-full"
-              >
-                Cancel scheduled / in-flight
-              </button>
-            </DropdownMenuItem>
-          </Form>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={busy}
+            onSelect={() => {
+              postIntent("cancel");
+            }}
+          >
+            Cancel scheduled / in-flight
+          </DropdownMenuItem>
         ) : null}
         {draftLike ? (
-          <Form method="post" className="contents">
-            <input type="hidden" name="campaignId" value={campaignId} />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                name="intent"
-                value="delete"
-                className="w-full"
-              >
-                Delete draft
-              </button>
-            </DropdownMenuItem>
-          </Form>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={busy}
+            onSelect={() => {
+              postIntent("delete");
+            }}
+          >
+            Delete draft
+          </DropdownMenuItem>
         ) : null}
         {terminal && !isArchived ? (
-          <Form method="post" className="contents">
-            <input type="hidden" name="campaignId" value={campaignId} />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                name="intent"
-                value="archive"
-                className="w-full"
-              >
-                Archive
-              </button>
-            </DropdownMenuItem>
-          </Form>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={busy}
+            onSelect={() => {
+              postIntent("archive");
+            }}
+          >
+            Archive
+          </DropdownMenuItem>
         ) : null}
         {isArchived ? (
-          <Form method="post" className="contents">
-            <input type="hidden" name="campaignId" value={campaignId} />
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                name="intent"
-                value="unarchive"
-                className="w-full"
-              >
-                Unarchive
-              </button>
-            </DropdownMenuItem>
-          </Form>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={busy}
+            onSelect={() => {
+              postIntent("unarchive");
+            }}
+          >
+            Unarchive
+          </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>

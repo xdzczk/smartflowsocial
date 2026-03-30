@@ -79,6 +79,21 @@ function typeParamFromComposeSearch(search: string): string | null {
   return new URLSearchParams(q).get("type");
 }
 
+/**
+ * Same-path navigations (e.g. stripping `published=`) sometimes leave `navigation.location.search`
+ * without `type` while the committed URL still has `?type=article`. That made urlMode "shortform"
+ * and `__composeMode` "article" → endless ComposeSkeletonLayout.
+ */
+function composeRouteTypeParam(
+  effectiveSearch: string,
+  locationSearch: string
+): string | null {
+  return (
+    typeParamFromComposeSearch(effectiveSearch) ??
+    typeParamFromComposeSearch(locationSearch)
+  );
+}
+
 function composeShellTitle(contentType: ComposeContentType): string {
   if (contentType === "poll") return "Create poll";
   if (contentType === "thread") return "Create thread";
@@ -88,8 +103,9 @@ function composeShellTitle(contentType: ComposeContentType): string {
 
 /** Header + tabs + skeleton body while loader catches up to the URL (or after a recoverable error). */
 function ComposeSkeletonLayout() {
+  const location = useLocation();
   const effectiveSearch = useEffectiveComposeSearch();
-  const queryType = typeParamFromComposeSearch(effectiveSearch);
+  const queryType = composeRouteTypeParam(effectiveSearch, location.search);
   const contentType = normalizeComposeType(queryType);
   const navigate = useNavigate();
   const navigation = useNavigation();
@@ -209,8 +225,9 @@ export default function ComposePage() {
   const data = useLoaderData<{
     __composeMode?: "shortform" | "article";
   }>();
+  const location = useLocation();
   const effectiveSearch = useEffectiveComposeSearch();
-  const queryType = typeParamFromComposeSearch(effectiveSearch);
+  const queryType = composeRouteTypeParam(effectiveSearch, location.search);
   const urlMode = getComposeMode(queryType);
   const loaderMode = data.__composeMode ?? urlMode;
 

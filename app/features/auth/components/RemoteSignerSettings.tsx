@@ -1,4 +1,5 @@
 import { useFetcher } from "@remix-run/react";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -317,6 +318,17 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       <ManagementListSection
         title="Remote signer connections"
         description="Manage NIP-46 remote signer connections. You can have multiple connections and switch between them."
+        primaryAction={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setReconnectDialogOpen(true)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add connection
+          </Button>
+        }
       >
         <RemoteSignerConnectionList
           connections={connections}
@@ -328,6 +340,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           onViewDetails={handleViewDetails}
           onRemove={handleRemove}
           onAddClick={() => setReconnectDialogOpen(true)}
+          showAddButton={false}
         />
 
         {activeConnection ? (

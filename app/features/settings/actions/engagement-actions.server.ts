@@ -11,6 +11,7 @@ import {
 import { fetchMutedList } from "~/features/engagement/mutedList.server";
 import {
   getUserBasicInfo,
+  updateUserDefaultZapAmountSats,
   updateUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
   updateUserMutedList,
@@ -18,6 +19,7 @@ import {
 import {
   toggleFilterMutedSchema,
   toggleHideLowTrustSchema,
+  updateDefaultZapAmountSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
@@ -114,6 +116,24 @@ export async function handleEngagementAction(
       );
     }
     return json({ success: true });
+  }
+
+  if (action === "update_default_zap_amount") {
+    const result = validateFormDataOrRespond(
+      formData,
+      updateDefaultZapAmountSchema
+    );
+    if (!result.success) {
+      return result.response;
+    }
+    await updateUserDefaultZapAmountSats(
+      userId,
+      result.data.defaultZapAmountSats
+    );
+    return json({
+      success: true,
+      defaultZapAmountSats: result.data.defaultZapAmountSats,
+    });
   }
 
   return null;

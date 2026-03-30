@@ -75,6 +75,7 @@ export function ContestBuilderSummaryRail({
   readinessRecommended,
   primaryCtaDisabled: _primaryCtaDisabled,
   footerActions,
+  className,
 }: {
   planType: PlanType;
   planLabel: string;
@@ -105,6 +106,8 @@ export function ContestBuilderSummaryRail({
   readinessRecommended: ContestReadinessItem[];
   primaryCtaDisabled: boolean;
   footerActions?: ReactNode;
+  /** Merged into `ActionRail` (e.g. `lg:static` when a parent owns `position: sticky`). */
+  className?: string;
 }) {
   const [now] = useState(() => Date.now());
 
@@ -302,6 +305,7 @@ export function ContestBuilderSummaryRail({
 
   return (
     <CampaignActionRail
+      className={className}
       ariaLabel={contestCopy.railAriaLabel}
       prependSections={prependSections}
       snapshotLabel={contestCopy.railSnapshotLabel}

@@ -12,7 +12,7 @@ interface MarkdownPreviewProps {
 
 export function MarkdownPreview({
   source,
-  className = "prose prose-lg dark:prose-invert max-w-none",
+  className = "longform-markdown-preview max-w-none text-base leading-relaxed",
 }: MarkdownPreviewProps) {
   if (!source || typeof source !== "string") {
     return (

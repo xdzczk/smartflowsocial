@@ -1,7 +1,7 @@
 /**
  * Composer signer reconnect: clear stuck "Waiting for signer approval" on healthy event,
  * and optionally retry the in-flight sign with the new signer.
- * Used by UnifiedComposer, DraftBulkResume, SimpleRescheduleModal.
+ * Used by UnifiedComposer, DraftBulkResume, RescheduleScheduledPostModal.
  *
  * On "nostr-connection-healthy", the retry callback runs first so it can read any pending
  * retry ref; if it returns true (retry started), we skip clearSigningState so we do not clear

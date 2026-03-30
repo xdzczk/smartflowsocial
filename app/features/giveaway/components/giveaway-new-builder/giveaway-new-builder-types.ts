@@ -24,5 +24,6 @@ export interface GiveawayNewBuilderProps {
   planDisplayName: string;
   /** New-post route loader fields for embedded composer (single-post → create). */
   composerLoader: Record<string, unknown>;
+  userTimezone: string;
   actionError?: string;
 }

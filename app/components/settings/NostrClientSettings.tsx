@@ -3,9 +3,8 @@
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -50,18 +49,22 @@ export function NostrClientSettings({
   const [customNostrClientBaseUrl, setCustomNostrClientBaseUrl] = useState(
     initialCustomUrl ?? ""
   );
+  const lastSavedRef = useRef({
+    client: initialClient || "PRIMAL",
+    url: initialCustomUrl ?? "",
+  });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     queueMicrotask(() => {
       setPreferredNostrClient(initialClient || "PRIMAL");
       setCustomNostrClientBaseUrl(initialCustomUrl ?? "");
+      lastSavedRef.current = {
+        client: initialClient || "PRIMAL",
+        url: initialCustomUrl ?? "",
+      };
     });
   }, [initialClient, initialCustomUrl]);
-
-  const isSubmitting = fetcher.state === "submitting";
-  const hasChanged =
-    preferredNostrClient !== (initialClient || "PRIMAL") ||
-    customNostrClientBaseUrl !== (initialCustomUrl ?? "");
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -69,31 +72,65 @@ export function NostrClientSettings({
     }
   }, [fetcher.data?.success, revalidator]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("_action", "update_preferred_nostr_client");
-    formData.append("preferredNostrClient", preferredNostrClient);
-    if (preferredNostrClient === "CUSTOM" && customNostrClientBaseUrl.trim()) {
-      formData.append(
-        "customNostrClientBaseUrl",
-        customNostrClientBaseUrl.trim()
-      );
+  const submitIfNeeded = (
+    client: string,
+    url: string,
+    opts?: { immediate?: boolean }
+  ) => {
+    const run = () => {
+      const sameClient = client === lastSavedRef.current.client;
+      const sameUrl =
+        (url.trim() || "") === (lastSavedRef.current.url.trim() || "");
+      if (sameClient && sameUrl) return;
+
+      const formData = new FormData();
+      formData.append("_action", "update_preferred_nostr_client");
+      formData.append("preferredNostrClient", client);
+      if (client === "CUSTOM" && url.trim()) {
+        formData.append("customNostrClientBaseUrl", url.trim());
+      }
+      fetcher.submit(formData, {
+        method: "post",
+        action: "/dashboard/settings",
+      });
+      lastSavedRef.current = { client, url: url.trim() };
+    };
+
+    if (opts?.immediate) {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      run();
+      return;
     }
-    fetcher.submit(formData, { method: "post" });
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(run, 400);
   };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const isSubmitting = fetcher.state === "submitting";
 
   return (
     <PreferenceSection
       title="Preferred Nostr client"
-      description='Where "View note" and "View article" links open (e.g. Primal, Damus, Iris).'
+      description='Where "View note" and "View article" links open (e.g. Primal, Damus, Iris). Changes save automatically.'
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="preferredNostrClient">Client</Label>
           <Select
             value={preferredNostrClient}
-            onValueChange={setPreferredNostrClient}
+            onValueChange={(v) => {
+              setPreferredNostrClient(v);
+              submitIfNeeded(v, v === "CUSTOM" ? customNostrClientBaseUrl : "");
+            }}
             disabled={isSubmitting}
           >
             <SelectTrigger id="preferredNostrClient">
@@ -117,7 +154,16 @@ export function NostrClientSettings({
               type="url"
               placeholder="https://example.com"
               value={customNostrClientBaseUrl}
-              onChange={(e) => setCustomNostrClientBaseUrl(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setCustomNostrClientBaseUrl(next);
+                submitIfNeeded("CUSTOM", next);
+              }}
+              onBlur={() =>
+                submitIfNeeded("CUSTOM", customNostrClientBaseUrl, {
+                  immediate: true,
+                })
+              }
               disabled={isSubmitting}
               className="font-mono text-sm"
             />
@@ -128,24 +174,15 @@ export function NostrClientSettings({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged}
-            size="sm"
-          >
-            {isSubmitting ? "Saving…" : "Save client"}
-          </Button>
+        <div className="text-muted-foreground flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs">
           {fetcher.data?.success ? (
-            <span className="text-success text-sm">Saved.</span>
+            <span className="text-success">Saved.</span>
           ) : null}
           {fetcher.data?.error ? (
-            <span className="text-destructive text-sm">
-              {fetcher.data.error}
-            </span>
+            <span className="text-destructive">{fetcher.data.error}</span>
           ) : null}
         </div>
-      </form>
+      </div>
     </PreferenceSection>
   );
 }

@@ -13,6 +13,7 @@ import {
   getNostrClientConfig,
   getNostrClientDisplayName,
 } from "~/lib/nostr-client-urls";
+import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 
 import { LookupEngageNowSection } from "./lookup-engage/LookupEngageNowSection";
 import { LookupCopySection } from "./LookupCopySection";
@@ -49,6 +50,8 @@ interface SearchResultProps {
   onRetryLookup?: () => void;
   /** Effective publish relays for client-side tag hints and zap flow. */
   publishRelays?: string[];
+  /** Resolved default zap (sats); usually from root session user. */
+  defaultZapAmountSats?: number;
 }
 
 function MobileRailCard({
@@ -79,6 +82,7 @@ export function SearchResult({
   onScheduleRepost,
   onRetryLookup,
   publishRelays = [],
+  defaultZapAmountSats: defaultZapAmountSatsProp,
 }: SearchResultProps) {
   const { formatDate } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -86,9 +90,21 @@ export function SearchResult({
         user?: {
           preferredNostrClient?: string;
           customNostrClientBaseUrl?: string | null;
+          defaultZapAmountSats?: number | null;
         } | null;
       }
     | undefined;
+
+  const defaultZapAmountSats =
+    typeof defaultZapAmountSatsProp === "number" &&
+    Number.isInteger(defaultZapAmountSatsProp) &&
+    defaultZapAmountSatsProp >= 1
+      ? defaultZapAmountSatsProp
+      : typeof rootData?.user?.defaultZapAmountSats === "number" &&
+          Number.isInteger(rootData.user.defaultZapAmountSats) &&
+          rootData.user.defaultZapAmountSats >= 1
+        ? rootData.user.defaultZapAmountSats
+        : DEFAULT_ZAP_AMOUNT_SATS_FALLBACK;
   const nostrClientConfig = useMemo(
     () =>
       getNostrClientConfig(
@@ -133,6 +149,7 @@ export function SearchResult({
             authorPubkey={result.pubkey}
             authorDisplayName={result.authorName}
             publishRelays={publishRelays}
+            defaultZapAmountSats={defaultZapAmountSats}
           />
         </MobileRailCard>
         <MobileRailCard title="Actions">
@@ -206,6 +223,7 @@ export function SearchResult({
             onScheduleRepost={onScheduleRepost}
             noteOrNeventDisplay={noteOrNeventDisplay}
             publishRelays={publishRelays}
+            defaultZapAmountSats={defaultZapAmountSats}
           />
         </aside>
       </div>

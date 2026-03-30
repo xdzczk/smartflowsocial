@@ -16,6 +16,8 @@ interface RemoteSignerConnectionListProps {
   onViewDetails: (connectionId: string) => void;
   onRemove: (connectionId: string) => void;
   onAddClick: () => void;
+  /** When false, omit inline add button (use section header action). */
+  showAddButton?: boolean;
 }
 
 export function RemoteSignerConnectionList({
@@ -28,6 +30,7 @@ export function RemoteSignerConnectionList({
   onViewDetails,
   onRemove,
   onAddClick,
+  showAddButton = true,
 }: RemoteSignerConnectionListProps) {
   const filteredConnections = connections.filter((conn) => {
     if (!searchQuery) return true;
@@ -41,7 +44,13 @@ export function RemoteSignerConnectionList({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div
+        className={
+          showAddButton
+            ? "flex flex-col gap-2 sm:flex-row sm:items-center"
+            : "flex flex-col gap-2"
+        }
+      >
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
           <Input
@@ -63,10 +72,12 @@ export function RemoteSignerConnectionList({
             </Button>
           ) : null}
         </div>
-        <Button onClick={onAddClick} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Connection
-        </Button>
+        {showAddButton ? (
+          <Button onClick={onAddClick} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Connection
+          </Button>
+        ) : null}
       </div>
 
       {filteredConnections.length === 0 ? (

@@ -65,7 +65,7 @@ export function getDeleteButtonLabel(
     case "draft":
       return "Delete Draft";
     case "scheduled":
-      return "Delete Scheduled Post";
+      return "Delete scheduled post";
     default:
       return "Delete Post";
   }

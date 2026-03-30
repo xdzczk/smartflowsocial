@@ -2,9 +2,12 @@
  * LongFormPost and LongFormPostStateTransition data. Prisma confined here.
  */
 
+import type { Prisma as PrismaClient } from "@prisma/client";
+
 import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { LongFormPostScheduledPayload } from "~/infra/outbox/outbox.server";
+import { isPrismaUniqueViolationOnFields } from "~/lib/prisma-unique-violation.server";
 import { prisma } from "~/lib/prisma.server";
 
 export type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -114,12 +117,17 @@ export async function runCreateScheduledLongFormPostInTransaction(
       ...outboxParams.payload,
       postId: post.id,
     };
+    const eventId =
+      typeof outboxParams.payload.signedEvent.id === "string"
+        ? outboxParams.payload.signedEvent.id
+        : undefined;
     const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
       post.id,
-      outboxParams.scheduledForUnix
+      outboxParams.scheduledForUnix,
+      eventId
     );
     await createOutboxEventInTransaction(
-      tx as Prisma.TransactionClient,
+      tx as PrismaClient.TransactionClient,
       "LONGFORM_SCHEDULED",
       post.id,
       "LongFormPost",
@@ -151,6 +159,17 @@ export async function runScheduleLongFormPostInTransaction(
   }
 ) {
   await prisma.$transaction(async (tx) => {
+    await tx.outboxEvent.deleteMany({
+      where: {
+        eventType: "LONGFORM_SCHEDULED",
+        aggregateId: postId,
+        aggregateType: "LongFormPost",
+        processedAt: null,
+        deadLetteredAt: null,
+        processingLockId: null,
+      },
+    });
+
     await tx.longFormPost.update({
       where: { id: postId, userId },
       data: {
@@ -166,15 +185,21 @@ export async function runScheduleLongFormPostInTransaction(
     await tx.longFormPostStateTransition.create({
       data: { longFormPostId: postId, fromState, toState, reason },
     });
-    await createOutboxEventInTransaction(
-      tx as Prisma.TransactionClient,
-      "LONGFORM_SCHEDULED",
-      postId,
-      "LongFormPost",
-      outboxParams.payload,
-      outboxParams.scheduledAtUtc,
-      outboxParams.enqueueIdempotencyKey,
-      outboxParams.correlationId ?? undefined
-    );
+    try {
+      await createOutboxEventInTransaction(
+        tx as PrismaClient.TransactionClient,
+        "LONGFORM_SCHEDULED",
+        postId,
+        "LongFormPost",
+        outboxParams.payload,
+        outboxParams.scheduledAtUtc,
+        outboxParams.enqueueIdempotencyKey,
+        outboxParams.correlationId ?? undefined
+      );
+    } catch (error) {
+      if (!isPrismaUniqueViolationOnFields(error, ["idempotencyKey"])) {
+        throw error;
+      }
+    }
   });
 }

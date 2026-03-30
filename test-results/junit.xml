@@ -1,61 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="27" failures="0" errors="0" time="0.033368458">
-    <testsuite name="tests/unit/giveaway-display.test.ts" timestamp="2026-03-30T18:37:59.162Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.015861">
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: Last N days when only days" time="0.000795583">
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.001752625">
+    <testsuite name="tests/unit/scheduled-post-capabilities.test.ts" timestamp="2026-03-30T20:16:29.169Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001752625">
+        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; longform always allows content edit" time="0.000791666">
         </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: date range when from/to set" time="0.012378666">
+        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; pure repost by kind blocks content edit" time="0.000113125">
         </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: appends queue name when provided" time="0.000126292">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; SINGLE_POST: Single post" time="0.000080208">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; QUEUE: Queue or Queue: name" time="0.000098334">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; FOLLOWERS / FOLLOWING" time="0.000074833">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatStatusLabel &gt; maps known statuses to human label" time="0.000128958">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatStatusLabel &gt; falls back to replacing underscores" time="0.00005275">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns null when scopeReference has no queueId" time="0.000230542">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns queue name when queueId present and found" time="0.000764667">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns null when queueId not string" time="0.000060083">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; getQueueNamesByIds &gt; returns empty map for empty array" time="0.000146041">
-        </testcase>
-        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; getQueueNamesByIds &gt; returns map of queueId to name" time="0.000106167">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" timestamp="2026-03-30T18:37:59.164Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.017507458">
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; returns em dash for undefined" time="0.000729125">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats unix timestamp (seconds)" time="0.001441125">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats ISO date string" time="0.000898667">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats number (unix seconds)" time="0.0002055">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats Date object" time="0.000183542">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; uses dateLocale for display" time="0.000290583">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; returns &apos;0 min read&apos; for empty or undefined" time="0.000091625">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; returns &apos;1 min read&apos; for short content" time="0.000298792">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; estimates reading time from word count (200 words ≈ 1 min)" time="0.000079833">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; rounds up to next minute for 201+ words" time="0.000089334">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; strips markdown before counting words" time="0.000061666">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Draft badge for type draft" time="0.010573583">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Scheduled badge for type scheduled" time="0.000880666">
-        </testcase>
-        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Published badge for type published" time="0.00078725">
+        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; quote post allows edit" time="0.000092083">
         </testcase>
     </testsuite>
 </testsuites>

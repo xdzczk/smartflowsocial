@@ -7,10 +7,13 @@ import sanitizeHtml from "sanitize-html";
 const ALLOWED_TAGS = [
   "p",
   "br",
+  "hr",
   "strong",
   "em",
   "b",
   "i",
+  "del",
+  "s",
   "h1",
   "h2",
   "h3",

@@ -77,6 +77,13 @@ export function useNewPostPublishModalEffect(input: {
         const data = (await res.json()) as FetchPostsResponse;
 
         if (!data.post && !data.longFormPost) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("published");
+          newSearchParams.delete("scheduled");
+          setSearchParams(newSearchParams, { replace: true });
+          setTimeout(() => {
+            setModalPostId(null);
+          }, 0);
           return;
         }
 
@@ -97,6 +104,10 @@ export function useNewPostPublishModalEffect(input: {
         setSearchParams(newSearchParams, { replace: true });
       } catch (error) {
         console.error("Failed to fetch post data:", error);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("published");
+        newSearchParams.delete("scheduled");
+        setSearchParams(newSearchParams, { replace: true });
         setTimeout(() => {
           setModalPostId(null);
         }, 0);

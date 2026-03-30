@@ -322,9 +322,16 @@ export async function createPostWithOutbox(
     // If scheduled and has signed event, create outbox event
     if (scheduledForUnix && signedEvent && scheduledAtUtcDate) {
       const scheduledAtUtc = new Date(scheduledForUnix * 1000);
+      const eventId =
+        typeof signedEvent === "object" &&
+        "id" in signedEvent &&
+        typeof (signedEvent as { id: unknown }).id === "string"
+          ? (signedEvent as { id: string }).id
+          : undefined;
       const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
         post.id,
-        scheduledForUnix
+        scheduledForUnix,
+        eventId
       );
 
       const payload: PostScheduledPayload = {

@@ -7,6 +7,8 @@ import MediaModal from "~/components/ui/MediaModal";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import type { SignedEvent } from "~/features/nostr/types";
 import { parsePollFromSignedEvent } from "~/features/polls";
+import type { ScheduledPostCapabilities } from "~/features/posts/scheduled";
+import { inferScheduledCapabilitiesFromModalPost } from "~/features/posts/scheduled";
 import { formatDate } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
@@ -65,6 +67,10 @@ export interface PostDetailsModalProps {
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   onDeleted?: (postId: string) => void;
+  /** When set, overrides inferred scheduled footer capabilities (Edit disabled, etc.). */
+  scheduledCapabilities?: ScheduledPostCapabilities | null;
+  /** Optional link shown in scheduled details footer (e.g. full composer / article editor). */
+  scheduledOpenFullEditorHref?: string | null;
 }
 
 export default function PostDetailsModal({
@@ -79,6 +85,8 @@ export default function PostDetailsModal({
   userTimezone,
   userTimeFormat = "12h",
   onDeleted,
+  scheduledCapabilities: scheduledCapabilitiesProp,
+  scheduledOpenFullEditorHref,
 }: PostDetailsModalProps) {
   const deleteFetcher = useFetcher();
   const [isMediaOpen, setIsMediaOpen] = useState(false);
@@ -217,6 +225,13 @@ export default function PostDetailsModal({
       : type === "scheduled"
         ? "Scheduled"
         : "Draft";
+
+  const scheduledCapabilities = useMemo(() => {
+    if (type !== "scheduled") return null;
+    return (
+      scheduledCapabilitiesProp ?? inferScheduledCapabilitiesFromModalPost(post)
+    );
+  }, [type, scheduledCapabilitiesProp, post]);
 
   const pollOptionCount = useMemo(() => {
     if (!isPostPoll({ nip88PollsEnabled, post, type })) return null;
@@ -464,6 +479,7 @@ export default function PostDetailsModal({
         }
         ultraCompact={effectiveHeightMode === "ultraCompact"}
         relationshipType={semantics.relationshipType}
+        detailType={type}
         replyParentHint={inReplyToRail?.authorLine ?? null}
         quotedSnippet={quotedPostRail?.snippet ?? null}
         quotedAuthorHint={quotedPostRail?.authorLine ?? null}
@@ -591,6 +607,19 @@ export default function PostDetailsModal({
               onReschedule != null ? () => onReschedule(post) : undefined
             }
             deleteForm={deleteForm}
+            scheduledEditDisabled={
+              type === "scheduled"
+                ? Boolean(
+                    scheduledCapabilities &&
+                    !scheduledCapabilities.canEditContent &&
+                    onEdit != null
+                  )
+                : undefined
+            }
+            scheduledEditDisabledReason="This scheduled repost cannot be edited as a full post."
+            scheduledOpenFullEditorHref={
+              scheduledOpenFullEditorHref ?? undefined
+            }
           />
 
           <MediaModal

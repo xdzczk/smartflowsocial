@@ -1,7 +1,7 @@
 /**
  * Unit tests for reschedule-modal.utils (Phase 3.1): parseFileUrl, getFirstMediaFromFileUrl,
  * getFirstMedia, formatDateTime, validateDateTime, formatDateTimeForInput,
- * getRescheduleHeaderTitle, getConfirmButtonLabel.
+ * RescheduleData type for calendar state.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -10,10 +10,7 @@ import type { RescheduleData } from "~/features/posts/calendar/Calendar/utils/re
 import {
   formatDateTime,
   formatDateTimeForInput,
-  getConfirmButtonLabel,
-  getFirstMedia,
   getFirstMediaFromFileUrl,
-  getRescheduleHeaderTitle,
   parseFileUrl,
   validateDateTime,
 } from "~/features/posts/calendar/Calendar/utils/reschedule-modal.utils";
@@ -63,37 +60,6 @@ describe("reschedule-modal.utils", () => {
     });
   });
 
-  describe("getFirstMedia", () => {
-    it("returns post.image when isLongform and post has image", () => {
-      const data: RescheduleData = {
-        post: {
-          fileUrl: [],
-          image: "https://longform-img.com",
-        } as unknown as RescheduleData["post"],
-        newDateTime: new Date(),
-        wasAutoScheduled: false,
-        queueName: null,
-        isEdit: false,
-        isLongform: true,
-      };
-      expect(getFirstMedia(data)).toBe("https://longform-img.com");
-    });
-
-    it("returns getFirstMediaFromFileUrl when not longform", () => {
-      const data: RescheduleData = {
-        post: {
-          fileUrl: ["https://reg.com"],
-        } as unknown as RescheduleData["post"],
-        newDateTime: new Date(),
-        wasAutoScheduled: false,
-        queueName: null,
-        isEdit: false,
-        isLongform: false,
-      };
-      expect(getFirstMedia(data)).toBe("https://reg.com");
-    });
-  });
-
   describe("formatDateTime", () => {
     it("returns formatted string with weekday and time", () => {
       const date = new Date("2024-06-15T14:30:00.000Z");
@@ -132,55 +98,6 @@ describe("reschedule-modal.utils", () => {
       const date = new Date("2024-06-15T14:30:00.000Z");
       const result = formatDateTimeForInput(date, "UTC");
       expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
-    });
-  });
-
-  describe("getRescheduleHeaderTitle", () => {
-    it("returns Edit Post Schedule when isEdit", () => {
-      expect(getRescheduleHeaderTitle(true, false)).toBe("Edit Post Schedule");
-      expect(getRescheduleHeaderTitle(true, true)).toBe("Edit Post Schedule");
-    });
-
-    it("returns Override Queue Logic when wasAutoScheduled and not edit", () => {
-      expect(getRescheduleHeaderTitle(false, true)).toBe(
-        "Override Queue Logic?"
-      );
-    });
-
-    it("returns Update Post Time when not edit and not auto-scheduled", () => {
-      expect(getRescheduleHeaderTitle(false, false)).toBe("Update Post Time?");
-    });
-  });
-
-  describe("getConfirmButtonLabel", () => {
-    it("returns Signing Event... when isSigningEvent", () => {
-      expect(getConfirmButtonLabel(false, false, true, "idle")).toBe(
-        "Signing Event..."
-      );
-    });
-
-    it("returns Updating... when fetcherState is submitting", () => {
-      expect(getConfirmButtonLabel(false, false, false, "submitting")).toBe(
-        "Updating..."
-      );
-    });
-
-    it("returns Save Changes when isEdit and not signing/submitting", () => {
-      expect(getConfirmButtonLabel(true, false, false, "idle")).toBe(
-        "Save Changes"
-      );
-    });
-
-    it("returns Convert to Manual when wasAutoScheduled and not edit", () => {
-      expect(getConfirmButtonLabel(false, true, false, "idle")).toBe(
-        "Convert to Manual"
-      );
-    });
-
-    it("returns Confirm otherwise", () => {
-      expect(getConfirmButtonLabel(false, false, false, "idle")).toBe(
-        "Confirm"
-      );
     });
   });
 });

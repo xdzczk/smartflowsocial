@@ -93,6 +93,9 @@ describe("SchedulePostUseCase", () => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock transaction callback
         async (callback) => {
           const tx = {
+            outboxEvent: {
+              deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            },
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
             },
@@ -192,6 +195,9 @@ describe("SchedulePostUseCase", () => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock transaction callback
         async (callback) => {
           const tx = {
+            outboxEvent: {
+              deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            },
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
             },
@@ -254,6 +260,9 @@ describe("SchedulePostUseCase", () => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock transaction callback
         async (callback) => {
           const tx = {
+            outboxEvent: {
+              deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            },
             post: {
               update: vi.fn().mockResolvedValue(mockPost),
             },

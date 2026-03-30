@@ -13,6 +13,7 @@ import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
+import { isPrismaUniqueViolationOnFields } from "~/lib/prisma-unique-violation.server";
 import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
 
 import {
@@ -49,9 +50,14 @@ export class SchedulePostUseCase {
     // Convert Temporal to Unix timestamp for legacy field
     const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
+    const nostrEventId =
+      typeof input.signedEvent.id === "string"
+        ? input.signedEvent.id
+        : undefined;
     const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
       input.postId,
-      scheduledForUnix
+      scheduledForUnix,
+      nostrEventId
     );
 
     const nominalScheduledAtUtcDate = input.nominalScheduledAtUtc
@@ -60,6 +66,17 @@ export class SchedulePostUseCase {
 
     // Update post, transition state, and create outbox event atomically
     await runTransaction(async (tx) => {
+      await tx.outboxEvent.deleteMany({
+        where: {
+          eventType: "POST_SCHEDULED",
+          aggregateId: input.postId,
+          aggregateType: "Post",
+          processedAt: null,
+          deadLetteredAt: null,
+          processingLockId: null,
+        },
+      });
+
       await schedulePostInTx(
         tx,
         input.postId,
@@ -83,16 +100,22 @@ export class SchedulePostUseCase {
         correlationId,
       };
 
-      await createOutboxEventInTransaction(
-        tx as Prisma.TransactionClient,
-        "POST_SCHEDULED",
-        input.postId,
-        "Post",
-        payload,
-        scheduledAtUtcDate,
-        enqueueIdempotencyKey,
-        correlationId
-      );
+      try {
+        await createOutboxEventInTransaction(
+          tx as Prisma.TransactionClient,
+          "POST_SCHEDULED",
+          input.postId,
+          "Post",
+          payload,
+          scheduledAtUtcDate,
+          enqueueIdempotencyKey,
+          correlationId
+        );
+      } catch (error) {
+        if (!isPrismaUniqueViolationOnFields(error, ["idempotencyKey"])) {
+          throw error;
+        }
+      }
     });
 
     // Record metrics
