@@ -55,7 +55,7 @@ export function computePollPreviewWarnings(
     }
     seen.add(o);
   }
-  if (normalized.endLabel === "No end date set") {
+  if (!normalized.hasPollEndDate) {
     out.push({
       id: "poll-no-end",
       message: "This poll has no end date.",

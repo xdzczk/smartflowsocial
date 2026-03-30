@@ -9,6 +9,7 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { NostrEvent } from "~/features/nostr/types";
 import { getPostStats, type PostStats } from "~/features/posts/stats.server";
 import { logError } from "~/lib/error-logger.server";
+import { LookupUnsupportedKindError } from "~/lib/errors";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 
 import { fetchAuthorsInfoBatch } from "./search-authors-batch.server";
@@ -35,6 +36,30 @@ type NostrEventWithMetadata = NostrEvent & {
 export type DecodedSearchInput =
   | { type: "event_id"; eventId: string }
   | { type: "naddr"; kind: number; pubkey: string; identifier: string };
+
+/** Bech32 / hex classification for lookup resolution header (post inspector). */
+export type LookupIdentifierKind = "note" | "nevent" | "naddr" | "hex";
+
+export interface SearchLookupResolution {
+  identifierKind: LookupIdentifierKind;
+  status: "resolved" | "partial";
+  labels: string[];
+  topLevelReplyCount: number;
+  statsUnavailable: boolean;
+  threadPartial: boolean;
+}
+
+export function deriveLookupIdentifierKind(
+  normalized: string
+): LookupIdentifierKind {
+  const n = normalized.startsWith("nostr:")
+    ? normalized.slice(6).trim()
+    : normalized.trim();
+  if (n.startsWith("naddr1")) return "naddr";
+  if (n.startsWith("nevent1")) return "nevent";
+  if (n.startsWith("note1")) return "note";
+  return "hex";
+}
 
 /**
  * Decode search input to either an event id or naddr (long-form) address.
@@ -156,38 +181,35 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
   return { name: authorName, image: authorImage };
 }
 
+const EMPTY_POST_STATS: PostStats = {
+  likes: 0,
+  replies: 0,
+  mentions: 0,
+  reposts: 0,
+  zaps: 0,
+  satszapped: 0,
+};
+
 /**
- * Fetch engagement stats for an event using cached getPostStats
+ * Fetch engagement stats for an event using cached getPostStats.
+ * `unavailable: true` when the stats service failed (distinct from legitimate zeros).
  */
-async function fetchEventStats(eventId: string): Promise<PostStats> {
+async function fetchEventStats(
+  eventId: string
+): Promise<{ stats: PostStats; unavailable: boolean }> {
   try {
     const stats = await getPostStats([eventId]);
-    return (
-      stats[eventId] ?? {
-        likes: 0,
-        replies: 0,
-        mentions: 0,
-        reposts: 0,
-        zaps: 0,
-        satszapped: 0,
-      }
-    );
+    return {
+      stats: stats[eventId] ?? { ...EMPTY_POST_STATS },
+      unavailable: false,
+    };
   } catch (error) {
-    // Log but continue - stats are optional
     const { logWarning } = await import("~/lib/error-logger.server");
     logWarning("Failed to fetch stats for searched event", {
       eventId,
       error: error instanceof Error ? error.message : String(error),
     });
-    // Return empty stats on error
-    return {
-      likes: 0,
-      replies: 0,
-      mentions: 0,
-      reposts: 0,
-      zaps: 0,
-      satszapped: 0,
-    };
+    return { stats: { ...EMPTY_POST_STATS }, unavailable: true };
   }
 }
 
@@ -222,6 +244,8 @@ export async function handleSearchEvent(eventInput: string) {
     pubkey: string;
     identifier: string;
   } | null = null;
+  let threadViewRejected = false;
+  let naddrThreadPartial = false;
 
   if (decoded.type === "naddr") {
     eventIdNorm = ""; // match by kind+pubkey+identifier below
@@ -260,6 +284,10 @@ export async function handleSearchEvent(eventInput: string) {
         event_ids: [decoded.eventId],
       }),
     ]);
+
+    if (threadSettled.status === "rejected") {
+      threadViewRejected = true;
+    }
 
     let threadResponses: unknown[] = [];
     let threadError: unknown;
@@ -335,6 +363,15 @@ export async function handleSearchEvent(eventInput: string) {
       scored.sort((a, b) => b.score - a.score);
       const best = scored[0]?.ev;
       eventToUse = best ? (best as NostrEventWithMetadata) : null;
+    } else if (idMatching.length > 0) {
+      const first = idMatching[0];
+      throw new LookupUnsupportedKindError(
+        "This identifier is valid, but this object type is not supported in lookup yet.",
+        {
+          kind: first != null ? getEvKind(first) : undefined,
+          input: normalized,
+        }
+      );
     } else {
       eventToUse = null;
     }
@@ -372,7 +409,7 @@ export async function handleSearchEvent(eventInput: string) {
         ...collectCandidatesFromPrimalResponses(threadExtras)
       );
     } catch {
-      // Thread may be unavailable; replies stay empty
+      naddrThreadPartial = true;
     }
   }
 
@@ -388,11 +425,13 @@ export async function handleSearchEvent(eventInput: string) {
     ),
   ];
 
-  const [authorInfo, stats, authorsMap] = await Promise.all([
+  const [authorInfo, statsPack, authorsMap] = await Promise.all([
     fetchAuthorInfo(eventPubkey),
     fetchEventStats(eventId),
     fetchAuthorsInfoBatch(replyPubkeys),
   ]);
+  const stats = statsPack.stats;
+  const statsUnavailable = statsPack.unavailable;
 
   // Extract media URLs from content and tags (NIP-94, url tags, etc.)
   const contentUrls = extractMediaUrlsFromContent(eventContent);
@@ -404,6 +443,34 @@ export async function handleSearchEvent(eventInput: string) {
     replyRawEvents,
     authorsMap
   );
+
+  const identifierKind = deriveLookupIdentifierKind(normalized);
+  const labels: string[] = [
+    identifierKind === "naddr"
+      ? "Resolved from naddr"
+      : identifierKind === "nevent"
+        ? "Resolved from nevent"
+        : identifierKind === "note"
+          ? "Resolved from note"
+          : "Resolved from event ID",
+  ];
+  if (statsUnavailable) {
+    labels.push("Stats unavailable");
+  }
+  const threadPartial = threadViewRejected || naddrThreadPartial;
+  if (threadPartial) {
+    labels.push("Thread data may be incomplete");
+  }
+  labels.push(`Thread replies loaded: ${replies.length}`);
+
+  const resolution: SearchLookupResolution = {
+    identifierKind,
+    status: statsUnavailable || threadPartial ? "partial" : "resolved",
+    labels,
+    topLevelReplyCount: replies.length,
+    statsUnavailable,
+    threadPartial,
+  };
 
   return {
     success: true,
@@ -427,6 +494,7 @@ export async function handleSearchEvent(eventInput: string) {
     },
     stats,
     replies,
+    resolution,
   };
 }
 /* eslint-enable sonarjs/cognitive-complexity */

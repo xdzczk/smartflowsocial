@@ -1,34 +1,69 @@
-import { Link, Outlet, useFetcher } from "@remix-run/react";
+import { Link, Outlet, useFetcher, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Copy, FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import { useTemplatesQuery, templatesKeys } from "../hooks/useTemplatesQuery";
 import { useTemplatesState } from "../hooks/useTemplatesState";
 import type { Template } from "../types";
 
-import { TemplateDetailsModal } from "./TemplateDetailsModal";
-import { TemplatesHeader } from "./TemplatesHeader";
+import { CreateTemplateTypeDialog } from "./CreateTemplateTypeDialog";
 
-function formatTemplateDate(template: Template, dateLocale: string): string {
-  const d = template.createdAt;
-  return d instanceof Date
-    ? d.toLocaleDateString(dateLocale)
-    : new Date(d).toLocaleDateString(dateLocale);
-}
+type TemplateFilter = "all" | "POST" | "LONGFORM";
+type TemplateSort = "updated" | "name";
 
-function typeLabel(template: Template): string {
-  const t = (template as Template & { templateType?: string }).templateType;
+function typeLabel(template: Template & { templateType?: string }): string {
+  const t = template.templateType;
   return t === "LONGFORM" ? "Article" : "Post";
 }
 
-/** Build modal payload with content from template post or longform */
-function templateToModalPayload(
+function formatTemplateUpdated(template: Template, dateLocale: string): string {
+  const d = template.updatedAt;
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toLocaleDateString(dateLocale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Modal/sheet payload with content from template post or longform */
+function templateToDetailPayload(
   t: Template & {
     post?: unknown;
     longFormPost?: unknown;
@@ -37,10 +72,18 @@ function templateToModalPayload(
 ) {
   const createdAt =
     t.createdAt instanceof Date ? t.createdAt : new Date(t.createdAt);
+  const updatedAtRaw = (t as { updatedAt?: string | Date }).updatedAt;
+  const updatedAt =
+    updatedAtRaw != null
+      ? updatedAtRaw instanceof Date
+        ? updatedAtRaw
+        : new Date(updatedAtRaw)
+      : createdAt;
   const base = {
     id: t.id,
     name: t.name ?? "",
     createdAt,
+    updatedAt,
     templateType: t.templateType,
   };
 
@@ -56,7 +99,13 @@ function templateToModalPayload(
         : [];
     const imageUrl = getImageUrls(fileUrl)[0] ?? null;
     const text = (post.caption ?? post.content ?? "").trim() || null;
-    return { ...base, text, imageUrl, summary: null };
+    return {
+      ...base,
+      text,
+      imageUrl,
+      summary: null,
+      mediaCount: fileUrl.filter(Boolean).length,
+    };
   }
 
   const lf = t.longFormPost as
@@ -74,214 +123,480 @@ function templateToModalPayload(
       imageUrl,
       summary: summary ?? null,
       longformTitle: (lf.title ?? "").trim() || null,
+      mediaCount: imageUrl ? 1 : 0,
     };
   }
 
-  return { ...base, text: null, imageUrl: null, summary: null };
+  return {
+    ...base,
+    text: null,
+    imageUrl: null,
+    summary: null,
+    mediaCount: 0,
+  };
+}
+
+function previewSnippet(
+  t: Template & {
+    post?: unknown;
+    longFormPost?: unknown;
+    templateType?: string;
+  }
+): string {
+  const p = templateToDetailPayload(t);
+  if (p.text && p.text.length > 0) {
+    const oneLine = p.text.replace(/\s+/g, " ").trim();
+    return oneLine.length > 140 ? `${oneLine.slice(0, 140)}…` : oneLine;
+  }
+  return "No preview yet";
 }
 
 export default function TemplatesPage() {
-  const { dateLocale } = useFormattedDate();
+  const { dateLocale, formatDate } = useFormattedDate();
   const queryClient = useQueryClient();
   const { data } = useTemplatesQuery();
-  const templates = Array.isArray(data?.templates) ? data.templates : [];
-  const { selectedTemplate, setSelectedTemplate, isOnChildRoute } =
-    useTemplatesState();
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const bulkDeleteFetcher = useFetcher();
-  const singleDeleteFetcher = useFetcher();
+  const { isOnChildRoute } = useTemplatesState();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<TemplateFilter>("all");
+  const [sort, setSort] = useState<TemplateSort>("updated");
+  const [sheetTemplate, setSheetTemplate] = useState<Template | null>(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<Template | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const actionFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+  }>();
 
   useEffect(() => {
-    if (
-      bulkDeleteFetcher.state === "idle" &&
-      bulkDeleteFetcher.data &&
-      typeof bulkDeleteFetcher.data === "object" &&
-      "success" in bulkDeleteFetcher.data &&
-      (bulkDeleteFetcher.data as { success?: boolean }).success
-    ) {
-      void queryClient.invalidateQueries({ queryKey: templatesKeys.list() });
-      queueMicrotask(() => setSelectedIds(new Set()));
-    }
-  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
-
-  useEffect(() => {
-    if (
-      singleDeleteFetcher.state === "idle" &&
-      singleDeleteFetcher.data &&
-      typeof singleDeleteFetcher.data === "object" &&
-      "success" in singleDeleteFetcher.data &&
-      (singleDeleteFetcher.data as { success?: boolean }).success
-    ) {
-      void queryClient.invalidateQueries({ queryKey: templatesKeys.list() });
-    }
-  }, [singleDeleteFetcher.state, singleDeleteFetcher.data, queryClient]);
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+    if (searchParams.get("create") !== "1") return;
+    queueMicrotask(() => {
+      setCreateOpen(true);
     });
+    searchParams.delete("create");
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (
+      actionFetcher.state === "idle" &&
+      actionFetcher.data &&
+      typeof actionFetcher.data === "object" &&
+      "success" in actionFetcher.data &&
+      (actionFetcher.data as { success?: boolean }).success
+    ) {
+      void queryClient.invalidateQueries({ queryKey: templatesKeys.list() });
+      queueMicrotask(() => {
+        setRenameOpen(false);
+        setRenameTarget(null);
+      });
+    }
+  }, [actionFetcher.state, actionFetcher.data, queryClient]);
+
+  const templates = useMemo(() => {
+    const templatesRaw = Array.isArray(data?.templates) ? data.templates : [];
+    let list = templatesRaw as unknown as Template[];
+    if (typeFilter !== "all") {
+      list = list.filter(
+        (x) => (x as { templateType?: string }).templateType === typeFilter
+      );
+    }
+    const sorted = [...list];
+    if (sort === "name") {
+      sorted.sort((a, b) =>
+        (a.name ?? "").localeCompare(b.name ?? "", undefined, {
+          sensitivity: "base",
+        })
+      );
+    } else {
+      sorted.sort((a, b) => {
+        const ra = a as {
+          updatedAt?: string | Date;
+          createdAt?: string | Date;
+        };
+        const rb = b as {
+          updatedAt?: string | Date;
+          createdAt?: string | Date;
+        };
+        const ta = new Date(ra.updatedAt ?? ra.createdAt ?? 0).getTime();
+        const tb = new Date(rb.updatedAt ?? rb.createdAt ?? 0).getTime();
+        return tb - ta;
+      });
+    }
+    return sorted;
+  }, [data, typeFilter, sort]);
+
+  const submitAction = (formData: FormData) => {
+    actionFetcher.submit(formData, { method: "post" });
   };
+
+  const detail = sheetTemplate
+    ? templateToDetailPayload(sheetTemplate as never)
+    : null;
+  const useHref =
+    detail &&
+    (detail.templateType === "LONGFORM"
+      ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(detail.id)}`
+      : `/dashboard/compose?type=post&templateId=${encodeURIComponent(detail.id)}`);
 
   return (
     <>
       {!isOnChildRoute ? (
         <div className="p-6">
-          <TemplatesHeader />
-          <div className="rounded-md border">
+          <div className="mb-6 flex flex-col gap-4 sm:mb-8">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-2xl font-bold tracking-tight">Templates</h1>
+              <p className="text-muted-foreground text-sm">
+                Reusable blueprints for posts and articles.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div
+                className="flex flex-wrap gap-2"
+                role="tablist"
+                aria-label="Template type"
+              >
+                {(
+                  [
+                    ["all", "All"],
+                    ["POST", "Posts"],
+                    ["LONGFORM", "Articles"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <Button
+                    key={key}
+                    type="button"
+                    size="sm"
+                    variant={typeFilter === key ? "default" : "outline"}
+                    className="rounded-full"
+                    onClick={() => setTypeFilter(key)}
+                    role="tab"
+                    aria-selected={typeFilter === key}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <Select
+                  value={sort}
+                  onValueChange={(v) => setSort(v as TemplateSort)}
+                >
+                  <SelectTrigger
+                    className="w-full sm:w-[200px]"
+                    aria-label="Sort templates"
+                  >
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="updated">Recently updated</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  className="shrink-0"
+                  onClick={() => setCreateOpen(true)}
+                >
+                  Create template
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <CreateTemplateTypeDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+          />
+
+          <div className="rounded-xl border">
             {templates.length === 0 ? (
-              <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <p className="text-sm">No templates yet</p>
-                <p className="text-xs">
-                  Create a template from scratch to reuse in your composers.
+              <div
+                className="text-muted-foreground flex flex-col items-center justify-center gap-3 px-4 py-16 text-center"
+                data-testid="empty-state"
+              >
+                <h2 className="text-foreground text-base font-semibold">
+                  No templates yet
+                </h2>
+                <p className="max-w-sm text-sm">
+                  Save reusable blueprints for recurring posts and articles.
                 </p>
-                <Button asChild variant="secondary">
-                  <Link to="/dashboard/templates/new">Create template</Link>
+                <p className="text-muted-foreground/90 max-w-md text-xs leading-relaxed">
+                  Templates help speed up repeated formats like weekly posts,
+                  announcements, and article structures.
+                </p>
+                <Button type="button" onClick={() => setCreateOpen(true)}>
+                  Create template
                 </Button>
               </div>
             ) : (
-              <>
-                {selectedIds.size > 0 ? (
-                  <div className="border-border flex items-center gap-2 border-b px-4 py-2">
-                    <bulkDeleteFetcher.Form method="post" key="bulk-delete">
-                      <input type="hidden" name="_action" value="bulkDelete" />
-                      {Array.from(selectedIds).map((id) => (
-                        <input
-                          key={id}
-                          type="hidden"
-                          name="templateIds"
-                          value={id}
-                        />
-                      ))}
-                      <Button
-                        type="submit"
-                        variant="destructive"
-                        size="sm"
-                        disabled={bulkDeleteFetcher.state !== "idle"}
-                      >
-                        {bulkDeleteFetcher.state !== "idle"
-                          ? "Deleting..."
-                          : "Delete selected"}
-                      </Button>
-                    </bulkDeleteFetcher.Form>
-                    <span className="text-muted-foreground text-xs">
-                      {selectedIds.size} selected
-                    </span>
-                  </div>
-                ) : null}
-                <ul className="divide-y">
-                  {templates.map((template) => (
-                    <li key={template.id} className="border-border divide-y">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="dark:hover:bg-muted hover:bg-muted flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
-                        onClick={() =>
-                          setSelectedTemplate(template as unknown as Template)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedTemplate(
-                              template as unknown as Template
-                            );
-                          }
-                        }}
-                        aria-label={`View ${template.name ?? "template"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(template.id)}
-                          onChange={() => toggleSelection(template.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="rounded border-gray-300"
-                          aria-label={`Select ${template.name ?? "template"}`}
-                        />
-                        <span className="min-w-0 flex-1 font-medium">
-                          {template.name ?? "Unnamed template"}
-                        </span>
-                        <Badge variant="secondary" className="shrink-0 text-xs">
-                          {typeLabel(template as unknown as Template)}
-                        </Badge>
-                        <span className="text-muted-foreground shrink-0 text-xs">
-                          {formatTemplateDate(
-                            template as unknown as Template,
-                            dateLocale
-                          )}
-                        </span>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1.5"
-                            asChild
-                          >
-                            <Link
-                              to={`/dashboard/templates/edit/${template.id}`}
-                              aria-label="Edit template"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span>Edit</span>
-                            </Link>
-                          </Button>
-                          <singleDeleteFetcher.Form
-                            method="post"
-                            className="inline"
-                          >
-                            <input
-                              type="hidden"
-                              name="_action"
-                              value="delete"
-                            />
-                            <input
-                              type="hidden"
-                              name="templateId"
-                              value={template.id}
-                            />
-                            <Button
-                              type="submit"
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive h-8 w-8"
-                              aria-label="Delete template"
-                              disabled={singleDeleteFetcher.state !== "idle"}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Trash2 className="h-4 w-4" />
+              <ul className="divide-y">
+                {templates.map((template) => {
+                  const t = template as Template & {
+                    post?: unknown;
+                    longFormPost?: unknown;
+                    templateType?: string;
+                  };
+                  const id = t.id;
+                  const rowUseHref =
+                    t.templateType === "LONGFORM"
+                      ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
+                      : `/dashboard/compose?type=post&templateId=${encodeURIComponent(id)}`;
+                  const mediaCount = templateToDetailPayload(t).mediaCount;
+
+                  return (
+                    <li key={id}>
+                      <div className="hover:bg-muted/40 flex flex-col gap-3 p-4 transition-colors sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => setSheetTemplate(template)}
+                        >
+                          <div className="font-medium">
+                            {t.name ?? "Unnamed template"}
+                          </div>
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
+                            {previewSnippet(t)}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {typeLabel(t)}
+                            </Badge>
+                            {mediaCount > 0 ? (
+                              <span className="text-muted-foreground text-xs">
+                                {mediaCount}{" "}
+                                {mediaCount === 1
+                                  ? "attachment"
+                                  : "attachments"}
+                              </span>
+                            ) : null}
+                          </div>
+                        </button>
+
+                        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end md:flex-row md:items-center">
+                          <span className="text-muted-foreground order-last w-full text-xs sm:order-none sm:w-auto sm:text-right">
+                            {formatTemplateUpdated(t as never, dateLocale)}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Button size="sm" className="gap-1.5" asChild>
+                              <Link to={rowUseHref}>Use template</Link>
                             </Button>
-                          </singleDeleteFetcher.Form>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link
+                                to={`/dashboard/templates/edit/${id}`}
+                                className="gap-1.5"
+                              >
+                                <Pencil
+                                  className="h-3.5 w-3.5"
+                                  strokeWidth={INLINE_ICON_STROKE}
+                                  aria-hidden
+                                />
+                                Edit template
+                              </Link>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0"
+                                  aria-label="More actions"
+                                >
+                                  <MoreHorizontal
+                                    className="h-4 w-4"
+                                    aria-hidden
+                                  />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const fd = new FormData();
+                                    fd.set("_action", "duplicate");
+                                    fd.set("templateId", id);
+                                    submitAction(fd);
+                                  }}
+                                >
+                                  <Copy className="mr-2 h-4 w-4" aria-hidden />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenameTarget(template);
+                                    setRenameValue(t.name ?? "");
+                                    setRenameOpen(true);
+                                  }}
+                                >
+                                  <Pencil
+                                    className="mr-2 h-4 w-4"
+                                    aria-hidden
+                                  />
+                                  Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => {
+                                    const fd = new FormData();
+                                    fd.set("_action", "delete");
+                                    fd.set("templateId", id);
+                                    submitAction(fd);
+                                  }}
+                                >
+                                  <Trash2
+                                    className="mr-2 h-4 w-4"
+                                    aria-hidden
+                                  />
+                                  Delete template
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </div>
                     </li>
-                  ))}
-                </ul>
-              </>
+                  );
+                })}
+              </ul>
             )}
           </div>
 
-          {selectedTemplate ? (
-            <TemplateDetailsModal
-              template={templateToModalPayload(
-                selectedTemplate as unknown as Template & {
-                  post?: unknown;
-                  longFormPost?: unknown;
-                  templateType?: string;
-                }
-              )}
-              onClose={() => setSelectedTemplate(null)}
-              onDelete={(templateId) => {
-                const formData = new FormData();
-                formData.set("_action", "delete");
-                formData.set("templateId", templateId);
-                singleDeleteFetcher.submit(formData, { method: "post" });
-                setSelectedTemplate(null);
-              }}
-              isDeleting={singleDeleteFetcher.state !== "idle"}
-            />
-          ) : null}
+          <Sheet
+            open={sheetTemplate !== null}
+            onOpenChange={(o) => {
+              if (!o) setSheetTemplate(null);
+            }}
+          >
+            <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md">
+              {detail ? (
+                <>
+                  <SheetHeader className="space-y-1 text-left">
+                    <SheetTitle className="pr-8">
+                      {detail.name || "Unnamed template"}
+                    </SheetTitle>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">
+                        {detail.templateType === "LONGFORM"
+                          ? "Article"
+                          : "Post"}
+                      </Badge>
+                      <span className="text-muted-foreground text-xs">
+                        Updated {formatDate(detail.updatedAt)}
+                      </span>
+                    </div>
+                  </SheetHeader>
+                  <div className="flex flex-1 flex-col gap-4 py-4">
+                    {"longformTitle" in detail &&
+                    detail.longformTitle &&
+                    detail.longformTitle !== detail.name ? (
+                      <p className="text-muted-foreground text-sm">
+                        Article title: {detail.longformTitle}
+                      </p>
+                    ) : null}
+                    {detail.imageUrl ? (
+                      <img
+                        src={detail.imageUrl}
+                        alt=""
+                        className="max-h-48 w-full rounded-lg object-cover"
+                      />
+                    ) : null}
+                    {detail.text ? (
+                      <div>
+                        <p className="mb-1 text-xs font-medium">Preview</p>
+                        <p className="text-muted-foreground max-h-56 overflow-y-auto text-sm whitespace-pre-wrap">
+                          {detail.text}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        No body text yet.
+                      </p>
+                    )}
+                    <div className="mt-auto flex flex-col gap-2 border-t pt-4">
+                      <Button className="w-full gap-2" asChild>
+                        <Link
+                          to={useHref ?? "#"}
+                          onClick={() => setSheetTemplate(null)}
+                        >
+                          <FileText className="h-4 w-4" aria-hidden />
+                          Use template
+                        </Link>
+                      </Button>
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link
+                          to={`/dashboard/templates/edit/${detail.id}`}
+                          onClick={() => setSheetTemplate(null)}
+                        >
+                          Edit template
+                        </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive w-full"
+                        onClick={() => {
+                          const fd = new FormData();
+                          fd.set("_action", "delete");
+                          fd.set("templateId", detail.id);
+                          submitAction(fd);
+                          setSheetTemplate(null);
+                        }}
+                      >
+                        Delete template
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </SheetContent>
+          </Sheet>
+
+          <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Rename template</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 py-2">
+                <Label htmlFor="rename-template">Name</Label>
+                <Input
+                  id="rename-template"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  placeholder="Template name"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRenameOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={
+                    !renameValue.trim() || actionFetcher.state !== "idle"
+                  }
+                  onClick={() => {
+                    if (!renameTarget) return;
+                    const fd = new FormData();
+                    fd.set("_action", "rename");
+                    fd.set("templateId", renameTarget.id);
+                    fd.set("name", renameValue.trim());
+                    submitAction(fd);
+                  }}
+                >
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       ) : null}
       <Outlet />

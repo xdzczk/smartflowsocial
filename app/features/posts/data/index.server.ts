@@ -12,4 +12,5 @@ export type {
 export * from "./post.commands.server";
 export * from "./post.queries.server";
 export * from "./post.read-queries.server";
+export * from "./thread-group.server";
 export * from "./longformpost.server";

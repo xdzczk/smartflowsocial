@@ -18,18 +18,21 @@ export const deleteTemplateSchema = z.object({
 });
 
 /**
- * Schedule template schema
- */
-export const scheduleTemplateSchema = z.object({
-  _action: z.literal("schedule"),
-  templateId: z.string().min(1, TEMPLATE_ID_REQUIRED),
-});
-
-/**
  * Bulk delete templates schema (templateIds come from formData.getAll("templateIds"))
  */
 export const bulkDeleteTemplatesSchema = z.object({
   _action: z.literal("bulkDelete"),
+});
+
+export const renameTemplateSchema = z.object({
+  _action: z.literal("rename"),
+  templateId: z.string().min(1, TEMPLATE_ID_REQUIRED),
+  name: z.string().min(1, TEMPLATE_NAME_REQUIRED),
+});
+
+export const duplicateTemplateSchema = z.object({
+  _action: z.literal("duplicate"),
+  templateId: z.string().min(1, TEMPLATE_ID_REQUIRED),
 });
 
 /**
@@ -89,8 +92,9 @@ export const createTemplateFromScratchLongformSchema = z.object({
  */
 export const templatesActionSchema = z.discriminatedUnion("_action", [
   deleteTemplateSchema,
-  scheduleTemplateSchema,
   bulkDeleteTemplatesSchema,
+  renameTemplateSchema,
+  duplicateTemplateSchema,
 ]);
 
 /**
@@ -107,10 +111,6 @@ export const deleteTemplateEditSchema = z.object({
 
 export const deleteTemplateRedirectSchema = z.object({
   _action: z.literal("deleteTemplate"),
-});
-
-export const scheduleTemplateEditSchema = z.object({
-  _action: z.literal("schedule"),
 });
 
 /**
@@ -176,7 +176,6 @@ export const templateEditActionSchema = z.discriminatedUnion("_action", [
   updateTemplateNameSchema,
   deleteTemplateEditSchema,
   deleteTemplateRedirectSchema,
-  scheduleTemplateEditSchema,
   updateTemplatePostSchema,
   updateTemplateLongformSchema,
 ]);

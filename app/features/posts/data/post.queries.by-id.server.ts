@@ -111,3 +111,20 @@ export function getPostsByIds({
     },
   });
 }
+
+/** IDs of draft posts owned by the user, subset of `ids` (order not preserved). */
+export async function getDraftPostIdsForUser(
+  userId: string,
+  ids: string[]
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const rows = await prisma.post.findMany({
+    where: {
+      id: { in: ids },
+      userId,
+      currentState: "DRAFT",
+    },
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
+}

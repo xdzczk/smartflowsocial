@@ -46,6 +46,7 @@ import {
   type ShortDraftFilter,
 } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
+import { TemplateSettingsRail } from "~/features/templates/components/TemplateSettingsRail";
 import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate.client";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
 import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
@@ -196,6 +197,10 @@ export interface UnifiedComposerProps {
    * When true, omit built-in draft/template picker UI and modal (e.g. New Post page uses shell actions).
    */
   suppressBuiltInDraftPicker?: boolean;
+  /** Template edit: preformatted "Updated" line for the template rail */
+  templateLastUpdatedLabel?: string | null;
+  /** Template edit: opens delete confirmation (parent owns dialog) */
+  onTemplateDeleteClick?: () => void;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -227,6 +232,8 @@ export function UnifiedComposer({
   onPublishModeChange,
   onDraftStateLabelChange,
   onRelayClick,
+  templateLastUpdatedLabel = null,
+  onTemplateDeleteClick,
   composerTemplates,
   shortDraftFilter: shortDraftFilterProp,
   suppressBuiltInDraftPicker = false,
@@ -1138,43 +1145,73 @@ export function UnifiedComposer({
   );
 
   const hardBlockers: string[] = [];
-  if (signerReady === false) {
-    hardBlockers.push("Signer not connected");
-  }
-
   const deferrableBlockers: string[] = [];
-  if (!canSubmit) {
-    deferrableBlockers.push("Resolve media upload issues before publishing");
-  }
-  if (publishMode === "schedule" && !hasScheduleTimeForSubmit) {
-    deferrableBlockers.push("Publish time is required");
-  }
-  if (publishMode === "queue" && selectedQueue === "unassigned") {
-    deferrableBlockers.push("Choose a queue");
-  }
-  if (isThreadMode && threadSegments.length < MIN_THREAD_SEGMENTS) {
-    deferrableBlockers.push(
-      "Threads need at least two segments. Add another below the first."
-    );
-  }
-  if (!hasContent) {
-    deferrableBlockers.push(
-      isThreadMode
-        ? "Each thread segment needs text or at least one media item."
-        : "Add text or at least one media item."
-    );
-  }
   const relayCount =
     relayCountProp > 0
       ? relayCountProp
       : relayOverride && relayOverride.length > 0
         ? relayOverride.length
         : relayCountProp;
-  if (relayCount <= 0) {
-    deferrableBlockers.push("Select at least one relay.");
+
+  if (isTemplateMode) {
+    if (!canSubmit) {
+      hardBlockers.push(
+        "Resolve media upload issues before saving the template."
+      );
+    }
+  } else {
+    if (signerReady === false) {
+      hardBlockers.push("Signer not connected");
+    }
+    if (!canSubmit) {
+      deferrableBlockers.push("Resolve media upload issues before publishing");
+    }
+    if (publishMode === "schedule" && !hasScheduleTimeForSubmit) {
+      deferrableBlockers.push("Publish time is required");
+    }
+    if (publishMode === "queue" && selectedQueue === "unassigned") {
+      deferrableBlockers.push("Choose a queue");
+    }
+    if (isThreadMode && threadSegments.length < MIN_THREAD_SEGMENTS) {
+      deferrableBlockers.push(
+        "Threads need at least two segments. Add another below the first."
+      );
+    }
+    if (!hasContent) {
+      deferrableBlockers.push(
+        isThreadMode
+          ? "Each thread segment needs text or at least one media item."
+          : "Add text or at least one media item."
+      );
+    }
+    if (relayCount <= 0) {
+      deferrableBlockers.push("Select at least one relay.");
+    }
   }
 
   const issueList = [...hardBlockers, ...deferrableBlockers];
+
+  const templateRailWarnings: string[] = [];
+  if (isTemplateMode) {
+    if (isThreadMode) {
+      if (threadSegments.length < MIN_THREAD_SEGMENTS) {
+        templateRailWarnings.push(
+          "Thread templates usually need at least two segments."
+        );
+      }
+      if (
+        threadSegments.some(
+          (s) => s.content.trim() === "" && s.attachments.length === 0
+        )
+      ) {
+        templateRailWarnings.push("Some thread segments are still empty.");
+      }
+    } else if (content.trim() === "" && attachments.length === 0) {
+      templateRailWarnings.push(
+        "Template body is empty — you can still save a starter blueprint."
+      );
+    }
+  }
 
   const issueDisplayPhase = resolveComposerIssueDisplayPhase(
     publishAttempted,
@@ -1337,18 +1374,29 @@ export function UnifiedComposer({
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
-        if (!disabled) draftSubmitRef.current?.click();
+        if (!disabled) {
+          if (isTemplateMode) {
+            primarySubmitRef.current?.click();
+          } else {
+            draftSubmitRef.current?.click();
+          }
+        }
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
-        if (disabled || signerReady === false) return;
+        if (disabled) return;
+        if (isTemplateMode) {
+          primarySubmitRef.current?.click();
+          return;
+        }
+        if (signerReady === false) return;
         primarySubmitRef.current?.click();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [disabled, signerReady]);
+  }, [disabled, signerReady, isTemplateMode]);
 
   useEffect(() => {
     if (!onDraftStateLabelChange) return;
@@ -1427,7 +1475,9 @@ export function UnifiedComposer({
     onDraftStateLabelChange,
   ]);
 
-  const primarySubmitAction = getTextSubmitActionForMode(publishMode);
+  const primarySubmitAction = isTemplateMode
+    ? "save-as-template"
+    : getTextSubmitActionForMode(publishMode);
 
   const openDraftPicker = (mode: "drafts" | "templates") => {
     setDraftPicker({ open: true, mode });
@@ -1492,19 +1542,21 @@ export function UnifiedComposer({
           disabled={blossomMediaBlocked}
           onChange={onFileChange}
         />
-        <ComposerErrors
-          isSigning={isSigning}
-          signerLabel={signerLabel}
-          onCancelSigning={cancelSigningState}
-          signingError={signingError}
-          onDismissSigningError={() => {
-            setSigningError(null);
-            setLastPublishFailed(false);
-          }}
-          onRetry={() => primarySubmitRef.current?.click()}
-          disabled={disabled}
-          signerReady={signerReady}
-        />
+        {!isTemplateMode ? (
+          <ComposerErrors
+            isSigning={isSigning}
+            signerLabel={signerLabel}
+            onCancelSigning={cancelSigningState}
+            signingError={signingError}
+            onDismissSigningError={() => {
+              setSigningError(null);
+              setLastPublishFailed(false);
+            }}
+            onRetry={() => primarySubmitRef.current?.click()}
+            disabled={disabled}
+            signerReady={signerReady}
+          />
+        ) : null}
         <Dialog
           open={partialThreadState !== null}
           onOpenChange={(open) => {
@@ -1604,14 +1656,7 @@ export function UnifiedComposer({
                     }
                     threadSegments={threadSegments}
                     threadDelayMinutes={threadDelayMinutes}
-                    publishMode={publishMode}
-                    relayCount={relayCount}
                     selectedQueue={selectedQueue}
-                    followUpSummaryLine={followUpSummaryLine}
-                    isRecyclable={isRecyclableVal}
-                    scheduledForLocal={
-                      formScheduledFor ?? schedulingScheduledFor
-                    }
                   />
                   <ComposerCanvasDivider />
                   <TagsChipRow
@@ -1713,7 +1758,93 @@ export function UnifiedComposer({
           />
         ) : null}
       </fetcher.Form>
-      {!isContestLite ? (
+      {!isContestLite && isTemplateMode ? (
+        <TemplateSettingsRail
+          variant="post"
+          typeLabel={isThreadMode ? "Thread" : "Short post"}
+          templateName={templateName}
+          lastUpdatedLabel={templateLastUpdatedLabel ?? undefined}
+          summaryRows={
+            isThreadMode
+              ? [
+                  {
+                    label: "Segments",
+                    value: String(threadSegments.length),
+                  },
+                  {
+                    label: "Characters",
+                    value: String(threadCharCount),
+                  },
+                  {
+                    label: "Media",
+                    value: String(threadMediaCount),
+                  },
+                  ...(repostDelayList.length > 0
+                    ? [
+                        {
+                          label: "Follow-up reposts",
+                          value: String(repostDelayList.length),
+                        },
+                      ]
+                    : []),
+                  ...(quoteEntries.length > 0
+                    ? [
+                        {
+                          label: "Quotes",
+                          value: String(quoteEntries.length),
+                        },
+                      ]
+                    : []),
+                ]
+              : [
+                  {
+                    label: "Characters",
+                    value: String(content.length),
+                  },
+                  {
+                    label: "Media",
+                    value: String(attachments.length),
+                  },
+                  ...(repostDelayList.length > 0
+                    ? [
+                        {
+                          label: "Follow-up reposts",
+                          value: String(repostDelayList.length),
+                        },
+                      ]
+                    : []),
+                  ...(quoteEntries.length > 0
+                    ? [
+                        {
+                          label: "Quotes",
+                          value: String(quoteEntries.length),
+                        },
+                      ]
+                    : []),
+                  ...(isRecyclableVal
+                    ? [{ label: "Recyclable", value: "Yes" }]
+                    : []),
+                ]
+          }
+          warnings={templateRailWarnings}
+          saveLabel="Save template"
+          saveLoading={primaryActionLoading}
+          saveLoadingLabel="Saving…"
+          onSaveTemplate={() => primarySubmitRef.current?.click()}
+          saveDisabled={
+            disabled || !templateName.trim() || issueList.length > 0
+          }
+          useTemplateHref={
+            editTemplateContext?.templateId
+              ? `/dashboard/compose?type=${isThreadMode ? "thread" : "post"}&templateId=${encodeURIComponent(editTemplateContext.templateId)}`
+              : null
+          }
+          showDelete={Boolean(onTemplateDeleteClick)}
+          onDeleteTemplate={onTemplateDeleteClick}
+          deleteDisabled={disabled}
+        />
+      ) : null}
+      {!isContestLite && !isTemplateMode ? (
         <PublishingSummaryRail
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
@@ -1828,17 +1959,13 @@ export function UnifiedComposer({
           })}
           contentSummaryLines={contentSummaryLines}
           publishPath={publishPath}
-          recyclableControl={
-            !isTemplateMode
-              ? {
-                  switchId: "composer-recyclable",
-                  checked: isRecyclableVal,
-                  onCheckedChange: (checked) =>
-                    form.setValue("isRecyclable", checked === true),
-                  disabled,
-                }
-              : undefined
-          }
+          recyclableControl={{
+            switchId: "composer-recyclable",
+            checked: isRecyclableVal,
+            onCheckedChange: (checked) =>
+              form.setValue("isRecyclable", checked === true),
+            disabled,
+          }}
           threadSettingsSection={
             isThreadMode
               ? {
@@ -1883,10 +2010,8 @@ export function UnifiedComposer({
           primaryActionDisabled={
             disabled || signerReady === false || issueList.length > 0
           }
-          secondaryActionLabel={isTemplateMode ? undefined : "Save draft"}
-          onSecondaryAction={
-            isTemplateMode ? undefined : () => draftSubmitRef.current?.click()
-          }
+          secondaryActionLabel="Save draft"
+          onSecondaryAction={() => draftSubmitRef.current?.click()}
           secondaryActionDisabled={disabled}
         />
       ) : null}

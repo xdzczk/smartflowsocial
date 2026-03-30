@@ -60,8 +60,8 @@ export default function QueueSelectionTabs({
           <SelectValue placeholder="Queue" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Queues</SelectItem>
-          <SelectItem value="unassigned">Unassigned</SelectItem>
+          <SelectItem value="all">All queues</SelectItem>
+          <SelectItem value="unassigned">No queue</SelectItem>
           {queueTypes
             .filter((qt) => {
               const name = typeof qt === "string" ? qt : qt.name;

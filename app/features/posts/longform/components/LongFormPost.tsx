@@ -1,4 +1,4 @@
-import { Link, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { Hash } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
@@ -33,6 +33,7 @@ import type { LongformQuoteEntry } from "~/features/posts/hooks/useLongFormSubmi
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 import { useLongFormScheduling } from "~/features/posts/useLongFormScheduling";
+import { TemplateSettingsRail } from "~/features/templates/components/TemplateSettingsRail";
 import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate.client";
 import {
   formatAttemptElapsed,
@@ -124,6 +125,10 @@ interface LongFormPostProps {
   relayOverride?: string[];
   /** Opens relay selector (parent owns `RelaySelectorModal`). */
   onRelayClick?: () => void;
+  /** Template edit: preformatted updated line for template rail */
+  templateLastUpdatedLabel?: string | null;
+  /** Template edit: parent opens delete confirmation */
+  onTemplateDeleteClick?: () => void;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
@@ -154,6 +159,8 @@ export default function LongFormPost({
   defaultRelays = [],
   relayOverride: relayOverrideProp,
   onRelayClick,
+  templateLastUpdatedLabel = null,
+  onTemplateDeleteClick,
 }: LongFormPostProps) {
   const { mediaUploadBlocked } = useBlossomUploadGate();
   const fetcher = useFetcher();
@@ -747,22 +754,37 @@ export default function LongFormPost({
   ]);
 
   const deferrableBlockers: string[] = [];
-  if (!title.trim()) deferrableBlockers.push("Article title is missing.");
-  if (!content.trim()) deferrableBlockers.push("Article body is empty.");
-  if (!image) deferrableBlockers.push("Article cover is missing.");
-  if (publishMode === "schedule" && !scheduledFor) {
-    deferrableBlockers.push("Select a date and time.");
-  }
-  if (
-    publishMode === "queue" &&
-    (selectedQueueType === "unassigned" || selectedQueueType === "Unassigned")
-  ) {
-    deferrableBlockers.push("Choose a queue.");
-  }
-  if (relayCount <= 0) {
-    deferrableBlockers.push("Select at least one relay.");
+  if (!isTemplateMode) {
+    if (!title.trim()) deferrableBlockers.push("Article title is missing.");
+    if (!content.trim()) deferrableBlockers.push("Article body is empty.");
+    if (!image) deferrableBlockers.push("Article cover is missing.");
+    if (publishMode === "schedule" && !scheduledFor) {
+      deferrableBlockers.push("Select a date and time.");
+    }
+    if (
+      publishMode === "queue" &&
+      (selectedQueueType === "unassigned" || selectedQueueType === "Unassigned")
+    ) {
+      deferrableBlockers.push("Choose a queue.");
+    }
+    if (relayCount <= 0) {
+      deferrableBlockers.push("Select at least one relay.");
+    }
   }
   const issueList = deferrableBlockers;
+
+  const templateRailWarnings: string[] = [];
+  if (isTemplateMode) {
+    if (!title.trim()) {
+      templateRailWarnings.push("Template has no title yet.");
+    }
+    if (!content.trim()) {
+      templateRailWarnings.push("Template body is empty.");
+    }
+    if (!image) {
+      templateRailWarnings.push("No cover image set.");
+    }
+  }
   const issueDisplayPhase = resolveComposerIssueDisplayPhase(
     publishAttempted,
     composerTouched
@@ -898,6 +920,8 @@ export default function LongFormPost({
   const articleColumnClass = "mx-auto w-full max-w-[min(100%,42rem)]";
   const showArticleFooterStrip =
     isTemplateMode || isSigning || Boolean(signingError);
+  const templateArticleSaveBusy =
+    fetcher.state !== "idle" || uploadFetcherState !== "idle";
 
   const editPreviewToggle = (
     <div className="inline-flex gap-4" role="group" aria-label="Body view">
@@ -1135,41 +1159,19 @@ export default function LongFormPost({
                 <ComposerCanvasDivider />
                 <div className={`${articleColumnClass} space-y-4`}>
                   {isTemplateMode ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="template-name-longform">
-                          Template name
-                        </Label>
-                        <Input
-                          id="template-name-longform"
-                          type="text"
-                          value={templateName}
-                          onChange={(e) => setTemplateName(e.target.value)}
-                          placeholder="e.g. Weekly article"
-                          className="max-w-xs"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          onClick={handleSaveAsTemplate}
-                          disabled={
-                            fetcher.state !== "idle" ||
-                            !templateName.trim() ||
-                            !image
-                          }
-                        >
-                          {fetcher.state !== "idle"
-                            ? "Saving..."
-                            : editTemplateContext
-                              ? "Save"
-                              : "Save as template"}
-                        </Button>
-                        <Button type="button" variant="ghost" asChild>
-                          <Link to="/dashboard/templates">Cancel</Link>
-                        </Button>
-                      </div>
-                    </>
+                    <div className="space-y-2">
+                      <Label htmlFor="template-name-longform">
+                        Template name
+                      </Label>
+                      <Input
+                        id="template-name-longform"
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder="e.g. Weekly article"
+                        className="max-w-xs"
+                      />
+                    </div>
                   ) : (
                     <>
                       {isSigning ? (
@@ -1228,128 +1230,176 @@ export default function LongFormPost({
             ) : null}
           </ComposerLeftCanvas>
         </div>
-        <PublishingSummaryRail
-          publishMode={publishMode}
-          onPublishModeChange={onPublishModeChange ?? (() => void 0)}
-          outcomeSentence={outcomeSentence}
-          readiness={readinessForRail}
-          sessionStrip={{
-            composerStatus,
-            relayCount,
-            signerLabel: "NIP-07",
-            onRelayClick: onRelayClick ? handleRelayRailClick : undefined,
-          }}
-          modeSpecificSection={
-            publishMode === "now"
-              ? undefined
-              : {
-                  lines:
-                    publishMode === "queue"
-                      ? [
-                          ...(longformQueueNextSlotLabel
-                            ? [
-                                `Next slot (estimate): ${longformQueueNextSlotLabel}`,
-                              ]
-                            : []),
-                        ]
-                      : [],
-                  controls: (
-                    <LongFormPublishingOptions
-                      layout="rail"
-                      queueTypes={queueTypes}
-                      selectedQueueType={selectedQueueType}
-                      onQueueTypeChange={(name) => {
-                        void updateDisplayedHashtags(name);
-                      }}
-                      scheduledFor={scheduledFor}
-                      onScheduledForChange={setScheduledFor}
-                      scheduleIntervals={scheduleIntervals}
-                      onScheduleIntervalClick={(intervalHours) => {
-                        handleScheduleIntervalClick(intervalHours);
-                      }}
-                      onNextSlotClick={() => {
-                        void calculateQueueScheduleTime(selectedQueueType);
-                      }}
-                      hashTagPresets={hashTagPresets}
-                      useHashtagPresets={useHashtagPresets}
-                      selectedHashtagPresetId={selectedHashtagPresetId}
-                      selectedHashtags={selectedHashtags}
-                      onHashtagPresetChange={
-                        onHashtagPresetChange ??
-                        ((_id, _tags) => {
-                          void _id;
-                          void _tags;
-                        })
-                      }
-                      onUseHashtagPresetsChange={
-                        onUseHashtagPresetsChange ??
-                        (() => {
-                          void 0;
-                        })
-                      }
-                      userTimezone={userTimezone}
-                      showHashtagPresets={false}
-                      hideScheduleControls={publishMode === "queue"}
-                    />
-                  ),
-                }
-          }
-          followUp={{
-            summaryLine: longformFollowUpSummary,
-            children: (
-              <AlsoScheduleLongformQuote
-                quoteEntries={quoteEntries}
-                onQuoteEntriesChange={setQuoteEntries}
-                disabled={fetcher.state !== "idle" || isSigning}
-              />
-            ),
-          }}
-          publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
-            followUpSummaryLine: longformFollowUpSummary,
-            showRecyclable: false,
-          })}
-          contentSummaryLines={contentSummaryLines}
-          contentSummaryDisplay="stacked"
-          publishPath={publishPath}
-          issues={displayRedIssues}
-          warnings={displayAmberIssues}
-          pristineHint={pristineHint}
-          idleStatusLabel={idleStatusLabel}
-          primaryActionLabel={getPrimaryCtaLabelForMode(publishMode, "article")}
-          primaryActionLoading={primaryActionLoading}
-          primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
-            publishMode,
-            "article"
-          )}
-          onPrimaryAction={() => {
-            flushSync();
-            void handleSchedule(publishMode === "now" ? "publish" : "schedule");
-          }}
-          onPrimaryActionBlocked={() => setPublishAttempted(true)}
-          primaryActionDisabled={
-            fetcher.state !== "idle" ||
-            !isFormValid ||
-            isSigning ||
-            issueList.length > 0
-          }
-          secondaryActionLabel={secondaryIsSaveDraft ? "Save draft" : "Preview"}
-          onSecondaryAction={
-            secondaryIsSaveDraft
-              ? () => {
-                  handleSaveDraft();
-                }
-              : onPreview
-                ? () =>
-                    onPreview({
-                      title,
-                      summary: summary ?? generateSummaryFromContent(content),
-                      content,
-                      image,
-                    })
-                : undefined
-          }
-          secondaryActionDisabled={fetcher.state !== "idle" || isSigning}
-        />
+        {isTemplateMode ? (
+          <TemplateSettingsRail
+            variant="article"
+            typeLabel="Article"
+            templateName={templateName}
+            lastUpdatedLabel={templateLastUpdatedLabel ?? undefined}
+            summaryRows={[
+              {
+                label: "Title",
+                value: title.trim() ? "Present" : "Missing",
+              },
+              {
+                label: "Summary",
+                value: (summary ?? "").trim() ? "Present" : "Missing",
+              },
+              {
+                label: "Cover",
+                value: image ? "Present" : "Missing",
+              },
+              {
+                label: "Body words",
+                value: String(wordCount),
+              },
+            ]}
+            warnings={templateRailWarnings}
+            saveLabel="Save template"
+            saveLoading={primaryActionLoading}
+            saveLoadingLabel="Saving…"
+            onSaveTemplate={() => handleSaveAsTemplate()}
+            saveDisabled={!templateName.trim() || templateArticleSaveBusy}
+            useTemplateHref={
+              editTemplateContext?.templateId
+                ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(editTemplateContext.templateId)}`
+                : null
+            }
+            showDelete={Boolean(onTemplateDeleteClick)}
+            onDeleteTemplate={onTemplateDeleteClick}
+            deleteDisabled={templateArticleSaveBusy}
+          />
+        ) : (
+          <PublishingSummaryRail
+            publishMode={publishMode}
+            onPublishModeChange={onPublishModeChange ?? (() => void 0)}
+            outcomeSentence={outcomeSentence}
+            readiness={readinessForRail}
+            sessionStrip={{
+              composerStatus,
+              relayCount,
+              signerLabel: "NIP-07",
+              onRelayClick: onRelayClick ? handleRelayRailClick : undefined,
+            }}
+            modeSpecificSection={
+              publishMode === "now"
+                ? undefined
+                : {
+                    lines:
+                      publishMode === "queue"
+                        ? [
+                            ...(longformQueueNextSlotLabel
+                              ? [
+                                  `Next slot (estimate): ${longformQueueNextSlotLabel}`,
+                                ]
+                              : []),
+                          ]
+                        : [],
+                    controls: (
+                      <LongFormPublishingOptions
+                        layout="rail"
+                        queueTypes={queueTypes}
+                        selectedQueueType={selectedQueueType}
+                        onQueueTypeChange={(name) => {
+                          void updateDisplayedHashtags(name);
+                        }}
+                        scheduledFor={scheduledFor}
+                        onScheduledForChange={setScheduledFor}
+                        scheduleIntervals={scheduleIntervals}
+                        onScheduleIntervalClick={(intervalHours) => {
+                          handleScheduleIntervalClick(intervalHours);
+                        }}
+                        onNextSlotClick={() => {
+                          void calculateQueueScheduleTime(selectedQueueType);
+                        }}
+                        hashTagPresets={hashTagPresets}
+                        useHashtagPresets={useHashtagPresets}
+                        selectedHashtagPresetId={selectedHashtagPresetId}
+                        selectedHashtags={selectedHashtags}
+                        onHashtagPresetChange={
+                          onHashtagPresetChange ??
+                          ((_id, _tags) => {
+                            void _id;
+                            void _tags;
+                          })
+                        }
+                        onUseHashtagPresetsChange={
+                          onUseHashtagPresetsChange ??
+                          (() => {
+                            void 0;
+                          })
+                        }
+                        userTimezone={userTimezone}
+                        showHashtagPresets={false}
+                        hideScheduleControls={publishMode === "queue"}
+                      />
+                    ),
+                  }
+            }
+            followUp={{
+              summaryLine: longformFollowUpSummary,
+              children: (
+                <AlsoScheduleLongformQuote
+                  quoteEntries={quoteEntries}
+                  onQuoteEntriesChange={setQuoteEntries}
+                  disabled={fetcher.state !== "idle" || isSigning}
+                />
+              ),
+            }}
+            publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
+              followUpSummaryLine: longformFollowUpSummary,
+              showRecyclable: false,
+            })}
+            contentSummaryLines={contentSummaryLines}
+            contentSummaryDisplay="stacked"
+            publishPath={publishPath}
+            issues={displayRedIssues}
+            warnings={displayAmberIssues}
+            pristineHint={pristineHint}
+            idleStatusLabel={idleStatusLabel}
+            primaryActionLabel={getPrimaryCtaLabelForMode(
+              publishMode,
+              "article"
+            )}
+            primaryActionLoading={primaryActionLoading}
+            primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
+              publishMode,
+              "article"
+            )}
+            onPrimaryAction={() => {
+              flushSync();
+              void handleSchedule(
+                publishMode === "now" ? "publish" : "schedule"
+              );
+            }}
+            onPrimaryActionBlocked={() => setPublishAttempted(true)}
+            primaryActionDisabled={
+              fetcher.state !== "idle" ||
+              !isFormValid ||
+              isSigning ||
+              issueList.length > 0
+            }
+            secondaryActionLabel={
+              secondaryIsSaveDraft ? "Save draft" : "Preview"
+            }
+            onSecondaryAction={
+              secondaryIsSaveDraft
+                ? () => {
+                    handleSaveDraft();
+                  }
+                : onPreview
+                  ? () =>
+                      onPreview({
+                        title,
+                        summary: summary ?? generateSummaryFromContent(content),
+                        content,
+                        image,
+                      })
+                  : undefined
+            }
+            secondaryActionDisabled={fetcher.state !== "idle" || isSigning}
+          />
+        )}
       </div>
     </>
   );

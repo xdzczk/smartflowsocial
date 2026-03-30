@@ -1,6 +1,10 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
+import type {
+  LookupLoaderErrorPayload,
+  SearchLookupResolution,
+} from "~/features/search";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -8,6 +12,7 @@ import {
 } from "~/lib/temporal";
 import { searchFormClientSchema } from "~/lib/validation";
 import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+
 interface User {
   timezone?: string | null;
 }
@@ -43,7 +48,18 @@ interface SearchResultData {
     satszapped: number;
   };
   replies?: SearchReplyItem[];
-  error?: string;
+  resolution?: SearchLookupResolution;
+  error?: string | LookupLoaderErrorPayload;
+}
+
+function normalizeLookupError(
+  raw: string | LookupLoaderErrorPayload | undefined
+): LookupLoaderErrorPayload | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    return { code: "UNKNOWN", message: raw };
+  }
+  return raw;
 }
 
 interface UseSearchStateProps {
@@ -81,20 +97,24 @@ export function useSearchState({
   const searchResult = dataSource?.event;
   const searchStats = dataSource?.stats;
   const searchReplies = dataSource?.replies ?? [];
-  const searchError = dataSource?.error;
+  const searchResolution = dataSource?.resolution ?? null;
+  const searchLookupError = normalizeLookupError(dataSource?.error);
 
   useEffect(() => {
-    if (searchError) {
-      // Defer to avoid cascading renders
-      setTimeout(() => {
-        setToast({
-          type: "error",
-          message: searchError,
-        });
-        setTimeout(() => setToast(null), 5000);
-      }, 0);
+    const err = dataSource?.error;
+    if (err == null) return;
+    if (typeof err === "object" && "code" in err) {
+      return;
     }
-  }, [searchError]);
+    const message = typeof err === "string" ? err : String(err);
+    setTimeout(() => {
+      setToast({
+        type: "error",
+        message,
+      });
+      setTimeout(() => setToast(null), 5000);
+    }, 0);
+  }, [dataSource?.error]);
 
   const handleSearch = form.handleSubmit((data) => {
     const formData = formDataToFormData(data, "searchEvent");
@@ -104,14 +124,13 @@ export function useSearchState({
   const handleScheduleQuote = () => {
     if (!searchResult) return;
 
-    // Prepare quote post data
     const quotePostData = [
       {
-        caption: "", // Empty caption - user can add content
+        caption: "",
         fileUrl: searchResult.mediaUrls?.[0] ?? "",
         queueType: "unassigned",
         scheduledFor: "",
-        originalPostId: null, // No local post ID for external events
+        originalPostId: null,
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,
         isQuotePost: true,
@@ -120,28 +139,25 @@ export function useSearchState({
       },
     ];
 
-    // Store in sessionStorage
     sessionStorage.setItem("quotePostData", JSON.stringify(quotePostData));
 
-    // Navigate to bulk posts page with quote mode
     navigate("/dashboard/bulkposts?mode=quote", { replace: true });
   };
 
   const handleScheduleRepost = () => {
     if (!searchResult) return;
 
-    // Prepare scheduled repost data (kind 6)
     const userTimezone = user?.timezone ?? "UTC";
     const now = nowInTimezone(userTimezone);
     const scheduleDateTime = addHours(now, 1);
 
     const scheduledRepostData = [
       {
-        caption: "", // Empty content for kind 6 reposts
-        fileUrl: "", // No file URL for kind 6 reposts
+        caption: "",
+        fileUrl: "",
         queueType: "unassigned",
         scheduledFor: formatForDateTimeLocal(scheduleDateTime, userTimezone),
-        originalPostId: null, // No local post ID for external events
+        originalPostId: null,
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,
         isKind6Repost: true,
@@ -151,19 +167,16 @@ export function useSearchState({
       },
     ];
 
-    // Store in sessionStorage
     sessionStorage.setItem(
       "scheduledRepostData",
       JSON.stringify(scheduledRepostData)
     );
 
-    // Navigate to bulk posts page with repost mode
     navigate("/dashboard/bulkposts?mode=repost", { replace: true });
   };
 
   const clearSearch = () => {
     form.reset({ eventInput: "" });
-    // Navigate to same page without q so loader returns no result (post viewer → empty state)
     navigate("/dashboard/search/posts", { replace: true });
   };
 
@@ -175,6 +188,8 @@ export function useSearchState({
     searchResult,
     searchStats,
     searchReplies,
+    searchResolution,
+    searchLookupError,
     fetcher,
     setToast,
     handleSearch,

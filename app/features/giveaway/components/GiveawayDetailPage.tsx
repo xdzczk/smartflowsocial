@@ -1454,7 +1454,7 @@ export function GiveawayDetailPage({
                 Export CSV
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link to="/dashboard/giveaway/proof">Proof cards</Link>
+                <Link to="/dashboard/giveaway/proof">Proof Studio</Link>
               </Button>
               <Form
                 method="post"

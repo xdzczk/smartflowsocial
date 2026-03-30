@@ -1,6 +1,6 @@
 /**
  * Create a longform-type template from scratch.
- * Template-only composer: only "Save as template" and Cancel.
+ * Template-only composer: blueprint rail (no publish / relay selection).
  */
 
 import {
@@ -9,7 +9,6 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -23,8 +22,7 @@ import {
   type QueueType,
 } from "~/features/posts/server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
-import { getQueueAccentHex, RelaySelectorModal } from "~/features/posts/ui";
-import type { AccountPublishRelaySource } from "~/features/relays/composer-relay-lists";
+import { getQueueAccentHex } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 
@@ -82,15 +80,7 @@ function parseLoaderData(loaderData: unknown) {
 
   const queueTypes: QueueType[] = queueTypesRaw
     .map((qt: unknown): QueueType | null => {
-      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for loader JSON */
-      if (
-        qt &&
-        typeof qt === "object" &&
-        qt !== null &&
-        "id" in qt &&
-        "name" in qt
-      ) {
-        /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
         const q = qt as {
           id?: unknown;
           name?: unknown;
@@ -176,33 +166,6 @@ function parseLoaderData(loaderData: unknown) {
       ? uploadProvider
       : null;
 
-  const relaysRaw = Array.isArray((raw as { relays?: unknown }).relays)
-    ? (raw as { relays: unknown[] }).relays
-    : [];
-  const defaultRelays = relaysRaw.filter(
-    (r): r is string => typeof r === "string" && r.length > 0
-  );
-
-  const relaysAppRaw = Array.isArray((raw as { relaysApp?: unknown }).relaysApp)
-    ? (raw as { relaysApp: unknown[] }).relaysApp
-    : [];
-  const relaysApp = relaysAppRaw.filter(
-    (r): r is string => typeof r === "string" && r.length > 0
-  );
-
-  const relaysNip65Raw = Array.isArray(
-    (raw as { relaysNip65Profile?: unknown }).relaysNip65Profile
-  )
-    ? (raw as { relaysNip65Profile: unknown[] }).relaysNip65Profile
-    : [];
-  const relaysNip65Profile = relaysNip65Raw.filter(
-    (r): r is string => typeof r === "string" && r.length > 0
-  );
-
-  const prs = (raw as { publishRelaySource?: unknown }).publishRelaySource;
-  const accountPublishRelaySource: AccountPublishRelaySource =
-    prs === "nip65_profile" ? "nip65_profile" : "app";
-
   return {
     queueTypes,
     scheduleIntervals,
@@ -210,10 +173,6 @@ function parseLoaderData(loaderData: unknown) {
     userTags,
     userTimezone,
     uploadProvider: uploadProviderStr,
-    defaultRelays,
-    relaysApp,
-    relaysNip65Profile,
-    accountPublishRelaySource,
   };
 }
 
@@ -226,25 +185,16 @@ export default function TemplateNewLongformPage() {
     userTags,
     userTimezone,
     uploadProvider,
-    defaultRelays,
-    relaysApp,
-    relaysNip65Profile,
-    accountPublishRelaySource,
   } = parseLoaderData(loaderData);
-
-  const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
-  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
-    null
-  );
 
   return (
     <div className="p-6">
       <div className="mb-4">
         <Link
-          to="/dashboard/templates/new"
+          to="/dashboard/templates"
           className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-sm"
         >
-          ← Back to type picker
+          ← Back to Templates
         </Link>
       </div>
       <LongFormPost
@@ -256,27 +206,8 @@ export default function TemplateNewLongformPage() {
         uploadProvider={uploadProvider}
         hashTagPresets={hashTagPresets}
         onPreview={() => {}}
-        defaultRelays={defaultRelays}
-        relayOverride={selectedRelayUrls ?? undefined}
-        onRelayClick={() => setRelaySelectorOpen(true)}
+        defaultRelays={[]}
       />
-      {relaySelectorOpen ? (
-        <RelaySelectorModal
-          relayLists={{
-            default: defaultRelays,
-            app: relaysApp,
-            nip65Profile: relaysNip65Profile,
-          }}
-          accountPublishRelaySource={accountPublishRelaySource}
-          inheritRelays={selectedRelayUrls === null}
-          selectedRelays={selectedRelayUrls ?? defaultRelays}
-          onClose={() => setRelaySelectorOpen(false)}
-          onSave={(urls) => {
-            setSelectedRelayUrls(urls);
-            setRelaySelectorOpen(false);
-          }}
-        />
-      ) : null}
     </div>
   );
 }

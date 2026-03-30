@@ -20,21 +20,60 @@ import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
 import { getTrustLevel, getTrustScoreBadgeColor } from "../trust-score";
+import type { EngagementQueueTypeOption } from "../types";
+import { buildEngagementContentPreview } from "../utils/engagement-content-preview";
 
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
 import {
   NotificationActionButtons,
   type NotificationStats,
 } from "./NotificationActionButtons";
-import { UnifiedEngagementComposer } from "./NotificationInputPanels";
+import {
+  UnifiedEngagementComposer,
+  type EngagementComposerMode,
+} from "./NotificationInputPanels";
+
+function isWorkflowDimmed(
+  state?:
+    | "UNHANDLED"
+    | "DRAFTED"
+    | "SCHEDULED"
+    | "REPLIED"
+    | "IGNORED"
+    | "SNOOZED"
+    | "HANDLED"
+): boolean {
+  return state === "HANDLED" || state === "IGNORED" || state === "REPLIED";
+}
+
+function workflowStatusLabel(
+  state?:
+    | "UNHANDLED"
+    | "DRAFTED"
+    | "SCHEDULED"
+    | "REPLIED"
+    | "IGNORED"
+    | "SNOOZED"
+    | "HANDLED"
+): string {
+  if (!state) return "Unhandled";
+  const labels: Record<string, string> = {
+    UNHANDLED: "Unhandled",
+    DRAFTED: "Drafted",
+    SCHEDULED: "Scheduled",
+    REPLIED: "Replied",
+    IGNORED: "Ignored",
+    SNOOZED: "Snoozed",
+    HANDLED: "Handled",
+  };
+  return labels[state] ?? state;
+}
 
 interface NotificationItemProps {
   notification: Notification;
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
-  isHandled?: boolean;
-  /** Mark this item as done. (eventId, repliedFromApp). */
   onMarkDone?: (
     eventId: string,
     repliedFromApp?: boolean,
@@ -48,11 +87,8 @@ interface NotificationItemProps {
       | "HANDLED",
     snoozedUntil?: string | null
   ) => Promise<void>;
-  /** Keyboard nav: flat list index for this item. */
   keyboardIndex?: number;
-  /** Keyboard nav: whether this item is currently focused. */
   isKeyboardFocused?: boolean;
-  /** Keyboard nav: register handlers for R/L/M/E. */
   registerKeyboardHandlers?: (
     index: number,
     handlers: {
@@ -68,11 +104,8 @@ interface NotificationItemProps {
       expandThread: () => void;
     } | null
   ) => void;
-  /** Reply templates for slash-command / Insert template */
   replyTemplates?: ReplyTemplate[];
-  /** URL for "View on client" link (from preferred Nostr client setting). */
   viewEventUrl?: string;
-  /** Label for "View on client" link (e.g. "View on Primal"). */
   viewEventLabel?: string;
   workflowState?:
     | "UNHANDLED"
@@ -89,11 +122,18 @@ interface NotificationItemProps {
     postId?: string | null;
     draftId?: string | null;
   }>;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  contentVariant?: "default" | "mention";
+  isFollowingAuthor?: boolean;
+  queueTypes?: EngagementQueueTypeOption[];
 }
 
-// Type badge configuration for each notification type
 const MUTED_BG_CLASS = "bg-muted";
 const MUTED_TEXT_CLASS = "text-muted-foreground";
+
+const LINKED_CHIP =
+  "border-border text-muted-foreground rounded border px-1.5 py-0.5 text-[10px] font-medium";
 
 const TYPE_BADGES = {
   reply: {
@@ -134,12 +174,13 @@ const TYPE_BADGES = {
   },
 };
 
+// Row bundles avatar, actions, and tray; complexity is mostly declarative layout.
+// eslint-disable-next-line sonarjs/cognitive-complexity -- keep single component for keyboard + selection wiring
 export function NotificationItem({
   notification,
-  userTimezone: _userTimezone,
+  userTimezone,
   userRelays = ["wss://relay.primal.net"],
   trustScores = {},
-  isHandled = false,
   onMarkDone,
   keyboardIndex = -1,
   isKeyboardFocused = false,
@@ -149,14 +190,18 @@ export function NotificationItem({
   viewEventLabel,
   workflowState,
   linkedActions = [],
+  isSelected = false,
+  onSelect,
+  contentVariant = "default",
+  isFollowingAuthor = false,
+  queueTypes = [],
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
   const [zapModalNpub, setZapModalNpub] = useState<string | null>(null);
-  const [composerMode, setComposerMode] = useState<
-    "reply" | "quote" | "repost-note"
-  >("reply");
-  const [repostWithNoteContent, setRepostWithNoteContent] = useState("");
-  const zapNpub = nostrAdapter.encodeNpub(notification.pubkey) ?? undefined;
+  const [composerMode, setComposerMode] =
+    useState<EngagementComposerMode>("reply");
+  const trayRef = useRef<HTMLDivElement>(null);
+  const zapNpub = nostrAdapter.encodeNpub(notification.pubkey);
 
   const actions = useNotificationActions({
     notification: {
@@ -167,23 +212,54 @@ export function NotificationItem({
     userRelays,
   });
 
+  useEffect(() => {
+    if (!isSelected) {
+      actions.setShowReplyInput(false);
+      actions.setReplyContent("");
+      actions.setQuoteContent("");
+    }
+    // actions identity changes each render; collapsing tray only depends on selection
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [isSelected]);
+
+  useEffect(() => {
+    if (isKeyboardFocused && onSelect) {
+      onSelect();
+    }
+  }, [isKeyboardFocused, onSelect]);
+
+  useEffect(() => {
+    if (actions.showReplyInput && trayRef.current) {
+      trayRef.current.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [actions.showReplyInput]);
+
   const displayName =
     notification.authorName ??
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
-  // Get trust score for this user
   const trustScore = trustScores[notification.pubkey];
   const trustInfo = trustScore !== undefined ? getTrustLevel(trustScore) : null;
   const trustBadgeColor =
     trustScore !== undefined ? getTrustScoreBadgeColor(trustScore) : null;
 
-  // Get type-specific badge configuration
-  const typeBadge = TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES];
+  const typeBadge =
+    notification.type in TYPE_BADGES
+      ? TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES]
+      : TYPE_BADGES.reply;
 
-  // Get stats (available on all notification types)
   const stats: NotificationStats | undefined = notification.stats;
 
-  // Keep handlers in a ref so we can register once and always call latest. Update in effect to avoid ref mutation during render.
+  const preview = buildEngagementContentPreview(
+    notification.content,
+    contentVariant
+  );
+
+  const dimmed = isWorkflowDimmed(workflowState);
+
   const handlersRef = useRef({
     openReply: () => {
       setComposerMode("reply");
@@ -194,8 +270,7 @@ export function NotificationItem({
       actions.setShowReplyInput(true);
     },
     openRepost: () => {
-      setComposerMode("repost-note");
-      actions.setShowReplyInput(true);
+      void actions.handleRepost();
     },
     like: () => {
       void actions.handleLike();
@@ -225,28 +300,14 @@ export function NotificationItem({
       void (async () => {
         if (composerMode === "reply") await actions.handleReply();
         else {
-          const nextContent =
-            composerMode === "quote"
-              ? actions.quoteContent
-              : repostWithNoteContent;
-          actions.setQuoteContent(nextContent);
           await actions.handleQuote();
         }
       })();
     },
     schedule: () => {
-      const actionType =
-        composerMode === "reply"
-          ? "reply"
-          : composerMode === "quote"
-            ? "quote"
-            : "repost";
+      const actionType = composerMode === "reply" ? "reply" : "quote";
       const content =
-        composerMode === "reply"
-          ? actions.replyContent
-          : composerMode === "quote"
-            ? actions.quoteContent
-            : repostWithNoteContent;
+        composerMode === "reply" ? actions.replyContent : actions.quoteContent;
       void actions.deferAction({
         actionType,
         mode: "schedule",
@@ -256,6 +317,7 @@ export function NotificationItem({
     },
     expandThread: () => actions.setShowChildReplies(!actions.showChildReplies),
   });
+
   useEffect(() => {
     handlersRef.current = {
       openReply: () => {
@@ -267,8 +329,7 @@ export function NotificationItem({
         actions.setShowReplyInput(true);
       },
       openRepost: () => {
-        setComposerMode("repost-note");
-        actions.setShowReplyInput(true);
+        void actions.handleRepost();
       },
       like: () => {
         void actions.handleLike();
@@ -298,28 +359,16 @@ export function NotificationItem({
         void (async () => {
           if (composerMode === "reply") await actions.handleReply();
           else {
-            const nextContent =
-              composerMode === "quote"
-                ? actions.quoteContent
-                : repostWithNoteContent;
-            actions.setQuoteContent(nextContent);
             await actions.handleQuote();
           }
         })();
       },
       schedule: () => {
-        const actionType =
-          composerMode === "reply"
-            ? "reply"
-            : composerMode === "quote"
-              ? "quote"
-              : "repost";
+        const actionType = composerMode === "reply" ? "reply" : "quote";
         const content =
           composerMode === "reply"
             ? actions.replyContent
-            : composerMode === "quote"
-              ? actions.quoteContent
-              : repostWithNoteContent;
+            : actions.quoteContent;
         void actions.deferAction({
           actionType,
           mode: "schedule",
@@ -330,15 +379,8 @@ export function NotificationItem({
       expandThread: () =>
         actions.setShowChildReplies(!actions.showChildReplies),
     };
-  }, [
-    actions,
-    composerMode,
-    notification.eventId,
-    onMarkDone,
-    repostWithNoteContent,
-  ]);
+  }, [actions, composerMode, notification.eventId, onMarkDone]);
 
-  // Register keyboard handlers for this item (R, L, M, E)
   useEffect(() => {
     if (keyboardIndex < 0 || !registerKeyboardHandlers) return;
     registerKeyboardHandlers(keyboardIndex, {
@@ -356,12 +398,37 @@ export function NotificationItem({
     return () => registerKeyboardHandlers(keyboardIndex, null);
   }, [keyboardIndex, registerKeyboardHandlers]);
 
+  const openComposer = (mode: EngagementComposerMode) => {
+    setComposerMode(mode);
+    actions.setShowReplyInput(true);
+  };
+
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- Selection shell only; real actions use nested buttons/links
     <div
-      className={`p-3 transition-colors ${isHandled ? "hover:bg-muted/50 opacity-90" : "hover:bg-muted border-primary/30 bg-primary/5 border-l-2"} ${isKeyboardFocused ? "ring-primary ring-2 ring-inset" : ""}`}
+      className={`border-l-4 p-3 transition-colors ${
+        isSelected
+          ? "border-primary bg-muted/80 shadow-sm"
+          : "hover:bg-muted/30 border-transparent"
+      } ${dimmed ? "opacity-[0.88]" : ""} ${
+        isKeyboardFocused ? "ring-primary/40 ring-2 ring-inset" : ""
+      }`}
+      onClick={(e) => {
+        const t = e.target as HTMLElement;
+        if (
+          t.closest("button") ||
+          t.closest("a") ||
+          t.closest("[role='menuitem']") ||
+          t.closest("textarea") ||
+          t.closest("input") ||
+          t.closest("[data-state]")
+        ) {
+          return;
+        }
+        onSelect?.();
+      }}
     >
       <div className="flex gap-2">
-        {/* Author Avatar */}
         <div className="flex-shrink-0">
           {notification.authorPicture ? (
             <img
@@ -374,11 +441,11 @@ export function NotificationItem({
           )}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          {/* Header */}
+        <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-foreground text-sm font-semibold">
+            <span
+              className={`text-sm font-semibold ${isSelected ? "text-foreground" : "text-foreground/95"}`}
+            >
               {displayName}
             </span>
             {notification.authorNip05 ? (
@@ -386,16 +453,21 @@ export function NotificationItem({
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
+            {isFollowingAuthor && contentVariant === "mention" ? (
+              <span className="text-primary text-xs font-medium">
+                Following
+              </span>
+            ) : null}
             {trustInfo && trustBadgeColor && trustScore !== undefined ? (
               <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${trustBadgeColor}`}
+                className={`inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium ${trustBadgeColor}`}
                 title={`Trust Score: ${trustScore} - ${trustInfo.description}`}
               >
                 {trustInfo.level}
               </span>
             ) : null}
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-medium ${typeBadge.bgClass} ${typeBadge.textClass}`}
+              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ${typeBadge.bgClass} ${typeBadge.textClass}`}
             >
               {typeBadge.icon}
               {typeBadge.label}
@@ -407,13 +479,25 @@ export function NotificationItem({
             </span>
           </div>
 
-          {/* Notification Content */}
-          <p className="text-foreground mb-2 text-sm break-words whitespace-pre-wrap">
-            {notification.content}
+          <p
+            className={`mb-1.5 text-sm break-words whitespace-pre-wrap ${
+              contentVariant === "mention"
+                ? "text-muted-foreground"
+                : "text-foreground"
+            } ${preview.noisy ? "line-clamp-3" : "line-clamp-4"}`}
+            title={notification.content}
+          >
+            {preview.text}
+            {preview.isTruncated || preview.noisy ? (
+              <span className="text-muted-foreground ml-1 text-[10px]">
+                truncated
+              </span>
+            ) : null}
           </p>
-          <div className="mb-2 flex flex-wrap items-center gap-1.5">
-            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
-              {workflowState ?? (isHandled ? "HANDLED" : "UNHANDLED")}
+
+          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-muted-foreground text-[11px] font-medium">
+              {workflowStatusLabel(workflowState)}
             </span>
             {linkedActions.map((action) => {
               const text =
@@ -431,15 +515,16 @@ export function NotificationItem({
                 <Link
                   key={`${action.kind}-${action.postId ?? "nopost"}-${action.draftId ?? "nodraft"}-${action.scheduledFor ?? "noschedule"}-${action.label ?? "nolabel"}`}
                   to={href}
-                  className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium hover:underline"
+                  className={`${LINKED_CHIP} hover:text-foreground hover:underline`}
                   title={action.scheduledFor ?? undefined}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {text}
                 </Link>
               ) : (
                 <span
                   key={`${action.kind}-${action.postId ?? "nopost"}-${action.draftId ?? "nodraft"}-${action.scheduledFor ?? "noschedule"}-${action.label ?? "nolabel"}-static`}
-                  className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+                  className={LINKED_CHIP}
                   title={action.scheduledFor ?? undefined}
                 >
                   {text}
@@ -448,7 +533,6 @@ export function NotificationItem({
             })}
           </div>
 
-          {/* Action Buttons */}
           <NotificationActionButtons
             eventId={notification.eventId}
             stats={stats}
@@ -457,15 +541,17 @@ export function NotificationItem({
             onLike={() => {
               void actions.handleLike();
             }}
-            onToggleReply={() =>
-              actions.setShowReplyInput(!actions.showReplyInput)
-            }
+            onOpenReply={() => {
+              onSelect?.();
+              openComposer("reply");
+            }}
             onRepost={() => {
               void actions.handleRepost();
             }}
-            onToggleQuote={() =>
-              actions.setShowReplyInput(!actions.showReplyInput)
-            }
+            onOpenQuote={() => {
+              onSelect?.();
+              openComposer("quote");
+            }}
             onCopyNevent={() => {
               void actions.copyNevent();
             }}
@@ -493,13 +579,12 @@ export function NotificationItem({
                 );
               }
             }}
-            zapNpub={zapNpub}
+            zapNpub={zapNpub ?? undefined}
             onZapClick={zapNpub ? (npub) => setZapModalNpub(npub) : undefined}
             viewEventUrl={viewEventUrl}
             viewEventLabel={viewEventLabel}
           />
 
-          {/* Unified Composer */}
           {actions.showReplyInput ? (
             <UnifiedEngagementComposer
               mode={composerMode}
@@ -507,29 +592,23 @@ export function NotificationItem({
               value={
                 composerMode === "reply"
                   ? actions.replyContent
-                  : composerMode === "quote"
-                    ? actions.quoteContent
-                    : repostWithNoteContent
+                  : actions.quoteContent
               }
               onValueChange={(value) => {
                 if (composerMode === "reply") actions.setReplyContent(value);
-                else if (composerMode === "quote")
-                  actions.setQuoteContent(value);
-                else setRepostWithNoteContent(value);
+                else actions.setQuoteContent(value);
               }}
               isSubmitting={
                 actions.isReplying || actions.isQuoting || actions.isReposting
               }
-              onSubmitNow={() => {
+              userTimezone={userTimezone}
+              queueTypes={queueTypes}
+              trayRef={trayRef}
+              onPostNow={() => {
                 void (async () => {
                   if (composerMode === "reply") {
                     await actions.handleReply();
                   } else {
-                    const nextContent =
-                      composerMode === "quote"
-                        ? actions.quoteContent
-                        : repostWithNoteContent;
-                    actions.setQuoteContent(nextContent);
                     await actions.handleQuote();
                   }
                   if (onMarkDone && notification.eventId) {
@@ -537,77 +616,53 @@ export function NotificationItem({
                   }
                 })();
               }}
-              onSchedule={() => {
-                const actionType =
-                  composerMode === "reply"
-                    ? "reply"
-                    : composerMode === "quote"
-                      ? "quote"
-                      : "repost";
-                const content =
-                  composerMode === "reply"
-                    ? actions.replyContent
-                    : composerMode === "quote"
-                      ? actions.quoteContent
-                      : repostWithNoteContent;
-                void actions.deferAction({
-                  actionType,
-                  mode: "schedule",
-                  content,
-                  scheduledFor: new Date(
-                    Date.now() + 60 * 60 * 1000
-                  ).toISOString(),
-                });
-              }}
               onSaveDraft={() => {
-                const actionType =
-                  composerMode === "reply"
-                    ? "reply"
-                    : composerMode === "quote"
-                      ? "quote"
-                      : "repost";
+                const actionType = composerMode === "reply" ? "reply" : "quote";
                 const content =
                   composerMode === "reply"
                     ? actions.replyContent
-                    : composerMode === "quote"
-                      ? actions.quoteContent
-                      : repostWithNoteContent;
+                    : actions.quoteContent;
                 void actions.deferAction({
                   actionType,
                   mode: "draft",
                   content,
                 });
               }}
-              onAddToQueue={() => {
-                const actionType =
-                  composerMode === "reply"
-                    ? "reply"
-                    : composerMode === "quote"
-                      ? "quote"
-                      : "repost";
+              onSchedule={(scheduledForIso) => {
+                const actionType = composerMode === "reply" ? "reply" : "quote";
                 const content =
                   composerMode === "reply"
                     ? actions.replyContent
-                    : composerMode === "quote"
-                      ? actions.quoteContent
-                      : repostWithNoteContent;
+                    : actions.quoteContent;
+                void actions.deferAction({
+                  actionType,
+                  mode: "schedule",
+                  content,
+                  scheduledFor: scheduledForIso,
+                });
+              }}
+              onAddToQueue={(queueTypeId) => {
+                const actionType = composerMode === "reply" ? "reply" : "quote";
+                const content =
+                  composerMode === "reply"
+                    ? actions.replyContent
+                    : actions.quoteContent;
                 void actions.deferAction({
                   actionType,
                   mode: "queue",
                   content,
+                  queueTypeId,
                 });
               }}
               onCancel={() => {
                 actions.setShowReplyInput(false);
                 actions.setReplyContent("");
                 actions.setQuoteContent("");
-                setRepostWithNoteContent("");
               }}
               templates={replyTemplates}
             />
           ) : null}
 
-          {/* Child Replies */}
           {actions.showChildReplies ? (
             <ChildRepliesPanel
               isLoading={actions.isLoadingReplies}
@@ -616,10 +671,13 @@ export function NotificationItem({
             />
           ) : null}
 
-          {/* Toast Notification */}
           {actions.toast ? (
             <div
-              className={`mt-2 rounded-lg px-3 py-2 text-xs ${actions.toast.type === "success" ? "bg-success/20 text-success dark:text-success" : "bg-destructive/20 text-destructive"}`}
+              className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
+                actions.toast.type === "success"
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-destructive/30 bg-destructive/10 text-destructive"
+              }`}
             >
               {actions.toast.message}
             </div>
@@ -627,7 +685,6 @@ export function NotificationItem({
         </div>
       </div>
 
-      {/* Zap modal - single target so nostr-zap script works */}
       <Dialog
         open={!!zapModalNpub}
         onOpenChange={(open) => !open && setZapModalNpub(null)}

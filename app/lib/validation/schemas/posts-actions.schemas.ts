@@ -119,6 +119,43 @@ export const bulkDeleteMixedSchema = z.object({
  * Bulk sign and resume schema
  * Note: This schema expects arrays from FormData.getAll()
  */
+const jsonStringToPostIdArray = z
+  .string()
+  .transform((val) => {
+    try {
+      const parsed = JSON.parse(val) as unknown;
+      return Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  })
+  .pipe(z.array(z.string().min(1)).min(1, AT_LEAST_ONE_POST_ID_REQUIRED));
+
+export const bulkAssignQueueDraftsSchema = z.object({
+  _action: z.literal("bulkAssignQueue"),
+  postIds: jsonStringToPostIdArray,
+  queueType: z.string(),
+  queueTypeId: z.string().optional().nullable(),
+});
+
+export const duplicateDraftPostSchema = z.object({
+  _action: z.literal("duplicateDraftPost"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+});
+
+export const convertDraftToTemplateSchema = z.object({
+  _action: z.literal("convertDraftToTemplate"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+  templateName: z.string().optional().nullable(),
+});
+
+export const bulkDuplicateDraftsSchema = z.object({
+  _action: z.literal("bulkDuplicateDrafts"),
+  postIds: jsonStringToPostIdArray,
+});
+
 export const bulkSignAndResumeSchema = z.object({
   _action: z.literal("bulkSignAndResume"),
   postIds: z
@@ -305,6 +342,10 @@ export const draftsActionSchema = z.discriminatedUnion("_action", [
   bulkDeletePostsSchema,
   bulkDeleteLongFormPostsSchema,
   bulkDeleteMixedSchema,
+  bulkAssignQueueDraftsSchema,
+  duplicateDraftPostSchema,
+  convertDraftToTemplateSchema,
+  bulkDuplicateDraftsSchema,
   bulkSignAndResumeSchema,
 ]);
 

@@ -58,5 +58,9 @@ describe("Engagement Feed", () => {
     it("should show needs response tab", () => {
       cy.contains("button", /Needs response/i).should("be.visible");
     });
+
+    it("should show engagement sort control", () => {
+      cy.get('[data-testid="engagement-sort"]').should("exist");
+    });
   });
 });

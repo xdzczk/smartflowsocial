@@ -7,8 +7,10 @@ export type EngagementTypeTab =
   | "mentions"
   | "needs-response";
 
+import type { EngagementSortBy as EngagementSortByFilter } from "../engagement-filter";
+
 /** Sort order for engagement list */
-export type EngagementSortBy = "newest" | "trust" | "zaps";
+export type EngagementSortBy = EngagementSortByFilter;
 
 /**
  * Custom hook for managing engagement feed state

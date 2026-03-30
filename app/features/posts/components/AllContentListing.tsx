@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useRef, useState, type Key } from "react";
@@ -10,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { getShortDraftEditRedirectPath } from "~/features/posts/drafts/utils/draft-editor-navigation";
+import {
+  buildShortDraftSearchHaystack,
+  matchesDraftSearch,
+} from "~/features/posts/drafts/utils/draft-search-haystack";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
@@ -35,20 +40,56 @@ import { ContentListCard } from "./ContentListCard";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
 
+function getContentListDateSortKey(
+  type: "scheduled" | "draft" | "published"
+): "publishedAt" | "scheduledAtUtc" | "updatedAt" {
+  if (type === "published") return "publishedAt";
+  if (type === "scheduled") return "scheduledAtUtc";
+  return "updatedAt";
+}
+
 function getInitialContentSortConfig(
   type: "scheduled" | "draft" | "published"
 ): {
   key: string;
   direction: "asc" | "desc";
 } {
-  const key =
-    type === "published"
-      ? "publishedAt"
-      : type === "scheduled"
-        ? "scheduledAtUtc"
-        : "createdAt";
+  const key = getContentListDateSortKey(type);
   const direction = type === "scheduled" ? "asc" : "desc";
   return { key, direction };
+}
+
+function combinedContentMatchesSearch(
+  item: CombinedContent,
+  type: "scheduled" | "draft" | "published",
+  searchTerm: string
+): boolean {
+  if (type === "draft" && item.type === "post") {
+    const od = item.originalData as {
+      caption?: string | null;
+      content?: string | null;
+      draftMeta?: unknown;
+    };
+    return matchesDraftSearch(buildShortDraftSearchHaystack(od), searchTerm);
+  }
+  if (type === "draft" && item.type === "longform") {
+    const od = item.originalData as {
+      title?: string | null;
+      summary?: string | null;
+      content?: string | null;
+    };
+    const h = `${(od.title ?? "").toLowerCase()} ${(od.summary ?? "").toLowerCase()} ${(od.content ?? "").toLowerCase()}`;
+    return matchesDraftSearch(h, searchTerm);
+  }
+  return Boolean(
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
+    item.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
+    item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
+    item.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.summary?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 }
 
 function getContentScrollElement(
@@ -67,6 +108,8 @@ interface AllContentListingProps {
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   onPostSelect?: (content: CombinedContent) => void;
+  /** When set (drafts page), row opens composer instead of modal */
+  onResumeDraft?: (content: CombinedContent) => void;
   selectedItems?: Set<string>;
   onToggleSelection?: (id: string) => void;
   onToggleSelectAll?: () => void;
@@ -103,6 +146,7 @@ export default function AllContentListing({
   userTimezone,
   userTimeFormat = "12h",
   onPostSelect,
+  onResumeDraft,
   selectedItems = new Set(),
   onToggleSelection,
   onToggleSelectAll,
@@ -133,6 +177,12 @@ export default function AllContentListing({
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
+  const draftsListActionFetcher = useFetcher<{
+    success?: boolean;
+    newPostId?: string;
+    error?: string;
+  }>();
+
   const deleteFetcher = useFetcher<{
     success?: boolean;
     moved?: boolean;
@@ -141,6 +191,27 @@ export default function AllContentListing({
     post?: PostData | LongFormPostData;
   }>();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (type !== "draft") return;
+    if (
+      draftsListActionFetcher.state === "idle" &&
+      draftsListActionFetcher.data?.success &&
+      draftsListActionFetcher.data.newPostId
+    ) {
+      void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+      navigate(
+        getShortDraftEditRedirectPath(draftsListActionFetcher.data.newPostId)
+      );
+    }
+  }, [
+    type,
+    draftsListActionFetcher.state,
+    draftsListActionFetcher.data,
+    navigate,
+    queryClient,
+  ]);
 
   // Invalidate queries when individual delete or move-to-draft succeeds
   useEffect(() => {
@@ -252,23 +323,11 @@ export default function AllContentListing({
     return 0;
   });
 
-  const filteredContent = sortedContent.filter(
-    (item) =>
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-      item.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-      item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-      item.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.summary?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContent = sortedContent.filter((item) =>
+    combinedContentMatchesSearch(item, type, searchTerm)
   );
 
-  const dateSortKey =
-    type === "published"
-      ? "publishedAt"
-      : type === "scheduled"
-        ? "scheduledAtUtc"
-        : "createdAt";
+  const dateSortKey = getContentListDateSortKey(type);
 
   // TanStack Virtual returns unstable refs by design; virtualization is intentional (plan: mobile card lists)
   const rowVirtualizer = useVirtualizer({
@@ -343,6 +402,14 @@ export default function AllContentListing({
                   selectedItems={selectedItems}
                   onToggleSelection={onToggleSelection}
                   onPostSelect={onPostSelect}
+                  onResumeDraft={
+                    type === "draft" && onResumeDraft
+                      ? () => onResumeDraft(item)
+                      : undefined
+                  }
+                  draftsActionFetcher={
+                    type === "draft" ? draftsListActionFetcher : undefined
+                  }
                   onEditPost={onEditPost}
                   onReschedulePost={onReschedulePost}
                   deleteFetcher={deleteFetcher as unknown as PostFetcher}
@@ -434,6 +501,16 @@ export default function AllContentListing({
                             selectedItems={selectedItems}
                             onToggleSelection={onToggleSelection}
                             onPostSelect={onPostSelect}
+                            onResumeDraft={
+                              type === "draft" && onResumeDraft
+                                ? () => onResumeDraft(item)
+                                : undefined
+                            }
+                            draftsActionFetcher={
+                              type === "draft"
+                                ? draftsListActionFetcher
+                                : undefined
+                            }
                             onEditPost={onEditPost}
                             onReschedulePost={onReschedulePost}
                             deleteFetcher={
@@ -502,6 +579,14 @@ export default function AllContentListing({
                       selectedItems={selectedItems}
                       onToggleSelection={onToggleSelection}
                       onPostSelect={onPostSelect}
+                      onResumeDraft={
+                        type === "draft" && onResumeDraft
+                          ? () => onResumeDraft(item)
+                          : undefined
+                      }
+                      draftsActionFetcher={
+                        type === "draft" ? draftsListActionFetcher : undefined
+                      }
                       onEditPost={onEditPost}
                       onReschedulePost={onReschedulePost}
                       deleteFetcher={deleteFetcher as unknown as PostFetcher}

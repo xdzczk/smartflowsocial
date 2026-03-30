@@ -10,6 +10,10 @@ interface ContentListPageHeaderProps {
   currentTab?: string;
   /** Optional class for layout */
   className?: string;
+  /** Supporting line under the title (e.g. Drafts page). */
+  subtitle?: string;
+  /** When set, replaces the computed title (e.g. always "Drafts"). */
+  titleOverride?: string;
 }
 
 function getTitle(
@@ -38,15 +42,21 @@ export function ContentListPageHeader({
   pageType,
   currentTab = "all",
   className,
+  subtitle,
+  titleOverride,
 }: ContentListPageHeaderProps) {
   const title =
-    pageType === "flow" ? "Your flow" : getTitle(pageType, currentTab);
+    titleOverride ??
+    (pageType === "flow" ? "Your flow" : getTitle(pageType, currentTab));
 
   return (
     <div
-      className={`flex flex-shrink-0 flex-row items-center text-left ${className ?? ""}`}
+      className={`flex flex-shrink-0 flex-col gap-1 text-left ${className ?? ""}`}
     >
       <h3 className="font-semibold">{title}</h3>
+      {subtitle ? (
+        <p className="text-muted-foreground max-w-2xl text-sm">{subtitle}</p>
+      ) : null}
     </div>
   );
 }

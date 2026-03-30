@@ -299,7 +299,7 @@ export function RecyclablesTable({
                       onClick={(e) => e.stopPropagation()}
                       className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
                     >
-                      View Note
+                      Open on Nostr
                     </Link>
                     <recycleFetcher.Form
                       method="post"

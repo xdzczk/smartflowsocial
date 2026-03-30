@@ -52,17 +52,18 @@ function initials(name: string): string {
 
 export function PreviewAccountHeader({
   user,
-  timeLabel = "Preview",
+  timeLabel,
   className,
 }: {
   user: User | undefined;
+  /** Optional secondary line (e.g. timestamp). Omitted in composer previews. */
   timeLabel?: string;
   className?: string;
 }) {
   const name = previewDisplayName(user);
   const picture = previewPicture(user);
   return (
-    <div className={cn("mb-3 flex items-center gap-2.5", className)}>
+    <div className={cn("mb-2.5 flex items-center gap-2.5", className)}>
       <Avatar className="border-border/50 h-9 w-9 border">
         {picture ? <AvatarImage src={picture} alt="" /> : null}
         <AvatarFallback className="text-xs font-medium">
@@ -73,9 +74,11 @@ export function PreviewAccountHeader({
         <p className="text-foreground truncate text-sm leading-tight font-semibold">
           {name}
         </p>
-        <p className="text-muted-foreground/80 text-[11px] leading-tight">
-          {timeLabel}
-        </p>
+        {timeLabel != null && timeLabel !== "" ? (
+          <p className="text-muted-foreground/70 mt-0.5 text-[11px] leading-tight">
+            {timeLabel}
+          </p>
+        ) : null}
       </div>
     </div>
   );

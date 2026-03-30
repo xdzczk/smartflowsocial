@@ -4,8 +4,7 @@
 
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 
-const ACTIVE_TAB_CLASSES =
-  "border-border text-foreground dark:border-primary dark:text-primary";
+const ACTIVE_TAB_CLASSES = "border-primary text-foreground font-semibold";
 const INACTIVE_TAB_CLASSES =
   "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
 
@@ -26,11 +25,14 @@ export function EngagementTabs({
 }: EngagementTabsProps) {
   return (
     <div className="flex-shrink-0">
-      <nav className="-mb-px flex space-x-8" aria-label="Type tabs">
+      <nav
+        className="-mb-px flex flex-wrap gap-x-10 gap-y-1"
+        aria-label="Type tabs"
+      >
         <button
           type="button"
           onClick={() => onTabChange("all")}
-          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
@@ -39,7 +41,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("replies")}
-          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === "replies" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
@@ -48,7 +50,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("needs-response")}
-          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === "needs-response"
               ? ACTIVE_TAB_CLASSES
               : INACTIVE_TAB_CLASSES
@@ -59,7 +61,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("mentions")}
-          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === "mentions" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >

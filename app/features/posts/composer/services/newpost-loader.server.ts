@@ -3,6 +3,7 @@
  * Centralized data fetching for new post page
  */
 
+import type { SignedEvent } from "~/features/nostr/types";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadDraftEditData } from "~/features/posts/server/drafts";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
@@ -16,6 +17,8 @@ import {
   getUserHashTagPresets,
 } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
+
+import { buildInitialPollRestoreFromDraftPost } from "./build-initial-poll-restore.server";
 
 /**
  * Load new post page data. When draftId or templateId is in the URL, load that for composer prefill.
@@ -64,17 +67,24 @@ export async function loadNewPostData(
         ...base,
         initialDraft: prefill.post,
         initialDraftId: null,
+        initialPollRestore: null,
       };
     }
   }
 
   if (!draftId || draftId.length === 0) {
-    return { ...base, initialDraft: null, initialDraftId: null };
+    return {
+      ...base,
+      initialDraft: null,
+      initialDraftId: null,
+      initialPollRestore: null,
+    };
   }
 
   try {
     const draftData = await loadDraftEditData(userId, draftId);
     const post = draftData.post as {
+      postType?: string | null;
       content?: string | null;
       caption?: string | null;
       fileUrl?: string[] | null;
@@ -85,6 +95,7 @@ export async function loadNewPostData(
         attachmentMeta?: Array<{ localId: string; url: string; alt?: string }>;
       } | null;
       hashTagPresetId?: string | null;
+      signedEvent?: SignedEvent | null;
     };
     const initialDraft = {
       content: post.content ?? "",
@@ -96,12 +107,19 @@ export async function loadNewPostData(
       draftMeta: post.draftMeta ?? null,
       hashTagPresetId: post.hashTagPresetId ?? null,
     };
+    const initialPollRestore = buildInitialPollRestoreFromDraftPost(post);
     return {
       ...base,
       initialDraft,
       initialDraftId: draftId,
+      initialPollRestore,
     };
   } catch {
-    return { ...base, initialDraft: null, initialDraftId: null };
+    return {
+      ...base,
+      initialDraft: null,
+      initialDraftId: null,
+      initialPollRestore: null,
+    };
   }
 }

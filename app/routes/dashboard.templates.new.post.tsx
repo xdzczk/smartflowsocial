@@ -106,10 +106,10 @@ export default function TemplateNewPostPage() {
     <div className="p-6">
       <div className="mb-4">
         <Link
-          to="/dashboard/templates/new"
+          to="/dashboard/templates"
           className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-sm"
         >
-          ← Back to type picker
+          ← Back to Templates
         </Link>
       </div>
       <NewPostHeader />

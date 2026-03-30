@@ -27,7 +27,7 @@ export function ContentTableHeader({
       ? "publishedAt"
       : type === "scheduled"
         ? "scheduledAtUtc"
-        : "createdAt";
+        : "updatedAt";
 
   return (
     <thead>
@@ -73,7 +73,7 @@ export function ContentTableHeader({
             ? "Published at"
             : type === "scheduled"
               ? "Scheduled For"
-              : "Created At"}{" "}
+              : "Updated"}{" "}
           {sortConfig.key === dateSortKey
             ? sortConfig.direction === "asc"
               ? "↑"
@@ -83,9 +83,11 @@ export function ContentTableHeader({
         <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
           Queue
         </th>
-        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-          Status
-        </th>
+        {type === "draft" ? null : (
+          <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+            Status
+          </th>
+        )}
         <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
           Actions
         </th>

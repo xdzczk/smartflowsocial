@@ -7,7 +7,6 @@ import { describe, it, expect } from "vitest";
 
 import {
   deleteTemplateSchema,
-  scheduleTemplateSchema,
   bulkDeleteTemplatesSchema,
   createTemplateFromScratchPostSchema,
   createTemplateFromScratchLongformSchema,
@@ -32,17 +31,6 @@ describe("templates.schemas", () => {
       expect(() =>
         deleteTemplateSchema.parse({ _action: "delete", templateId: "" })
       ).toThrow();
-    });
-  });
-
-  describe("scheduleTemplateSchema", () => {
-    it("parses _action schedule and templateId", () => {
-      const result = scheduleTemplateSchema.parse({
-        _action: "schedule",
-        templateId: "tpl-1",
-      });
-      expect(result._action).toBe("schedule");
-      expect(result.templateId).toBe("tpl-1");
     });
   });
 
@@ -121,12 +109,23 @@ describe("templates.schemas", () => {
       });
       expect(result._action).toBe("delete");
     });
-    it("parses schedule member", () => {
+    it("parses rename member", () => {
       const result = templatesActionSchema.parse({
-        _action: "schedule",
+        _action: "rename",
+        templateId: "t1",
+        name: "Renamed",
+      });
+      expect(result._action).toBe("rename");
+      if (result._action === "rename") {
+        expect(result.name).toBe("Renamed");
+      }
+    });
+    it("parses duplicate member", () => {
+      const result = templatesActionSchema.parse({
+        _action: "duplicate",
         templateId: "t1",
       });
-      expect(result._action).toBe("schedule");
+      expect(result._action).toBe("duplicate");
     });
     it("parses bulkDelete member", () => {
       const result = templatesActionSchema.parse({ _action: "bulkDelete" });
@@ -196,10 +195,6 @@ describe("templates.schemas", () => {
         _action: "deleteTemplate",
       });
       expect(result._action).toBe("deleteTemplate");
-    });
-    it("parses schedule", () => {
-      const result = templateEditActionSchema.parse({ _action: "schedule" });
-      expect(result._action).toBe("schedule");
     });
     it("parses updateTemplatePost", () => {
       const result = templateEditActionSchema.parse({

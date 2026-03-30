@@ -5,17 +5,18 @@
 
 import {
   deleteTemplate,
-  getTemplates,
+  updateTemplate,
 } from "~/features/templates/services/template-data.server";
-import { getUserTimezone } from "~/features/user/services/user-settings.server";
-import { formatForDateTimeLocal, nowInTimezone } from "~/lib/temporal";
 import {
   templatesActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
+import { duplicateTemplateForUser } from "./templates-duplicate.server";
+
 const ACTION_DELETE = "delete";
 const ACTION_BULK_DELETE = "bulkDelete";
+const ACTION_RENAME = "rename";
 
 export async function handleTemplatesAction(
   formData: FormData,
@@ -44,42 +45,16 @@ export async function handleTemplatesAction(
     return { success: true };
   }
 
-  // TypeScript guarantees this is "schedule" after the check (discriminated union)
-  const scheduleData = result.data as {
-    _action: "schedule";
-    templateId: string;
-  };
-  const templates = await getTemplates({ userId });
-  const template = templates.find((t) => t.id === scheduleData.templateId);
-
-  if (!template) {
-    return { error: "Template not found" };
+  if (_action === ACTION_RENAME) {
+    const { templateId, name } = result.data;
+    await updateTemplate({ id: templateId, userId, name: name.trim() });
+    return { success: true };
   }
 
-  const userTimezone = (await getUserTimezone(userId)) ?? "UTC";
-  const now = nowInTimezone(userTimezone);
-  const startTime = now.add({ hours: 1 });
-
-  // Schedule only applies to post-type templates (one post)
-  const post = template.post;
-  if (!post) {
-    return { error: "Template has no post to schedule" };
+  const { templateId } = result.data;
+  const dup = await duplicateTemplateForUser({ templateId, userId });
+  if ("error" in dup && dup.error) {
+    return { error: dup.error };
   }
-
-  const templateData = [
-    {
-      caption: post.caption ?? "",
-
-      // Prisma JsonValue for fileUrl may be string[] or string at runtime
-      fileUrl: Array.isArray(post.fileUrl)
-        ? (post.fileUrl[0] ?? "")
-        : typeof post.fileUrl === "string"
-          ? post.fileUrl
-          : "",
-      queueType: post.queueTypeId ?? "unassigned",
-      scheduledFor: formatForDateTimeLocal(startTime, userTimezone),
-    },
-  ];
-
-  return { scheduleData: templateData };
+  return { success: true };
 }

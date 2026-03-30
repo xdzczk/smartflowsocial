@@ -3,10 +3,6 @@ import { useMemo } from "react";
 import type { ComposerAttachment, QueueType } from "~/features/posts/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-import { getQueueNextSlotLabel } from "../components/composer/composer-helpers";
-import type { ComposerPublishMode } from "../components/composer/publish-mode";
-
-import { buildPostThreadPreviewMetaLines } from "./build-preview-meta-lines";
 import { ComposerPreviewSection } from "./ComposerPreviewSection";
 import {
   computeHiddenTagsWarning,
@@ -19,8 +15,8 @@ import {
   parsePreviewTagLabels,
 } from "./normalize-thread-preview";
 import type { PreviewWarning } from "./normalized-composer-preview.types";
+import { PreviewArtifactShell } from "./PreviewArtifactShell";
 import { PreviewEmptyState } from "./PreviewEmptyState";
-import { PreviewMetaRow } from "./PreviewMetaRow";
 import { RenderedPostPreview } from "./RenderedPostPreview";
 import { RenderedThreadPreview } from "./RenderedThreadPreview";
 import { useEffectiveHashtagsForPreview } from "./useEffectiveHashtagsForPreview";
@@ -43,13 +39,7 @@ export interface UnifiedComposerPreviewBlockProps {
     attachments: ComposerAttachment[];
   }>;
   threadDelayMinutes: number;
-  publishMode: ComposerPublishMode;
-  relayCount: number;
   selectedQueue: string;
-  followUpSummaryLine: string;
-  isRecyclable: boolean;
-  /** Local datetime string for schedule mode (composer field). */
-  scheduledForLocal?: string;
 }
 
 function postHasPreviewableContent(text: string, mediaCount: number): boolean {
@@ -78,39 +68,6 @@ export function UnifiedComposerPreviewBlock(
     userId: props.userId,
     defaultTags: props.defaultTags,
   });
-
-  const queueNextSlot = getQueueNextSlotLabel(
-    props.scheduledForLocal?.trim() ?? ""
-  );
-  const scheduleLocalTrimmed = props.scheduledForLocal?.trim();
-  const scheduleHint =
-    props.publishMode === "schedule"
-      ? scheduleLocalTrimmed && scheduleLocalTrimmed.length > 0
-        ? scheduleLocalTrimmed
-        : null
-      : props.publishMode === "queue"
-        ? queueNextSlot
-        : null;
-
-  const metaLines = useMemo(
-    () =>
-      buildPostThreadPreviewMetaLines({
-        publishMode: props.publishMode,
-        relayCount: props.relayCount,
-        selectedQueue: props.selectedQueue,
-        followUpSummaryLine: props.followUpSummaryLine,
-        isRecyclable: props.isRecyclable,
-        scheduleHint,
-      }),
-    [
-      props.publishMode,
-      props.relayCount,
-      props.selectedQueue,
-      props.followUpSummaryLine,
-      props.isRecyclable,
-      scheduleHint,
-    ]
-  );
 
   const postNormalized = useMemo(
     () =>
@@ -176,22 +133,21 @@ export function UnifiedComposerPreviewBlock(
     const tagLabels = parsePreviewTagLabels(effectiveTagsLine);
     return (
       <ComposerPreviewSection title="Thread preview" warnings={threadWarnings}>
-        {hasContent ? (
-          <>
+        <PreviewArtifactShell>
+          {hasContent ? (
             <RenderedThreadPreview
               data={threadNormalized}
               user={user}
               tags={tagLabels}
               hideTags={props.includeHashtagsInNoteBody === false}
             />
-            <PreviewMetaRow lines={metaLines} />
-          </>
-        ) : (
-          <>
-            <PreviewEmptyState message="Add thread segments to preview the full thread." />
-            <PreviewMetaRow lines={metaLines} />
-          </>
-        )}
+          ) : (
+            <PreviewEmptyState
+              className="border-0 bg-transparent py-5"
+              message="Add thread segments to preview the full thread."
+            />
+          )}
+        </PreviewArtifactShell>
       </ComposerPreviewSection>
     );
   }
@@ -203,17 +159,16 @@ export function UnifiedComposerPreviewBlock(
 
   return (
     <ComposerPreviewSection title="Post preview" warnings={postWarnings}>
-      {hasPost ? (
-        <>
+      <PreviewArtifactShell>
+        {hasPost ? (
           <RenderedPostPreview data={postNormalized} user={user} />
-          <PreviewMetaRow lines={metaLines} />
-        </>
-      ) : (
-        <>
-          <PreviewEmptyState message="Your post preview will appear here." />
-          <PreviewMetaRow lines={metaLines} />
-        </>
-      )}
+        ) : (
+          <PreviewEmptyState
+            className="border-0 bg-transparent py-5"
+            message="Your post preview will appear here."
+          />
+        )}
+      </PreviewArtifactShell>
     </ComposerPreviewSection>
   );
 }

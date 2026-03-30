@@ -68,6 +68,7 @@ describe("New Post Loader", () => {
     expect(result.scheduleIntervals).toEqual(mockScheduleIntervals);
     expect(result.queueTypes).toEqual(mockQueueTypes);
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
+    expect(result).toHaveProperty("initialPollRestore", null);
   });
 
   it("should require subscription before loading", async () => {

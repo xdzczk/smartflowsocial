@@ -90,7 +90,7 @@ export function TemplateDetailsModal({
           <Button asChild variant="default" className="gap-2">
             <Link to={useTemplateHref} onClick={onClose}>
               <FileText className="h-4 w-4" />
-              Use this template
+              Use template
             </Link>
           </Button>
           <Button asChild variant="secondary" className="gap-2">
@@ -99,7 +99,7 @@ export function TemplateDetailsModal({
               onClick={onClose}
             >
               <Pencil className="h-4 w-4" />
-              Edit
+              Edit template
             </Link>
           </Button>
           {onDelete ? (

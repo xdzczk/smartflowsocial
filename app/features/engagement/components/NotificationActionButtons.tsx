@@ -5,11 +5,20 @@ import {
   Copy,
   Heart,
   MessageCircle,
+  MoreHorizontal,
   Quote,
   Repeat,
   Zap,
 } from "lucide-react";
 
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -29,22 +38,22 @@ interface NotificationActionButtonsProps {
   isReposting: boolean;
   showChildReplies: boolean;
   onLike: () => void;
-  onToggleReply: () => void;
+  onOpenReply: () => void;
   onRepost: () => void;
-  onToggleQuote: () => void;
+  onOpenQuote: () => void;
   onCopyNevent: () => void;
   onToggleChildReplies: () => void;
   onMarkHandled?: () => void;
   onIgnore?: () => void;
   onSnooze?: () => void;
-  /** When set, show a Zap action that calls this with the reply author's npub */
   zapNpub?: string;
   onZapClick?: (npub: string) => void;
-  /** URL for "View on client" link (from preferred Nostr client setting). */
   viewEventUrl?: string;
-  /** Label for "View on client" link (e.g. "View on Primal"). */
   viewEventLabel?: string;
 }
+
+const actionBtnClass =
+  "text-muted-foreground hover:text-foreground h-8 gap-1 px-2 text-xs";
 
 export function NotificationActionButtons({
   eventId,
@@ -52,9 +61,9 @@ export function NotificationActionButtons({
   isReposting,
   showChildReplies,
   onLike,
-  onToggleReply,
+  onOpenReply,
   onRepost,
-  onToggleQuote,
+  onOpenQuote,
   onCopyNevent,
   onToggleChildReplies,
   onMarkHandled,
@@ -66,163 +75,201 @@ export function NotificationActionButtons({
   viewEventLabel = "View on Primal",
 }: NotificationActionButtonsProps) {
   const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
+
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-2">
-      {/* Zap action - send sats to reply author */}
-      {zapNpub && onZapClick ? (
-        <button
+    <div className="mb-1 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
           type="button"
-          onClick={() => onZapClick(zapNpub)}
-          className="text-muted-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+          variant="ghost"
+          size="sm"
+          className={actionBtnClass}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenReply();
+          }}
         >
-          <Zap
+          <MessageCircle
             className={INLINE_ICON_SIZE_CLASS}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
-          Zap
-        </button>
-      ) : null}
-
-      {/* Zap count (when reply has zaps) */}
-      {(stats?.zaps && stats.zaps > 0) ||
-      (stats?.satszapped && stats.satszapped > 0) ? (
-        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-medium">
-          <Zap
+          Reply
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={actionBtnClass}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenQuote();
+          }}
+        >
+          <Quote
             className={INLINE_ICON_SIZE_CLASS}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
-          {stats.satszapped
-            ? `${Number(stats.satszapped).toLocaleString()} sats`
-            : `${stats.zaps ?? 0} zap${(stats.zaps ?? 0) === 1 ? "" : "s"}`}
-        </span>
-      ) : null}
-
-      {/* Like Button */}
-      <button
-        onClick={onLike}
-        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-      >
-        <Heart
-          className={INLINE_ICON_SIZE_CLASS}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        Like {stats?.likes ? `(${stats.likes})` : ""}
-      </button>
-
-      {/* Reply Button */}
-      <button
-        onClick={onToggleReply}
-        className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-      >
-        <MessageCircle
-          className={INLINE_ICON_SIZE_CLASS}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        Reply {stats?.replies ? `(${stats.replies})` : ""}
-      </button>
-
-      {/* Repost Button */}
-      <button
-        onClick={onRepost}
-        disabled={isReposting}
-        className="text-muted-foreground hover:bg-success/10 hover:text-success dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
-      >
-        <Repeat
-          className={INLINE_ICON_SIZE_CLASS}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        {isReposting
-          ? "Reposting..."
-          : `Repost ${stats?.reposts ? `(${stats.reposts})` : ""}`}
-      </button>
-
-      {/* Quote Button */}
-      <button
-        onClick={onToggleQuote}
-        className="dark:text-muted-foreground text-foreground hover:bg-success/10 hover:text-success dark:hover:bg-success/20 dark:hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-      >
-        <Quote
-          className={INLINE_ICON_SIZE_CLASS}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        Quote
-      </button>
-
-      {/* Copy NEvent Button */}
-      <button
-        onClick={onCopyNevent}
-        className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-      >
-        <Copy
-          className={INLINE_ICON_SIZE_CLASS}
-          strokeWidth={INLINE_ICON_STROKE}
-          aria-hidden
-        />
-        Copy NEvent
-      </button>
-      {onMarkHandled ? (
-        <button
-          onClick={onMarkHandled}
-          className="text-muted-foreground hover:bg-success/10 hover:text-success inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+          Quote
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={actionBtnClass}
+          disabled={isReposting}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRepost();
+          }}
         >
-          Mark handled
-        </button>
-      ) : null}
-      {onIgnore ? (
-        <button
-          onClick={onIgnore}
-          className="text-muted-foreground hover:bg-muted inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-        >
-          Ignore
-        </button>
-      ) : null}
-      {onSnooze ? (
-        <button
-          onClick={onSnooze}
-          className="text-muted-foreground hover:bg-primary/10 hover:text-primary inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-        >
-          Snooze
-        </button>
-      ) : null}
+          <Repeat
+            className={INLINE_ICON_SIZE_CLASS}
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+          {isReposting ? "…" : "Repost"}
+        </Button>
+        {onMarkHandled ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={actionBtnClass}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkHandled();
+            }}
+          >
+            Handled
+          </Button>
+        ) : null}
 
-      {/* View Replies Button */}
-      {stats?.replies ? (
-        <button
-          onClick={onToggleChildReplies}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-        >
-          {showChildReplies ? (
-            <ChevronUp
-              className={INLINE_ICON_SIZE_CLASS}
-              strokeWidth={INLINE_ICON_STROKE}
-              aria-hidden
-            />
-          ) : (
-            <ChevronDown
-              className={INLINE_ICON_SIZE_CLASS}
-              strokeWidth={INLINE_ICON_STROKE}
-              aria-hidden
-            />
-          )}
-          {showChildReplies ? "Hide" : "View"} Replies ({stats.replies})
-        </button>
-      ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground h-8 w-8"
+              aria-label="More actions"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem
+              onSelect={() => {
+                onLike();
+              }}
+            >
+              <Heart
+                className="mr-2 h-3.5 w-3.5"
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+              Like
+              {stats?.likes != null && stats.likes > 0
+                ? ` (${stats.likes})`
+                : ""}
+            </DropdownMenuItem>
+            {zapNpub && onZapClick ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  onZapClick(zapNpub);
+                }}
+              >
+                <Zap
+                  className="mr-2 h-3.5 w-3.5"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                Zap
+              </DropdownMenuItem>
+            ) : null}
+            {(stats?.zaps && stats.zaps > 0) ||
+            (stats?.satszapped && stats.satszapped > 0) ? (
+              <div className="text-muted-foreground px-2 py-1.5 text-xs">
+                {stats.satszapped
+                  ? `${Number(stats.satszapped).toLocaleString()} sats on note`
+                  : `${stats.zaps ?? 0} zap${(stats.zaps ?? 0) === 1 ? "" : "s"}`}
+              </div>
+            ) : null}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                onCopyNevent();
+              }}
+            >
+              <Copy
+                className="mr-2 h-3.5 w-3.5"
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+              Copy NEvent
+            </DropdownMenuItem>
+            {onIgnore ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  onIgnore();
+                }}
+              >
+                Ignore
+              </DropdownMenuItem>
+            ) : null}
+            {stats?.replies ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  onToggleChildReplies();
+                }}
+              >
+                {showChildReplies ? (
+                  <ChevronUp
+                    className="mr-2 h-3.5 w-3.5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                ) : (
+                  <ChevronDown
+                    className="mr-2 h-3.5 w-3.5"
+                    strokeWidth={INLINE_ICON_STROKE}
+                    aria-hidden
+                  />
+                )}
+                {showChildReplies ? "Hide" : "View"} replies ({stats.replies})
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-      {/* View on client link */}
-      <Link
-        to={eventViewUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="text-primary ml-auto text-xs hover:underline"
-      >
-        {viewEventLabel} →
-      </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        {onSnooze ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`${actionBtnClass} h-7`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSnooze();
+            }}
+          >
+            Snooze
+          </Button>
+        ) : null}
+        <Link
+          to={eventViewUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-muted-foreground hover:text-foreground text-xs"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {viewEventLabel} →
+        </Link>
+      </div>
     </div>
   );
 }

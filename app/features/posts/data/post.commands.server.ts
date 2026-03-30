@@ -642,3 +642,56 @@ export async function updatePost({
 
   return post;
 }
+
+/**
+ * Clone an existing short-form draft for the same user (duplicate / convert flows).
+ */
+export async function cloneDraftPost(
+  userId: string,
+  sourceId: string
+): Promise<{ ok: true; postId: string } | { ok: false; error: string }> {
+  const src = await prisma.post.findFirst({
+    where: { id: sourceId, userId, currentState: "DRAFT" },
+  });
+  if (!src) {
+    return { ok: false, error: "Draft not found" };
+  }
+
+  const draftMeta = src.draftMeta ?? Prisma.JsonNull;
+
+  const created = await prisma.post.create({
+    data: {
+      userId,
+      content: src.content,
+      caption: src.caption,
+      fileUrl: src.fileUrl,
+      postType: src.postType,
+      postKind: src.postKind,
+      draftMeta,
+      tags: src.tags,
+      queueTypeId: src.queueTypeId,
+      hashTagPresetId: src.hashTagPresetId,
+      repost: src.repost,
+      isQuotedPost: src.isQuotedPost,
+      isRecyclable: src.isRecyclable,
+      currentState: "DRAFT",
+      status: src.status,
+      manual_override: src.manual_override,
+      signedEvent: Prisma.JsonNull,
+      nostrEvent: Prisma.JsonNull,
+      nostrEventId: null,
+      scheduledAtUtc: null,
+      nominalScheduledAtUtc: null,
+      publishedAt: null,
+      draftGroupId: null,
+      threadGroupId: null,
+      repostOfPostId: src.repostOfPostId,
+      quoteOfPostId: src.quoteOfPostId,
+      quoteOfLongFormPostId: src.quoteOfLongFormPostId,
+      replyToEventId: src.replyToEventId,
+      replyToPostId: src.replyToPostId,
+    },
+  });
+
+  return { ok: true, postId: created.id };
+}

@@ -1,5 +1,10 @@
-import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
-import { Search, X } from "lucide-react";
+import {
+  useFetcher,
+  useLocation,
+  useNavigate,
+  useNavigation,
+} from "@remix-run/react";
+import { Loader2, Search, X } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -8,13 +13,16 @@ import {
   startTransition,
 } from "react";
 
+import { Badge } from "~/components/ui/badge";
 import {
   Popover,
   PopoverAnchor,
   PopoverContent,
 } from "~/components/ui/popover";
+import { detectNostrPasteKind } from "~/features/search/utils/detect-nostr-paste-kind";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 import {
   GlobalSearchResults,
@@ -41,9 +49,11 @@ function getSearchPriorityContext(pathname: string): string | null {
 export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const priorityContext = getSearchPriorityContext(location.pathname);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GlobalSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -200,6 +210,14 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     setResults([]);
   }, []);
 
+  const navLoc = navigation.location;
+  const lookupNavigating =
+    navigation.state === "loading" &&
+    navLoc?.pathname === "/dashboard/search/posts" &&
+    (new URLSearchParams(navLoc.search).get("q") ?? "").length > 0;
+
+  const pasteKind = detectNostrPasteKind(query);
+
   // Determine if we should show results dropdown
   // Show when open and either has query text or is currently searching
   const showResults = isOpen && (query.trim() !== "" || isSearching);
@@ -218,7 +236,6 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     >
       <PopoverAnchor asChild>
         <div ref={containerRef} className={`relative ${className}`}>
-          {/* Search Input */}
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
               <Search className="text-muted-foreground h-4 w-4" />
@@ -230,20 +247,58 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               type="text"
               value={query}
               onChange={handleInputChange}
-              onFocus={handleInputFocus}
-              placeholder="Search or paste Nostr link (note1, nevent1, naddr1...) (⌘K)"
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pr-8 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pr-10 sm:pl-10"
+              onFocus={() => {
+                setInputFocused(true);
+                handleInputFocus();
+              }}
+              onBlur={() => {
+                setInputFocused(false);
+              }}
+              aria-describedby={inputFocused ? "global-search-hint" : undefined}
+              placeholder="Paste note, nevent, naddr, event ID, or Nostr URL"
+              title="Examples: note1…, nevent1…, naddr1…, nostr:note1… — ⌘K to focus"
+              className={cn(
+                "border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pl-10",
+                lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"
+              )}
             />
-            {query ? (
-              <button
-                type="button"
-                onClick={handleClose}
-                className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3"
-              >
-                <X className={INLINE_ICON_SIZE_CLASS} />
-              </button>
-            ) : null}
+            <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-1.5 sm:pr-2">
+              {lookupNavigating ? (
+                <Loader2
+                  className="text-muted-foreground h-4 w-4 shrink-0 animate-spin"
+                  aria-label="Resolving lookup"
+                />
+              ) : null}
+              {query ? (
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="text-muted-foreground hover:text-foreground flex items-center p-1"
+                  aria-label="Clear search"
+                >
+                  <X className={INLINE_ICON_SIZE_CLASS} />
+                </button>
+              ) : null}
+            </div>
           </div>
+          {pasteKind ? (
+            <div className="mt-1.5 flex items-center gap-2 px-0.5">
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {pasteKind}
+              </Badge>
+              <span className="text-muted-foreground text-[11px]">
+                Detected format
+              </span>
+            </div>
+          ) : null}
+          {inputFocused ? (
+            <p
+              id="global-search-hint"
+              className="text-muted-foreground mt-1.5 hidden px-0.5 text-xs sm:block"
+            >
+              Examples: note1…, nevent1…, naddr1…, nostr:note1…
+            </p>
+          ) : null}
         </div>
       </PopoverAnchor>
 

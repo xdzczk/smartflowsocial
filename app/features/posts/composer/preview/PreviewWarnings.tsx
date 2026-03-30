@@ -16,7 +16,7 @@ export function PreviewWarnings({
   return (
     <ul
       className={cn(
-        "border-border/60 bg-muted/20 mb-3 space-y-1.5 rounded-lg border px-3 py-2.5 text-xs",
+        "border-border/40 bg-muted/10 mb-2 space-y-1 rounded-md border px-2.5 py-2 text-xs",
         className
       )}
     >
@@ -24,21 +24,21 @@ export function PreviewWarnings({
         <li
           key={w.id}
           className={cn(
-            "flex gap-2 leading-snug",
+            "flex items-start gap-2 leading-snug",
             w.tone === "warn"
-              ? "text-amber-800 dark:text-amber-200/90"
-              : "text-muted-foreground"
+              ? "text-amber-800/95 dark:text-amber-200/85"
+              : "text-muted-foreground/90"
           )}
         >
           {w.tone === "warn" ? (
             <AlertTriangle
-              className="mt-0.5 h-3.5 w-3.5 shrink-0"
+              className="mt-px h-3.5 w-3.5 shrink-0"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           ) : (
             <Info
-              className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80"
+              className="text-muted-foreground/70 mt-px h-3.5 w-3.5 shrink-0"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />

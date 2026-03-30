@@ -443,7 +443,7 @@ export default function PublishedPostsTable({
                               target="_blank"
                               rel="noreferrer"
                             >
-                              View Note
+                              Open on Nostr
                             </Link>
                           </DropdownMenuItem>
                           {(() => {

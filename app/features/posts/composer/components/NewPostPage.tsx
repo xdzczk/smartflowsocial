@@ -29,6 +29,7 @@ import {
   determineModalAction,
 } from "../../utils/publish-result.utils";
 import { useNewPostState } from "../hooks/useNewPostState";
+import type { InitialPollRestore } from "../types/initial-poll-restore";
 import { trackComposerEvent } from "../utils/composer-analytics.client";
 
 import type { ComposerPublishMode } from "./composer";
@@ -177,6 +178,46 @@ interface InitialDraftShape {
   hashTagPresetId: string | null;
 }
 
+function parseInitialPollRestore(raw: unknown): InitialPollRestore | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o["question"] !== "string") return null;
+  if (!Array.isArray(o["options"])) return null;
+  let options = o["options"].filter((x): x is string => typeof x === "string");
+  if (options.length < 2) options = ["", ""];
+  const pt = o["pollType"];
+  const pollType = pt === "multiplechoice" ? "multiplechoice" : "singlechoice";
+  const endsAtUnix =
+    typeof o["endsAtUnix"] === "number" && Number.isFinite(o["endsAtUnix"])
+      ? Math.floor(o["endsAtUnix"])
+      : undefined;
+  const selectedHashtags =
+    typeof o["selectedHashtags"] === "string" ? o["selectedHashtags"] : "";
+  const hashTagPresetId =
+    o["hashTagPresetId"] === null
+      ? null
+      : typeof o["hashTagPresetId"] === "string"
+        ? o["hashTagPresetId"]
+        : null;
+  const queueType =
+    typeof o["queueType"] === "string" ? o["queueType"] : "unassigned";
+  return {
+    question: o["question"],
+    options,
+    pollType,
+    endsAtUnix,
+    selectedHashtags,
+    hashTagPresetId,
+    queueType,
+    includeHashtagsInNoteBody:
+      typeof o["includeHashtagsInNoteBody"] === "boolean"
+        ? o["includeHashtagsInNoteBody"]
+        : undefined,
+    isRecyclable:
+      typeof o["isRecyclable"] === "boolean" ? o["isRecyclable"] : undefined,
+  };
+}
+
 export interface NewPostLoaderParsed {
   typedQueueTypes: Array<string | QueueType>;
   typedHashTagPresets: HashTagPreset[];
@@ -187,6 +228,7 @@ export interface NewPostLoaderParsed {
   accountPublishRelaySource: AccountPublishRelaySource;
   initialDraft: InitialDraftShape | null;
   initialDraftId: string | null;
+  initialPollRestore: InitialPollRestore | null;
   templates: Array<{ id: string; name: string | null }>;
   nip88PollsEnabled: boolean;
 }
@@ -274,6 +316,14 @@ export function parseNewPostLoaderData(
       ? loaderData["initialDraftId"]
       : null;
 
+  const initialPollRestoreRaw = loaderData["initialPollRestore"];
+  const initialPollRestore =
+    initialPollRestoreRaw !== null &&
+    initialPollRestoreRaw !== undefined &&
+    typeof initialPollRestoreRaw === "object"
+      ? parseInitialPollRestore(initialPollRestoreRaw)
+      : null;
+
   const templates =
     "templates" in loaderData && Array.isArray(loaderData["templates"])
       ? (loaderData["templates"] as Array<{ id: string; name: string | null }>)
@@ -294,6 +344,7 @@ export function parseNewPostLoaderData(
     accountPublishRelaySource,
     initialDraft,
     initialDraftId,
+    initialPollRestore,
     templates,
     nip88PollsEnabled,
   };
@@ -311,6 +362,7 @@ export default function NewPostPage() {
     accountPublishRelaySource,
     initialDraft,
     initialDraftId,
+    initialPollRestore,
     templates,
   } = parseNewPostLoaderData(useLoaderData<unknown>());
 
@@ -515,7 +567,12 @@ export default function NewPostPage() {
             initialScheduledFor={scheduledAt ?? undefined}
             publishMode={publishMode}
             onPublishModeChange={setPublishMode}
-            skipLocalDraftRestore={Boolean(publishResultToken)}
+            skipLocalDraftRestore={
+              Boolean(publishResultToken) || Boolean(initialDraftId)
+            }
+            initialQueue={initialDraft?.queueType ?? "unassigned"}
+            initialPollRestore={initialPollRestore}
+            initialDraftId={initialDraftId}
             onDraftStateLabelChange={setSaveStateLabel}
           />
         ) : (

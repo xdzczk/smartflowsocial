@@ -27,18 +27,22 @@ export function RenderedThreadPreview({
   const visibleSegments =
     showCollapseUi && collapsed ? segs.slice(0, COLLAPSE_THRESHOLD) : segs;
 
-  const duration = Math.max(segs.length - 1, 0) * data.cadenceMinutes;
-
   return (
     <div>
-      <PreviewAccountHeader user={user} className="mb-4" />
-      <div className="flex flex-col gap-3 pl-1">
-        {visibleSegments.map((seg) => (
-          <ThreadSegmentPreviewCard key={seg.id} segment={seg} />
-        ))}
+      <PreviewAccountHeader user={user} className="mb-2" />
+      <div className="relative pl-3">
+        <div
+          className="bg-border/45 absolute top-2 bottom-2 left-[0.45rem] w-px"
+          aria-hidden
+        />
+        <div className="relative z-[1] flex flex-col gap-2 pl-4">
+          {visibleSegments.map((seg) => (
+            <ThreadSegmentPreviewCard key={seg.id} segment={seg} />
+          ))}
+        </div>
       </div>
       {showCollapseUi ? (
-        <div className="mt-2 flex justify-center">
+        <div className="mt-2 flex justify-center pl-1">
           <Button
             type="button"
             variant="ghost"
@@ -52,22 +56,15 @@ export function RenderedThreadPreview({
           </Button>
         </div>
       ) : null}
-      <div className="text-muted-foreground/85 border-border/40 mt-4 space-y-1 border-t pt-3 text-[11px] leading-relaxed">
-        <p>
-          {segs.length} segment{segs.length === 1 ? "" : "s"} ·{" "}
-          {data.cadenceMinutes} minute cadence
-        </p>
-        <p>Estimated total thread duration: {duration} minutes</p>
-      </div>
       {hideTags ? (
         tags.length > 0 ? (
-          <p className="text-muted-foreground/85 mt-2 text-xs">
+          <p className="text-muted-foreground/75 mt-2.5 text-xs">
             {tags.length} hidden topic tag{tags.length === 1 ? "" : "s"}{" "}
             included (applied to each note)
           </p>
         ) : null
       ) : tags.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {tags.map((t) => (
             <Badge key={t} variant="secondary" className="text-xs font-normal">
               #{t}

@@ -1,13 +1,15 @@
 /**
- * Drafts table component
+ * Drafts table — resume-first layout (desktop table + mobile cards).
  */
 
-import { Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Repeat } from "lucide-react";
 import { useEffect, useRef, useState, type Key } from "react";
 
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -31,6 +33,14 @@ import {
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "~/features/posts/components/constants";
 import { ContentListCard } from "~/features/posts/components/ContentListCard";
+import {
+  getShortDraftComposeUrl,
+  getShortDraftEditRedirectPath,
+} from "~/features/posts/drafts/utils/draft-editor-navigation";
+import {
+  buildDraftRowPreview,
+  draftTypeLabel,
+} from "~/features/posts/drafts/utils/draft-row-preview";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import {
   getQueueColor,
@@ -51,8 +61,13 @@ import { formatForDisplay, fromISOString } from "~/lib/temporal";
 interface Post {
   id: string;
   caption?: string | null;
+  content?: string | null;
   createdAt: string;
+  updatedAt?: string;
   fileUrl?: string[] | null;
+  postType?: string;
+  postKind?: string;
+  draftMeta?: unknown;
   queueType?: {
     name: string;
     color?: string | null;
@@ -67,7 +82,7 @@ interface DraftsTableProps {
   selectedPosts: Set<string>;
   onToggleSelection: (postId: string) => void;
   onToggleSelectAll: () => void;
-  onPostClick: (post: Post) => void;
+  onResume: (post: Post) => void;
   bulkDeleteState: string;
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
@@ -76,6 +91,8 @@ interface DraftsTableProps {
   sentinelRef?: React.Ref<HTMLDivElement | null>;
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
+  /** When false, mobile sort is shown in DraftsToolbar instead */
+  showMobileSortControl?: boolean;
 }
 
 interface SortableHeaderProps {
@@ -92,7 +109,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
+    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-3 text-left text-xs font-semibold tracking-wide uppercase"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -104,6 +121,18 @@ const SortableHeader = ({
   </th>
 );
 
+function queuePillLabel(post: Post): string {
+  const n = post.queueType?.name;
+  if (!n || n === "unassigned") return "No queue";
+  return n;
+}
+
+interface DraftsActionData {
+  success?: boolean;
+  newPostId?: string;
+  error?: string;
+}
+
 export function DraftsTable({
   posts,
   sortConfig,
@@ -111,7 +140,7 @@ export function DraftsTable({
   selectedPosts,
   onToggleSelection,
   onToggleSelectAll,
-  onPostClick,
+  onResume,
   bulkDeleteState,
   userTimezone = "UTC",
   userTimeFormat = "12h",
@@ -120,7 +149,9 @@ export function DraftsTable({
   sentinelRef,
   isFetchingNextPage = false,
   onScrollContainerReady,
+  showMobileSortControl = true,
 }: DraftsTableProps) {
+  const navigate = useNavigate();
   const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -128,9 +159,9 @@ export function DraftsTable({
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
 
   const deleteFetcher = useFetcher<{ success?: boolean }>();
+  const draftsActionFetcher = useFetcher<DraftsActionData>();
   const queryClient = useQueryClient();
 
-  // Invalidate drafts list when a single draft delete succeeds so the list updates
   useEffect(() => {
     if (
       deleteFetcher.state === "idle" &&
@@ -142,10 +173,31 @@ export function DraftsTable({
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
+  useEffect(() => {
+    if (
+      draftsActionFetcher.state !== "idle" ||
+      !draftsActionFetcher.data?.success
+    ) {
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+    if (draftsActionFetcher.data.newPostId) {
+      navigate(
+        getShortDraftEditRedirectPath(draftsActionFetcher.data.newPostId)
+      );
+    }
+  }, [
+    draftsActionFetcher.state,
+    draftsActionFetcher.data,
+    navigate,
+    queryClient,
+  ]);
+
   const combinedContent = posts.map((post) =>
     postToCombinedContent(post as unknown as PostData)
   );
-  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
+
+  /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual exposes unstable function refs; virtualization is intentional */
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
@@ -154,7 +206,7 @@ export function DraftsTable({
         : typeof document !== "undefined"
           ? document.documentElement
           : null,
-    estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
+    estimateSize: () => 112 + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
     getItemKey: (index) => combinedContent[index]?.id ?? String(index),
   });
@@ -179,25 +231,7 @@ export function DraftsTable({
         dateLocale
       );
     } catch {
-      // Fallback - still use Temporal for consistency
       try {
-        const zoned = fromISOString(isoString, "UTC");
-        const userZoned = zoned.withTimeZone(userTimezone);
-        return formatForDisplay(
-          userZoned,
-          userTimezone,
-          {
-            month: "2-digit",
-            day: "2-digit",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          },
-          userTimeFormat,
-          dateLocale
-        );
-      } catch {
-        // Final fallback
         const date = new Date(isoString);
         return date.toLocaleString(dateLocale, {
           timeZone: userTimezone,
@@ -208,32 +242,59 @@ export function DraftsTable({
           minute: "2-digit",
           hour12: userTimeFormat === "12h",
         });
+      } catch {
+        return "—";
       }
     }
   };
 
   const getImageUrls = (fileUrl: string[] | null | undefined) => {
     if (!fileUrl || fileUrl.length === 0) return [];
-
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
         return JSON.parse(fileUrl[0]) as string[];
-      } catch (_e) {
+      } catch {
         return [];
       }
     }
-
     return fileUrl;
   };
+
+  if (posts.length === 0) {
+    return (
+      <div className="border-border bg-card rounded-lg border px-6 py-12 text-center">
+        <h3 className="text-foreground mb-2 text-lg font-semibold">
+          No drafts yet
+        </h3>
+        <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+          Anything saved from the composer will appear here.
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button asChild variant="default" size="sm">
+            <Link to="/dashboard/compose">New post</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard/compose?type=article">New article</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard/bulkposts">Bulk posts</Link>
+          </Button>
+        </div>
+        <p className="text-muted-foreground mt-6 text-xs">
+          Use templates to speed up repetitive content workflows.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="hidden md:block">
-        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
-          <table className="min-w-full align-middle text-sm whitespace-nowrap">
+        <div className="border-border bg-card w-full overflow-x-auto rounded-lg border">
+          <table className="min-w-full table-fixed align-middle text-sm">
             <thead>
               <tr>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-card border-border text-foreground w-10 border-b px-2 py-3 text-center">
                   <Checkbox
                     id="draft-select-all"
                     checked={
@@ -244,189 +305,285 @@ export function DraftsTable({
                     onCheckedChange={() => onToggleSelectAll()}
                   />
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
-                  Media
+                <th className="bg-card border-border text-foreground w-24 border-b px-2 py-3 text-left text-xs font-semibold tracking-wide uppercase">
+                  Type
                 </th>
-                <SortableHeader
-                  sortKey="caption"
-                  label="Caption"
-                  sortConfig={sortConfig}
-                  onRequestSort={onRequestSort}
-                />
-                <SortableHeader
-                  sortKey="createdAt"
-                  label="Created"
-                  sortConfig={sortConfig}
-                  onRequestSort={onRequestSort}
-                />
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-card border-border text-foreground border-b px-2 py-3 text-left text-xs font-semibold tracking-wide uppercase">
+                  Content
+                </th>
+                <th className="bg-card border-border text-foreground w-36 border-b px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
                   Queue
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
-                  Status
-                </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <SortableHeader
+                  sortKey="updatedAt"
+                  label="Updated"
+                  sortConfig={sortConfig}
+                  onRequestSort={onRequestSort}
+                />
+                <th className="bg-card border-border text-foreground w-28 border-b px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => (
-                <tr
-                  key={post.id}
-                  className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
-                  onClick={() => onPostClick(post)}
-                >
-                  <td className="p-3 text-center">
-                    <Checkbox
-                      id={`draft-select-${post.id}`}
-                      checked={selectedPosts.has(post.id)}
-                      onCheckedChange={() => onToggleSelection(post.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-                  <td className="p-3">
-                    {(() => {
-                      const p = post as Post & {
-                        repost?: boolean;
-                        postKind?: string;
-                        postType?: string;
-                        signedEvent?: PostData["signedEvent"];
-                      };
-                      const isRepost =
-                        p.repost === true || p.postKind === "REPOST";
-                      const rowThumbBadge = getPostRowThumbnailBadge({
-                        contentKind: "post",
-                        postType: p.postType,
-                        signedEvent: p.signedEvent ?? null,
-                        repost: isRepost,
-                        postKind: p.postKind ?? null,
-                      });
-                      return post.fileUrl && post.fileUrl.length > 0 ? (
-                        <div className="relative inline-block">
-                          <img
-                            src={getImageUrls(post.fileUrl)[0]}
-                            alt="Post preview"
-                            className="h-12 w-12 rounded object-cover"
-                          />
-                          {isRepost ? (
-                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
-                              <Repeat
-                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                                strokeWidth={2}
-                                aria-hidden
+              {posts.map((post) => {
+                const preview = buildDraftRowPreview(
+                  post as Parameters<typeof buildDraftRowPreview>[0]
+                );
+                const typeLabel = draftTypeLabel(
+                  post as Parameters<typeof draftTypeLabel>[0]
+                );
+                const resumeUrl = getShortDraftComposeUrl(
+                  post.id,
+                  post as Parameters<typeof getShortDraftComposeUrl>[1]
+                );
+                const updatedIso = post.updatedAt ?? post.createdAt;
+                const p = post as Post & {
+                  repost?: boolean;
+                  postKind?: string;
+                  postType?: string;
+                  signedEvent?: PostData["signedEvent"];
+                };
+                const isRepost = p.repost === true || p.postKind === "REPOST";
+                const rowThumbBadge = getPostRowThumbnailBadge({
+                  contentKind: "post",
+                  postType: p.postType,
+                  signedEvent: p.signedEvent ?? null,
+                  repost: isRepost,
+                  postKind: p.postKind ?? null,
+                });
+                const urls = getImageUrls(post.fileUrl);
+                const qt = post.queueType;
+                const qLabel = queuePillLabel(post);
+
+                return (
+                  <tr
+                    key={post.id}
+                    className="group border-border hover:bg-muted/60 cursor-pointer border-b transition-colors"
+                    onClick={() => onResume(post)}
+                  >
+                    <td className="p-2 text-center align-middle">
+                      <Checkbox
+                        id={`draft-select-${post.id}`}
+                        checked={selectedPosts.has(post.id)}
+                        onCheckedChange={() => onToggleSelection(post.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+                    <td className="p-2 align-middle">
+                      <Badge
+                        variant="secondary"
+                        className="text-muted-foreground font-normal"
+                      >
+                        {typeLabel}
+                      </Badge>
+                    </td>
+                    <td className="p-2 align-middle">
+                      <div className="flex gap-3">
+                        <div className="relative h-14 w-14 flex-shrink-0">
+                          {urls.length > 0 ? (
+                            <div className="relative">
+                              <img
+                                src={urls[0]}
+                                alt=""
+                                className="h-14 w-14 rounded-md object-cover"
                               />
+                              {isRepost ? (
+                                <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+                                  <Repeat
+                                    className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                    strokeWidth={2}
+                                    aria-hidden
+                                  />
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
+                          ) : (
+                            <div className="relative">
+                              <div className="bg-muted text-muted-foreground flex h-14 w-14 items-center justify-center rounded-md text-xs font-medium">
+                                {rowThumbBadge}
+                              </div>
+                              {isRepost ? (
+                                <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+                                  <Repeat
+                                    className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                    strokeWidth={2}
+                                    aria-hidden
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="relative inline-block">
-                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
-                            {rowThumbBadge}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              to={resumeUrl}
+                              className="text-foreground group-hover:text-primary font-semibold hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {preview.title}
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-primary h-7 px-2 text-xs font-semibold"
+                              asChild
+                            >
+                              <Link
+                                to={resumeUrl}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Continue
+                              </Link>
+                            </Button>
                           </div>
-                          {isRepost ? (
-                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
-                              <Repeat
-                                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                                strokeWidth={2}
-                                aria-hidden
-                              />
+                          {preview.subtitle ? (
+                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
+                              {preview.subtitle}
+                            </p>
+                          ) : null}
+                          {preview.chips.length > 0 ? (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {preview.chips.map((c) => (
+                                <Badge
+                                  key={c}
+                                  variant="outline"
+                                  className="text-muted-foreground font-normal"
+                                >
+                                  {c}
+                                </Badge>
+                              ))}
                             </div>
                           ) : null}
                         </div>
-                      );
-                    })()}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">{post.caption ?? "—"}</p>
-                  </td>
-                  <td className="p-3">{formatDate(post.createdAt)}</td>
-                  <td className="p-3 text-center">
-                    {post.queueType?.colorToken ? (
-                      (() => {
-                        const bundle = getQueueColorBundle(
-                          post.queueType.colorToken
-                        );
-                        return (
-                          <div
-                            className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
-                            style={{
-                              backgroundColor: bundle.surface,
-                              color: bundle.accent,
-                              borderColor: bundle.accent,
+                      </div>
+                    </td>
+                    <td className="p-2 text-center align-middle">
+                      {qt?.colorToken ? (
+                        (() => {
+                          const bundle = getQueueColorBundle(qt.colorToken);
+                          return (
+                            <div
+                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} mx-auto inline-flex max-w-full truncate`}
+                              style={{
+                                backgroundColor: bundle.surface,
+                                color: bundle.accent,
+                                borderColor: bundle.accent,
+                              }}
+                            >
+                              {qLabel}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div
+                          className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} mx-auto inline-flex max-w-full truncate ${(() => {
+                            const colors = getQueueColor(
+                              qt?.name ?? "unassigned",
+                              qt?.colorToken
+                            );
+                            return `${colors.bg} ${colors.text} ${colors.border}`;
+                          })()}`}
+                        >
+                          {qLabel}
+                        </div>
+                      )}
+                    </td>
+                    <td className="text-muted-foreground p-2 align-middle text-xs whitespace-nowrap">
+                      {formatDate(updatedIso)}
+                    </td>
+                    <td className="p-2 text-center align-middle">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            aria-label="Actions"
+                          >
+                            <MoreHorizontal
+                              className={INLINE_ICON_SIZE_CLASS}
+                            />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <DropdownMenuItem asChild>
+                            <Link to={resumeUrl}>Continue editing</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              const fd = new FormData();
+                              fd.set("_action", "duplicateDraftPost");
+                              fd.set("postId", post.id);
+                              draftsActionFetcher.submit(fd, {
+                                method: "post",
+                                action: "/dashboard/drafts",
+                              });
                             }}
                           >
-                            {post.queueType.name || "unassigned"}
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <div
-                        className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${(() => {
-                          const colors = getQueueColor(
-                            post.queueType?.name ?? "unassigned",
-                            post.queueType?.colorToken
-                          );
-                          return `${colors.bg} ${colors.text} ${colors.border}`;
-                        })()}`}
-                      >
-                        {post.queueType?.name ?? "unassigned"}
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
-                      Draft
-                    </div>
-                  </td>
-                  <td className="p-3 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
-                          aria-label="Actions"
-                        >
-                          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <DropdownMenuItem asChild>
-                          <Link
-                            to={`/dashboard/compose?type=post&draftId=${post.id}`}
-                          >
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <deleteFetcher.Form method="post">
-                          <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="_action" value="delete" />
-                          <DropdownMenuItem asChild>
-                            <button
-                              type="submit"
-                              disabled={
-                                deleteFetcher.state !== "idle" ||
-                                bulkDeleteState !== "idle"
-                              }
-                              className="text-destructive focus:text-destructive"
-                            >
-                              {deleteFetcher.state !== "idle" &&
-                              deleteFetcher.formData?.get("postId") === post.id
-                                ? "Deleting..."
-                                : "Delete"}
-                            </button>
+                            Duplicate draft
                           </DropdownMenuItem>
-                        </deleteFetcher.Form>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              const name = window.prompt(
+                                "Template name",
+                                "Template from draft"
+                              );
+                              if (name === null) return;
+                              const fd = new FormData();
+                              fd.set("_action", "convertDraftToTemplate");
+                              fd.set("postId", post.id);
+                              fd.set("templateName", name);
+                              draftsActionFetcher.submit(fd, {
+                                method: "post",
+                                action: "/dashboard/drafts",
+                              });
+                            }}
+                          >
+                            Convert to template
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <deleteFetcher.Form
+                            method="post"
+                            action="/dashboard/drafts"
+                          >
+                            <input
+                              type="hidden"
+                              name="postId"
+                              value={post.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="_action"
+                              value="delete"
+                            />
+                            <DropdownMenuItem asChild>
+                              <button
+                                type="submit"
+                                disabled={
+                                  deleteFetcher.state !== "idle" ||
+                                  bulkDeleteState !== "idle"
+                                }
+                                className="text-destructive focus:text-destructive w-full"
+                              >
+                                {deleteFetcher.state !== "idle" &&
+                                deleteFetcher.formData?.get("postId") ===
+                                  post.id
+                                  ? "Deleting..."
+                                  : "Delete draft"}
+                              </button>
+                            </DropdownMenuItem>
+                          </deleteFetcher.Form>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -434,7 +591,7 @@ export function DraftsTable({
 
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
-          {onSortChange ? (
+          {showMobileSortControl && onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
               <span
                 className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
@@ -458,7 +615,7 @@ export function DraftsTable({
                       string,
                       "asc" | "desc",
                     ];
-                    onSortChange(key === "date" ? "createdAt" : "caption", dir);
+                    onSortChange(key === "date" ? "updatedAt" : "caption", dir);
                   }
                 }}
               >
@@ -468,8 +625,8 @@ export function DraftsTable({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="date-desc">Date (newest first)</SelectItem>
-                  <SelectItem value="date-asc">Date (oldest first)</SelectItem>
+                  <SelectItem value="date-desc">Updated (newest)</SelectItem>
+                  <SelectItem value="date-asc">Updated (oldest)</SelectItem>
                   <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
                   <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
                 </SelectContent>
@@ -521,15 +678,18 @@ export function DraftsTable({
                             showBulkActions={true}
                             selectedItems={selectedPosts}
                             onToggleSelection={onToggleSelection}
-                            onPostSelect={(content) =>
-                              onPostClick(
-                                content.originalData as unknown as Post
-                              )
+                            onResumeDraft={() =>
+                              onResume(item.originalData as unknown as Post)
                             }
                             deleteFetcher={
                               deleteFetcher as Parameters<
                                 typeof ContentListCard
                               >[0]["deleteFetcher"]
+                            }
+                            draftsActionFetcher={
+                              draftsActionFetcher as Parameters<
+                                typeof ContentListCard
+                              >[0]["draftsActionFetcher"]
                             }
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
@@ -587,13 +747,18 @@ export function DraftsTable({
                       showBulkActions={true}
                       selectedItems={selectedPosts}
                       onToggleSelection={onToggleSelection}
-                      onPostSelect={(content) =>
-                        onPostClick(content.originalData as unknown as Post)
+                      onResumeDraft={() =>
+                        onResume(item.originalData as unknown as Post)
                       }
                       deleteFetcher={
                         deleteFetcher as Parameters<
                           typeof ContentListCard
                         >[0]["deleteFetcher"]
+                      }
+                      draftsActionFetcher={
+                        draftsActionFetcher as Parameters<
+                          typeof ContentListCard
+                        >[0]["draftsActionFetcher"]
                       }
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)

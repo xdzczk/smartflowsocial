@@ -3,10 +3,8 @@ import { useMemo } from "react";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-import { getQueueNextSlotLabel } from "../components/composer/composer-helpers";
 import type { ComposerPublishMode } from "../components/composer/publish-mode";
 
-import { buildPostThreadPreviewMetaLines } from "./build-preview-meta-lines";
 import { ComposerPreviewSection } from "./ComposerPreviewSection";
 import {
   computeHiddenTagsWarning,
@@ -14,8 +12,8 @@ import {
 } from "./compute-preview-warnings";
 import { normalizePollPreviewFromComposer } from "./normalize-poll-preview";
 import type { PollEndMode } from "./poll-preview-end-label";
+import { PreviewArtifactShell } from "./PreviewArtifactShell";
 import { PreviewEmptyState } from "./PreviewEmptyState";
-import { PreviewMetaRow } from "./PreviewMetaRow";
 import { RenderedPollPreview } from "./RenderedPollPreview";
 
 export interface PollComposerPreviewBlockProps {
@@ -32,9 +30,6 @@ export interface PollComposerPreviewBlockProps {
   publishMode: ComposerPublishMode;
   scheduledFor: string;
   userTimezone: string;
-  relayCount: number;
-  selectedQueue: string;
-  isRecyclable: boolean;
 }
 
 export function PollComposerPreviewBlock(props: PollComposerPreviewBlockProps) {
@@ -99,53 +94,25 @@ export function PollComposerPreviewBlock(props: PollComposerPreviewBlockProps) {
     props.tagsLine,
   ]);
 
-  const queueNextSlot = getQueueNextSlotLabel(props.scheduledFor.trim());
-  const scheduleHint =
-    props.publishMode === "schedule"
-      ? props.scheduledFor.trim() || null
-      : props.publishMode === "queue"
-        ? queueNextSlot
-        : null;
-
-  const metaLines = useMemo(
-    () =>
-      buildPostThreadPreviewMetaLines({
-        publishMode: props.publishMode,
-        relayCount: props.relayCount,
-        selectedQueue: props.selectedQueue,
-        followUpSummaryLine: "None",
-        isRecyclable: props.isRecyclable,
-        scheduleHint,
-      }),
-    [
-      props.publishMode,
-      props.relayCount,
-      props.selectedQueue,
-      props.isRecyclable,
-      scheduleHint,
-    ]
-  );
-
   const hasPreview =
     normalized.question.trim().length > 0 && normalized.options.length >= 2;
 
   return (
     <ComposerPreviewSection title="Poll preview" warnings={warnings}>
-      {hasPreview ? (
-        <>
+      <PreviewArtifactShell>
+        {hasPreview ? (
           <RenderedPollPreview
             data={normalized}
             user={user}
             optionKeys={optionKeysForPreview}
           />
-          <PreviewMetaRow lines={metaLines} />
-        </>
-      ) : (
-        <>
-          <PreviewEmptyState message="Add a question and at least 2 options to preview your poll." />
-          <PreviewMetaRow lines={metaLines} />
-        </>
-      )}
+        ) : (
+          <PreviewEmptyState
+            className="border-0 bg-transparent py-5"
+            message="Add a question and at least 2 options to preview your poll."
+          />
+        )}
+      </PreviewArtifactShell>
     </ComposerPreviewSection>
   );
 }

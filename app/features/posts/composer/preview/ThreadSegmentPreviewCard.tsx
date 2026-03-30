@@ -1,19 +1,37 @@
+import { cn } from "~/lib/utils";
+
 import type { NormalizedThreadSegmentPreview } from "./normalized-composer-preview.types";
 import { PreviewNoteBody } from "./PreviewNoteBody";
 import { PreviewPostMediaGrid } from "./PreviewPostMediaGrid";
 
 export function ThreadSegmentPreviewCard({
   segment,
+  className,
 }: {
   segment: NormalizedThreadSegmentPreview;
+  className?: string;
 }) {
+  const hasText = segment.text.trim().length > 0;
   return (
-    <div className="border-border/50 bg-card/80 rounded-lg border p-3 shadow-sm">
-      <p className="text-muted-foreground/90 mb-2 text-[10px] font-semibold tracking-wide uppercase">
-        Segment {segment.index}
-      </p>
-      <PreviewPostMediaGrid media={segment.media} className="mb-2" />
-      <PreviewNoteBody text={segment.text} className="text-[14px]" />
+    <div
+      className={cn(
+        "border-border/35 bg-muted/10 relative rounded-md border px-2.5 pt-2 pb-2.5",
+        className
+      )}
+    >
+      <span
+        className="text-muted-foreground/60 absolute top-2 right-2 text-[10px] tabular-nums"
+        aria-label={`Segment ${segment.index}`}
+      >
+        {segment.index}
+      </span>
+      <div className={cn("pr-5", hasText ? "" : "pt-0.5")}>
+        <PreviewNoteBody text={segment.text} className="text-[14px]" />
+        <PreviewPostMediaGrid
+          media={segment.media}
+          className={hasText ? "mt-2" : undefined}
+        />
+      </div>
     </div>
   );
 }

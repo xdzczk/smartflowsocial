@@ -1,4 +1,5 @@
 export { ComposerPreviewSection } from "./ComposerPreviewSection";
+export { PreviewArtifactShell } from "./PreviewArtifactShell";
 export { UnifiedComposerPreviewBlock } from "./UnifiedComposerPreviewBlock";
 export type { UnifiedComposerPreviewBlockProps } from "./UnifiedComposerPreviewBlock";
 export { PollComposerPreviewBlock } from "./PollComposerPreviewBlock";

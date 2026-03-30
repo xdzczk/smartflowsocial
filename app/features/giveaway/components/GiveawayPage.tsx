@@ -400,7 +400,7 @@ export default function GiveawayPage({
                           variant="ghost"
                           size="sm"
                           disabled
-                          title="Generate a proof card from a completed giveaway (Proof cards page)"
+                          title="Generate proof cards from a completed giveaway (Proof Studio)"
                         >
                           Proof
                         </Button>

@@ -1,21 +1,29 @@
 import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
-import { Bookmark, MoreVertical } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
-import { ChildRepliesPanel } from "~/features/engagement/components/ChildRepliesPanel";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
+import { PostDetailHeader } from "~/features/posts/components/post-detail-modal/PostDetailHeader";
+import { DetailModalReplySnippet } from "~/features/posts/components/post-detail-modal/rail/DetailModalReplySnippet";
+import {
+  RailSectionHeader,
+  RailSettingsValueRow,
+  RAIL_MAJOR_DIVIDE,
+  RAIL_PAD_X,
+  RAIL_ZONE_PY,
+} from "~/features/posts/components/publishing-rail";
+import { getQueueColor } from "~/features/posts/queue-colors";
 import type {
   LongFormPostType,
   LongFormPostData,
 } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
@@ -26,6 +34,7 @@ import {
   fromUnixTimestamp,
   type DateDisplayLocale,
 } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 function formatLongFormDate(
   dateInput: string | Date | number | undefined,
@@ -106,44 +115,30 @@ function getLongFormReadingTime(content: string | undefined): string {
   }
 }
 
-function LongFormStatusBadge({
-  type,
+function QueueTypeCalm({
+  queueType,
 }: {
-  type: "draft" | "scheduled" | "published";
+  queueType: { name: string; color?: string | null; id?: string };
 }) {
-  if (type === "draft") {
-    return (
-      <Badge
-        variant="secondary"
-        className="bg-muted text-foreground dark:bg-muted dark:text-foreground"
-      >
-        Draft
-      </Badge>
-    );
-  }
-  if (type === "scheduled") {
-    return (
-      <Badge
-        variant="secondary"
-        className="bg-muted text-foreground dark:bg-primary/90/10 dark:text-foreground"
-      >
-        Scheduled
-      </Badge>
-    );
-  }
+  const colors = getQueueColor(
+    queueType.name,
+    (queueType as { colorToken?: string | null }).colorToken
+  );
   return (
-    <Badge
-      variant="secondary"
-      className="bg-success/20 text-success dark:bg-success/10 dark:text-success"
+    <span
+      className={cn(
+        "inline-flex max-w-full items-center rounded-md border px-2 py-0.5 text-xs font-medium capitalize",
+        colors.bg,
+        colors.text,
+        colors.border
+      )}
     >
-      Published
-    </Badge>
+      {queueType.name}
+    </span>
   );
 }
 
-const LONGFORM_MODAL_TITLE = "Article";
-
-function LongFormDetailsSidebar({
+function LongFormDetailRail({
   type,
   post,
   eventId,
@@ -156,6 +151,8 @@ function LongFormDetailsSidebar({
   showSignedEvent,
   showEventData,
   onToggleEventData,
+  openOnNostrUrl,
+  viewThreadUrl,
 }: {
   type: "draft" | "scheduled" | "published";
   post: LongFormPostType | LongFormPostData;
@@ -169,12 +166,17 @@ function LongFormDetailsSidebar({
   showSignedEvent: boolean;
   showEventData: boolean;
   onToggleEventData: () => void;
+  openOnNostrUrl: string | null;
+  viewThreadUrl: string;
 }) {
+  const pad = cn(RAIL_PAD_X, RAIL_ZONE_PY, "flex flex-col gap-0");
+  const divide = cn(RAIL_MAJOR_DIVIDE, "my-3");
+
   const dateLabel =
     type === "published"
-      ? "Published"
+      ? "Posted at"
       : type === "scheduled"
-        ? "Scheduled For"
+        ? "Scheduled for"
         : "Created";
   const dateValue =
     type === "published"
@@ -182,112 +184,179 @@ function LongFormDetailsSidebar({
       : type === "scheduled"
         ? (post.scheduledAtUtc ?? undefined)
         : post.createdAt;
+  const dateStr = formatLongFormDate(dateValue, tz, userTimeFormat, dateLocale);
+
+  const queueType =
+    "queueType" in post && post.queueType && typeof post.queueType === "object"
+      ? post.queueType
+      : null;
+
+  const statusLabel =
+    type === "published"
+      ? "Published"
+      : type === "scheduled"
+        ? "Scheduled"
+        : "Draft";
+
+  const previewReplies = directReplies.slice(0, 2);
+  const readingTime = getLongFormReadingTime(post.content ?? undefined);
+  const hasCover = Boolean(post.image?.trim());
 
   return (
-    <div className="border-border dark:border-border w-80 overflow-y-auto border-l">
-      <div className="space-y-6 p-6">
-        <div>
-          <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
-            Article Details
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <span className="text-muted-foreground dark:text-foreground text-xs">
-                Status
-              </span>
-              <div className="mt-1">
-                <LongFormStatusBadge type={type} />
+    <aside
+      className={cn(
+        "border-border bg-muted/10 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[30%] md:max-w-[320px] md:min-w-[260px]",
+        "border-t md:border-t-0 md:border-l"
+      )}
+    >
+      <div className={pad}>
+        <RailSectionHeader>Overview</RailSectionHeader>
+        <div className="mt-2 space-y-2.5">
+          <RailSettingsValueRow
+            label="Status"
+            value={statusLabel}
+            trailing={null}
+          />
+          <RailSettingsValueRow label="Type" value="Article" trailing={null} />
+          <RailSettingsValueRow
+            label={dateLabel}
+            value={dateStr}
+            trailing={null}
+          />
+          {queueType && "name" in queueType ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-foreground text-xs font-medium">Queue</span>
+              <QueueTypeCalm
+                queueType={
+                  queueType as {
+                    name: string;
+                    color?: string | null;
+                    id?: string;
+                  }
+                }
+              />
+            </div>
+          ) : null}
+          {post.tags.length > 0 ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-foreground text-xs font-medium">Tags</span>
+              <div className="flex flex-wrap gap-1">
+                {post.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-muted text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               </div>
             </div>
-            <div>
-              <span className="text-muted-foreground dark:text-foreground text-xs">
-                {dateLabel}
-              </span>
-              <p className="text-foreground mt-1 text-sm dark:text-white">
-                {formatLongFormDate(dateValue, tz, userTimeFormat, dateLocale)}
-              </p>
+          ) : null}
+          {type === "published" && eventId && openOnNostrUrl ? (
+            <div className="flex flex-col gap-2 pt-1">
+              <Link
+                to={openOnNostrUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+              >
+                Open on Nostr
+                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+              </Link>
+              <Link
+                to={viewThreadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+              >
+                View thread
+                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+              </Link>
             </div>
-            <div>
-              <span className="text-muted-foreground dark:text-foreground text-xs">
-                Reading Time
-              </span>
-              <p className="text-foreground mt-1 text-sm dark:text-white">
-                {getLongFormReadingTime(post.content ?? undefined)}
-              </p>
-            </div>
-            {post.tags.length > 0 ? (
-              <div>
-                <span className="text-muted-foreground dark:text-foreground text-xs">
-                  Tags
-                </span>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {post.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded px-2 py-1 text-xs"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
+        </div>
+
+        <div className={divide} />
+        <RailSectionHeader>Structure</RailSectionHeader>
+        <div className="mt-2 space-y-1">
+          <RailSettingsValueRow
+            label="Reading time"
+            value={readingTime}
+            trailing={null}
+          />
+          <RailSettingsValueRow
+            label="Cover"
+            value={hasCover ? "Yes" : "No"}
+            trailing={null}
+          />
         </div>
 
         {type === "published" && eventId ? (
-          <section
-            className="dark:bg-card bg-muted/30 border-border mt-6 rounded-lg border p-4"
-            aria-labelledby="longform-comments-heading"
-            aria-live="polite"
-            aria-busy={isThreadLoading}
-          >
-            <h3
-              id="longform-comments-heading"
-              className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium"
+          <>
+            <div className={divide} />
+            <RailSectionHeader>Replies</RailSectionHeader>
+            <div
+              className="mt-2 space-y-2"
+              aria-live="polite"
+              aria-busy={isThreadLoading}
             >
-              Comments ({directReplies.length})
-            </h3>
-            <div className="max-h-64 overflow-x-hidden overflow-y-auto">
-              <ChildRepliesPanel
-                isLoading={isThreadLoading}
-                replies={directReplies}
-                metadata={threadMetadata}
-              />
+              {isThreadLoading ? (
+                <p className="text-muted-foreground text-xs">Loading…</p>
+              ) : previewReplies.length > 0 ? (
+                previewReplies.map((r) => (
+                  <DetailModalReplySnippet
+                    key={r.id || r.pubkey + r.created_at}
+                    reply={r}
+                    metadata={threadMetadata}
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  Replies: {directReplies.length}
+                </p>
+              )}
+              <Link
+                to={viewThreadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+              >
+                View thread
+                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+              </Link>
             </div>
-          </section>
+          </>
         ) : null}
 
         {showSignedEvent && post.signedEvent ? (
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-muted-foreground dark:text-foreground text-sm font-medium">
-                Signed Event Data
-              </h3>
+          <>
+            <div className={divide} />
+            <div className="flex items-center justify-between gap-2">
+              <RailSectionHeader className="mb-0">
+                Technical details
+              </RailSectionHeader>
               <button
                 type="button"
                 onClick={onToggleEventData}
                 aria-expanded={showEventData}
                 aria-controls="longform-signed-event-data"
-                className="text-primary dark:text-muted-foreground focus:ring-ring text-xs hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                className="text-muted-foreground hover:text-foreground text-[10px] font-medium"
               >
                 {showEventData ? "Hide" : "Show"}
               </button>
             </div>
             {showEventData ? (
-              <div
+              <pre
                 id="longform-signed-event-data"
-                className="dark:bg-card bg-muted rounded-lg p-3"
+                className="bg-muted/40 text-foreground mt-2 max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
               >
-                <pre className="text-foreground dark:text-foreground max-h-64 overflow-auto text-xs break-words whitespace-pre-wrap">
-                  {JSON.stringify(post.signedEvent, null, 2)}
-                </pre>
-              </div>
+                {JSON.stringify(post.signedEvent, null, 2)}
+              </pre>
             ) : null}
-          </div>
+          </>
         ) : null}
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -301,6 +370,19 @@ interface LongFormDetailsModalProps {
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   onDeleted?: (postId: string) => void;
+}
+
+function getLongFormNostrArticleId(
+  post: LongFormPostType | LongFormPostData
+): string {
+  const nostrId = post.nostrEventId;
+  if (typeof nostrId === "string" && nostrId.length > 0) return nostrId;
+  const se = post.signedEvent;
+  if (se && typeof se === "object" && "id" in se) {
+    const id = (se as { id?: unknown }).id;
+    if (typeof id === "string" && id.length > 0) return id;
+  }
+  return "";
 }
 
 export default function LongFormDetailsModal({
@@ -330,7 +412,6 @@ export default function LongFormDetailsModal({
     [rootData?.user]
   );
 
-  // Close modal when delete completes successfully (e.g. from Flow or Scheduled section)
   useEffect(() => {
     if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
     const data = deleteFetcher.data as { success?: boolean; error?: unknown };
@@ -354,27 +435,15 @@ export default function LongFormDetailsModal({
     onClose,
   ]);
 
-  const postWithEvent = post as {
-    nostrEventId?: string;
-    signedEvent?: { id?: string };
-  };
   const eventId =
-    type === "published"
-      ? (postWithEvent.nostrEventId ??
-        (postWithEvent.signedEvent &&
-        typeof postWithEvent.signedEvent === "object" &&
-        "id" in postWithEvent.signedEvent &&
-        typeof postWithEvent.signedEvent.id === "string"
-          ? postWithEvent.signedEvent.id
-          : undefined))
-      : null;
+    type === "published" ? getLongFormNostrArticleId(post) || null : null;
+  const eventIdForThread = eventId;
 
-  const { data: threadData, isPending: isThreadLoading } = useThreadView(
-    eventId ?? null
-  );
+  const { data: threadData, isPending: isThreadLoading } =
+    useThreadView(eventIdForThread);
 
   const directReplies = useMemo((): ChildReply[] => {
-    const rootId = eventId ?? "";
+    const rootId = eventIdForThread ?? "";
     if (!rootId || !threadData?.events || !Array.isArray(threadData.events))
       return [];
     const events = threadData.events as Array<{
@@ -400,136 +469,115 @@ export default function LongFormDetailsModal({
           tags: event.tags,
         })
       );
-  }, [eventId, threadData?.events]);
+  }, [eventIdForThread, threadData?.events]);
 
   const threadMetadata = threadData?.metadata ?? {};
   const tz = userTimezone;
+
+  const articleIdStr = getLongFormNostrArticleId(post);
+  const openOnNostrUrl =
+    type === "published" && articleIdStr
+      ? nostrUrls.articleUrl(articleIdStr)
+      : null;
+  const viewThreadUrl =
+    eventIdForThread && eventIdForThread.length > 0
+      ? nostrUrls.eventUrl(eventIdForThread)
+      : "";
+
+  const metaLine = formatLongFormDate(
+    type === "published"
+      ? (post.publishedAt ?? undefined)
+      : type === "scheduled"
+        ? (post.scheduledAtUtc ?? undefined)
+        : post.createdAt,
+    tz,
+    userTimeFormat,
+    dateLocale
+  );
+
+  const deleteForm = (
+    <deleteFetcher.Form method="post" onClick={(e) => e.stopPropagation()}>
+      <input type="hidden" name="postId" value={post.id} />
+      <input type="hidden" name="_action" value="deleteLongForm" />
+      <Button
+        type="submit"
+        variant="outline"
+        size="sm"
+        disabled={deleteFetcher.state !== "idle"}
+        className="border-destructive text-destructive hover:bg-destructive/10"
+      >
+        {deleteFetcher.state !== "idle" &&
+        deleteFetcher.formData?.get("postId") === post.id
+          ? "Deleting..."
+          : type === "scheduled"
+            ? "Delete Scheduled Article"
+            : type === "draft"
+              ? "Delete Draft"
+              : "Delete Article"}
+      </Button>
+    </deleteFetcher.Form>
+  );
+
+  const statusType: "draft" | "published" | "scheduled" =
+    type === "published"
+      ? "published"
+      : type === "scheduled"
+        ? "scheduled"
+        : "draft";
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideCloseButton
-        className="dark:bg-card border-border flex max-h-[90dvh] w-full max-w-5xl flex-col gap-0 overflow-hidden rounded-xl bg-white p-0 shadow-2xl"
+        className="bg-card text-card-foreground border-border flex max-h-[90dvh] w-full max-w-[min(1040px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
       >
-        {/* Header */}
-        <div className="dark:border-border dark:bg-card/95 border-border sticky top-0 z-10 border-b bg-white/95 px-6 py-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-foreground text-xl font-semibold dark:text-white">
-                {LONGFORM_MODAL_TITLE}
-              </DialogTitle>
-              <LongFormStatusBadge type={type} />
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        <PostDetailHeader
+          typeLabel="Article"
+          statusType={statusType}
+          publishedPillLabel="Published"
+        />
 
-        {/* Content */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Preview Panel */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Article Preview - Primal/NOSTR style */}
-            <div className="mx-auto max-w-3xl p-6">
-              {/* Author Header */}
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] text-lg font-semibold text-white">
-                  A
-                </div>
-                <div>
-                  <div className="text-foreground font-semibold dark:text-white">
-                    You
-                  </div>
-                </div>
-                <div className="ml-auto">
-                  <MoreVertical
-                    className="text-foreground h-6 w-6"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                </div>
-              </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row md:items-stretch">
+          <div className="border-border min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-5 md:w-[70%] md:max-w-[72%] md:border-r md:px-6 md:py-5">
+            <div className="mx-auto max-w-3xl">
+              <p className="text-muted-foreground mb-4 text-sm">
+                {metaLine}
+                <span className="mx-2">·</span>
+                {getLongFormReadingTime(post.content ?? undefined)}
+              </p>
 
-              {/* Date and Reading Time */}
-              <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
-                <span>
-                  {formatLongFormDate(
-                    type === "published"
-                      ? (post.publishedAt ?? undefined)
-                      : type === "scheduled"
-                        ? (post.scheduledAtUtc ?? undefined)
-                        : post.createdAt,
-                    tz,
-                    userTimeFormat,
-                    dateLocale
-                  )}
-                </span>
-                <span>•</span>
-                <span>{getLongFormReadingTime(post.content ?? undefined)}</span>
-                <span>•</span>
-                <span>via SmartFlow</span>
-                <div className="ml-auto">
-                  <Bookmark
-                    className="h-5 w-5"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-foreground mb-6 text-3xl leading-tight font-bold dark:text-white">
+              <h1 className="text-foreground mb-6 text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
                 {post.title ?? "Untitled Article"}
               </h1>
 
-              {/* Cover Image */}
               {post.image ? (
-                <div className="mb-6 overflow-hidden rounded-2xl">
+                <div className="mb-6 overflow-hidden rounded-xl">
                   <img
                     src={post.image}
-                    alt="Cover"
-                    className="h-80 w-full object-cover"
+                    alt=""
+                    className="max-h-[min(52vh,520px)] w-full object-contain"
                   />
                 </div>
               ) : null}
 
-              {/* Summary */}
               {post.summary ? (
-                <div className="dark:bg-card bg-muted mb-6 rounded-xl p-6">
-                  <p className="text-muted-foreground dark:text-foreground text-lg leading-relaxed font-medium">
+                <div className="border-border/60 bg-muted/20 mb-6 rounded-lg border px-4 py-3">
+                  <p className="text-muted-foreground text-base leading-relaxed">
                     {post.summary}
                   </p>
                 </div>
               ) : null}
 
-              {/* Content */}
-              <div
-                className="text-foreground dark:text-white"
-                style={{
-                  fontSize: "1.1rem",
-                  lineHeight: "1.7",
-                  color: "inherit",
-                }}
-              >
+              <div className="text-foreground text-[1.05rem] leading-relaxed">
                 <MarkdownPreview source={post.content ?? ""} />
               </div>
 
-              {/* Tags */}
               {post.tags.length > 0 ? (
                 <>
-                  <Separator className="mt-8 mb-2" />
-                  <div className="flex items-center gap-2">
+                  <Separator className="mt-8 mb-3" />
+                  <div className="flex flex-wrap gap-2">
                     {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-primary dark:text-muted-foreground cursor-pointer text-sm hover:underline"
-                      >
+                      <span key={tag} className="text-muted-foreground text-sm">
                         #{tag}
                       </span>
                     ))}
@@ -539,7 +587,7 @@ export default function LongFormDetailsModal({
             </div>
           </div>
 
-          <LongFormDetailsSidebar
+          <LongFormDetailRail
             type={type}
             post={post}
             eventId={eventId}
@@ -552,93 +600,66 @@ export default function LongFormDetailsModal({
             showSignedEvent={showSignedEvent}
             showEventData={showEventData}
             onToggleEventData={() => setShowEventData((v) => !v)}
+            openOnNostrUrl={openOnNostrUrl}
+            viewThreadUrl={viewThreadUrl}
           />
         </div>
 
-        {/* Footer */}
-        <div className="dark:border-border dark:bg-card/95 border-border sticky bottom-0 border-t bg-white/95 px-6 py-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap gap-3">
-              {type === "scheduled" && (onEdit || onReschedule) ? (
-                <>
-                  {onEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => onEdit(post)}
-                      className="dark:bg-card border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
-                    >
-                      Edit
-                    </button>
-                  ) : null}
-                  {onReschedule ? (
-                    <button
-                      type="button"
-                      onClick={() => onReschedule(post)}
-                      className="dark:bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring dark:border-border dark:text-success dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
-                    >
-                      Reschedule
-                    </button>
-                  ) : null}
-                </>
-              ) : null}
-              {type === "published" &&
-              (post.nostrEventId ??
-                (typeof post.signedEvent === "object" &&
-                post.signedEvent !== null &&
-                "id" in post.signedEvent
-                  ? (post.signedEvent as { id?: string }).id
-                  : undefined)) ? (
+        <div className="border-border bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {type === "published" && openOnNostrUrl ? (
+              <Button variant="default" size="sm" asChild>
                 <Link
-                  to={nostrUrls.articleUrl(
-                    String(
-                      post.nostrEventId ??
-                        (typeof post.signedEvent === "object" &&
-                        post.signedEvent !== null &&
-                        "id" in post.signedEvent
-                          ? (post.signedEvent as { id?: string }).id
-                          : "") ??
-                        ""
-                    )
-                  )}
+                  to={openOnNostrUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="View article (opens in new tab)"
-                  className="dark:bg-muted dark:hover:bg-muted/80 bg-muted hover:bg-muted focus:ring-ring inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                  aria-label="Open on Nostr (opens in new tab)"
                 >
-                  View Article
+                  Open on Nostr
                 </Link>
-              ) : null}
-
-              {type === "draft" ? (
+              </Button>
+            ) : null}
+            {type === "published" && eventIdForThread ? (
+              <Button variant="outline" size="sm" asChild>
                 <Link
-                  to={`/dashboard/drafts/longform/edit/${post.id}`}
-                  className="dark:bg-card border-border text-foreground hover:bg-muted focus:ring-ring dark:border-border dark:text-foreground dark:hover:bg-muted/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                  to={viewThreadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View thread (opens in new tab)"
                 >
+                  View thread
+                </Link>
+              </Button>
+            ) : null}
+            {type === "scheduled" && onEdit ? (
+              <Button
+                variant="default"
+                size="sm"
+                type="button"
+                onClick={() => onEdit(post)}
+              >
+                Edit
+              </Button>
+            ) : null}
+            {type === "scheduled" && onReschedule ? (
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => onReschedule(post)}
+              >
+                Reschedule
+              </Button>
+            ) : null}
+            {type === "draft" ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/dashboard/drafts/longform/edit/${post.id}`}>
                   Edit Draft
                 </Link>
-              ) : null}
-            </div>
-
-            <div className="flex gap-3">
-              <deleteFetcher.Form
-                method="post"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <input type="hidden" name="postId" value={post.id} />
-                <input type="hidden" name="_action" value="deleteLongForm" />
-                <button
-                  type="submit"
-                  disabled={deleteFetcher.state !== "idle"}
-                  className="dark:bg-card border-destructive text-destructive hover:bg-destructive/10 focus:ring-ring dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10/50 inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:opacity-50"
-                >
-                  {deleteFetcher.state !== "idle" &&
-                  deleteFetcher.formData?.get("postId") === post.id
-                    ? "Deleting..."
-                    : "Delete"}
-                </button>
-              </deleteFetcher.Form>
-
-              <Button onClick={onClose}>Close</Button>
+              </Button>
+            ) : null}
+            <div className="border-border ml-1 flex items-center border-l border-dashed pl-3">
+              {deleteForm}
             </div>
           </div>
         </div>

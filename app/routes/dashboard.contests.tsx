@@ -4,7 +4,7 @@ const subNav = [
   { to: "/dashboard/contests", end: true, label: "All contests" },
   { to: "/dashboard/contests/new", end: false, label: "New contest" },
   { to: "/dashboard/contests/presets", end: false, label: "Presets" },
-  { to: "/dashboard/contests/proof", end: false, label: "Proof cards" },
+  { to: "/dashboard/contests/proof", end: false, label: "Proof Studio" },
 ] as const;
 
 export default function ContestsLayout() {

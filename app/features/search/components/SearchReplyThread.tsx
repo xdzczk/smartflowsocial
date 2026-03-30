@@ -15,7 +15,10 @@ import { startTransition, useCallback, useEffect, useState } from "react";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { NostrClientConfig } from "~/lib/nostr-client-urls";
 import { eventUrl } from "~/lib/nostr-client-urls";
+import { cn } from "~/lib/utils";
 import { validateSearchReplies } from "~/lib/validation/search-result";
+
+import { stripRenderedMediaUrlsFromNoteText } from "../utils/strip-note-media-urls";
 
 function truncateEventId(id: string, head = 12, tail = 6): string {
   if (id.length <= head + tail + 3) return id;
@@ -39,15 +42,20 @@ interface SearchReplyThreadProps {
     date: Date | number,
     options?: { isUnixTimestamp?: boolean }
   ) => string;
+  /** When true, top-level replies show full note text (no line clamp). */
+  expandAllTopLevelBodies?: boolean;
 }
 
 const MAX_INDENT_STEPS = 10;
 const INDENT_REM = 0.75;
 
+const BODY_COLLAPSE_CHARS = 220;
+
 export function SearchReplyThread({
   rootReplies,
   nostrClientConfig,
   formatDate,
+  expandAllTopLevelBodies = false,
 }: SearchReplyThreadProps) {
   const fetcher = useFetcher<{
     replies?: unknown;
@@ -58,6 +66,9 @@ export function SearchReplyThread({
     () => new Map()
   );
   const [loadingFor, setLoadingFor] = useState<string | null>(null);
+  const [expandedBodyIds, setExpandedBodyIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const requestChildren = useCallback(
     (parentId: string) => {
@@ -90,6 +101,15 @@ export function SearchReplyThread({
     });
   }, [fetcher.state, fetcher.data]);
 
+  const toggleBodyExpanded = useCallback((replyKey: string) => {
+    setExpandedBodyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(replyKey)) next.delete(replyKey);
+      else next.add(replyKey);
+      return next;
+    });
+  }, []);
+
   const toggleBranch = useCallback(
     (parentId: string) => {
       const norm = parentId.toLowerCase();
@@ -117,6 +137,16 @@ export function SearchReplyThread({
     const isLoadingThis = loadingFor === replyKey;
     const replyName =
       reply.authorName.trim() || `${reply.pubkey.slice(0, 8)}...`;
+    const replyMedia = reply.mediaUrls ?? [];
+    const bodyText = stripRenderedMediaUrlsFromNoteText(
+      reply.content,
+      replyMedia
+    );
+    const canToggleBody =
+      bodyText.length > BODY_COLLAPSE_CHARS || bodyText.includes("\n\n");
+    const bodyExpanded =
+      expandedBodyIds.has(replyKey) || (depth === 0 && expandAllTopLevelBodies);
+    const showClamp = !bodyExpanded && canToggleBody;
 
     return (
       <li
@@ -187,14 +217,32 @@ export function SearchReplyThread({
                     })}
                   </span>
                 </div>
-                {reply.content ? (
-                  <p className="text-foreground mb-2 text-sm leading-relaxed break-words whitespace-pre-wrap">
-                    {reply.content}
-                  </p>
+                {bodyText ? (
+                  <div className="mb-1">
+                    <p
+                      className={cn(
+                        "text-foreground text-sm leading-relaxed break-words whitespace-pre-wrap",
+                        showClamp && "line-clamp-3"
+                      )}
+                    >
+                      {bodyText}
+                    </p>
+                    {canToggleBody ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toggleBodyExpanded(replyKey);
+                        }}
+                        className="text-muted-foreground hover:text-foreground mt-0.5 text-xs font-medium"
+                      >
+                        {bodyExpanded ? "Show less" : "Show more"}
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
-                {reply.mediaUrls && reply.mediaUrls.length > 0 ? (
+                {replyMedia.length > 0 ? (
                   <div className="mb-2 flex flex-wrap gap-1">
-                    {reply.mediaUrls.slice(0, 3).map((url, index) => (
+                    {replyMedia.slice(0, 3).map((url, index) => (
                       <img
                         // eslint-disable-next-line react/no-array-index-key -- URL list from note
                         key={index}

@@ -19,36 +19,43 @@ export function RenderedPollPreview({
     data.mode === "multiple" ? "Multiple choice" : "Single choice";
 
   return (
-    <article className="space-y-3">
+    <article className="space-y-2.5">
       <PreviewAccountHeader user={user} />
-      <div className="border-border/60 bg-muted/15 rounded-lg border p-3">
-        <p className="text-foreground text-base leading-snug font-semibold">
+      <div>
+        <h3 className="text-foreground text-lg leading-snug font-semibold tracking-tight">
           {data.question}
-        </p>
-        <p className="text-muted-foreground mt-2 text-[11px] font-medium tracking-wide uppercase">
+        </h3>
+        <p className="text-muted-foreground/80 mt-1.5 text-[11px] font-normal">
           Poll · {modeLabel}
         </p>
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 space-y-1.5">
           {data.options.map((opt, i) => (
             <li
               key={optionKeys[i] ?? `poll-opt-${i}`}
               className={cn(
-                "border-border/50 bg-background/60 flex items-center rounded-md border px-3 py-2.5 text-sm",
-                "shadow-none"
+                "bg-muted/30 flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                "border-border/35 border"
               )}
             >
-              <span className="text-muted-foreground mr-2 w-5 shrink-0 text-xs tabular-nums">
+              <span
+                className="bg-muted/60 text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium tabular-nums"
+                aria-hidden
+              >
                 {i + 1}
               </span>
               <span className="wrap-break-word leading-snug">{opt}</span>
             </li>
           ))}
         </ul>
-        <p className="text-muted-foreground mt-3 text-xs">{data.endLabel}</p>
+        {data.hasPollEndDate ? (
+          <p className="text-muted-foreground/75 mt-2.5 text-[11px] leading-snug">
+            {data.endLabel}
+          </p>
+        ) : null}
       </div>
       {data.hideTags ? (
         data.tags.length > 0 ? (
-          <p className="text-muted-foreground/85 text-xs">
+          <p className="text-muted-foreground/75 text-xs">
             {data.tags.length} hidden topic tag
             {data.tags.length === 1 ? "" : "s"} included
           </p>

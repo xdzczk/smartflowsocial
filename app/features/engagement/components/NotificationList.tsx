@@ -175,7 +175,7 @@ function ReplyNotification({
               rel="noreferrer"
               className="text-primary dark:text-muted-foreground hover:underline"
             >
-              View note
+              Open on Nostr
             </Link>
           </div>
         </div>
@@ -340,7 +340,7 @@ function MentionNotification({
               rel="noreferrer"
               className="text-primary dark:text-muted-foreground hover:underline"
             >
-              View note
+              Open on Nostr
             </Link>
           </div>
         </div>

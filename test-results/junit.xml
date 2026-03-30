@@ -1,27 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="10" failures="0" errors="0" time="0.005479749">
-    <testsuite name="tests/unit/composer-preview.test.ts" timestamp="2026-03-29T17:03:35.656Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.003363708">
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; orderAttachmentsForPreview follows token order then remainder" time="0.001128125">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.003736958">
+    <testsuite name="tests/unit/posts/drafts/draft-editor-navigation.test.ts" timestamp="2026-03-30T04:45:53.122Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001858542">
+        <testcase classname="tests/unit/posts/drafts/draft-editor-navigation.test.ts" name="draft-editor-navigation &gt; maps compose type from draft classification" time="0.000792125">
         </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; normalizePostPreviewFromComposer strips tokens and hides tags flag" time="0.00083425">
+        <testcase classname="tests/unit/posts/drafts/draft-editor-navigation.test.ts" name="draft-editor-navigation &gt; builds compose URL with encoded params" time="0.000220542">
         </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; computePostPreviewWarnings surfaces attachment placeholders" time="0.000127291">
-        </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; computeHiddenTagsWarning when hide on and no tags" time="0.000105791">
-        </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; getPollPreviewEndLabel absolute empty is explicit" time="0.000146875">
-        </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; normalizePollPreviewFromComposer trims options in order" time="0.000151084">
-        </testcase>
-        <testcase classname="tests/unit/composer-preview.test.ts" name="composer preview &gt; computePollPreviewWarnings detects duplicate options" time="0.000136375">
+        <testcase classname="tests/unit/posts/drafts/draft-editor-navigation.test.ts" name="draft-editor-navigation &gt; builds longform edit and bulk URLs" time="0.000152625">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/posts/composer/thread-segment-numbering.test.ts" timestamp="2026-03-29T17:03:35.657Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.002116041">
-        <testcase classname="tests/unit/posts/composer/thread-segment-numbering.test.ts" name="thread-segment-numbering &gt; strips one leading index prefix" time="0.00074125">
+    <testsuite name="tests/unit/posts/drafts/draft-row-preview.test.ts" timestamp="2026-03-30T04:45:53.123Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001878416">
+        <testcase classname="tests/unit/posts/drafts/draft-row-preview.test.ts" name="draft-row-preview &gt; summarizes poll drafts from draftMeta" time="0.000938583">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/thread-segment-numbering.test.ts" name="thread-segment-numbering &gt; applies 1-based prefixes" time="0.000140875">
-        </testcase>
-        <testcase classname="tests/unit/posts/composer/thread-segment-numbering.test.ts" name="thread-segment-numbering &gt; preserves other fields" time="0.00054725">
+        <testcase classname="tests/unit/posts/drafts/draft-row-preview.test.ts" name="draft-row-preview &gt; summarizes thread drafts" time="0.000248834">
         </testcase>
     </testsuite>
 </testsuites>

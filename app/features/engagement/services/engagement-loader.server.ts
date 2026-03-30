@@ -11,9 +11,12 @@ import { toPostDTOArray } from "~/features/posts/dtos";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { getPublishedPosts } from "~/features/posts/server";
 import type { PostData, QueueType } from "~/features/posts/types";
-import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
+import {
+  convertJsonValueToScheduleConfig,
+  convertPrismaQueueTypeToQueueType,
+} from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
-import { getUserById } from "~/features/user";
+import { getUserById, getQueueTypes } from "~/features/user";
 import { getUserProfileWithCache } from "~/features/user/services/user-profile-cache.server";
 import {
   getEngagementLastCheckedAt,
@@ -966,16 +969,23 @@ export async function loadEngagementFeedData(
   page = 1,
   limit = ENGAGEMENT_FEED_PAGE_SIZE
 ) {
-  const [{ posts }, userResult, lastCheckedAt] = await Promise.all([
-    getPublishedPosts({
-      userId,
-      page,
-      limit,
-      queueType: "all",
-    }),
-    getUserById(userId),
-    getEngagementLastCheckedAt(userId),
-  ]);
+  const [{ posts }, userResult, lastCheckedAt, queueTypesPrisma] =
+    await Promise.all([
+      getPublishedPosts({
+        userId,
+        page,
+        limit,
+        queueType: "all",
+      }),
+      getUserById(userId),
+      getEngagementLastCheckedAt(userId),
+      getQueueTypes(userId),
+    ]);
+
+  const queueTypes = queueTypesPrisma
+    .filter((qt) => qt.isEnabled !== false && qt.name !== "Unassigned")
+    .map((qt) => convertPrismaQueueTypeToQueueType(qt))
+    .filter((qt): qt is NonNullable<typeof qt> => qt !== undefined);
 
   if (!userResult) throw new Error("User not found");
   const user: UserWithHashTagPresets = userResult;
@@ -1141,6 +1151,7 @@ export async function loadEngagementFeedData(
     groupSummaries,
     lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
     followedPubkeys,
+    queueTypes,
   };
 }
 

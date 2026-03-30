@@ -294,6 +294,7 @@ export function useNotificationActions({
     mode: "draft" | "schedule" | "queue";
     content: string;
     scheduledFor?: string | null;
+    queueTypeId?: string | null;
   }) => {
     try {
       const response = await fetch("/api/engagement/defer-action", {
@@ -305,6 +306,7 @@ export function useNotificationActions({
           mode: params.mode,
           content: params.content,
           scheduledFor: params.scheduledFor ?? null,
+          queueTypeId: params.queueTypeId ?? null,
         }),
       });
       if (!response.ok) throw new Error("Failed to defer action");

@@ -56,6 +56,7 @@ vi.mock("~/features/posts/server", () => ({
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
+  getQueueTypes: vi.fn().mockResolvedValue([]),
 }));
 
 import { TEST_USER_ID } from "../utils/test-helpers";
@@ -189,6 +190,8 @@ describe("Engagement Loader", () => {
       expect(result).toHaveProperty("engagementItemStates");
       expect(result).toHaveProperty("engagementLinkedActions");
       expect(result).toHaveProperty("groupSummaries");
+      expect(result).toHaveProperty("queueTypes");
+      expect(Array.isArray(result.queueTypes)).toBe(true);
       expect(result.posts).toHaveLength(2); // Loader returns all posts with stats
       expect(
         result.posts[0]?.signedEvent &&

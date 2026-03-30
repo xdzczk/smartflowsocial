@@ -6,7 +6,7 @@
 import type { EngagementItemStateMap } from "../engagement-filter";
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
-import type { GroupedNotification } from "../types";
+import type { EngagementQueueTypeOption, GroupedNotification } from "../types";
 
 import GroupedNotificationList from "./GroupedNotificationList";
 
@@ -32,9 +32,7 @@ interface EngagementContentProps {
   userRelays?: string[];
   trustScores: Record<string, number>;
   postsCount: number;
-  /** Keyboard: focused item index in the flat list; pass -1 to disable. */
   focusedIndex?: number;
-  /** Keyboard: register handlers for the item at this index. */
   registerKeyboardHandlers?: (
     index: number,
     handlers: {
@@ -50,7 +48,6 @@ interface EngagementContentProps {
       expandThread: () => void;
     } | null
   ) => void;
-  /** Reply templates for slash-command / Insert template in reply panel */
   replyTemplates?: ReplyTemplate[];
   engagementLinkedActions?: Record<
     string,
@@ -72,6 +69,8 @@ interface EngagementContentProps {
       handled: number;
     }
   >;
+  followedPubkeys?: string[];
+  queueTypes?: EngagementQueueTypeOption[];
 }
 
 export function EngagementContent({
@@ -89,6 +88,8 @@ export function EngagementContent({
   replyTemplates = [],
   engagementLinkedActions = {},
   groupSummaries = {},
+  followedPubkeys = [],
+  queueTypes = [],
 }: EngagementContentProps) {
   const defaultRelays = ["wss://relay.primal.net"];
   const listProps = {
@@ -102,6 +103,8 @@ export function EngagementContent({
     replyTemplates,
     engagementLinkedActions,
     groupSummaries,
+    followedPubkeys,
+    queueTypes,
   };
 
   const repliesFlatCount = groupedReplies.reduce(
@@ -117,6 +120,7 @@ export function EngagementContent({
             groupedNotifications={groupedReplies}
             {...listProps}
             baseIndex={0}
+            listVariant="replies"
           />
         ) : null}
 
@@ -125,6 +129,7 @@ export function EngagementContent({
             groupedNotifications={groupedMentionsTab}
             {...listProps}
             baseIndex={repliesFlatCount}
+            listVariant="mentions"
           />
         ) : null}
 
@@ -147,6 +152,7 @@ export function EngagementContent({
             groupedNotifications={groupedReplies}
             {...listProps}
             baseIndex={0}
+            listVariant="replies"
           />
         ) : (
           <div className="border-border bg-card rounded-lg border p-8 text-center">
@@ -170,6 +176,7 @@ export function EngagementContent({
             groupedNotifications={groupedReplies}
             {...listProps}
             baseIndex={0}
+            listVariant="replies"
           />
         ) : null}
         {groupedMentionsTab.length > 0 ? (
@@ -177,6 +184,7 @@ export function EngagementContent({
             groupedNotifications={groupedMentionsTab}
             {...listProps}
             baseIndex={repliesFlatCount}
+            listVariant="mentions"
           />
         ) : null}
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
@@ -190,7 +198,6 @@ export function EngagementContent({
     );
   }
 
-  // activeTab === "mentions"
   return (
     <>
       {groupedMentionsTab.length > 0 ? (
@@ -198,6 +205,7 @@ export function EngagementContent({
           groupedNotifications={groupedMentionsTab}
           {...listProps}
           baseIndex={0}
+          listVariant="mentions"
         />
       ) : (
         <div className="border-border bg-card rounded-lg border p-8 text-center">

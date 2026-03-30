@@ -7,12 +7,20 @@ import {
   isShortPostDraftForPostsTab,
   isThreadDraftPost,
 } from "~/features/posts/drafts/utils/draft-post-classification";
+import {
+  buildShortDraftSearchHaystack,
+  matchesDraftSearch,
+} from "~/features/posts/drafts/utils/draft-search-haystack";
 
 import { draftsKeys } from "./useDraftsQuery";
-interface Post {
+
+/** Serialized short-form row for drafts list sorting/filtering */
+export interface DraftsHookPost {
   id: string;
   caption?: string | null;
+  content?: string | null;
   createdAt: string;
+  updatedAt?: string;
   postType?: string;
   postKind?: string;
   draftMeta?: unknown;
@@ -24,13 +32,13 @@ interface CombinedContentItem {
   type: "post" | "longform";
 }
 
-function isRepostDraft(post: Post): boolean {
+function isRepostDraft(post: DraftsHookPost): boolean {
   const kind = (post as { postKind?: string }).postKind;
   return kind === "REPOST";
 }
 
 interface UseDraftsStateProps {
-  posts: Post[];
+  posts: DraftsHookPost[];
   /** When provided (e.g. on "all" tab), select-all and bulk delete include both posts and longform */
   allContent?: CombinedContentItem[];
   currentTab?: string;
@@ -46,11 +54,10 @@ export function useDraftsState({
 }: UseDraftsStateProps) {
   const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState({
-    key: "createdAt",
+    key: "updatedAt",
     direction: "desc" as "asc" | "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [showAdvancedBulkResume, setShowAdvancedBulkResume] = useState(false);
   interface FetcherData {
@@ -62,18 +69,20 @@ export function useDraftsState({
   // Sort posts - memoized to prevent unnecessary re-sorting on every render
   const sortedPosts = useMemo(() => {
     return [...posts].sort((a, b) => {
-      if (sortConfig.key === "createdAt") {
-        try {
-          // Import synchronously at top level would be better, but for now use sync fallback
-          const dateA = new Date(a[sortConfig.key]).getTime();
-          const dateB = new Date(b[sortConfig.key]).getTime();
-          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-        } catch {
-          // Ultimate fallback
-          const dateA = new Date(a[sortConfig.key]).getTime();
-          const dateB = new Date(b[sortConfig.key]).getTime();
-          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-        }
+      if (sortConfig.key === "createdAt" || sortConfig.key === "updatedAt") {
+        const key = sortConfig.key;
+        const fallback = "createdAt";
+        const getTime = (p: DraftsHookPost) => {
+          const raw = p[key] ?? p[fallback];
+          try {
+            return new Date(String(raw)).getTime();
+          } catch {
+            return 0;
+          }
+        };
+        const dateA = getTime(a);
+        const dateB = getTime(b);
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
       }
       const aValue = a[sortConfig.key] as string | number | undefined;
       const bValue = b[sortConfig.key] as string | number | undefined;
@@ -97,7 +106,7 @@ export function useDraftsState({
               ? sortedPosts.filter((p) => isRepostDraft(p))
               : sortedPosts;
     return byTab.filter((post) =>
-      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
+      matchesDraftSearch(buildShortDraftSearchHaystack(post), searchTerm)
     );
   }, [sortedPosts, searchTerm, currentTab]);
 
@@ -194,7 +203,6 @@ export function useDraftsState({
     sortConfig,
     setSortConfig,
     searchTerm,
-    selectedPost,
     selectedPosts,
     showAdvancedBulkResume,
     filteredPosts,
@@ -202,7 +210,6 @@ export function useDraftsState({
     bulkResumeFetcher,
     requestSort,
     setSearchTerm,
-    setSelectedPost,
     togglePostSelection,
     toggleSelectAll,
     handleBulkDelete,

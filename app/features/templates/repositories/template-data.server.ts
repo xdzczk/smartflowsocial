@@ -47,7 +47,7 @@ export async function getTemplates({ userId }: { userId: string }) {
       longFormPost: true,
     },
     orderBy: {
-      createdAt: "desc",
+      updatedAt: "desc",
     },
   });
 }

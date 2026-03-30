@@ -4,7 +4,7 @@ const subNav = [
   { to: "/dashboard/giveaway", end: true, label: "All giveaways" },
   { to: "/dashboard/giveaway/new", end: false, label: "New giveaway" },
   { to: "/dashboard/giveaway/presets", end: false, label: "Presets" },
-  { to: "/dashboard/giveaway/proof", end: false, label: "Proof cards" },
+  { to: "/dashboard/giveaway/proof", end: false, label: "Proof Studio" },
 ] as const;
 
 /**

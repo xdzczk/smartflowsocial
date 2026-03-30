@@ -121,6 +121,46 @@ describe("Search Result Validation", () => {
       expect(validated?.replies).toHaveLength(1);
       expect(validated?.replies?.[0]?.content).toBe("reply text");
     });
+
+    it("accepts resolution metadata from lookup loader", () => {
+      const payload = {
+        event: {
+          id: "a".repeat(64),
+          pubkey: "b".repeat(64),
+          created_at: 1,
+          kind: 1,
+          content: "hi",
+          tags: [] as string[][],
+          authorName: "A",
+          authorImage: null as string | null,
+        },
+        resolution: {
+          identifierKind: "nevent" as const,
+          status: "partial" as const,
+          labels: ["Resolved from nevent", "Stats unavailable"],
+          topLevelReplyCount: 3,
+          statsUnavailable: true,
+          threadPartial: false,
+        },
+      };
+      const validated = validateSearchResultData(payload);
+      expect(validated?.resolution?.identifierKind).toBe("nevent");
+      expect(validated?.resolution?.status).toBe("partial");
+      expect(validated?.resolution?.topLevelReplyCount).toBe(3);
+    });
+
+    it("accepts structured lookup error payload", () => {
+      const payload = {
+        error: {
+          code: "NOT_FOUND" as const,
+          message: "missing",
+          context: { input: "abc" },
+        },
+      };
+      const validated = validateSearchResultData(payload);
+      expect(validated?.error).toEqual(payload.error);
+      expect(validated?.event).toBeUndefined();
+    });
   });
 
   describe("validateSearchResultDisplay", () => {

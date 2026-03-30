@@ -36,6 +36,8 @@ interface LongFormListingProps {
   posts: Array<LongFormPostType | LongFormPostData>;
   type: "draft" | "scheduled" | "published";
   onPostSelect?: (post: LongFormPostType | LongFormPostData) => void;
+  /** Drafts tab: open longform editor instead of details modal */
+  onResumeDraft?: (post: LongFormPostType | LongFormPostData) => void;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   userTimezone?: string;
@@ -54,6 +56,7 @@ export default function LongFormListing({
   posts,
   type,
   onPostSelect,
+  onResumeDraft,
   searchTerm = "",
   onSearchChange: _onSearchChange,
   userTimezone = "UTC",
@@ -170,6 +173,14 @@ export default function LongFormListing({
     bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
+  const handleOpenPost = (post: LongFormPostType | LongFormPostData) => {
+    if (type === "draft" && onResumeDraft) {
+      onResumeDraft(post);
+      return;
+    }
+    onPostSelect?.(post);
+  };
+
   return (
     <div>
       <LongFormBulkActionsBar
@@ -192,7 +203,7 @@ export default function LongFormListing({
           getReadingTime={getReadingTime}
           getStatusBadge={getStatusBadge}
           countdowns={countdowns}
-          onPostSelect={onPostSelect}
+          onPostSelect={handleOpenPost}
           onEditPost={onEditPost}
           onReschedulePost={onReschedulePost}
           deleteFetcher={deleteFetcher}
@@ -227,7 +238,7 @@ export default function LongFormListing({
           userTimeFormat={userTimeFormat}
           selectedPosts={selectedPosts}
           togglePostSelection={togglePostSelection}
-          onPostSelect={onPostSelect}
+          onPostSelect={handleOpenPost}
           onEditPost={onEditPost}
           onReschedulePost={onReschedulePost}
           deleteFetcher={deleteFetcher}

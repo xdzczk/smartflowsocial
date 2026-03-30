@@ -35,10 +35,20 @@ export default function EngagementFeedPage() {
     engagementLinkedActions: safeEngagementLinkedActions,
     groupSummaries: safeGroupSummaries,
     followedPubkeys: safeFollowedPubkeys,
+    queueTypes: safeQueueTypes,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
   } = useEngagementInfiniteData();
+
+  const engagementQueueTypes = useMemo(
+    () =>
+      safeQueueTypes.map((q) => ({
+        id: q.id,
+        name: q.name,
+      })),
+    [safeQueueTypes]
+  );
 
   const {
     selectedPost,
@@ -357,6 +367,8 @@ export default function EngagementFeedPage() {
         replyTemplates={replyTemplates}
         engagementLinkedActions={engagementLinkedActions}
         groupSummaries={safeGroupSummaries}
+        followedPubkeys={safeFollowedPubkeys}
+        queueTypes={engagementQueueTypes}
       />
 
       {/* Scroll sentinel for infinite scroll */}

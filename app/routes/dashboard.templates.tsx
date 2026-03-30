@@ -84,7 +84,7 @@ function TemplatesFeedRoute() {
       fallback={
         <DeferredListPageSkeleton
           title="Templates"
-          subtitle="Reusable posts and long-form layouts"
+          subtitle="Reusable blueprints for posts and articles."
         />
       }
     >

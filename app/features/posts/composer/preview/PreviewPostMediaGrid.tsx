@@ -3,7 +3,7 @@ import { cn } from "~/lib/utils";
 
 import type { NormalizedPreviewMedia } from "./normalized-composer-preview.types";
 
-const GRID_TWO_COL = "grid grid-cols-2 gap-1.5";
+const GRID_TWO_COL = "grid grid-cols-2 gap-1";
 
 export function PreviewPostMediaGrid({
   media,
@@ -21,11 +21,11 @@ export function PreviewPostMediaGrid({
     return (
       <div
         className={cn(
-          "border-border/50 mb-3 overflow-hidden rounded-lg border",
+          "border-border/50 overflow-hidden rounded-lg border",
           className
         )}
       >
-        <div className="bg-muted/30 aspect-video max-h-80 w-full">
+        <div className="bg-muted/30 aspect-video max-h-64 min-h-[7.5rem] w-full">
           {m.kind === "video" ? (
             <video
               src={m.url}
@@ -47,32 +47,39 @@ export function PreviewPostMediaGrid({
   }
 
   return (
-    <div className={cn("mb-3", GRID_TWO_COL, className)}>
-      {media.map((m, i) => (
-        <div
-          key={m.id}
-          className={cn(
-            "border-border/50 bg-muted/20 overflow-hidden rounded-md border",
-            n === 3 && i === 0 ? "col-span-2 aspect-video" : "aspect-square"
-          )}
-        >
-          {m.kind === "video" ? (
-            <video
-              src={m.url}
-              className="h-full w-full object-cover"
-              muted
-              playsInline
-              preload="metadata"
-            />
-          ) : (
-            <MediaThumbnail
-              src={m.url}
-              alt={m.alt ?? ""}
-              className="h-full w-full object-cover"
-            />
-          )}
-        </div>
-      ))}
+    <div
+      className={cn(
+        "border-border/50 overflow-hidden rounded-lg border",
+        className
+      )}
+    >
+      <div className={cn(GRID_TWO_COL, "bg-muted/25")}>
+        {media.map((m, i) => (
+          <div
+            key={m.id}
+            className={cn(
+              "bg-muted/40 overflow-hidden",
+              n === 3 && i === 0 ? "col-span-2 aspect-video" : "aspect-square"
+            )}
+          >
+            {m.kind === "video" ? (
+              <video
+                src={m.url}
+                className="h-full w-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <MediaThumbnail
+                src={m.url}
+                alt={m.alt ?? ""}
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

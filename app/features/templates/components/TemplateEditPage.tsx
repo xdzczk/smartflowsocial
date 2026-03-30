@@ -26,6 +26,7 @@ type LoaderData = unknown;
 type Template = Record<string, unknown> & {
   name?: string;
   createdAt?: string | Date;
+  updatedAt?: string | Date;
   templateType?: string;
   post?: unknown;
   longFormPost?: unknown;
@@ -102,36 +103,8 @@ export default function TemplateEditPage() {
     success?: boolean;
     redirectTo?: string;
   }>();
-  const scheduleFetcher = useFetcher<{
-    scheduleData?: Array<{
-      caption: string;
-      fileUrl: string[];
-      queueType: string;
-      scheduledFor: string;
-    }>;
-  }>();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Handle schedule data response
-  useEffect(() => {
-    const fetcherData = scheduleFetcher.data;
-    if (
-      fetcherData &&
-      typeof fetcherData === "object" &&
-      !Array.isArray(fetcherData) &&
-      "scheduleData" in fetcherData &&
-      Array.isArray(fetcherData.scheduleData)
-    ) {
-      // Store schedule data in sessionStorage
-      sessionStorage.setItem(
-        "repostData",
-        JSON.stringify(fetcherData.scheduleData)
-      );
-      // Navigate to bulk posts page
-      navigate("/dashboard/bulkposts?mode=repost", { replace: true });
-    }
-  }, [scheduleFetcher.data, navigate]);
 
   // After successful delete, navigate to templates list (redirect from fetcher doesn't navigate)
   useEffect(() => {
@@ -159,44 +132,22 @@ export default function TemplateEditPage() {
     setShowDeleteConfirm(false);
   };
 
-  const handleScheduleTemplate = () => {
-    const formData = new FormData();
-    formData.append("_action", "schedule");
-
-    scheduleFetcher.submit(formData, { method: "post" });
-  };
+  const templateUpdatedLabel =
+    template.updatedAt != null
+      ? formatDate(template.updatedAt)
+      : template.createdAt != null
+        ? formatDate(template.createdAt)
+        : null;
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/dashboard/templates"
-            className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
-          >
-            ← Back to Templates
-          </Link>
-        </div>
-        <div className="flex gap-2">
-          {template.templateType === "POST" && template.post ? (
-            <button
-              onClick={handleScheduleTemplate}
-              disabled={scheduleFetcher.state !== "idle"}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 disabled:opacity-50"
-            >
-              {scheduleFetcher.state !== "idle" ? "Loading..." : "Schedule"}
-            </button>
-          ) : null}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={deleteTemplateFetcher.state !== "idle"}
-            className="border-destructive text-destructive hover:bg-destructive/10 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/10 rounded-lg border px-4 py-2 disabled:opacity-50"
-          >
-            {deleteTemplateFetcher.state !== "idle"
-              ? "Deleting..."
-              : "Delete Template"}
-          </button>
-        </div>
+      <div className="mb-6">
+        <Link
+          to="/dashboard/templates"
+          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-sm"
+        >
+          ← Back to template library
+        </Link>
       </div>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -225,11 +176,10 @@ export default function TemplateEditPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Edit template</h1>
         <p className="dark:text-muted-foreground text-muted-foreground text-sm">
-          {template.templateType === "LONGFORM" ? "1 article" : "1 post"} •
-          Created{" "}
-          {(template as { createdAt?: unknown }).createdAt
-            ? formatDate((template as { createdAt: string | Date }).createdAt)
-            : "Unknown"}
+          {template.templateType === "LONGFORM"
+            ? "Article template"
+            : "Post template"}
+          {templateUpdatedLabel ? ` · Updated ${templateUpdatedLabel}` : null}
         </p>
       </div>
 
@@ -307,6 +257,8 @@ export default function TemplateEditPage() {
                   postId,
                 }}
                 initialTemplateName={(template as { name?: string }).name ?? ""}
+                templateLastUpdatedLabel={templateUpdatedLabel}
+                onTemplateDeleteClick={() => setShowDeleteConfirm(true)}
               />
             </>
           );
@@ -394,6 +346,8 @@ export default function TemplateEditPage() {
               }}
               initialTemplateName={(template as { name?: string }).name ?? ""}
               defaultRelays={defaultRelays}
+              templateLastUpdatedLabel={templateUpdatedLabel}
+              onTemplateDeleteClick={() => setShowDeleteConfirm(true)}
             />
           );
         })()

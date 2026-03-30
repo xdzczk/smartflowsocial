@@ -36,6 +36,10 @@ describe("Templates", () => {
       cy.visitAndCheck("/dashboard/templates");
       cy.location("pathname").should("include", "templates");
       cy.get("body").should("be.visible");
+      cy.contains("h1", "Templates").should("be.visible");
+      cy.contains("Reusable blueprints for posts and articles").should(
+        "be.visible"
+      );
     });
   });
 

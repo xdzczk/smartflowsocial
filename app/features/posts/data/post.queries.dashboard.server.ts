@@ -297,9 +297,7 @@ export async function getDraftPosts({
         hashTagPreset: true,
         template: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       skip,
       take: limit,
     }),

@@ -1,4 +1,5 @@
 import { Link, useRouteLoaderData } from "@remix-run/react";
+import type { FetcherWithComponents } from "@remix-run/react";
 import { MoreHorizontal, Repeat } from "lucide-react";
 import { useMemo } from "react";
 
@@ -11,6 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import {
+  getLongFormDraftEditUrl,
+  getShortDraftComposeUrl,
+} from "~/features/posts/drafts/utils/draft-editor-navigation";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -53,6 +58,12 @@ interface ContentTableRowProps {
   selectedItems: Set<string>;
   onToggleSelection?: (id: string) => void;
   onPostSelect?: (content: CombinedContent) => void;
+  onResumeDraft?: () => void;
+  draftsActionFetcher?: FetcherWithComponents<{
+    success?: boolean;
+    newPostId?: string;
+    error?: string;
+  }>;
   onEditPost?: (post: PostData | LongFormPostData) => void;
   onReschedulePost?: (post: PostData | LongFormPostData) => void;
   deleteFetcher: PostFetcher;
@@ -72,6 +83,8 @@ export function ContentTableRow({
   selectedItems,
   onToggleSelection,
   onPostSelect,
+  onResumeDraft,
+  draftsActionFetcher,
   onEditPost,
   onReschedulePost,
   deleteFetcher,
@@ -84,6 +97,11 @@ export function ContentTableRow({
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
   const queueDisplay = getQueueTypeDisplay(item.queueType);
+  const queueRowLabel =
+    type === "draft" &&
+    (!item.queueType?.name || item.queueType.name === "unassigned")
+      ? "No queue"
+      : queueDisplay.name;
   const isRepost = isRepostContent(item);
   const postThumbnailBadge =
     item.type === "longform"
@@ -100,7 +118,13 @@ export function ContentTableRow({
     <tr
       key={`${item.type}-${item.id}`}
       className="group border-border hover:bg-muted cursor-pointer border-b"
-      onClick={() => onPostSelect?.(item)}
+      onClick={() => {
+        if (type === "draft" && onResumeDraft) {
+          onResumeDraft();
+          return;
+        }
+        onPostSelect?.(item);
+      }}
     >
       {showBulkActions ? (
         <td className="p-3 text-center">
@@ -211,7 +235,7 @@ export function ContentTableRow({
                 dateLocale
               )
             : formatDate(
-                item.createdAt,
+                item.updatedAt,
                 false,
                 userTimezone,
                 userTimeFormat,
@@ -220,20 +244,23 @@ export function ContentTableRow({
       </td>
       <td className="p-3 text-center">
         <div className={queueDisplay.className} style={queueDisplay.style}>
-          {queueDisplay.name}
+          {queueRowLabel}
         </div>
       </td>
-      <td className="p-3 text-center">
-        <div
-          className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${getStatusColor(item)}`}
-        >
-          {getStatusText(item)}
-        </div>
-      </td>
+      {type === "draft" ? null : (
+        <td className="p-3 text-center">
+          <div
+            className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${getStatusColor(item)}`}
+          >
+            {getStatusText(item)}
+          </div>
+        </td>
+      )}
       <td className="p-3 text-center">
         <ContentRowActions
           item={item}
           type={type}
+          draftsActionFetcher={draftsActionFetcher}
           onEditPost={onEditPost}
           onReschedulePost={onReschedulePost}
           deleteFetcher={deleteFetcher}
@@ -248,9 +275,11 @@ export function ContentTableRow({
   );
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- Row actions menu composes many conditional fetcher targets */
 function ContentRowActions({
   item,
   type,
+  draftsActionFetcher,
   onEditPost,
   onReschedulePost,
   deleteFetcher,
@@ -262,6 +291,11 @@ function ContentRowActions({
 }: {
   item: CombinedContent;
   type: "scheduled" | "draft" | "published";
+  draftsActionFetcher?: FetcherWithComponents<{
+    success?: boolean;
+    newPostId?: string;
+    error?: string;
+  }>;
   onEditPost?: (post: PostData | LongFormPostData) => void;
   onReschedulePost?: (post: PostData | LongFormPostData) => void;
   deleteFetcher: PostFetcher;
@@ -305,7 +339,7 @@ function ContentRowActions({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  View Note
+                  Open on Nostr
                 </Link>
               </DropdownMenuItem>
             ) : null}
@@ -525,7 +559,63 @@ function ContentRowActions({
             </DropdownMenuItem>
           </>
         ) : null}
-        <DropdownMenuSeparator />
+        {type === "draft" ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link
+                to={
+                  item.type === "longform"
+                    ? getLongFormDraftEditUrl(item.id)
+                    : getShortDraftComposeUrl(
+                        item.id,
+                        item.originalData as PostData
+                      )
+                }
+              >
+                Continue editing
+              </Link>
+            </DropdownMenuItem>
+            {item.type === "post" && draftsActionFetcher ? (
+              <>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    const fd = new FormData();
+                    fd.set("_action", "duplicateDraftPost");
+                    fd.set("postId", item.id);
+                    draftsActionFetcher.submit(fd, {
+                      method: "post",
+                      action: "/dashboard/drafts",
+                    });
+                  }}
+                >
+                  Duplicate draft
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    const name = window.prompt(
+                      "Template name",
+                      "Template from draft"
+                    );
+                    if (name === null) return;
+                    const fd = new FormData();
+                    fd.set("_action", "convertDraftToTemplate");
+                    fd.set("postId", item.id);
+                    fd.set("templateName", name);
+                    draftsActionFetcher.submit(fd, {
+                      method: "post",
+                      action: "/dashboard/drafts",
+                    });
+                  }}
+                >
+                  Convert to template
+                </DropdownMenuItem>
+              </>
+            ) : null}
+            <DropdownMenuSeparator />
+          </>
+        ) : (
+          <DropdownMenuSeparator />
+        )}
         <DropdownMenuItem
           disabled={deleteFetcher.state !== "idle"}
           className="text-destructive focus:text-destructive"
@@ -545,7 +635,9 @@ function ContentRowActions({
               item.id
             : false)
             ? "Deleting..."
-            : "Delete"}
+            : type === "draft"
+              ? "Delete draft"
+              : "Delete"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -4,12 +4,15 @@
  */
 
 import {
+  cloneDraftPost,
   deleteLongFormPost,
   deletePost,
+  getDraftPostIdsForUser,
   updatePost,
 } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
+import { createTemplate } from "~/features/templates/services/template-data.server";
 import {
   draftsActionSchema,
   validateFormDataOrRespond,
@@ -60,6 +63,74 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
     );
     await Promise.all(promises);
     return { success: true };
+  }
+
+  if (_action === "bulkAssignQueue") {
+    const data = result.data;
+    const allowedIds = await getDraftPostIdsForUser(userId, data.postIds);
+    if (allowedIds.length !== data.postIds.length) {
+      return { error: "One or more drafts were not found." };
+    }
+    const resolved = await resolveQueueTypeId(
+      userId,
+      data.queueTypeId ?? null,
+      data.queueType
+    );
+    await Promise.all(
+      data.postIds.map((id) =>
+        updatePost({
+          id,
+          userId,
+          data: { queueTypeId: resolved },
+        })
+      )
+    );
+    return { success: true };
+  }
+
+  if (_action === "duplicateDraftPost") {
+    const r = await cloneDraftPost(userId, result.data.postId);
+    if (!r.ok) {
+      return { error: r.error };
+    }
+    return { success: true, newPostId: r.postId };
+  }
+
+  if (_action === "convertDraftToTemplate") {
+    const data = result.data;
+    const clone = await cloneDraftPost(userId, data.postId);
+    if (!clone.ok) {
+      return { error: clone.error };
+    }
+    const name =
+      data.templateName && data.templateName.trim().length > 0
+        ? data.templateName.trim()
+        : "Template from draft";
+    await createTemplate({
+      userId,
+      name,
+      templateType: "POST",
+      postId: clone.postId,
+      longFormPostId: null,
+    });
+    await deletePost({ id: data.postId, userId });
+    return { success: true };
+  }
+
+  if (_action === "bulkDuplicateDrafts") {
+    const data = result.data;
+    const allowedIds = await getDraftPostIdsForUser(userId, data.postIds);
+    if (allowedIds.length !== data.postIds.length) {
+      return { error: "One or more drafts were not found." };
+    }
+    const newPostIds: string[] = [];
+    for (const id of data.postIds) {
+      const r = await cloneDraftPost(userId, id);
+      if (r.ok) {
+        newPostIds.push(r.postId);
+      }
+    }
+    return { success: true, newPostIds };
   }
 
   // TypeScript guarantees this is "bulkSignAndResume" after previous checks

@@ -33,6 +33,7 @@ import { useLocalDraft } from "../hooks/useComposerLocalDraft";
 import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
 import { useComposerState } from "../hooks/useComposerState";
 import { PollComposerPreviewBlock } from "../preview/PollComposerPreviewBlock";
+import type { InitialPollRestore } from "../types/initial-poll-restore";
 
 import {
   ComposerCanvasDivider,
@@ -157,6 +158,11 @@ export interface PollComposerProps {
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   skipLocalDraftRestore?: boolean;
+  /** Queue name when opening compose (e.g. from draft loader). */
+  initialQueue?: string;
+  /** Server-built poll fields when resuming `/dashboard/compose?type=poll&draftId=…`. */
+  initialPollRestore?: InitialPollRestore | null;
+  initialDraftId?: string | null;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- poll composer intentionally orchestrates many mode-specific UI states */
@@ -177,6 +183,9 @@ export function PollComposer({
   onPublishModeChange,
   onDraftStateLabelChange,
   skipLocalDraftRestore = false,
+  initialQueue = "unassigned",
+  initialPollRestore = null,
+  initialDraftId = null,
 }: PollComposerProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
@@ -229,8 +238,13 @@ export function PollComposer({
     scheduleRandomWindowMinutes?: number;
     includeHashtagsInNoteBody?: boolean;
     savedAt: number;
-  }>(pollDraftStorageKey, skipLocalDraftRestore, 1500);
+  }>(
+    pollDraftStorageKey,
+    skipLocalDraftRestore || Boolean(initialDraftId),
+    1500
+  );
   const appliedPollRestoreRef = useRef(false);
+  const serverPollRestoreAppliedRef = useRef(false);
 
   const {
     selectedQueue,
@@ -245,7 +259,7 @@ export function PollComposer({
     queueTypes,
     scheduleIntervals: scheduleIntervalsProp,
     userTimezone,
-    initialQueue: "unassigned",
+    initialQueue,
     onQueueTypeChange,
   });
 
@@ -669,6 +683,7 @@ export function PollComposer({
     if (
       !pollDraftRestored ||
       skipLocalDraftRestore ||
+      initialDraftId ||
       appliedPollRestoreRef.current
     )
       return;
@@ -714,6 +729,60 @@ export function PollComposer({
     setScheduledFor,
     setSelectedQueue,
     skipLocalDraftRestore,
+    initialDraftId,
+  ]);
+
+  useEffect(() => {
+    if (
+      !initialPollRestore ||
+      !initialDraftId ||
+      serverPollRestoreAppliedRef.current
+    ) {
+      return;
+    }
+    serverPollRestoreAppliedRef.current = true;
+    setQuestion(initialPollRestore.question);
+    setOptions(
+      initialPollRestore.options.length >= MIN_OPTIONS
+        ? initialPollRestore.options
+        : ["", ""]
+    );
+    setOptionRowIds(
+      (initialPollRestore.options.length >= MIN_OPTIONS
+        ? initialPollRestore.options
+        : ["", ""]
+      ).map(() => newPollOptionRowId())
+    );
+    setPollType(initialPollRestore.pollType);
+    if (initialPollRestore.endsAtUnix != null) {
+      setPollEndMode("absolute");
+      setEndsAtLocal(
+        formatForDateTimeLocal(
+          fromUnixTimestamp(initialPollRestore.endsAtUnix, userTimezone),
+          userTimezone
+        )
+      );
+    } else {
+      setEndsAtLocal("");
+    }
+    setSelectedHashtags(initialPollRestore.selectedHashtags);
+    setIncludeHashtagsInNoteBody(
+      initialPollRestore.includeHashtagsInNoteBody !== false
+    );
+    setHashTagPresetId(initialPollRestore.hashTagPresetId);
+    setIsRecyclable(Boolean(initialPollRestore.isRecyclable));
+    setSelectedQueue(initialPollRestore.queueType);
+    applyQueueDefaultScheduleRandom(initialPollRestore.queueType);
+    trackComposerEvent("composer_draft_restored", {
+      source: "poll",
+      mode: "server",
+    });
+  }, [
+    initialPollRestore,
+    initialDraftId,
+    userTimezone,
+    setSelectedQueue,
+    applyQueueDefaultScheduleRandom,
   ]);
 
   useEffect(() => {
@@ -1144,9 +1213,6 @@ export function PollComposer({
               publishMode={publishMode}
               scheduledFor={scheduledFor}
               userTimezone={userTimezone}
-              relayCount={relayCount}
-              selectedQueue={selectedQueue}
-              isRecyclable={isRecyclable}
             />
             <ComposerCanvasDivider />
             <TagsChipRow

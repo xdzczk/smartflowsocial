@@ -300,7 +300,7 @@ export function GiveawayTable({
                           target="_blank"
                           rel="noreferrer"
                         >
-                          View Note
+                          Open on Nostr
                         </Link>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

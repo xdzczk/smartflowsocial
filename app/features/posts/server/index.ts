@@ -86,6 +86,7 @@ export {
 } from "../services/top-posts.server";
 export { getRunwayLastScheduledAtUtcMs } from "../runway/index.server";
 export { getPostDataForModal } from "../services/post-data-loader.server";
+export { getThreadGroupSegmentsForUser } from "../data/thread-group.server";
 
 // ============================================================================
 // Content and bulk

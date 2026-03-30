@@ -1,11 +1,29 @@
+import { FileText } from "lucide-react";
 import * as React from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  getNowForDateTimeLocal,
+  nowInTimezone,
+  parseDateTimeLocal,
+  toDate,
+} from "~/lib/temporal";
 
 export interface ReplyTemplate {
   id: string;
@@ -13,9 +31,12 @@ export interface ReplyTemplate {
   body: string;
 }
 
-const MODE_ACTIVE_CLASS = "bg-primary text-primary-foreground";
-const MODE_INACTIVE_CLASS = "bg-muted text-muted-foreground";
+export type EngagementComposerMode = "reply" | "quote";
+
 const POSTING_LABEL = "Posting...";
+
+const PUBLISH_TOGGLE_ACTIVE = "bg-primary text-primary-foreground shadow-sm";
+const PUBLISH_TOGGLE_IDLE = "bg-muted/60 text-muted-foreground hover:bg-muted";
 
 interface ReplyInputPanelProps {
   replyContent: string;
@@ -23,9 +44,7 @@ interface ReplyInputPanelProps {
   onContentChange: (content: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
-  /** Reply templates for slash-command or Insert template button */
   templates?: ReplyTemplate[];
-  /** Called when user inserts a template body (e.g. append to content) */
   onInsertTemplate?: (body: string) => void;
 }
 
@@ -216,17 +235,20 @@ export function QuoteInputPanel({
 }
 
 interface UnifiedEngagementComposerProps {
-  mode: "reply" | "quote" | "repost-note";
-  onModeChange: (mode: "reply" | "quote" | "repost-note") => void;
+  mode: EngagementComposerMode;
+  onModeChange: (mode: EngagementComposerMode) => void;
   value: string;
   onValueChange: (value: string) => void;
   isSubmitting: boolean;
-  onSubmitNow: () => void;
-  onSchedule: () => void;
+  userTimezone?: string;
+  queueTypes: Array<{ id: string; name: string }>;
+  onPostNow: () => void;
   onSaveDraft: () => void;
-  onAddToQueue: () => void;
+  onSchedule: (scheduledForIso: string) => void;
+  onAddToQueue: (queueTypeId: string | null) => void;
   onCancel: () => void;
   templates?: ReplyTemplate[];
+  trayRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function UnifiedEngagementComposer({
@@ -235,21 +257,87 @@ export function UnifiedEngagementComposer({
   value,
   onValueChange,
   isSubmitting,
-  onSubmitNow,
-  onSchedule,
+  userTimezone = "UTC",
+  queueTypes,
+  onPostNow,
   onSaveDraft,
+  onSchedule,
   onAddToQueue,
   onCancel,
   templates = [],
+  trayRef,
 }: UnifiedEngagementComposerProps) {
+  const tz = userTimezone.trim() || "UTC";
+  const [publishMode, setPublishMode] = React.useState<
+    "now" | "schedule" | "queue"
+  >("now");
+  const [scheduleLocal, setScheduleLocal] = React.useState(() =>
+    formatForDateTimeLocal(addHours(nowInTimezone(tz), 1), tz)
+  );
+  const [queueTypeId, setQueueTypeId] = React.useState(
+    () => queueTypes[0]?.id ?? ""
+  );
+
+  React.useEffect(() => {
+    if (
+      queueTypes.length > 0 &&
+      !queueTypes.some((q) => q.id === queueTypeId)
+    ) {
+      setQueueTypeId(queueTypes[0]?.id ?? "");
+    }
+  }, [queueTypes, queueTypeId]);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  const placeholder =
+    mode === "reply" ? "Write your reply…" : "Add your comment…";
+
+  const canSubmit = value.trim().length > 0;
+
+  const handlePrimary = () => {
+    if (!canSubmit) return;
+    if (publishMode === "now") {
+      onPostNow();
+      return;
+    }
+    if (publishMode === "schedule") {
+      const zdt = parseDateTimeLocal(scheduleLocal, tz);
+      onSchedule(toDate(zdt).toISOString());
+      return;
+    }
+    onAddToQueue(queueTypeId || null);
+  };
+
+  const showSpinner = isSubmitting && publishMode === "now";
+  const primaryButtonText = showSpinner
+    ? POSTING_LABEL
+    : publishMode === "now"
+      ? "Post now"
+      : publishMode === "schedule"
+        ? "Schedule"
+        : "Add to queue";
+
   return (
-    <div className="border-border bg-secondary/30 mt-2 rounded-lg border p-2">
-      <div className="mb-2 flex flex-wrap gap-2">
+    <div
+      ref={trayRef}
+      className="border-border bg-background/95 mt-0 border-t px-3 py-3"
+      role="region"
+      aria-label="Response tray"
+    >
+      <div className="ring-border mb-2 inline-flex rounded-md p-0.5 ring-1">
         <button
           type="button"
           onClick={() => onModeChange("reply")}
-          className={`rounded-full px-2 py-1 text-xs ${
-            mode === "reply" ? MODE_ACTIVE_CLASS : MODE_INACTIVE_CLASS
+          className={`rounded px-2.5 py-1 text-xs font-medium ${
+            mode === "reply" ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
           }`}
         >
           Reply
@@ -257,41 +345,124 @@ export function UnifiedEngagementComposer({
         <button
           type="button"
           onClick={() => onModeChange("quote")}
-          className={`rounded-full px-2 py-1 text-xs ${
-            mode === "quote" ? MODE_ACTIVE_CLASS : MODE_INACTIVE_CLASS
+          className={`rounded px-2.5 py-1 text-xs font-medium ${
+            mode === "quote" ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
           }`}
         >
-          Quote reply
-        </button>
-        <button
-          type="button"
-          onClick={() => onModeChange("repost-note")}
-          className={`rounded-full px-2 py-1 text-xs ${
-            mode === "repost-note" ? MODE_ACTIVE_CLASS : MODE_INACTIVE_CLASS
-          }`}
-        >
-          Repost with note
+          Quote
         </button>
       </div>
+
       <textarea
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
-        placeholder="Write your response..."
-        className="text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
-        rows={3}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            if (publishMode === "now" && canSubmit && !isSubmitting) {
+              onPostNow();
+            }
+          }
+        }}
+        placeholder={placeholder}
+        className="text-foreground placeholder:text-muted-foreground focus-visible:ring-ring min-h-[88px] w-full resize-y rounded-md border-0 bg-transparent px-1 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+        rows={4}
       />
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+
+      <div className="mt-2 flex flex-wrap gap-1">
+        {(
+          [
+            ["now", "Now"],
+            ["schedule", "Schedule"],
+            ["queue", "Queue"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setPublishMode(key)}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+              publishMode === key ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {publishMode === "schedule" ? (
+        <div className="mt-2">
+          <Input
+            type="datetime-local"
+            value={scheduleLocal}
+            min={getNowForDateTimeLocal(tz)}
+            onChange={(e) => setScheduleLocal(e.target.value)}
+            className="bg-muted/40 border-border h-9 max-w-xs text-sm"
+            aria-label="Schedule for"
+          />
+        </div>
+      ) : null}
+
+      {publishMode === "queue" && queueTypes.length > 0 ? (
+        <div className="mt-2 max-w-xs">
+          <Select value={queueTypeId} onValueChange={setQueueTypeId}>
+            <SelectTrigger className="h-9 text-sm" aria-label="Queue">
+              <SelectValue placeholder="Select queue" />
+            </SelectTrigger>
+            <SelectContent>
+              {queueTypes.map((q) => (
+                <SelectItem key={q.id} value={q.id}>
+                  {q.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+
+      {publishMode === "queue" && queueTypes.length === 0 ? (
+        <p className="text-muted-foreground mt-2 text-xs">
+          No queues configured. Save a draft or post now.
+        </p>
+      ) : null}
+
+      <div className="border-border/60 mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+        <Button
+          type="button"
+          size="sm"
+          disabled={
+            !canSubmit ||
+            (publishMode === "now" && isSubmitting) ||
+            (publishMode === "queue" && queueTypes.length === 0)
+          }
+          onClick={() => handlePrimary()}
+        >
+          {primaryButtonText}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
+          onClick={() => onSaveDraft()}
+          disabled={!canSubmit}
+        >
+          Save draft
+        </Button>
         {templates.length > 0 ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg px-2 py-1 text-xs font-medium"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground gap-1"
               >
-                Insert template
-              </button>
+                <FileText className="h-3.5 w-3.5" aria-hidden />
+                Templates
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               {templates.map((t) => (
                 <DropdownMenuItem
                   key={t.id}
@@ -303,45 +474,19 @@ export function UnifiedEngagementComposer({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground ml-auto"
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium"
         >
           Cancel
-        </button>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onSaveDraft}
-            className="text-muted-foreground hover:bg-muted rounded-lg px-3 py-1 text-xs font-medium"
-          >
-            Save draft
-          </button>
-          <button
-            type="button"
-            onClick={onAddToQueue}
-            className="text-muted-foreground hover:bg-muted rounded-lg px-3 py-1 text-xs font-medium"
-          >
-            Add to queue
-          </button>
-          <button
-            type="button"
-            onClick={onSchedule}
-            className="text-muted-foreground hover:bg-muted rounded-lg px-3 py-1 text-xs font-medium"
-          >
-            Schedule
-          </button>
-          <button
-            type="button"
-            onClick={onSubmitNow}
-            disabled={isSubmitting || !value.trim()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
-          >
-            {isSubmitting ? POSTING_LABEL : "Post now"}
-          </button>
-        </div>
+        </Button>
       </div>
+      <p className="text-muted-foreground mt-2 text-[10px]">
+        {publishMode === "now" ? "⌘/Ctrl+Enter to post now" : null}
+      </p>
     </div>
   );
 }

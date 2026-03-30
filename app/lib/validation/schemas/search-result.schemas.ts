@@ -5,6 +5,27 @@
 
 import { z } from "zod";
 
+export const lookupLoaderErrorSchema = z.object({
+  code: z.enum([
+    "INVALID_INPUT",
+    "NOT_FOUND",
+    "UNSUPPORTED",
+    "EXTERNAL_ERROR",
+    "UNKNOWN",
+  ]),
+  message: z.string(),
+  context: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const searchLookupResolutionSchema = z.object({
+  identifierKind: z.enum(["note", "nevent", "naddr", "hex"]),
+  status: z.enum(["resolved", "partial"]),
+  labels: z.array(z.string()),
+  topLevelReplyCount: z.number(),
+  statsUnavailable: z.boolean(),
+  threadPartial: z.boolean(),
+});
+
 /**
  * Schema for search event (from fetcher)
  */
@@ -51,7 +72,8 @@ export const searchResultDataSchema = z.object({
   event: searchEventSchema.optional(),
   stats: searchStatsSchema.optional(),
   replies: z.array(searchReplyItemSchema).optional(),
-  error: z.string().optional(),
+  resolution: searchLookupResolutionSchema.optional(),
+  error: z.union([z.string(), lookupLoaderErrorSchema]).optional(),
 });
 
 /**

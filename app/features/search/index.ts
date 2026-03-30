@@ -16,7 +16,19 @@
 // Search Actions
 // ============================================================================
 
-export { handleSearchEvent as handleSearchAction } from "./services/search-action.server";
+export {
+  deriveLookupIdentifierKind,
+  handleSearchEvent as handleSearchAction,
+} from "./services/search-action.server";
+export type {
+  LookupIdentifierKind,
+  SearchLookupResolution,
+} from "./services/search-action.server";
+export { serializeLookupLoaderError } from "./services/lookup-loader-error.server";
+export type {
+  LookupLoaderErrorCode,
+  LookupLoaderErrorPayload,
+} from "./services/lookup-loader-error.server";
 
 // ============================================================================
 // Components (Public API)

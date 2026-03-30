@@ -86,6 +86,28 @@ describe("composer preview", () => {
     });
     expect(n.options).toEqual(["a", "b"]);
     expect(n.question).toBe("Q");
+    expect(n.hasPollEndDate).toBe(false);
+  });
+
+  it("normalizePollPreviewFromComposer sets hasPollEndDate when absolute end is set", () => {
+    const n = normalizePollPreviewFromComposer({
+      question: "Q",
+      options: ["a", "b"],
+      pollType: "singlechoice",
+      tagsLine: "",
+      includeHashtagsInNoteBody: true,
+      end: {
+        pollEndMode: "absolute",
+        endsAtLocal: "2026-06-01T12:00",
+        pollEndHoursAfterPublish: 1,
+        publishMode: "now",
+        scheduledFor: "",
+        userTimezone: "UTC",
+        userTimeFormat: "24h",
+      },
+    });
+    expect(n.hasPollEndDate).toBe(true);
+    expect(n.endLabel).toMatch(/^Ends /);
   });
 
   it("computePollPreviewWarnings detects duplicate options", () => {

@@ -3,10 +3,13 @@ import {
   useFetcher,
   useLoaderData,
   useNavigation,
+  useRevalidator,
+  useSearchParams,
 } from "@remix-run/react";
 import { Search } from "lucide-react";
 import { Suspense } from "react";
 
+import { Badge } from "~/components/ui/badge";
 import {
   validateSearchReplies,
   validateSearchResultData,
@@ -16,6 +19,7 @@ import {
 
 import { useSearchState } from "../hooks/useSearchState";
 
+import { LookupErrorPanel } from "./LookupErrorPanel";
 import { SearchResult } from "./SearchResult";
 import { SearchToast } from "./SearchToast";
 
@@ -24,7 +28,8 @@ interface DeferredSearchResult {
   event?: unknown;
   stats?: unknown;
   replies?: unknown;
-  error?: string;
+  resolution?: unknown;
+  error?: unknown;
 }
 
 export default function SearchPostsPage() {
@@ -35,7 +40,8 @@ export default function SearchPostsPage() {
       event?: unknown;
       stats?: unknown;
       replies?: unknown;
-      error?: string;
+      resolution?: unknown;
+      error?: unknown;
     };
     searchResultPromise?: Promise<DeferredSearchResult>;
   }>();
@@ -86,7 +92,8 @@ interface SearchPostsPageContentProps {
     event?: unknown;
     stats?: unknown;
     replies?: unknown;
-    error?: string;
+    resolution?: unknown;
+    error?: unknown;
   } | null;
   forceShowSkeleton: boolean;
 }
@@ -97,12 +104,19 @@ function SearchPostsPageContent({
   loaderSearchResult,
   forceShowSkeleton,
 }: SearchPostsPageContentProps) {
+  const [searchParams] = useSearchParams();
+  const rawQ = searchParams.get("q")?.trim();
+  const queryLabel = rawQ && rawQ.length > 0 ? rawQ : null;
+  const revalidator = useRevalidator();
+
   const {
     toast,
     isSearching,
     searchResult,
     searchStats,
     searchReplies,
+    searchLookupError,
+    searchResolution,
     setToast,
     handleScheduleQuote,
     handleScheduleRepost,
@@ -117,20 +131,35 @@ function SearchPostsPageContent({
     return <SearchPostSkeleton />;
   }
 
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="mb-2 text-2xl font-bold">
-          {searchResult ? "Post" : "Search Posts"}
-        </h1>
-        <p className="dark:text-muted-foreground text-foreground text-sm">
-          {searchResult
-            ? "Viewing post from link. Use the search bar above to open another."
-            : "Use the search bar above to view a Nostr post or article (note1, nevent1, naddr1, or hex)."}
-        </p>
-      </div>
+  const hasResult = Boolean(searchResult);
+  const showErrorPanel = Boolean(
+    queryLabel && searchLookupError && !hasResult && !isSearching
+  );
 
-      {searchResult ? (
+  return (
+    <div className="mx-auto max-w-[1360px] px-4 py-6 sm:px-6">
+      <header className="mb-6">
+        <h1 className="text-foreground text-2xl font-bold tracking-tight">
+          Lookup Result
+        </h1>
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+          {hasResult
+            ? "Resolved from pasted identifier. Paste another identifier in the top bar to inspect a different object."
+            : "Look up any Nostr object. Paste a note, nevent, naddr, event ID, or supported URL in the global search bar."}
+        </p>
+      </header>
+
+      {showErrorPanel && searchLookupError ? (
+        <LookupErrorPanel
+          error={searchLookupError}
+          onNewLookup={clearSearch}
+          onRetry={() => {
+            revalidator.revalidate();
+          }}
+        />
+      ) : null}
+
+      {hasResult ? (
         <SearchResult
           result={
             validateSearchResultDisplay(searchResult) ?? {
@@ -147,23 +176,49 @@ function SearchPostsPageContent({
           }
           stats={validateSearchStats(searchStats) ?? null}
           replies={validateSearchReplies(searchReplies) ?? []}
+          resolution={searchResolution}
+          queryLabel={queryLabel}
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}
+          onRetryLookup={() => {
+            revalidator.revalidate();
+          }}
         />
-      ) : !isSearching ? (
-        <div className="dark:border-border dark:bg-card border-border bg-card flex flex-col items-center justify-center rounded-lg border py-12 text-center">
+      ) : null}
+
+      {!hasResult && !showErrorPanel && !isSearching && !queryLabel ? (
+        <div className="border-border bg-card mx-auto flex max-w-lg flex-col items-center rounded-xl border px-6 py-14 text-center shadow-sm">
           <Search
-            className="text-muted-foreground mb-3 h-12 w-12"
+            className="text-muted-foreground mb-4 h-12 w-12"
             strokeWidth={1.5}
             aria-hidden
           />
-          <p className="dark:text-muted-foreground text-muted-foreground text-sm">
-            Paste a Nostr link (note1, nevent1, naddr1) in the top search bar to
-            view a post or article here.
+          <h2 className="text-foreground text-lg font-semibold">
+            Look up any Nostr object
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+            Paste a note, nevent, naddr, event ID, or supported URL in the top
+            search bar to inspect it.
           </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <Badge variant="outline" className="font-mono text-xs">
+              note1…
+            </Badge>
+            <Badge variant="outline" className="font-mono text-xs">
+              nevent1…
+            </Badge>
+            <Badge variant="outline" className="font-mono text-xs">
+              naddr1…
+            </Badge>
+            <Badge variant="outline" className="font-mono text-xs">
+              hex (64 chars)
+            </Badge>
+          </div>
         </div>
       ) : null}
+
+      {isSearching && !hasResult ? <SearchPostSkeleton /> : null}
 
       <SearchToast toast={toast} onClose={() => setToast(null)} />
     </div>
@@ -172,29 +227,36 @@ function SearchPostsPageContent({
 
 function SearchPostSkeleton() {
   return (
-    <div className="p-6">
+    <div className="mx-auto max-w-[1360px] px-4 py-6 sm:px-6">
       <div className="mb-6">
-        <div className="bg-muted mb-2 h-8 w-20 animate-pulse rounded" />
-        <div className="bg-muted h-4 w-80 max-w-full animate-pulse rounded" />
+        <div className="bg-muted mb-2 h-8 w-48 animate-pulse rounded" />
+        <div className="bg-muted h-4 w-full max-w-md animate-pulse rounded" />
       </div>
 
-      <div className="dark:border-border dark:bg-card border-border bg-card space-y-4 rounded-lg border p-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-muted h-10 w-10 animate-pulse rounded-full" />
-          <div className="space-y-2">
-            <div className="bg-muted h-4 w-32 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-24 animate-pulse rounded" />
+      <div className="bg-muted mb-6 h-20 w-full animate-pulse rounded-xl" />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <div className="border-border bg-card space-y-4 rounded-xl border p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="bg-muted h-10 w-10 animate-pulse rounded-full" />
+              <div className="space-y-2">
+                <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+                <div className="bg-muted h-3 w-24 animate-pulse rounded" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="bg-muted h-4 w-full animate-pulse rounded" />
+              <div className="bg-muted h-4 w-11/12 animate-pulse rounded" />
+              <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+            </div>
+            <div className="bg-muted mx-auto h-48 max-w-md animate-pulse rounded-lg" />
           </div>
+          <div className="bg-muted h-16 w-full animate-pulse rounded-xl" />
+          <div className="bg-muted h-40 w-full animate-pulse rounded-xl" />
         </div>
-        <div className="space-y-2">
-          <div className="bg-muted h-4 w-full animate-pulse rounded" />
-          <div className="bg-muted h-4 w-11/12 animate-pulse rounded" />
-          <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-muted h-8 animate-pulse rounded" />
-          <div className="bg-muted h-8 animate-pulse rounded" />
-          <div className="bg-muted h-8 animate-pulse rounded" />
+        <div className="hidden lg:block">
+          <div className="border-border bg-card h-72 w-full animate-pulse rounded-xl border shadow-sm" />
         </div>
       </div>
     </div>

@@ -17,8 +17,8 @@ export function useTemplatesState() {
     scheduleData?: ScheduleData[];
   }>();
 
-  // Check if we're on a child route (edit page)
-  const isOnChildRoute = location.pathname.includes("/edit/");
+  // Child routes: /edit/:id, /new, /new/post, /new/longform (not the list at /dashboard/templates)
+  const isOnChildRoute = location.pathname.startsWith("/dashboard/templates/");
 
   return {
     selectedTemplate,

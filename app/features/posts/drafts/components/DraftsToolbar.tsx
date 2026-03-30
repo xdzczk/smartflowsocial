@@ -1,0 +1,127 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  CONTENT_MOBILE_BREAKPOINT_PX,
+  MOBILE_FILTER_LABEL_CLASS,
+  MOBILE_FILTER_SELECT_TRIGGER_CLASS,
+} from "~/features/posts/components/constants";
+import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
+import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
+import type { QueueType } from "~/features/posts/types";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
+
+export interface DraftsToolbarProps {
+  currentTab: string;
+  basePath?: string;
+  queueTypes: QueueType[];
+  totalContentCount: number;
+  totalPostsCount: number;
+  totalPollsCount: number;
+  totalThreadsCount: number;
+  totalRepostsCount: number;
+  totalLongformCount: number;
+  bulkCount: number;
+  showQueueFilter: boolean;
+  showSort: boolean;
+  sortConfig: { key: string; direction: "asc" | "desc" };
+  onSortChange: (key: string, direction: "asc" | "desc") => void;
+}
+
+export function DraftsToolbar({
+  currentTab,
+  basePath = "/dashboard/drafts",
+  queueTypes,
+  totalContentCount,
+  totalPostsCount,
+  totalPollsCount,
+  totalThreadsCount,
+  totalRepostsCount,
+  totalLongformCount,
+  bulkCount,
+  showQueueFilter,
+  showSort,
+  sortConfig,
+  onSortChange,
+}: DraftsToolbarProps) {
+  const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+
+  const sortControl = showSort ? (
+    <div className="flex min-w-0 flex-shrink-0 items-center gap-2">
+      <span
+        className={`text-muted-foreground hidden text-sm sm:inline ${MOBILE_FILTER_LABEL_CLASS}`}
+      >
+        Sort
+      </span>
+      <Select
+        value={
+          sortConfig.key === "caption"
+            ? `caption-${sortConfig.direction}`
+            : `date-${sortConfig.direction}`
+        }
+        onValueChange={(value) => {
+          if (
+            value === "date-asc" ||
+            value === "date-desc" ||
+            value === "caption-asc" ||
+            value === "caption-desc"
+          ) {
+            const [key, dir] = value.split("-") as [string, "asc" | "desc"];
+            onSortChange(key === "date" ? "updatedAt" : "caption", dir);
+          }
+        }}
+      >
+        <SelectTrigger
+          className={`border-border h-9 w-[11rem] ${MOBILE_FILTER_SELECT_TRIGGER_CLASS}`}
+          aria-label="Sort drafts"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="date-desc">Updated (newest)</SelectItem>
+          <SelectItem value="date-asc">Updated (oldest)</SelectItem>
+          <SelectItem value="caption-asc">Title (A–Z)</SelectItem>
+          <SelectItem value="caption-desc">Title (Z–A)</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  ) : null;
+
+  return (
+    <div
+      className={`border-border mb-6 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3`}
+    >
+      <div className="min-w-0 flex-1">
+        <PostTypeTabs
+          currentTab={currentTab}
+          basePath={basePath}
+          totalContentCount={totalContentCount}
+          totalPostsCount={totalPostsCount}
+          totalPollsCount={totalPollsCount}
+          totalThreadsCount={totalThreadsCount}
+          totalRepostsCount={totalRepostsCount}
+          totalLongformCount={totalLongformCount}
+          bulkCount={bulkCount}
+          inRow
+        />
+      </div>
+      <div className="flex flex-shrink-0 flex-wrap items-end gap-3 sm:justify-end">
+        {showQueueFilter ? (
+          <QueueSelectionTabs
+            currentTab={currentTab}
+            queueTypes={queueTypes}
+            basePath={basePath}
+          />
+        ) : null}
+        {!isMobile ? sortControl : null}
+      </div>
+      {isMobile && showSort ? (
+        <div className="sm:hidden">{sortControl}</div>
+      ) : null}
+    </div>
+  );
+}

@@ -71,7 +71,7 @@ export function ComposerActionButtons({
   isSigning,
   fetcherState,
   templateName,
-  editTemplateContext,
+  editTemplateContext: _editTemplateContext,
   publishMode,
 }: ComposerActionButtonsProps) {
   const primaryLabel =
@@ -98,11 +98,7 @@ export function ComposerActionButtons({
           name="_action"
           disabled={disabled || !templateName.trim()}
         >
-          {fetcherState !== "idle"
-            ? "Saving..."
-            : editTemplateContext
-              ? "Save"
-              : "Save as template"}
+          {fetcherState !== "idle" ? "Saving..." : "Save template"}
         </Button>
         <Button type="button" variant="ghost" asChild>
           <Link to="/dashboard/templates">Cancel</Link>

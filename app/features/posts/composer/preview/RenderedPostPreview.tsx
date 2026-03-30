@@ -16,17 +16,20 @@ export function RenderedPostPreview({
   return (
     <article>
       <PreviewAccountHeader user={user} />
-      <PreviewPostMediaGrid media={data.media} />
       <PreviewNoteBody text={data.text} />
+      <PreviewPostMediaGrid
+        media={data.media}
+        className={data.text.trim() ? "mt-2.5" : undefined}
+      />
       {data.hideTags ? (
         data.tags.length > 0 ? (
-          <p className="text-muted-foreground/85 mt-3 text-xs">
+          <p className="text-muted-foreground/75 mt-2.5 text-xs">
             {data.tags.length} hidden topic tag
             {data.tags.length === 1 ? "" : "s"} included
           </p>
         ) : null
       ) : data.tags.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {data.tags.map((t) => (
             <Badge key={t} variant="secondary" className="text-xs font-normal">
               #{t}

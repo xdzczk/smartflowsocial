@@ -17,13 +17,11 @@ import {
   deleteTemplate,
 } from "~/features/templates/services/template-data.server";
 import { getQueueTypeByNameForUser } from "~/features/user";
-import { getUserTimezone } from "~/features/user/services/user-settings.server";
 import { ValidationError } from "~/lib/errors";
 import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
-import { formatForDateTimeLocal, nowInTimezone } from "~/lib/temporal";
 import {
   templateEditActionSchema,
   validateFormDataOrRespond,
@@ -251,43 +249,5 @@ export async function handleTemplateEditAction(
     return json({ success: true });
   }
 
-  if (_action === "updateTemplateLongform") {
-    return applyUpdateLongform(result.data, templateId, userId);
-  }
-
-  // TypeScript guarantees this is "schedule" after checking all other actions
-  const template = await getTemplateById({ id: templateId, userId });
-
-  if (!template) {
-    return json({ error: "Template not found" }, { status: 404 });
-  }
-
-  // Prepare template data for scheduling (similar to repost mode)
-  // Get user's timezone for proper date handling
-  const userTimezone = (await getUserTimezone(userId)) ?? "UTC";
-  const now = nowInTimezone(userTimezone);
-  const startTime = now.add({ hours: 1 });
-
-  // Schedule only applies to post-type templates (one post)
-  const post = template.post;
-  if (!post) {
-    return json({ error: "Template has no post to schedule" }, { status: 400 });
-  }
-
-  // Prisma JsonValue for fileUrl may be string[] or string at runtime
-  const fileUrl = Array.isArray(post.fileUrl)
-    ? (post.fileUrl[0] ?? "")
-    : typeof post.fileUrl === "string"
-      ? post.fileUrl
-      : "";
-  const templateData = [
-    {
-      caption: post.caption ?? "",
-      fileUrl,
-      queueType: post.queueTypeId ?? "unassigned",
-      scheduledFor: formatForDateTimeLocal(startTime, userTimezone),
-    },
-  ];
-
-  return json({ scheduleData: templateData });
+  return applyUpdateLongform(result.data, templateId, userId);
 }

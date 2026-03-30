@@ -16,12 +16,14 @@ export function normalizePollPreviewFromComposer(input: {
   const options = input.options
     .map((o) => o.trim())
     .filter((o) => o.length > 0);
+  const endLabel = getPollPreviewEndLabel(input.end);
   return {
     type: "poll",
     question: input.question.trim(),
     options,
     mode: input.pollType === "multiplechoice" ? "multiple" : "single",
-    endLabel: getPollPreviewEndLabel(input.end),
+    endLabel,
+    hasPollEndDate: endLabel !== "No end date set",
     tags: parsePreviewTagLabels(input.tagsLine),
     hideTags: input.includeHashtagsInNoteBody === false,
   };

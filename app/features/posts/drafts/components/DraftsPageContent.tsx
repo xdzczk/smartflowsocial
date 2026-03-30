@@ -3,20 +3,17 @@ import {
   DraftBulkResume,
   DraftsBulkActions,
   DraftsTable,
+  DraftsToolbar,
 } from "~/features/posts/drafts";
 import { LongFormListing } from "~/features/posts/longform";
 import type {
   CombinedContent,
   LongFormPostData,
+  LongFormPostType,
   PostData,
 } from "~/features/posts/server";
 import type { QueueType } from "~/features/posts/types";
-import type { LongFormPostType } from "~/features/posts/ui";
-import {
-  AllContentListing,
-  PostTypeTabs,
-  QueueSelectionTabs,
-} from "~/features/posts/ui";
+import { AllContentListing } from "~/features/posts/ui";
 import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion";
 import type { DraftsStatePost } from "~/lib/validation/drafts-post-conversion";
 
@@ -31,7 +28,6 @@ export interface DraftsPageContentProps {
   bulkCount: number;
   queueTypes: QueueType[];
   bulkDraftGroups: Array<{ id: string; postCount: number; updatedAt: string }>;
-  // allContent listing
   allContent: unknown[];
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -40,11 +36,7 @@ export interface DraftsPageContentProps {
   toggleSelectAll: () => void;
   handleBulkDelete: () => void;
   bulkDeleteFetcherState: string;
-  onPostSelectFromAll: (content: {
-    type: string;
-    originalData: unknown;
-  }) => void;
-  // posts/reposts table
+  onResumeFromAll: (content: { type: string; originalData: unknown }) => void;
   filteredPosts: DraftsStatePost[];
   sortConfig: { key: string; direction: "asc" | "desc" };
   requestSort: (key: string) => void;
@@ -52,14 +44,12 @@ export interface DraftsPageContentProps {
   showAdvancedBulkResume: boolean;
   setShowAdvancedBulkResume: (v: boolean) => void;
   bulkResumeFetcherState: string;
-  onPostClick: (post: { id: string }) => void;
+  onResumeShortDraft: (post: { id: string }) => void;
   posts: PostData[];
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
-  // longform
   longformPosts: LongFormPostData[];
-  onLongFormSelect: (post: LongFormPostData | LongFormPostType) => void;
-  // scroll
+  onResumeLongform: (post: LongFormPostData | LongFormPostType) => void;
   isMobile: boolean;
   prefetchSentinelRef: React.Ref<HTMLDivElement | null>;
   sentinelRef: React.Ref<HTMLDivElement | null>;
@@ -86,7 +76,7 @@ export function DraftsPageContent({
   toggleSelectAll,
   handleBulkDelete,
   bulkDeleteFetcherState,
-  onPostSelectFromAll,
+  onResumeFromAll,
   filteredPosts,
   sortConfig,
   requestSort,
@@ -94,12 +84,12 @@ export function DraftsPageContent({
   showAdvancedBulkResume,
   setShowAdvancedBulkResume,
   bulkResumeFetcherState,
-  onPostClick,
+  onResumeShortDraft,
   posts,
   userTimezone,
   userTimeFormat = "12h",
   longformPosts,
-  onLongFormSelect,
+  onResumeLongform,
   isMobile,
   prefetchSentinelRef,
   sentinelRef,
@@ -114,30 +104,34 @@ export function DraftsPageContent({
     currentTab === "reposts" ||
     currentTab === "longform";
 
+  const toolbarCounts = {
+    totalContentCount: allContentLength,
+    totalPostsCount: postsCount,
+    totalPollsCount: pollsCount,
+    totalThreadsCount: threadsCount,
+    totalRepostsCount: repostsCount,
+    totalLongformCount: longformCount,
+    bulkCount,
+  };
+
+  const shortFormSortTabs =
+    currentTab === "posts" ||
+    currentTab === "reposts" ||
+    currentTab === "polls" ||
+    currentTab === "threads";
+
   if (currentTab === "bulk") {
     return (
       <>
-        <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
-          <PostTypeTabs
-            currentTab={currentTab}
-            basePath="/dashboard/drafts"
-            totalContentCount={allContentLength}
-            totalPostsCount={postsCount}
-            totalPollsCount={pollsCount}
-            totalThreadsCount={threadsCount}
-            totalRepostsCount={repostsCount}
-            totalLongformCount={longformCount}
-            bulkCount={bulkCount}
-            inRow
-          />
-          {showQueueTabs ? (
-            <QueueSelectionTabs
-              currentTab={currentTab}
-              queueTypes={queueTypes}
-              basePath="/dashboard/drafts"
-            />
-          ) : null}
-        </div>
+        <DraftsToolbar
+          currentTab={currentTab}
+          queueTypes={queueTypes}
+          {...toolbarCounts}
+          showQueueFilter={false}
+          showSort={false}
+          sortConfig={sortConfig}
+          onSortChange={(key, direction) => setSortConfig({ key, direction })}
+        />
         <div className="flex min-h-0 flex-1 flex-col">
           <BulkDraftsListing groups={bulkDraftGroups} />
         </div>
@@ -148,27 +142,15 @@ export function DraftsPageContent({
   if (currentTab === "all") {
     return (
       <>
-        <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
-          <PostTypeTabs
-            currentTab={currentTab}
-            basePath="/dashboard/drafts"
-            totalContentCount={allContentLength}
-            totalPostsCount={postsCount}
-            totalPollsCount={pollsCount}
-            totalThreadsCount={threadsCount}
-            totalRepostsCount={repostsCount}
-            totalLongformCount={longformCount}
-            bulkCount={bulkCount}
-            inRow
-          />
-          {showQueueTabs ? (
-            <QueueSelectionTabs
-              currentTab={currentTab}
-              queueTypes={queueTypes}
-              basePath="/dashboard/drafts"
-            />
-          ) : null}
-        </div>
+        <DraftsToolbar
+          currentTab={currentTab}
+          queueTypes={queueTypes}
+          {...toolbarCounts}
+          showQueueFilter={showQueueTabs}
+          showSort={false}
+          sortConfig={sortConfig}
+          onSortChange={(key, direction) => setSortConfig({ key, direction })}
+        />
         <div className="flex min-h-0 flex-1 flex-col">
           <AllContentListing
             content={allContent as CombinedContent[]}
@@ -176,7 +158,7 @@ export function DraftsPageContent({
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             userTimezone={userTimezone}
-            onPostSelect={onPostSelectFromAll}
+            onResumeDraft={onResumeFromAll}
             selectedItems={selectedPosts}
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
@@ -193,39 +175,25 @@ export function DraftsPageContent({
     );
   }
 
-  if (
-    currentTab === "posts" ||
-    currentTab === "reposts" ||
-    currentTab === "polls" ||
-    currentTab === "threads"
-  ) {
+  if (shortFormSortTabs) {
     return (
       <>
-        <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
-          <PostTypeTabs
-            currentTab={currentTab}
-            basePath="/dashboard/drafts"
-            totalContentCount={allContentLength}
-            totalPostsCount={postsCount}
-            totalPollsCount={pollsCount}
-            totalThreadsCount={threadsCount}
-            totalRepostsCount={repostsCount}
-            totalLongformCount={longformCount}
-            bulkCount={bulkCount}
-            inRow
-          />
-          {showQueueTabs ? (
-            <QueueSelectionTabs
-              currentTab={currentTab}
-              queueTypes={queueTypes}
-              basePath="/dashboard/drafts"
-            />
-          ) : null}
-        </div>
+        <DraftsToolbar
+          currentTab={currentTab}
+          queueTypes={queueTypes}
+          {...toolbarCounts}
+          showQueueFilter={showQueueTabs}
+          showSort={true}
+          sortConfig={sortConfig}
+          onSortChange={(key, direction) => setSortConfig({ key, direction })}
+        />
         <div className="flex min-h-0 flex-1 flex-col">
           <DraftsBulkActions
             selectedCount={selectedPosts.size}
-            onBulkEdit={() => setShowAdvancedBulkResume(true)}
+            queueTypes={queueTypes}
+            selectedPostIds={Array.from(selectedPosts)}
+            filteredPosts={filteredPosts}
+            onBulkReviewSchedule={() => setShowAdvancedBulkResume(true)}
             onBulkDelete={handleBulkDelete}
             isDeleting={bulkDeleteFetcherState !== "idle"}
             isResuming={bulkResumeFetcherState !== "idle"}
@@ -237,7 +205,7 @@ export function DraftsPageContent({
             selectedPosts={selectedPosts}
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
-            onPostClick={onPostClick}
+            onResume={onResumeShortDraft}
             bulkDeleteState={bulkDeleteFetcherState}
             userTimezone={userTimezone}
             userTimeFormat={userTimeFormat}
@@ -246,6 +214,7 @@ export function DraftsPageContent({
             sentinelRef={isMobile ? sentinelRef : undefined}
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            showMobileSortControl={false}
           />
           {showAdvancedBulkResume ? (
             <div className="bg-background fixed inset-0 z-50">
@@ -266,27 +235,15 @@ export function DraftsPageContent({
 
   return (
     <>
-      <div className="border-border mb-6 flex flex-row flex-nowrap items-end gap-2 border-b">
-        <PostTypeTabs
-          currentTab={currentTab}
-          basePath="/dashboard/drafts"
-          totalContentCount={allContentLength}
-          totalPostsCount={postsCount}
-          totalPollsCount={pollsCount}
-          totalThreadsCount={threadsCount}
-          totalRepostsCount={repostsCount}
-          totalLongformCount={longformCount}
-          bulkCount={bulkCount}
-          inRow
-        />
-        {showQueueTabs ? (
-          <QueueSelectionTabs
-            currentTab={currentTab}
-            queueTypes={queueTypes}
-            basePath="/dashboard/drafts"
-          />
-        ) : null}
-      </div>
+      <DraftsToolbar
+        currentTab={currentTab}
+        queueTypes={queueTypes}
+        {...toolbarCounts}
+        showQueueFilter={showQueueTabs}
+        showSort={false}
+        sortConfig={sortConfig}
+        onSortChange={(key, direction) => setSortConfig({ key, direction })}
+      />
       <div className="flex min-h-0 flex-1 flex-col">
         <LongFormListing
           posts={longformPosts}
@@ -294,7 +251,7 @@ export function DraftsPageContent({
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={userTimezone}
-          onPostSelect={onLongFormSelect}
+          onResumeDraft={onResumeLongform}
           prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
           sentinelRef={isMobile ? sentinelRef : undefined}
           isFetchingNextPage={isFetchingNextPage}

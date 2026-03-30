@@ -1,54 +1,54 @@
-import { Outlet, useParams, useSearchParams } from "@remix-run/react";
-import { useState } from "react";
+import {
+  Outlet,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 
 import {
+  getLongFormDraftEditUrl,
+  getShortDraftComposeUrl,
   isPollDraftPost,
   isShortPostDraftForPostsTab,
   isThreadDraftPost,
   useDraftsInfiniteData,
   useDraftsState,
 } from "~/features/posts/drafts";
-import { LongFormDetailsModal } from "~/features/posts/longform";
+import type { DraftsHookPost } from "~/features/posts/hooks/useDraftsState";
 import type {
-  CombinedContent,
   LongFormPostData,
+  LongFormPostType,
   PostData,
 } from "~/features/posts/server";
-import { ContentListPageHeader, PostDetailsModal } from "~/features/posts/ui";
+import { ContentListPageHeader } from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 import { DraftsPageContent } from "./DraftsPageContent";
 
-function convertPostDataToDraftsPost(postData: PostData): {
-  id: string;
-  caption?: string | null;
-  createdAt: string;
-  [key: string]: unknown;
-} {
-  return {
-    ...postData,
-    createdAt:
-      postData.createdAt instanceof Date
-        ? postData.createdAt.toISOString()
-        : typeof postData.createdAt === "string"
-          ? postData.createdAt
-          : new Date().toISOString(),
+function convertPostDataToDraftsPost(postData: PostData): DraftsHookPost {
+  const toIso = (d: Date | string | undefined) => {
+    if (d instanceof Date) return d.toISOString();
+    if (typeof d === "string") return d;
+    return new Date().toISOString();
   };
+  const hookPost: DraftsHookPost = {
+    ...postData,
+    createdAt: toIso(postData.createdAt as Date | string),
+    updatedAt: toIso(postData.updatedAt as Date | string | undefined),
+  };
+  return hookPost;
 }
 
 export default function DraftsPage() {
-  const [selectedLongFormPost, setSelectedLongFormPost] =
-    useState<LongFormPostData | null>(null);
-
+  const navigate = useNavigate();
   const {
     posts,
     longformPosts,
     allContent,
     user,
     queueTypes,
-    selectedQueueType: _selectedQueueType,
     bulkDraftGroups,
     isFetchingNextPage,
     hasNextPage,
@@ -80,8 +80,6 @@ export default function DraftsPage() {
     sortConfig,
     setSortConfig,
     searchTerm,
-    setSearchTerm,
-    selectedPost,
     selectedPosts,
     showAdvancedBulkResume,
     setShowAdvancedBulkResume,
@@ -89,7 +87,7 @@ export default function DraftsPage() {
     bulkDeleteFetcher,
     bulkResumeFetcher,
     requestSort,
-    setSelectedPost,
+    setSearchTerm,
     togglePostSelection,
     toggleSelectAll,
     handleBulkDelete,
@@ -106,13 +104,28 @@ export default function DraftsPage() {
         : "12h"
       : "12h";
 
+  const resumeShortDraft = (post: PostData) => {
+    navigate(getShortDraftComposeUrl(post.id, post));
+  };
+
+  const resumeLongform = (post: LongFormPostData | LongFormPostType) => {
+    navigate(getLongFormDraftEditUrl(post.id));
+  };
+
   if (isChildRoute) {
     return <Outlet />;
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <ContentListPageHeader pageType="drafts" currentTab={currentTab} />
+    <div className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-4 pb-8">
+      <div className="pt-2 pb-4">
+        <ContentListPageHeader
+          pageType="drafts"
+          currentTab={currentTab}
+          titleOverride="Drafts"
+          subtitle="Resume unfinished posts, threads, polls, articles, and bulk drafts."
+        />
+      </div>
 
       <DraftsPageContent
         currentTab={currentTab}
@@ -133,13 +146,11 @@ export default function DraftsPage() {
         toggleSelectAll={toggleSelectAll}
         handleBulkDelete={handleBulkDelete}
         bulkDeleteFetcherState={bulkDeleteFetcher.state}
-        onPostSelectFromAll={(content) => {
+        onResumeFromAll={(content) => {
           if (content.type === "post") {
-            setSelectedPost(
-              convertPostDataToDraftsPost(content.originalData as PostData)
-            );
+            resumeShortDraft(content.originalData as PostData);
           } else {
-            setSelectedLongFormPost(content.originalData as LongFormPostData);
+            resumeLongform(content.originalData as LongFormPostData);
           }
         }}
         filteredPosts={filteredPosts}
@@ -149,53 +160,23 @@ export default function DraftsPage() {
         showAdvancedBulkResume={showAdvancedBulkResume}
         setShowAdvancedBulkResume={setShowAdvancedBulkResume}
         bulkResumeFetcherState={bulkResumeFetcher.state}
-        onPostClick={(post) => {
-          const originalPostData = posts.find((p) => p.id === post.id);
-          if (originalPostData) {
-            setSelectedPost(convertPostDataToDraftsPost(originalPostData));
+        onResumeShortDraft={(post) => {
+          const full = posts.find((p) => p.id === post.id);
+          if (full) {
+            resumeShortDraft(full);
           }
         }}
         posts={posts}
         userTimezone={user?.timezone ?? undefined}
         userTimeFormat={userTimeFormat}
         longformPosts={longformPosts}
-        onLongFormSelect={(post) =>
-          setSelectedLongFormPost(post as LongFormPostData)
-        }
+        onResumeLongform={resumeLongform}
         isMobile={isMobile}
         prefetchSentinelRef={prefetchSentinelRef}
         sentinelRef={sentinelRef}
         isFetchingNextPage={isFetchingNextPage}
         setScrollRoot={setScrollRoot}
       />
-
-      {(currentTab === "all" || currentTab === "longform") &&
-      selectedLongFormPost ? (
-        <LongFormDetailsModal
-          post={selectedLongFormPost}
-          onClose={() => setSelectedLongFormPost(null)}
-          type="draft"
-          userTimezone={user?.timezone ?? undefined}
-        />
-      ) : null}
-
-      {(currentTab === "all" ||
-        currentTab === "posts" ||
-        currentTab === "reposts" ||
-        currentTab === "polls" ||
-        currentTab === "threads") &&
-      selectedPost ? (
-        <PostDetailsModal
-          post={
-            (posts.find((p) => p.id === selectedPost.id) ??
-              allContent.find((c) => c.id === selectedPost.id) ??
-              selectedPost) as PostData | CombinedContent
-          }
-          onClose={() => setSelectedPost(null)}
-          type="draft"
-          userTimezone={user?.timezone ?? undefined}
-        />
-      ) : null}
 
       {!isMobile ? (
         <>

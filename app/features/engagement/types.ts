@@ -180,6 +180,12 @@ export interface ParentPost {
   contextLabel?: string | null;
 }
 
+/** Minimal queue type for engagement response tray */
+export interface EngagementQueueTypeOption {
+  id: string;
+  name: string;
+}
+
 /**
  * Grouped notification structure with parent post
  */

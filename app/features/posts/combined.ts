@@ -75,6 +75,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     result.nostrEventId = post.nostrEventId;
   }
   result.postKind = post.postKind;
+  result.threadGroupId = post.threadGroupId ?? undefined;
   result.replyToEventId = post.replyToEventId ?? undefined;
   result.replyToPostId = post.replyToPostId ?? undefined;
 

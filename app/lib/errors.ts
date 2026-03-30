@@ -145,6 +145,15 @@ export class NotFoundError extends AppError {
 }
 
 /**
+ * Lookup resolved to an event kind we do not support in the inspector (e.g. non–kind-1 for note-style input).
+ */
+export class LookupUnsupportedKindError extends AppError {
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, 422, "LOOKUP_UNSUPPORTED_KIND", true, context);
+  }
+}
+
+/**
  * Conflict errors (409)
  */
 export class ConflictError extends AppError {

@@ -19,14 +19,18 @@ export function ComposerPreviewSection({
   className?: string;
 }) {
   return (
-    <section className={cn("pt-1", className)} aria-label={title}>
-      <ComposerCanvasSectionLabel className="mb-2.5">
+    <section
+      className={cn(
+        "border-border/35 mt-1 border-t pt-2.5 first:mt-0 first:border-t-0 first:pt-1",
+        className
+      )}
+      aria-label={title}
+    >
+      <ComposerCanvasSectionLabel className="mb-1.5">
         {title}
       </ComposerCanvasSectionLabel>
       <PreviewWarnings warnings={warnings} />
-      <div className="border-border/50 bg-card/40 rounded-xl border p-4 shadow-sm">
-        {children}
-      </div>
+      {children}
     </section>
   );
 }

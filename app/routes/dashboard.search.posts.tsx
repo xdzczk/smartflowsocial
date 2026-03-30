@@ -10,6 +10,7 @@ import {
   SearchPostsPage,
   handleSearchAction,
   loadSearchData,
+  serializeLookupLoaderError,
 } from "~/features/search";
 import { withCSRFProtection } from "~/lib/csrf";
 import {
@@ -36,7 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       };
     } catch (error: unknown) {
       return {
-        error: error instanceof Error ? error.message : "Failed to load post",
+        error: serializeLookupLoaderError(error),
       };
     }
   })();

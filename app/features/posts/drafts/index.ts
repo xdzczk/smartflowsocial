@@ -6,6 +6,7 @@ export { default as DraftsPage } from "./components/DraftsPage";
 export { default as DraftEditPage } from "./components/DraftEditPage";
 export { default as DraftBulkResume } from "./components/DraftBulkResume";
 export { DraftsBulkActions } from "./components/DraftsBulkActions";
+export { DraftsToolbar } from "./components/DraftsToolbar";
 export { DraftsTable } from "./components/DraftsTable";
 export { BulkDraftsListing } from "../components/BulkDraftsListing";
 export { DraftEditForm } from "./components/DraftEditForm";
@@ -26,6 +27,18 @@ export {
   isShortPostDraftForPostsTab,
   isRepostDraftPost,
 } from "./utils/draft-post-classification";
+export {
+  getShortDraftComposeType,
+  getShortDraftComposeUrl,
+  getShortDraftEditRedirectPath,
+  getLongFormDraftEditUrl,
+  getBulkGroupUrl,
+} from "./utils/draft-editor-navigation";
+export {
+  buildDraftRowPreview,
+  draftTypeLabel,
+  type DraftRowPreview,
+} from "./utils/draft-row-preview";
 
 // Re-export hooks from parent so consumers can use ~/features/posts/drafts or ~/features/posts/ui
 export {

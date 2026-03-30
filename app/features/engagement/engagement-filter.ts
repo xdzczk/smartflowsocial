@@ -74,9 +74,21 @@ export function applyPowerFilters(
     .filter((group) => group.notifications.length > 0);
 }
 
-export type EngagementSortBy = "newest" | "trust" | "zaps";
+export type EngagementSortBy =
+  | "newest"
+  | "oldest"
+  | "trust"
+  | "zaps"
+  | "most_engaged";
 
-/** Sort groups and their notifications by trust or zaps. Newest = no change. */
+/** Engagement signal: likes, thread replies, reposts, zaps (sats weighted lightly). */
+function mostEngagedScore(n: GroupedNotification["notifications"][0]): number {
+  const s = n.stats;
+  if (!s) return 0;
+  return s.likes + s.replies * 2 + s.reposts + s.zaps + s.satszapped / 1000;
+}
+
+/** Sort groups and their notifications. Newest preserves loader order. */
 export function applySort(
   groups: GroupedNotification[],
   trustScores: Record<string, number>,
@@ -84,23 +96,69 @@ export function applySort(
 ): GroupedNotification[] {
   if (sortBy === "newest") return groups;
 
-  const score = (n: GroupedNotification["notifications"][0]) => {
+  if (sortBy === "oldest") {
+    return groups
+      .map((group) => ({
+        ...group,
+        notifications: [...group.notifications].sort(
+          (a, b) => a.createdAt - b.createdAt
+        ),
+      }))
+      .sort((ga, gb) => {
+        const maxA = Math.max(...ga.notifications.map((n) => n.createdAt), 0);
+        const maxB = Math.max(...gb.notifications.map((n) => n.createdAt), 0);
+        return maxA - maxB;
+      });
+  }
+
+  const trustOrZapsScore = (n: GroupedNotification["notifications"][0]) => {
     if (sortBy === "trust") {
       return n.pubkey ? (trustScores[n.pubkey] ?? 0) : 0;
     }
-    return n.stats?.satszapped ?? n.stats?.zaps ?? 0;
+    if (sortBy === "zaps") {
+      return n.stats?.satszapped ?? n.stats?.zaps ?? 0;
+    }
+    return 0;
   };
 
+  if (sortBy === "trust" || sortBy === "zaps") {
+    return groups
+      .map((group) => ({
+        ...group,
+        notifications: [...group.notifications].sort(
+          (a, b) => trustOrZapsScore(b) - trustOrZapsScore(a)
+        ),
+      }))
+      .sort((ga, gb) => {
+        const maxA = Math.max(
+          ...ga.notifications.map((n) => trustOrZapsScore(n)),
+          0
+        );
+        const maxB = Math.max(
+          ...gb.notifications.map((n) => trustOrZapsScore(n)),
+          0
+        );
+        return maxB - maxA;
+      });
+  }
+
+  // most_engaged
   return groups
     .map((group) => ({
       ...group,
       notifications: [...group.notifications].sort(
-        (a, b) => score(b) - score(a)
+        (a, b) => mostEngagedScore(b) - mostEngagedScore(a)
       ),
     }))
     .sort((ga, gb) => {
-      const maxA = Math.max(...ga.notifications.map((n) => score(n)), 0);
-      const maxB = Math.max(...gb.notifications.map((n) => score(n)), 0);
+      const maxA = Math.max(
+        ...ga.notifications.map((n) => mostEngagedScore(n)),
+        0
+      );
+      const maxB = Math.max(
+        ...gb.notifications.map((n) => mostEngagedScore(n)),
+        0
+      );
       return maxB - maxA;
     });
 }

@@ -455,6 +455,7 @@ export const engagementLoaderDataSchema = z.object({
     .optional(),
   lastCheckedAt: z.string().nullable(),
   followedPubkeys: z.array(z.string()).optional(),
+  queueTypes: z.array(queueTypeSchema).optional(),
 });
 
 export type EngagementLoaderData = z.infer<typeof engagementLoaderDataSchema>;

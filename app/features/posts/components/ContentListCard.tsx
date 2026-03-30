@@ -1,4 +1,5 @@
 import { Link, useRouteLoaderData } from "@remix-run/react";
+import type { FetcherWithComponents } from "@remix-run/react";
 import { MoreHorizontal, Repeat } from "lucide-react";
 import { useMemo } from "react";
 
@@ -10,6 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import {
+  getLongFormDraftEditUrl,
+  getShortDraftComposeUrl,
+} from "~/features/posts/drafts/utils/draft-editor-navigation";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -61,6 +66,14 @@ export interface ContentListCardProps {
   longformQuoteFetcher?: PostFetcher;
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
+  /** Drafts: row tap opens composer/editor instead of details modal */
+  onResumeDraft?: () => void;
+  /** Drafts: duplicate / convert actions (optional; All tab may omit) */
+  draftsActionFetcher?: FetcherWithComponents<{
+    success?: boolean;
+    newPostId?: string;
+    error?: string;
+  }>;
   /** Called when the actions menu opens or closes (e.g. so parent can elevate z-index for virtual lists) */
   onMenuOpenChange?: (open: boolean) => void;
 }
@@ -84,6 +97,8 @@ export function ContentListCard({
   longformQuoteFetcher,
   onScheduleRepost,
   onScheduleQuote,
+  onResumeDraft,
+  draftsActionFetcher,
   onMenuOpenChange,
 }: ContentListCardProps) {
   const { dateLocale } = useFormattedDate();
@@ -100,6 +115,11 @@ export function ContentListCard({
     [rootData?.user]
   );
   const queueDisplay = getQueueTypeDisplay(item.queueType);
+  const queueRowLabel =
+    type === "draft" &&
+    (!item.queueType?.name || item.queueType.name === "unassigned")
+      ? "No queue"
+      : queueDisplay.name;
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
   const thumbnailBadge =
@@ -131,7 +151,7 @@ export function ContentListCard({
             dateLocale
           )
         : formatDate(
-            item.createdAt,
+            item.updatedAt,
             false,
             userTimezone,
             userTimeFormat,
@@ -142,10 +162,20 @@ export function ContentListCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onPostSelect?.(item)}
+      onClick={() => {
+        if (type === "draft" && onResumeDraft) {
+          onResumeDraft();
+          return;
+        }
+        onPostSelect?.(item);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          if (type === "draft" && onResumeDraft) {
+            onResumeDraft();
+            return;
+          }
           onPostSelect?.(item);
         }
       }}
@@ -215,13 +245,15 @@ export function ContentListCard({
         <div className="mt-1 flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
           <span className="text-muted-foreground">{dateLabel}</span>
           <span className={queueDisplay.className} style={queueDisplay.style}>
-            {queueDisplay.name}
+            {queueRowLabel}
           </span>
-          <span
-            className={`inline-flex rounded-full border border-transparent px-1.5 py-0.5 text-[10px] font-semibold ${getStatusColor(item)}`}
-          >
-            {getStatusText(item)}
-          </span>
+          {type === "draft" ? null : (
+            <span
+              className={`inline-flex rounded-full border border-transparent px-1.5 py-0.5 text-[10px] font-semibold ${getStatusColor(item)}`}
+            >
+              {getStatusText(item)}
+            </span>
+          )}
         </div>
       </div>
       <DropdownMenu
@@ -249,7 +281,7 @@ export function ContentListCard({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View Note
+                    Open on Nostr
                   </Link>
                 </DropdownMenuItem>
               ) : null}
@@ -438,7 +470,63 @@ export function ContentListCard({
               ) : null}
             </>
           ) : null}
-          <DropdownMenuSeparator />
+          {type === "draft" ? (
+            <>
+              <DropdownMenuItem asChild>
+                <Link
+                  to={
+                    item.type === "longform"
+                      ? getLongFormDraftEditUrl(item.id)
+                      : getShortDraftComposeUrl(
+                          item.id,
+                          item.originalData as PostData
+                        )
+                  }
+                >
+                  Continue editing
+                </Link>
+              </DropdownMenuItem>
+              {item.type === "post" && draftsActionFetcher ? (
+                <>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      const fd = new FormData();
+                      fd.set("_action", "duplicateDraftPost");
+                      fd.set("postId", item.id);
+                      draftsActionFetcher.submit(fd, {
+                        method: "post",
+                        action: "/dashboard/drafts",
+                      });
+                    }}
+                  >
+                    Duplicate draft
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      const name = window.prompt(
+                        "Template name",
+                        "Template from draft"
+                      );
+                      if (name === null) return;
+                      const fd = new FormData();
+                      fd.set("_action", "convertDraftToTemplate");
+                      fd.set("postId", item.id);
+                      fd.set("templateName", name);
+                      draftsActionFetcher.submit(fd, {
+                        method: "post",
+                        action: "/dashboard/drafts",
+                      });
+                    }}
+                  >
+                    Convert to template
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+              <DropdownMenuSeparator />
+            </>
+          ) : (
+            <DropdownMenuSeparator />
+          )}
           <DropdownMenuItem
             disabled={deleteFetcher.state !== "idle"}
             className="text-destructive w-full cursor-pointer disabled:opacity-50"
@@ -458,7 +546,9 @@ export function ContentListCard({
                 item.id
               : false)
               ? "Deleting..."
-              : "Delete"}
+              : type === "draft"
+                ? "Delete draft"
+                : "Delete"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

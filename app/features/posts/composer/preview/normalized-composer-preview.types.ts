@@ -29,6 +29,8 @@ export interface NormalizedPollPreview {
   options: string[];
   mode: "single" | "multiple";
   endLabel: string;
+  /** False when absolute end is unset (`No end date set`); warning strip carries the message. */
+  hasPollEndDate: boolean;
   tags: string[];
   hideTags: boolean;
 }

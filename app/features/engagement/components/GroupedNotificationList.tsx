@@ -1,10 +1,23 @@
 import { Link, useRouteLoaderData } from "@remix-run/react";
-import { Bell, Copy, Heart, MessageCircle, Repeat, Zap } from "lucide-react";
+import {
+  Bell,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Repeat,
+  Zap,
+} from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useMemo, useState } from "react";
 
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { Separator } from "~/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -24,7 +37,9 @@ import type { NostrClientConfig } from "~/lib/nostr-client-urls";
 
 import type { Notification } from "../engagement.server";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
-import type { GroupedNotification } from "../types";
+import type { EngagementQueueTypeOption, GroupedNotification } from "../types";
+import type { EngagementListVariant } from "../utils/engagement-context-labels";
+import { displayParentContextLabel } from "../utils/engagement-context-labels";
 
 import { NotificationItem } from "./NotificationItem";
 
@@ -103,6 +118,9 @@ interface GroupedNotificationListProps {
       handled: number;
     }
   >;
+  listVariant?: EngagementListVariant;
+  followedPubkeys?: string[];
+  queueTypes?: EngagementQueueTypeOption[];
 }
 
 export default function GroupedNotificationList({
@@ -118,6 +136,9 @@ export default function GroupedNotificationList({
   replyTemplates = [],
   engagementLinkedActions = {},
   groupSummaries = {},
+  listVariant = "all",
+  followedPubkeys = [],
+  queueTypes = [],
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -183,6 +204,9 @@ export default function GroupedNotificationList({
           summary={groupSummaries[group.parentPost.eventId]}
           nostrClientConfig={nostrClientConfig}
           viewEventLabel={viewEventLabel}
+          listVariant={listVariant}
+          followedPubkeys={followedPubkeys}
+          queueTypes={queueTypes}
         />
       ))}
     </div>
@@ -204,6 +228,9 @@ function GroupedNotificationCard({
   summary,
   nostrClientConfig,
   viewEventLabel,
+  listVariant,
+  followedPubkeys,
+  queueTypes,
 }: {
   group: GroupedNotification;
   userTimezone?: string;
@@ -249,6 +276,9 @@ function GroupedNotificationCard({
   };
   nostrClientConfig: NostrClientConfig;
   viewEventLabel: string;
+  listVariant: EngagementListVariant;
+  followedPubkeys: string[];
+  queueTypes: EngagementQueueTypeOption[];
 }) {
   const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
@@ -256,6 +286,9 @@ function GroupedNotificationCard({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
+  const contextTitle = displayParentContextLabel(parentPost, listVariant);
 
   const copyParentNevent = async () => {
     try {
@@ -281,7 +314,7 @@ function GroupedNotificationCard({
           component: "GroupedNotificationList",
           action: "handleCopyNEvent",
         },
-        false // Don't show toast, we set parentToast instead
+        false
       );
       setParentToast({ type: "error", message: "Failed to copy" });
       setTimeout(() => setParentToast(null), 2000);
@@ -290,26 +323,45 @@ function GroupedNotificationCard({
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-lg border">
-      {/* Forum-style layout: Parent post on left, replies on right */}
       <div className="flex flex-col lg:flex-row">
-        {/* Parent Post - Left Side */}
-        <div className="border-border bg-secondary/30 flex-shrink-0 border-b p-4 lg:w-2/5 lg:border-r lg:border-b-0">
-          <div className="text-muted-foreground mb-2 flex items-center gap-2 text-xs">
+        <div className="border-border flex flex-shrink-0 flex-col border-b p-3 lg:w-[40%] lg:border-r lg:border-b-0">
+          <div className="text-muted-foreground mb-1.5 flex flex-wrap items-center gap-2 text-xs">
             <MessageCircle
-              className="h-5 w-5"
+              className="h-4 w-4 shrink-0"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
-            <span className="font-medium">
-              {parentPost.contextLabel ?? "Your post"}
+            <span className="text-foreground/90 font-medium">
+              {contextTitle}
             </span>
             {parentPost.publishedAt ? (
               <span>· {formatDate(parentPost.publishedAt)}</span>
             ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground h-7 w-7"
+                  aria-label="Post actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void copyParentNevent();
+                  }}
+                >
+                  Copy NEvent
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <div className="flex gap-3">
-            {/* Media Preview */}
+          <div className="flex gap-2">
             {parentPost.fileUrl ? (
               <div className="flex-shrink-0">
                 <MediaThumbnail
@@ -319,27 +371,26 @@ function GroupedNotificationCard({
                       : parentPost.fileUrl
                   }
                   alt="Post media"
-                  className="h-20 w-20 rounded object-cover"
+                  className="h-16 w-16 rounded object-cover"
                 />
               </div>
             ) : null}
 
-            {/* Content Preview - hover shows full content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="min-w-0 flex-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-default">
                     {parentPost.isLongform ? (
                       <>
                         {parentPost.title ? (
-                          <h4 className="text-foreground mb-1 font-semibold">
+                          <h4 className="text-foreground mb-0.5 text-sm leading-snug font-semibold">
                             {parentPost.title.length > 100
                               ? parentPost.title.substring(0, 100) + "..."
                               : parentPost.title}
                           </h4>
                         ) : null}
                         {parentPost.content ? (
-                          <p className="text-muted-foreground text-sm">
+                          <p className="text-muted-foreground text-xs leading-snug">
                             {parentPost.content.length > 150
                               ? parentPost.content.substring(0, 150) + "..."
                               : parentPost.content}
@@ -348,7 +399,7 @@ function GroupedNotificationCard({
                       </>
                     ) : (
                       parentPost.caption && (
-                        <p className="text-foreground text-sm whitespace-pre-wrap">
+                        <p className="text-foreground text-sm leading-snug whitespace-pre-wrap">
                           {parentPost.caption.length > 200
                             ? parentPost.caption.substring(0, 200) + "..."
                             : parentPost.caption}
@@ -374,101 +425,86 @@ function GroupedNotificationCard({
                 </TooltipContent>
               </Tooltip>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Link
-                  to={eventUrl(parentPost.eventId, nostrClientConfig)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary text-xs hover:underline"
-                >
-                  View original post →
-                </Link>
-                <button
-                  onClick={() => {
-                    void copyParentNevent();
-                  }}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-                >
-                  <Copy
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  Copy NEvent
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Toast for parent post */}
-          {parentToast ? (
-            <div
-              className={`mt-2 rounded-lg px-3 py-2 text-xs ${parentToast.type === "success" ? "bg-success/20 text-success dark:text-success" : "bg-destructive/20 text-destructive"}`}
-            >
-              {parentToast.message}
-            </div>
-          ) : null}
-
-          {/* Parent Post Stats - slightly larger numbers for scanability */}
-          {summary ? (
-            <div className="text-muted-foreground mt-2 text-xs">
-              {summary.total} total · {summary.needResponse} need response ·{" "}
-              {summary.drafted} drafted · {summary.scheduled} scheduled ·{" "}
-              {summary.handled} handled
-            </div>
-          ) : null}
-          {parentPost.stats ? (
-            <>
-              <Separator className="my-3" />
-              <div className="flex flex-wrap gap-4">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
-                  <MessageCircle
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  <span>{parentPost.stats.replies}</span>
-                </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
-                  <Zap
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  <span>
+              {parentPost.stats ? (
+                <div className="text-muted-foreground mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle
+                      className={INLINE_ICON_SIZE_CLASS}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                    {parentPost.stats.replies}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Zap
+                      className={INLINE_ICON_SIZE_CLASS}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
                     {parentPost.stats.zaps > 0
                       ? `${parentPost.stats.satszapped.toLocaleString()}`
                       : "0"}
                   </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Heart
+                      className={INLINE_ICON_SIZE_CLASS}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                    {parentPost.stats.likes}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Repeat
+                      className={INLINE_ICON_SIZE_CLASS}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden
+                    />
+                    {parentPost.stats.reposts}
+                  </span>
                 </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
-                  <Heart
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  <span>{parentPost.stats.likes}</span>
+              ) : null}
+
+              {summary ? (
+                <div className="text-muted-foreground mt-1.5 text-xs font-medium tracking-tight">
+                  <span className="text-foreground/80">
+                    {summary.total} total
+                  </span>
+                  <span className="text-border mx-1.5">·</span>
+                  <span>{summary.needResponse} need response</span>
+                  <span className="text-border mx-1.5">·</span>
+                  <span>{summary.scheduled} scheduled</span>
                 </div>
-                <div className="dark:text-muted-foreground text-foreground flex items-center gap-1.5 text-sm">
-                  <Repeat
-                    className={INLINE_ICON_SIZE_CLASS}
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  <span>{parentPost.stats.reposts}</span>
-                </div>
-              </div>
-            </>
+              ) : null}
+
+              <Link
+                to={eventUrl(parentPost.eventId, nostrClientConfig)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-primary mt-1.5 inline-block text-xs"
+              >
+                View original post →
+              </Link>
+            </div>
+          </div>
+
+          {parentToast ? (
+            <div
+              className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
+                parentToast.type === "success"
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-destructive/30 bg-destructive/10 text-destructive"
+              }`}
+            >
+              {parentToast.message}
+            </div>
           ) : null}
         </div>
 
-        {/* Notifications - Right Side */}
-        <div className="flex-1 lg:w-3/5">
+        <div className="min-w-0 flex-1 lg:w-[60%]">
           <div className="divide-border max-h-[500px] divide-y overflow-y-auto">
             {notifications.map((notification: Notification) => {
-              const isHandled = notification.eventId
-                ? !!engagementItemStates[notification.eventId]
-                : false;
+              const workflowState =
+                engagementItemStates[notification.eventId]?.state;
               const itemIndex = getNextIndex();
               return (
                 <NotificationItem
@@ -477,11 +513,8 @@ function GroupedNotificationCard({
                   userTimezone={userTimezone}
                   userRelays={userRelays}
                   trustScores={trustScores}
-                  isHandled={isHandled}
+                  workflowState={workflowState}
                   onMarkDone={onMarkDone}
-                  workflowState={
-                    engagementItemStates[notification.eventId]?.state
-                  }
                   keyboardIndex={itemIndex}
                   isKeyboardFocused={itemIndex === focusedIndex}
                   registerKeyboardHandlers={registerKeyboardHandlers}
@@ -494,6 +527,15 @@ function GroupedNotificationCard({
                     nostrClientConfig
                   )}
                   viewEventLabel={`View on ${viewEventLabel}`}
+                  isSelected={notification.eventId === selectedEventId}
+                  onSelect={() => setSelectedEventId(notification.eventId)}
+                  contentVariant={
+                    listVariant === "mentions" ? "mention" : "default"
+                  }
+                  isFollowingAuthor={followedPubkeys.includes(
+                    notification.pubkey
+                  )}
+                  queueTypes={queueTypes}
                 />
               );
             })}
