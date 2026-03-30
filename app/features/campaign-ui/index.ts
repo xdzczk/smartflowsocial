@@ -1,6 +1,34 @@
 export { CampaignKpiStrip } from "./components/CampaignKpiStrip";
 export type { CampaignKpiItem } from "./components/CampaignKpiStrip";
 
+export { CampaignSectionHeader } from "./components/CampaignSectionHeader";
+export {
+  ChoiceTileGroup,
+  ChoiceTileGroupCustom,
+} from "./components/ChoiceTileGroup";
+export type { ChoiceTileOption } from "./components/ChoiceTileGroup";
+export { CompactStatusMessage } from "./components/CompactStatusMessage";
+export type { CompactStatusVariant } from "./components/CompactStatusMessage";
+export { RewardSummaryLine } from "./components/RewardSummaryLine";
+export { CampaignOutcomeSentence } from "./components/CampaignOutcomeSentence";
+export type { CampaignOutcomeSentenceProps } from "./components/CampaignOutcomeSentence";
+export { CampaignActionRail } from "./components/CampaignActionRail";
+export type {
+  CampaignActionRailFinancialRow,
+  CampaignActionRailSnapshotRow,
+} from "./components/CampaignActionRail";
+
+export {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "./campaign-field-classes";
+export {
+  buildContestOutcomePoolLine,
+  buildGiveawayOutcomeLine,
+} from "./campaign-outcome-helpers";
+
+export { SourcePostModule } from "./components/SourcePostModule";
+
 export { CampaignFilterRow } from "./components/CampaignFilterRow";
 
 export { CampaignStateBanner } from "./components/CampaignStateBanner";

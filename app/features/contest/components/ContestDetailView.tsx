@@ -13,6 +13,7 @@ import type {
   ContestWinnerRow,
 } from "../contest-detail-ui.types";
 import type { ContestDetailPageData } from "../contest-detail.types";
+import type { ContestRankingMetric } from "../types";
 
 import { ContestActivityLog } from "./ContestActivityLog";
 import {
@@ -28,6 +29,7 @@ import {
   ContestDetailSourceSection,
   ContestPublicShareRow,
 } from "./ContestDetailSections";
+import { ContestLaunchRecoveryPanel } from "./ContestLaunchRecoveryPanel";
 import { ContestStateBanner } from "./ContestStateBanner";
 
 function rootUserFromData(
@@ -59,6 +61,8 @@ function stateSummaryForContest(status: string, statusLabel: string): string {
   switch (status) {
     case "DRAFT":
       return "Configure source, ranking, and rewards before launch.";
+    case "SCHEDULED_LAUNCH":
+      return "Launch is scheduled. The source post will publish first when applicable, then the contest activates.";
     case "LIVE":
       return "Entries are open. Leaderboard updates in real time.";
     case "ENDED_REVIEW":
@@ -86,7 +90,8 @@ export function ContestDetailView({
 
   const { contest } = data;
   const isCancelled = contest.status === "CANCELLED";
-  const isDraft = contest.status === "DRAFT";
+  const isDraft =
+    contest.status === "DRAFT" || contest.status === "SCHEDULED_LAUNCH";
   const isLive = contest.status === "LIVE";
   const isReview = contest.status === "ENDED_REVIEW";
   const isLocked =
@@ -122,13 +127,15 @@ export function ContestDetailView({
         reactionsCount: r.reactionsCount,
         zapCount: r.zapCount,
         satsZapped: r.satsZapped,
+        repliesCount: r.repliesCount,
+        repostsCount: r.repostsCount,
       })),
     [data.leaderboardEligible]
   );
 
   const liveRows: ContestLivePreviewRow[] = data.livePreview;
 
-  const metric = contest.rankingMetric as "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  const metric = contest.rankingMetric as ContestRankingMetric;
 
   const announcementText = useMemo(
     () =>
@@ -192,6 +199,11 @@ export function ContestDetailView({
 
       <div className="min-w-0 space-y-6">
         <ContestStateBanner status={contest.status} />
+
+        <ContestLaunchRecoveryPanel
+          contestStatus={contest.status}
+          launchOrchestration={data.launchOrchestration}
+        />
 
         <ContestDetailSourceSection
           sourcePost={data.sourcePost}

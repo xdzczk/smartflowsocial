@@ -34,6 +34,7 @@ export interface DraftsPageContentProps {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
   selectedPosts: Set<string>;
+  clearSelection: () => void;
   togglePostSelection: (id: string) => void;
   toggleSelectAll: () => void;
   handleBulkDelete: () => void;
@@ -74,6 +75,7 @@ export function DraftsPageContent({
   searchTerm,
   setSearchTerm,
   selectedPosts,
+  clearSelection,
   togglePostSelection,
   toggleSelectAll,
   handleBulkDelete,
@@ -167,6 +169,7 @@ export function DraftsPageContent({
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             showBulkActions={true}
+            onClearSelection={clearSelection}
             onBulkDelete={handleBulkDelete}
             bulkDeleteState={bulkDeleteFetcherState}
             prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
@@ -199,6 +202,7 @@ export function DraftsPageContent({
         <div className="flex min-h-0 flex-1 flex-col">
           <DraftsBulkActions
             selectedCount={selectedPosts.size}
+            onClearSelection={clearSelection}
             queueTypes={queueTypes}
             selectedPostIds={Array.from(selectedPosts)}
             filteredPosts={filteredPosts}

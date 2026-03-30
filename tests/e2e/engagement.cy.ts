@@ -75,8 +75,8 @@ describe("Engagement Feed", () => {
       cy.get("body").then(($body) => {
         const item = $body.find('[data-testid="engagement-item"]').first();
         if (!item.length) return;
-        cy.wrap(item).click({ force: true });
-        cy.contains("button", /^Reply$/i)
+        cy.wrap(item)
+          .contains("button", /^Reply$/i)
           .first()
           .click({ force: true });
         cy.get('[data-testid="engagement-response-tray"]').should("exist");

@@ -730,6 +730,7 @@ export function useRecyclablesState({
     searchTerm,
     selectedPost,
     selectedPosts,
+    setSelectedPosts,
     toast,
     filteredPosts,
     requestSort,

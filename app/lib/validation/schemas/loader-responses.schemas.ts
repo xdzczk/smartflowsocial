@@ -544,6 +544,15 @@ export const hashTagPresetSchema = z
  * Schema for ScheduledPostsLoaderData
  * Note: allContent is removed - reconstruct on client from posts/longformPosts
  */
+export const scheduledContestLaunchRowSchema = z.object({
+  id: z.string(),
+  contestId: z.string(),
+  title: z.string(),
+  scheduledFor: z.string().nullable(),
+  sourceMode: z.string(),
+  contestActivationStatus: z.string(),
+});
+
 export const scheduledPostsLoaderDataSchema = z.object({
   posts: z.array(postDTOSchema),
   longformPosts: z.array(longFormPostDTOSchema),
@@ -557,6 +566,7 @@ export const scheduledPostsLoaderDataSchema = z.object({
   totalRepostsCount: z.number().int().min(0).optional(),
   totalLongformCount: z.number().int().min(0).optional(),
   totalContentCount: z.number().int().min(0).optional(),
+  scheduledContestLaunches: z.array(scheduledContestLaunchRowSchema).optional(),
 });
 
 export type ScheduledPostsLoaderData = z.infer<

@@ -157,7 +157,7 @@ export function DraftsHybridTableRow({
       onClick={() => onResumeDraft?.()}
     >
       {showBulkActions ? (
-        <td className="px-3 py-4 align-middle">
+        <td className="px-3 py-3 align-middle">
           <Checkbox
             id={`drafts-hybrid-select-${item.id}`}
             checked={selectedItems.has(item.id)}
@@ -166,13 +166,13 @@ export function DraftsHybridTableRow({
           />
         </td>
       ) : null}
-      <td className="px-3 py-4 align-middle whitespace-nowrap">
+      <td className="px-3 py-3 align-middle whitespace-nowrap">
         <div className="flex max-w-[10rem] items-center gap-3 sm:max-w-none">
           {mediaCell}
           <ContentTypeChip item={item} />
         </div>
       </td>
-      <td className="max-w-md px-3 py-4 align-middle whitespace-normal">
+      <td className="max-w-md px-3 py-3 align-middle whitespace-normal">
         <p className="text-foreground leading-snug font-semibold">{title}</p>
         {excerpt ? (
           <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
@@ -180,7 +180,7 @@ export function DraftsHybridTableRow({
           </p>
         ) : null}
       </td>
-      <td className="text-foreground px-3 py-4 align-middle text-sm whitespace-nowrap">
+      <td className="text-foreground px-3 py-3 align-middle text-sm whitespace-nowrap">
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <span className="cursor-default tabular-nums underline decoration-dotted underline-offset-4">
@@ -195,12 +195,12 @@ export function DraftsHybridTableRow({
           </TooltipContent>
         </Tooltip>
       </td>
-      <td className="px-3 py-4 text-center align-middle">
+      <td className="px-3 py-3 text-center align-middle">
         <div className="flex justify-center">
           <QueueStatusChip queueType={item.queueType} mode="draft" />
         </div>
       </td>
-      <td className="px-3 py-4 text-center align-middle">
+      <td className="px-3 py-3 text-center align-middle">
         <ContentRowActions
           item={item}
           type="draft"

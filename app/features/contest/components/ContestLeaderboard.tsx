@@ -15,7 +15,12 @@ function MetricCells({
   metric: ContestRankingMetric;
   row: Pick<
     ContestLeaderboardEntryRow | ContestLivePreviewRow,
-    "reactionsCount" | "zapCount" | "satsZapped" | "score"
+    | "reactionsCount"
+    | "zapCount"
+    | "satsZapped"
+    | "repliesCount"
+    | "repostsCount"
+    | "score"
   >;
 }) {
   return (
@@ -23,6 +28,8 @@ function MetricCells({
       {metric === "REACTIONS" ? <>R {row.reactionsCount}</> : null}
       {metric === "ZAPS" ? <>Z {row.zapCount}</> : null}
       {metric === "SATS_ZAPPED" ? <>⚡ {row.satsZapped}</> : null}
+      {metric === "REPLIES" ? <>↩ {row.repliesCount}</> : null}
+      {metric === "REPOSTS" ? <>🔁 {row.repostsCount}</> : null}
     </span>
   );
 }

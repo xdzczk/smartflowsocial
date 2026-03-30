@@ -6,6 +6,7 @@ import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -13,12 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { PublishingBatchSelectionBar } from "~/features/posts/components/publishing-suite";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import type { QueueType } from "~/features/posts/types";
 import type { DraftsStatePost } from "~/lib/validation/drafts-post-conversion";
 
 interface DraftsBulkActionsProps {
   selectedCount: number;
+  onClearSelection: () => void;
   queueTypes: QueueType[];
   selectedPostIds: string[];
   filteredPosts: DraftsStatePost[];
@@ -30,6 +33,7 @@ interface DraftsBulkActionsProps {
 
 export function DraftsBulkActions({
   selectedCount,
+  onClearSelection,
   queueTypes,
   selectedPostIds,
   filteredPosts,
@@ -95,76 +99,77 @@ export function DraftsBulkActions({
   };
 
   return (
-    <div className="border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 mb-4 flex flex-col gap-3 rounded-xl border p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-foreground text-sm font-medium">
-        {selectedCount} draft{selectedCount !== 1 ? "s" : ""} selected
-      </span>
+    <PublishingBatchSelectionBar
+      selectedCount={selectedCount}
+      onClearSelection={onClearSelection}
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={queueTarget} onValueChange={setQueueTarget}>
-            <SelectTrigger
-              className="h-9 w-[10.5rem]"
-              aria-label="Queue for bulk assign"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">No queue</SelectItem>
-              {queueTypes
-                .filter((qt) => qt.name !== "Unassigned")
-                .map((qt) => (
-                  <SelectItem key={qt.id} value={qt.name}>
-                    {qt.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <button
-            type="button"
-            onClick={() => handleAssignQueue()}
-            disabled={
-              !canBulkQueue ||
-              assignFetcher.state !== "idle" ||
-              isDeleting ||
-              isResuming
-            }
-            className="border-border bg-card text-foreground hover:bg-muted inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50"
+        <Select value={queueTarget} onValueChange={setQueueTarget}>
+          <SelectTrigger
+            className="border-border h-9 w-[10.5rem]"
+            aria-label="Queue for bulk assign"
           >
-            {assignFetcher.state !== "idle" ? "Updating…" : "Move to queue"}
-          </button>
-        </div>
-        <button
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unassigned">No queue</SelectItem>
+            {queueTypes
+              .filter((qt) => qt.name !== "Unassigned")
+              .map((qt) => (
+                <SelectItem key={qt.id} value={qt.name}>
+                  {qt.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Button
           type="button"
-          onClick={handleBulkDuplicate}
+          variant="outline"
+          size="default"
+          onClick={() => handleAssignQueue()}
           disabled={
             !canBulkQueue ||
-            dupFetcher.state !== "idle" ||
+            assignFetcher.state !== "idle" ||
             isDeleting ||
             isResuming
           }
-          className="border-border bg-card text-foreground hover:bg-muted inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50"
         >
-          {dupFetcher.state !== "idle" ? "Duplicating…" : "Duplicate"}
-        </button>
-        <button
-          type="button"
-          onClick={onBulkReviewSchedule}
-          disabled={isResuming}
-          className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-        >
-          Review &amp; schedule
-        </button>
-        <button
-          type="button"
-          onClick={onBulkDelete}
-          disabled={isDeleting}
-          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-        >
-          {isDeleting
-            ? "Deleting..."
-            : `Delete ${selectedCount} draft${selectedCount !== 1 ? "s" : ""}`}
-        </button>
+          {assignFetcher.state !== "idle" ? "Updating…" : "Move to queue"}
+        </Button>
       </div>
-    </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={handleBulkDuplicate}
+        disabled={
+          !canBulkQueue ||
+          dupFetcher.state !== "idle" ||
+          isDeleting ||
+          isResuming
+        }
+      >
+        {dupFetcher.state !== "idle" ? "Duplicating…" : "Duplicate"}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={onBulkReviewSchedule}
+        disabled={isResuming}
+      >
+        Review &amp; schedule
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={onBulkDelete}
+        disabled={isDeleting}
+        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+      >
+        {isDeleting ? "Deleting..." : "Delete"}
+      </Button>
+    </PublishingBatchSelectionBar>
   );
 }

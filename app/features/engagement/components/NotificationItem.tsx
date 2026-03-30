@@ -124,6 +124,8 @@ interface NotificationItemProps {
   }>;
   isSelected?: boolean;
   onSelect?: () => void;
+  /** Clears global active row (e.g. cancel tray, success, toggle close). */
+  onClearActive?: () => void;
   contentVariant?: "default" | "mention";
   isFollowingAuthor?: boolean;
 }
@@ -191,6 +193,7 @@ export function NotificationItem({
   linkedActions = [],
   isSelected = false,
   onSelect,
+  onClearActive,
   contentVariant = "default",
   isFollowingAuthor = false,
 }: NotificationItemProps) {
@@ -209,7 +212,23 @@ export function NotificationItem({
       content: notification.content,
     },
     userRelays,
+    suppressSuccessToast: true,
   });
+
+  const [rowSuccessLine, setRowSuccessLine] = useState<string | null>(null);
+  const [likedOptimistic, setLikedOptimistic] = useState(false);
+  const [repostedOptimistic, setRepostedOptimistic] = useState<
+    "posted" | "scheduled" | null
+  >(null);
+
+  useEffect(() => {
+    if (!rowSuccessLine) return;
+    const t = window.setTimeout(() => setRowSuccessLine(null), 4500);
+    return () => window.clearTimeout(t);
+  }, [rowSuccessLine]);
+
+  const isInteractionActive =
+    isSelected && (actions.showReplyInput || showRepostPanel);
 
   useEffect(() => {
     if (!isSelected) {
@@ -221,12 +240,6 @@ export function NotificationItem({
     // actions identity changes each render; collapsing tray only depends on selection
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [isSelected]);
-
-  useEffect(() => {
-    if (isKeyboardFocused && onSelect) {
-      onSelect();
-    }
-  }, [isKeyboardFocused, onSelect]);
 
   useEffect(() => {
     if ((actions.showReplyInput || showRepostPanel) && trayRef.current) {
@@ -260,20 +273,45 @@ export function NotificationItem({
 
   const dimmed = isWorkflowDimmed(workflowState);
 
+  const openComposer = (mode: EngagementComposerMode) => {
+    if (
+      isSelected &&
+      actions.showReplyInput &&
+      composerMode === mode &&
+      !showRepostPanel
+    ) {
+      actions.setShowReplyInput(false);
+      actions.setReplyContent("");
+      actions.setQuoteContent("");
+      onClearActive?.();
+      return;
+    }
+    setShowRepostPanel(false);
+    setComposerMode(mode);
+    actions.setShowReplyInput(true);
+    onSelect?.();
+  };
+
+  const openOrToggleRepostTray = () => {
+    if (isSelected && showRepostPanel) {
+      setShowRepostPanel(false);
+      onClearActive?.();
+      return;
+    }
+    actions.setShowReplyInput(false);
+    setShowRepostPanel(true);
+    onSelect?.();
+  };
+
   const handlersRef = useRef({
     openReply: () => {
-      setShowRepostPanel(false);
-      setComposerMode("reply");
-      actions.setShowReplyInput(true);
+      openComposer("reply");
     },
     openQuote: () => {
-      setShowRepostPanel(false);
-      setComposerMode("quote");
-      actions.setShowReplyInput(true);
+      openComposer("quote");
     },
     openRepost: () => {
-      actions.setShowReplyInput(false);
-      setShowRepostPanel(true);
+      openOrToggleRepostTray();
     },
     like: () => {
       void actions.handleLike();
@@ -324,18 +362,13 @@ export function NotificationItem({
   useEffect(() => {
     handlersRef.current = {
       openReply: () => {
-        setShowRepostPanel(false);
-        setComposerMode("reply");
-        actions.setShowReplyInput(true);
+        openComposer("reply");
       },
       openQuote: () => {
-        setShowRepostPanel(false);
-        setComposerMode("quote");
-        actions.setShowReplyInput(true);
+        openComposer("quote");
       },
       openRepost: () => {
-        actions.setShowReplyInput(false);
-        setShowRepostPanel(true);
+        openOrToggleRepostTray();
       },
       like: () => {
         void actions.handleLike();
@@ -385,7 +418,19 @@ export function NotificationItem({
       expandThread: () =>
         actions.setShowChildReplies(!actions.showChildReplies),
     };
-  }, [actions, composerMode, notification.eventId, onMarkDone]);
+    // openComposer / openOrToggleRepostTray are stable enough; full deps would re-register every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers mirror refs above
+  }, [
+    actions,
+    composerMode,
+    notification.eventId,
+    onMarkDone,
+    isSelected,
+    actions.showReplyInput,
+    showRepostPanel,
+    onSelect,
+    onClearActive,
+  ]);
 
   useEffect(() => {
     if (keyboardIndex < 0 || !registerKeyboardHandlers) return;
@@ -404,44 +449,22 @@ export function NotificationItem({
     return () => registerKeyboardHandlers(keyboardIndex, null);
   }, [keyboardIndex, registerKeyboardHandlers]);
 
-  const openComposer = (mode: EngagementComposerMode) => {
-    setShowRepostPanel(false);
-    setComposerMode(mode);
-    actions.setShowReplyInput(true);
-  };
-
-  const openRepostPanel = () => {
-    actions.setShowReplyInput(false);
-    setShowRepostPanel(true);
-  };
+  const hasScheduledRepostLink = linkedActions.some(
+    (a) => a.kind === "SCHEDULED_REPOST" || a.kind === "QUEUED_REPOST"
+  );
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- Selection shell only; real actions use nested buttons/links
     <div
       data-testid="engagement-item"
       className={`border-l-4 transition-colors ${
         contentVariant === "mention" ? "px-2.5 py-2 sm:px-3" : "p-2.5 sm:p-3"
       } ${
-        isSelected
+        isInteractionActive
           ? "border-primary bg-muted/50 ring-primary/10 ring-1 shadow-sm"
           : "hover:bg-muted/25 border-transparent"
       } ${dimmed ? "opacity-[0.88]" : ""} ${
         isKeyboardFocused ? "ring-primary/35 ring-2 ring-inset" : ""
       }`}
-      onClick={(e) => {
-        const t = e.target as HTMLElement;
-        if (
-          t.closest("button") ||
-          t.closest("a") ||
-          t.closest("[role='menuitem']") ||
-          t.closest("textarea") ||
-          t.closest("input") ||
-          t.closest("[data-state]")
-        ) {
-          return;
-        }
-        onSelect?.();
-      }}
     >
       <div className="flex gap-2">
         <div className="flex-shrink-0">
@@ -458,7 +481,7 @@ export function NotificationItem({
 
         <div
           className={`min-w-0 flex-1 ${
-            isSelected
+            isInteractionActive
               ? "border-border/60 bg-muted/25 border-l-primary/35 -mr-px rounded-r-md border-l-2 pl-2.5"
               : ""
           }`}
@@ -552,19 +575,35 @@ export function NotificationItem({
             stats={stats}
             isReposting={actions.isReposting}
             showChildReplies={actions.showChildReplies}
+            replyTrayOpen={Boolean(
+              actions.showReplyInput && composerMode === "reply"
+            )}
+            quoteTrayOpen={Boolean(
+              actions.showReplyInput && composerMode === "quote"
+            )}
+            repostTrayOpen={Boolean(showRepostPanel)}
+            likeCompleted={likedOptimistic}
+            repostScheduledHighlight={Boolean(
+              !showRepostPanel &&
+              repostedOptimistic !== "posted" &&
+              (hasScheduledRepostLink || repostedOptimistic === "scheduled")
+            )}
+            repostPostedHighlight={Boolean(
+              repostedOptimistic === "posted" && !showRepostPanel
+            )}
             onLike={() => {
-              void actions.handleLike();
+              void (async () => {
+                const ok = await actions.handleLike();
+                if (ok) setLikedOptimistic(true);
+              })();
             }}
             onOpenReply={() => {
-              onSelect?.();
               openComposer("reply");
             }}
             onRepost={() => {
-              onSelect?.();
-              openRepostPanel();
+              openOrToggleRepostTray();
             }}
             onOpenQuote={() => {
-              onSelect?.();
               openComposer("quote");
             }}
             onCopyNevent={() => {
@@ -600,6 +639,12 @@ export function NotificationItem({
             viewEventLabel={viewEventLabel}
           />
 
+          {rowSuccessLine ? (
+            <p className="text-success mt-1.5 text-[11px] leading-snug">
+              {rowSuccessLine}
+            </p>
+          ) : null}
+
           {actions.showReplyInput ? (
             <UnifiedEngagementComposer
               mode={composerMode}
@@ -618,45 +663,67 @@ export function NotificationItem({
               trayRef={trayRef}
               onPostNow={() => {
                 void (async () => {
-                  if (composerMode === "reply") {
-                    await actions.handleReply();
-                  } else {
-                    await actions.handleQuote();
-                  }
+                  const ok =
+                    composerMode === "reply"
+                      ? await actions.handleReply()
+                      : await actions.handleQuote();
+                  if (!ok) return;
                   if (onMarkDone && notification.eventId) {
                     await onMarkDone(notification.eventId, true, "REPLIED");
                   }
+                  onClearActive?.();
+                  setRowSuccessLine(
+                    composerMode === "reply" ? "Reply posted" : "Quote posted"
+                  );
                 })();
               }}
               onSaveDraft={() => {
-                const actionType = composerMode === "reply" ? "reply" : "quote";
-                const content =
-                  composerMode === "reply"
-                    ? actions.replyContent
-                    : actions.quoteContent;
-                void actions.deferAction({
-                  actionType,
-                  mode: "draft",
-                  content,
-                });
+                void (async () => {
+                  const actionType =
+                    composerMode === "reply" ? "reply" : "quote";
+                  const content =
+                    composerMode === "reply"
+                      ? actions.replyContent
+                      : actions.quoteContent;
+                  const ok = await actions.deferAction({
+                    actionType,
+                    mode: "draft",
+                    content,
+                  });
+                  if (ok) setRowSuccessLine("Draft saved");
+                })();
               }}
               onSchedule={(scheduledForIso) => {
-                const actionType = composerMode === "reply" ? "reply" : "quote";
-                const content =
-                  composerMode === "reply"
-                    ? actions.replyContent
-                    : actions.quoteContent;
-                void actions.deferAction({
-                  actionType,
-                  mode: "schedule",
-                  content,
-                  scheduledFor: scheduledForIso,
-                });
+                void (async () => {
+                  const actionType =
+                    composerMode === "reply" ? "reply" : "quote";
+                  const content =
+                    composerMode === "reply"
+                      ? actions.replyContent
+                      : actions.quoteContent;
+                  const ok = await actions.deferAction({
+                    actionType,
+                    mode: "schedule",
+                    content,
+                    scheduledFor: scheduledForIso,
+                  });
+                  if (!ok) return;
+                  actions.setShowReplyInput(false);
+                  actions.setReplyContent("");
+                  actions.setQuoteContent("");
+                  onClearActive?.();
+                  setRowSuccessLine(
+                    composerMode === "reply"
+                      ? "Reply scheduled"
+                      : "Quote scheduled"
+                  );
+                })();
               }}
               onCancel={() => {
                 actions.setShowReplyInput(false);
                 actions.setReplyContent("");
                 actions.setQuoteContent("");
+                onClearActive?.();
               }}
               templates={replyTemplates}
             />
@@ -668,19 +735,34 @@ export function NotificationItem({
               isSubmitting={actions.isReposting}
               trayRef={trayRef}
               onRepostNow={() => {
-                void actions.handleRepost();
-                setShowRepostPanel(false);
+                void (async () => {
+                  const ok = await actions.handleRepost();
+                  if (!ok) return;
+                  setShowRepostPanel(false);
+                  onClearActive?.();
+                  setRepostedOptimistic("posted");
+                  setRowSuccessLine("Reposted");
+                })();
               }}
               onScheduleRepost={(scheduledForIso) => {
-                void actions.deferAction({
-                  actionType: "repost",
-                  mode: "schedule",
-                  content: "",
-                  scheduledFor: scheduledForIso,
-                });
-                setShowRepostPanel(false);
+                void (async () => {
+                  const ok = await actions.deferAction({
+                    actionType: "repost",
+                    mode: "schedule",
+                    content: "",
+                    scheduledFor: scheduledForIso,
+                  });
+                  if (!ok) return;
+                  setShowRepostPanel(false);
+                  onClearActive?.();
+                  setRepostedOptimistic("scheduled");
+                  setRowSuccessLine("Repost scheduled");
+                })();
               }}
-              onCancel={() => setShowRepostPanel(false)}
+              onCancel={() => {
+                setShowRepostPanel(false);
+                onClearActive?.();
+              }}
             />
           ) : null}
 
@@ -692,14 +774,8 @@ export function NotificationItem({
             />
           ) : null}
 
-          {actions.toast ? (
-            <div
-              className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
-                actions.toast.type === "success"
-                  ? "border-success/30 bg-success/10 text-success"
-                  : "border-destructive/30 bg-destructive/10 text-destructive"
-              }`}
-            >
+          {actions.toast?.type === "error" ? (
+            <div className="border-destructive/30 bg-destructive/10 text-destructive mt-2 rounded-md border px-2 py-1.5 text-xs">
               {actions.toast.message}
             </div>
           ) : null}

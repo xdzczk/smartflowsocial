@@ -6,6 +6,44 @@
 
 import type { RelatedEvent } from "./types";
 
+/**
+ * Remove likes, zaps, reposts, and comments where the actor is the author of the
+ * scoped root note (no self-engagement toward one's own post in selection).
+ */
+export function excludeSelfEngagementForScopedRootPosts(
+  events: RelatedEvent[],
+  rootEventIdToAuthorPubkey: Map<string, string>
+): RelatedEvent[] {
+  if (rootEventIdToAuthorPubkey.size === 0) return events;
+  const scopedIds = new Set(rootEventIdToAuthorPubkey.keys());
+  return events.filter((ev) => {
+    const targetRootId = findFirstMatchingScopedRootId(ev, scopedIds);
+    if (targetRootId === null) return true;
+    const author = rootEventIdToAuthorPubkey.get(targetRootId);
+    if (author === undefined) return true;
+    return ev.pubkey !== author;
+  });
+}
+
+function findFirstMatchingScopedRootId(
+  ev: RelatedEvent,
+  scopedIds: Set<string>
+): string | null {
+  const tags = ev.tags;
+  if (!Array.isArray(tags)) return null;
+  for (const t of tags) {
+    if (
+      Array.isArray(t) &&
+      t[0] === "e" &&
+      typeof t[1] === "string" &&
+      scopedIds.has(t[1])
+    ) {
+      return t[1];
+    }
+  }
+  return null;
+}
+
 function getKind1ReplyParentEventId(event: RelatedEvent): string | null {
   const tags = event.tags;
   if (!Array.isArray(tags)) return null;

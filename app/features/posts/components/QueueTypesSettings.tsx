@@ -4,13 +4,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 
 import type { QueueType } from "../types";
 
@@ -193,39 +187,32 @@ export function QueueTypesSettings({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>Queue Types</CardTitle>
-              <CardDescription>
-                Manage your posting queues with custom scheduling
-              </CardDescription>
-            </div>
-            <Button onClick={handleCreateNew} className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Queue Type
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {queueTypesState.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">
-              No queue types found. Create your first queue type to get started.
-            </p>
-          ) : (
-            queueTypesState.map((queueType) => (
-              <QueueTypeCard
-                key={queueType.id}
-                queueType={queueType}
-                onEdit={handleEdit}
-                isDeletingQueueType={isDeleting}
-                deleteFetcher={deleteFetcher}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
+      <ManagementListSection
+        title="Queue types"
+        description="Posting queues and how each one schedules work."
+        primaryAction={
+          <Button onClick={handleCreateNew} size="sm" variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            Add queue type
+          </Button>
+        }
+      >
+        {queueTypesState.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center">
+            No queue types found. Create your first queue type to get started.
+          </p>
+        ) : (
+          queueTypesState.map((queueType) => (
+            <QueueTypeCard
+              key={queueType.id}
+              queueType={queueType}
+              onEdit={handleEdit}
+              isDeletingQueueType={isDeleting}
+              deleteFetcher={deleteFetcher}
+            />
+          ))
+        )}
+      </ManagementListSection>
 
       <QueueTypeDialog
         open={showDialog}

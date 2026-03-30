@@ -6,9 +6,14 @@ import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Repeat } from "lucide-react";
-import { useEffect, useRef, useState, type Key } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Key,
+  type KeyboardEvent,
+} from "react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -34,6 +39,12 @@ import {
 } from "~/features/posts/components/constants";
 import { ContentListCard } from "~/features/posts/components/ContentListCard";
 import {
+  PUBLISHING_CONTENT_KIND_BADGE_CLASS,
+  PUBLISHING_LIST_SURFACE_CLASS,
+  PUBLISHING_TABLE_ROW_CLASS,
+  QueueStatusChip,
+} from "~/features/posts/components/publishing-suite";
+import {
   getShortDraftComposeUrl,
   getShortDraftEditRedirectPath,
 } from "~/features/posts/drafts/utils/draft-editor-navigation";
@@ -42,12 +53,6 @@ import {
   draftTypeLabel,
 } from "~/features/posts/drafts/utils/draft-row-preview";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
-import {
-  getQueueColor,
-  getQueueColorBundle,
-  QUEUE_PILL_OPACITY_CLASS,
-  QUEUE_PILL_SHAPE_CLASS,
-} from "~/features/posts/queue-colors";
 import type { PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -109,23 +114,17 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-3 text-left text-xs font-semibold tracking-wide uppercase"
+    className="bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer border-b px-3 py-3 text-left text-xs font-medium"
     onClick={() => onRequestSort(sortKey)}
   >
-    {label}{" "}
+    <span className="text-foreground font-medium">{label}</span>
     {sortConfig.key === sortKey
       ? sortConfig.direction === "asc"
-        ? "↑"
-        : "↓"
+        ? " ↑"
+        : " ↓"
       : null}
   </th>
 );
-
-function queuePillLabel(post: Post): string {
-  const n = post.queueType?.name;
-  if (!n || n === "unassigned") return "No queue";
-  return n;
-}
 
 interface DraftsActionData {
   success?: boolean;
@@ -262,7 +261,9 @@ export function DraftsTable({
 
   if (posts.length === 0) {
     return (
-      <div className="border-border bg-card rounded-lg border px-6 py-12 text-center">
+      <div
+        className={`${PUBLISHING_LIST_SURFACE_CLASS} px-6 py-12 text-center`}
+      >
         <h3 className="text-foreground mb-2 text-lg font-semibold">
           No drafts yet
         </h3>
@@ -290,11 +291,11 @@ export function DraftsTable({
   return (
     <>
       <div className="hidden md:block">
-        <div className="border-border bg-card w-full overflow-x-auto rounded-lg border">
+        <div className={`w-full ${PUBLISHING_LIST_SURFACE_CLASS}`}>
           <table className="min-w-full table-fixed align-middle text-sm">
             <thead>
               <tr>
-                <th className="bg-card border-border text-foreground w-10 border-b px-2 py-3 text-center">
+                <th className="bg-card border-border text-muted-foreground w-10 border-b px-2 py-3 text-center">
                   <Checkbox
                     id="draft-select-all"
                     checked={
@@ -305,13 +306,10 @@ export function DraftsTable({
                     onCheckedChange={() => onToggleSelectAll()}
                   />
                 </th>
-                <th className="bg-card border-border text-foreground w-24 border-b px-2 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Type
+                <th className="bg-card border-border text-muted-foreground border-b px-3 py-3 text-left text-xs font-medium">
+                  Draft
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-2 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Content
-                </th>
-                <th className="bg-card border-border text-foreground w-36 border-b px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
+                <th className="bg-card border-border text-muted-foreground w-40 border-b px-3 py-3 text-center text-xs font-medium">
                   Queue
                 </th>
                 <SortableHeader
@@ -320,13 +318,13 @@ export function DraftsTable({
                   sortConfig={sortConfig}
                   onRequestSort={onRequestSort}
                 />
-                <th className="bg-card border-border text-foreground w-28 border-b px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
+                <th className="bg-card border-border text-muted-foreground w-28 border-b px-3 py-3 text-center text-xs font-medium">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => {
+              {posts.map((post, rowIndex) => {
                 const preview = buildDraftRowPreview(
                   post as Parameters<typeof buildDraftRowPreview>[0]
                 );
@@ -338,6 +336,7 @@ export function DraftsTable({
                   post as Parameters<typeof getShortDraftComposeUrl>[1]
                 );
                 const updatedIso = post.updatedAt ?? post.createdAt;
+                const combinedRow = combinedContent[rowIndex];
                 const p = post as Post & {
                   repost?: boolean;
                   postKind?: string;
@@ -353,16 +352,27 @@ export function DraftsTable({
                   postKind: p.postKind ?? null,
                 });
                 const urls = getImageUrls(post.fileUrl);
-                const qt = post.queueType;
-                const qLabel = queuePillLabel(post);
+
+                const handleRowKeyDown = (
+                  e: KeyboardEvent<HTMLTableRowElement>
+                ) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onResume(post);
+                  }
+                };
 
                 return (
                   <tr
                     key={post.id}
-                    className="group border-border hover:bg-muted/60 cursor-pointer border-b transition-colors"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open draft: ${preview.title}`}
+                    className={`${PUBLISHING_TABLE_ROW_CLASS} border-border hover:border-border/80 hover:bg-muted/40 cursor-pointer border-b transition-colors last:border-b-0`}
                     onClick={() => onResume(post)}
+                    onKeyDown={handleRowKeyDown}
                   >
-                    <td className="p-2 text-center align-middle">
+                    <td className="px-2 py-3 text-center align-middle">
                       <Checkbox
                         id={`draft-select-${post.id}`}
                         checked={selectedPosts.has(post.id)}
@@ -370,15 +380,7 @@ export function DraftsTable({
                         onClick={(e) => e.stopPropagation()}
                       />
                     </td>
-                    <td className="p-2 align-middle">
-                      <Badge
-                        variant="secondary"
-                        className="text-muted-foreground font-normal"
-                      >
-                        {typeLabel}
-                      </Badge>
-                    </td>
-                    <td className="p-2 align-middle">
+                    <td className="px-3 py-3 align-middle">
                       <div className="flex gap-3">
                         <div className="relative h-14 w-14 flex-shrink-0">
                           {urls.length > 0 ? (
@@ -415,90 +417,52 @@ export function DraftsTable({
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Link
-                              to={resumeUrl}
-                              className="text-foreground group-hover:text-primary font-semibold hover:underline"
-                              onClick={(e) => e.stopPropagation()}
+                        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                          <div className="flex w-[6.5rem] shrink-0 flex-col gap-0.5">
+                            <span
+                              className={PUBLISHING_CONTENT_KIND_BADGE_CLASS}
                             >
-                              {preview.title}
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-primary h-7 px-2 text-xs font-semibold"
-                              asChild
-                            >
-                              <Link
-                                to={resumeUrl}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Continue
-                              </Link>
-                            </Button>
+                              {typeLabel}
+                            </span>
+                            {preview.mediaLine ? (
+                              <span className="text-muted-foreground text-xs leading-tight">
+                                {preview.mediaLine}
+                              </span>
+                            ) : null}
                           </div>
-                          {preview.subtitle ? (
-                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
-                              {preview.subtitle}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground group-hover:text-primary pr-2 leading-snug font-semibold">
+                              {preview.title}
                             </p>
-                          ) : null}
-                          {preview.chips.length > 0 ? (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {preview.chips.map((c) => (
-                                <Badge
-                                  key={c}
-                                  variant="outline"
-                                  className="text-muted-foreground font-normal"
-                                >
-                                  {c}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : null}
+                            <p
+                              className={`text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed ${preview.subtitle ? "" : "min-h-[1.25rem]"}`}
+                            >
+                              {preview.subtitle || "\u00a0"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-2 text-center align-middle">
-                      {qt?.colorToken ? (
-                        (() => {
-                          const bundle = getQueueColorBundle(qt.colorToken);
-                          return (
-                            <div
-                              className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} mx-auto inline-flex max-w-full truncate`}
-                              style={{
-                                backgroundColor: bundle.surface,
-                                color: bundle.accent,
-                                borderColor: bundle.accent,
-                              }}
-                            >
-                              {qLabel}
-                            </div>
-                          );
-                        })()
-                      ) : (
-                        <div
-                          className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} mx-auto inline-flex max-w-full truncate ${(() => {
-                            const colors = getQueueColor(
-                              qt?.name ?? "unassigned",
-                              qt?.colorToken
-                            );
-                            return `${colors.bg} ${colors.text} ${colors.border}`;
-                          })()}`}
-                        >
-                          {qLabel}
-                        </div>
-                      )}
+                    <td className="px-3 py-3 text-center align-middle">
+                      <div className="flex justify-center">
+                        {combinedRow ? (
+                          <QueueStatusChip
+                            queueType={combinedRow.queueType}
+                            mode="draft"
+                          />
+                        ) : null}
+                      </div>
                     </td>
-                    <td className="text-muted-foreground p-2 align-middle text-xs whitespace-nowrap">
+                    <td className="text-muted-foreground px-3 py-3 align-middle text-xs whitespace-nowrap">
                       {formatDate(updatedIso)}
                     </td>
-                    <td className="p-2 text-center align-middle">
+                    <td className="px-3 py-3 text-center align-middle">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
                             className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
                             aria-label="Actions"
                           >

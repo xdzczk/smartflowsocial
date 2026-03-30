@@ -15,6 +15,8 @@ export function ContestStatsStrip({
     totalReactions: number;
     totalZaps: number;
     totalSatsZapped: number;
+    totalReplies: number;
+    totalReposts: number;
   };
 }) {
   const metricLabel =
@@ -22,13 +24,21 @@ export function ContestStatsStrip({
       ? "Reactions (sum)"
       : metric === "ZAPS"
         ? "Zaps (sum)"
-        : "Sats zapped (sum)";
+        : metric === "SATS_ZAPPED"
+          ? "Sats zapped (sum)"
+          : metric === "REPLIES"
+            ? "Replies (sum)"
+            : "Reposts (sum)";
   const metricValue =
     metric === "REACTIONS"
       ? aggregates.totalReactions
       : metric === "ZAPS"
         ? aggregates.totalZaps
-        : aggregates.totalSatsZapped;
+        : metric === "SATS_ZAPPED"
+          ? aggregates.totalSatsZapped
+          : metric === "REPLIES"
+            ? aggregates.totalReplies
+            : aggregates.totalReposts;
 
   return (
     <div className="border-border bg-muted/30 grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm shadow-sm sm:grid-cols-4">

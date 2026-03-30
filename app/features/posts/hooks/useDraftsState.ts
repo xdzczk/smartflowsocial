@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   isPollDraftPost,
@@ -59,6 +59,9 @@ export function useDraftsState({
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const clearSelection = useCallback(() => {
+    setSelectedPosts(new Set());
+  }, []);
   const [showAdvancedBulkResume, setShowAdvancedBulkResume] = useState(false);
   interface FetcherData {
     success?: boolean;
@@ -204,6 +207,7 @@ export function useDraftsState({
     setSortConfig,
     searchTerm,
     selectedPosts,
+    clearSelection,
     showAdvancedBulkResume,
     filteredPosts,
     bulkDeleteFetcher,

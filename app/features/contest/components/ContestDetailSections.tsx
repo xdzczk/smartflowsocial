@@ -21,6 +21,7 @@ import type {
   ContestWinnerRow,
 } from "../contest-detail-ui.types";
 import type { ContestDetailPageData } from "../contest-detail.types";
+import type { ContestRankingMetric } from "../types";
 
 import { ContestFairnessSnapshotCard } from "./ContestFairnessSnapshotCard";
 import { ContestLeaderboard } from "./ContestLeaderboard";
@@ -158,7 +159,7 @@ export function ContestDetailSourceSection({
   onOpenNostr,
 }: {
   sourcePost: DetailData["sourcePost"];
-  sourceNoteId: string;
+  sourceNoteId: string | null;
   onOpenNostr: () => void;
 }) {
   if (sourcePost?.nostrEventId) {
@@ -174,8 +175,10 @@ export function ContestDetailSourceSection({
   }
   return (
     <div className="border-border bg-muted/30 rounded-lg border p-4 text-sm">
-      <p className="text-muted-foreground font-mono text-xs">
-        Source note: {sourceNoteId}
+      <p className="text-muted-foreground text-xs">
+        {sourceNoteId
+          ? `Source note: ${sourceNoteId}`
+          : "Source note will be set when the entry post is published."}
       </p>
     </div>
   );
@@ -193,7 +196,7 @@ export function ContestDetailLiveSection({
 }: {
   contest: ContestRow;
   data: DetailData;
-  metric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  metric: ContestRankingMetric;
   profiles: ContestProfileMap;
   winners: ContestWinnerRow[];
   liveRows: ContestLivePreviewRow[];
@@ -264,7 +267,7 @@ export function ContestDetailFrozenSection({
   showFrozen: boolean;
   frozenRows: ContestLeaderboardEntryRow[];
   contest: ContestRow;
-  metric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  metric: ContestRankingMetric;
   profiles: ContestProfileMap;
   winners: ContestWinnerRow[];
   aggregates: DetailData["aggregates"];
@@ -375,7 +378,7 @@ export function ContestDetailFormsSection({
   isLocked: boolean;
   isCompleted: boolean;
   feeLabel: string;
-  metric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  metric: ContestRankingMetric;
   winners: ContestWinnerRow[];
   nostr: ContestDetailNostrUrls;
   canUsePresets: boolean;

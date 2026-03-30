@@ -208,6 +208,25 @@ export class PublishNowUseCase {
         }),
       });
 
+      try {
+        const { maybeActivateContestAfterSourcePostPublish } =
+          await import("~/features/contest");
+        await maybeActivateContestAfterSourcePostPublish({
+          postId: input.postId,
+          userId: input.userId,
+          publishedEventId: validatedSignedEvent.id,
+        });
+      } catch (orchErr) {
+        logErrorUtil(
+          orchErr instanceof Error ? orchErr : new Error(String(orchErr)),
+          {
+            message: "Contest launch hook after immediate publish failed",
+            postId: input.postId,
+            userId: input.userId,
+          }
+        );
+      }
+
       // Send push notification for publish success
       try {
         const { sendPublishSuccessNotification } =

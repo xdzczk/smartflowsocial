@@ -134,6 +134,33 @@ export function getStatusColor(item: CombinedContent): string {
   return "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 }
 
+const STATUS_TONE_MUTED = "text-muted-foreground";
+
+/** Text-only classes for lifecycle status (distinct from queue chips). */
+export function getStatusTextToneClass(item: CombinedContent): string {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- originalData may be absent on partial test fixtures
+  const currentState = item.currentState ?? item.originalData?.currentState;
+
+  if (currentState) {
+    const state = currentState;
+
+    if (item.type === "longform") {
+      if (deriveIsDraftLongForm(state)) return "text-foreground";
+      if (deriveIsPublishedLongForm(state)) return "text-success";
+      if (deriveIsScheduledLongForm(state)) return STATUS_TONE_MUTED;
+    } else {
+      if (deriveIsDraft(state)) return "text-foreground";
+      if (deriveIsPublished(state)) return "text-success";
+      if (deriveIsScheduled(state)) return STATUS_TONE_MUTED;
+    }
+
+    if (state === "FAILED") return "text-destructive";
+    if (state === "CANCELLED") return STATUS_TONE_MUTED;
+  }
+
+  return STATUS_TONE_MUTED;
+}
+
 export function getStatusText(item: CombinedContent): string {
   // Use currentState as single source of truth
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Optional chaining needed for runtime safety (tests may create incomplete objects)

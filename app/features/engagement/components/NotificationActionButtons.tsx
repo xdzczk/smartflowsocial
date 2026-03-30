@@ -49,6 +49,16 @@ interface NotificationActionButtonsProps {
   onZapClick?: (npub: string) => void;
   viewEventUrl?: string;
   viewEventLabel?: string;
+  /** Open tray / editing (distinct from completed-state styling). */
+  replyTrayOpen?: boolean;
+  quoteTrayOpen?: boolean;
+  repostTrayOpen?: boolean;
+  likeCompleted?: boolean;
+  zapCompleted?: boolean;
+  /** Scheduled repost exists (linked action) or just queued. */
+  repostScheduledHighlight?: boolean;
+  /** User just reposted now (ephemeral or persisted). */
+  repostPostedHighlight?: boolean;
 }
 
 const primaryActionClass =
@@ -78,8 +88,18 @@ export function NotificationActionButtons({
   onZapClick,
   viewEventUrl,
   viewEventLabel = "View on Primal",
+  replyTrayOpen = false,
+  quoteTrayOpen = false,
+  repostTrayOpen = false,
+  likeCompleted = false,
+  zapCompleted = false,
+  repostScheduledHighlight = false,
+  repostPostedHighlight = false,
 }: NotificationActionButtonsProps) {
   const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
+
+  const trayOpenClass =
+    "bg-primary/10 text-primary border-primary/25 border shadow-sm";
 
   return (
     <div className="mt-0.5 space-y-1">
@@ -88,7 +108,7 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={primaryActionClass}
+          className={`${primaryActionClass} ${replyTrayOpen ? trayOpenClass : ""}`}
           onClick={(e) => {
             e.stopPropagation();
             onOpenReply();
@@ -105,7 +125,7 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={primaryActionClass}
+          className={`${primaryActionClass} ${quoteTrayOpen ? trayOpenClass : ""}`}
           onClick={(e) => {
             e.stopPropagation();
             onOpenQuote();
@@ -122,7 +142,15 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={primaryActionClass}
+          className={`${primaryActionClass} ${
+            repostTrayOpen
+              ? trayOpenClass
+              : repostPostedHighlight
+                ? "text-primary border-primary/30 bg-primary/5 border"
+                : repostScheduledHighlight
+                  ? "text-primary/85 border-primary/35 border border-dashed"
+                  : ""
+          }`}
           disabled={isReposting}
           onClick={(e) => {
             e.stopPropagation();
@@ -130,7 +158,9 @@ export function NotificationActionButtons({
           }}
         >
           <Repeat
-            className={INLINE_ICON_SIZE_CLASS}
+            className={`${INLINE_ICON_SIZE_CLASS} ${
+              repostPostedHighlight && !repostTrayOpen ? "fill-primary/35" : ""
+            }`}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
@@ -217,7 +247,11 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={secondaryAckClass}
+          className={`${secondaryAckClass} ${
+            likeCompleted
+              ? "text-primary bg-primary/8 border-primary/20 border"
+              : ""
+          }`}
           aria-label="Like"
           onClick={(e) => {
             e.stopPropagation();
@@ -225,7 +259,7 @@ export function NotificationActionButtons({
           }}
         >
           <Heart
-            className="h-3.5 w-3.5"
+            className={`h-3.5 w-3.5 ${likeCompleted ? "fill-primary/45" : ""}`}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
@@ -241,7 +275,11 @@ export function NotificationActionButtons({
             type="button"
             variant="ghost"
             size="sm"
-            className={secondaryAckClass}
+            className={`${secondaryAckClass} ${
+              zapCompleted
+                ? "text-primary bg-primary/8 border-primary/20 border"
+                : ""
+            }`}
             aria-label="Zap"
             onClick={(e) => {
               e.stopPropagation();
@@ -249,7 +287,7 @@ export function NotificationActionButtons({
             }}
           >
             <Zap
-              className="h-3.5 w-3.5"
+              className={`h-3.5 w-3.5 ${zapCompleted ? "fill-primary/45" : ""}`}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />

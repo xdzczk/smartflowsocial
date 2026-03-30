@@ -21,6 +21,8 @@ export interface NotificationActionTarget {
 export interface UseNotificationActionsProps {
   notification: NotificationActionTarget;
   userRelays?: string[];
+  /** When true, omit success toasts for publish/defer (caller shows inline feedback). */
+  suppressSuccessToast?: boolean;
 }
 
 export interface ToastState {
@@ -39,6 +41,7 @@ export interface ChildReply {
 export function useNotificationActions({
   notification,
   userRelays = [DEFAULT_RELAY],
+  suppressSuccessToast = false,
 }: UseNotificationActionsProps) {
   const queryClient = useQueryClient();
 
@@ -97,8 +100,8 @@ export function useNotificationActions({
     }
   };
 
-  const handleReply = async () => {
-    if (!replyContent.trim()) return;
+  const handleReply = async (): Promise<boolean> => {
+    if (!replyContent.trim()) return false;
 
     setIsReplying(true);
     try {
@@ -129,9 +132,12 @@ export function useNotificationActions({
 
       if (!response.ok) throw new Error("Failed to publish reply");
 
-      showToast("success", "Reply posted successfully!");
+      if (!suppressSuccessToast) {
+        showToast("success", "Reply posted successfully!");
+      }
       setReplyContent("");
       setShowReplyInput(false);
+      return true;
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");
@@ -144,12 +150,13 @@ export function useNotificationActions({
         false
       ); // Don't show toast, we call showToast instead
       showToast("error", getErrorMessage(error) || "Failed to post reply");
+      return false;
     } finally {
       setIsReplying(false);
     }
   };
 
-  const handleRepost = async () => {
+  const handleRepost = async (): Promise<boolean> => {
     setIsReposting(true);
     try {
       const kind6EventData = {
@@ -176,7 +183,10 @@ export function useNotificationActions({
 
       if (!response.ok) throw new Error("Failed to publish repost");
 
-      showToast("success", "Reposted successfully!");
+      if (!suppressSuccessToast) {
+        showToast("success", "Reposted successfully!");
+      }
+      return true;
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");
@@ -189,12 +199,13 @@ export function useNotificationActions({
         false
       ); // Don't show toast, we call showToast instead
       showToast("error", getErrorMessage(error) || "Failed to repost");
+      return false;
     } finally {
       setIsReposting(false);
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = async (): Promise<boolean> => {
     try {
       const kind7EventData = {
         kind: 7,
@@ -220,7 +231,10 @@ export function useNotificationActions({
 
       if (!response.ok) throw new Error("Failed to publish like");
 
-      showToast("success", "Liked!", 2000);
+      if (!suppressSuccessToast) {
+        showToast("success", "Liked!", 2000);
+      }
+      return true;
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");
@@ -233,11 +247,12 @@ export function useNotificationActions({
         false
       ); // Don't show toast, we call showToast instead
       showToast("error", getErrorMessage(error) || "Failed to like");
+      return false;
     }
   };
 
-  const handleQuote = async () => {
-    if (!quoteContent.trim()) return;
+  const handleQuote = async (): Promise<boolean> => {
+    if (!quoteContent.trim()) return false;
 
     setIsQuoting(true);
     try {
@@ -275,9 +290,13 @@ export function useNotificationActions({
 
       if (!response.ok) throw new Error("Failed to publish quote post");
 
-      showToast("success", "Quote posted successfully!");
+      if (!suppressSuccessToast) {
+        showToast("success", "Quote posted successfully!");
+      }
       setQuoteContent("");
       setShowQuoteInput(false);
+      setShowReplyInput(false);
+      return true;
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");
@@ -290,6 +309,7 @@ export function useNotificationActions({
         false
       ); // Don't show toast, we call showToast instead
       showToast("error", getErrorMessage(error) || "Failed to post quote");
+      return false;
     } finally {
       setIsQuoting(false);
     }
@@ -301,13 +321,13 @@ export function useNotificationActions({
     content: string;
     scheduledFor?: string | null;
     signedEvent?: SignedEvent | null;
-  }) => {
+  }): Promise<boolean> => {
     try {
       let signedEvent: SignedEvent | null = params.signedEvent ?? null;
       if (params.mode === "schedule") {
         if (!params.scheduledFor) {
           showToast("error", "Pick a schedule time");
-          return;
+          return false;
         }
         const unix = Math.floor(new Date(params.scheduledFor).getTime() / 1000);
         const relay = userRelays[0] ?? DEFAULT_RELAY;
@@ -374,11 +394,14 @@ export function useNotificationActions({
         }),
       });
       if (!response.ok) throw new Error("Failed to defer action");
-      showToast(
-        "success",
-        params.mode === "draft" ? "Draft saved" : "Action scheduled"
-      );
+      if (!suppressSuccessToast) {
+        showToast(
+          "success",
+          params.mode === "draft" ? "Draft saved" : "Action scheduled"
+        );
+      }
       await queryClient.invalidateQueries({ queryKey: engagementKeys.lists() });
+      return true;
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");
@@ -394,6 +417,7 @@ export function useNotificationActions({
         "error",
         getErrorMessage(error) || "Failed to create deferred action"
       );
+      return false;
     }
   };
 

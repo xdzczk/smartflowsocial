@@ -2,18 +2,21 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import {
-  ActionRail,
   ActionRailLabel,
-  ActionRailNotice,
-  ActionRailOutcome,
-  ActionRailRow,
   ActionRailSection,
-  RAIL_MAJOR_DIVIDE,
-  RAIL_STACK_ROWS,
-  RAIL_SUMMARY_TO_FEEDBACK,
+  type ActionRailRowTone,
+  railFieldClassNames,
 } from "~/components/action-rail";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  buildContestOutcomePoolLine,
+  CampaignActionRail,
+  type CampaignActionRailSnapshotRow,
+} from "~/features/campaign-ui";
 import type { PlanType } from "~/features/payments/types";
-import { cn } from "~/lib/utils";
+import { RailSegmentedTabGroup } from "~/features/posts/components/publishing-rail/RailSegmentedTabGroup";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 
 import { contestCopy } from "../contest-copy";
 import {
@@ -21,26 +24,64 @@ import {
   computePlannedPayoutSats,
   getContestFinalizationFeeRateBps,
 } from "../contest-finalization-fee.shared";
+import { getContestLaunchCtaConfig } from "../contest-launch-cta-config";
 import type { ContestPrizeMode, ContestRankReward } from "../types";
+
+const LAUNCH_TABS = [
+  { id: "now", label: "Now", ariaLabel: "Launch now" },
+  { id: "schedule", label: "Schedule", ariaLabel: "Schedule for later" },
+] as const;
+
+export interface ContestReadinessItem {
+  id: string;
+  label: string;
+  satisfied: boolean;
+  isError?: boolean;
+}
+
+function launchHintLine(
+  launchMode: "now" | "schedule",
+  sourceMode: "create" | "existing"
+): string {
+  if (launchMode === "now") {
+    return sourceMode === "existing"
+      ? "Launches immediately with the selected post."
+      : "Publishes the source post, then launches.";
+  }
+  return sourceMode === "existing"
+    ? "Activates at the scheduled time."
+    : "Publishes the source post, then activates on schedule.";
+}
 
 export function ContestBuilderSummaryRail({
   planType,
   planLabel,
   sourceMode,
   hasSourcePost,
+  hasValidNewPostComposer,
   rankingMetric,
   contestEndAt,
   prizeMode,
   winnerCount,
   equalRewardSats,
   rankRewards,
-  fairness,
+  fairness: _fairness,
+  launchMode,
+  onLaunchModeChange,
+  scheduledActivationFor,
+  onScheduledActivationForChange,
+  userTimezone,
+  readinessRequired,
+  readinessRecommended,
+  primaryCtaDisabled: _primaryCtaDisabled,
   footerActions,
 }: {
   planType: PlanType;
   planLabel: string;
   sourceMode: "create" | "existing";
   hasSourcePost: boolean;
+  /** When source is create-new, true if composer has content/media to publish. */
+  hasValidNewPostComposer: boolean;
   rankingMetric: string;
   contestEndAt: string;
   prizeMode: ContestPrizeMode;
@@ -55,6 +96,14 @@ export function ContestBuilderSummaryRail({
     minAccountAgeDays: number;
     minFollowers: number;
   };
+  launchMode: "now" | "schedule";
+  onLaunchModeChange: (next: "now" | "schedule") => void;
+  scheduledActivationFor: string;
+  onScheduledActivationForChange: (next: string) => void;
+  userTimezone: string;
+  readinessRequired: ContestReadinessItem[];
+  readinessRecommended: ContestReadinessItem[];
+  primaryCtaDisabled: boolean;
   footerActions?: ReactNode;
 }) {
   const [now] = useState(() => Date.now());
@@ -90,124 +139,181 @@ export function ContestBuilderSummaryRail({
   const endValid = end != null && Number.isFinite(end.getTime());
   const endMs = endValid ? end.getTime() : null;
   const endPast = endMs != null && endMs < now;
-  const endSoon = endMs != null && endMs > now && endMs - now < 60 * 60 * 1000;
 
-  const rankedIncomplete =
-    prizeMode === "RANKED" && !rankRewardsJson.some((r) => r.sats > 0);
+  const scheduleHelper =
+    sourceMode === "existing"
+      ? contestCopy.railScheduleHelperExisting
+      : contestCopy.railScheduleHelperCreate;
 
-  const noFairnessFilters =
-    !fairness.excludeMuted &&
-    !fairness.excludeBlocked &&
-    !fairness.excludeLowTrust &&
-    !fairness.excludeNonFollowers &&
-    fairness.minAccountAgeDays <= 0 &&
-    fairness.minFollowers <= 0;
+  const ctaConfig = getContestLaunchCtaConfig(sourceMode, launchMode);
 
-  const missingRequirements: string[] = [];
-  if (!hasSourcePost) {
-    missingRequirements.push(
-      sourceMode === "create"
-        ? contestCopy.railWarnNoSourceCreate
-        : contestCopy.railWarnNoSourceExisting
-    );
-  }
-  if (!endValid) {
-    missingRequirements.push(contestCopy.railWarnEndInvalid);
-  } else if (endPast) {
-    missingRequirements.push(contestCopy.railWarnEndPast);
-  }
-  if (rankedIncomplete) {
-    missingRequirements.push(contestCopy.railWarnRankedIncomplete);
-  }
+  const sourceOk =
+    sourceMode === "existing"
+      ? hasSourcePost
+      : hasValidNewPostComposer || hasSourcePost;
 
-  const beforeSubmit: string[] = [];
-  if (plannedPayoutSats <= 0) {
-    beforeSubmit.push(contestCopy.railWarnZeroPayout);
-  }
-  if (endValid && !endPast && endSoon) {
-    beforeSubmit.push(contestCopy.railWarnEndSoon);
-  }
-  if (noFairnessFilters) {
-    beforeSubmit.push(contestCopy.railWarnNoFairness);
-  }
+  const modeLine =
+    launchMode === "now"
+      ? "Now"
+      : scheduledActivationFor.trim()
+        ? new Date(scheduledActivationFor).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        : "—";
 
-  const hasHardBlockers = missingRequirements.length > 0;
-  const outcomeLine = `${plannedPayoutSats.toLocaleString()} sats pool · ${winnerCount} winner${winnerCount !== 1 ? "s" : ""}`;
+  const outcomeLine = buildContestOutcomePoolLine({
+    plannedPayoutSats,
+    winnerCount,
+  });
+
+  const minSchedule = getNowForDateTimeLocal(userTimezone);
+
+  const blockerLines = readinessRequired
+    .filter((r) => !r.satisfied && r.isError)
+    .map((r) => r.label);
+
+  const blocker =
+    blockerLines.length > 0
+      ? {
+          variant: "warning" as const,
+          title: contestCopy.railBlockerTitle,
+          lines: blockerLines,
+        }
+      : null;
+
+  const hasRecommendedGap = readinessRecommended.some((r) => !r.satisfied);
+
+  const scheduleActivationRows: CampaignActionRailSnapshotRow[] =
+    launchMode === "schedule"
+      ? [
+          {
+            label: contestCopy.railRowActivation,
+            value: modeLine,
+          },
+        ]
+      : [];
+
+  const optionalHintRows: CampaignActionRailSnapshotRow[] = hasRecommendedGap
+    ? [
+        {
+          label: "Optional",
+          value: contestCopy.railOptionalHint,
+          tone: "muted",
+        },
+      ]
+    : [];
+
+  const sourceStatusTone: ActionRailRowTone = sourceOk ? "default" : "warning";
+
+  const snapshotRows: CampaignActionRailSnapshotRow[] = [
+    {
+      label: "Source",
+      value:
+        sourceMode === "existing"
+          ? contestCopy.railSourceModeExisting
+          : contestCopy.railSourceModeCreate,
+    },
+    {
+      label: "Launch",
+      value:
+        launchMode === "now"
+          ? contestCopy.railLaunchNow
+          : contestCopy.railLaunchSchedule,
+    },
+    ...scheduleActivationRows,
+    {
+      label: "Source status",
+      value: sourceOk
+        ? contestCopy.railSourceOk
+        : contestCopy.railSourceMissing,
+      placeholder: !sourceOk,
+      tone: sourceStatusTone,
+    },
+    { label: "Metric", value: rankingMetric.toLowerCase() },
+    {
+      label: "Ends",
+      value:
+        endValid && !endPast
+          ? end.toLocaleString()
+          : contestCopy.railEndPlaceholder,
+      placeholder: !endValid || endPast,
+    },
+    { label: "Winners", value: winnerCount },
+    { label: "Plan", value: planLabel },
+    ...optionalHintRows,
+  ];
+
+  const prependSections = (
+    <>
+      <ActionRailSection>
+        <ActionRailLabel>{contestCopy.railLaunchModeLabel}</ActionRailLabel>
+        <RailSegmentedTabGroup
+          items={[...LAUNCH_TABS]}
+          value={launchMode}
+          onValueChange={(id) => {
+            onLaunchModeChange(id as "now" | "schedule");
+          }}
+          columns={2}
+          radiogroupAriaLabel="Contest launch timing"
+        />
+        <p className="text-muted-foreground mt-2 text-[11px] leading-snug">
+          {launchHintLine(launchMode, sourceMode)}
+        </p>
+      </ActionRailSection>
+
+      {launchMode === "schedule" ? (
+        <ActionRailSection className="space-y-2">
+          <ActionRailLabel>
+            {contestCopy.railActivationTimeLabel}
+          </ActionRailLabel>
+          <Label
+            htmlFor="contest-rail-scheduled-activation"
+            className="text-muted-foreground text-[11px] font-medium"
+          >
+            {contestCopy.railDateTimeLabel}
+          </Label>
+          <Input
+            id="contest-rail-scheduled-activation"
+            type="datetime-local"
+            className={railFieldClassNames}
+            value={scheduledActivationFor}
+            min={minSchedule}
+            onChange={(e) => {
+              const v = e.target.value || "";
+              onScheduledActivationForChange(v < minSchedule ? minSchedule : v);
+            }}
+          />
+          <p className="text-muted-foreground text-[11px] leading-snug">
+            {userTimezone} · {scheduleHelper}
+          </p>
+        </ActionRailSection>
+      ) : null}
+    </>
+  );
 
   return (
-    <ActionRail ariaLabel="Contest summary" footer={footerActions}>
-      <div className={cn("flex flex-col text-xs", RAIL_MAJOR_DIVIDE)}>
-        <ActionRailSection>
-          <ActionRailLabel>Contest options</ActionRailLabel>
-          <div className={RAIL_STACK_ROWS}>
-            <ActionRailRow
-              label="Source"
-              value={
-                hasSourcePost
-                  ? contestCopy.railSourceOk
-                  : contestCopy.railSourceMissing
-              }
-              tone={hasSourcePost ? "default" : "warning"}
-              placeholder={!hasSourcePost}
-            />
-            <ActionRailRow label="Metric" value={rankingMetric.toLowerCase()} />
-            <ActionRailRow
-              label="Ends"
-              value={
-                endValid ? end.toLocaleString() : contestCopy.railEndPlaceholder
-              }
-              placeholder={!endValid}
-            />
-            <ActionRailRow label="Winners" value={winnerCount} />
-            <ActionRailRow label="Plan" value={planLabel} />
-          </div>
-        </ActionRailSection>
-
-        <ActionRailSection>
-          <ActionRailLabel>Contest summary</ActionRailLabel>
-          <div className={RAIL_STACK_ROWS}>
-            <ActionRailRow
-              label="Planned pool"
-              value={`${plannedPayoutSats.toLocaleString()} sats`}
-            />
-            <ActionRailRow label="Finalization fee" value={feePct} />
-            <ActionRailRow
-              label="Due at lock"
-              value={`${feeSats.toLocaleString()} sats`}
-            />
-          </div>
-        </ActionRailSection>
-
-        <ActionRailSection className="space-y-2">
-          {missingRequirements.length > 0 ? (
-            <ActionRailNotice
-              variant="error"
-              title="Missing requirements"
-              lines={missingRequirements}
-              className={RAIL_SUMMARY_TO_FEEDBACK}
-            />
-          ) : null}
-          {beforeSubmit.length > 0 ? (
-            <ActionRailNotice
-              variant="warning"
-              title="Before you submit"
-              lines={beforeSubmit}
-              className={
-                missingRequirements.length > 0
-                  ? RAIL_SUMMARY_TO_FEEDBACK
-                  : undefined
-              }
-            />
-          ) : null}
-          {!hasHardBlockers ? (
-            <ActionRailOutcome
-              className={RAIL_SUMMARY_TO_FEEDBACK}
-              headline="Ready to launch"
-              outcomeLine={outcomeLine}
-            />
-          ) : null}
-        </ActionRailSection>
-      </div>
-    </ActionRail>
+    <CampaignActionRail
+      ariaLabel={contestCopy.railAriaLabel}
+      prependSections={prependSections}
+      snapshotLabel={contestCopy.railSnapshotLabel}
+      snapshotRows={snapshotRows}
+      financialLabel={contestCopy.railFinancialLabel}
+      financialRows={[
+        {
+          label: contestCopy.railPlannedPool,
+          value: `${plannedPayoutSats.toLocaleString()} sats`,
+        },
+        { label: contestCopy.railFinalizationFee, value: feePct },
+        {
+          label: contestCopy.railDueAtLock,
+          value: `${feeSats.toLocaleString()} sats`,
+        },
+      ]}
+      blocker={blocker}
+      outcomeHeadline={ctaConfig.outcomeText}
+      outcomeLine={outcomeLine}
+      footer={footerActions ?? <></>}
+    />
   );
 }

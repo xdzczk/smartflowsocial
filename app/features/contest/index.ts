@@ -1,5 +1,6 @@
 export { ContestEmbeddedComposer } from "./components/ContestEmbeddedComposer";
 export { ContestBuilderSummaryRail } from "./components/ContestBuilderSummaryRail";
+export type { ContestReadinessItem } from "./components/ContestBuilderSummaryRail";
 export { ContestDetailView } from "./components/ContestDetailView";
 export { createContestSchema } from "./schemas";
 export { contestCopy } from "./contest-copy";
@@ -50,3 +51,19 @@ export {
   touchContestPresetLastUsed,
 } from "./contest-presets.server";
 export type { CreateContestPresetInput } from "./contest-presets.server";
+export {
+  findOrchestrationByContestId,
+  findOrchestrationBySourcePostId,
+  getScheduledContestLaunchesForUser,
+  markSourcePublishFailed,
+  maybeActivateContestAfterSourcePostPublish,
+  processDueScheduledContestLaunches,
+  rescheduleContestLaunchOrchestration,
+  retryContestLaunchOrchestration,
+  upsertContestLaunchOrchestration,
+} from "./repositories/contest-launch-orchestration.server";
+export type { ScheduledContestLaunchRow } from "./repositories/contest-launch-orchestration.server";
+export {
+  findContestCreationDraftByUserId,
+  upsertContestCreationDraftPayload,
+} from "./repositories/contest-creation-draft.server";

@@ -1,7 +1,13 @@
-export type ContestRankingMetric = "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+export type ContestRankingMetric =
+  | "REACTIONS"
+  | "ZAPS"
+  | "SATS_ZAPPED"
+  | "REPLIES"
+  | "REPOSTS";
 export type ContestPrizeMode = "EQUAL" | "RANKED";
 export type ContestStatus =
   | "DRAFT"
+  | "SCHEDULED_LAUNCH"
   | "LIVE"
   | "ENDED_REVIEW"
   | "LOCKED"
@@ -32,5 +38,7 @@ export interface ContestEntryScore {
   reactionsCount: number;
   zapCount: number;
   satsZapped: number;
+  repliesCount: number;
+  repostsCount: number;
   score: number;
 }

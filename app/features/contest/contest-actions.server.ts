@@ -50,9 +50,10 @@ export async function createContest(
   userId: string,
   input: {
     title?: string | null;
-    sourceNoteId: string;
+    /** Required before launch; may be null while draft awaits linked source publish. */
+    sourceNoteId: string | null;
     sourcePostId?: string | null;
-    rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+    rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED" | "REPLIES" | "REPOSTS";
     contestStartAt?: Date | null;
     contestEndAt: Date;
     prizeMode: "EQUAL" | "RANKED";
@@ -60,12 +61,14 @@ export async function createContest(
     equalRewardSats?: number | null;
     rankRewards?: ContestRankReward[] | null;
     fairnessConfig?: Record<string, unknown> | null;
+    /** Draft default; use SCHEDULED_LAUNCH when activation is deferred. */
+    status?: "DRAFT" | "SCHEDULED_LAUNCH";
   }
 ): Promise<Contest> {
   return createContestRow({
     user: { connect: { id: userId } },
     title: input.title?.trim() || null,
-    sourceNoteId: input.sourceNoteId,
+    sourceNoteId: input.sourceNoteId?.trim() ? input.sourceNoteId.trim() : null,
     sourcePostId: input.sourcePostId ?? null,
     rankingMetric: input.rankingMetric,
     contestStartAt: input.contestStartAt ?? null,
@@ -85,7 +88,7 @@ export async function createContest(
       | undefined,
     entryType: "REPLY_DIRECT",
     tieBreakRule: DEFAULT_TIE_BREAK_RULE,
-    status: "DRAFT",
+    status: input.status ?? "DRAFT",
     eventLogs: {
       create: {
         eventType: "contest_created",
@@ -101,8 +104,19 @@ export async function launchContest(
 ): Promise<{ success: boolean; error?: string }> {
   const contest = await getContestById(contestId, userId);
   if (!contest) return { success: false, error: "Contest not found" };
-  if (contest.status !== "DRAFT")
-    return { success: false, error: "Only draft contests can be launched" };
+  if (contest.status !== "DRAFT" && contest.status !== "SCHEDULED_LAUNCH")
+    return {
+      success: false,
+      error: "Only draft or scheduled-launch contests can be launched",
+    };
+
+  const noteId = contest.sourceNoteId?.trim() ?? "";
+  if (!noteId) {
+    return {
+      success: false,
+      error: "Contest needs a source note id before launch",
+    };
+  }
 
   await updateContestRow(contestId, {
     status: "LIVE",
@@ -126,10 +140,17 @@ export async function freezeContestAtDeadline(
   if (contest.status !== "LIVE" && contest.status !== "ENDED_REVIEW") {
     return { success: false, error: "Contest is not in a freezeable state" };
   }
+  const sourceNote = contest.sourceNoteId?.trim() ?? "";
+  if (!sourceNote) {
+    return {
+      success: false,
+      error: "Contest is missing a source note id.",
+    };
+  }
   const snapshotAt = new Date();
   const entries = await resolveContestEntries({
     userId,
-    sourceNoteId: contest.sourceNoteId,
+    sourceNoteId: sourceNote,
     metric: contest.rankingMetric,
     deadlineUnix: Math.floor(contest.contestEndAt.getTime() / 1000),
     filters:
@@ -172,6 +193,8 @@ export async function freezeContestAtDeadline(
             reactionsCount: row.reactionsCount,
             zapCount: row.zapCount,
             satsZapped: row.satsZapped,
+            repliesCount: row.repliesCount,
+            repostsCount: row.repostsCount,
             score: row.score,
             rank: idx + 1,
             isEligible: true,
@@ -257,9 +280,13 @@ export async function lockContest(
 
   const subscription = await getUserSubscription(userId);
   const planType = getUserPlanType(subscription as UserSubscription | null);
+  const srcNote = contest.sourceNoteId?.trim() ?? "";
+  if (!srcNote) {
+    return { success: false, error: "Contest is missing a source note id." };
+  }
   const quote = quoteContestFinalization({
     contest: {
-      sourceNoteId: contest.sourceNoteId,
+      sourceNoteId: srcNote,
       rankingMetric: contest.rankingMetric,
       contestEndAt: contest.contestEndAt,
       prizeMode: contest.prizeMode,

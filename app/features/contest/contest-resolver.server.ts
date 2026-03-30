@@ -1,4 +1,5 @@
 /* eslint-disable import/order, @typescript-eslint/prefer-optional-chain -- Contest resolver scaffold prioritizes correctness; style cleanup follows. */
+import type { RelatedEvent } from "~/features/giveaway/types";
 import type { ContestRankingMetric } from "./types";
 import {
   processGiveawayParticipants,
@@ -15,36 +16,55 @@ export interface ContestResolvedEntry {
   reactionsCount: number;
   zapCount: number;
   satsZapped: number;
+  repliesCount: number;
+  repostsCount: number;
   score: number;
 }
 
 function scoreForMetric(
   metric: ContestRankingMetric,
-  values: { reactionsCount: number; zapCount: number; satsZapped: number }
+  values: {
+    reactionsCount: number;
+    zapCount: number;
+    satsZapped: number;
+    repliesCount: number;
+    repostsCount: number;
+  }
 ): number {
   if (metric === "REACTIONS") return values.reactionsCount;
   if (metric === "ZAPS") return values.zapCount;
-  return values.satsZapped;
+  if (metric === "SATS_ZAPPED") return values.satsZapped;
+  if (metric === "REPLIES") return values.repliesCount;
+  return values.repostsCount;
 }
 
 function buildMetricAggregatesForReply(
   eventId: string,
-  relatedEvents: Array<{ kind: number; tags?: string[][] }>
+  relatedEvents: RelatedEvent[],
+  /** Do not count reactions, zaps, nested replies, or reposts performed by the entry author on their own entry. */
+  entryAuthorPubkey: string
 ): {
   reactionsCount: number;
   zapCount: number;
   satsZapped: number;
+  repliesCount: number;
+  repostsCount: number;
 } {
   let reactionsCount = 0;
   let zapCount = 0;
   let satsZapped = 0;
+  let repliesCount = 0;
+  let repostsCount = 0;
 
   for (const ev of relatedEvents) {
+    if (ev.pubkey === entryAuthorPubkey) continue;
     const tags: string[][] = Array.isArray(ev.tags) ? ev.tags : [];
     const isTaggedToReply = tags.some(
       (t) => Array.isArray(t) && t[0] === "e" && t[1] === eventId
     );
     if (!isTaggedToReply) continue;
+    if (ev.kind === 1) repliesCount += 1;
+    if (ev.kind === 6) repostsCount += 1;
     if (ev.kind === 7) reactionsCount += 1;
     if (ev.kind === 9735) {
       zapCount += 1;
@@ -56,7 +76,7 @@ function buildMetricAggregatesForReply(
     }
   }
 
-  return { reactionsCount, zapCount, satsZapped };
+  return { reactionsCount, zapCount, satsZapped, repliesCount, repostsCount };
 }
 
 export async function resolveContestEntries(params: {
@@ -106,7 +126,11 @@ export async function resolveContestEntries(params: {
   );
 
   const rows: ContestResolvedEntry[] = eligibleReplies.map((reply) => {
-    const aggregates = buildMetricAggregatesForReply(reply.id, relatedEvents);
+    const aggregates = buildMetricAggregatesForReply(
+      reply.id,
+      relatedEvents,
+      reply.pubkey
+    );
     const score = scoreForMetric(params.metric, aggregates);
     return {
       entryEventId: reply.id,
@@ -116,6 +140,8 @@ export async function resolveContestEntries(params: {
       reactionsCount: aggregates.reactionsCount,
       zapCount: aggregates.zapCount,
       satsZapped: aggregates.satsZapped,
+      repliesCount: aggregates.repliesCount,
+      repostsCount: aggregates.repostsCount,
       score,
     };
   });

@@ -42,7 +42,7 @@ describe("Templates", () => {
       ).should("be.visible");
     });
 
-    it("should show templates type segmented control", () => {
+    it("should show templates type filter", () => {
       cy.visitAndCheck("/dashboard/templates");
       cy.get('[data-testid="templates-type-segments"]', {
         timeout: 15000,

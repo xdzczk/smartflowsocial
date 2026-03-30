@@ -1,4 +1,5 @@
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import { useEffect } from "react";
 
 import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
@@ -6,7 +7,6 @@ import { NotificationSettings } from "~/components/settings/NotificationSettings
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
 import {
   isPrimarySignerProfile,
@@ -33,6 +33,12 @@ import type {
   Nip65ProfileRelayEntry,
   Nip65RelayScope,
 } from "~/features/relays/nip65-relay-entry";
+import { SettingsShell } from "~/features/settings/components/SettingsShell";
+import {
+  getVisibleSettingsSections,
+  resolveSettingsTab,
+  type SettingsTabId,
+} from "~/features/settings/settings-sections";
 import {
   BlossomMediaMirrorsSettings,
   UploadProviderSettings,
@@ -296,36 +302,319 @@ function parseRelayAcksMap(value: unknown): Record<string, RelayAck> {
   return value as Record<string, RelayAck>;
 }
 
-function getSettingsDefaultTab(input: {
-  tabParam: string | null;
-  isChild: boolean;
-  hasAccountsAccess: boolean;
-}): string {
-  const requested = input.tabParam ?? "general";
-  if (
-    input.isChild &&
-    (requested === "subscription" || requested === "referral")
-  )
-    return "general";
-  if (!input.hasAccountsAccess && requested === "accounts") return "general";
-  return requested;
-}
+function renderSettingsPanel(
+  tab: SettingsTabId,
+  ctx: {
+    isChildBool: boolean;
+    hasAccountsAccessBool: boolean;
+    timezoneValue: string | null;
+    timeFormatRaw: unknown;
+    dateFormatRaw: unknown;
+    preferredNostrClientRaw: unknown;
+    customNostrClientBaseUrlRaw: unknown;
+    pushNotificationsEnabled: unknown;
+    pushNotifyPublishSuccess: unknown;
+    pushNotifyPublishFailure: unknown;
+    pushNotifyRunwayLow: unknown;
+    pushNotifyIncludePreview: unknown;
+    runwayNotifyBelowDays: unknown;
+    primarySignerProfile: PrimarySignerProfile | null;
+    queueTypes: QueueTypeSettings[];
+    hashTagPresets: HashTagPreset[];
+    accounts: ReturnType<typeof validateAccounts>;
+    relaysList: string[];
+    publishRelaySourceValue: "app" | "nip65_profile";
+    profileRelayEntriesList: Nip65ProfileRelayEntry[];
+    managedRelaysList: ManagedRelay[];
+    relayAcksMap: Record<string, RelayAck>;
+    blastrRelayEnabled: unknown;
+    canToggleBlastr: unknown;
+    blastrPolicyRaw: unknown;
+    blastrSystemRelaysRaw: unknown;
+    giveawayBlacklistList: string[];
+    mutedList: ReturnType<typeof parseMutedList>;
+    filterMutedValue: boolean;
+    hidePostsFromLowTrustUsersValue: boolean;
+    replyTemplates: Array<{ id: string; slug: string; body: string }>;
+    uploadProviderValue: string;
+    customBlossomUrlValue: string | null;
+    enableMirrorBlossomValue: boolean;
+    mirrorUploadUrlsList: string[];
+    subscription: ReturnType<typeof validateSubscription>;
+    availablePlans: ReturnType<typeof validateAvailablePlans>;
+    paymentHistory: ReturnType<typeof validatePaymentHistory>;
+    nwcEnabledValue: boolean;
+    maskedNwcStringValue: string | undefined;
+    nwcLastUsedValue: string | null;
+    referral: {
+      referralLink: string;
+      commissionRatePercent: number;
+      totalEarnedSats: number;
+      paidSats: number;
+      pendingSats: number;
+      failedSats: number;
+      payoutDestination: string | null;
+      payoutDestinationType: string | null;
+    };
+  }
+) {
+  const {
+    isChildBool,
+    hasAccountsAccessBool,
+    timezoneValue,
+    timeFormatRaw,
+    dateFormatRaw,
+    preferredNostrClientRaw,
+    customNostrClientBaseUrlRaw,
+    pushNotificationsEnabled,
+    pushNotifyPublishSuccess,
+    pushNotifyPublishFailure,
+    pushNotifyRunwayLow,
+    pushNotifyIncludePreview,
+    runwayNotifyBelowDays,
+    primarySignerProfile,
+    queueTypes,
+    hashTagPresets,
+    accounts,
+    relaysList,
+    publishRelaySourceValue,
+    profileRelayEntriesList,
+    managedRelaysList,
+    relayAcksMap,
+    blastrRelayEnabled,
+    canToggleBlastr,
+    blastrPolicyRaw,
+    blastrSystemRelaysRaw,
+    giveawayBlacklistList,
+    mutedList,
+    filterMutedValue,
+    hidePostsFromLowTrustUsersValue,
+    replyTemplates,
+    uploadProviderValue,
+    customBlossomUrlValue,
+    enableMirrorBlossomValue,
+    mirrorUploadUrlsList,
+    subscription,
+    availablePlans,
+    paymentHistory,
+    nwcEnabledValue,
+    maskedNwcStringValue,
+    nwcLastUsedValue,
+    referral,
+  } = ctx;
 
-function getTabsGridColsClass(input: {
-  isChild: boolean;
-  hasAccountsAccess: boolean;
-}): string {
-  // Mobile: 2 cols, sm: 3 cols. Desktop (lg): single row — 6 tabs (no Accounts) or 7 tabs (with Accounts).
-  return input.isChild || !input.hasAccountsAccess
-    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
-    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-7";
+  switch (tab) {
+    case "general":
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <TimezoneSettings timezone={timezoneValue} />
+          <TimeFormatSettings
+            timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
+          />
+          <DateFormatSettings
+            dateFormat={
+              dateFormatRaw === "mmddyyyy" || dateFormatRaw === "yyyymmdd"
+                ? dateFormatRaw
+                : "ddmmyyyy"
+            }
+          />
+          <NostrClientSettings
+            preferredNostrClient={
+              typeof preferredNostrClientRaw === "string"
+                ? preferredNostrClientRaw
+                : "PRIMAL"
+            }
+            customNostrClientBaseUrl={asStringOrNull(
+              customNostrClientBaseUrlRaw
+            )}
+          />
+          <NotificationSettings
+            pushNotificationsEnabled={asBoolean(pushNotificationsEnabled, true)}
+            pushNotifyPublishSuccess={asBoolean(pushNotifyPublishSuccess, true)}
+            pushNotifyPublishFailure={asBoolean(pushNotifyPublishFailure, true)}
+            pushNotifyRunwayLow={asBoolean(pushNotifyRunwayLow, false)}
+            pushNotifyIncludePreview={asBoolean(pushNotifyIncludePreview, true)}
+            runwayNotifyBelowDays={
+              typeof runwayNotifyBelowDays === "number" &&
+              Number.isInteger(runwayNotifyBelowDays) &&
+              runwayNotifyBelowDays >= 0
+                ? runwayNotifyBelowDays
+                : null
+            }
+          />
+          <RemoteSignerSettings primarySignerProfile={primarySignerProfile} />
+        </div>
+      );
+    case "content":
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <QueueTypesSettings
+            queueTypes={queueTypes}
+            hashTagPresets={hashTagPresets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              tags: p.tags,
+              description: p.description ?? undefined,
+            }))}
+          />
+          <HashtagPresetsSettings
+            presets={hashTagPresets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              tags: p.tags,
+              description: p.description ?? null,
+              createdAt: toIsoStringOrNow(p.createdAt),
+              updatedAt: toIsoStringOrNow(p.updatedAt),
+            }))}
+          />
+        </div>
+      );
+    case "network":
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <RelaysSettings
+            relays={relaysList}
+            publishRelaySource={publishRelaySourceValue}
+            profileRelayEntries={profileRelayEntriesList}
+            managedRelays={managedRelaysList}
+            relayAcks={relayAcksMap}
+            blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
+            canToggleBlastr={asBoolean(canToggleBlastr, false)}
+            canShowBlastrPolicyModal={
+              asBoolean(canToggleBlastr, false) && blastrPolicyRaw != null
+                ? Array.isArray(blastrSystemRelaysRaw)
+                : undefined
+            }
+            blastrPolicy={
+              typeof blastrPolicyRaw === "object" &&
+              blastrPolicyRaw != null &&
+              "policy" in blastrPolicyRaw &&
+              (blastrPolicyRaw as { policy: unknown }).policy != null
+                ? (
+                    blastrPolicyRaw as {
+                      policy: {
+                        mode: "blacklist" | "whitelist";
+                        enabled: boolean;
+                      } | null;
+                    }
+                  ).policy
+                : null
+            }
+            blastrPolicyRelays={
+              typeof blastrPolicyRaw === "object" &&
+              blastrPolicyRaw != null &&
+              "relays" in blastrPolicyRaw &&
+              Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
+                ? (
+                    blastrPolicyRaw as {
+                      relays: Array<{
+                        relay_url: string;
+                        action: "allow" | "block";
+                      }>;
+                    }
+                  ).relays
+                : []
+            }
+            blastrSystemRelays={
+              Array.isArray(blastrSystemRelaysRaw)
+                ? (blastrSystemRelaysRaw as string[])
+                : []
+            }
+          />
+          <GiveawayBlacklistSettings
+            giveawayBlacklist={giveawayBlacklistList}
+          />
+          <MutedListSettings
+            mutedList={mutedList}
+            filterMuted={filterMutedValue}
+            hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
+          />
+          <ReplyTemplatesSettings templates={replyTemplates} />
+        </div>
+      );
+    case "storage":
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <UploadProviderSettings
+            uploadProvider={uploadProviderValue}
+            customBlossomUrl={customBlossomUrlValue}
+          />
+          <BlossomMediaMirrorsSettings
+            enableMirrorBlossom={enableMirrorBlossomValue}
+            mirrorUploadUrls={mirrorUploadUrlsList}
+          />
+          <div className="text-sm">
+            <Link
+              to="/dashboard/settings/media"
+              className="text-primary hover:underline"
+            >
+              Manage Blossom media (list, usage, delete records)
+            </Link>
+          </div>
+        </div>
+      );
+    case "subscription":
+      if (isChildBool) return null;
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <SubscriptionSettings
+            subscription={subscription}
+            availablePlans={availablePlans}
+            paymentHistory={paymentHistory}
+            nwcEnabled={nwcEnabledValue}
+          />
+          <NWCSettings
+            nwcEnabled={nwcEnabledValue}
+            maskedNwcString={maskedNwcStringValue}
+            nwcLastUsed={nwcLastUsedValue}
+          />
+        </div>
+      );
+    case "referral":
+      if (isChildBool) return null;
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          <ReferralSettings
+            referralLink={referral.referralLink}
+            commissionRatePercent={referral.commissionRatePercent}
+            totalEarnedSats={referral.totalEarnedSats}
+            paidSats={referral.paidSats}
+            pendingSats={referral.pendingSats}
+            failedSats={referral.failedSats}
+            payoutDestination={referral.payoutDestination}
+            payoutDestinationType={referral.payoutDestinationType}
+          />
+        </div>
+      );
+    case "accounts":
+      if (!hasAccountsAccessBool) return null;
+      return (
+        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+          {accounts ? (
+            <AccountsSettings
+              parentNpub={accounts.parentNpub}
+              confirmedChildren={accounts.confirmedChildren}
+              pendingChildren={accounts.pendingChildren}
+              isChild={accounts.isChild ?? false}
+              parentUser={accounts.parentUser}
+            />
+          ) : (
+            <div className="text-muted-foreground text-sm">
+              Your account npub is not available.
+            </div>
+          )}
+        </div>
+      );
+    default:
+      return null;
+  }
 }
 
 export default function SettingsPage() {
   const resolvedFromDefer = useSettingsResolvedLoaderData();
   const loaderDataFromRoute = useLoaderData<unknown>();
   const loaderDataRaw = resolvedFromDefer ?? loaderDataFromRoute;
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const data = loaderDataRaw as {
     timezone?: unknown;
     relays?: unknown;
@@ -458,15 +747,23 @@ export default function SettingsPage() {
 
   const isChildBool = asBoolean(isChild);
   const hasAccountsAccessBool = asBoolean(hasAccountsAccess);
-  const defaultTab = getSettingsDefaultTab({
+  const activeTab = resolveSettingsTab({
     tabParam: searchParams.get("tab"),
     isChild: isChildBool,
     hasAccountsAccess: hasAccountsAccessBool,
   });
-  const tabsGridColsClass = getTabsGridColsClass({
+  const settingsSections = getVisibleSettingsSections({
     isChild: isChildBool,
     hasAccountsAccess: hasAccountsAccessBool,
   });
+
+  useEffect(() => {
+    const requested = searchParams.get("tab");
+    if (!requested || requested === activeTab) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", activeTab);
+    setSearchParams(next, { replace: true, preventScrollReset: true });
+  }, [activeTab, searchParams, setSearchParams]);
 
   const referral =
     referralRaw &&
@@ -514,289 +811,51 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl overflow-x-hidden p-4 sm:p-6">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Settings
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your account preferences and posting configurations
-        </p>
-      </div>
-
-      <Tabs defaultValue={defaultTab} className="w-full min-w-0">
-        <TabsList
-          className={`grid h-auto w-full max-w-full gap-1 ${tabsGridColsClass}`}
-        >
-          <TabsTrigger
-            value="general"
-            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-          >
-            General
-          </TabsTrigger>
-          <TabsTrigger
-            value="content"
-            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-          >
-            Content
-          </TabsTrigger>
-          {hasAccountsAccessBool ? (
-            <TabsTrigger
-              value="accounts"
-              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-            >
-              Accounts
-            </TabsTrigger>
-          ) : null}
-          <TabsTrigger
-            value="network"
-            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-          >
-            Network
-          </TabsTrigger>
-          <TabsTrigger
-            value="storage"
-            className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-          >
-            Storage
-          </TabsTrigger>
-          {!isChildBool ? (
-            <TabsTrigger
-              value="subscription"
-              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-            >
-              Subscription
-            </TabsTrigger>
-          ) : null}
-          {!isChildBool ? (
-            <TabsTrigger
-              value="referral"
-              className="h-auto min-h-9 px-2 py-1.5 text-center leading-tight whitespace-normal"
-            >
-              Referral
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
-
-        <TabsContent
-          value="general"
-          className="mt-6 min-w-0 space-y-6 overflow-x-hidden"
-        >
-          <div className="grid min-w-0 gap-6 md:grid-cols-1">
-            <TimezoneSettings timezone={timezoneValue} />
-            <TimeFormatSettings
-              timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
-            />
-            <DateFormatSettings
-              dateFormat={
-                dateFormatRaw === "mmddyyyy" || dateFormatRaw === "yyyymmdd"
-                  ? dateFormatRaw
-                  : "ddmmyyyy"
-              }
-            />
-            <NostrClientSettings
-              preferredNostrClient={
-                typeof preferredNostrClientRaw === "string"
-                  ? preferredNostrClientRaw
-                  : "PRIMAL"
-              }
-              customNostrClientBaseUrl={asStringOrNull(
-                customNostrClientBaseUrlRaw
-              )}
-            />
-            <NotificationSettings
-              pushNotificationsEnabled={asBoolean(
-                pushNotificationsEnabled,
-                true
-              )}
-              pushNotifyPublishSuccess={asBoolean(
-                pushNotifyPublishSuccess,
-                true
-              )}
-              pushNotifyPublishFailure={asBoolean(
-                pushNotifyPublishFailure,
-                true
-              )}
-              pushNotifyRunwayLow={asBoolean(pushNotifyRunwayLow, false)}
-              pushNotifyIncludePreview={asBoolean(
-                pushNotifyIncludePreview,
-                true
-              )}
-              runwayNotifyBelowDays={
-                typeof runwayNotifyBelowDays === "number" &&
-                Number.isInteger(runwayNotifyBelowDays) &&
-                runwayNotifyBelowDays >= 0
-                  ? runwayNotifyBelowDays
-                  : null
-              }
-            />
-            <RemoteSignerSettings primarySignerProfile={primarySignerProfile} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="content" className="mt-6 min-w-0 space-y-6">
-          <div className="grid min-w-0 gap-6 md:grid-cols-1">
-            <QueueTypesSettings
-              queueTypes={queueTypes}
-              hashTagPresets={hashTagPresets.map((p) => ({
-                id: p.id,
-                name: p.name,
-                tags: p.tags,
-                description: p.description ?? undefined,
-              }))}
-            />
-            <HashtagPresetsSettings
-              presets={hashTagPresets.map((p) => ({
-                id: p.id,
-                name: p.name,
-                tags: p.tags,
-                description: p.description ?? null,
-                createdAt: toIsoStringOrNow(p.createdAt),
-                updatedAt: toIsoStringOrNow(p.updatedAt),
-              }))}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="network" className="mt-6 min-w-0 space-y-6">
-          <div className="grid min-w-0 gap-6 md:grid-cols-1">
-            <RelaysSettings
-              relays={relaysList}
-              publishRelaySource={publishRelaySourceValue}
-              profileRelayEntries={profileRelayEntriesList}
-              managedRelays={managedRelaysList}
-              relayAcks={relayAcksMap}
-              blastrRelayEnabled={asBoolean(blastrRelayEnabled, true)}
-              canToggleBlastr={asBoolean(canToggleBlastr, false)}
-              canShowBlastrPolicyModal={
-                asBoolean(canToggleBlastr, false) && blastrPolicyRaw != null
-                  ? Array.isArray(blastrSystemRelaysRaw)
-                  : undefined
-              }
-              blastrPolicy={
-                typeof blastrPolicyRaw === "object" &&
-                blastrPolicyRaw != null &&
-                "policy" in blastrPolicyRaw &&
-                (blastrPolicyRaw as { policy: unknown }).policy != null
-                  ? (
-                      blastrPolicyRaw as {
-                        policy: {
-                          mode: "blacklist" | "whitelist";
-                          enabled: boolean;
-                        } | null;
-                      }
-                    ).policy
-                  : null
-              }
-              blastrPolicyRelays={
-                typeof blastrPolicyRaw === "object" &&
-                blastrPolicyRaw != null &&
-                "relays" in blastrPolicyRaw &&
-                Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
-                  ? (
-                      blastrPolicyRaw as {
-                        relays: Array<{
-                          relay_url: string;
-                          action: "allow" | "block";
-                        }>;
-                      }
-                    ).relays
-                  : []
-              }
-              blastrSystemRelays={
-                Array.isArray(blastrSystemRelaysRaw)
-                  ? (blastrSystemRelaysRaw as string[])
-                  : []
-              }
-            />
-            <GiveawayBlacklistSettings
-              giveawayBlacklist={giveawayBlacklistList}
-            />
-            <MutedListSettings
-              mutedList={mutedList}
-              filterMuted={filterMutedValue}
-              hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
-            />
-            <ReplyTemplatesSettings templates={replyTemplates} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="storage" className="mt-6 min-w-0 space-y-6">
-          <div className="grid min-w-0 gap-6 md:grid-cols-1">
-            <UploadProviderSettings
-              uploadProvider={uploadProviderValue}
-              customBlossomUrl={customBlossomUrlValue}
-            />
-            <BlossomMediaMirrorsSettings
-              enableMirrorBlossom={enableMirrorBlossomValue}
-              mirrorUploadUrls={mirrorUploadUrlsList}
-            />
-            <div className="text-sm">
-              <Link
-                to="/dashboard/settings/media"
-                className="text-primary hover:underline"
-              >
-                Manage Blossom media (list, usage, delete records)
-              </Link>
-            </div>
-          </div>
-        </TabsContent>
-
-        {!isChildBool ? (
-          <TabsContent value="subscription" className="mt-6 min-w-0 space-y-6">
-            <div className="grid min-w-0 gap-6 md:grid-cols-1">
-              <SubscriptionSettings
-                subscription={subscription}
-                availablePlans={availablePlans}
-                paymentHistory={paymentHistory}
-                nwcEnabled={nwcEnabledValue}
-              />
-              <NWCSettings
-                nwcEnabled={nwcEnabledValue}
-                maskedNwcString={maskedNwcStringValue}
-                nwcLastUsed={nwcLastUsedValue}
-              />
-            </div>
-          </TabsContent>
-        ) : null}
-
-        {!isChildBool ? (
-          <TabsContent value="referral" className="mt-6 min-w-0 space-y-6">
-            <div className="grid min-w-0 gap-6 md:grid-cols-1">
-              <ReferralSettings
-                referralLink={referral.referralLink}
-                commissionRatePercent={referral.commissionRatePercent}
-                totalEarnedSats={referral.totalEarnedSats}
-                paidSats={referral.paidSats}
-                pendingSats={referral.pendingSats}
-                failedSats={referral.failedSats}
-                payoutDestination={referral.payoutDestination}
-                payoutDestinationType={referral.payoutDestinationType}
-              />
-            </div>
-          </TabsContent>
-        ) : null}
-
-        {hasAccountsAccessBool ? (
-          <TabsContent value="accounts" className="mt-6 min-w-0 space-y-6">
-            <div className="grid min-w-0 gap-6 md:grid-cols-1">
-              {accounts ? (
-                <AccountsSettings
-                  parentNpub={accounts.parentNpub}
-                  confirmedChildren={accounts.confirmedChildren}
-                  pendingChildren={accounts.pendingChildren}
-                  isChild={accounts.isChild ?? false}
-                  parentUser={accounts.parentUser}
-                />
-              ) : (
-                <div className="text-muted-foreground text-sm">
-                  Your account npub is not available.
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        ) : null}
-      </Tabs>
-    </div>
+    <SettingsShell sections={settingsSections} activeTab={activeTab}>
+      {renderSettingsPanel(activeTab, {
+        isChildBool,
+        hasAccountsAccessBool,
+        timezoneValue,
+        timeFormatRaw,
+        dateFormatRaw,
+        preferredNostrClientRaw,
+        customNostrClientBaseUrlRaw,
+        pushNotificationsEnabled,
+        pushNotifyPublishSuccess,
+        pushNotifyPublishFailure,
+        pushNotifyRunwayLow,
+        pushNotifyIncludePreview,
+        runwayNotifyBelowDays,
+        primarySignerProfile,
+        queueTypes,
+        hashTagPresets,
+        accounts,
+        relaysList,
+        publishRelaySourceValue,
+        profileRelayEntriesList,
+        managedRelaysList,
+        relayAcksMap,
+        blastrRelayEnabled,
+        canToggleBlastr,
+        blastrPolicyRaw,
+        blastrSystemRelaysRaw,
+        giveawayBlacklistList,
+        mutedList,
+        filterMutedValue,
+        hidePostsFromLowTrustUsersValue,
+        replyTemplates,
+        uploadProviderValue,
+        customBlossomUrlValue,
+        enableMirrorBlossomValue,
+        mirrorUploadUrlsList,
+        subscription,
+        availablePlans,
+        paymentHistory,
+        nwcEnabledValue,
+        maskedNwcStringValue,
+        nwcLastUsedValue,
+        referral,
+      })}
+    </SettingsShell>
   );
 }

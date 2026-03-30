@@ -1,20 +1,11 @@
 /**
- * Date Format Settings Component
- * Allows users to choose display format: DD/MM/YYYY, MM/DD/YYYY, or YYYY-MM-DD
+ * Date Format Settings — regional date ordering.
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { Calendar } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
-import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -23,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 
 export type DateFormatKey = "ddmmyyyy" | "mmddyyyy" | "yyyymmdd";
 
@@ -35,85 +27,75 @@ export function DateFormatSettings({
 }: DateFormatSettingsProps) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const revalidator = useRevalidator();
+  const prevFetcherState = useRef(fetcher.state);
   const [dateFormat, setDateFormat] =
     useState<DateFormatKey>(initialDateFormat);
 
+  useEffect(() => {
+    setDateFormat(initialDateFormat);
+  }, [initialDateFormat]);
+
   const isSubmitting = fetcher.state === "submitting";
-  const hasChanged = dateFormat !== initialDateFormat;
 
   useEffect(() => {
-    if (fetcher.data?.success) {
+    if (
+      prevFetcherState.current === "submitting" &&
+      fetcher.state === "idle" &&
+      fetcher.data?.success
+    ) {
+      toast.success("Date format saved");
       revalidator.revalidate();
     }
-  }, [fetcher.data?.success, revalidator]);
+    if (
+      prevFetcherState.current === "submitting" &&
+      fetcher.state === "idle" &&
+      fetcher.data?.error
+    ) {
+      toast.error(fetcher.data.error);
+    }
+    prevFetcherState.current = fetcher.state;
+  }, [fetcher.state, fetcher.data, revalidator]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const persist = (value: DateFormatKey) => {
+    if (value === initialDateFormat) return;
     const formData = new FormData();
     formData.append("_action", "update_date_format");
-    formData.append("dateFormat", dateFormat);
+    formData.append("dateFormat", value);
     fetcher.submit(formData, { method: "post" });
   };
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="p-4 sm:p-6">
-        <div className="flex items-start gap-4">
-          <Calendar className="text-foreground h-5 w-5 flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <CardTitle>Date Format</CardTitle>
-            <CardDescription>
-              Choose how dates are displayed across the app
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="dateFormat">Date Format</Label>
-            <Select
-              value={dateFormat}
-              onValueChange={(value) => {
-                setDateFormat(value as DateFormatKey);
-              }}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger id="dateFormat">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ddmmyyyy">
-                  DD/MM/YYYY (e.g. 19/02/2025)
-                </SelectItem>
-                <SelectItem value="mmddyyyy">
-                  MM/DD/YYYY (e.g. 02/19/2025)
-                </SelectItem>
-                <SelectItem value="yyyymmdd">
-                  YYYY-MM-DD (e.g. 2025-02-19)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged}
-            className="w-full"
-          >
-            {isSubmitting ? "Saving..." : "Save Date Format"}
-          </Button>
-
-          {fetcher.data?.success ? (
-            <p className="text-success text-sm">
-              Date format updated successfully!
-            </p>
-          ) : null}
-          {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
-          ) : null}
-        </form>
-      </CardContent>
-    </Card>
+    <PreferenceSection
+      title="Date format"
+      description="How dates appear in lists and previews."
+    >
+      <div className="space-y-2">
+        <Label htmlFor="dateFormat">Format</Label>
+        <Select
+          value={dateFormat}
+          onValueChange={(value) => {
+            const v = value as DateFormatKey;
+            setDateFormat(v);
+            persist(v);
+          }}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger id="dateFormat">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ddmmyyyy">
+              DD/MM/YYYY (e.g. 19/02/2025)
+            </SelectItem>
+            <SelectItem value="mmddyyyy">
+              MM/DD/YYYY (e.g. 02/19/2025)
+            </SelectItem>
+            <SelectItem value="yyyymmdd">
+              YYYY-MM-DD (e.g. 2025-02-19)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </PreferenceSection>
   );
 }

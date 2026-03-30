@@ -14,6 +14,16 @@ import {
   OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX,
 } from "../flow-view-constants";
 
+/** Avoid capturing the pointer on the scroll container when the user is interacting with a link or control — capture breaks click/navigation on edge slots (e.g. Flow CTA → composer). */
+function isFlowOverscrollPointerCaptureSafeTarget(
+  target: EventTarget | null
+): boolean {
+  if (!(target instanceof Element)) return true;
+  return !target.closest(
+    'a[href], button, input, textarea, select, [role="button"], [role="link"]'
+  );
+}
+
 export interface UseFlowViewOverscrollResult {
   overscrollPx: number;
   isOverscrollSpringing: boolean;
@@ -119,7 +129,10 @@ export function useFlowViewOverscroll(
       pointerStartScrollLeftRef.current = el.scrollLeft;
       const atLeft = scrollLeft <= OVERSCROLL_EDGE_PX;
       const atRight = scrollLeft >= maxScrollLeft - OVERSCROLL_EDGE_PX;
-      if (atLeft || atRight) {
+      if (
+        (atLeft || atRight) &&
+        isFlowOverscrollPointerCaptureSafeTarget(e.target)
+      ) {
         el.setPointerCapture(e.pointerId);
       }
     };

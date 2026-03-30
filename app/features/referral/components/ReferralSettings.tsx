@@ -5,6 +5,10 @@ import { useCallback, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  AccountSummarySection,
+  PreferenceSection,
+} from "~/features/settings/components/patterns";
 
 export interface ReferralSettingsProps {
   referralLink: string;
@@ -38,84 +42,119 @@ export function ReferralSettings({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>Referral link</Label>
-        <div className="flex gap-2">
-          <Input readOnly value={referralLink} className="font-mono text-sm" />
+      <AccountSummarySection
+        title="Referral earnings"
+        description={`${commissionRatePercent}% lifetime commission on referred subscriptions.`}
+        summary={
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Total earned
+              </dt>
+              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
+                {totalEarnedSats.toLocaleString()}{" "}
+                <span className="text-muted-foreground text-sm font-normal">
+                  sats
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Paid out
+              </dt>
+              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
+                {paidSats.toLocaleString()}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Pending
+              </dt>
+              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
+                {pendingSats.toLocaleString()}
+              </dd>
+            </div>
+            {failedSats > 0 ? (
+              <div>
+                <dt className="text-destructive text-xs font-medium tracking-wide uppercase">
+                  Failed
+                </dt>
+                <dd className="text-destructive mt-1 text-lg font-semibold tabular-nums">
+                  {failedSats.toLocaleString()}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        }
+      />
+
+      <PreferenceSection
+        title="Your referral link"
+        description="Share this link to earn when people subscribe through SmartFlow."
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <Input
+            readOnly
+            value={referralLink}
+            className="min-w-0 font-mono text-sm"
+          />
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            className="shrink-0 sm:w-auto"
             onClick={() => {
               void copyLink();
             }}
             aria-label="Copy referral link"
           >
-            {copied ? (
-              <span className="text-xs">Copied</span>
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
+            {copied ? "Copied" : <Copy className="h-4 w-4" />}
           </Button>
         </div>
-      </div>
+      </PreferenceSection>
 
-      <div className="text-muted-foreground text-sm">
-        Commission rate: <strong>{commissionRatePercent}%</strong> (lifetime)
-      </div>
-
-      <div className="grid gap-2 text-sm">
-        <div>
-          Total earned: <strong>{totalEarnedSats.toLocaleString()} sats</strong>
-        </div>
-        <div>
-          Paid: <strong>{paidSats.toLocaleString()} sats</strong>
-        </div>
-        <div>
-          Pending: <strong>{pendingSats.toLocaleString()} sats</strong>
-        </div>
-        {failedSats > 0 ? (
-          <div className="text-destructive">
-            Failed (contact support):{" "}
-            <strong>{failedSats.toLocaleString()} sats</strong>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="payout_destination">
-          Payout destination (LNURL or LN address URL)
-        </Label>
-        <p className="text-muted-foreground text-xs">
-          Earnings stay pending until you set a payout address. Use an LNURL pay
-          URL or Lightning address service URL so we can send you payments.
-        </p>
+      <PreferenceSection
+        title="Payout destination"
+        description="Earnings stay pending until you set a Lightning payout URL (LNURL pay or similar)."
+      >
         <Form method="post">
           <input type="hidden" name="_action" value="referral_save_payout" />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <Input
-              id="payout_destination"
-              name="payout_destination"
-              type="url"
-              placeholder="https://..."
-              defaultValue={payoutDestination ?? ""}
-              className="font-mono text-sm"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Label
+                htmlFor="payout_destination"
+                className="sr-only sm:not-sr-only"
+              >
+                Payout URL
+              </Label>
+              <Input
+                id="payout_destination"
+                name="payout_destination"
+                type="url"
+                placeholder="https://..."
+                defaultValue={payoutDestination ?? ""}
+                className="font-mono text-sm"
+              />
+            </div>
             <input
               type="hidden"
               name="payout_destination_type"
               value={payoutDestinationType ?? "lnurl"}
             />
-            <Button type="submit" disabled={fetcher.state !== "idle"}>
+            <Button
+              type="submit"
+              disabled={fetcher.state !== "idle"}
+              size="sm"
+              className="shrink-0"
+            >
               {fetcher.state !== "idle" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Save"
+                "Save payout"
               )}
             </Button>
           </div>
         </Form>
-      </div>
+      </PreferenceSection>
     </div>
   );
 }

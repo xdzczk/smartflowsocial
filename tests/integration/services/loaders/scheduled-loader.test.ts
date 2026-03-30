@@ -34,6 +34,10 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+vi.mock("~/features/contest", () => ({
+  getScheduledContestLaunchesForUser: vi.fn().mockResolvedValue([]),
+}));
+
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 import { getScheduledLongFormPosts } from "~/features/posts/server";

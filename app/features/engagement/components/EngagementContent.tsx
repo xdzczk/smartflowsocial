@@ -3,6 +3,8 @@
  * Renders by type tab: All (replies + mentions), Replies, or Mentions (quotes + mention-type).
  */
 
+import { useState } from "react";
+
 import type { EngagementItemStateMap } from "../engagement-filter";
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
@@ -89,6 +91,9 @@ export function EngagementContent({
   groupSummaries = {},
   followedPubkeys = [],
 }: EngagementContentProps) {
+  const [activeNotificationEventId, setActiveNotificationEventId] = useState<
+    string | null
+  >(null);
   const defaultRelays = ["wss://relay.primal.net"];
   const listProps = {
     userTimezone: userTimezone ?? undefined,
@@ -102,6 +107,8 @@ export function EngagementContent({
     engagementLinkedActions,
     groupSummaries,
     followedPubkeys,
+    activeNotificationEventId,
+    setActiveNotificationEventId,
   };
 
   const repliesFlatCount = groupedReplies.reduce(

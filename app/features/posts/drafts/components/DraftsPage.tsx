@@ -87,6 +87,7 @@ export default function DraftsPage() {
     setSortConfig,
     searchTerm,
     selectedPosts,
+    clearSelection,
     showAdvancedBulkResume,
     setShowAdvancedBulkResume,
     filteredPosts,
@@ -151,7 +152,7 @@ export default function DraftsPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                className="text-muted-foreground hover:text-foreground border-border/60 h-9 shrink-0 px-3 text-sm font-normal"
                 onClick={resumeLatestDraft}
               >
                 Resume latest
@@ -176,6 +177,7 @@ export default function DraftsPage() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         selectedPosts={selectedPosts}
+        clearSelection={clearSelection}
         togglePostSelection={togglePostSelection}
         toggleSelectAll={toggleSelectAll}
         handleBulkDelete={handleBulkDelete}

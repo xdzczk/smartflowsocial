@@ -31,4 +31,13 @@ export { handleSettingsAction } from "./settings-actions.server";
 export { SettingsAwaitError } from "./components/SettingsAwaitError";
 export { SettingsPageSkeleton } from "./components/SettingsPageSkeleton";
 export { default as SettingsPage } from "./components/SettingsPage";
+export { SettingsShell } from "./components/SettingsShell";
+export * from "./components/patterns";
+export {
+  getVisibleSettingsSections,
+  getSettingsDefaultTab,
+  resolveSettingsTab,
+  type SettingsTabId,
+  type SettingsSectionDef,
+} from "./settings-sections";
 export { SettingsResolvedLoaderProvider } from "./context/SettingsResolvedLoaderContext";

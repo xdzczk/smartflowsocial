@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-const rankingMetricSchema = z.enum(["REACTIONS", "ZAPS", "SATS_ZAPPED"]);
+const rankingMetricSchema = z.enum([
+  "REACTIONS",
+  "ZAPS",
+  "SATS_ZAPPED",
+  "REPLIES",
+  "REPOSTS",
+]);
 const prizeModeSchema = z.enum(["EQUAL", "RANKED"]);
 
 export const createContestSchema = z

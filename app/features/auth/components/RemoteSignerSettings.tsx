@@ -3,13 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import {
   clearActiveSession,
@@ -28,6 +21,7 @@ import {
   type PrimarySignerProfile,
   type RemoteSignerConnection,
 } from "~/features/auth/signer";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { RemoteSignerConnectionList } from "./RemoteSignerConnectionList";
@@ -320,116 +314,104 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Remote Signer Connections</CardTitle>
-          <CardDescription>
-            Manage your NIP-46 remote signer connections. You can have multiple
-            connections and switch between them.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <RemoteSignerConnectionList
-            connections={connections}
-            activeConnection={activeConnection}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onReconnect={handleReconnect}
-            onSetActive={handleSetActive}
-            onViewDetails={handleViewDetails}
-            onRemove={handleRemove}
-            onAddClick={() => setReconnectDialogOpen(true)}
-          />
+      <ManagementListSection
+        title="Remote signer connections"
+        description="Manage NIP-46 remote signer connections. You can have multiple connections and switch between them."
+      >
+        <RemoteSignerConnectionList
+          connections={connections}
+          activeConnection={activeConnection}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onReconnect={handleReconnect}
+          onSetActive={handleSetActive}
+          onViewDetails={handleViewDetails}
+          onRemove={handleRemove}
+          onAddClick={() => setReconnectDialogOpen(true)}
+        />
 
-          {activeConnection ? (
-            <>
-              <Separator className="my-4" />
-              <RemoteSignerHealthSection
-                activeConnection={activeConnection}
-                isTestingConnection={isTestingConnection}
-                onTestConnection={() => void handleTestConnection()}
-                onDisconnect={handleDisconnect}
-                getConnectionHistory={getConnectionHistory}
-              />
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
+        {activeConnection ? (
+          <>
+            <Separator className="my-4" />
+            <RemoteSignerHealthSection
+              activeConnection={activeConnection}
+              isTestingConnection={isTestingConnection}
+              onTestConnection={() => void handleTestConnection()}
+              onDisconnect={handleDisconnect}
+              getConnectionHistory={getConnectionHistory}
+            />
+          </>
+        ) : null}
+      </ManagementListSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Primary Home Signer</CardTitle>
-          <CardDescription>
-            Save one account-level NIP-46 signer profile as fallback so any
-            device can recover from stale local sessions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-muted/30 rounded-md border p-4">
-            {primarySignerProfile ? (
-              <div className="space-y-2">
-                <div className="font-medium">
-                  {primarySignerProfile.label ?? "Primary signer configured"}
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  Method:{" "}
-                  {primarySignerProfile.method === "bunker_input"
-                    ? "Bunker input"
-                    : "nostrconnect URI"}
-                </div>
-                {primarySignerProfile.method === "nostrconnect_uri" ? (
-                  <div className="text-muted-foreground text-sm">
-                    Relays: {primarySignerProfile.relays.length}
-                  </div>
-                ) : null}
-                <div className="text-muted-foreground text-xs">
-                  Last updated:{" "}
-                  {new Date(primarySignerProfile.updatedAt).toLocaleString()}
-                </div>
+      <ManagementListSection
+        title="Primary home signer"
+        description="Save one account-level NIP-46 signer profile as fallback so any device can recover from stale local sessions."
+      >
+        <div className="bg-muted/30 rounded-md border p-4">
+          {primarySignerProfile ? (
+            <div className="space-y-2">
+              <div className="font-medium">
+                {primarySignerProfile.label ?? "Primary signer configured"}
               </div>
-            ) : (
               <div className="text-muted-foreground text-sm">
-                No account-level primary signer is configured yet.
+                Method:{" "}
+                {primarySignerProfile.method === "bunker_input"
+                  ? "Bunker input"
+                  : "nostrconnect URI"}
               </div>
-            )}
-          </div>
+              {primarySignerProfile.method === "nostrconnect_uri" ? (
+                <div className="text-muted-foreground text-sm">
+                  Relays: {primarySignerProfile.relays.length}
+                </div>
+              ) : null}
+              <div className="text-muted-foreground text-xs">
+                Last updated:{" "}
+                {new Date(primarySignerProfile.updatedAt).toLocaleString()}
+              </div>
+            </div>
+          ) : (
+            <div className="text-muted-foreground text-sm">
+              No account-level primary signer is configured yet.
+            </div>
+          )}
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSaveActiveConnectionAsPrimary}
-              disabled={
-                !activeConnectionSupportsPrimarySave ||
-                primarySignerFetcher.state !== "idle"
-              }
-            >
-              Use active connection as primary
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                void handleTestPrimaryProfile();
-              }}
-              disabled={
-                !primarySignerProfile ||
-                isTestingPrimarySigner ||
-                primarySignerFetcher.state !== "idle"
-              }
-            >
-              {isTestingPrimarySigner ? "Testing..." : "Test primary signer"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleClearPrimaryProfile}
-              disabled={
-                !primarySignerProfile || primarySignerFetcher.state !== "idle"
-              }
-            >
-              Clear primary signer
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={handleSaveActiveConnectionAsPrimary}
+            disabled={
+              !activeConnectionSupportsPrimarySave ||
+              primarySignerFetcher.state !== "idle"
+            }
+          >
+            Use active connection as primary
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void handleTestPrimaryProfile();
+            }}
+            disabled={
+              !primarySignerProfile ||
+              isTestingPrimarySigner ||
+              primarySignerFetcher.state !== "idle"
+            }
+          >
+            {isTestingPrimarySigner ? "Testing..." : "Test primary signer"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleClearPrimaryProfile}
+            disabled={
+              !primarySignerProfile || primarySignerFetcher.state !== "idle"
+            }
+          >
+            Clear primary signer
+          </Button>
+        </div>
+      </ManagementListSection>
 
       {reconnectDialogOpen ? (
         <RemoteSignerReconnectDialog

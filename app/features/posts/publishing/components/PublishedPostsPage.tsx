@@ -2,6 +2,7 @@ import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
+import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
 import { DateRangeFilter } from "~/features/posts/components/DateRangeFilter";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
@@ -230,6 +231,7 @@ export default function PublishedPostsPage() {
     requestSort,
     togglePostSelection,
     toggleSelectAll,
+    setSelectedPosts,
     handleBulkDelete: originalHandleBulkDelete,
     handleBulkRepost,
     handleBulkScheduledRepost,
@@ -390,6 +392,7 @@ export default function PublishedPostsPage() {
               toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
             }
             showBulkActions={true}
+            onClearSelection={() => setSelectedPosts(new Set())}
             onBulkDelete={handleBulkDelete}
             bulkDeleteState={
               bulkDeleteMutation.isPending
@@ -416,36 +419,53 @@ export default function PublishedPostsPage() {
             onResetListFilters={resetListFilters}
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
-          <PublishedPostsTable
-            filteredPosts={filteredPosts}
-            selectedPosts={selectedPosts}
-            stats={stats}
-            sortConfig={sortConfig}
-            toggleSelectAll={() =>
-              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-            }
-            togglePostSelection={togglePostSelection}
-            requestSort={requestSort}
-            setSelectedPost={setSelectedPost}
-            individualRepostFetcher={individualRepostFetcher}
-            deleteFetcher={deleteFetcher}
-            bulkDeleteFetcher={bulkDeleteFetcher}
-            userTimezone={user.timezone ?? undefined}
-            userTimeFormat={userTimeFormat}
-            onScheduleRepost={(post: PostData) =>
-              setScheduleRepostQuote({ post, mode: "repost" })
-            }
-            onScheduleQuote={(post: PostData) =>
-              setScheduleRepostQuote({ post, mode: "quote" })
-            }
-            onSortChange={(key: string, direction: "asc" | "desc") =>
-              setSortConfig({ key, direction })
-            }
-            prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
-            sentinelRef={isMobile ? sentinelRef : undefined}
-            isFetchingNextPage={isFetchingNextPage}
-            onScrollContainerReady={isMobile ? setScrollRoot : undefined}
-          />
+          <>
+            <ContentBulkActions
+              type="published"
+              selectedCount={selectedPosts.size}
+              onClearSelection={() => setSelectedPosts(new Set())}
+              onBulkDelete={handleBulkDelete}
+              bulkDeleteState={
+                bulkDeleteMutation.isPending
+                  ? "submitting"
+                  : bulkDeleteFetcher.state
+              }
+              onBulkRepost={handleBulkRepost}
+              onBulkScheduledRepost={handleBulkScheduledRepost}
+              onBulkQuote={handleBulkQuote}
+              repostFetcher={repostFetcher as PostFetcher}
+            />
+            <PublishedPostsTable
+              filteredPosts={filteredPosts}
+              selectedPosts={selectedPosts}
+              stats={stats}
+              sortConfig={sortConfig}
+              toggleSelectAll={() =>
+                toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
+              }
+              togglePostSelection={togglePostSelection}
+              requestSort={requestSort}
+              setSelectedPost={setSelectedPost}
+              individualRepostFetcher={individualRepostFetcher}
+              deleteFetcher={deleteFetcher}
+              bulkDeleteFetcher={bulkDeleteFetcher}
+              userTimezone={user.timezone ?? undefined}
+              userTimeFormat={userTimeFormat}
+              onScheduleRepost={(post: PostData) =>
+                setScheduleRepostQuote({ post, mode: "repost" })
+              }
+              onScheduleQuote={(post: PostData) =>
+                setScheduleRepostQuote({ post, mode: "quote" })
+              }
+              onSortChange={(key: string, direction: "asc" | "desc") =>
+                setSortConfig({ key, direction })
+              }
+              prefetchSentinelRef={isMobile ? prefetchSentinelRef : undefined}
+              sentinelRef={isMobile ? sentinelRef : undefined}
+              isFetchingNextPage={isFetchingNextPage}
+              onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            />
+          </>
         ) : (
           <LongFormListing
             posts={longformPosts}

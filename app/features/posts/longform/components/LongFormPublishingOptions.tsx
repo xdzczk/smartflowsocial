@@ -65,6 +65,8 @@ interface LongFormPublishingOptionsProps {
   showHashtagPresets?: boolean;
   /** When true (e.g. queue delivery mode), hide manual schedule datetime; slot comes from queue API. */
   hideScheduleControls?: boolean;
+  /** When true (e.g. Schedule tab in the article rail), hide queue picker; `queueType` still submitted via hidden input. */
+  hideQueueControls?: boolean;
   /** `rail`: tokens aligned with publishing rail. `page`: legacy separator + headings (non-rail embeds). */
   layout?: "rail" | "page";
 }
@@ -87,6 +89,7 @@ export function LongFormPublishingOptions({
   userTimezone = "UTC",
   showHashtagPresets = true,
   hideScheduleControls = false,
+  hideQueueControls = false,
   layout = "page",
 }: LongFormPublishingOptionsProps) {
   void _scheduleIntervals;
@@ -141,7 +144,18 @@ export function LongFormPublishingOptions({
     onQueueTypeChange,
   ]);
 
-  const queueBlock = (
+  const queueTypeHiddenInput = (
+    <input
+      type="hidden"
+      id="longform-queue-type-hidden"
+      name="queueType"
+      value={selectedQueueType}
+    />
+  );
+
+  const queueBlock = hideQueueControls ? (
+    queueTypeHiddenInput
+  ) : (
     <div className={cn("space-y-2", isRail && "space-y-1.5")}>
       <Select
         value={radixQueueSelectValue}
@@ -171,12 +185,7 @@ export function LongFormPublishingOptions({
           })}
         </SelectContent>
       </Select>
-      <input
-        type="hidden"
-        id="longform-queue-type-hidden"
-        name="queueType"
-        value={selectedQueueType}
-      />
+      {queueTypeHiddenInput}
     </div>
   );
 

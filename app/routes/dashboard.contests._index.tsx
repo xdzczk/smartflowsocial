@@ -330,6 +330,8 @@ export default function ContestsIndexRoute() {
               <option value="REACTIONS">Reactions</option>
               <option value="ZAPS">Zaps</option>
               <option value="SATS_ZAPPED">Sats zapped</option>
+              <option value="REPLIES">Replies</option>
+              <option value="REPOSTS">Reposts</option>
             </select>
           </div>
           <div>

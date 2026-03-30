@@ -1,10 +1,14 @@
+import { Button } from "~/components/ui/button";
+import { PublishingBatchSelectionBar } from "~/features/posts/components/publishing-suite";
+
 import type { PostFetcher } from "../types";
 
 const PROCESSING_TEXT = "Processing...";
 
 interface ContentBulkActionsProps {
-  type: "scheduled" | "draft" | "published";
+  type: "scheduled" | "published";
   selectedCount: number;
+  onClearSelection: () => void;
   onBulkDelete: () => void;
   onBulkRepost?: () => void;
   onBulkScheduledRepost?: () => void;
@@ -14,16 +18,11 @@ interface ContentBulkActionsProps {
   repostFetcher?: PostFetcher;
 }
 
-function itemLabel(count: number, word: string): string {
-  return `${count} ${word}${count !== 1 ? "s" : ""}`;
-}
-
 function isRepostFetcherBusy(fetcher: PostFetcher | undefined): boolean {
   return fetcher?.state !== "idle";
 }
 
 interface ScheduledActionsProps {
-  selectedCount: number;
   onBulkEditReschedule?: () => void;
   onBulkScheduledRepost?: () => void;
   onBulkQuote?: () => void;
@@ -31,7 +30,6 @@ interface ScheduledActionsProps {
 }
 
 function ScheduledActions({
-  selectedCount,
   onBulkEditReschedule,
   onBulkScheduledRepost,
   onBulkQuote,
@@ -43,42 +41,37 @@ function ScheduledActions({
   return (
     <>
       {onBulkEditReschedule ? (
-        <button
-          type="button"
-          onClick={onBulkEditReschedule}
-          className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-        >
-          Edit / Reschedule {itemLabel(selectedCount, "item")}
-        </button>
+        <Button type="button" size="default" onClick={onBulkEditReschedule}>
+          Edit / Reschedule
+        </Button>
       ) : null}
       {onBulkScheduledRepost ? (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="default"
           onClick={onBulkScheduledRepost}
           disabled={disabled}
-          className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
         >
-          {busy
-            ? PROCESSING_TEXT
-            : `Repost ${itemLabel(selectedCount, "item")}`}
-        </button>
+          {busy ? PROCESSING_TEXT : "Repost"}
+        </Button>
       ) : null}
       {onBulkQuote ? (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="default"
           onClick={onBulkQuote}
           disabled={disabled}
-          className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
         >
-          {busy ? PROCESSING_TEXT : `Quote ${itemLabel(selectedCount, "item")}`}
-        </button>
+          {busy ? PROCESSING_TEXT : "Quote"}
+        </Button>
       ) : null}
     </>
   );
 }
 
 interface PublishedActionsProps {
-  selectedCount: number;
   onBulkRepost?: () => void;
   onBulkScheduledRepost?: () => void;
   onBulkQuote?: () => void;
@@ -86,7 +79,6 @@ interface PublishedActionsProps {
 }
 
 function PublishedActions({
-  selectedCount,
   onBulkRepost,
   onBulkScheduledRepost,
   onBulkQuote,
@@ -97,30 +89,32 @@ function PublishedActions({
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        size="default"
         onClick={onBulkRepost}
         disabled={disabled}
-        className="border-primary/30 bg-card text-primary hover:border-primary/50 hover:bg-primary/10 focus:ring-ring/25 active:border-primary/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
       >
-        {busy ? PROCESSING_TEXT : `Recycle ${itemLabel(selectedCount, "Item")}`}
-      </button>
-      <button
+        {busy ? PROCESSING_TEXT : "Recycle"}
+      </Button>
+      <Button
         type="button"
+        variant="outline"
+        size="default"
         onClick={onBulkScheduledRepost}
         disabled={disabled}
-        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
       >
-        {busy ? PROCESSING_TEXT : `Repost ${itemLabel(selectedCount, "Item")}`}
-      </button>
-      <button
+        {busy ? PROCESSING_TEXT : "Repost"}
+      </Button>
+      <Button
         type="button"
+        variant="outline"
+        size="default"
         onClick={onBulkQuote}
         disabled={disabled}
-        className="bg-card border-success/30 text-success hover:border-success/50 hover:bg-success/10 focus:ring-ring/25 active:border-success/30 dark:text-success inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
       >
-        {busy ? PROCESSING_TEXT : `Quote ${itemLabel(selectedCount, "Item")}`}
-      </button>
+        {busy ? PROCESSING_TEXT : "Quote"}
+      </Button>
     </>
   );
 }
@@ -128,6 +122,7 @@ function PublishedActions({
 export function ContentBulkActions({
   type,
   selectedCount,
+  onClearSelection,
   onBulkDelete,
   onBulkRepost,
   onBulkScheduledRepost,
@@ -139,40 +134,36 @@ export function ContentBulkActions({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="border-border bg-muted mb-4 flex items-center justify-between rounded-lg border p-4">
-      <span className="text-foreground text-sm font-medium">
-        {itemLabel(selectedCount, "item")} selected
-      </span>
-      <div className="flex gap-2">
-        {type === "scheduled" ? (
-          <ScheduledActions
-            selectedCount={selectedCount}
-            onBulkEditReschedule={onBulkEditReschedule}
-            onBulkScheduledRepost={onBulkScheduledRepost}
-            onBulkQuote={onBulkQuote}
-            repostFetcher={repostFetcher}
-          />
-        ) : null}
-        {type === "published" ? (
-          <PublishedActions
-            selectedCount={selectedCount}
-            onBulkRepost={onBulkRepost}
-            onBulkScheduledRepost={onBulkScheduledRepost}
-            onBulkQuote={onBulkQuote}
-            repostFetcher={repostFetcher}
-          />
-        ) : null}
-        <button
-          type="button"
-          onClick={onBulkDelete}
-          disabled={bulkDeleteState !== "idle"}
-          className="border-destructive/30 bg-card text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
-        >
-          {bulkDeleteState !== "idle"
-            ? "Deleting..."
-            : `Delete ${itemLabel(selectedCount, "item")}`}
-        </button>
-      </div>
-    </div>
+    <PublishingBatchSelectionBar
+      selectedCount={selectedCount}
+      onClearSelection={onClearSelection}
+    >
+      {type === "scheduled" ? (
+        <ScheduledActions
+          onBulkEditReschedule={onBulkEditReschedule}
+          onBulkScheduledRepost={onBulkScheduledRepost}
+          onBulkQuote={onBulkQuote}
+          repostFetcher={repostFetcher}
+        />
+      ) : null}
+      {type === "published" ? (
+        <PublishedActions
+          onBulkRepost={onBulkRepost}
+          onBulkScheduledRepost={onBulkScheduledRepost}
+          onBulkQuote={onBulkQuote}
+          repostFetcher={repostFetcher}
+        />
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={onBulkDelete}
+        disabled={bulkDeleteState !== "idle"}
+        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+      >
+        {bulkDeleteState !== "idle" ? "Deleting..." : "Delete"}
+      </Button>
+    </PublishingBatchSelectionBar>
   );
 }

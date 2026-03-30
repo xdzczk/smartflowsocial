@@ -20,6 +20,8 @@ import {
   runContestPayoutBatchStepWithNwc,
   setContestWinnerPayoutStatus,
   updateContestPayoutSettings,
+  rescheduleContestLaunchOrchestration,
+  retryContestLaunchOrchestration,
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import {
@@ -67,6 +69,7 @@ function parsePayoutSettings(formData: FormData): {
   };
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Contest detail intents: export, payouts, launch recovery, retries
 async function handleContestDetailIntent(args: {
   intent: FormDataEntryValue | null;
   userId: string;
@@ -203,6 +206,30 @@ async function handleContestDetailIntent(args: {
       if (!result.success)
         return json({ error: result.error }, { status: 400 });
       return redirect("/dashboard/contests");
+    }
+    case "retryLaunchOrchestration": {
+      const result = await retryContestLaunchOrchestration(userId, contestId);
+      if (!result.success)
+        return json({ error: result.error ?? "Retry failed" }, { status: 400 });
+      return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "rescheduleLaunch": {
+      const raw = String(formData.get("scheduledFor") ?? "").trim();
+      const scheduledFor = new Date(raw);
+      if (!Number.isFinite(scheduledFor.getTime())) {
+        return json({ error: "Invalid schedule time" }, { status: 400 });
+      }
+      const result = await rescheduleContestLaunchOrchestration(
+        userId,
+        contestId,
+        scheduledFor
+      );
+      if (!result.success)
+        return json(
+          { error: result.error ?? "Reschedule failed" },
+          { status: 400 }
+        );
+      return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     default:
       return json({ error: "Unknown intent" }, { status: 400 });

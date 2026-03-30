@@ -7,6 +7,9 @@ const styles: Record<ContestStatus, { title: string }> = {
   DRAFT: {
     title: contestCopy.bannerDraft,
   },
+  SCHEDULED_LAUNCH: {
+    title: contestCopy.bannerScheduledLaunch,
+  },
   LIVE: {
     title: contestCopy.bannerLive,
   },
@@ -32,14 +35,16 @@ export function ContestStateBanner({ status }: { status: ContestStatus }) {
   const tone =
     status === "LIVE"
       ? "blue"
-      : status === "ENDED_REVIEW"
-        ? "amber"
-        : status === "LOCKED" || status === "PAYOUT_IN_PROGRESS"
-          ? "orange"
-          : status === "COMPLETED"
-            ? "green"
-            : status === "CANCELLED"
-              ? "muted"
-              : "neutral";
+      : status === "SCHEDULED_LAUNCH"
+        ? "blue"
+        : status === "ENDED_REVIEW"
+          ? "amber"
+          : status === "LOCKED" || status === "PAYOUT_IN_PROGRESS"
+            ? "orange"
+            : status === "COMPLETED"
+              ? "green"
+              : status === "CANCELLED"
+                ? "muted"
+                : "neutral";
   return <CampaignStateBanner title={s.title} tone={tone} />;
 }

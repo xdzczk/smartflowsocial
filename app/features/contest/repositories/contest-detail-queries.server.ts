@@ -49,3 +49,11 @@ export async function countContestsByUserAndStatus(
     where: { userId, status: status as never },
   });
 }
+
+export async function findContestLaunchOrchestrationForDetail(
+  contestId: string
+) {
+  return prisma.contestLaunchOrchestration.findUnique({
+    where: { contestId },
+  });
+}

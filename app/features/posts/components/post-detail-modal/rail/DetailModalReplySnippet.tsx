@@ -1,5 +1,7 @@
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 
+import { getPubkeyDisplayName } from "../author-metadata";
+
 export function DetailModalReplySnippet({
   reply,
   metadata,
@@ -7,28 +9,7 @@ export function DetailModalReplySnippet({
   reply: ChildReply;
   metadata: Record<string, unknown>;
 }) {
-  const meta = metadata[reply.pubkey];
-  let name = reply.pubkey.slice(0, 8) + "…";
-  if (
-    meta &&
-    typeof meta === "object" &&
-    !Array.isArray(meta) &&
-    "content" in meta
-  ) {
-    try {
-      const raw = (meta as { content?: unknown }).content;
-      const parsed: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        const p = parsed as Record<string, unknown>;
-        const d =
-          typeof p["display_name"] === "string" ? p["display_name"] : undefined;
-        const n = typeof p["name"] === "string" ? p["name"] : undefined;
-        name = d ?? n ?? name;
-      }
-    } catch {
-      /* ignore */
-    }
-  }
+  const name = getPubkeyDisplayName(reply.pubkey, metadata);
   const body = reply.content.trim();
   const snippet = body.slice(0, 140);
   const ell = body.length > 140 ? "…" : "";

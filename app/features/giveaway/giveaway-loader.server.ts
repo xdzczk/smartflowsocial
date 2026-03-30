@@ -23,6 +23,7 @@ import { convertToHex } from "~/lib/helpers";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 import { getPostsInScope } from "./giveaway-scope.server";
+import { excludeSelfEngagementForScopedRootPosts } from "./giveaway-single-post-engagement.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import type {
   GiveawayProfile,
@@ -583,11 +584,33 @@ export async function loadGiveawayData(
     })
     .filter((id): id is string => id !== null);
 
+  const rootEventIdToAuthorPubkey = new Map<string, string>();
+  for (const post of postsWithNonZeroEngagement) {
+    const se = post.signedEvent;
+    if (
+      se &&
+      typeof se === "object" &&
+      "id" in se &&
+      "pubkey" in se &&
+      typeof (se as { id: unknown }).id === "string" &&
+      typeof (se as { pubkey: unknown }).pubkey === "string"
+    ) {
+      const id = (se as { id: string }).id;
+      const pk = (se as { pubkey: string }).pubkey;
+      if (id.trim() && pk.trim()) {
+        rootEventIdToAuthorPubkey.set(id, pk);
+      }
+    }
+  }
+
   // Handle case when there are no posts with engagement
   let relatedEvents: RelatedEvent[] = [];
   if (postIds.length > 0) {
     const result = await fetchGiveawayParticipants(postIds);
-    relatedEvents = result.relatedEvents;
+    relatedEvents = excludeSelfEngagementForScopedRootPosts(
+      result.relatedEvents,
+      rootEventIdToAuthorPubkey
+    );
   }
 
   // Process and filter participants

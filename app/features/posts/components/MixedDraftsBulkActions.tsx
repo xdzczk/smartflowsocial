@@ -7,6 +7,7 @@ import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -14,13 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { PublishingBatchSelectionBar } from "~/features/posts/components/publishing-suite";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import type { CombinedContent, QueueType } from "~/features/posts/types";
-import { cn } from "~/lib/utils";
 
 interface MixedDraftsBulkActionsProps {
   selectedDrafts: CombinedContent[];
   queueTypes: QueueType[];
+  onClearSelection: () => void;
   onBulkDelete: () => void;
   bulkDeleteState: string;
 }
@@ -28,6 +30,7 @@ interface MixedDraftsBulkActionsProps {
 export function MixedDraftsBulkActions({
   selectedDrafts,
   queueTypes,
+  onClearSelection,
   onBulkDelete,
   bulkDeleteState,
 }: MixedDraftsBulkActionsProps) {
@@ -89,93 +92,88 @@ export function MixedDraftsBulkActions({
   };
 
   return (
-    <div
-      className={cn(
-        "border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 z-10 mb-4 flex flex-col gap-3 rounded-xl border p-4 backdrop-blur-sm",
-        "sm:flex-row sm:items-center sm:justify-between"
-      )}
+    <PublishingBatchSelectionBar
+      selectedCount={count}
+      onClearSelection={onClearSelection}
     >
-      <span className="text-foreground text-sm font-medium">
-        {count} draft{count !== 1 ? "s" : ""} selected
-      </span>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            value={queueTarget}
-            onValueChange={setQueueTarget}
-            disabled={!canPostOnlyBulk}
+        <Select
+          value={queueTarget}
+          onValueChange={setQueueTarget}
+          disabled={!canPostOnlyBulk}
+        >
+          <SelectTrigger
+            className="border-border h-9 w-[10.5rem]"
+            aria-label="Queue for bulk assign"
           >
-            <SelectTrigger
-              className="border-border h-9 w-[10.5rem]"
-              aria-label="Queue for bulk assign"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">No queue</SelectItem>
-              {queueTypes
-                .filter((qt) => {
-                  const name = typeof qt === "string" ? qt : qt.name;
-                  return name !== "Unassigned";
-                })
-                .map((qt) => {
-                  const queueName = typeof qt === "string" ? qt : qt.name;
-                  const key =
-                    typeof qt === "object" ? qt.id || queueName : queueName;
-                  return (
-                    <SelectItem key={key} value={queueName}>
-                      {queueName}
-                    </SelectItem>
-                  );
-                })}
-            </SelectContent>
-          </Select>
-          <button
-            type="button"
-            title={
-              canPostOnlyBulk
-                ? undefined
-                : "Select only short-form post drafts to assign a queue"
-            }
-            onClick={() => handleAssignQueue()}
-            disabled={
-              !canPostOnlyBulk ||
-              assignFetcher.state !== "idle" ||
-              bulkDeleteState !== "idle"
-            }
-            className="border-border bg-background text-foreground hover:bg-muted inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50"
-          >
-            {assignFetcher.state !== "idle" ? "Updating…" : "Move to queue"}
-          </button>
-        </div>
-        <button
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unassigned">No queue</SelectItem>
+            {queueTypes
+              .filter((qt) => {
+                const name = typeof qt === "string" ? qt : qt.name;
+                return name !== "Unassigned";
+              })
+              .map((qt) => {
+                const queueName = typeof qt === "string" ? qt : qt.name;
+                const key =
+                  typeof qt === "object" ? qt.id || queueName : queueName;
+                return (
+                  <SelectItem key={key} value={queueName}>
+                    {queueName}
+                  </SelectItem>
+                );
+              })}
+          </SelectContent>
+        </Select>
+        <Button
           type="button"
+          variant="outline"
+          size="default"
           title={
             canPostOnlyBulk
               ? undefined
-              : "Select only short-form post drafts to duplicate"
+              : "Select only short-form post drafts to assign a queue"
           }
-          onClick={handleBulkDuplicate}
+          onClick={() => handleAssignQueue()}
           disabled={
             !canPostOnlyBulk ||
-            dupFetcher.state !== "idle" ||
+            assignFetcher.state !== "idle" ||
             bulkDeleteState !== "idle"
           }
-          className="border-border bg-background text-foreground hover:bg-muted inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50"
         >
-          {dupFetcher.state !== "idle" ? "Duplicating…" : "Duplicate"}
-        </button>
-        <button
-          type="button"
-          onClick={onBulkDelete}
-          disabled={bulkDeleteState !== "idle"}
-          className="border-destructive/30 bg-background text-destructive hover:border-destructive/50 hover:bg-destructive/10 focus:ring-ring/25 active:border-destructive/30 inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold focus:ring active:shadow-none disabled:opacity-50"
-        >
-          {bulkDeleteState !== "idle"
-            ? "Deleting..."
-            : `Delete ${count} draft${count !== 1 ? "s" : ""}`}
-        </button>
+          {assignFetcher.state !== "idle" ? "Updating…" : "Move to queue"}
+        </Button>
       </div>
-    </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        title={
+          canPostOnlyBulk
+            ? undefined
+            : "Select only short-form post drafts to duplicate"
+        }
+        onClick={handleBulkDuplicate}
+        disabled={
+          !canPostOnlyBulk ||
+          dupFetcher.state !== "idle" ||
+          bulkDeleteState !== "idle"
+        }
+      >
+        {dupFetcher.state !== "idle" ? "Duplicating…" : "Duplicate"}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={onBulkDelete}
+        disabled={bulkDeleteState !== "idle"}
+        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+      >
+        {bulkDeleteState !== "idle" ? "Deleting..." : "Delete"}
+      </Button>
+    </PublishingBatchSelectionBar>
   );
 }

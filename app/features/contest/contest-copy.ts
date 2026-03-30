@@ -11,6 +11,8 @@ export const contestCopy = {
   cancelContest: "Cancel contest",
   markContestComplete: "Mark contest complete",
   bannerDraft: "Draft — configure rules and launch when you're ready.",
+  bannerScheduledLaunch:
+    "Scheduled — contest will activate at the chosen time (source post will publish first if new).",
   bannerLive: "Live — entries are being ranked in real time.",
   bannerEndedReview:
     "Ended — leaderboard frozen. Review before locking winners.",
@@ -22,6 +24,24 @@ export const contestCopy = {
     "Payouts in progress — sending from your connected wallet or manual fallback.",
   railSourceOk: "Selected",
   railSourceMissing: "Not selected",
+  railSourceModeExisting: "Published post",
+  railSourceModeCreate: "New post",
+  railLaunchNow: "Now",
+  railLaunchSchedule: "Scheduled",
+  railRowActivation: "Activation",
+  railLaunchModeLabel: "Launch mode",
+  railActivationTimeLabel: "Activation time",
+  railDateTimeLabel: "Date and time",
+  railSnapshotLabel: "Snapshot",
+  railFinancialLabel: "Pool & fees",
+  railPlannedPool: "Planned pool",
+  railFinalizationFee: "Finalization fee",
+  railDueAtLock: "Due at lock",
+  railAriaLabel: "Contest launch",
+  railBlockerTitle: "Before launch",
+  railOptionalHint: "Review optional filters",
+  railScheduleHelperExisting: "Activates at the chosen time.",
+  railScheduleHelperCreate: "Source post publishes first, then activation.",
   railEndPlaceholder: "—",
   railWarnNoSourceCreate:
     "Publish with the embedded composer, then select the post.",
@@ -62,4 +82,18 @@ export const contestCopy = {
   savePresetHint:
     "Save ranking metric, prize structure, and eligibility filters. Start a new contest from this preset and choose the source post there.",
   presetNamePlaceholder: "Preset name",
+  sourceModuleCreate:
+    "Compose the note entries will reply to — this is the contest anchor.",
+  sourceModuleExisting: "Pick a live note to use as the contest anchor.",
+  entryRuleShort: "Direct replies to the source post count as entries.",
+  tieBreakShort: "Ties break by score, then reply time.",
+  tieBreakTooltipDetail:
+    "Order: higher metric, then earlier reply timestamp, then entry event id.",
+  prizeEqualTileTitle: "Equal rewards",
+  prizeEqualTileDesc: "Same sats for each winner slot.",
+  prizeRankedTileTitle: "Rank-based rewards",
+  prizeRankedTileDesc: "Different sats for 1st, 2nd, 3rd…",
+  rankingSectionLead: "Entries are ranked by the metric until the end time.",
+  eligibilitySectionTitle: "4. Eligibility filters",
+  eligibilitySectionLead: "Optional. Applied when results are frozen.",
 } as const;

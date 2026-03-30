@@ -1,7 +1,13 @@
-import { useFetcher, useSearchParams, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useSearchParams,
+  useNavigate,
+} from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
+import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
 import { DateRangeFilter } from "~/features/posts/components/DateRangeFilter";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
@@ -23,7 +29,6 @@ import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
   AllContentListing,
-  BulkDeleteBar,
   EditPostModal,
   PostDetailsModal,
   PublishingFilterRow,
@@ -73,6 +78,7 @@ export default function ScheduledPostsPage() {
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,
+    scheduledContestLaunches,
     isLoading: _isDataLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -407,6 +413,45 @@ export default function ScheduledPostsPage() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col">
+        {currentTab === "all" && scheduledContestLaunches.length > 0 ? (
+          <div className="border-border bg-muted/20 mb-4 rounded-lg border px-3 py-2 text-sm">
+            <p className="text-foreground font-medium">
+              Scheduled contest launches
+            </p>
+            <ul className="text-muted-foreground mt-2 list-inside list-disc space-y-1">
+              {scheduledContestLaunches.map((row) => {
+                const when = row.scheduledFor
+                  ? new Date(row.scheduledFor).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : "—";
+                const state =
+                  row.contestActivationStatus === "failed" ||
+                  row.contestActivationStatus === "blocked_by_source_failure"
+                    ? "Needs attention"
+                    : "Awaiting activation";
+                return (
+                  <li key={row.id}>
+                    <Link
+                      to={`/dashboard/contests/detail/${row.contestId}`}
+                      className="text-primary font-medium underline-offset-2 hover:underline"
+                    >
+                      {row.title}
+                    </Link>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {when} · {state}
+                      {row.sourceMode === "new_post"
+                        ? " · Source: new post"
+                        : " · Source: existing post"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
         {/* Content based on current tab */}
         {currentTab === "all" ? (
           <AllContentListing
@@ -434,6 +479,7 @@ export default function ScheduledPostsPage() {
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             showBulkActions={true}
+            onClearSelection={() => setSelectedPosts(new Set())}
             onBulkDelete={handleBulkDelete}
             bulkDeleteState={bulkDeleteFetcher.state}
             onBulkEditReschedule={handleBulkEditReschedule}
@@ -462,10 +508,16 @@ export default function ScheduledPostsPage() {
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
-            <BulkDeleteBar
+            <ContentBulkActions
+              type="scheduled"
               selectedCount={selectedPosts.size}
+              onClearSelection={() => setSelectedPosts(new Set())}
               onBulkDelete={handleBulkDelete}
-              isDeleting={bulkDeleteFetcher.state !== "idle"}
+              bulkDeleteState={bulkDeleteFetcher.state}
+              onBulkEditReschedule={handleBulkEditReschedule}
+              onBulkScheduledRepost={handleBulkScheduledRepost}
+              onBulkQuote={handleBulkQuote}
+              repostFetcher={repostFetcher as PostFetcher}
             />
 
             <ScheduledPostsTable

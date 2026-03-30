@@ -1,9 +1,13 @@
-import type { PublishingSegmentLinkItem } from "./PublishingSegmentedControl";
+import type { PublishingContentTypeFilterItem } from "./PublishingContentTypeFilter";
+
+function menuWithCount(label: string, count: number): string {
+  return `${label} (${count})`;
+}
 
 /**
- * URL segments for Scheduled / Published (no polls, threads, or bulk tabs).
+ * Options for Scheduled / Published content-type filter (matches existing tab routing).
  */
-export function buildLibraryContentSegmentLinkItems({
+export function buildLibraryContentTypeFilterItems({
   basePath,
   queuePathSegment,
   searchParams,
@@ -19,7 +23,7 @@ export function buildLibraryContentSegmentLinkItems({
   totalPostsCount: number;
   totalRepostsCount: number;
   totalLongformCount: number;
-}): PublishingSegmentLinkItem[] {
+}): PublishingContentTypeFilterItem[] {
   const withTab = (tab: string) => {
     const next = new URLSearchParams(searchParams);
     next.set("tab", tab);
@@ -29,26 +33,30 @@ export function buildLibraryContentSegmentLinkItems({
   return [
     {
       id: "all",
-      label: `All (${totalContentCount})`,
       to: withTab("all"),
+      triggerLabel: "All types",
+      menuLabel: menuWithCount("All types", totalContentCount),
       ariaLabel: `All scheduled content, ${totalContentCount} items`,
     },
     {
       id: "posts",
-      label: `Posts (${totalPostsCount})`,
       to: withTab("posts"),
+      triggerLabel: "Post",
+      menuLabel: menuWithCount("Post", totalPostsCount),
       ariaLabel: `Posts, ${totalPostsCount} items`,
     },
     {
       id: "longform",
-      label: `Articles (${totalLongformCount})`,
       to: withTab("longform"),
+      triggerLabel: "Article",
+      menuLabel: menuWithCount("Article", totalLongformCount),
       ariaLabel: `Articles, ${totalLongformCount} items`,
     },
     {
       id: "reposts",
-      label: `Reposts (${totalRepostsCount})`,
       to: withTab("reposts"),
+      triggerLabel: "Repost",
+      menuLabel: menuWithCount("Repost", totalRepostsCount),
       ariaLabel: `Reposts, ${totalRepostsCount} items`,
     },
   ];

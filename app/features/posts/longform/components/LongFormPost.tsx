@@ -1332,6 +1332,7 @@ export default function LongFormPost({
                         userTimezone={userTimezone}
                         showHashtagPresets={false}
                         hideScheduleControls={publishMode === "queue"}
+                        hideQueueControls={publishMode === "schedule"}
                       />
                     ),
                   }

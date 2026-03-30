@@ -81,6 +81,20 @@ describe("Published Posts Queue", () => {
         }
       });
     });
+
+    it("should open post detail modal with overview rail labels when a row exists", () => {
+      cy.get("body").then(($body) => {
+        const row = $body.find("table tbody tr").first();
+        if (row.length === 0) {
+          cy.log("No published rows — skipping modal assertion");
+          return;
+        }
+        cy.get("table tbody tr").first().click({ force: true });
+        cy.get('[role="dialog"]', { timeout: 15000 }).should("be.visible");
+        cy.contains("Overview").should("be.visible");
+        cy.contains("Content").should("be.visible");
+      });
+    });
   });
 
   describe("Queue Type Filtering", () => {

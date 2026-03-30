@@ -1,6 +1,4 @@
-import type { BroadcastDeliveryMode } from "@prisma/client";
 import { Form } from "@remix-run/react";
-import { ArrowRight, Clock } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -9,18 +7,12 @@ import {
   AudienceSourceCards,
   type AudienceMode,
 } from "~/components/broadcast/audience/AudienceSourceCards";
-import { AudienceSummaryCard } from "~/components/broadcast/audience/AudienceSummaryCard";
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
-import { Button } from "~/components/ui/button";
-import {
-  broadcastDeliveryModeComposerHelper,
-  broadcastSendStrategyComposerHelper,
-} from "~/features/broadcast/broadcast-delivery-copy";
+import { BroadcastCreationRail } from "~/components/broadcast/BroadcastCreationRail";
+import type { BroadcastCommitMode } from "~/components/broadcast/BroadcastRailModeTabs";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
 import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
-import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -28,9 +20,6 @@ import {
   nowInTimezone,
 } from "~/lib/temporal";
 
-const BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS = [
-  0.25, 0.5, 1, 12, 24,
-] as const;
 const UNSUBSCRIBE_PREVIEW_TOKEN = "your_unique_token";
 
 function normalizeHexLines(lines: string[]): string[] {
@@ -46,18 +35,18 @@ function normalizeHexLines(lines: string[]): string[] {
   return out;
 }
 
-function broadcastReviewPrimaryLabel(
+function broadcastPrimaryCtaLabel(
   busy: boolean,
-  scheduleLater: boolean,
-  hasValidSchedule: boolean,
+  commitMode: BroadcastCommitMode,
+  hasScheduleTimeForSubmit: boolean,
   scheduleTimeLabel: string | null
 ): string {
-  if (busy) return scheduleLater ? "Scheduling…" : "Continuing…";
-  if (scheduleLater) {
-    if (hasValidSchedule && scheduleTimeLabel) {
-      return `Review broadcast · ${scheduleTimeLabel}`;
+  if (busy) return commitMode === "schedule" ? "Scheduling…" : "Continuing…";
+  if (commitMode === "schedule") {
+    if (hasScheduleTimeForSubmit && scheduleTimeLabel) {
+      return `Review & schedule · ${scheduleTimeLabel}`;
     }
-    return "Review broadcast";
+    return "Review & schedule";
   }
   return "Review broadcast";
 }
@@ -175,19 +164,25 @@ export function BroadcastNewDraftForm({
   const [showMessagePreview, setShowMessagePreview] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState("BEST_COMPATIBILITY");
   const [sendStrategy, setSendStrategy] = useState("STANDARD");
-  const [scheduleLater, setScheduleLater] = useState(false);
+  const [commitMode, setCommitMode] = useState<BroadcastCommitMode>("now");
   const [scheduledForLocal, setScheduledForLocal] = useState("");
 
   const resolvedSendStrategy = limits.allowStaggered
     ? sendStrategy
     : "STANDARD";
 
+  const effectiveCommitMode: BroadcastCommitMode = limits.allowSchedule
+    ? commitMode
+    : "now";
+
   const minDatetime = getNowForDateTimeLocal(userTimezone);
   const hasValidScheduleTime =
     scheduledForLocal.trim() !== "" &&
     !Number.isNaN(new Date(scheduledForLocal).getTime());
   const hasScheduleTimeForSubmit =
-    limits.allowSchedule && scheduleLater && hasValidScheduleTime;
+    limits.allowSchedule &&
+    effectiveCommitMode === "schedule" &&
+    hasValidScheduleTime;
   const scheduleTimeLabel = hasScheduleTimeForSubmit
     ? getBroadcastScheduleTimeLabel(scheduledForLocal)
     : null;
@@ -252,10 +247,6 @@ export function BroadcastNewDraftForm({
 
   const riskSource = audienceMode === "mutuals" ? "MUTUALS" : "CUSTOM";
 
-  const scheduleSummary =
-    hasScheduleTimeForSubmit && scheduleTimeLabel
-      ? scheduleTimeLabel
-      : "After review";
   const hasMessage = messageBody.trim().length > 0;
   const unsubscribePreviewUrl = `${unsubscribePreviewBaseUrl.replace(/\/$/, "")}/broadcast/unsubscribe?t=${UNSUBSCRIBE_PREVIEW_TOKEN}`;
   const messagePreviewText = hasMessage
@@ -268,9 +259,9 @@ export function BroadcastNewDraftForm({
   const canSaveAudience =
     audienceMode === "selected" && selectedPubkeys.length > 0 && hasMessage;
 
-  const primaryLabel = broadcastReviewPrimaryLabel(
+  const primaryLabel = broadcastPrimaryCtaLabel(
     busy,
-    scheduleLater,
+    effectiveCommitMode,
     hasScheduleTimeForSubmit,
     scheduleTimeLabel
   );
@@ -279,11 +270,56 @@ export function BroadcastNewDraftForm({
     ? "create_schedule"
     : "create_now";
 
-  const deliveryModeHelper = broadcastDeliveryModeComposerHelper(
-    deliveryMode as BroadcastDeliveryMode
-  );
-  const strategyHelper =
-    broadcastSendStrategyComposerHelper(resolvedSendStrategy);
+  const primaryDisabled =
+    busy ||
+    !canContinue ||
+    (effectiveCommitMode === "schedule" &&
+      limits.allowSchedule &&
+      !hasValidScheduleTime);
+
+  const blockers = useMemo(() => {
+    const out: string[] = [];
+    if (!hasMessage) out.push("Add a message.");
+    if (audienceMode === "selected" && selectedPubkeys.length === 0) {
+      out.push("Choose at least one recipient.");
+    }
+    if (
+      effectiveCommitMode === "schedule" &&
+      limits.allowSchedule &&
+      !hasValidScheduleTime
+    ) {
+      out.push("Select a send time.");
+    }
+    return out;
+  }, [
+    hasMessage,
+    audienceMode,
+    selectedPubkeys.length,
+    effectiveCommitMode,
+    limits.allowSchedule,
+    hasValidScheduleTime,
+  ]);
+
+  const advisories = useMemo(() => {
+    const out: string[] = [];
+    if (audienceMode === "selected") {
+      out.push("Recipient counts may change at send time.");
+    }
+    out.push("Suppressed recipients are excluded automatically.");
+    out.push("Only eligible recipients are included at send time.");
+    return out;
+  }, [audienceMode]);
+
+  const outcomeLine = useMemo(() => {
+    if (
+      effectiveCommitMode === "schedule" &&
+      hasScheduleTimeForSubmit &&
+      scheduleTimeLabel
+    ) {
+      return `Scheduled for ${scheduleTimeLabel}`;
+    }
+    return "Sends to eligible recipients after review.";
+  }, [effectiveCommitMode, hasScheduleTimeForSubmit, scheduleTimeLabel]);
 
   return (
     <Form
@@ -354,9 +390,6 @@ export function BroadcastNewDraftForm({
               <p className="text-muted-foreground text-xs">
                 Applied when the final audience is resolved.
               </p>
-              <p className="text-muted-foreground text-xs">
-                Suppressed recipients are always excluded automatically.
-              </p>
               <div>
                 <label
                   htmlFor="broadcast-exclude-recent-days-global"
@@ -394,6 +427,20 @@ export function BroadcastNewDraftForm({
                 </span>
               </label>
             </div>
+
+            {canSaveAudience ? (
+              <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
+                <button
+                  type="submit"
+                  name="intent"
+                  value="save_audience"
+                  disabled={busy}
+                  className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+                >
+                  Save audience
+                </button>
+              </div>
+            ) : null}
           </div>
         </FormSection>
 
@@ -460,11 +507,6 @@ export function BroadcastNewDraftForm({
                   Preview message
                 </label>
               </div>
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-                Recipients should understand why they are receiving this
-                message. Low-context or overly promotional messages are more
-                likely to be treated as spam.
-              </p>
               {showMessagePreview && hasMessage ? (
                 <div
                   className="border-border bg-muted/30 mt-3 rounded-lg border p-4 text-sm whitespace-pre-wrap"
@@ -489,164 +531,34 @@ export function BroadcastNewDraftForm({
             </div>
           </div>
         </FormSection>
-
-        <FormSection
-          step="3"
-          title="Delivery"
-          purpose="Choose how and when to send after you review and sign."
-        >
-          <div className="space-y-6">
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="broadcast-delivery-mode"
-                  className="mb-1 block text-sm font-medium"
-                >
-                  Delivery mode
-                </label>
-                <select
-                  id="broadcast-delivery-mode"
-                  name="deliveryMode"
-                  value={deliveryMode}
-                  onChange={(e) => setDeliveryMode(e.target.value)}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="BEST_COMPATIBILITY">Best compatibility</option>
-                  {limits.allowAdvancedDelivery ? (
-                    <>
-                      <option value="NIP04_ONLY">NIP-04 only (legacy)</option>
-                      <option value="NIP17_ONLY">NIP-17 only</option>
-                      <option value="NIP17_FALLBACK_NIP04">
-                        NIP-17 with NIP-04 fallback
-                      </option>
-                      <option value="BOTH">Both (expert)</option>
-                    </>
-                  ) : null}
-                </select>
-                <p className="text-muted-foreground mt-1.5 text-xs leading-snug">
-                  {deliveryModeHelper}
-                </p>
-              </div>
-              <div>
-                <label
-                  htmlFor="broadcast-send-strategy"
-                  className="mb-1 block text-sm font-medium"
-                >
-                  Strategy
-                </label>
-                <select
-                  id="broadcast-send-strategy"
-                  name="sendStrategy"
-                  value={resolvedSendStrategy}
-                  onChange={(e) => setSendStrategy(e.target.value)}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="STANDARD">Standard</option>
-                  {limits.allowStaggered ? (
-                    <option value="STAGGERED">Conservative</option>
-                  ) : null}
-                </select>
-                <p className="text-muted-foreground mt-1.5 text-xs leading-snug">
-                  {strategyHelper}
-                </p>
-              </div>
-            </div>
-
-            {limits.allowSchedule ? (
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Send time</p>
-                <div className="space-y-2">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="radio"
-                      className="border-input"
-                      checked={!scheduleLater}
-                      onChange={() => {
-                        setScheduleLater(false);
-                        setScheduledForLocal("");
-                      }}
-                    />
-                    Send after review
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm">
-                    <input
-                      type="radio"
-                      className="border-input"
-                      checked={scheduleLater}
-                      onChange={() => {
-                        setScheduleLater(true);
-                      }}
-                    />
-                    Schedule for later
-                  </label>
-                </div>
-                {scheduleLater ? (
-                  <div className="space-y-2">
-                    <input
-                      id="broadcast-scheduled-for"
-                      type="datetime-local"
-                      name="scheduledFor"
-                      value={scheduledForLocal}
-                      min={minDatetime}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const min = getNowForDateTimeLocal(userTimezone);
-                        setScheduledForLocal(v && v < min ? min : v);
-                      }}
-                      className="border-input bg-background w-full max-w-md rounded-md border px-3 py-2 text-sm"
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS.map((h) => (
-                        <Button
-                          key={h}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() => {
-                            applyQuickSchedule(h);
-                          }}
-                          className="border-primary text-foreground hover:bg-muted transition-transform duration-150 active:scale-95"
-                        >
-                          {formatIntervalLabel(h, { compact: true })}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Signed direct messages are queued after review. The next step is
-              review and signing—not an instant blast.
-            </p>
-
-            {canSaveAudience ? (
-              <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
-                <button
-                  type="submit"
-                  name="intent"
-                  value="save_audience"
-                  disabled={busy}
-                  className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-                >
-                  Save audience
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </FormSection>
       </div>
 
-      <AudienceSummaryCard
-        planType={planType}
+      <BroadcastCreationRail
         limits={{
+          allowSchedule: limits.allowSchedule,
+          allowAdvancedDelivery: limits.allowAdvancedDelivery,
+          allowStaggered: limits.allowStaggered,
           maxRecipientsPerCampaign: limits.maxRecipientsPerCampaign,
           maxDailyBroadcastRecipients: limits.maxDailyBroadcastRecipients,
         }}
-        riskSource={riskSource}
+        planType={planType}
+        busy={busy}
+        userTimezone={userTimezone}
+        commitMode={effectiveCommitMode}
+        onCommitModeChange={(next) => {
+          setCommitMode(next);
+          if (next === "now") setScheduledForLocal("");
+        }}
+        deliveryMode={deliveryMode}
+        onDeliveryModeChange={setDeliveryMode}
+        onSendStrategyChange={setSendStrategy}
+        resolvedSendStrategy={resolvedSendStrategy}
+        scheduledForLocal={scheduledForLocal}
+        onScheduledForChange={setScheduledForLocal}
+        onQuickSchedule={applyQuickSchedule}
+        minDatetime={minDatetime}
         audienceHeadline={audienceHeadline}
+        riskSource={riskSource}
         estimatedGraphCount={
           audienceMode === "mutuals"
             ? (graphEstimateStats?.count ?? null)
@@ -666,50 +578,17 @@ export function BroadcastNewDraftForm({
         selectedSendable={
           audienceMode === "selected" ? trayStats.sendable : undefined
         }
-        deliveryMode={deliveryMode as BroadcastDeliveryMode}
-        sendStrategy={resolvedSendStrategy}
-        scheduleSummary={scheduleSummary}
         excludeRecentDays={excludeMessagedDays}
-        overlapWarning={null}
-        actions={
-          <>
-            <button
-              type="submit"
-              name="intent"
-              value={primaryIntent}
-              disabled={
-                busy ||
-                !canContinue ||
-                (scheduleLater && limits.allowSchedule && !hasValidScheduleTime)
-              }
-              className="bg-success hover:bg-success/90 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-            >
-              {hasScheduleTimeForSubmit ? (
-                <Clock
-                  className="h-5 w-5 shrink-0"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              ) : (
-                <ArrowRight
-                  className="h-5 w-5 shrink-0"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              )}
-              {primaryLabel}
-            </button>
-            <button
-              type="submit"
-              name="intent"
-              value="create_draft"
-              disabled={busy || !canContinue}
-              className="border-input bg-background hover:bg-muted w-full rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-            >
-              Save draft
-            </button>
-          </>
-        }
+        hasScheduleTimeForSubmit={hasScheduleTimeForSubmit}
+        scheduleTimeLabel={scheduleTimeLabel}
+        primaryLabel={primaryLabel}
+        primaryIntent={primaryIntent}
+        primaryDisabled={primaryDisabled}
+        draftDisabled={busy || !canContinue}
+        blockers={blockers}
+        advisories={advisories}
+        outcomeHeadline={null}
+        outcomeLine={outcomeLine}
       />
     </Form>
   );

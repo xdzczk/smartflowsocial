@@ -2,16 +2,10 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 import { updateNWCClientSchema } from "~/lib/validation";
 import {
   useZodForm,
@@ -80,150 +74,147 @@ export function NWCSettings({
   }, [fetcher.data?.success, form]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Auto-renew wallet</CardTitle>
-        <CardDescription>
-          Connect a Lightning wallet for automatic subscription renewals.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSubmit(e);
-          }}
-          className="space-y-4"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 space-y-0.5">
-              <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
-              <p className="text-muted-foreground text-sm">
-                SmartFlow never holds your funds. You can revoke wallet access
-                at any time.
-              </p>
-            </div>
-            <Switch
-              id="nwc-enabled"
-              checked={watchedEnabled}
-              onCheckedChange={(checked) => {
-                form.setValue("nwcEnabled", checked);
-              }}
-              disabled={isSubmitting}
-            />
+    <PreferenceSection
+      title="Auto-renew wallet"
+      description="Connect a Lightning wallet (NWC) for automatic subscription renewals."
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSubmit(e);
+        }}
+        className="space-y-4"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-0.5">
+            <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
+            <p className="text-muted-foreground text-sm">
+              SmartFlow never holds your funds. You can revoke wallet access at
+              any time.
+            </p>
           </div>
+          <Switch
+            id="nwc-enabled"
+            checked={watchedEnabled}
+            onCheckedChange={(checked) => {
+              form.setValue("nwcEnabled", checked);
+            }}
+            disabled={isSubmitting}
+          />
+        </div>
 
-          {watchedEnabled ? (
-            <div className="space-y-4">
-              {maskedNwcString && !showInput ? (
-                <div className="space-y-2">
-                  <Label>Connected wallet</Label>
-                  <div className="bg-muted space-y-2 rounded-md p-3">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="min-w-0 font-mono text-sm break-all">
-                        {maskedNwcString}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          void navigator.clipboard.writeText(maskedNwcString);
-                        }}
-                        className="ml-2 h-6 px-2 text-xs"
-                      >
-                        Copy
-                      </Button>
-                    </div>
-                    {nwcLastUsed ? (
-                      <p className="text-muted-foreground text-xs">
-                        Last used: {new Date(nwcLastUsed).toLocaleString()}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+        {watchedEnabled ? (
+          <div className="space-y-4">
+            {maskedNwcString && !showInput ? (
+              <div className="space-y-2">
+                <Label>Connected wallet</Label>
+                <div className="bg-muted space-y-2 rounded-md p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="min-w-0 font-mono text-sm break-all">
+                      {maskedNwcString}
+                    </p>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => setShowInput(true)}
-                      disabled={isSubmitting}
+                      onClick={() => {
+                        void navigator.clipboard.writeText(maskedNwcString);
+                      }}
+                      className="ml-2 h-6 px-2 text-xs"
                     >
-                      Update wallet
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClear}
-                      disabled={isSubmitting}
-                    >
-                      Disconnect
+                      Copy
                     </Button>
                   </div>
+                  {nwcLastUsed ? (
+                    <p className="text-muted-foreground text-xs">
+                      Last used: {new Date(nwcLastUsed).toLocaleString()}
+                    </p>
+                  ) : null}
                 </div>
-              ) : null}
-
-              {showInput ? (
-                <div className="space-y-2">
-                  <Label htmlFor="nwc-string">NWC connection string</Label>
-                  <Input
-                    id="nwc-string"
-                    type="text"
-                    placeholder="nostr+walletconnect://..."
-                    {...form.register("nwcString")}
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowInput(true)}
                     disabled={isSubmitting}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    This will be encrypted and stored securely.
-                  </p>
-                </div>
-              ) : null}
-
-              {!maskedNwcString && !showInput ? (
-                <div className="space-y-2">
-                  <Label htmlFor="nwc-string">NWC connection string</Label>
-                  <Input
-                    id="nwc-string"
-                    type="text"
-                    placeholder="nostr+walletconnect://..."
-                    {...form.register("nwcString")}
+                  >
+                    Update wallet
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClear}
                     disabled={isSubmitting}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    This will be encrypted and stored securely.
-                  </p>
+                  >
+                    Disconnect
+                  </Button>
                 </div>
-              ) : null}
-            </div>
-          ) : null}
+              </div>
+            ) : null}
 
+            {showInput ? (
+              <div className="space-y-2">
+                <Label htmlFor="nwc-string">NWC connection string</Label>
+                <Input
+                  id="nwc-string"
+                  type="text"
+                  placeholder="nostr+walletconnect://..."
+                  {...form.register("nwcString")}
+                  disabled={isSubmitting}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                />
+                <p className="text-muted-foreground text-xs">
+                  This will be encrypted and stored securely.
+                </p>
+              </div>
+            ) : null}
+
+            {!maskedNwcString && !showInput ? (
+              <div className="space-y-2">
+                <Label htmlFor="nwc-string">NWC connection string</Label>
+                <Input
+                  id="nwc-string"
+                  type="text"
+                  placeholder="nostr+walletconnect://..."
+                  {...form.register("nwcString")}
+                  disabled={isSubmitting}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                />
+                <p className="text-muted-foreground text-xs">
+                  This will be encrypted and stored securely.
+                </p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex justify-end">
           <Button
             type="submit"
             disabled={isSubmitting || !hasChanged}
-            className="w-full"
+            size="sm"
           >
-            {isSubmitting ? "Saving..." : "Save wallet settings"}
+            {isSubmitting ? "Saving…" : "Save wallet settings"}
           </Button>
+        </div>
 
-          {fetcher.data?.success ? (
-            <p className="text-success text-sm">
-              NWC settings updated successfully!
-            </p>
-          ) : null}
-          {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
-          ) : null}
-        </form>
-      </CardContent>
-    </Card>
+        {fetcher.data?.success ? (
+          <p className="text-success text-sm">
+            NWC settings updated successfully!
+          </p>
+        ) : null}
+        {fetcher.data?.error ? (
+          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+        ) : null}
+      </form>
+    </PreferenceSection>
   );
 }

@@ -116,10 +116,12 @@ export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { ContentListPageHeader } from "./components/ContentListPageHeader";
 export {
   AttachmentCountChip,
-  buildLibraryContentSegmentLinkItems,
+  buildLibraryContentTypeFilterItems,
   ContentStatusChip,
   ContentTypeChip,
   PublishingArchiveModeLinks,
+  PublishingBatchSelectionBar,
+  PublishingContentTypeFilter,
   PublishingEmptyState,
   PublishingFilterRow,
   PublishingLibraryContentSegments,
@@ -133,16 +135,21 @@ export {
   TextOnlyIndicatorChip,
 } from "./components/publishing-suite";
 export type {
+  PublishingContentTypeFilterItem,
   PublishingSegmentButtonItem,
   PublishingSegmentLinkItem,
 } from "./components/publishing-suite";
 export {
+  PUBLISHING_BATCH_SELECTION_BAR_CLASS,
   PUBLISHING_DATETIME_CELL_CLASS,
+  PUBLISHING_FILTER_SELECT_TRIGGER_CLASS,
   PUBLISHING_LIST_SURFACE_CLASS,
+  PUBLISHING_METADATA_CHIP_GAP_CLASS,
+  PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS,
   PUBLISHING_TABLE_ROW_CLASS,
+  PUBLISHING_TEMPLATE_TYPE_SELECT_TRIGGER_CLASS,
 } from "./components/publishing-suite/constants";
 export { default as AllContentListing } from "./components/AllContentListing";
-export { BulkDeleteBar } from "./components/BulkDeleteBar";
 export { default as Statistics } from "./components/Statistics";
 export { SuccessMessage } from "./components/SuccessMessage";
 export { ErrorMessage } from "./components/ErrorMessage";

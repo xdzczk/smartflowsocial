@@ -16,6 +16,13 @@ import { cn } from "~/lib/utils";
 import type { Post } from "../../data/posts-prisma-types.server";
 import type { CombinedContent, PostData } from "../../types";
 
+import { getPubkeyDisplayName } from "./author-metadata";
+import {
+  derivePostDetailSemantics,
+  getPrimaryContentTypeLabel,
+  partitionTags,
+  shouldUseUltraCompactLayout,
+} from "./derive-post-detail-semantics";
 import {
   filterRepliesExcludingThreadSegments,
   formatScheduledDate,
@@ -33,10 +40,10 @@ import { TextPostPreview } from "./previews/TextPostPreview";
 import { ThreadPostPreview } from "./previews/ThreadPostPreview";
 import { PostDetailRail } from "./rail/PostDetailRail";
 import {
-  getHeaderTypeLabel,
   isPostPoll,
   resolvePostDetailVariant,
 } from "./resolve-post-detail-variant";
+import type { PostDetailHeightMode } from "./resolve-post-detail-variant";
 import { usePostThreadGroup } from "./usePostThreadGroup";
 
 export interface PostDetailsModalProps {
@@ -154,7 +161,10 @@ export default function PostDetailsModal({
       );
   }, [eventId, threadData?.events]);
 
-  const threadMetadata = threadData?.metadata ?? {};
+  const threadMetadata = useMemo(
+    () => threadData?.metadata ?? {},
+    [threadData?.metadata]
+  );
   const showOpenOnNostr = type === "published" && hasOpenOnNostrLink(post);
   const openOnNostrUrl = showOpenOnNostr
     ? nostrUrls.eventUrl(post.signedEvent.id)
@@ -174,8 +184,32 @@ export default function PostDetailsModal({
     [nip88PollsEnabled, post, type]
   );
 
-  const headerTypeLabel = getHeaderTypeLabel({ variant, innerVariant });
-  const railTypeLabel = headerTypeLabel;
+  const semantics = useMemo(
+    () =>
+      derivePostDetailSemantics({
+        post,
+        type,
+        nip88PollsEnabled,
+        layoutVariant: variant,
+      }),
+    [post, type, nip88PollsEnabled, variant]
+  );
+
+  const useUltra = shouldUseUltraCompactLayout({
+    relationshipType: semantics.relationshipType,
+    innerVariant,
+    layoutVariant: variant,
+    post,
+    nip88PollsEnabled,
+    type,
+  });
+
+  const effectiveHeightMode: PostDetailHeightMode = useUltra
+    ? "ultraCompact"
+    : heightMode;
+
+  const headerTypeLabel = getPrimaryContentTypeLabel({ innerVariant });
+  const contentLabel = headerTypeLabel;
 
   const statusLabel =
     type === "published"
@@ -257,6 +291,130 @@ export default function PostDetailsModal({
     );
   }, [variant, threadSegmentIds, directReplies]);
 
+  const threadEvents = useMemo((): Array<{
+    id?: string;
+    pubkey?: string;
+    content?: string;
+    tags?: string[][];
+  }> => {
+    if (!threadData?.events || !Array.isArray(threadData.events)) return [];
+    return threadData.events as Array<{
+      id?: string;
+      pubkey?: string;
+      content?: string;
+      tags?: string[][];
+    }>;
+  }, [threadData?.events]);
+
+  const { userTags, technicalTags } = useMemo(
+    () => partitionTags(post.tags),
+    [post.tags]
+  );
+
+  const inReplyToRail = useMemo(() => {
+    if (semantics.relationshipType !== "reply") return null;
+    const pid = semantics.parentEventId;
+    const ev = pid ? (threadEvents.find((e) => e.id === pid) ?? null) : null;
+    let snippet: string | null = null;
+    if (ev?.content?.trim()) {
+      const t = ev.content.trim();
+      snippet = t.length > 140 ? `${t.slice(0, 137)}…` : t;
+    }
+    let authorLine: string | null = null;
+    if (ev?.pubkey) {
+      authorLine = getPubkeyDisplayName(ev.pubkey, threadMetadata);
+    } else if (semantics.relatedPubkeyHex) {
+      authorLine = getPubkeyDisplayName(
+        semantics.relatedPubkeyHex,
+        threadMetadata
+      );
+    }
+    return {
+      authorLine,
+      snippet,
+      viewThreadUrl: viewThreadUrl || "",
+    };
+  }, [
+    semantics.relationshipType,
+    semantics.parentEventId,
+    semantics.relatedPubkeyHex,
+    threadEvents,
+    threadMetadata,
+    viewThreadUrl,
+  ]);
+
+  const quotedPostRail = useMemo(() => {
+    if (semantics.relationshipType !== "quote") return null;
+    const qid = semantics.quotedEventId;
+    const ev = qid ? (threadEvents.find((e) => e.id === qid) ?? null) : null;
+    let snippet: string | null = null;
+    if (ev?.content?.trim()) {
+      const t = ev.content.trim();
+      snippet = t.length > 140 ? `${t.slice(0, 137)}…` : t;
+    }
+    let authorLine: string | null = null;
+    if (ev?.pubkey) {
+      authorLine = getPubkeyDisplayName(ev.pubkey, threadMetadata);
+    } else if (semantics.relatedPubkeyHex) {
+      authorLine = getPubkeyDisplayName(
+        semantics.relatedPubkeyHex,
+        threadMetadata
+      );
+    }
+    const openUrl = qid ? nostrUrls.eventUrl(qid) : null;
+    const hasImetaTag = Boolean(ev?.tags?.some((t) => t[0] === "imeta"));
+    const hasInlineImageUrl = Boolean(
+      ev?.content && /https?:\/\/[^\s]+\.(png|jpe?g|gif|webp)/i.test(ev.content)
+    );
+    const hasMediaHint = hasImetaTag || hasInlineImageUrl;
+    return { authorLine, snippet, openUrl, hasMediaHint };
+  }, [
+    semantics.relationshipType,
+    semantics.quotedEventId,
+    semantics.relatedPubkeyHex,
+    threadEvents,
+    threadMetadata,
+    nostrUrls,
+  ]);
+
+  const repostedPostRail = useMemo(() => {
+    if (semantics.relationshipType !== "repost") return null;
+    const rid = semantics.repostedEventId;
+    const ev = rid ? (threadEvents.find((e) => e.id === rid) ?? null) : null;
+    let snippet: string | null = null;
+    if (ev?.content?.trim()) {
+      const t = ev.content.trim();
+      snippet = t.length > 140 ? `${t.slice(0, 137)}…` : t;
+    }
+    let authorLine: string | null = null;
+    if (ev?.pubkey) {
+      authorLine = getPubkeyDisplayName(ev.pubkey, threadMetadata);
+    } else if (semantics.relatedPubkeyHex) {
+      authorLine = getPubkeyDisplayName(
+        semantics.relatedPubkeyHex,
+        threadMetadata
+      );
+    }
+    const openUrl = rid ? nostrUrls.eventUrl(rid) : null;
+    return { authorLine, snippet, openUrl };
+  }, [
+    semantics.relationshipType,
+    semantics.repostedEventId,
+    semantics.relatedPubkeyHex,
+    threadEvents,
+    threadMetadata,
+    nostrUrls,
+  ]);
+
+  const threadContextPosition = useMemo(() => {
+    if (semantics.relationshipType !== "thread_item") return null;
+    const d = threadGroupQuery.data;
+    if (d && d.currentIndex >= 0 && d.total > 0) {
+      return `Post ${d.currentIndex + 1} of ${d.total}`;
+    }
+    return "Thread segment";
+  }, [semantics.relationshipType, threadGroupQuery.data]);
+
   const leftBody = (() => {
     if (variant === "thread") {
       return (
@@ -265,7 +423,7 @@ export default function PostDetailsModal({
           type={type}
           nip88PollsEnabled={nip88PollsEnabled}
           innerVariant={innerVariant}
-          heightMode={heightMode}
+          heightMode={effectiveHeightMode}
           formatDateFn={formatDateWithLocale}
           formatScheduledDateFn={formatScheduledDateWithLocale}
           userTimezone={userTimezone}
@@ -300,7 +458,17 @@ export default function PostDetailsModal({
       <TextPostPreview
         post={post}
         contextLine={contextLine}
-        compact={heightMode === "compact"}
+        compact={
+          effectiveHeightMode === "compact" ||
+          effectiveHeightMode === "ultraCompact"
+        }
+        ultraCompact={effectiveHeightMode === "ultraCompact"}
+        relationshipType={semantics.relationshipType}
+        replyParentHint={inReplyToRail?.authorLine ?? null}
+        quotedSnippet={quotedPostRail?.snippet ?? null}
+        quotedAuthorHint={quotedPostRail?.authorLine ?? null}
+        quotedOpenUrl={quotedPostRail?.openUrl ?? null}
+        repostSourcePreview={repostedPostRail}
       />
     );
   })();
@@ -330,16 +498,27 @@ export default function PostDetailsModal({
         <DialogContent
           hideCloseButton
           className={cn(
-            "bg-card text-card-foreground border-border flex max-h-[90dvh] w-full max-w-[min(1040px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
+            "bg-card text-card-foreground border-border flex max-h-[90dvh] w-full flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl",
+            useUltra
+              ? "max-w-[min(920px,calc(100vw-2rem))]"
+              : "max-w-[min(1040px,calc(100vw-2rem))]"
           )}
         >
-          <PostDetailHeader typeLabel={headerTypeLabel} statusType={type} />
+          <PostDetailHeader
+            typeLabel={headerTypeLabel}
+            statusType={type}
+            relationshipChipLabel={semantics.relationshipChipLabel}
+          />
 
           <div className="flex min-h-0 shrink flex-col overflow-hidden md:flex-row md:items-stretch">
             <div
               className={cn(
                 "border-border min-h-0 min-w-0 grow overflow-y-auto md:w-[70%] md:max-w-[72%] md:border-r",
-                heightMode === "compact" ? "px-5 py-4" : "px-5 py-5 md:px-6"
+                effectiveHeightMode === "ultraCompact"
+                  ? "px-4 py-3 md:px-5"
+                  : effectiveHeightMode === "compact"
+                    ? "px-5 py-4"
+                    : "px-5 py-5 md:px-6"
               )}
             >
               {leftBody}
@@ -369,7 +548,14 @@ export default function PostDetailsModal({
               mediaCount={mediaCount}
               pollOptionCount={pollOptionCount}
               statusLabel={statusLabel}
-              typeLabel={railTypeLabel}
+              contentLabel={contentLabel}
+              relationshipType={semantics.relationshipType}
+              inReplyTo={inReplyToRail}
+              quotedPost={quotedPostRail}
+              repostedPost={repostedPostRail}
+              threadContextPosition={threadContextPosition}
+              userTags={userTags}
+              technicalTags={technicalTags}
             />
           </div>
 
@@ -381,6 +567,25 @@ export default function PostDetailsModal({
               type === "published" && eventId && eventId.length > 0
             )}
             viewThreadUrl={viewThreadUrl}
+            viewThreadLabel={
+              semantics.relationshipType === "reply"
+                ? "View conversation"
+                : "View thread"
+            }
+            secondaryNostrLink={
+              semantics.relationshipType === "quote" && quotedPostRail?.openUrl
+                ? {
+                    label: "Open quoted post",
+                    href: quotedPostRail.openUrl,
+                  }
+                : semantics.relationshipType === "repost" &&
+                    repostedPostRail?.openUrl
+                  ? {
+                      label: "Open reposted post",
+                      href: repostedPostRail.openUrl,
+                    }
+                  : null
+            }
             onEdit={onEdit != null ? () => onEdit(post) : undefined}
             onReschedule={
               onReschedule != null ? () => onReschedule(post) : undefined

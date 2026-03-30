@@ -14,13 +14,13 @@ import {
 } from "~/features/posts/components/constants";
 import type { QueueType } from "~/features/posts/types";
 import {
+  PublishingContentTypeFilter,
   PublishingFilterRow,
   PublishingQueueFilter,
-  PublishingSegmentedControlLinks,
 } from "~/features/posts/ui";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
-import { buildDraftsSegmentLinkItems } from "../utils/drafts-toolbar-segments";
+import { buildDraftsContentTypeFilterItems } from "../utils/drafts-toolbar-segments";
 
 export interface DraftsToolbarProps {
   currentTab: string;
@@ -61,7 +61,7 @@ export function DraftsToolbar({
 
   const queuePathSegment = params["queueType"] ? `/${params["queueType"]}` : "";
 
-  const segmentItems = buildDraftsSegmentLinkItems({
+  const typeFilterItems = buildDraftsContentTypeFilterItems({
     basePath,
     queuePathSegment,
     searchParams,
@@ -118,11 +118,11 @@ export function DraftsToolbar({
   return (
     <PublishingFilterRow
       leading={
-        <PublishingSegmentedControlLinks
+        <PublishingContentTypeFilter
           data-testid="drafts-type-segments"
-          ariaLabel="Draft type"
-          activeId={currentTab}
-          items={segmentItems}
+          value={currentTab}
+          items={typeFilterItems}
+          ariaLabel="Draft content type"
         />
       }
       trailing={

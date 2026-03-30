@@ -1,20 +1,30 @@
-import {
-  UnifiedComposer,
-  type ContestEmbedPublishPayload,
-} from "~/features/posts/composer";
+import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { parseNewPostLoaderData } from "~/features/posts/composer/components/NewPostPage";
+import { UnifiedComposer } from "~/features/posts/composer/components/UnifiedComposer";
 import { useNewPostState } from "~/features/posts/composer/hooks/useNewPostState";
 
 type ContestLoaderLike = Record<string, unknown>;
+
+const contestEmbedHint =
+  "Publishing is controlled from the contest rail — not here.";
 
 export function ContestEmbeddedComposer({
   loaderData,
   composerKey,
   onEmbedPublishSuccess,
+  contestRailLaunchMode,
+  contestRailScheduledFor,
+  onEmbedActionsReady,
 }: {
   loaderData: ContestLoaderLike;
   composerKey: number;
   onEmbedPublishSuccess: (payload: ContestEmbedPublishPayload) => void;
+  contestRailLaunchMode: "now" | "schedule";
+  contestRailScheduledFor: string;
+  onEmbedActionsReady?: (api: {
+    publishNow: () => void;
+    schedulePost: () => void;
+  }) => void;
 }) {
   const parsed = parseNewPostLoaderData(loaderData);
   const {
@@ -24,10 +34,8 @@ export function ContestEmbeddedComposer({
   } = useNewPostState();
 
   return (
-    <div className="border-border bg-muted/20 rounded-lg border p-4">
-      <p className="text-muted-foreground mb-3 text-sm font-medium">
-        Compose and publish your contest entry
-      </p>
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">{contestEmbedHint}</p>
       <UnifiedComposer
         key={composerKey}
         queueTypes={parsed.typedQueueTypes}
@@ -46,9 +54,15 @@ export function ContestEmbeddedComposer({
         formAction="/dashboard/compose?type=post"
         localDraftStorageKey="composer-contest-embedded-draft"
         embedContext="contest"
-        embeddedDensity="contest-lite"
+        embeddedDensity="source-post"
+        contestRailLaunchMode={contestRailLaunchMode}
+        contestRailScheduledFor={
+          contestRailLaunchMode === "schedule" ? contestRailScheduledFor : null
+        }
+        onEmbedActionsReady={onEmbedActionsReady}
         onEmbedPublishSuccess={onEmbedPublishSuccess}
         skipLocalDraftRestore={false}
+        suppressBuiltInDraftPicker
       />
     </div>
   );

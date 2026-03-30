@@ -19,7 +19,7 @@ import type { ContestRankReward } from "./types";
 export interface CreateContestPresetInput {
   name: string;
   title?: string | null;
-  rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+  rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED" | "REPLIES" | "REPOSTS";
   prizeMode: "EQUAL" | "RANKED";
   winnerCount: number;
   equalRewardSats?: number | null;

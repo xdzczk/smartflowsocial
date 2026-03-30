@@ -4,7 +4,6 @@
  */
 
 import { useFetcher } from "@remix-run/react";
-import { Bell, BellOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Label } from "~/components/ui/label";
@@ -17,6 +16,7 @@ import {
   isPushSupported,
   getPushPermission,
 } from "~/features/notifications/push-manager.client";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 
 interface NotificationSettingsProps {
   pushNotificationsEnabled: boolean;
@@ -422,180 +422,156 @@ export function NotificationSettings({
 
   if (hasMounted && !isSupported) {
     return (
-      <div className="border-border bg-card rounded-lg border p-6">
-        <div className="flex items-start gap-4">
-          <BellOff className="text-muted-foreground h-5 w-5 flex-shrink-0" />
-          <div className="flex-1">
-            <h3 className="text-foreground font-semibold">
-              Push Notifications
-            </h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Push notifications are not supported in this browser.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PreferenceSection
+        title="Push notifications"
+        description="Browser push for publish success, failures, and queue runway."
+      >
+        <p className="text-muted-foreground text-sm">
+          Push notifications are not supported in this browser.
+        </p>
+      </PreferenceSection>
     );
   }
 
   return (
-    <div className="border-border bg-card rounded-lg border p-6">
-      <div className="flex items-start gap-4">
-        <Bell className="text-foreground h-5 w-5 flex-shrink-0" />
-        <div className="flex-1 space-y-4">
-          <div>
-            <h3 className="text-foreground font-semibold">
-              Push Notifications
-            </h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Get notified when your posts are published or fail. Enable on each
-              device (e.g. this browser and your phone) to receive notifications
-              everywhere.
+    <PreferenceSection
+      title="Push notifications"
+      description="Get notified when your posts are published or fail. Enable on each device (e.g. this browser and your phone) to receive notifications everywhere."
+    >
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-0.5">
+            <Label htmlFor="push-enabled">Enable Push Notifications</Label>
+            <p className="text-muted-foreground text-xs break-words">
+              {pushConfiguredOnServer === false
+                ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
+                : isChecking
+                  ? "Checking subscription..."
+                  : isSubscribing
+                    ? "Subscribing..."
+                    : isSubscribed
+                      ? "Subscribed and ready"
+                      : permission === "denied"
+                        ? "Permission denied. Please enable in browser settings."
+                        : "Click to subscribe"}
             </p>
           </div>
+          <Switch
+            id="push-enabled"
+            checked={isSubscribed}
+            onCheckedChange={(checked) => {
+              void handleTogglePushNotifications(checked);
+            }}
+            disabled={
+              pushConfiguredOnServer === false ||
+              isChecking ||
+              isSubscribing ||
+              permission === "denied"
+            }
+          />
+        </div>
 
-          <div className="space-y-4">
+        {isSubscribed ? (
+          <>
+            <Separator className="my-4" />
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="push-enabled">Enable Push Notifications</Label>
-                <p className="text-muted-foreground text-xs break-words">
-                  {pushConfiguredOnServer === false
-                    ? "Push notifications are not configured for this server. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
-                    : isChecking
-                      ? "Checking subscription..."
-                      : isSubscribing
-                        ? "Subscribing..."
-                        : isSubscribed
-                          ? "Subscribed and ready"
-                          : permission === "denied"
-                            ? "Permission denied. Please enable in browser settings."
-                            : "Click to subscribe"}
+                <Label htmlFor="notify-success">
+                  Notify on Publish Success
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Get notified when posts are published successfully
                 </p>
               </div>
               <Switch
-                id="push-enabled"
-                checked={isSubscribed}
-                onCheckedChange={(checked) => {
-                  void handleTogglePushNotifications(checked);
-                }}
-                disabled={
-                  pushConfiguredOnServer === false ||
-                  isChecking ||
-                  isSubscribing ||
-                  permission === "denied"
-                }
+                id="notify-success"
+                checked={pushNotifyPublishSuccess}
+                onCheckedChange={handleToggleSuccess}
               />
             </div>
 
-            {isSubscribed ? (
-              <>
-                <Separator className="my-4" />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-0.5">
-                    <Label htmlFor="notify-success">
-                      Notify on Publish Success
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                      Get notified when posts are published successfully
-                    </p>
-                  </div>
-                  <Switch
-                    id="notify-success"
-                    checked={pushNotifyPublishSuccess}
-                    onCheckedChange={handleToggleSuccess}
-                  />
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="notify-failure">
+                  Notify on Publish Failure
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Get notified when posts fail to publish (always actionable)
+                </p>
+              </div>
+              <Switch
+                id="notify-failure"
+                checked={pushNotifyPublishFailure}
+                onCheckedChange={handleToggleFailure}
+              />
+            </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-0.5">
-                    <Label htmlFor="notify-failure">
-                      Notify on Publish Failure
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                      Get notified when posts fail to publish (always
-                      actionable)
-                    </p>
-                  </div>
-                  <Switch
-                    id="notify-failure"
-                    checked={pushNotifyPublishFailure}
-                    onCheckedChange={handleToggleFailure}
-                  />
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="notify-include-preview">
+                  Include post preview in notifications
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Show a short snippet of the post or article in publish success
+                  notifications
+                </p>
+              </div>
+              <Switch
+                id="notify-include-preview"
+                checked={pushNotifyIncludePreview}
+                onCheckedChange={handleToggleIncludePreview}
+              />
+            </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-0.5">
-                    <Label htmlFor="notify-include-preview">
-                      Include post preview in notifications
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                      Show a short snippet of the post or article in publish
-                      success notifications
-                    </p>
-                  </div>
-                  <Switch
-                    id="notify-include-preview"
-                    checked={pushNotifyIncludePreview}
-                    onCheckedChange={handleToggleIncludePreview}
-                  />
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="notify-runway-low">
+                  Notify when Queue Runway is Low
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Get notified when your scheduled queue has few days left
+                </p>
+              </div>
+              <Switch
+                id="notify-runway-low"
+                checked={pushNotifyRunwayLow}
+                onCheckedChange={handleToggleRunwayLow}
+              />
+            </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-0.5">
-                    <Label htmlFor="notify-runway-low">
-                      Notify when Queue Runway is Low
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                      Get notified when your scheduled queue has few days left
-                    </p>
-                  </div>
-                  <Switch
-                    id="notify-runway-low"
-                    checked={pushNotifyRunwayLow}
-                    onCheckedChange={handleToggleRunwayLow}
-                  />
+            {pushNotifyRunwayLow ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <div className="min-w-0 space-y-0.5">
+                  <Label htmlFor="runway-notify-below-days">
+                    Notify when runway is below (days)
+                  </Label>
+                  <p className="text-muted-foreground text-xs">
+                    Use dashboard red threshold if left empty
+                  </p>
                 </div>
-
-                {pushNotifyRunwayLow ? (
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <div className="min-w-0 space-y-0.5">
-                      <Label htmlFor="runway-notify-below-days">
-                        Notify when runway is below (days)
-                      </Label>
-                      <p className="text-muted-foreground text-xs">
-                        Use dashboard red threshold if left empty
-                      </p>
-                    </div>
-                    <input
-                      id="runway-notify-below-days"
-                      type="number"
-                      min={0}
-                      max={365}
-                      value={runwayNotifyBelowDays ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const n = v === "" ? null : parseInt(v, 10);
-                        if (
-                          v === "" ||
-                          (Number.isInteger(n) &&
-                            n !== null &&
-                            n >= 0 &&
-                            n <= 365)
-                        ) {
-                          handleRunwayNotifyBelowDaysChange(
-                            v === "" ? null : n
-                          );
-                        }
-                      }}
-                      className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm"
-                    />
-                  </div>
-                ) : null}
-              </>
+                <input
+                  id="runway-notify-below-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={runwayNotifyBelowDays ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const n = v === "" ? null : parseInt(v, 10);
+                    if (
+                      v === "" ||
+                      (Number.isInteger(n) && n !== null && n >= 0 && n <= 365)
+                    ) {
+                      handleRunwayNotifyBelowDaysChange(v === "" ? null : n);
+                    }
+                  }}
+                  className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm"
+                />
+              </div>
             ) : null}
-          </div>
-        </div>
+          </>
+        ) : null}
       </div>
-    </div>
+    </PreferenceSection>
   );
 }

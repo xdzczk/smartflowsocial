@@ -295,11 +295,11 @@ export function SubscriptionSettings({
   }, [invoiceIsPaid]);
 
   return (
-    <div className="bg-card rounded-lg border p-6">
+    <div className="border-border/80 bg-muted/15 rounded-lg border px-5 py-5 sm:px-6 sm:py-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold">Subscription Management</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          View your current plan and manage your subscription
+        <h2 className="text-lg font-semibold tracking-tight">Subscription</h2>
+        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          Current plan, renewals, and payment history.
         </p>
       </div>
 

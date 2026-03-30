@@ -359,6 +359,14 @@ function emptyScheduledPostsInfiniteResult(
     totalPostsCount: 0,
     totalRepostsCount: 0,
     totalLongformCount: 0,
+    scheduledContestLaunches: [] as Array<{
+      id: string;
+      contestId: string;
+      title: string;
+      scheduledFor: string | null;
+      sourceMode: string;
+      contestActivationStatus: string;
+    }>,
     isLoading,
     isFetchingNextPage,
     hasNextPage: false,
@@ -569,6 +577,23 @@ export function useScheduledPostsInfiniteData() {
   const totalContentCount =
     serverTotalContentCount ?? allPosts.length + allLongformPosts.length;
 
+  const scheduledContestLaunchesRaw =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "scheduledContestLaunches" in firstPage
+      ? (firstPage as Record<string, unknown>)["scheduledContestLaunches"]
+      : undefined;
+  const scheduledContestLaunches = Array.isArray(scheduledContestLaunchesRaw)
+    ? (scheduledContestLaunchesRaw as Array<{
+        id: string;
+        contestId: string;
+        title: string;
+        scheduledFor: string | null;
+        sourceMode: string;
+        contestActivationStatus: string;
+      }>)
+    : [];
+
   return {
     posts: allPosts,
     longformPosts: allLongformPosts,
@@ -581,6 +606,7 @@ export function useScheduledPostsInfiniteData() {
     totalRepostsCount,
     totalLongformCount,
     totalContentCount,
+    scheduledContestLaunches,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

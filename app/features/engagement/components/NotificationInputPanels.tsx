@@ -526,7 +526,7 @@ export function RepostEngagementTray({
         <Button
           type="button"
           size="sm"
-          disabled={publishMode === "now" ? isSubmitting : null}
+          disabled={publishMode === "now" ? isSubmitting : false}
           onClick={() => handlePrimary()}
         >
           {showSpinner ? POSTING_LABEL : primaryLabel}

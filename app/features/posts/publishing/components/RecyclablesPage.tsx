@@ -179,6 +179,7 @@ export default function RecyclablesPage() {
     searchTerm: _searchTerm,
     selectedPost,
     selectedPosts,
+    setSelectedPosts,
     toast,
     filteredPosts,
     requestSort,
@@ -225,6 +226,7 @@ export default function RecyclablesPage() {
 
       <RecyclablesBulkActions
         selectedCount={selectedPosts.size}
+        onClearSelection={() => setSelectedPosts(new Set())}
         onBulkRecycle={handleBulkRepost}
         recycleFetcher={repostFetcher}
       />

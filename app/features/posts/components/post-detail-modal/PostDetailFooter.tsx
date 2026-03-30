@@ -8,6 +8,8 @@ export function PostDetailFooterBar({
   openOnNostrUrl,
   showViewThread,
   viewThreadUrl,
+  viewThreadLabel = "View thread",
+  secondaryNostrLink,
   onEdit,
   onReschedule,
   deleteForm,
@@ -17,6 +19,8 @@ export function PostDetailFooterBar({
   openOnNostrUrl: string | null;
   showViewThread: boolean;
   viewThreadUrl: string;
+  viewThreadLabel?: string;
+  secondaryNostrLink?: { label: string; href: string } | null;
   onEdit?: () => void;
   onReschedule?: () => void;
   deleteForm: React.ReactNode;
@@ -36,15 +40,27 @@ export function PostDetailFooterBar({
             </Link>
           </Button>
         ) : null}
+        {type === "published" && secondaryNostrLink ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link
+              to={secondaryNostrLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${secondaryNostrLink.label} (opens in new tab)`}
+            >
+              {secondaryNostrLink.label}
+            </Link>
+          </Button>
+        ) : null}
         {type === "published" && showViewThread ? (
           <Button variant="outline" size="sm" asChild>
             <Link
               to={viewThreadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="View thread (opens in new tab)"
+              aria-label={`${viewThreadLabel} (opens in new tab)`}
             >
-              View thread
+              {viewThreadLabel}
             </Link>
           </Button>
         ) : null}

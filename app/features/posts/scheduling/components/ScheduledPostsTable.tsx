@@ -32,19 +32,14 @@ import {
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "~/features/posts/components/constants";
 import { ContentListCard } from "~/features/posts/components/ContentListCard";
+import { QueueStatusChip } from "~/features/posts/components/publishing-suite";
 import {
   PUBLISHING_DATETIME_CELL_CLASS,
   PUBLISHING_LIST_SURFACE_CLASS,
   PUBLISHING_TABLE_ROW_CLASS,
 } from "~/features/posts/components/publishing-suite/constants";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
-import {
-  getQueueColor,
-  getQueueColorBundle,
-  QUEUE_PILL_OPACITY_CLASS,
-  QUEUE_PILL_SHAPE_CLASS,
-} from "~/features/posts/queue-colors";
-import type { PostData } from "~/features/posts/types";
+import type { CombinedContent, PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -396,48 +391,18 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3 text-center">
-                      {post.queueType?.colorToken
-                        ? (() => {
-                            const bundle = getQueueColorBundle(
-                              post.queueType.colorToken
-                            );
-                            return (
-                              <div
-                                className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS}`}
-                                style={{
-                                  backgroundColor: bundle.surface,
-                                  color: bundle.accent,
-                                  borderColor: bundle.accent,
-                                }}
-                              >
-                                {post.queueType.name}
-                              </div>
-                            );
-                          })()
-                        : (() => {
-                            const colors = getQueueColor(
-                              post.queueType?.name ?? "unassigned",
-                              post.queueType?.colorToken
-                            );
-                            return (
-                              <div
-                                className={`${QUEUE_PILL_SHAPE_CLASS} ${QUEUE_PILL_OPACITY_CLASS} ${colors.bg} ${colors.text} ${colors.border}`}
-                              >
-                                {post.queueType?.name ?? "unassigned"}
-                              </div>
-                            );
-                          })()}
+                      <div className="flex justify-center">
+                        <QueueStatusChip
+                          queueType={
+                            post.queueType as CombinedContent["queueType"]
+                          }
+                        />
+                      </div>
                     </td>
                     <td className="p-3 text-center">
-                      <div
-                        className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
-                          post.signedEvent
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
+                      <span className="text-muted-foreground text-xs font-medium">
                         {post.signedEvent ? "Signed" : "Scheduled"}
-                      </div>
+                      </span>
                     </td>
                     <td className="p-3 text-center">
                       <DropdownMenu>

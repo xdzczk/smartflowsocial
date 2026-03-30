@@ -2,26 +2,26 @@ import { Link, useFetcher, useNavigate, useNavigation } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  ActionRail,
   ActionRailActions,
-  ActionRailLabel,
-  ActionRailNotice,
-  ActionRailOutcome,
-  ActionRailRow,
-  ActionRailSection,
-  RAIL_MAJOR_DIVIDE,
   RAIL_SECONDARY_ACTION,
-  RAIL_STACK_ROWS,
-  RAIL_SUMMARY_TO_FEEDBACK,
 } from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
-import { PublishedPostPickerGrid } from "~/features/campaign-ui";
+import {
+  buildGiveawayOutcomeLine,
+  CampaignActionRail,
+  CampaignSectionHeader,
+  ChoiceTileGroup,
+  CompactStatusMessage,
+  PublishedPostPickerGrid,
+  RewardSummaryLine,
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
 import {
   computeFinalizationFeeSats,
   getFinalizationFeeRateBps,
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { PlanType } from "~/features/payments/types";
-import { cn } from "~/lib/utils";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
@@ -180,7 +180,7 @@ function GiveawayNewBuilderStickySummary({
     rewardMode === "simple"
       ? simpleSats > 0
         ? `${simpleSats.toLocaleString()} sats × ${winnerCount} → ${(simpleSats * winnerCount).toLocaleString()} max`
-        : "Selection only (no sats)"
+        : "Selection-only (no payout)"
       : "Advanced per-type";
 
   const selectionValue = isFollowGraphScope
@@ -197,19 +197,29 @@ function GiveawayNewBuilderStickySummary({
     missingLines.push("Select at least one entry method.");
   }
 
-  const warnLines: string[] = [];
-  if (rewardMode === "simple" && simpleSats <= 0) {
-    warnLines.push("No sats pledged — selection-only giveaway.");
-  }
+  const cautionLines: string[] = [];
   if (winnerCount > 50) {
-    warnLines.push("Winner count is high — confirm your plan cap.");
+    cautionLines.push("Winner count is high — confirm your plan cap.");
   }
 
+  const blockerLines = [...missingLines, ...cautionLines];
+  const blocker =
+    blockerLines.length > 0
+      ? {
+          variant: "warning" as const,
+          title: "Before you continue",
+          lines: blockerLines,
+        }
+      : null;
+
   const serverErr = actionError ?? fetcherError;
-  const outcomeLine =
-    plannedPayoutForFee != null && plannedPayoutForFee > 0
-      ? `Up to ${plannedPayoutForFee.toLocaleString()} sats across ${winnerCount} winner${winnerCount !== 1 ? "s" : ""}`
-      : `Selection-focused · ${winnerCount} winner${winnerCount !== 1 ? "s" : ""}`;
+  const outcomeLine = buildGiveawayOutcomeLine({
+    plannedPayoutSats:
+      plannedPayoutForFee != null && plannedPayoutForFee > 0
+        ? plannedPayoutForFee
+        : null,
+    winnerCount,
+  });
 
   const plannedPayoutDisplay =
     rewardMode === "advanced"
@@ -242,9 +252,32 @@ function GiveawayNewBuilderStickySummary({
   }
 
   return (
-    <ActionRail
+    <CampaignActionRail
       ariaLabel="Giveaway summary"
       className="mt-10 self-start lg:mt-0"
+      snapshotLabel="Snapshot"
+      snapshotRows={[
+        { label: "Scope", value: asideScopeLine(scopeType, periodMode) },
+        {
+          label: "Entry",
+          value: entryValue,
+          placeholder: !isFollowGraphScope ? selectedTypes.length === 0 : false,
+        },
+        { label: "Winners", value: `${winnerCount} total` },
+        { label: "Rewards", value: rewardsValue },
+        { label: "Selection", value: selectionValue },
+        { label: "Plan", value: planDisplayName },
+      ]}
+      financialLabel="Payout & fees"
+      financialRows={[
+        { label: "Planned payout", value: plannedPayoutDisplay },
+        { label: "Finalization fee", value: finalizationDisplay },
+        { label: "Due at lock", value: dueAtLockDisplay },
+      ]}
+      blocker={blocker}
+      serverError={serverErr ?? null}
+      outcomeHeadline="Ready to continue"
+      outcomeLine={outcomeLine}
       footer={
         <ActionRailActions
           secondaryButton={
@@ -265,90 +298,14 @@ function GiveawayNewBuilderStickySummary({
               size="sm"
               variant="default"
               disabled={isBusy}
-              className={cn(
-                "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
-                "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
+              className="h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none"
             >
               Create draft & continue to preview
             </Button>
           }
         />
       }
-    >
-      <div className={cn("flex flex-col text-xs", RAIL_MAJOR_DIVIDE)}>
-        <ActionRailSection>
-          <ActionRailLabel>Giveaway options</ActionRailLabel>
-          <div className={RAIL_STACK_ROWS}>
-            <ActionRailRow
-              label="Scope"
-              value={asideScopeLine(scopeType, periodMode)}
-            />
-            <ActionRailRow
-              label="Entry methods"
-              value={entryValue}
-              placeholder={
-                !isFollowGraphScope ? selectedTypes.length === 0 : false
-              }
-            />
-            <ActionRailRow label="Winners" value={`${winnerCount} total`} />
-            <ActionRailRow label="Rewards" value={rewardsValue} />
-            <ActionRailRow label="Selection" value={selectionValue} />
-            <ActionRailRow label="Plan" value={planDisplayName} />
-          </div>
-        </ActionRailSection>
-
-        <ActionRailSection>
-          <ActionRailLabel>Giveaway summary</ActionRailLabel>
-          <div className={RAIL_STACK_ROWS}>
-            <ActionRailRow
-              label="Planned payout"
-              value={plannedPayoutDisplay}
-            />
-            <ActionRailRow
-              label="Finalization fee"
-              value={finalizationDisplay}
-            />
-            <ActionRailRow label="Due at lock" value={dueAtLockDisplay} />
-          </div>
-        </ActionRailSection>
-
-        <ActionRailSection className="space-y-2">
-          {missingLines.length > 0 ? (
-            <ActionRailNotice
-              variant="warning"
-              title="Missing requirements"
-              lines={missingLines}
-              className={RAIL_SUMMARY_TO_FEEDBACK}
-            />
-          ) : null}
-          {warnLines.length > 0 ? (
-            <ActionRailNotice
-              variant="warning"
-              title="Before you submit"
-              lines={warnLines}
-              className={
-                missingLines.length > 0 ? RAIL_SUMMARY_TO_FEEDBACK : undefined
-              }
-            />
-          ) : null}
-          {serverErr ? (
-            <ActionRailNotice
-              variant="error"
-              title="Could not save"
-              lines={[serverErr]}
-              className={RAIL_SUMMARY_TO_FEEDBACK}
-            />
-          ) : null}
-
-          <ActionRailOutcome
-            className={RAIL_SUMMARY_TO_FEEDBACK}
-            headline="Ready to continue"
-            outcomeLine={outcomeLine}
-          />
-        </ActionRailSection>
-      </div>
-    </ActionRail>
+    />
   );
 }
 /* eslint-enable sonarjs/cognitive-complexity */
@@ -358,43 +315,55 @@ function GiveawayNewBuilderPresetTemplates({
   presets,
 }: Pick<GiveawayNewBuilderProps, "planLimits" | "presets">) {
   return (
-    <div className="border-border bg-card rounded-lg border p-6">
-      <h2 className="text-foreground mb-2 text-sm font-semibold">
-        Or use a template
+    <section
+      className="border-border/60 space-y-3 border-t pt-10"
+      aria-labelledby="preset-templates-heading"
+    >
+      <h2
+        id="preset-templates-heading"
+        className="text-muted-foreground text-sm font-medium"
+      >
+        Start from preset
       </h2>
       {!planLimits.canUsePresets ? (
         <p className="text-muted-foreground text-sm">
-          Upgrade your plan to save and use giveaway templates.
+          Upgrade to save and use templates.
         </p>
       ) : presets.length > 0 ? (
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2">
           {presets.map((p) => (
-            <form
-              key={p.id}
-              method="post"
-              className="border-border bg-muted/20 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-            >
-              <input type="hidden" name="intent" value="createFromPreset" />
-              <input type="hidden" name="presetId" value={p.id} />
-              <div>
-                <p className="text-foreground font-medium">{p.name}</p>
-                <p className="text-muted-foreground text-xs">
-                  {p.scopeType} · {p.winnerCount} winner
-                  {p.winnerCount !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <Button type="submit" variant="secondary" size="sm">
-                Create from template
-              </Button>
-            </form>
+            <li key={p.id}>
+              <form
+                method="post"
+                className="flex flex-wrap items-center justify-between gap-2 py-1"
+              >
+                <input type="hidden" name="intent" value="createFromPreset" />
+                <input type="hidden" name="presetId" value={p.id} />
+                <span className="text-foreground text-sm">
+                  {p.name}{" "}
+                  <span className="text-muted-foreground">
+                    · {p.scopeType} · {p.winnerCount} winner
+                    {p.winnerCount !== 1 ? "s" : ""}
+                  </span>
+                </span>
+                <Button
+                  type="submit"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                >
+                  Use
+                </Button>
+              </form>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <p className="text-muted-foreground text-sm">
-          No templates yet. Save a preset from a giveaway detail page.
+          No presets yet — save one from a giveaway detail page.
         </p>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -409,23 +378,28 @@ function GiveawayNewBuilderSelection({
 }) {
   return (
     <section className="space-y-4" aria-labelledby="sel-heading">
-      <h2 id="sel-heading" className="text-foreground text-lg font-semibold">
-        4. How should winners be chosen?
-      </h2>
+      <CampaignSectionHeader
+        id="sel-heading"
+        title="4. Winner selection"
+        description={
+          isFollowGraphScope
+            ? "Uniform random from your follower or following pool after filters."
+            : "How entries map to winners after filters."
+        }
+      />
       {isFollowGraphScope ? (
         <>
           <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
-          <p className="text-muted-foreground max-w-prose text-sm">
-            Winners are picked uniformly at random from eligible accounts in
-            your follower or following list (after filters). This is not based
-            on note reactions or zaps.
-          </p>
+          <CompactStatusMessage variant="info">
+            One chance per eligible account. Pool is your follow graph at lock
+            time.
+          </CompactStatusMessage>
         </>
       ) : (
-        <div className="max-w-md">
+        <div className="max-w-md space-y-1">
           <label
             htmlFor="selectionMode"
-            className="text-muted-foreground text-sm"
+            className="text-muted-foreground text-sm font-medium"
           >
             Selection mode
           </label>
@@ -440,25 +414,22 @@ function GiveawayNewBuilderSelection({
                   : "UNIQUE_USER"
               );
             }}
-            className="border-border bg-background mt-1 block w-full rounded-md border px-2 py-2 text-sm"
+            className={campaignSelectClassNames}
           >
             <option value="UNIQUE_USER">
-              Unique user — one entry per eligible pubkey
+              Unique user (one entry per pubkey)
             </option>
             <option value="WEIGHTED_BY_ENGAGEMENT">
-              Weighted by engagement — more activity, higher chance
+              Weighted by engagement
             </option>
           </select>
         </div>
       )}
-      <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/10 p-4 text-sm">
-        <p className="text-foreground font-medium">Fairness</p>
-        <p className="text-muted-foreground mt-2">
-          {isFollowGraphScope
-            ? "The eligible pool is built from your follow graph at lock time. Each eligible account has one chance to win."
-            : "Winners are picked at random from eligible participants after filters. In unique-user mode each eligible account gets one entry. Locked giveaways cannot be edited — preview first, then lock when you’re satisfied."}
-        </p>
-      </div>
+      <CompactStatusMessage variant="info">
+        {isFollowGraphScope
+          ? "Preview winners before lock. Locked giveaways cannot be edited."
+          : "Random draw from eligible entries. Preview before lock — locked giveaways cannot be edited."}
+      </CompactStatusMessage>
     </section>
   );
 }
@@ -592,8 +563,7 @@ export function GiveawayNewBuilder({
               New giveaway
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Build your campaign in steps. You’ll create a draft, then preview
-              winners before locking or paying.
+              Draft first, preview winners, then lock or pay.
             </p>
             <label htmlFor="giveaway-name" className="sr-only">
               Optional title
@@ -603,47 +573,31 @@ export function GiveawayNewBuilder({
               name="name"
               type="text"
               placeholder="Optional giveaway title"
-              className="border-border bg-background mt-4 w-full max-w-md rounded-md border px-3 py-2 text-sm"
+              className={`${campaignFieldClassNames} mt-4 max-w-md`}
             />
           </div>
 
           <section className="space-y-4" aria-labelledby="scope-heading">
-            <h2
+            <CampaignSectionHeader
               id="scope-heading"
-              className="text-foreground text-lg font-semibold"
-            >
-              1. What should this giveaway reward?
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {SCOPE_TYPE_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`border-border bg-card hover:border-primary/40 cursor-pointer rounded-lg border p-4 transition-colors ${
-                    scopeType === opt.value
-                      ? "border-primary ring-primary/20 ring-2"
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="scopeType"
-                    value={opt.value}
-                    checked={scopeType === opt.value}
-                    onChange={() => {
-                      setScopeType(opt.value);
-                    }}
-                    className="sr-only"
-                  />
-                  <p className="text-foreground font-medium">{opt.title}</p>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {opt.desc}
-                  </p>
-                </label>
-              ))}
-            </div>
+              title="1. Reward scope"
+              description="Where entries come from for this giveaway."
+            />
+            <ChoiceTileGroup
+              name="scopeType"
+              value={scopeType}
+              onChange={(v) => {
+                setScopeType(v);
+              }}
+              options={SCOPE_TYPE_OPTIONS.map((o) => ({
+                value: o.value,
+                title: o.title,
+                description: o.desc,
+              }))}
+            />
 
             {scopeType === "PERIOD" ? (
-              <div className="border-border bg-muted/20 space-y-3 rounded-lg border p-4">
+              <div className="border-border/60 space-y-3 border-t pt-4">
                 <div className="flex flex-wrap gap-4">
                   <label className="text-foreground flex items-center gap-2 text-sm">
                     <input
@@ -679,7 +633,7 @@ export function GiveawayNewBuilder({
                     <select
                       id="periodDays"
                       name="periodDays"
-                      className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+                      className={`${campaignSelectClassNames} w-auto min-w-[140px]`}
                       defaultValue="7"
                     >
                       {[7, 14, 30].map((d) => (
@@ -699,7 +653,7 @@ export function GiveawayNewBuilder({
                         <select
                           id="queueId"
                           name="queueId"
-                          className="border-border bg-background min-w-[160px] rounded-md border px-2 py-1 text-sm"
+                          className={`${campaignSelectClassNames} min-w-[160px]`}
                         >
                           <option value="">All queues</option>
                           {queueTypes.map((q) => (
@@ -724,7 +678,7 @@ export function GiveawayNewBuilder({
                         id="periodFrom"
                         name="periodFrom"
                         type="date"
-                        className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+                        className={`${campaignFieldClassNames} w-auto`}
                       />
                     </div>
                     <div>
@@ -738,7 +692,7 @@ export function GiveawayNewBuilder({
                         id="periodTo"
                         name="periodTo"
                         type="date"
-                        className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+                        className={`${campaignFieldClassNames} w-auto`}
                       />
                     </div>
                     {planLimits.canUseQueueScope ? (
@@ -752,7 +706,7 @@ export function GiveawayNewBuilder({
                         <select
                           id="queueId2"
                           name="queueId"
-                          className="border-border bg-background min-w-[160px] rounded-md border px-2 py-1 text-sm"
+                          className={`${campaignSelectClassNames} min-w-[160px]`}
                         >
                           <option value="">All queues</option>
                           {queueTypes.map((q) => (
@@ -769,7 +723,7 @@ export function GiveawayNewBuilder({
             ) : null}
 
             {scopeType === "SINGLE_POST" ? (
-              <div className="border-border bg-muted/20 space-y-2 rounded-lg border p-4">
+              <div className="border-border/60 space-y-2 border-t pt-4">
                 <input
                   type="hidden"
                   name="postId"
@@ -787,25 +741,23 @@ export function GiveawayNewBuilder({
             ) : null}
 
             {scopeType === "FOLLOWERS" || scopeType === "FOLLOWING" ? (
-              <p className="text-muted-foreground border-border bg-muted/20 rounded-lg border px-4 py-3 text-sm">
-                <span className="text-foreground font-medium">Snapshot: </span>
-                Eligible accounts use your follow graph at the moment you lock
-                winners — not a frozen list from now.
-              </p>
+              <CompactStatusMessage variant="info">
+                Eligible accounts follow your graph at lock time (not frozen
+                now).
+              </CompactStatusMessage>
             ) : null}
           </section>
 
           <section className="space-y-4" aria-labelledby="elig-heading">
-            <h2
+            <CampaignSectionHeader
               id="elig-heading"
-              className="text-foreground text-lg font-semibold"
-            >
-              2. Who is eligible?
-            </h2>
+              title="2. Eligibility & entry"
+              description="What counts as an entry, and who can be excluded."
+            />
             {canPickEngagementEntryTypes ? (
               <>
-                <p className="text-muted-foreground text-sm">
-                  Pick engagement types that count as entries.
+                <p className="text-foreground text-sm font-medium">
+                  Entry methods
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {ENGAGEMENT_META.map((m) => (
@@ -839,10 +791,8 @@ export function GiveawayNewBuilder({
               </>
             ) : isFollowGraphScope ? (
               <p className="text-muted-foreground text-sm">
-                Winners are picked at random from eligible accounts in your
-                follower or following list (not from note reactions or zaps).
-                The list is snapshotted when you lock. Use filters below to
-                exclude accounts from the pool.
+                Random from your follower or following list at lock (not from
+                note engagement). Use exclusions below to narrow the pool.
               </p>
             ) : (
               <>
@@ -862,8 +812,8 @@ export function GiveawayNewBuilder({
               </>
             )}
 
-            <div className="space-y-3">
-              <p className="text-foreground text-sm font-medium">Exclude</p>
+            <div className="border-border/60 space-y-2 border-t pt-4">
+              <p className="text-foreground text-sm font-medium">Exclusions</p>
               <div className="flex flex-wrap gap-4">
                 <label className="text-foreground flex items-center gap-2 text-sm">
                   <input type="checkbox" name="excludeMuted" value="true" />
@@ -888,11 +838,11 @@ export function GiveawayNewBuilder({
               </div>
             </div>
 
-            <div className="border-border space-y-2 rounded-lg border p-4">
-              <p className="text-foreground text-sm font-medium">
+            <details className="border-border/60 group border-t pt-4">
+              <summary className="text-muted-foreground marker:text-muted-foreground cursor-pointer text-sm font-medium">
                 Advanced fairness (optional)
-              </p>
-              <div className="flex flex-wrap gap-4">
+              </summary>
+              <div className="mt-3 flex flex-wrap gap-4">
                 <div>
                   <label
                     htmlFor="minAccountAgeDays"
@@ -906,7 +856,7 @@ export function GiveawayNewBuilder({
                     type="number"
                     min={0}
                     placeholder="—"
-                    className="border-border bg-background mt-1 block w-28 rounded-md border px-2 py-1 text-sm"
+                    className={`${campaignFieldClassNames} mt-1 block w-28`}
                   />
                 </div>
                 <div>
@@ -922,51 +872,60 @@ export function GiveawayNewBuilder({
                     type="number"
                     min={0}
                     placeholder="—"
-                    className="border-border bg-background mt-1 block w-28 rounded-md border px-2 py-1 text-sm"
+                    className={`${campaignFieldClassNames} mt-1 block w-28`}
                   />
                 </div>
               </div>
-            </div>
+            </details>
           </section>
 
           <section className="space-y-4" aria-labelledby="reward-heading">
-            <h2
+            <CampaignSectionHeader
               id="reward-heading"
-              className="text-foreground text-lg font-semibold"
-            >
-              3. How should rewards be distributed?
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant={
-                  effectiveRewardMode === "simple" ? "default" : "outline"
-                }
-                size="sm"
-                onClick={() => {
-                  setRewardMode("simple");
-                }}
-              >
-                Simple payout
-              </Button>
-              {!isFollowGraphScope ? (
-                <Button
+              title="3. Reward distribution"
+              description="Payout shape and amounts."
+            />
+            {!isFollowGraphScope ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
                   type="button"
-                  variant={
-                    effectiveRewardMode === "advanced" ? "default" : "outline"
+                  onClick={() => {
+                    setRewardMode("simple");
+                  }}
+                  className={
+                    rewardMode === "simple"
+                      ? "border-primary bg-primary/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      : "border-border bg-card hover:border-primary/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
                   }
-                  size="sm"
+                >
+                  <p className="text-foreground font-medium">Simple payout</p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Same sats per winner.
+                  </p>
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setRewardMode("advanced");
                   }}
+                  className={
+                    rewardMode === "advanced"
+                      ? "border-primary bg-primary/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      : "border-border bg-card hover:border-primary/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                  }
                 >
-                  Customize by engagement type
-                </Button>
-              ) : null}
-            </div>
+                  <p className="text-foreground font-medium">
+                    Customize by entry type
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Per-type winners and sats.
+                  </p>
+                </button>
+              </div>
+            ) : null}
 
             {effectiveRewardMode === "simple" ? (
-              <div className="border-border bg-muted/20 flex flex-wrap gap-6 rounded-lg border p-4">
+              <div className="border-border/60 flex flex-wrap gap-6 border-t pt-4">
                 <div>
                   <label
                     htmlFor="winnerCount"
@@ -989,7 +948,7 @@ export function GiveawayNewBuilder({
                         )
                       );
                     }}
-                    className="border-border bg-background mt-1 block w-24 rounded-md border px-2 py-1 text-sm"
+                    className={`${campaignFieldClassNames} mt-1 block w-24`}
                   />
                 </div>
                 <div>
@@ -1010,22 +969,21 @@ export function GiveawayNewBuilder({
                         Math.max(0, parseInt(e.target.value, 10) || 0)
                       );
                     }}
-                    className="border-border bg-background mt-1 block w-28 rounded-md border px-2 py-1 text-sm"
+                    className={`${campaignFieldClassNames} mt-1 block w-28`}
                   />
                 </div>
-                <div className="text-muted-foreground flex flex-col justify-end text-sm">
-                  <span>
+                <div className="text-muted-foreground flex min-w-[12rem] flex-col justify-end text-sm">
+                  <RewardSummaryLine>
                     Max payout:{" "}
                     <span className="text-foreground font-semibold tabular-nums">
                       {(winnerCount * simpleSats).toLocaleString()}
                     </span>{" "}
                     sats
-                  </span>
+                  </RewardSummaryLine>
                   {simpleSats === 0 ? (
-                    <span className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                      No payout amount set — this giveaway will only select
-                      winners.
-                    </span>
+                    <CompactStatusMessage variant="info" className="mt-2">
+                      Selection-only giveaway. No payout configured.
+                    </CompactStatusMessage>
                   ) : null}
                 </div>
               </div>
@@ -1036,7 +994,7 @@ export function GiveawayNewBuilder({
                   stay within your plan limit ({planLimits.maxWinnerCount} max).
                 </p>
                 <input type="hidden" name="winnerCount" value="1" />
-                <div className="border-border bg-muted/20 grid max-w-xl gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[auto_1fr_1fr]">
+                <div className="border-border/60 grid max-w-xl gap-2 border-t pt-4 text-sm sm:grid-cols-[auto_1fr_1fr]">
                   <span className="text-muted-foreground font-medium">
                     Type
                   </span>
@@ -1058,14 +1016,14 @@ export function GiveawayNewBuilder({
                         min={0}
                         max={planLimits.maxWinnerCount}
                         defaultValue={0}
-                        className="border-border bg-background w-20 rounded-md border px-2 py-1"
+                        className={`${campaignFieldClassNames} w-20`}
                       />
                       <input
                         name={`engagementSats_${opt.value}`}
                         type="number"
                         min={0}
                         defaultValue={0}
-                        className="border-border bg-background w-24 rounded-md border px-2 py-1"
+                        className={`${campaignFieldClassNames} w-24`}
                       />
                     </div>
                   ))}

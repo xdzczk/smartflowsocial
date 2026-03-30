@@ -1,16 +1,10 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 
 import { SearchableTimezoneSelector } from "~/components/settings/SearchableTimezoneSelector";
-import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 import { updateTimezoneClientSchema } from "~/lib/validation";
 import {
   useZodForm,
@@ -29,6 +23,7 @@ interface FetcherData {
 export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
   const revalidator = useRevalidator();
+  const prevFetcherState = useRef(fetcher.state);
   const form = useZodForm(updateTimezoneClientSchema, {
     defaultValues: {
       timezone: timezone ?? "Etc/UTC",
@@ -36,72 +31,60 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   });
 
   const isSubmitting = fetcher.state === "submitting";
-  const hasChanged = form.watch("timezone") !== timezone;
 
-  // Revalidate root loader after successful save to update user data across the app
   useEffect(() => {
-    if (fetcher.data?.success) {
-      // Revalidate root loader to refresh user data (including timezone)
+    form.reset({ timezone: timezone ?? "Etc/UTC" });
+  }, [timezone, form]);
+
+  useEffect(() => {
+    if (
+      prevFetcherState.current === "submitting" &&
+      fetcher.state === "idle" &&
+      fetcher.data?.success
+    ) {
+      toast.success("Timezone saved");
       revalidator.revalidate();
     }
-  }, [fetcher.data?.success, revalidator]);
+    if (
+      prevFetcherState.current === "submitting" &&
+      fetcher.state === "idle" &&
+      fetcher.data?.error
+    ) {
+      toast.error(fetcher.data.error);
+    }
+    prevFetcherState.current = fetcher.state;
+  }, [fetcher.state, fetcher.data, revalidator]);
 
-  const onSubmit = form.handleSubmit((data) => {
-    const formData = formDataToFormData(data, "update_timezone");
+  const submitTimezone = (value: string) => {
+    const parsed = updateTimezoneClientSchema.safeParse({ timezone: value });
+    if (!parsed.success) return;
+    if (parsed.data.timezone === (timezone ?? "Etc/UTC")) return;
+    const formData = formDataToFormData(parsed.data, "update_timezone");
     fetcher.submit(formData, { method: "post" });
-  });
+  };
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="p-4 sm:p-6">
-        <CardTitle>Timezone</CardTitle>
-        <CardDescription>
-          Set your timezone for scheduling posts
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSubmit(e);
+    <PreferenceSection
+      title="Timezone"
+      description="Used for scheduling posts and calendar views."
+    >
+      <div className="space-y-2">
+        <Label htmlFor="timezone">Timezone</Label>
+        <SearchableTimezoneSelector
+          id="timezone"
+          value={form.watch("timezone")}
+          onValueChange={(value) => {
+            form.setValue("timezone", value, { shouldValidate: true });
+            submitTimezone(value);
           }}
-          className="space-y-4"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Select Timezone</Label>
-            <SearchableTimezoneSelector
-              id="timezone"
-              value={form.watch("timezone")}
-              onValueChange={(value) => {
-                form.setValue("timezone", value, { shouldValidate: true });
-              }}
-              disabled={isSubmitting}
-            />
-            {form.formState.errors.timezone ? (
-              <p className="text-destructive text-sm">
-                {form.formState.errors.timezone.message}
-              </p>
-            ) : null}
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged}
-            className="w-full"
-          >
-            {isSubmitting ? "Saving..." : "Save Timezone"}
-          </Button>
-
-          {fetcher.data?.success ? (
-            <p className="text-success text-sm">
-              Timezone updated successfully!
-            </p>
-          ) : null}
-          {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
-          ) : null}
-        </form>
-      </CardContent>
-    </Card>
+          disabled={isSubmitting}
+        />
+        {form.formState.errors.timezone ? (
+          <p className="text-destructive text-sm">
+            {form.formState.errors.timezone.message}
+          </p>
+        ) : null}
+      </div>
+    </PreferenceSection>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { LongFormPostType } from "~/features/posts/server";
 import type { LongFormPostData } from "~/features/posts/types";
@@ -32,6 +32,9 @@ export function useLongFormListingState({
     direction: getDefaultSortDirection(type),
   });
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const clearSelection = useCallback(() => {
+    setSelectedPosts(new Set());
+  }, []);
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
 
   const sortedPosts = useMemo(
@@ -135,6 +138,7 @@ export function useLongFormListingState({
     filteredPosts,
     selectedPosts,
     setSelectedPosts,
+    clearSelection,
     togglePostSelection,
     toggleSelectAll,
     countdowns,

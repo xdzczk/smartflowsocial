@@ -83,6 +83,7 @@ export default function LongFormListing({
     filteredPosts,
     selectedPosts,
     setSelectedPosts,
+    clearSelection,
     togglePostSelection,
     toggleSelectAll,
     countdowns,
@@ -185,6 +186,7 @@ export default function LongFormListing({
     <div>
       <LongFormBulkActionsBar
         selectedCount={selectedPosts.size}
+        onClearSelection={clearSelection}
         onBulkDelete={handleBulkDelete}
         deleteFetcherState={bulkDeleteFetcher.state}
         type={type}

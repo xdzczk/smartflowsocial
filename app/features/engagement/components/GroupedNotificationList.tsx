@@ -123,6 +123,9 @@ interface GroupedNotificationListProps {
   >;
   listVariant?: EngagementListVariant;
   followedPubkeys?: string[];
+  /** Single open tray across the whole feed (not per thread card). */
+  activeNotificationEventId?: string | null;
+  setActiveNotificationEventId?: (eventId: string | null) => void;
 }
 
 export default function GroupedNotificationList({
@@ -140,6 +143,8 @@ export default function GroupedNotificationList({
   groupSummaries = {},
   listVariant = "all",
   followedPubkeys = [],
+  activeNotificationEventId = null,
+  setActiveNotificationEventId,
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -207,6 +212,8 @@ export default function GroupedNotificationList({
           viewEventLabel={viewEventLabel}
           listVariant={listVariant}
           followedPubkeys={followedPubkeys}
+          activeNotificationEventId={activeNotificationEventId}
+          setActiveNotificationEventId={setActiveNotificationEventId}
         />
       ))}
     </div>
@@ -230,6 +237,8 @@ function GroupedNotificationCard({
   viewEventLabel,
   listVariant,
   followedPubkeys,
+  activeNotificationEventId,
+  setActiveNotificationEventId,
 }: {
   group: GroupedNotification;
   userTimezone?: string;
@@ -277,6 +286,8 @@ function GroupedNotificationCard({
   viewEventLabel: string;
   listVariant: EngagementListVariant;
   followedPubkeys: string[];
+  activeNotificationEventId: string | null;
+  setActiveNotificationEventId?: (eventId: string | null) => void;
 }) {
   const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
@@ -284,7 +295,6 @@ function GroupedNotificationCard({
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const contextTitle = displayParentContextLabel(parentPost, listVariant);
   const contextSublabel = displayParentContextSublabel(parentPost, listVariant);
@@ -323,8 +333,8 @@ function GroupedNotificationCard({
   return (
     <div className="border-border bg-card overflow-hidden rounded-lg border">
       <div className="flex flex-col items-stretch lg:flex-row lg:items-start">
-        <div className="border-border flex flex-shrink-0 flex-col border-b p-2.5 lg:w-[38%] lg:border-r lg:border-b-0 lg:py-2.5 lg:pr-2.5 lg:pl-3">
-          <div className="text-muted-foreground mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-tight">
+        <div className="border-border flex flex-shrink-0 flex-col border-b p-2 lg:w-[30%] lg:border-r lg:border-b-0 lg:py-2 lg:pr-2 lg:pl-2.5">
+          <div className="text-muted-foreground mb-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-tight">
             <MessageCircle
               className="h-3.5 w-3.5 shrink-0 translate-y-px"
               strokeWidth={INLINE_ICON_STROKE}
@@ -371,7 +381,7 @@ function GroupedNotificationCard({
 
           <div className="flex gap-1.5">
             {parentPost.fileUrl ? (
-              <div className="flex-shrink-0">
+              <div className="w-[min(100%,7.5rem)] flex-shrink-0">
                 <MediaThumbnail
                   src={
                     Array.isArray(parentPost.fileUrl)
@@ -379,7 +389,7 @@ function GroupedNotificationCard({
                       : parentPost.fileUrl
                   }
                   alt="Post media"
-                  className="h-16 w-16 rounded object-cover"
+                  className="aspect-square max-h-28 w-full rounded object-cover sm:max-h-32"
                 />
               </div>
             ) : null}
@@ -434,7 +444,7 @@ function GroupedNotificationCard({
               </Tooltip>
 
               {parentPost.stats ? (
-                <div className="text-muted-foreground/90 mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px]">
+                <div className="text-muted-foreground/90 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px]">
                   <span className="inline-flex items-center gap-1">
                     <MessageCircle
                       className={INLINE_ICON_SIZE_CLASS}
@@ -473,12 +483,12 @@ function GroupedNotificationCard({
               ) : null}
 
               {summary ? (
-                <div className="text-muted-foreground/85 mt-1 text-[11px] leading-snug tracking-tight">
-                  <span className="text-foreground/80 font-medium tabular-nums">
+                <div className="text-muted-foreground/80 mt-0.5 text-[11px] leading-tight tracking-tight">
+                  <span className="text-foreground/75 font-medium tabular-nums">
                     {summary.total} total
                   </span>
                   <span className="text-border/80 mx-1">·</span>
-                  <span className="text-foreground/90 font-semibold tabular-nums">
+                  <span className="text-foreground font-semibold tabular-nums">
                     {summary.needResponse} need response
                   </span>
                   <span className="text-border/80 mx-1">·</span>
@@ -492,7 +502,7 @@ function GroupedNotificationCard({
                 to={eventUrl(parentPost.eventId, nostrClientConfig)}
                 target="_blank"
                 rel="noreferrer"
-                className="text-muted-foreground/70 hover:text-foreground/85 mt-1 inline-block text-[11px] hover:underline"
+                className="text-muted-foreground/70 hover:text-foreground/85 mt-0.5 inline-block text-[11px] hover:underline"
               >
                 View original post →
               </Link>
@@ -512,7 +522,7 @@ function GroupedNotificationCard({
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1 lg:w-[62%]">
+        <div className="min-w-0 flex-1 lg:w-[70%]">
           <div className="divide-border max-h-[500px] divide-y overflow-y-auto lg:pt-0.5">
             {notifications.map((notification: Notification) => {
               const workflowState =
@@ -539,8 +549,14 @@ function GroupedNotificationCard({
                     nostrClientConfig
                   )}
                   viewEventLabel={`View on ${viewEventLabel}`}
-                  isSelected={notification.eventId === selectedEventId}
-                  onSelect={() => setSelectedEventId(notification.eventId)}
+                  isSelected={Boolean(
+                    activeNotificationEventId &&
+                    notification.eventId === activeNotificationEventId
+                  )}
+                  onSelect={() =>
+                    setActiveNotificationEventId?.(notification.eventId)
+                  }
+                  onClearActive={() => setActiveNotificationEventId?.(null)}
                   contentVariant={
                     listVariant === "mentions" ? "mention" : "default"
                   }

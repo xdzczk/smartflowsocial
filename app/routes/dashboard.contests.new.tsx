@@ -5,16 +5,18 @@ import type {
 } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
-  Form,
   Link,
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigation,
   useRevalidator,
 } from "@remix-run/react";
 import {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -25,17 +27,39 @@ import {
   RAIL_SECONDARY_ACTION,
 } from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { requireUserId } from "~/features/auth";
-import { PublishedPostPickerGrid } from "~/features/campaign-ui";
+import {
+  CampaignSectionHeader,
+  campaignFieldClassNames,
+  ChoiceTileGroup,
+  CompactStatusMessage,
+  PublishedPostPickerGrid,
+  RewardSummaryLine,
+  SourcePostModule,
+} from "~/features/campaign-ui";
 import {
   ContestBuilderSummaryRail,
   ContestEmbeddedComposer,
   createContest,
+  findContestCreationDraftByUserId,
   getContestPresetById,
   launchContest,
   touchContestPresetLastUsed,
+  upsertContestCreationDraftPayload,
+  upsertContestLaunchOrchestration,
   type ContestRankReward,
+  type ContestReadinessItem,
 } from "~/features/contest";
+import { trackContestCreationEvent } from "~/features/contest/contest-analytics.client";
+import { contestCopy } from "~/features/contest/contest-copy";
+import { getContestLaunchCtaConfig } from "~/features/contest/contest-launch-cta-config";
+import type { ContestRankingMetric } from "~/features/contest/types";
 import {
   requireAnySubscription,
   requireFeatureAccess,
@@ -50,7 +74,9 @@ import type { UserSubscription } from "~/features/payments/types";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getPostById, getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
+import { getUserById } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { getNowForDateTimeLocal } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -61,11 +87,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireAnySubscription(userId);
   await requireFeatureAccess(userId, "contests");
 
-  const [composerLoader, rawPosts, subscription] = await Promise.all([
-    loadNewPostData(userId, null, null),
-    getRecentPublishedPosts({ userId, days: 90 }),
-    getUserSubscription(userId),
-  ]);
+  const [composerLoader, rawPosts, subscription, userRow, savedContestDraft] =
+    await Promise.all([
+      loadNewPostData(userId, null, null),
+      getRecentPublishedPosts({ userId, days: 90 }),
+      getUserSubscription(userId),
+      getUserById(userId),
+      findContestCreationDraftByUserId(userId),
+    ]);
   const planType = getUserPlanType(subscription as UserSubscription | null);
   const planLabel = getPlanDisplayName(subscription as UserSubscription | null);
   const canUsePresets = getGiveawayPlanLimits(planType).canUsePresets;
@@ -75,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let presetDefaults: null | {
     id: string;
     title: string | null;
-    rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
+    rankingMetric: ContestRankingMetric;
     prizeMode: "EQUAL" | "RANKED";
     winnerCount: number;
     equalRewardSats: number;
@@ -118,9 +147,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     planLabel,
     presetDefaults,
     canUsePresets,
+    userTimezone: userRow?.timezone ?? "UTC",
+    savedContestDraft: savedContestDraft?.payload ?? null,
   });
 }
 
+function parseContestFairness(formData: FormData) {
+  return {
+    excludeMuted: formData.get("excludeMuted") === "on",
+    excludeBlocked: formData.get("excludeBlocked") === "on",
+    excludeLowTrust: formData.get("excludeLowTrust") === "on",
+    excludeNonFollowers: formData.get("excludeNonFollowers") === "on",
+    minAccountAgeDays:
+      parseInt(String(formData.get("minAccountAgeDays") ?? "0"), 10) ||
+      undefined,
+    minFollowers:
+      parseInt(String(formData.get("minFollowers") ?? "0"), 10) || undefined,
+  };
+}
+
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Action branches: draft save vs launch vs presets
 export async function action({ request }: ActionFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
     throw new Response("Not found", { status: 404 });
@@ -130,12 +176,34 @@ export async function action({ request }: ActionFunctionArgs) {
   await requireFeatureAccess(userId, "contests");
 
   const formData = await request.formData();
+  const intent = String(formData.get("intent") ?? "launch");
+
+  if (intent === "save-draft") {
+    const raw = String(formData.get("draftPayload") ?? "{}");
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return json({ error: "Invalid draft payload" }, { status: 400 });
+    }
+    await upsertContestCreationDraftPayload(userId, payload);
+    return json({ ok: true, draftSaved: true });
+  }
+
   const title = String(formData.get("title") ?? "");
+  const sourceMode = String(formData.get("sourceMode") ?? "existing") as
+    | "create"
+    | "existing";
+  const launchMode = String(formData.get("launchMode") ?? "now") as
+    | "now"
+    | "schedule";
+  const scheduledActivationRaw = String(
+    formData.get("scheduledActivationFor") ?? ""
+  ).trim();
   const sourcePostId = String(formData.get("sourcePostId") ?? "").trim();
-  const rankingMetric = String(formData.get("rankingMetric") ?? "ZAPS") as
-    | "REACTIONS"
-    | "ZAPS"
-    | "SATS_ZAPPED";
+  const rankingMetric = String(
+    formData.get("rankingMetric") ?? "ZAPS"
+  ) as ContestRankingMetric;
   const contestEndAtRaw = String(formData.get("contestEndAt") ?? "");
   const prizeMode = String(formData.get("prizeMode") ?? "EQUAL") as
     | "EQUAL"
@@ -156,25 +224,6 @@ export async function action({ request }: ActionFunctionArgs) {
     rankRewards.push({ rank, sats });
   }
 
-  if (!sourcePostId) {
-    return json(
-      { error: "Select the published post to use as the contest source." },
-      { status: 400 }
-    );
-  }
-
-  const sourcePost = await getPostById({ id: sourcePostId, userId });
-  const sourceNoteId = sourcePost?.nostrEventId?.trim() ?? "";
-  if (!sourcePost || !sourceNoteId) {
-    return json(
-      {
-        error:
-          "Selected post must be yours and published with a Nostr note id. Create or publish a post, then pick it here.",
-      },
-      { status: 400 }
-    );
-  }
-
   if (prizeMode === "RANKED" && !rankRewards.some((r) => r.sats > 0)) {
     return json(
       { error: "Rank-based mode requires at least one prize amount above 0." },
@@ -190,28 +239,80 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const contest = await createContest(userId, {
+  const fairnessConfig = parseContestFairness(formData);
+  const scheduledActivationAt =
+    scheduledActivationRaw.length > 0 ? new Date(scheduledActivationRaw) : null;
+  if (launchMode === "schedule") {
+    if (
+      !scheduledActivationAt ||
+      !Number.isFinite(scheduledActivationAt.getTime())
+    ) {
+      return json(
+        { error: "Choose a valid future date and time for scheduling." },
+        { status: 400 }
+      );
+    }
+    if (scheduledActivationAt.getTime() <= Date.now()) {
+      return json(
+        { error: "Scheduled activation must be in the future." },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (!sourcePostId) {
+    return json(
+      {
+        error:
+          sourceMode === "create"
+            ? "Publish or schedule the source post from the contest actions first."
+            : "Select the published post to use as the contest source.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const sourcePost = await getPostById({ id: sourcePostId, userId });
+  if (!sourcePost) {
+    return json({ error: "Source post not found." }, { status: 400 });
+  }
+
+  const sourceNoteId = sourcePost.nostrEventId?.trim() ?? "";
+  const hasPublishedNote = sourceNoteId.length > 0;
+
+  if (sourceMode === "existing") {
+    if (!hasPublishedNote) {
+      return json(
+        {
+          error:
+            "Selected post must be published with a Nostr note id before launching.",
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (sourceMode === "create" && launchMode === "now" && !hasPublishedNote) {
+    return json(
+      {
+        error:
+          "Publish the source post first (use the primary contest action), then submit again.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const baseContestInput = {
     title,
-    sourceNoteId,
-    sourcePostId: sourcePost.id,
     rankingMetric,
     contestEndAt,
     prizeMode,
     winnerCount,
     equalRewardSats: prizeMode === "EQUAL" ? equalRewardSats : null,
     rankRewards: prizeMode === "RANKED" ? rankRewards : null,
-    fairnessConfig: {
-      excludeMuted: formData.get("excludeMuted") === "on",
-      excludeBlocked: formData.get("excludeBlocked") === "on",
-      excludeLowTrust: formData.get("excludeLowTrust") === "on",
-      excludeNonFollowers: formData.get("excludeNonFollowers") === "on",
-      minAccountAgeDays:
-        parseInt(String(formData.get("minAccountAgeDays") ?? "0"), 10) ||
-        undefined,
-      minFollowers:
-        parseInt(String(formData.get("minFollowers") ?? "0"), 10) || undefined,
-    },
-  });
+    fairnessConfig,
+  };
+
   const appliedPresetId = String(formData.get("appliedPresetId") ?? "").trim();
   if (appliedPresetId) {
     try {
@@ -220,8 +321,52 @@ export async function action({ request }: ActionFunctionArgs) {
       // ignore
     }
   }
-  const launchNow = formData.get("launchNow") === "1";
-  if (launchNow) {
+
+  // --- Existing published post ---
+  if (sourceMode === "existing") {
+    if (launchMode === "now") {
+      const contest = await createContest(userId, {
+        ...baseContestInput,
+        sourceNoteId,
+        sourcePostId: sourcePost.id,
+      });
+      const launched = await launchContest(userId, contest.id);
+      if (!launched.success) {
+        return json(
+          { error: launched.error ?? "Contest created but launch failed." },
+          { status: 400 }
+        );
+      }
+      return redirect(`/dashboard/contests/detail/${contest.id}`);
+    }
+
+    const contest = await createContest(userId, {
+      ...baseContestInput,
+      sourceNoteId,
+      sourcePostId: sourcePost.id,
+      status: "SCHEDULED_LAUNCH",
+    });
+    await upsertContestLaunchOrchestration({
+      userId,
+      contestId: contest.id,
+      sourceMode: "existing_post",
+      launchMode: "schedule",
+      scheduledFor: scheduledActivationAt,
+      existingSourcePostId: sourcePost.id,
+      sourcePostId: null,
+      sourcePostPublishStatus: "not_needed",
+      contestActivationStatus: "scheduled",
+    });
+    return redirect(`/dashboard/contests/detail/${contest.id}`);
+  }
+
+  // --- New contest post (composer) ---
+  if (launchMode === "now") {
+    const contest = await createContest(userId, {
+      ...baseContestInput,
+      sourceNoteId,
+      sourcePostId: sourcePost.id,
+    });
     const launched = await launchContest(userId, contest.id);
     if (!launched.success) {
       return json(
@@ -229,7 +374,28 @@ export async function action({ request }: ActionFunctionArgs) {
         { status: 400 }
       );
     }
+    return redirect(`/dashboard/contests/detail/${contest.id}`);
   }
+
+  const contest = await createContest(userId, {
+    ...baseContestInput,
+    sourceNoteId: hasPublishedNote ? sourceNoteId : null,
+    sourcePostId: sourcePost.id,
+    status: "SCHEDULED_LAUNCH",
+  });
+
+  await upsertContestLaunchOrchestration({
+    userId,
+    contestId: contest.id,
+    sourceMode: "new_post",
+    launchMode: "schedule",
+    scheduledFor: scheduledActivationAt,
+    existingSourcePostId: null,
+    sourcePostId: sourcePost.id,
+    sourcePostPublishStatus: hasPublishedNote ? "published" : "scheduled",
+    contestActivationStatus: "scheduled",
+  });
+
   return redirect(`/dashboard/contests/detail/${contest.id}`);
 }
 
@@ -244,9 +410,6 @@ function formatPostOptionLabel(p: {
   const date = p.publishedAt.slice(0, 10);
   return `${caption} · ${date}`;
 }
-
-const STEP_ACTIVE_BUTTON_CLASSES = "border-primary bg-primary/10";
-const STEP_INACTIVE_BUTTON_CLASSES = "border-border bg-background";
 
 type ContestNewLoaderData = SerializeFrom<typeof loader>;
 
@@ -290,7 +453,6 @@ function ContestNewFormSetupSteps({
   setRankingMetric,
   contestEndAt,
   setContestEndAt,
-  tieBreakPreview,
   stepIssuesRanking,
   prizeMode,
   setPrizeMode,
@@ -316,11 +478,10 @@ function ContestNewFormSetupSteps({
   setMinFollowers,
   contestEndRequired,
 }: {
-  rankingMetric: "REACTIONS" | "ZAPS" | "SATS_ZAPPED";
-  setRankingMetric: (v: "REACTIONS" | "ZAPS" | "SATS_ZAPPED") => void;
+  rankingMetric: ContestRankingMetric;
+  setRankingMetric: (v: ContestRankingMetric) => void;
   contestEndAt: string;
   setContestEndAt: (v: string) => void;
-  tieBreakPreview: string;
   stepIssuesRanking: string | null;
   prizeMode: "EQUAL" | "RANKED";
   setPrizeMode: (v: "EQUAL" | "RANKED") => void;
@@ -347,11 +508,13 @@ function ContestNewFormSetupSteps({
   contestEndRequired: boolean;
 }) {
   return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <h2 className="text-foreground text-lg font-semibold">
-          2. Ranking rules
-        </h2>
+    <div className="space-y-10">
+      <section className="space-y-3" aria-labelledby="contest-ranking-heading">
+        <CampaignSectionHeader
+          id="contest-ranking-heading"
+          title="2. Ranking rules"
+          description={contestCopy.rankingSectionLead}
+        />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="rankingMetric">
@@ -362,15 +525,15 @@ function ContestNewFormSetupSteps({
               name="rankingMetric"
               value={rankingMetric}
               onChange={(e) => {
-                setRankingMetric(
-                  e.target.value as "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-                );
+                setRankingMetric(e.target.value as ContestRankingMetric);
               }}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             >
               <option value="REACTIONS">Most reactions</option>
               <option value="ZAPS">Most zaps</option>
               <option value="SATS_ZAPPED">Most sats zapped</option>
+              <option value="REPLIES">Most replies</option>
+              <option value="REPOSTS">Most reposts</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -386,56 +549,64 @@ function ContestNewFormSetupSteps({
               onChange={(e) => {
                 setContestEndAt(e.target.value);
               }}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
         </div>
-      </section>
-      <div className="border-border bg-muted/25 space-y-2 rounded-lg border p-3 text-xs">
-        <p className="text-foreground font-medium">Eligibility filters</p>
-        <p className="text-muted-foreground">
-          Low-trust uses your account trust rules. Muted/blocked/non-followers
-          are checked at freeze.
-        </p>
-        <p className="text-muted-foreground">Tie-break: {tieBreakPreview}</p>
-        {stepIssuesRanking ? (
-          <p className="text-destructive">{stepIssuesRanking}</p>
-        ) : null}
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="text-foreground text-lg font-semibold">
-          3. Prize structure
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-            <input
-              type="radio"
-              name="prizeMode"
-              value="EQUAL"
-              checked={prizeMode === "EQUAL"}
-              onChange={() => {
-                setPrizeMode("EQUAL");
-              }}
-            />
-            Equal rewards
-          </label>
-          <label className="border-border bg-card flex items-center gap-2 rounded-md border p-3 text-sm">
-            <input
-              type="radio"
-              name="prizeMode"
-              value="RANKED"
-              checked={prizeMode === "RANKED"}
-              onChange={() => {
-                setPrizeMode("RANKED");
-              }}
-            />
-            Rank-based rewards
-          </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-muted-foreground text-xs">
+            {contestCopy.tieBreakShort}
+          </p>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-primary text-xs font-medium underline-offset-2 hover:underline"
+                >
+                  Details
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                {contestCopy.tieBreakTooltipDetail}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {stepIssuesRanking ? (
+          <CompactStatusMessage variant="error">
+            {stepIssuesRanking}
+          </CompactStatusMessage>
+        ) : null}
+      </section>
+
+      <section className="space-y-4" aria-labelledby="contest-prize-heading">
+        <CampaignSectionHeader
+          id="contest-prize-heading"
+          title="3. Prize structure"
+        />
+        <ChoiceTileGroup
+          name="prizeMode"
+          value={prizeMode}
+          onChange={(v) => {
+            setPrizeMode(v);
+          }}
+          options={[
+            {
+              value: "EQUAL",
+              title: contestCopy.prizeEqualTileTitle,
+              description: contestCopy.prizeEqualTileDesc,
+            },
+            {
+              value: "RANKED",
+              title: contestCopy.prizeRankedTileTitle,
+              description: contestCopy.prizeRankedTileDesc,
+            },
+          ]}
+        />
+        <div className="border-border/60 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm" htmlFor="winnerCount">
+            <label className="text-sm font-medium" htmlFor="winnerCount">
               Number of winners
             </label>
             <input
@@ -457,11 +628,11 @@ function ContestNewFormSetupSteps({
                   return arr.slice(0, next);
                 });
               }}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm" htmlFor="equalRewardSats">
+            <label className="text-sm font-medium" htmlFor="equalRewardSats">
               Sats per winner (equal mode)
             </label>
             <input
@@ -474,15 +645,14 @@ function ContestNewFormSetupSteps({
                 const n = parseInt(e.target.value, 10);
                 setEqualRewardSats(Number.isFinite(n) ? Math.max(0, n) : 0);
               }}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
         </div>
         {prizeMode === "RANKED" ? (
           <div className="space-y-2">
             <p className="text-muted-foreground text-xs">
-              Set sats for each rank from 1 through {winnerCount}. Unused ranks
-              can be 0.
+              Set sats per rank (1–{winnerCount}). Unused ranks can be 0.
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: winnerCount }, (_, i) => {
@@ -510,7 +680,7 @@ function ContestNewFormSetupSteps({
                           return next;
                         });
                       }}
-                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      className={campaignFieldClassNames}
                     />
                   </div>
                 );
@@ -518,21 +688,27 @@ function ContestNewFormSetupSteps({
             </div>
           </div>
         ) : null}
+        <div className="space-y-2">
+          <RewardSummaryLine>{prizeSummary}</RewardSummaryLine>
+          {stepIssuesRewards ? (
+            <CompactStatusMessage variant="warning">
+              {stepIssuesRewards}
+            </CompactStatusMessage>
+          ) : null}
+        </div>
       </section>
-      <div className="border-border bg-muted/25 space-y-2 rounded-lg border p-3 text-xs">
-        <p className="text-foreground font-medium">Reward summary</p>
-        <p className="text-muted-foreground">{prizeSummary}</p>
-        {stepIssuesRewards ? (
-          <p className="text-destructive">{stepIssuesRewards}</p>
-        ) : null}
-      </div>
 
-      <section className="space-y-2">
-        <h2 className="text-foreground text-lg font-semibold">
-          4. Eligibility filters
-        </h2>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <label>
+      <section
+        className="space-y-3"
+        aria-labelledby="contest-eligibility-heading"
+      >
+        <CampaignSectionHeader
+          id="contest-eligibility-heading"
+          title={contestCopy.eligibilitySectionTitle}
+          description={contestCopy.eligibilitySectionLead}
+        />
+        <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               name="excludeMuted"
@@ -540,10 +716,10 @@ function ContestNewFormSetupSteps({
               onChange={(e) => {
                 setExcludeMuted(e.target.checked);
               }}
-            />{" "}
+            />
             Exclude muted
           </label>
-          <label>
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               name="excludeBlocked"
@@ -551,10 +727,10 @@ function ContestNewFormSetupSteps({
               onChange={(e) => {
                 setExcludeBlocked(e.target.checked);
               }}
-            />{" "}
+            />
             Exclude blocked
           </label>
-          <label>
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               name="excludeLowTrust"
@@ -562,10 +738,10 @@ function ContestNewFormSetupSteps({
               onChange={(e) => {
                 setExcludeLowTrust(e.target.checked);
               }}
-            />{" "}
+            />
             Exclude low trust
           </label>
-          <label>
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               name="excludeNonFollowers"
@@ -573,35 +749,62 @@ function ContestNewFormSetupSteps({
               onChange={(e) => {
                 setExcludeNonFollowers(e.target.checked);
               }}
-            />{" "}
+            />
             Exclude non-followers
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minAccountAgeDays"
-            type="number"
-            min={0}
-            placeholder="Min account age (days)"
-            value={minAccountAgeDays}
-            onChange={(e) => {
-              const n = parseInt(e.target.value, 10);
-              setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
-            }}
-            className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-          />
-          <input
-            name="minFollowers"
-            type="number"
-            min={0}
-            placeholder="Min followers"
-            value={minFollowers}
-            onChange={(e) => {
-              const n = parseInt(e.target.value, 10);
-              setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
-            }}
-            className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-          />
+        <div className="border-border/60 grid grid-cols-1 gap-3 border-t pt-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label
+              className="text-foreground text-sm font-medium"
+              htmlFor="minAccountAgeDays"
+            >
+              Minimum account age (days)
+            </label>
+            <input
+              id="minAccountAgeDays"
+              name="minAccountAgeDays"
+              type="number"
+              min={0}
+              aria-describedby="minAccountAgeDays-hint"
+              value={minAccountAgeDays}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
+              }}
+              className={campaignFieldClassNames}
+            />
+            <p
+              id="minAccountAgeDays-hint"
+              className="text-muted-foreground text-xs"
+            >
+              0 = off
+            </p>
+          </div>
+          <div className="space-y-1">
+            <label
+              className="text-foreground text-sm font-medium"
+              htmlFor="minFollowers"
+            >
+              Minimum followers
+            </label>
+            <input
+              id="minFollowers"
+              name="minFollowers"
+              type="number"
+              min={0}
+              aria-describedby="minFollowers-hint"
+              value={minFollowers}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
+              }}
+              className={campaignFieldClassNames}
+            />
+            <p id="minFollowers-hint" className="text-muted-foreground text-xs">
+              0 = off
+            </p>
+          </div>
         </div>
       </section>
     </div>
@@ -618,7 +821,16 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
-  const isSubmitting = navigation.state === "submitting";
+  const fetcher = useFetcher();
+  const formRef = useRef<HTMLFormElement>(null);
+  const pendingContestSubmitRef = useRef(false);
+  const embedApiRef = useRef<{
+    publishNow: () => void;
+    schedulePost: () => void;
+  } | null>(null);
+
+  const isSubmitting =
+    navigation.state === "submitting" || fetcher.state !== "idle";
 
   const preset = loaderData.presetDefaults;
   const fairnessInit = fairnessInitialFromPreset(
@@ -639,9 +851,9 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
   const [rankRewards, setRankRewards] = useState<number[]>(() =>
     preset?.id ? rankRewardsInitialFromPreset(preset) : Array(3).fill(0)
   );
-  const [rankingMetric, setRankingMetric] = useState<
-    "REACTIONS" | "ZAPS" | "SATS_ZAPPED"
-  >(preset?.rankingMetric ?? "ZAPS");
+  const [rankingMetric, setRankingMetric] = useState<ContestRankingMetric>(
+    preset?.rankingMetric ?? "ZAPS"
+  );
   const [excludeMuted, setExcludeMuted] = useState(fairnessInit.excludeMuted);
   const [excludeBlocked, setExcludeBlocked] = useState(
     fairnessInit.excludeBlocked
@@ -659,9 +871,42 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
   const [formTitle, setFormTitle] = useState(
     preset?.title?.trim() ? preset.title : ""
   );
+  const [launchMode, setLaunchMode] = useState<"now" | "schedule">("now");
+  const userTz = loaderData.userTimezone;
+  const [scheduledActivationFor, setScheduledActivationFor] = useState(() =>
+    getNowForDateTimeLocal(userTz)
+  );
   const [now] = useState(() => Date.now());
 
-  const { posts, planType, planLabel, presetDefaults } = loaderData;
+  const {
+    posts,
+    planType,
+    planLabel,
+    presetDefaults,
+    userTimezone,
+    savedContestDraft,
+  } = loaderData;
+
+  useEffect(() => {
+    if (
+      savedContestDraft &&
+      typeof savedContestDraft === "object" &&
+      !Array.isArray(savedContestDraft)
+    ) {
+      const d = savedContestDraft as Record<string, unknown>;
+      queueMicrotask(() => {
+        if (
+          typeof d["launchMode"] === "string" &&
+          d["launchMode"] === "schedule"
+        ) {
+          setLaunchMode("schedule");
+        }
+        if (typeof d["scheduledActivationFor"] === "string") {
+          setScheduledActivationFor(d["scheduledActivationFor"]);
+        }
+      });
+    }
+  }, [savedContestDraft]);
 
   const onContestComposerPublished = useCallback(
     (payload: ContestEmbedPublishPayload) => {
@@ -674,9 +919,26 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       } catch {
         // ignore
       }
+      if (pendingContestSubmitRef.current && formRef.current) {
+        pendingContestSubmitRef.current = false;
+        const fd = new FormData(formRef.current);
+        fd.set("sourcePostId", payload.postId);
+        fd.set("intent", "launch");
+        fd.set("sourceMode", "create");
+        fd.set("launchMode", launchMode);
+        fd.set(
+          "scheduledActivationFor",
+          launchMode === "schedule" ? scheduledActivationFor : ""
+        );
+        trackContestCreationEvent("contest_launch_submit", {
+          sourceMode: "create",
+          launchMode,
+        });
+        fetcher.submit(fd, { method: "post" });
+      }
       revalidator.revalidate();
     },
-    [revalidator]
+    [fetcher, launchMode, revalidator, scheduledActivationFor]
   );
 
   const selectedSourcePost = useMemo(
@@ -687,24 +949,27 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
   const prizeSummary = useMemo(() => {
     if (prizeMode === "EQUAL") {
       const total = winnerCount * equalRewardSats;
-      return `Top ${winnerCount} winners split ${total.toLocaleString()} sats equally (${equalRewardSats.toLocaleString()} each).`;
+      const w = winnerCount !== 1 ? "s" : "";
+      return `Top ${winnerCount} winner${w} split ${total.toLocaleString()} sats equally.`;
     }
     const ranked = rankRewards.slice(0, winnerCount);
-    const firstThree = ranked.slice(0, 3);
-    if (firstThree.length === 0)
-      return "Rank-based rewards are not configured yet.";
-    return firstThree
-      .map((sats, idx) => `#${idx + 1}: ${sats.toLocaleString()} sats`)
-      .join(" · ");
+    if (!ranked.some((s) => s > 0)) {
+      return "Add rank rewards above 0.";
+    }
+    const ord = (n: number) =>
+      n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
+    return ranked
+      .map((sats, i) => `${ord(i + 1)} ${sats.toLocaleString()} sats`)
+      .join(", ");
   }, [prizeMode, winnerCount, equalRewardSats, rankRewards]);
 
-  const entryRuleSummary =
-    "Only direct replies to the source post count as entries.";
-  const tieBreakPreview =
-    "Ties are resolved by: higher metric -> earlier reply timestamp -> entry event ID.";
+  const entryRuleSummary = contestCopy.entryRuleShort;
 
   const stepIssues = {
-    source: !selectedSourcePostId.trim() ? "Choose a source post." : null,
+    source:
+      sourceMode === "existing" && !selectedSourcePostId.trim()
+        ? "Choose a source post."
+        : null,
     ranking: !contestEndAt
       ? "Set a contest end time in the future."
       : new Date(contestEndAt).getTime() <= now
@@ -718,7 +983,181 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           : null,
   };
 
-  const canSubmit = selectedSourcePostId.trim() !== "";
+  const endOk = Boolean(contestEndAt) && new Date(contestEndAt).getTime() > now;
+  const sourceOkExisting =
+    sourceMode === "existing" && selectedSourcePostId.trim() !== "";
+  const sourceOkCreate =
+    sourceMode === "create" && selectedSourcePostId.trim() !== "";
+  const scheduleTimeOk =
+    scheduledActivationFor.trim() !== "" &&
+    new Date(scheduledActivationFor).getTime() > now;
+  const scheduleOk = launchMode === "now" || scheduleTimeOk;
+
+  const primaryCtaDisabled = useMemo(() => {
+    if (!formTitle.trim()) return true;
+    if (!endOk) return true;
+    if (stepIssues.rewards) return true;
+    if (sourceMode === "existing" && !sourceOkExisting) return true;
+    if (sourceMode === "create" && launchMode === "schedule" && !scheduleOk)
+      return true;
+    return false;
+  }, [
+    formTitle,
+    endOk,
+    stepIssues.rewards,
+    sourceMode,
+    sourceOkExisting,
+    launchMode,
+    scheduleOk,
+  ]);
+
+  const readinessRequired: ContestReadinessItem[] = useMemo(
+    () => [
+      {
+        id: "source",
+        label:
+          sourceMode === "existing"
+            ? "Source post selected"
+            : "Source post published or scheduled via contest action",
+        satisfied:
+          sourceMode === "existing" ? sourceOkExisting : sourceOkCreate,
+        isError: true,
+      },
+      {
+        id: "title",
+        label: "Contest title",
+        satisfied: formTitle.trim().length > 0,
+        isError: true,
+      },
+      {
+        id: "end",
+        label: "Contest end time (future)",
+        satisfied: endOk,
+        isError: true,
+      },
+      {
+        id: "winners",
+        label: "Winners & pool valid",
+        satisfied: !stepIssues.rewards,
+        isError: true,
+      },
+      {
+        id: "schedule",
+        label: "Activation schedule (future)",
+        satisfied: launchMode === "now" || scheduleOk,
+        isError: true,
+      },
+    ],
+    [
+      sourceMode,
+      sourceOkExisting,
+      sourceOkCreate,
+      launchMode,
+      formTitle,
+      endOk,
+      stepIssues.rewards,
+      scheduleOk,
+    ]
+  );
+
+  const noFairnessFilters =
+    !excludeMuted &&
+    !excludeBlocked &&
+    !excludeLowTrust &&
+    !excludeNonFollowers &&
+    minAccountAgeDays <= 0 &&
+    minFollowers <= 0;
+
+  const readinessRecommended: ContestReadinessItem[] = useMemo(
+    () => [
+      {
+        id: "filters",
+        label: "Eligibility filters configured",
+        satisfied: !noFairnessFilters,
+      },
+      {
+        id: "review",
+        label: "Muted / blocked / low-trust exclusions reviewed",
+        satisfied: excludeMuted || excludeBlocked || excludeLowTrust,
+      },
+    ],
+    [noFairnessFilters, excludeMuted, excludeBlocked, excludeLowTrust]
+  );
+
+  const handleSaveDraft = useCallback(() => {
+    const payload = {
+      sourceMode,
+      launchMode,
+      scheduledActivationFor,
+      formTitle,
+      contestEndAt,
+      rankingMetric,
+      prizeMode,
+      winnerCount,
+      equalRewardSats,
+      rankRewards,
+      excludeMuted,
+      excludeBlocked,
+      excludeLowTrust,
+      excludeNonFollowers,
+      minAccountAgeDays,
+      minFollowers,
+    };
+    const fd = new FormData();
+    fd.set("intent", "save-draft");
+    fd.set("draftPayload", JSON.stringify(payload));
+    trackContestCreationEvent("contest_draft_saved");
+    fetcher.submit(fd, { method: "post" });
+  }, [
+    sourceMode,
+    launchMode,
+    scheduledActivationFor,
+    formTitle,
+    contestEndAt,
+    rankingMetric,
+    prizeMode,
+    winnerCount,
+    equalRewardSats,
+    rankRewards,
+    excludeMuted,
+    excludeBlocked,
+    excludeLowTrust,
+    excludeNonFollowers,
+    minAccountAgeDays,
+    minFollowers,
+    fetcher,
+  ]);
+
+  const handlePrimaryLaunch = useCallback(() => {
+    if (primaryCtaDisabled) return;
+    if (sourceMode === "existing") {
+      trackContestCreationEvent("contest_launch_submit", {
+        sourceMode,
+        launchMode,
+      });
+      if (formRef.current) {
+        const fd = new FormData(formRef.current);
+        fd.set("intent", "launch");
+        fetcher.submit(fd, { method: "post" });
+      }
+      return;
+    }
+    pendingContestSubmitRef.current = true;
+    trackContestCreationEvent("contest_launch_submit", {
+      sourceMode,
+      launchMode,
+    });
+    if (launchMode === "now") {
+      embedApiRef.current?.publishNow();
+    } else {
+      embedApiRef.current?.schedulePost();
+    }
+  }, [primaryCtaDisabled, sourceMode, launchMode, fetcher]);
+
+  const primaryLabel = getContestLaunchCtaConfig(
+    sourceMode,
+    launchMode
+  ).ctaLabel;
 
   return (
     <div className="space-y-6">
@@ -731,7 +1170,8 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         </Link>
       </div>
 
-      <Form
+      <form
+        ref={formRef}
         id="dashboard-contest-new-form"
         method="post"
         className="lg:grid lg:grid-cols-[1fr_min(100%,312px)] lg:items-start lg:gap-8 xl:grid-cols-[1fr_min(100%,344px)]"
@@ -742,53 +1182,39 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
               New contest
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Build your contest in steps. You can save a draft, then launch
-              when ready.
+              Save a draft anytime, then launch from the rail.
             </p>
           </div>
 
-          {actionData?.error ? (
+          {actionData &&
+          typeof actionData === "object" &&
+          "error" in actionData &&
+          actionData.error ? (
             <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
-              {actionData.error}
+              {String(actionData.error)}
             </div>
+          ) : null}
+          {actionData &&
+          typeof actionData === "object" &&
+          "draftSaved" in actionData &&
+          (actionData as { draftSaved?: boolean }).draftSaved ? (
+            <p className="text-muted-foreground text-sm">Draft saved.</p>
           ) : null}
 
           {presetDefaults?.id ? (
-            <p className="text-muted-foreground border-border bg-muted/30 rounded-md border px-3 py-2 text-sm">
-              Loaded a saved preset — choose your source post and contest end
-              time, then save or launch.
-            </p>
+            <CompactStatusMessage variant="info">
+              Preset loaded — set source post and end time, then save or launch.
+            </CompactStatusMessage>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSourceMode("create");
-              }}
-              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                sourceMode === "create"
-                  ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
-                  : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
-              }`}
-            >
-              Create new contest post
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSourceMode("existing");
-              }}
-              className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                sourceMode === "existing"
-                  ? `${STEP_ACTIVE_BUTTON_CLASSES} text-primary`
-                  : `${STEP_INACTIVE_BUTTON_CLASSES} text-muted-foreground hover:bg-muted hover:text-foreground`
-              }`}
-            >
-              Use existing published post
-            </button>
-          </div>
-
+          <input type="hidden" name="intent" value="launch" />
+          <input type="hidden" name="sourceMode" value={sourceMode} />
+          <input type="hidden" name="launchMode" value={launchMode} />
+          <input
+            type="hidden"
+            name="scheduledActivationFor"
+            value={launchMode === "schedule" ? scheduledActivationFor : ""}
+          />
           <input
             type="hidden"
             name="sourcePostId"
@@ -810,64 +1236,88 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
               onChange={(e) => {
                 setFormTitle(e.target.value);
               }}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
             <p className="text-muted-foreground text-xs">{entryRuleSummary}</p>
           </section>
 
-          <section className="space-y-3 rounded-lg border border-transparent p-0">
-            <div className="space-y-1">
-              <span className="text-foreground text-lg font-semibold">
-                1. Source post
-              </span>
-              <p className="text-muted-foreground text-xs">
-                Each direct reply to this note is an entry. Publish a new note
-                or pick an existing published post.
-              </p>
-            </div>
-            {sourceMode === "create" ? (
-              <ContestEmbeddedComposer
-                loaderData={loaderData as Record<string, unknown>}
-                composerKey={composerSessionKey}
-                onEmbedPublishSuccess={onContestComposerPublished}
-              />
-            ) : null}
-            {sourceMode === "create" && posts.length === 0 ? (
-              <p className="text-muted-foreground border-border bg-muted/20 rounded-md border px-3 py-2 text-sm">
-                No eligible published posts yet (last 90 days, with a Nostr note
-                id). Publish with the composer — your post will appear here for
-                selection.
-              </p>
-            ) : null}
-            {sourceMode === "existing" ? (
-              <PublishedPostPickerGrid
-                posts={posts}
-                value={selectedSourcePostId}
-                onValueChange={setSelectedSourcePostId}
-                searchInputId="contest-source-post-search"
-                emptyPostsMessage="No published posts with a Nostr id yet."
-                emptyFilterMessage="No posts match your search."
-              />
-            ) : null}
-            {selectedSourcePost ? (
-              <div className="border-border bg-muted/30 rounded-md border p-3">
-                <p className="text-xs font-medium">Selected source</p>
-                <p className="mt-1 text-sm">
-                  {formatPostOptionLabel(selectedSourcePost)}
-                </p>
-              </div>
-            ) : null}
-            {stepIssues.source ? (
-              <p className="text-destructive text-xs">{stepIssues.source}</p>
-            ) : null}
-          </section>
+          <SourcePostModule
+            id="contest-source-heading"
+            title="1. Source post"
+            description={
+              sourceMode === "create"
+                ? contestCopy.sourceModuleCreate
+                : contestCopy.sourceModuleExisting
+            }
+            mode={sourceMode}
+            onModeChange={(m) => {
+              setSourceMode(m);
+              trackContestCreationEvent("contest_source_mode", { mode: m });
+            }}
+            errorMessage={stepIssues.source}
+            createBody={
+              <>
+                <ContestEmbeddedComposer
+                  loaderData={loaderData as Record<string, unknown>}
+                  composerKey={composerSessionKey}
+                  contestRailLaunchMode={launchMode}
+                  contestRailScheduledFor={scheduledActivationFor}
+                  onEmbedActionsReady={(api) => {
+                    embedApiRef.current = api;
+                  }}
+                  onEmbedPublishSuccess={onContestComposerPublished}
+                />
+                {posts.length === 0 ? (
+                  <CompactStatusMessage variant="info">
+                    No published posts in the last 90 days yet. After you
+                    publish, they appear here when you switch to “existing
+                    post”.
+                  </CompactStatusMessage>
+                ) : null}
+              </>
+            }
+            existingBody={
+              <>
+                <PublishedPostPickerGrid
+                  posts={posts}
+                  value={selectedSourcePostId}
+                  onValueChange={setSelectedSourcePostId}
+                  searchInputId="contest-source-post-search"
+                  emptyPostsMessage="No published posts with a Nostr id yet."
+                  emptyFilterMessage="No posts match your search."
+                />
+                {selectedSourcePost ? (
+                  <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                    <div>
+                      <p className="text-muted-foreground text-xs font-medium">
+                        Selected source
+                      </p>
+                      <p className="text-foreground mt-0.5 text-sm">
+                        {formatPostOptionLabel(selectedSourcePost)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => {
+                        setSelectedSourcePostId("");
+                      }}
+                    >
+                      Change
+                    </Button>
+                  </div>
+                ) : null}
+              </>
+            }
+          />
 
           <ContestNewFormSetupSteps
             rankingMetric={rankingMetric}
             setRankingMetric={setRankingMetric}
             contestEndAt={contestEndAt}
             setContestEndAt={setContestEndAt}
-            tieBreakPreview={tieBreakPreview}
             stepIssuesRanking={stepIssues.ranking}
             prizeMode={prizeMode}
             setPrizeMode={setPrizeMode}
@@ -901,6 +1351,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
             planLabel={planLabel}
             sourceMode={sourceMode}
             hasSourcePost={selectedSourcePostId.trim() !== ""}
+            hasValidNewPostComposer={sourceOkCreate}
             rankingMetric={rankingMetric}
             contestEndAt={contestEndAt}
             prizeMode={prizeMode}
@@ -915,46 +1366,56 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
               minAccountAgeDays,
               minFollowers,
             }}
+            launchMode={launchMode}
+            onLaunchModeChange={(m) => {
+              setLaunchMode(m);
+              trackContestCreationEvent("contest_launch_mode", { mode: m });
+            }}
+            scheduledActivationFor={scheduledActivationFor}
+            onScheduledActivationForChange={(v) => {
+              setScheduledActivationFor(v);
+              trackContestCreationEvent("contest_schedule_set");
+            }}
+            userTimezone={userTimezone}
+            readinessRequired={readinessRequired}
+            readinessRecommended={readinessRecommended}
+            primaryCtaDisabled={primaryCtaDisabled}
             footerActions={
               <ActionRailActions
                 secondaryButton={
                   <Button
-                    type="submit"
-                    form="dashboard-contest-new-form"
-                    name="launchNow"
-                    value="0"
+                    type="button"
                     variant="ghost"
                     size="sm"
                     className={RAIL_SECONDARY_ACTION}
                     disabled={isSubmitting}
+                    onClick={handleSaveDraft}
                   >
                     Save draft
                   </Button>
                 }
                 primaryButton={
                   <Button
-                    type="submit"
-                    form="dashboard-contest-new-form"
-                    name="launchNow"
-                    value="1"
+                    type="button"
                     size="sm"
                     variant="default"
-                    disabled={!canSubmit || isSubmitting}
+                    disabled={primaryCtaDisabled || isSubmitting}
+                    onClick={handlePrimaryLaunch}
                     className={cn(
                       "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
-                      !canSubmit || isSubmitting
+                      primaryCtaDisabled || isSubmitting
                         ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
                         : "bg-primary text-primary-foreground hover:bg-primary/90"
                     )}
                   >
-                    Launch contest
+                    {primaryLabel}
                   </Button>
                 }
               />
             }
           />
         </div>
-      </Form>
+      </form>
     </div>
   );
 }

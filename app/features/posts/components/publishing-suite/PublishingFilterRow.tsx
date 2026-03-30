@@ -14,12 +14,14 @@ export function PublishingFilterRow({
   return (
     <div
       className={cn(
-        "border-border mb-6 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3",
+        "border-border mb-6 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3",
         className
       )}
     >
-      <div className="min-w-0 flex-1 overflow-x-auto">{leading}</div>
-      <div className="flex min-w-0 flex-shrink-0 flex-wrap items-end gap-3 sm:justify-end">
+      <div className="flex min-w-0 flex-1 flex-shrink-0 items-center">
+        {leading}
+      </div>
+      <div className="flex min-w-0 flex-shrink-0 flex-wrap items-center gap-3 sm:justify-end">
         {trailing}
       </div>
     </div>

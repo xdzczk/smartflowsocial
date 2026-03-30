@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import {
@@ -13,7 +14,14 @@ import { getQueueColor } from "~/features/posts/queue-colors";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
+import type { PostDetailRelationshipType } from "../derive-post-detail-semantics";
 import type { PostDetailModalPost } from "../post-detail-helpers";
+import {
+  InReplyToBlock,
+  QuotedPostBlock,
+  RepostedPostBlock,
+  ThreadContextBlock,
+} from "../relationships/RelationshipPreviewBlocks";
 import type { PostDetailContentVariant } from "../resolve-post-detail-variant";
 import type { PostThreadGroupResponse } from "../usePostThreadGroup";
 
@@ -22,6 +30,8 @@ import { DetailModalReplySnippet } from "./DetailModalReplySnippet";
 const RAIL_SECTION_LABEL = cn(
   "normal-case tracking-tight text-muted-foreground/70 !mb-1 text-[10px] font-medium"
 );
+
+const USER_TAGS_VISIBLE = 8;
 
 function QueueTypeCalm({
   queueType,
@@ -43,6 +53,44 @@ function QueueTypeCalm({
     >
       {queueType.name}
     </span>
+  );
+}
+
+function UserTagChips({
+  tags,
+  expanded,
+  onToggle,
+}: {
+  tags: string[];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (tags.length === 0) return null;
+  const visible = expanded ? tags : tags.slice(0, USER_TAGS_VISIBLE);
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-foreground text-xs font-medium">Tags</span>
+      <div className="flex flex-wrap gap-1">
+        {visible.map((tag) => (
+          <span
+            key={tag}
+            className="bg-muted text-foreground max-w-[min(100%,14rem)] truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
+            title={tag}
+          >
+            #{tag.length > 36 ? `${tag.slice(0, 33)}…` : tag}
+          </span>
+        ))}
+      </div>
+      {tags.length > USER_TAGS_VISIBLE ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-muted-foreground hover:text-foreground text-left text-[10px] font-medium"
+        >
+          {expanded ? "Show fewer" : `Show all (${tags.length})`}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -71,7 +119,14 @@ export function PostDetailRail({
   mediaCount,
   pollOptionCount,
   statusLabel,
-  typeLabel,
+  contentLabel,
+  relationshipType,
+  inReplyTo,
+  quotedPost,
+  repostedPost,
+  threadContextPosition,
+  userTags,
+  technicalTags,
 }: {
   type: "draft" | "published" | "scheduled";
   post: PostDetailModalPost;
@@ -114,9 +169,34 @@ export function PostDetailRail({
   mediaCount: number;
   pollOptionCount: number | null;
   statusLabel: string;
-  typeLabel: string;
+  /** Post | Poll — content type, not relationship */
+  contentLabel: string;
+  relationshipType: PostDetailRelationshipType;
+  inReplyTo?: {
+    authorLine: string | null;
+    snippet: string | null;
+    viewThreadUrl: string;
+  } | null;
+  quotedPost?: {
+    authorLine: string | null;
+    snippet: string | null;
+    openUrl: string | null;
+    hasMediaHint?: boolean;
+  } | null;
+  repostedPost?: {
+    authorLine: string | null;
+    snippet: string | null;
+    openUrl: string | null;
+  } | null;
+  threadContextPosition?: string | null;
+  userTags: string[];
+  technicalTags: string[];
   variant: PostDetailContentVariant;
 }) {
+  const [tagsExpanded, setTagsExpanded] = useState(false);
+  /** When there is no signed-event JSON toggle, expand technical tags locally. */
+  const [localTechnicalExpanded, setLocalTechnicalExpanded] = useState(false);
+
   const pad = cn(RAIL_PAD_X, RAIL_ZONE_PY, "flex flex-col gap-0");
   const divide = cn(RAIL_MAJOR_DIVIDE, "my-2.5");
 
@@ -148,10 +228,50 @@ export function PostDetailRail({
     type === "published" && showStats && stats && eventId ? stats : null;
 
   const previewReplies = directReplies.slice(0, 2);
-  const showRepliesSection =
+
+  const showRepliesOriginal =
     type === "published" &&
     eventId &&
     (variant !== "thread" || isThreadLoading || directReplies.length > 0);
+
+  const showRepliesSecondary =
+    type === "published" &&
+    eventId &&
+    (relationshipType === "reply" ||
+      relationshipType === "quote" ||
+      relationshipType === "thread_item") &&
+    directReplies.length > 0;
+
+  const showRepliesSection =
+    relationshipType === "repost"
+      ? false
+      : relationshipType === "original"
+        ? showRepliesOriginal
+        : showRepliesSecondary;
+
+  /* eslint-disable @typescript-eslint/prefer-nullish-coalescing -- Boolean OR of relationship guards, not nullish coalescing */
+  const showRelationshipRail = Boolean(
+    (relationshipType === "reply" && inReplyTo) ||
+    (relationshipType === "quote" && quotedPost) ||
+    (relationshipType === "repost" && repostedPost) ||
+    (relationshipType === "thread_item" && threadContextPosition)
+  );
+  /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
+
+  const hasSignedEventJson = Boolean(showSignedEvent && post.signedEvent);
+  const technicalTagsOnly = technicalTags.length > 0 && !hasSignedEventJson;
+  const showTechnicalExpanded = technicalTagsOnly
+    ? localTechnicalExpanded
+    : showEventData;
+  const showTechnicalBlock = technicalTags.length > 0 || hasSignedEventJson;
+
+  const toggleTechnical = () => {
+    if (technicalTagsOnly) {
+      setLocalTechnicalExpanded((v) => !v);
+    } else {
+      onToggleEventData();
+    }
+  };
 
   return (
     <aside
@@ -171,8 +291,8 @@ export function PostDetailRail({
             trailing={null}
           />
           <RailSettingsValueRow
-            label="Type"
-            value={typeLabel}
+            label="Content"
+            value={contentLabel}
             trailing={null}
           />
           {type === "draft" ? (
@@ -218,20 +338,12 @@ export function PostDetailRail({
               <QueueTypeCalm queueType={queueType} />
             </div>
           ) : null}
-          {post.tags && post.tags.length > 0 && !post.repost ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-foreground text-xs font-medium">Tags</span>
-              <div className="flex flex-wrap gap-1">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-muted text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
+          {userTags.length > 0 && !post.repost ? (
+            <UserTagChips
+              tags={userTags}
+              expanded={tagsExpanded}
+              onToggle={() => setTagsExpanded((v) => !v)}
+            />
           ) : null}
           {type === "published" &&
           eventId &&
@@ -259,6 +371,65 @@ export function PostDetailRail({
             </div>
           ) : null}
         </div>
+
+        {showRelationshipRail ? (
+          <>
+            <div className={divide} />
+            {relationshipType === "reply" && inReplyTo ? (
+              <>
+                <RailSectionHeader className={RAIL_SECTION_LABEL}>
+                  In reply to
+                </RailSectionHeader>
+                <div className="mt-1.5">
+                  <InReplyToBlock
+                    authorLine={inReplyTo.authorLine}
+                    snippet={inReplyTo.snippet}
+                    viewThreadUrl={inReplyTo.viewThreadUrl}
+                  />
+                </div>
+              </>
+            ) : null}
+            {relationshipType === "quote" && quotedPost ? (
+              <>
+                <RailSectionHeader className={RAIL_SECTION_LABEL}>
+                  Quoted post
+                </RailSectionHeader>
+                <div className="mt-1.5">
+                  <QuotedPostBlock
+                    authorLine={quotedPost.authorLine}
+                    snippet={quotedPost.snippet}
+                    openUrl={quotedPost.openUrl}
+                    hasMediaHint={quotedPost.hasMediaHint}
+                  />
+                </div>
+              </>
+            ) : null}
+            {relationshipType === "repost" && repostedPost ? (
+              <>
+                <RailSectionHeader className={RAIL_SECTION_LABEL}>
+                  Reposted post
+                </RailSectionHeader>
+                <div className="mt-1.5">
+                  <RepostedPostBlock
+                    authorLine={repostedPost.authorLine}
+                    snippet={repostedPost.snippet}
+                    openUrl={repostedPost.openUrl}
+                  />
+                </div>
+              </>
+            ) : null}
+            {relationshipType === "thread_item" && threadContextPosition ? (
+              <>
+                <RailSectionHeader className={RAIL_SECTION_LABEL}>
+                  Thread context
+                </RailSectionHeader>
+                <div className="mt-1.5">
+                  <ThreadContextBlock positionLine={threadContextPosition} />
+                </div>
+              </>
+            ) : null}
+          </>
+        ) : null}
 
         {showStructure ? (
           <>
@@ -376,7 +547,7 @@ export function PostDetailRail({
           </>
         ) : null}
 
-        {showSignedEvent && post.signedEvent ? (
+        {showTechnicalBlock ? (
           <>
             <div className={divide} />
             <div className="flex items-center justify-between gap-2">
@@ -387,21 +558,35 @@ export function PostDetailRail({
               </RailSectionHeader>
               <button
                 type="button"
-                onClick={onToggleEventData}
-                aria-expanded={showEventData}
-                aria-controls="post-detail-signed-event"
+                onClick={toggleTechnical}
+                aria-expanded={showTechnicalExpanded}
+                aria-controls="post-detail-technical-block"
                 className="text-muted-foreground hover:text-foreground text-[10px] font-medium"
               >
-                {showEventData ? "Hide" : "Show"}
+                {showTechnicalExpanded ? "Hide" : "Show"}
               </button>
             </div>
-            {showEventData ? (
-              <pre
-                id="post-detail-signed-event"
-                className="bg-muted/40 text-foreground mt-2 max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
-              >
-                {JSON.stringify(post.signedEvent, null, 2)}
-              </pre>
+            {showTechnicalExpanded ? (
+              <div id="post-detail-technical-block" className="mt-2 space-y-2">
+                {technicalTags.length > 0 ? (
+                  <div>
+                    <p className="text-muted-foreground mb-1 text-[10px] font-medium">
+                      Tags (raw)
+                    </p>
+                    <pre className="bg-muted/40 text-foreground max-h-32 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap">
+                      {technicalTags.join("\n")}
+                    </pre>
+                  </div>
+                ) : null}
+                {hasSignedEventJson ? (
+                  <pre
+                    id="post-detail-signed-event"
+                    className="bg-muted/40 text-foreground max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
+                  >
+                    {JSON.stringify(post.signedEvent, null, 2)}
+                  </pre>
+                ) : null}
+              </div>
             ) : null}
           </>
         ) : null}

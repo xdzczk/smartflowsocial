@@ -1,7 +1,7 @@
 import { Link, Outlet, useFetcher, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -34,12 +34,16 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import {
+  AttachmentCountChip,
+  PublishingContentTypeFilter,
   PublishingEmptyState,
   PublishingFilterRow,
   PublishingLibraryShell,
   PublishingPageHeader,
-  PublishingSegmentedControlButtons,
+  PUBLISHING_FILTER_SELECT_TRIGGER_CLASS,
+  PUBLISHING_TEMPLATE_TYPE_SELECT_TRIGGER_CLASS,
   TemplateKindChip,
+  TextOnlyIndicatorChip,
 } from "~/features/posts/ui";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -264,7 +268,7 @@ export default function TemplatesPage() {
               actions={
                 <Button
                   type="button"
-                  className="shrink-0"
+                  className="h-9 shrink-0 px-4"
                   onClick={() => setCreateOpen(true)}
                 >
                   Create template
@@ -275,17 +279,32 @@ export default function TemplatesPage() {
 
           <PublishingFilterRow
             leading={
-              <PublishingSegmentedControlButtons
+              <PublishingContentTypeFilter
                 data-testid="templates-type-segments"
-                radiogroupAriaLabel="Template type"
                 value={typeFilter}
+                ariaLabel="Template type"
+                triggerClassName={PUBLISHING_TEMPLATE_TYPE_SELECT_TRIGGER_CLASS}
                 onValueChange={(v) => setTypeFilter(v as TemplateFilter)}
                 items={[
-                  { id: "all", label: "All", ariaLabel: "All templates" },
-                  { id: "POST", label: "Posts", ariaLabel: "Post templates" },
+                  {
+                    id: "all",
+                    to: "",
+                    triggerLabel: "All types",
+                    menuLabel: "All types",
+                    ariaLabel: "All templates",
+                  },
+                  {
+                    id: "POST",
+                    to: "",
+                    triggerLabel: "Post",
+                    menuLabel: "Post",
+                    ariaLabel: "Post templates",
+                  },
                   {
                     id: "LONGFORM",
-                    label: "Articles",
+                    to: "",
+                    triggerLabel: "Article",
+                    menuLabel: "Article",
                     ariaLabel: "Article templates",
                   },
                 ]}
@@ -297,7 +316,7 @@ export default function TemplatesPage() {
                 onValueChange={(v) => setSort(v as TemplateSort)}
               >
                 <SelectTrigger
-                  className="border-border h-9 w-full sm:w-[200px]"
+                  className={PUBLISHING_FILTER_SELECT_TRIGGER_CLASS}
                   aria-label="Sort templates"
                 >
                   <SelectValue placeholder="Sort" />
@@ -361,58 +380,89 @@ export default function TemplatesPage() {
                   const payload = templateToDetailPayload(t);
                   const mediaCount = payload.mediaCount;
                   const thumb = payload.imageUrl;
+                  const displayName = t.name ?? "Unnamed template";
+
+                  const handleCardKeyDown = (
+                    e: KeyboardEvent<HTMLDivElement>
+                  ) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSheetTemplate(template);
+                    }
+                  };
 
                   return (
                     <li key={id}>
-                      <div className="border-border bg-card hover:border-border hover:bg-muted/25 rounded-xl border p-4 transition-colors">
+                      <div
+                        className="border-border bg-card hover:border-border/80 hover:bg-muted/30 focus-visible:ring-ring cursor-pointer rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Template: ${displayName}`}
+                        onClick={() => setSheetTemplate(template)}
+                        onKeyDown={handleCardKeyDown}
+                      >
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-5">
-                          {thumb ? (
-                            <div className="shrink-0">
+                          <div className="shrink-0">
+                            {thumb ? (
                               <img
                                 src={thumb}
                                 alt=""
                                 className="border-border/60 size-14 rounded-lg border object-cover sm:size-16"
                               />
-                            </div>
-                          ) : null}
+                            ) : (
+                              <div
+                                className="border-border/40 bg-muted/30 size-14 rounded-lg border border-dashed sm:size-16"
+                                aria-hidden
+                              />
+                            )}
+                          </div>
                           <div className="flex min-w-0 flex-1 flex-col">
-                            <button
-                              type="button"
-                              className="text-left"
-                              onClick={() => setSheetTemplate(template)}
-                            >
-                              <div className="text-foreground leading-snug font-semibold">
-                                {t.name ?? "Unnamed template"}
-                              </div>
-                              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
+                            <div className="space-y-1 text-left">
+                              <h3 className="text-foreground text-base font-semibold tracking-tight">
+                                {displayName}
+                              </h3>
+                              <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
                                 {previewSnippet(t)}
                               </p>
-                            </button>
+                            </div>
                             <div className="mt-3 flex min-h-[1.75rem] flex-wrap items-center gap-2">
                               <TemplateKindChip label={typeLabel(t)} />
                               {mediaCount > 0 ? (
-                                <span className="text-muted-foreground text-xs">
-                                  {mediaCount}{" "}
-                                  {mediaCount === 1
-                                    ? "attachment"
-                                    : "attachments"}
-                                </span>
-                              ) : null}
+                                <AttachmentCountChip count={mediaCount} />
+                              ) : (
+                                <TextOnlyIndicatorChip />
+                              )}
                               <span className="text-muted-foreground text-xs sm:hidden">
                                 {formatTemplateUpdated(t as never, dateLocale)}
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex shrink-0 flex-col gap-3 sm:min-w-[12.5rem] sm:items-end">
-                            <span className="text-muted-foreground hidden text-xs sm:block sm:text-right">
+                          <div className="flex shrink-0 flex-col gap-2 sm:min-w-[12rem] sm:items-end">
+                            <span className="text-muted-foreground hidden text-xs tabular-nums sm:block sm:text-right">
                               {formatTemplateUpdated(t as never, dateLocale)}
                             </span>
-                            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                              <Button size="sm" className="gap-1.5" asChild>
+                            <div
+                              role="toolbar"
+                              aria-label="Template actions"
+                              tabIndex={-1}
+                              className="flex flex-wrap items-center justify-end gap-1.5"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                size="sm"
+                                className="h-9 gap-1.5 px-3"
+                                asChild
+                              >
                                 <Link to={rowUseHref}>Use template</Link>
                               </Button>
-                              <Button variant="outline" size="sm" asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 gap-1.5 px-3"
+                                asChild
+                              >
                                 <Link
                                   to={`/dashboard/templates/edit/${id}`}
                                   className="gap-1.5"
@@ -431,7 +481,7 @@ export default function TemplatesPage() {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 shrink-0"
+                                    className="h-9 w-9 shrink-0"
                                     aria-label="More actions"
                                   >
                                     <MoreHorizontal

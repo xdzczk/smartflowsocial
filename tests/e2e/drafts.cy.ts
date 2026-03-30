@@ -35,7 +35,7 @@ describe("Drafts Management", () => {
       cy.get("body").should("be.visible");
     });
 
-    it("should show drafts type segmented control", () => {
+    it("should show drafts content type filter", () => {
       cy.visitAndCheck("/dashboard/drafts");
       cy.get('[data-testid="drafts-type-segments"]', {
         timeout: 15000,

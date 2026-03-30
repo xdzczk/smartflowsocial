@@ -5,16 +5,10 @@ import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { clearUploadProviderCache } from "~/lib/query";
 import { updateBlossomMirrorsClientSchema } from "~/lib/validation";
@@ -120,127 +114,122 @@ export function BlossomMediaMirrorsSettings({
   }, [fetcher.state, fetcher.data]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Blossom Media Mirrors</CardTitle>
-        <CardDescription>
-          Only works if your Media Upload Provider is set to a Blossom option.
-          Configure additional Blossom media mirror servers for enhanced
-          reliability.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSubmit(e);
-          }}
-          className="space-y-4"
-        >
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="enableMirrorBlossom"
-              name="enableMirrorBlossom"
-              checked={watchedEnableMirror}
-              onCheckedChange={(checked) => {
-                form.setValue("enableMirrorBlossom", checked as boolean);
-                form.clearErrors("mirrorUrls");
-              }}
-              disabled={isSubmitting}
-            />
-            <Label
-              htmlFor="enableMirrorBlossom"
-              className="cursor-pointer text-sm font-normal"
-            >
-              Enable Blossom Media Mirrors
-            </Label>
-          </div>
+    <ManagementListSection
+      title="Blossom media mirrors"
+      description="Only applies when your media upload provider is a Blossom option. Add mirror servers for redundancy."
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSubmit(e);
+        }}
+        className="space-y-4"
+      >
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="enableMirrorBlossom"
+            name="enableMirrorBlossom"
+            checked={watchedEnableMirror}
+            onCheckedChange={(checked) => {
+              form.setValue("enableMirrorBlossom", checked as boolean);
+              form.clearErrors("mirrorUrls");
+            }}
+            disabled={isSubmitting}
+          />
+          <Label
+            htmlFor="enableMirrorBlossom"
+            className="cursor-pointer text-sm font-normal"
+          >
+            Enable Blossom Media Mirrors
+          </Label>
+        </div>
 
-          {watchedEnableMirror ? (
+        {watchedEnableMirror ? (
+          <div className="space-y-2">
+            <Label>Mirror URLs</Label>
             <div className="space-y-2">
-              <Label>Mirror URLs</Label>
-              <div className="space-y-2">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex gap-2">
-                    <Input
-                      id={`mirror-url-${index}`}
-                      {...form.register(`mirrorUrls.${index}`)}
-                      placeholder="https://blossom.example.com"
-                      disabled={isSubmitting}
-                      onBlur={() => {
-                        const value = form.getValues(`mirrorUrls.${index}`);
-                        if (value.trim() && !validateUrl(value.trim())) {
-                          form.setError(`mirrorUrls.${index}`, {
-                            type: "manual",
-                            message:
-                              "Must start with https:// and be a valid URL",
-                          });
-                        } else {
-                          form.clearErrors(`mirrorUrls.${index}`);
-                        }
-                      }}
-                      className={
-                        form.formState.errors.mirrorUrls?.[index]
-                          ? "border-destructive"
-                          : ""
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <Input
+                    id={`mirror-url-${index}`}
+                    {...form.register(`mirrorUrls.${index}`)}
+                    placeholder="https://blossom.example.com"
+                    disabled={isSubmitting}
+                    onBlur={() => {
+                      const value = form.getValues(`mirrorUrls.${index}`);
+                      if (value.trim() && !validateUrl(value.trim())) {
+                        form.setError(`mirrorUrls.${index}`, {
+                          type: "manual",
+                          message:
+                            "Must start with https:// and be a valid URL",
+                        });
+                      } else {
+                        form.clearErrors(`mirrorUrls.${index}`);
                       }
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        remove(index);
-                        form.clearErrors("mirrorUrls");
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      <X className={INLINE_ICON_SIZE_CLASS} />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => append("")}
-                  disabled={isSubmitting}
-                  className="w-full"
-                >
-                  <Plus className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`} />
-                  Add Mirror URL
-                </Button>
-              </div>
-              {form.formState.errors.mirrorUrls ? (
-                <p className="text-destructive text-sm">
-                  {form.formState.errors.mirrorUrls.message ??
-                    "Please fix validation errors"}
-                </p>
-              ) : null}
-              <p className="text-muted-foreground text-xs">
-                Add Blossom mirror URLs one by one
-              </p>
+                    }}
+                    className={
+                      form.formState.errors.mirrorUrls?.[index]
+                        ? "border-destructive"
+                        : ""
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      remove(index);
+                      form.clearErrors("mirrorUrls");
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <X className={INLINE_ICON_SIZE_CLASS} />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append("")}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                <Plus className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`} />
+                Add Mirror URL
+              </Button>
             </div>
-          ) : null}
+            {form.formState.errors.mirrorUrls ? (
+              <p className="text-destructive text-sm">
+                {form.formState.errors.mirrorUrls.message ??
+                  "Please fix validation errors"}
+              </p>
+            ) : null}
+            <p className="text-muted-foreground text-xs">
+              Add Blossom mirror URLs one by one
+            </p>
+          </div>
+        ) : null}
 
+        <div className="flex justify-end">
           <Button
             type="submit"
             disabled={isSubmitting || !hasChanged || hasValidationErrors}
-            className="w-full"
+            size="sm"
           >
-            {isSubmitting ? "Saving..." : "Save Blossom Settings"}
+            {isSubmitting ? "Saving…" : "Save mirror settings"}
           </Button>
+        </div>
 
-          {fetcher.data?.success ? (
-            <p className="text-success text-sm">
-              Blossom settings updated successfully!
-            </p>
-          ) : null}
-          {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
-          ) : null}
-        </form>
-      </CardContent>
-    </Card>
+        {fetcher.data?.success ? (
+          <p className="text-success text-sm">
+            Blossom settings updated successfully!
+          </p>
+        ) : null}
+        {fetcher.data?.error ? (
+          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+        ) : null}
+      </form>
+    </ManagementListSection>
   );
 }

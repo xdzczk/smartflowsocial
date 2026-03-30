@@ -1,20 +1,11 @@
 /**
- * Preferred Nostr Client Settings
- * Lets users choose where "View note/article" links open (Primal, Damus, Amethyst, etc. or custom URL).
+ * Preferred Nostr Client — where "View note/article" links open.
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -24,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 import type { PreferredNostrClientPreset } from "~/features/user";
 
 const PRESET_OPTIONS: Array<{
@@ -59,6 +51,13 @@ export function NostrClientSettings({
     initialCustomUrl ?? ""
   );
 
+  useEffect(() => {
+    queueMicrotask(() => {
+      setPreferredNostrClient(initialClient || "PRIMAL");
+      setCustomNostrClientBaseUrl(initialCustomUrl ?? "");
+    });
+  }, [initialClient, initialCustomUrl]);
+
   const isSubmitting = fetcher.state === "submitting";
   const hasChanged =
     preferredNostrClient !== (initialClient || "PRIMAL") ||
@@ -85,76 +84,68 @@ export function NostrClientSettings({
   };
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="p-4 sm:p-6">
-        <div className="flex items-start gap-4">
-          <ExternalLink className="text-foreground h-5 w-5 flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <CardTitle>Preferred Nostr Client</CardTitle>
-            <CardDescription>
-              Choose where &quot;View note&quot; and &quot;View article&quot;
-              links open (e.g. Primal, Damus, Iris)
-            </CardDescription>
-          </div>
+    <PreferenceSection
+      title="Preferred Nostr client"
+      description='Where "View note" and "View article" links open (e.g. Primal, Damus, Iris).'
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="preferredNostrClient">Client</Label>
+          <Select
+            value={preferredNostrClient}
+            onValueChange={setPreferredNostrClient}
+            disabled={isSubmitting}
+          >
+            <SelectTrigger id="preferredNostrClient">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRESET_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        {preferredNostrClient === "CUSTOM" ? (
           <div className="space-y-2">
-            <Label htmlFor="preferredNostrClient">Nostr client</Label>
-            <Select
-              value={preferredNostrClient}
-              onValueChange={setPreferredNostrClient}
+            <Label htmlFor="customNostrClientBaseUrl">Base URL</Label>
+            <Input
+              id="customNostrClientBaseUrl"
+              type="url"
+              placeholder="https://example.com"
+              value={customNostrClientBaseUrl}
+              onChange={(e) => setCustomNostrClientBaseUrl(e.target.value)}
               disabled={isSubmitting}
-            >
-              <SelectTrigger id="preferredNostrClient">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRESET_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              className="font-mono text-sm"
+            />
+            <p className="text-muted-foreground text-xs">
+              Must start with https://. Paths /e/, /a/, /p/ will be appended for
+              notes, articles, and profiles.
+            </p>
           </div>
+        ) : null}
 
-          {preferredNostrClient === "CUSTOM" ? (
-            <div className="space-y-2">
-              <Label htmlFor="customNostrClientBaseUrl">Base URL</Label>
-              <Input
-                id="customNostrClientBaseUrl"
-                type="url"
-                placeholder="https://example.com"
-                value={customNostrClientBaseUrl}
-                onChange={(e) => setCustomNostrClientBaseUrl(e.target.value)}
-                disabled={isSubmitting}
-                className="font-mono text-sm"
-              />
-              <p className="text-muted-foreground text-xs">
-                Must start with https://. Paths /e/, /a/, /p/ will be appended
-                for notes, articles, and profiles.
-              </p>
-            </div>
-          ) : null}
-
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             type="submit"
             disabled={isSubmitting || !hasChanged}
-            className="w-full"
+            size="sm"
           >
-            {isSubmitting ? "Saving..." : "Save"}
+            {isSubmitting ? "Saving…" : "Save client"}
           </Button>
-
           {fetcher.data?.success ? (
-            <p className="text-success text-sm">Settings saved.</p>
+            <span className="text-success text-sm">Saved.</span>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
+            <span className="text-destructive text-sm">
+              {fetcher.data.error}
+            </span>
           ) : null}
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </PreferenceSection>
   );
 }

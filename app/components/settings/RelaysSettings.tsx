@@ -8,13 +8,6 @@ import type { z } from "zod";
 import { BlastrPolicySettings } from "~/components/settings/BlastrPolicySettings";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -36,6 +29,7 @@ import type {
   Nip65ProfileRelayEntry,
   Nip65RelayScope,
 } from "~/features/relays/nip65-relay-entry";
+import { ProviderSelectionSection } from "~/features/settings/components/patterns";
 import { publishNip65RelayListToNostr } from "~/features/settings/publish-nip65-relay-list.client";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
@@ -274,16 +268,11 @@ export function RelaysSettings({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nostr Relays</CardTitle>
-        <CardDescription>
-          SFS Blastr is optional fan-out. Below, pick either your Nostr profile
-          relay list (NIP-65) or the SmartFlow app list — only one is used when
-          you publish.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <ProviderSelectionSection
+      title="Nostr relays"
+      description="SFS Blastr is optional fan-out. Pick either your Nostr profile relay list (NIP-65) or the SmartFlow app list — only one is used when you publish."
+    >
+      <div className="space-y-6">
         {managedRelays.length > 0 ? (
           <div className="space-y-3">
             <div className="text-sm font-medium">Managed relays</div>
@@ -535,13 +524,15 @@ export function RelaysSettings({
             </TabsContent>
           </Tabs>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged || !form.formState.isValid}
-            className="w-full"
-          >
-            {isSubmitting ? "Saving…" : "Save relay preferences"}
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !hasChanged || !form.formState.isValid}
+              size="sm"
+            >
+              {isSubmitting ? "Saving…" : "Save relay preferences"}
+            </Button>
+          </div>
 
           {fetcher.data?.success ? (
             <p className="text-success text-sm">
@@ -575,7 +566,7 @@ export function RelaysSettings({
             </DialogContent>
           </Dialog>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </ProviderSelectionSection>
   );
 }

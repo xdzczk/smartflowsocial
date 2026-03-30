@@ -447,8 +447,7 @@ export default function BroadcastNewRoute() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">New broadcast</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Send signed Nostr direct messages to selected audiences. Use
-          broadcasts for meaningful updates, not noise.
+          Send signed Nostr direct messages to selected audiences.
         </p>
       </div>
 

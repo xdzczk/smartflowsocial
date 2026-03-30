@@ -35,15 +35,12 @@ import {
   getContentTitle,
   getMediaPreviewUrls,
   getPostRowThumbnailBadge,
-  getQueueTypeDisplay,
-  getStatusColor,
-  getStatusText,
   isRepostContent,
 } from "../utils/content-helpers";
 
 import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
-import { QueueStatusChip } from "./publishing-suite";
+import { ContentStatusChip, QueueStatusChip } from "./publishing-suite";
 
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
@@ -116,7 +113,6 @@ export function ContentListCard({
     () => getNostrClientUrlsFromUser(rootData?.user),
     [rootData?.user]
   );
-  const queueDisplay = getQueueTypeDisplay(item.queueType);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
   const thumbnailBadge =
@@ -235,20 +231,11 @@ export function ContentListCard({
         </p>
         <div className="mt-1 flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
           <span className="text-muted-foreground">{dateLabel}</span>
-          {type === "draft" ? (
-            <QueueStatusChip queueType={item.queueType} mode="draft" />
-          ) : (
-            <span className={queueDisplay.className} style={queueDisplay.style}>
-              {queueDisplay.name}
-            </span>
-          )}
-          {type === "draft" ? null : (
-            <span
-              className={`inline-flex rounded-full border border-transparent px-1.5 py-0.5 text-[10px] font-semibold ${getStatusColor(item)}`}
-            >
-              {getStatusText(item)}
-            </span>
-          )}
+          <QueueStatusChip
+            queueType={item.queueType}
+            mode={type === "draft" ? "draft" : "default"}
+          />
+          {type === "draft" ? null : <ContentStatusChip item={item} />}
         </div>
       </div>
       <DropdownMenu

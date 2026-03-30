@@ -28,6 +28,7 @@ import type { Contest } from "./data/contest-prisma-types.server";
 import {
   findContestEntriesForDetail,
   findContestEventLogs,
+  findContestLaunchOrchestrationForDetail,
   findContestWinnersWithEntries,
   findLatestContestSnapshot,
 } from "./repositories/contest-detail-queries.server";
@@ -74,9 +75,11 @@ export async function getContestDetailPageData(
   const fairnessConfig =
     (contest.fairnessConfig as Record<string, unknown> | null) ?? null;
 
+  const quoteSourceTrim = contest.sourceNoteId?.trim() ?? "";
+  const quoteSourceId = quoteSourceTrim !== "" ? quoteSourceTrim : "pending";
   const quote = quoteContestFinalization({
     contest: {
-      sourceNoteId: contest.sourceNoteId,
+      sourceNoteId: quoteSourceId,
       rankingMetric: contest.rankingMetric,
       contestEndAt: contest.contestEndAt,
       prizeMode: contest.prizeMode,
@@ -103,7 +106,7 @@ export async function getContestDetailPageData(
     : null;
 
   const receiptSummaryLine =
-    contest.status === "COMPLETED" && completedAtLabel
+    contest.status === "COMPLETED" && completedAtLabel && contest.sourceNoteId
       ? buildContestReceiptSummaryLine({
           sourceNoteId: contest.sourceNoteId,
           rankingMetric: contest.rankingMetric,
@@ -134,7 +137,7 @@ export async function getContestDetailPageData(
   let livePreview: ContestDetailPageData["livePreview"] = [];
   let liveStats: ContestDetailPageData["liveStats"] = null;
 
-  if (contest.status === "LIVE") {
+  if (contest.status === "LIVE" && contest.sourceNoteId) {
     const nowUnix = Math.floor(Date.now() / 1000);
     const endUnix = Math.floor(contest.contestEndAt.getTime() / 1000);
     /** Rank as-of now: replies up to min(now, end) — documented product rule. */
@@ -156,6 +159,8 @@ export async function getContestDetailPageData(
       reactionsCount: row.reactionsCount,
       zapCount: row.zapCount,
       satsZapped: row.satsZapped,
+      repliesCount: row.repliesCount,
+      repostsCount: row.repostsCount,
       createdAtUnix: row.createdAtUnix,
     }));
     const pubkeys = capped.map((r) => r.authorPubkey);
@@ -226,6 +231,8 @@ export async function getContestDetailPageData(
     reactionsCount: row.reactionsCount,
     zapCount: row.zapCount,
     satsZapped: row.satsZapped,
+    repliesCount: row.repliesCount,
+    repostsCount: row.repostsCount,
     isExcluded: row.isExcluded,
   }));
 
@@ -255,20 +262,28 @@ export async function getContestDetailPageData(
   let totalReactions = 0;
   let totalZaps = 0;
   let totalSatsZapped = 0;
+  let totalReplies = 0;
+  let totalReposts = 0;
   const rowsForAgg = frozenOrDone ? eligible : [];
   for (const row of rowsForAgg) {
     totalReactions += row.reactionsCount;
     totalZaps += row.zapCount;
     totalSatsZapped += row.satsZapped;
+    totalReplies += row.repliesCount;
+    totalReposts += row.repostsCount;
   }
   if (contest.status === "LIVE" && livePreview.length > 0) {
     totalReactions = 0;
     totalZaps = 0;
     totalSatsZapped = 0;
+    totalReplies = 0;
+    totalReposts = 0;
     for (const row of livePreview) {
       totalReactions += row.reactionsCount;
       totalZaps += row.zapCount;
       totalSatsZapped += row.satsZapped;
+      totalReplies += row.repliesCount;
+      totalReposts += row.repostsCount;
     }
   }
 
@@ -298,6 +313,10 @@ export async function getContestDetailPageData(
       pending += 1;
     }
   }
+
+  const launchOrchestrationRow = await findContestLaunchOrchestrationForDetail(
+    contest.id
+  );
 
   const fairnessProofText =
     contest.status === "COMPLETED"
@@ -409,6 +428,8 @@ export async function getContestDetailPageData(
       totalReactions,
       totalZaps,
       totalSatsZapped,
+      totalReplies,
+      totalReposts,
     },
     payoutSummary: {
       winnerSlots: winnerPubkeys.length,
@@ -422,6 +443,21 @@ export async function getContestDetailPageData(
       plannedSats: contest.plannedPayoutSats ?? quote.plannedPayoutSats,
     },
     canUsePresets,
+    launchOrchestration: launchOrchestrationRow
+      ? {
+          sourceMode: launchOrchestrationRow.sourceMode,
+          launchMode: launchOrchestrationRow.launchMode,
+          sourcePostId: launchOrchestrationRow.sourcePostId,
+          sourcePostPublishStatus:
+            launchOrchestrationRow.sourcePostPublishStatus,
+          contestActivationStatus:
+            launchOrchestrationRow.contestActivationStatus,
+          lastErrorMessage: launchOrchestrationRow.lastErrorMessage,
+          lastErrorCode: launchOrchestrationRow.lastErrorCode,
+          scheduledFor:
+            launchOrchestrationRow.scheduledFor?.toISOString() ?? null,
+        }
+      : null,
   };
 }
 
@@ -445,7 +481,7 @@ export async function getContestPublicPageData(contestId: string) {
     entryEventId: string;
     replySnippet: string | null;
   }> = [];
-  if (contest.status === "LIVE") {
+  if (contest.status === "LIVE" && contest.sourceNoteId) {
     const resolved = await resolveContestEntries({
       userId: contest.userId,
       sourceNoteId: contest.sourceNoteId,

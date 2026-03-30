@@ -1,5 +1,5 @@
 /**
- * Type-specific title, subtitle, and chips for Drafts table / cards.
+ * Type-specific title, subtitle, and media hints for Drafts table / cards.
  */
 
 import {
@@ -11,8 +11,13 @@ import {
 
 export interface DraftRowPreview {
   title: string;
+  /** Secondary line under the title (excerpt, body preview, poll/thread detail). */
   subtitle: string;
-  chips: string[];
+  /**
+   * Quiet media/format hint under the primary type (e.g. "Text only", "2 images").
+   * Omitted for poll/thread; plain posts and reposts only.
+   */
+  mediaLine: string | null;
 }
 
 function firstMeaningfulLine(
@@ -92,6 +97,20 @@ function pollMetaFromDraft(post: DraftPostLike & { content?: string | null }): {
   };
 }
 
+/** When `true`, draft has no caption, body, or media (show subtitle "No content yet" instead). */
+function mediaLineForShortPost(
+  mediaCount: number,
+  isTrulyEmpty: boolean
+): string | null {
+  if (mediaCount > 0) {
+    return `${mediaCount} image${mediaCount === 1 ? "" : "s"}`;
+  }
+  if (isTrulyEmpty) {
+    return null;
+  }
+  return "Text only";
+}
+
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Branches mirror draft post kinds (poll / thread / repost / plain) */
 export function buildDraftRowPreview(
   post: DraftPostLike & {
@@ -101,7 +120,6 @@ export function buildDraftRowPreview(
     fileUrl?: string[] | null;
   }
 ): DraftRowPreview {
-  const chips: string[] = [];
   const mediaCount = countMediaUrls(post.fileUrl ?? null);
 
   if (isPollDraftPost(post)) {
@@ -111,8 +129,7 @@ export function buildDraftRowPreview(
       optionCount > 0
         ? `${optionCount} option${optionCount === 1 ? "" : "s"}`
         : "Poll draft";
-    chips.push("Poll");
-    return { title, subtitle, chips };
+    return { title, subtitle, mediaLine: null };
   }
 
   if (isThreadDraftPost(post)) {
@@ -129,12 +146,7 @@ export function buildDraftRowPreview(
           ? `${n} posts · starts with: ${start}`
           : `${n} post${n === 1 ? "" : "s"}`
         : "Thread draft";
-    chips.push("Thread");
-    return { title, subtitle, chips };
-  }
-
-  if (isRepostDraftPost(post)) {
-    chips.push("Repost");
+    return { title, subtitle, mediaLine: null };
   }
 
   const cap = post.caption?.trim();
@@ -143,19 +155,26 @@ export function buildDraftRowPreview(
     (cap && cap.length > 0 ? cap : undefined) ??
     (body && body.length > 0 ? firstMeaningfulLine(body, 100) : undefined) ??
     "Untitled post";
-  const subtitle =
-    cap && body && cap !== body ? firstMeaningfulLine(body, 100) : "";
-  if (mediaCount > 0) {
-    chips.push(`${mediaCount} image${mediaCount === 1 ? "" : "s"}`);
+
+  const hasNoText = !cap && !body;
+  let subtitle = "";
+  if (cap && body && cap !== body) {
+    subtitle = firstMeaningfulLine(body, 100);
+  } else if (hasNoText && mediaCount === 0) {
+    subtitle = "No content yet";
+  } else if (cap && body && cap === body) {
+    subtitle = "";
   }
-  if (!isRepostDraftPost(post) && !cap && !body) {
-    chips.push("TEXT");
-  }
+
+  const mediaLine = mediaLineForShortPost(
+    mediaCount,
+    hasNoText && mediaCount === 0
+  );
+
   return {
     title,
-    subtitle:
-      subtitle.length > 0 ? subtitle : mediaCount === 0 && !cap ? "" : subtitle,
-    chips,
+    subtitle,
+    mediaLine,
   };
 }
 

@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  excludeSelfEngagementForScopedRootPosts,
   filterRelatedEventsToRootNoteEngagementOnly,
   kind1IsDirectReplyToRootEvent,
   kind9735TargetsEventId,
@@ -121,6 +122,45 @@ describe("giveaway-single-post-engagement", () => {
       expect(out.map((e) => e.id).sort()).toEqual(
         ["direct", "l1", "z1"].sort()
       );
+    });
+  });
+
+  describe("excludeSelfEngagementForScopedRootPosts", () => {
+    it("drops engagement when actor pubkey matches scoped root author", () => {
+      const author = "aaa";
+      const map = new Map([[ROOT, author]]);
+      const selfLike: RelatedEvent = {
+        id: "l1",
+        pubkey: author,
+        created_at: 1,
+        kind: 7,
+        tags: [["e", ROOT]],
+      };
+      const otherLike: RelatedEvent = {
+        id: "l2",
+        pubkey: "bbb",
+        created_at: 1,
+        kind: 7,
+        tags: [["e", ROOT]],
+      };
+      const out = excludeSelfEngagementForScopedRootPosts(
+        [selfLike, otherLike],
+        map
+      );
+      expect(out.map((e) => e.id)).toEqual(["l2"]);
+    });
+
+    it("keeps events that do not tag a scoped root id", () => {
+      const map = new Map([[ROOT, "aaa"]]);
+      const orphan: RelatedEvent = {
+        id: "x",
+        pubkey: "aaa",
+        created_at: 1,
+        kind: 7,
+        tags: [["e", "unknown-note"]],
+      };
+      const out = excludeSelfEngagementForScopedRootPosts([orphan], map);
+      expect(out).toHaveLength(1);
     });
   });
 });

@@ -3,6 +3,7 @@
  * Exports runPostChecker() used by the post-checker worker.
  */
 
+import { processDueScheduledContestLaunches } from "~/features/contest";
 import { processLongFormPost } from "~/features/posts/queue-handlers/longform-job.server";
 import { processPost } from "~/features/posts/queue-handlers/post-job.server";
 import { extractPostData } from "~/features/posts/queue-payload.server";
@@ -43,6 +44,8 @@ export async function runPostChecker(): Promise<{ processed: number }> {
       }
     }
   }
+
+  await processDueScheduledContestLaunches();
 
   for (const longformPost of longformPosts) {
     if (

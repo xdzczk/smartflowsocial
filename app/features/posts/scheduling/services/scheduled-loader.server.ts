@@ -3,6 +3,7 @@
  * Centralized data fetching for scheduled posts page
  */
 
+import { getScheduledContestLaunchesForUser } from "~/features/contest";
 import { combineContent as _combineContent } from "~/features/posts/combined.server";
 import {
   toPostDTOArray,
@@ -56,6 +57,7 @@ export async function loadScheduledData(
     queueTypes,
     hashTagPresets,
     repostsCount,
+    scheduledContestLaunches,
   ] = await Promise.all([
     getScheduledPosts({
       userId,
@@ -79,6 +81,10 @@ export async function loadScheduledData(
       queueType,
       scheduledFromUtc,
       scheduledToUtc,
+    }),
+    getScheduledContestLaunchesForUser(userId, {
+      fromUtc: scheduledFromUtc,
+      toUtc: scheduledToUtc,
     }),
   ]);
 
@@ -160,5 +166,6 @@ export async function loadScheduledData(
     totalRepostsCount: repostsCount,
     totalLongformCount: totalLongform,
     totalContentCount: totalPosts + totalLongform,
+    scheduledContestLaunches,
   };
 }

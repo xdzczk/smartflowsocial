@@ -29,6 +29,8 @@ export interface ContestLeaderboardEntryRow {
   reactionsCount: number;
   zapCount: number;
   satsZapped: number;
+  repliesCount: number;
+  repostsCount: number;
 }
 
 export interface ContestLivePreviewRow {
@@ -40,6 +42,8 @@ export interface ContestLivePreviewRow {
   reactionsCount: number;
   zapCount: number;
   satsZapped: number;
+  repliesCount: number;
+  repostsCount: number;
   createdAtUnix: number;
 }
 

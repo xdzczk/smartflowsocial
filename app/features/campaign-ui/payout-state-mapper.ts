@@ -24,6 +24,7 @@ type GiveawayStatus =
   | "CANCELLED";
 type ContestStatus =
   | "DRAFT"
+  | "SCHEDULED_LAUNCH"
   | "LIVE"
   | "ENDED_REVIEW"
   | "LOCKED"
@@ -57,6 +58,8 @@ export function mapContestCampaignPhase(
 ): UnifiedCampaignPhase {
   switch (status) {
     case "DRAFT":
+      return "Draft";
+    case "SCHEDULED_LAUNCH":
       return "Draft";
     case "ENDED_REVIEW":
       return "Reviewing";

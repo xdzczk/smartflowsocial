@@ -1,12 +1,7 @@
 import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
- * Settings Tests
- *
- * Tests user settings functionality:
- * - Accessing settings page
- * - Viewing settings sections
- * - Updating settings (if applicable)
+ * Settings — shell navigation, deep links, and basic visibility.
  */
 describe("User Settings", () => {
   beforeEach(() => {
@@ -20,7 +15,6 @@ describe("User Settings", () => {
   describe("Settings Page Access", () => {
     it("should navigate to settings page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="settings"]')
         .first()
         .should("exist")
@@ -31,63 +25,42 @@ describe("User Settings", () => {
     it("should load settings page directly", () => {
       cy.visitAndCheck("/dashboard/settings");
       cy.location("pathname").should("include", "settings");
-      cy.get("body").should("be.visible");
+      cy.get('[data-testid="settings-page"]').should("be.visible");
     });
   });
 
-  describe("Settings Display", () => {
-    beforeEach(() => {
+  describe("Settings shell", () => {
+    it("shows settings page and active panel", () => {
       cy.visitAndCheck("/dashboard/settings");
+      cy.get('[data-testid="settings-page"]').should("be.visible");
+      cy.get('[data-testid="settings-active-panel"]').should("be.visible");
     });
 
-    it("should display settings page content", () => {
-      cy.get("body").should("be.visible");
-      // Should have some form of settings content
+    it("syncs tab query when selecting a section (desktop nav)", () => {
+      cy.visitAndCheck("/dashboard/settings?tab=general");
+      cy.viewport(1280, 800);
+      cy.get('[data-testid="settings-nav-desktop"]').should("be.visible");
+      cy.get('[data-testid="settings-nav-item-network"]').click();
+      cy.location("search").should("include", "tab=network");
+      cy.get('[data-testid="settings-active-panel"]').should("be.visible");
+    });
+
+    it("supports deep link to subscription when available", () => {
+      cy.visitAndCheck("/dashboard/settings?tab=subscription");
+      cy.location("search").should("include", "tab=subscription");
+      cy.get('[data-testid="settings-active-panel"]').should("be.visible");
+    });
+  });
+
+  describe("Settings content", () => {
+    it("should display settings forms or sections", () => {
+      cy.visitAndCheck("/dashboard/settings");
       cy.get("body").then(($body) => {
         const hasContent =
           $body.find("form").length > 0 ||
           $body.find('[data-testid="settings-section"]').length > 0 ||
           $body.find("h1, h2").length > 0;
-
         expect(hasContent).to.be.true;
-      });
-    });
-
-    it("should display settings sections or tabs", () => {
-      cy.get("body").then(($body) => {
-        const hasSections =
-          $body.find('[data-testid="settings-section"]').length > 0 ||
-          $body.find('[role="tablist"]').length > 0 ||
-          $body.find(".settings-section, .card").length > 0;
-
-        expect(hasSections).to.be.true;
-      });
-    });
-  });
-
-  describe("Settings Tabs", () => {
-    beforeEach(() => {
-      cy.visitAndCheck("/dashboard/settings");
-    });
-
-    it("should display queue settings tab", () => {
-      cy.get("body").then(($body) => {
-        // Check for queue tab or queue settings
-        const hasQueueTab =
-          $body.find('[role="tab"]').filter((_, el) => {
-            return Cypress.$(el).text().toLowerCase().includes("queue");
-          }).length > 0 ||
-          $body.find('a[href*="queue"]').length > 0 ||
-          $body.find("button").filter((_, el) => {
-            return Cypress.$(el).text().toLowerCase().includes("queue");
-          }).length > 0;
-
-        // Or check if queue settings are visible
-        const hasQueueSettings =
-          $body.find('[data-testid="queue-settings"]').length > 0 ||
-          $body.text().toLowerCase().includes("queue");
-
-        expect(hasQueueTab || hasQueueSettings).to.be.true;
       });
     });
   });

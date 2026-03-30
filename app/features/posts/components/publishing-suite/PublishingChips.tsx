@@ -2,19 +2,21 @@ import type { CombinedContent } from "~/features/posts/types";
 import {
   getContentTypeBadge,
   getQueueTypeDisplay,
-  getStatusColor,
   getStatusText,
+  getStatusTextToneClass,
 } from "~/features/posts/utils/content-helpers";
+import { cn } from "~/lib/utils";
 
-import { PUBLISHING_CONTENT_KIND_BADGE_CLASS } from "./constants";
+import {
+  PUBLISHING_CONTENT_KIND_BADGE_CLASS,
+  PUBLISHING_METADATA_CHIP_GAP_CLASS,
+  PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS,
+} from "./constants";
 
 export function ContentTypeChip({ item }: { item: CombinedContent }) {
   const badge = getContentTypeBadge(item);
   return <span className={badge.className}>{badge.text}</span>;
 }
-
-const NO_QUEUE_NEUTRAL_CLASS =
-  "inline-flex max-w-full truncate rounded-full border border-border/60 bg-muted/25 px-2 py-1 text-xs font-medium text-muted-foreground";
 
 export function QueueStatusChip({
   queueType,
@@ -29,7 +31,10 @@ export function QueueStatusChip({
   const isUnassigned = !queueType?.name || queueType.name === "unassigned";
   if (mode === "draft" && isUnassigned) {
     return (
-      <span className={NO_QUEUE_NEUTRAL_CLASS} title={noQueueLabel}>
+      <span
+        className={PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS}
+        title={noQueueLabel}
+      >
         {noQueueLabel}
       </span>
     );
@@ -41,7 +46,7 @@ export function QueueStatusChip({
 
   return (
     <span
-      className={queueDisplay.className}
+      className={cn("max-w-[12rem] truncate", queueDisplay.className)}
       style={queueDisplay.style}
       title={label}
     >
@@ -55,11 +60,14 @@ export function TemplateKindChip({ label }: { label: string }) {
   return <span className={PUBLISHING_CONTENT_KIND_BADGE_CLASS}>{label}</span>;
 }
 
-/** Scheduled / published / draft row status from combined content. */
+/** Scheduled / published / draft row status — lifecycle text, not queue-style pills. */
 export function ContentStatusChip({ item }: { item: CombinedContent }) {
   return (
     <span
-      className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${getStatusColor(item)}`}
+      className={cn(
+        "text-xs leading-normal font-medium",
+        getStatusTextToneClass(item)
+      )}
     >
       {getStatusText(item)}
     </span>
@@ -67,7 +75,7 @@ export function ContentStatusChip({ item }: { item: CombinedContent }) {
 }
 
 const META_CHIP_CLASS =
-  "text-muted-foreground inline-flex items-center rounded-full border border-border/60 bg-muted/20 px-2 py-0.5 text-xs font-medium";
+  "text-muted-foreground inline-flex items-center rounded-full border border-border/60 bg-muted/20 px-2 py-1 text-xs font-medium";
 
 export function AttachmentCountChip({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -81,3 +89,6 @@ export function AttachmentCountChip({ count }: { count: number }) {
 export function TextOnlyIndicatorChip() {
   return <span className={META_CHIP_CLASS}>Text only</span>;
 }
+
+/** Re-export for flex rows that group multiple metadata chips. */
+export { PUBLISHING_METADATA_CHIP_GAP_CLASS };

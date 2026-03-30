@@ -9,7 +9,11 @@ import {
 } from "./post-detail-helpers";
 
 export type PostDetailContentVariant = "text" | "media" | "poll" | "thread";
-export type PostDetailHeightMode = "compact" | "medium" | "large";
+export type PostDetailHeightMode =
+  | "compact"
+  | "medium"
+  | "large"
+  | "ultraCompact";
 
 function pollItemArgs(
   post: PostDetailModalPost

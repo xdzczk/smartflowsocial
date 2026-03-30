@@ -10,7 +10,7 @@ export interface ContestDetailPageData {
   contest: {
     id: string;
     title: string;
-    sourceNoteId: string;
+    sourceNoteId: string | null;
     sourcePostId: string | null;
     status: ContestStatus;
     statusLabel: string;
@@ -65,6 +65,8 @@ export interface ContestDetailPageData {
     reactionsCount: number;
     zapCount: number;
     satsZapped: number;
+    repliesCount: number;
+    repostsCount: number;
     createdAtUnix: number;
   }>;
   liveStats: {
@@ -94,6 +96,8 @@ export interface ContestDetailPageData {
     reactionsCount: number;
     zapCount: number;
     satsZapped: number;
+    repliesCount: number;
+    repostsCount: number;
     isExcluded: boolean;
   }>;
   leaderboardExcluded: Array<{
@@ -138,6 +142,8 @@ export interface ContestDetailPageData {
     totalReactions: number;
     totalZaps: number;
     totalSatsZapped: number;
+    totalReplies: number;
+    totalReposts: number;
   };
   payoutSummary: {
     winnerSlots: number;
@@ -152,4 +158,14 @@ export interface ContestDetailPageData {
   };
   /** Same gate as giveaway presets (paid plans). */
   canUsePresets: boolean;
+  launchOrchestration: null | {
+    sourceMode: string;
+    launchMode: string;
+    sourcePostId: string | null;
+    sourcePostPublishStatus: string;
+    contestActivationStatus: string;
+    lastErrorMessage: string | null;
+    lastErrorCode: string | null;
+    scheduledFor: string | null;
+  };
 }

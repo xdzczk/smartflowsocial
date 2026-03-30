@@ -83,6 +83,8 @@ model User {
   blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
   giveaways                Giveaway[]
   contests                 Contest[]
+  contestLaunchOrchestrations ContestLaunchOrchestration[]
+  contestCreationDrafts     ContestCreationDraft[]
   giveawayPresets          GiveawayPreset[]
   contestPresets           ContestPreset[]
   contestFinalizationPayments ContestFinalizationPayment[]
@@ -517,12 +519,42 @@ enum GiveawayFinalizationPaymentStatus {
 
 enum ContestStatus {
   DRAFT
+  /** Draft with a future scheduled activation (see ContestLaunchOrchestration). */
+  SCHEDULED_LAUNCH
   LIVE
   ENDED_REVIEW
   LOCKED
   PAYOUT_IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum ContestOrchestrationSourceMode {
+  existing_post
+  new_post
+}
+
+enum ContestOrchestrationLaunchMode {
+  now
+  schedule
+}
+
+enum ContestSourcePostPublishStatus {
+  not_needed
+  pending
+  scheduled
+  publishing
+  published
+  failed
+}
+
+enum ContestActivationOrchestrationStatus {
+  draft
+  scheduled
+  activating
+  active
+  failed
+  blocked_by_source_failure
 }
 
 enum ContestEntryType {
@@ -533,6 +565,8 @@ enum ContestRankingMetric {
   REACTIONS
   ZAPS
   SATS_ZAPPED
+  REPLIES
+  REPOSTS
 }
 
 enum ContestPrizeMode {
@@ -681,7 +715,8 @@ model Contest {
   userId                String
   title                 String?
   status                ContestStatus             @default(DRAFT)
-  sourceNoteId          String
+  /** Set when source note is known; may be null for drafts awaiting linked source publish. */
+  sourceNoteId          String?
   sourcePostId          String?
   entryType             ContestEntryType          @default(REPLY_DIRECT)
   rankingMetric         ContestRankingMetric
@@ -722,10 +757,49 @@ model Contest {
   finalizationPayments  ContestFinalizationPayment[]
   payments              Payment[]                 @relation("ContestPayoutPayment")
   payoutRuns            PayoutRun[]
+  launchOrchestration   ContestLaunchOrchestration?
 
   @@index([userId])
   @@index([userId, status])
   @@index([userId, createdAt])
+}
+
+/** Linked launch flow for contest creation (publish source + activate contest). */
+model ContestLaunchOrchestration {
+  id                    String                           @id @default(cuid())
+  userId                String
+  contestId             String                           @unique
+  contest               Contest                          @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  sourceMode            ContestOrchestrationSourceMode
+  launchMode            ContestOrchestrationLaunchMode
+  scheduledFor          DateTime?
+  existingSourcePostId  String?
+  sourcePostId          String?
+  sourcePostPublishStatus ContestSourcePostPublishStatus @default(not_needed)
+  contestActivationStatus ContestActivationOrchestrationStatus @default(draft)
+  publishedSourceEventId String?
+  lastErrorCode         String?
+  lastErrorMessage      String?
+  activationJobId       String?
+  idempotencyKey        String?                          @unique
+  createdAt             DateTime                         @default(now())
+  updatedAt             DateTime                         @updatedAt
+  user                  User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sourcePostId])
+}
+
+/** Server-persisted in-progress contest form (incl. embedded composer snapshot) when source is not yet published. */
+model ContestCreationDraft {
+  id        String   @id @default(cuid())
+  userId    String
+  payload   Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
 }
 
 model ContestSnapshot {
@@ -761,6 +835,8 @@ model ContestEntry {
   reactionsCount   Int      @default(0)
   zapCount         Int      @default(0)
   satsZapped       Int      @default(0)
+  repliesCount     Int      @default(0)
+  repostsCount     Int      @default(0)
   rank             Int?
   isEligible       Boolean  @default(true)
   isExcluded       Boolean  @default(false)

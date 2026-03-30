@@ -136,6 +136,8 @@ interface AllContentListingProps {
   onToggleSelection?: (id: string) => void;
   onToggleSelectAll?: () => void;
   showBulkActions?: boolean;
+  /** Clears row selection (batch bar Clear control). Required when `showBulkActions` is true. */
+  onClearSelection?: () => void;
   onBulkDelete?: () => void;
   bulkDeleteState?: string;
   // Advanced actions for posted content
@@ -180,6 +182,7 @@ export default function AllContentListing({
   onToggleSelection,
   onToggleSelectAll,
   showBulkActions = false,
+  onClearSelection,
   onBulkDelete,
   bulkDeleteState = "idle",
   // Advanced actions
@@ -403,13 +406,15 @@ export default function AllContentListing({
         <MixedDraftsBulkActions
           selectedDrafts={selectedDraftContent}
           queueTypes={queueTypes}
+          onClearSelection={onClearSelection ?? (() => {})}
           onBulkDelete={onBulkDelete ?? (() => {})}
           bulkDeleteState={bulkDeleteState}
         />
       ) : showBulkActions ? (
         <ContentBulkActions
-          type={type}
+          type={type === "scheduled" ? "scheduled" : "published"}
           selectedCount={selectedItems.size}
+          onClearSelection={onClearSelection ?? (() => {})}
           onBulkDelete={onBulkDelete ?? (() => {})}
           onBulkRepost={onBulkRepost}
           onBulkScheduledRepost={onBulkScheduledRepost}

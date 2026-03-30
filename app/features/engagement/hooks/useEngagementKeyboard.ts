@@ -19,7 +19,8 @@ export interface EngagementItemHandlers {
 }
 
 export function useEngagementKeyboard(itemCount: number, isActive = true) {
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  /** -1 = no row focused (resting feed); 0..n-1 = keyboard focus */
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const handlersRef = useRef<Map<number, EngagementItemHandlers>>(new Map());
 
   const registerHandlers = useCallback(
@@ -41,58 +42,77 @@ export function useEngagementKeyboard(itemCount: number, isActive = true) {
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
 
       const safeIndex =
-        itemCount > 0 ? Math.min(focusedIndex, itemCount - 1) : -1;
+        itemCount === 0 || focusedIndex < 0
+          ? -1
+          : Math.min(focusedIndex, itemCount - 1);
 
       switch (e.key) {
         case "j":
         case "J":
         case "ArrowDown":
           e.preventDefault();
-          setFocusedIndex((i) => (i < itemCount - 1 ? i + 1 : i));
+          setFocusedIndex((i) => {
+            if (i < itemCount - 1) {
+              return i < 0 ? 0 : i + 1;
+            }
+            return i;
+          });
           break;
         case "k":
         case "K":
         case "ArrowUp":
           e.preventDefault();
-          setFocusedIndex((i) => (i > 0 ? i - 1 : i));
+          setFocusedIndex((i) => {
+            if (i > 0) return i - 1;
+            if (i === 0) return -1;
+            return i;
+          });
           break;
         case "r":
         case "R":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.openReply();
           break;
         case "l":
         case "L":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.like();
           break;
         case "q":
         case "Q":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.openQuote?.();
           break;
         case "p":
         case "P":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.openRepost?.();
           break;
         case "m":
         case "M":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.markDone();
           break;
         case "i":
         case "I":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.ignore?.();
           break;
         case "z":
         case "Z":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.snooze?.();
           break;
         case "Enter":
           if (e.metaKey || e.ctrlKey) {
+            if (safeIndex < 0) return;
             e.preventDefault();
             if (e.shiftKey) {
               handlersRef.current.get(safeIndex)?.schedule?.();
@@ -103,6 +123,7 @@ export function useEngagementKeyboard(itemCount: number, isActive = true) {
           break;
         case "e":
         case "E":
+          if (safeIndex < 0) return;
           e.preventDefault();
           handlersRef.current.get(safeIndex)?.expandThread();
           break;
@@ -118,9 +139,11 @@ export function useEngagementKeyboard(itemCount: number, isActive = true) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Derive clamped index so we never expose an out-of-bounds index (avoids setState in effect)
+  // -1 = none; else clamp to [0, itemCount - 1]
   const focusedIndexClamped =
-    itemCount > 0 ? Math.min(Math.max(0, focusedIndex), itemCount - 1) : -1;
+    itemCount === 0 || focusedIndex < 0
+      ? -1
+      : Math.min(focusedIndex, itemCount - 1);
 
   return {
     focusedIndex: focusedIndexClamped,

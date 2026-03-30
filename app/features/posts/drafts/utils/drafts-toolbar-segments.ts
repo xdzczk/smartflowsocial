@@ -1,6 +1,10 @@
-import type { PublishingSegmentLinkItem } from "~/features/posts/ui";
+import type { PublishingContentTypeFilterItem } from "~/features/posts/components/publishing-suite/PublishingContentTypeFilter";
 
-export function buildDraftsSegmentLinkItems({
+function menuWithCount(label: string, count: number): string {
+  return `${label} (${count})`;
+}
+
+export function buildDraftsContentTypeFilterItems({
   basePath,
   queuePathSegment,
   searchParams,
@@ -13,7 +17,6 @@ export function buildDraftsSegmentLinkItems({
   bulkCount,
 }: {
   basePath: string;
-  /** `/${queueType}` when queue is in the path, else `""`. */
   queuePathSegment: string;
   searchParams: URLSearchParams;
   totalContentCount: number;
@@ -23,7 +26,7 @@ export function buildDraftsSegmentLinkItems({
   totalRepostsCount: number;
   totalLongformCount: number;
   bulkCount: number;
-}): PublishingSegmentLinkItem[] {
+}): PublishingContentTypeFilterItem[] {
   const withTab = (tab: string) => {
     const next = new URLSearchParams(searchParams);
     next.set("tab", tab);
@@ -33,44 +36,51 @@ export function buildDraftsSegmentLinkItems({
   return [
     {
       id: "all",
-      label: `All (${totalContentCount})`,
       to: withTab("all"),
+      triggerLabel: "All types",
+      menuLabel: menuWithCount("All types", totalContentCount),
       ariaLabel: `All drafts, ${totalContentCount} items`,
     },
     {
       id: "posts",
-      label: `Posts (${totalPostsCount})`,
       to: withTab("posts"),
+      triggerLabel: "Post",
+      menuLabel: menuWithCount("Post", totalPostsCount),
       ariaLabel: `Post drafts, ${totalPostsCount} items`,
     },
     {
       id: "polls",
-      label: `Polls (${totalPollsCount})`,
       to: withTab("polls"),
+      triggerLabel: "Poll",
+      menuLabel: menuWithCount("Poll", totalPollsCount),
       ariaLabel: `Poll drafts, ${totalPollsCount} items`,
     },
     {
       id: "threads",
-      label: `Threads (${totalThreadsCount})`,
       to: withTab("threads"),
+      triggerLabel: "Thread",
+      menuLabel: menuWithCount("Thread", totalThreadsCount),
       ariaLabel: `Thread drafts, ${totalThreadsCount} items`,
     },
     {
       id: "longform",
-      label: `Articles (${totalLongformCount})`,
       to: withTab("longform"),
+      triggerLabel: "Article",
+      menuLabel: menuWithCount("Article", totalLongformCount),
       ariaLabel: `Article drafts, ${totalLongformCount} items`,
     },
     {
       id: "reposts",
-      label: `Reposts (${totalRepostsCount})`,
       to: withTab("reposts"),
+      triggerLabel: "Repost",
+      menuLabel: menuWithCount("Repost", totalRepostsCount),
       ariaLabel: `Repost drafts, ${totalRepostsCount} items`,
     },
     {
       id: "bulk",
-      label: `Bulk (${bulkCount})`,
       to: withTab("bulk"),
+      triggerLabel: "Bulk",
+      menuLabel: menuWithCount("Bulk", bulkCount),
       ariaLabel: `Bulk drafts, ${bulkCount} items`,
     },
   ];

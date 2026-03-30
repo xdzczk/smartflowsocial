@@ -309,6 +309,7 @@ export async function handleScheduledPostJobError(input: {
 // runScheduledPostJob (export)
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- Scheduled publish: validation, signing, contest hook, retries
 export async function runScheduledPostJob(input: {
   job: Job<PostJobData>;
   startTime: number;
@@ -623,6 +624,23 @@ export async function runScheduledPostJob(input: {
       attemptsMade: job.attemptsMade + 1,
     }),
   });
+
+  try {
+    const { maybeActivateContestAfterSourcePostPublish } =
+      await import("~/features/contest");
+    await maybeActivateContestAfterSourcePostPublish({
+      postId,
+      userId,
+      publishedEventId: validatedSignedEvent.id,
+    });
+  } catch (orchErr) {
+    logError(orchErr instanceof Error ? orchErr : new Error(String(orchErr)), {
+      message: "Contest launch hook after scheduled publish failed",
+      postId,
+      userId,
+    });
+  }
+
   addBreadcrumb({
     message: "scheduled_post_job_succeeded",
     category: "worker",

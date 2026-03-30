@@ -41,11 +41,14 @@ export function PostDetailHeader({
   statusType,
   titleId,
   publishedPillLabel = "Posted",
+  relationshipChipLabel,
 }: {
   typeLabel: string;
   statusType: "draft" | "published" | "scheduled";
   titleId?: string;
   publishedPillLabel?: string;
+  /** Reply / Quote / Repost / Thread item — layered on content type (V2.2). */
+  relationshipChipLabel?: string | null;
 }) {
   return (
     <div className="border-border/60 bg-card/95 shrink-0 border-b px-5 py-3.5 backdrop-blur-sm">
@@ -61,6 +64,14 @@ export function PostDetailHeader({
             type={statusType}
             publishedLabel={publishedPillLabel}
           />
+          {relationshipChipLabel ? (
+            <span
+              className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium"
+              data-testid="post-detail-relationship-chip"
+            >
+              {relationshipChipLabel}
+            </span>
+          ) : null}
         </div>
         <DialogPrimitive.Close
           type="button"

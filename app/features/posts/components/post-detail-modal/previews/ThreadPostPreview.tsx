@@ -66,7 +66,7 @@ function CurrentInnerBody({
   onImageClick: (url: string) => void;
   emphasizeText?: boolean;
 }) {
-  const compact = heightMode === "compact";
+  const compact = heightMode === "compact" || heightMode === "ultraCompact";
   if (innerVariant === "poll") {
     return (
       <PollPostPreview

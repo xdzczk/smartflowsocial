@@ -5,13 +5,6 @@ import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,6 +15,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import {
   createHashtagPresetClientSchema,
@@ -139,27 +133,19 @@ export function HashtagPresetsSettings({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Hash className="h-5 w-5" />
-              Hashtag Presets
-            </CardTitle>
-            <CardDescription>
-              Create and manage reusable hashtag collections for your posts
-            </CardDescription>
-          </div>
-
+    <>
+      <ManagementListSection
+        title="Hashtag presets"
+        description="Reusable hashtag collections for your posts."
+        primaryAction={
           <Dialog
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button size="sm" className="w-full sm:w-auto">
+              <Button size="sm" variant="outline">
                 <Plus className="mr-2 h-4 w-4" />
-                New Preset
+                New preset
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -245,10 +231,8 @@ export function HashtagPresetsSettings({
               </form>
             </DialogContent>
           </Dialog>
-        </div>
-      </CardHeader>
-
-      <CardContent>
+        }
+      >
         {presets.length === 0 ? (
           <div className="text-muted-foreground py-8 text-center">
             <Hash className="mx-auto mb-4 h-12 w-12 opacity-50" />
@@ -332,7 +316,7 @@ export function HashtagPresetsSettings({
         {fetcher.data?.error ? (
           <p className="text-destructive mt-4 text-sm">{fetcher.data.error}</p>
         ) : null}
-      </CardContent>
+      </ManagementListSection>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -415,6 +399,6 @@ export function HashtagPresetsSettings({
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
 }

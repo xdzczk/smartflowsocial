@@ -42,7 +42,10 @@ import {
   runGiveawaySelection,
   runGiveawaySelectionPerEngagement,
 } from "./giveaway-selection.server";
-import { filterRelatedEventsToRootNoteEngagementOnly } from "./giveaway-single-post-engagement.server";
+import {
+  excludeSelfEngagementForScopedRootPosts,
+  filterRelatedEventsToRootNoteEngagementOnly,
+} from "./giveaway-single-post-engagement.server";
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import {
   createGiveaway as createGiveawayRow,
@@ -165,6 +168,24 @@ async function getEligibleParticipantsForGiveaway(
   }
 
   const posts = await getPostsInScope(userId, scope);
+  const rootEventIdToAuthorPubkey = new Map<string, string>();
+  for (const p of posts) {
+    const se = p.signedEvent;
+    if (
+      se &&
+      typeof se === "object" &&
+      "id" in se &&
+      "pubkey" in se &&
+      typeof (se as { id: unknown }).id === "string" &&
+      typeof (se as { pubkey: unknown }).pubkey === "string"
+    ) {
+      const id = (se as { id: string }).id;
+      const pk = (se as { pubkey: string }).pubkey;
+      if (id.trim() && pk.trim()) {
+        rootEventIdToAuthorPubkey.set(id, pk);
+      }
+    }
+  }
   const eventIds = posts
     .filter(
       (p) =>
@@ -188,6 +209,10 @@ async function getEligibleParticipantsForGiveaway(
       eventIds[0]
     );
   }
+  eventsForSelection = excludeSelfEngagementForScopedRootPosts(
+    eventsForSelection,
+    rootEventIdToAuthorPubkey
+  );
   const processed = await processGiveawayParticipants(
     eventsForSelection,
     userId,

@@ -181,10 +181,20 @@ export interface UnifiedComposerProps {
   /** Called after a successful publish when `embedContext` is set (JSON response from server). */
   onEmbedPublishSuccess?: (payload: ContestEmbedPublishPayload) => void;
   /**
-   * When `embedContext` is `contest`, controls UI density. Defaults to `contest-lite`
-   * (queue/tags/advanced schedule behind a collapsible).
+   * When `embedContext` is `contest`, controls UI density. Defaults to `contest-lite`.
+   * `contest-content` hides the publishing rail; the parent contest rail owns publish/schedule.
+   * `source-post` is like `contest-content` with tighter spacing for campaign source step.
    */
-  embeddedDensity?: "full" | "contest-lite";
+  embeddedDensity?: "full" | "contest-lite" | "contest-content" | "source-post";
+  /** Parent contest rail: now vs schedule (drives submit action when embedded). */
+  contestRailLaunchMode?: "now" | "schedule";
+  /** Syncs schedule time from contest rail into the composer form. */
+  contestRailScheduledFor?: string | null;
+  /** Exposes programmatic publish/schedule triggers for the contest primary CTA. */
+  onEmbedActionsReady?: (api: {
+    publishNow: () => void;
+    schedulePost: () => void;
+  }) => void;
   /**
    * New Post page tabs: when set, thread mode follows the tab and the thread
    * checkbox is omitted from Post options.
@@ -227,6 +237,9 @@ export function UnifiedComposer({
   embedContext,
   onEmbedPublishSuccess,
   embeddedDensity,
+  contestRailLaunchMode,
+  contestRailScheduledFor,
+  onEmbedActionsReady,
   newPostContentTab,
   publishMode = "now",
   onPublishModeChange,
@@ -250,9 +263,11 @@ export function UnifiedComposer({
     shortDraftFilterProp ?? (newPostContentTab === "thread" ? "thread" : "all");
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
-  const isContestLite =
+  const hidePublishingRail =
     embedContext === "contest" &&
-    (embeddedDensity ?? "contest-lite") === "contest-lite";
+    (embeddedDensity ?? "contest-lite") !== "full";
+  const isContestSourcePostDensity =
+    embedContext === "contest" && embeddedDensity === "source-post";
   const initialAttachmentsFromDraft = React.useMemo(() => {
     const meta = initialDraft?.draftMeta?.attachmentMeta;
     if (!meta?.length) return [];
@@ -630,6 +645,12 @@ export function UnifiedComposer({
     }
   }, [schedulingScheduledFor, form]);
 
+  React.useEffect(() => {
+    if (embedContext !== "contest" || contestRailScheduledFor == null) return;
+    form.setValue("scheduledFor", contestRailScheduledFor);
+    setSchedulingScheduledFor(contestRailScheduledFor);
+  }, [contestRailScheduledFor, embedContext, form, setSchedulingScheduledFor]);
+
   const formScheduledFor = form.watch("scheduledFor");
   const selectedQueueType = queueTypes.find(
     (q) => (typeof q === "string" ? q : q.name) === selectedQueue
@@ -789,6 +810,13 @@ export function UnifiedComposer({
     pendingExplicitSaveDraftRef.current = true;
   }, []);
 
+  const contestSubmitMode: ComposerPublishMode =
+    embedContext === "contest"
+      ? (contestRailLaunchMode ?? "now") === "schedule"
+        ? "schedule"
+        : "now"
+      : publishMode;
+
   const {
     runSubmit,
     isSigning,
@@ -833,7 +861,7 @@ export function UnifiedComposer({
     defaultTags: tags,
     submitAction: formAction,
     embedContext,
-    publishMode,
+    publishMode: contestSubmitMode,
     calculateQueueScheduleTime,
     onBeginSaveDraft,
   });
@@ -1139,6 +1167,7 @@ export function UnifiedComposer({
   const disabled = fetcher.state !== "idle" || isSigning;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
+
   const hasScheduleTimeForSubmit = !!(
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
@@ -1166,7 +1195,11 @@ export function UnifiedComposer({
     if (!canSubmit) {
       deferrableBlockers.push("Resolve media upload issues before publishing");
     }
-    if (publishMode === "schedule" && !hasScheduleTimeForSubmit) {
+    if (
+      (embedContext === "contest" ? contestSubmitMode : publishMode) ===
+        "schedule" &&
+      !hasScheduleTimeForSubmit
+    ) {
       deferrableBlockers.push("Publish time is required");
     }
     if (publishMode === "queue" && selectedQueue === "unassigned") {
@@ -1237,15 +1270,21 @@ export function UnifiedComposer({
       ? "Draft"
       : undefined;
 
+  const publishModeForRail =
+    embedContext === "contest" ? contestSubmitMode : publishMode;
   const readinessForRail =
     displayRedIssues.length > 0
-      ? getReadinessPresentation(publishMode, displayRedIssues, signerReady)
+      ? getReadinessPresentation(
+          publishModeForRail,
+          displayRedIssues,
+          signerReady
+        )
       : displayAmberIssues.length > 0
         ? ({
             tone: "warn",
             headline: "Missing requirements",
           } as const)
-        : getReadinessPresentation(publishMode, [], signerReady);
+        : getReadinessPresentation(publishModeForRail, [], signerReady);
 
   // Defer setState to satisfy react-hooks/set-state-in-effect.
   useEffect(() => {
@@ -1350,7 +1389,7 @@ export function UnifiedComposer({
     : undefined;
 
   const outcomeSentence = buildPublishingOutcomeSentence({
-    publishMode,
+    publishMode: publishModeForRail,
     relayCount,
     signerReady,
     scheduledFor:
@@ -1359,7 +1398,8 @@ export function UnifiedComposer({
         : schedulingScheduledFor,
     hasScheduleTime: hasScheduleTimeForSubmit,
     selectedQueue,
-    queueNextSlotLabel: publishMode === "queue" ? queueNextSlotLabel : null,
+    queueNextSlotLabel:
+      publishModeForRail === "queue" ? queueNextSlotLabel : null,
   });
 
   const followUpSummaryLine = buildFollowUpCollapsedSummary({
@@ -1477,7 +1517,17 @@ export function UnifiedComposer({
 
   const primarySubmitAction = isTemplateMode
     ? "save-as-template"
-    : getTextSubmitActionForMode(publishMode);
+    : getTextSubmitActionForMode(
+        embedContext === "contest" ? contestSubmitMode : publishMode
+      );
+
+  React.useLayoutEffect(() => {
+    if (!embedContext || !onEmbedActionsReady) return;
+    onEmbedActionsReady({
+      publishNow: () => primarySubmitRef.current?.click(),
+      schedulePost: () => primarySubmitRef.current?.click(),
+    });
+  }, [embedContext, onEmbedActionsReady, contestSubmitMode]);
 
   const openDraftPicker = (mode: "drafts" | "templates") => {
     setDraftPicker({ open: true, mode });
@@ -1514,7 +1564,12 @@ export function UnifiedComposer({
     ) : null;
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div
+      className={cn(
+        "flex flex-col gap-6 lg:flex-row lg:items-start",
+        isContestSourcePostDensity && "gap-4"
+      )}
+    >
       <fetcher.Form
         method="post"
         {...(formAction ? { action: formAction } : {})}
@@ -1599,7 +1654,7 @@ export function UnifiedComposer({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <div className="mb-4">
+        <div className={cn("mb-4", isContestSourcePostDensity && "mb-2")}>
           <ComposerLeftCanvas
             headerTrailing={composerHeaderTrailing ?? undefined}
           >
@@ -1758,7 +1813,7 @@ export function UnifiedComposer({
           />
         ) : null}
       </fetcher.Form>
-      {!isContestLite && isTemplateMode ? (
+      {!hidePublishingRail && isTemplateMode ? (
         <TemplateSettingsRail
           variant="post"
           typeLabel={isThreadMode ? "Thread" : "Short post"}
@@ -1844,7 +1899,7 @@ export function UnifiedComposer({
           deleteDisabled={disabled}
         />
       ) : null}
-      {!isContestLite && !isTemplateMode ? (
+      {!hidePublishingRail && !isTemplateMode ? (
         <PublishingSummaryRail
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
