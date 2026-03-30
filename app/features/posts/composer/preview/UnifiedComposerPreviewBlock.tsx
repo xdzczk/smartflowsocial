@@ -40,6 +40,8 @@ export interface UnifiedComposerPreviewBlockProps {
   }>;
   threadDelayMinutes: number;
   selectedQueue: string;
+  /** When true, post mode renders nothing if there is no text/media (no empty placeholder slab). */
+  hideEmptyPreview?: boolean;
 }
 
 function postHasPreviewableContent(text: string, mediaCount: number): boolean {
@@ -156,6 +158,10 @@ export function UnifiedComposerPreviewBlock(
     postNormalized.text,
     postNormalized.media.length
   );
+
+  if (props.hideEmptyPreview && !hasPost) {
+    return null;
+  }
 
   return (
     <ComposerPreviewSection title="Post preview" warnings={postWarnings}>

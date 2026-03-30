@@ -190,6 +190,7 @@ export function ContestBuilderSummaryRail({
           {
             label: contestCopy.railRowActivation,
             value: modeLine,
+            emphasis: "primary",
           },
         ]
       : [];
@@ -200,6 +201,7 @@ export function ContestBuilderSummaryRail({
           label: "Optional",
           value: contestCopy.railOptionalHint,
           tone: "muted",
+          emphasis: "muted",
         },
       ]
     : [];
@@ -209,6 +211,7 @@ export function ContestBuilderSummaryRail({
   const snapshotRows: CampaignActionRailSnapshotRow[] = [
     {
       label: "Source",
+      emphasis: "primary",
       value:
         sourceMode === "existing"
           ? contestCopy.railSourceModeExisting
@@ -216,6 +219,7 @@ export function ContestBuilderSummaryRail({
     },
     {
       label: "Launch",
+      emphasis: "primary",
       value:
         launchMode === "now"
           ? contestCopy.railLaunchNow
@@ -223,31 +227,35 @@ export function ContestBuilderSummaryRail({
     },
     ...scheduleActivationRows,
     {
-      label: "Source status",
-      value: sourceOk
-        ? contestCopy.railSourceOk
-        : contestCopy.railSourceMissing,
-      placeholder: !sourceOk,
-      tone: sourceStatusTone,
-    },
-    { label: "Metric", value: rankingMetric.toLowerCase() },
-    {
       label: "Ends",
+      emphasis: "primary",
       value:
         endValid && !endPast
           ? end.toLocaleString()
           : contestCopy.railEndPlaceholder,
       placeholder: !endValid || endPast,
     },
-    { label: "Winners", value: winnerCount },
-    { label: "Plan", value: planLabel },
+    { label: "Winners", emphasis: "primary", value: winnerCount },
+    { label: "Metric", value: rankingMetric.toLowerCase() },
+  ];
+
+  const snapshotSecondaryRows: CampaignActionRailSnapshotRow[] = [
+    {
+      label: "Source status",
+      value: sourceOk
+        ? contestCopy.railSourceOk
+        : contestCopy.railSourceMissing,
+      placeholder: !sourceOk,
+      tone: sourceStatusTone,
+      emphasis: sourceOk ? "muted" : "default",
+    },
+    { label: "Plan", value: planLabel, emphasis: "muted" },
     ...optionalHintRows,
   ];
 
   const prependSections = (
     <>
-      <ActionRailSection>
-        <ActionRailLabel>{contestCopy.railLaunchModeLabel}</ActionRailLabel>
+      <ActionRailSection className="pt-0">
         <RailSegmentedTabGroup
           items={[...LAUNCH_TABS]}
           value={launchMode}
@@ -257,7 +265,7 @@ export function ContestBuilderSummaryRail({
           columns={2}
           radiogroupAriaLabel="Contest launch timing"
         />
-        <p className="text-muted-foreground mt-2 text-[11px] leading-snug">
+        <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug">
           {launchHintLine(launchMode, sourceMode)}
         </p>
       </ActionRailSection>
@@ -298,11 +306,13 @@ export function ContestBuilderSummaryRail({
       prependSections={prependSections}
       snapshotLabel={contestCopy.railSnapshotLabel}
       snapshotRows={snapshotRows}
+      snapshotSecondaryRows={snapshotSecondaryRows}
       financialLabel={contestCopy.railFinancialLabel}
       financialRows={[
         {
           label: contestCopy.railPlannedPool,
           value: `${plannedPayoutSats.toLocaleString()} sats`,
+          emphasis: "primary",
         },
         { label: contestCopy.railFinalizationFee, value: feePct },
         {

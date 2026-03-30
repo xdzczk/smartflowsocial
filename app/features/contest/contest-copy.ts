@@ -29,7 +29,6 @@ export const contestCopy = {
   railLaunchNow: "Now",
   railLaunchSchedule: "Scheduled",
   railRowActivation: "Activation",
-  railLaunchModeLabel: "Launch mode",
   railActivationTimeLabel: "Activation time",
   railDateTimeLabel: "Date and time",
   railSnapshotLabel: "Snapshot",
@@ -83,8 +82,8 @@ export const contestCopy = {
     "Save ranking metric, prize structure, and eligibility filters. Start a new contest from this preset and choose the source post there.",
   presetNamePlaceholder: "Preset name",
   sourceModuleCreate:
-    "Compose the note entries will reply to — this is the contest anchor.",
-  sourceModuleExisting: "Pick a live note to use as the contest anchor.",
+    "Anchor note for entries — publish or schedule from the contest rail.",
+  sourceModuleExisting: "Pick a published note as the contest anchor.",
   entryRuleShort: "Direct replies to the source post count as entries.",
   tieBreakShort: "Ties break by score, then reply time.",
   tieBreakTooltipDetail:
@@ -95,5 +94,5 @@ export const contestCopy = {
   prizeRankedTileDesc: "Different sats for 1st, 2nd, 3rd…",
   rankingSectionLead: "Entries are ranked by the metric until the end time.",
   eligibilitySectionTitle: "4. Eligibility filters",
-  eligibilitySectionLead: "Optional. Applied when results are frozen.",
+  eligibilitySectionLead: "Optional — applied when results freeze.",
 } as const;

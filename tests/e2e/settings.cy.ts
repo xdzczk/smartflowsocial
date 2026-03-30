@@ -36,10 +36,10 @@ describe("User Settings", () => {
       cy.get('[data-testid="settings-active-panel"]').should("be.visible");
     });
 
-    it("syncs tab query when selecting a section (desktop nav)", () => {
+    it("syncs tab query when selecting a section (desktop rail)", () => {
       cy.visitAndCheck("/dashboard/settings?tab=general");
       cy.viewport(1280, 800);
-      cy.get('[data-testid="settings-nav-desktop"]').should("be.visible");
+      cy.get('[data-testid="settings-section-rail"]').should("be.visible");
       cy.get('[data-testid="settings-nav-item-network"]').click();
       cy.location("search").should("include", "tab=network");
       cy.get('[data-testid="settings-active-panel"]').should("be.visible");

@@ -201,7 +201,7 @@ export function PollComposer({
     "singlechoice"
   );
   const [endsAtLocal, setEndsAtLocal] = useState("");
-  const [pollEndMode, setPollEndMode] = useState<PollEndMode>("absolute");
+  const [pollEndMode, setPollEndMode] = useState<PollEndMode>("relative");
   const [pollEndHoursAfterPublish, setPollEndHoursAfterPublish] = useState(24);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] =
@@ -702,7 +702,7 @@ export function PollComposer({
     );
     setPollType(pollDraftRestored.pollType);
     setEndsAtLocal(pollDraftRestored.endsAtLocal);
-    setPollEndMode(pollDraftRestored.pollEndMode ?? "absolute");
+    setPollEndMode(pollDraftRestored.pollEndMode ?? "relative");
     setPollEndHoursAfterPublish(
       typeof pollDraftRestored.pollEndHoursAfterPublish === "number" &&
         pollDraftRestored.pollEndHoursAfterPublish >= 1
@@ -1119,8 +1119,8 @@ export function PollComposer({
                 disabled={disabled}
                 className="border-border/50 bg-muted/10 text-muted-foreground h-9 w-full rounded-md border px-2.5 text-xs shadow-sm"
               >
-                <option value="absolute">Date and time</option>
                 <option value="relative">Hours after publish</option>
+                <option value="absolute">Date and time</option>
               </select>
             </div>
           </div>

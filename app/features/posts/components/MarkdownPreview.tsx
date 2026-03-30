@@ -1,19 +1,14 @@
 /**
  * Renders markdown source as HTML with prose styling.
- * Uses marked (GFM) and Tailwind prose for longform preview/listing.
+ * Uses marked (GFM) + shared sanitization and Tailwind prose for longform preview/listing.
  */
 
-import { marked } from "marked";
+import { sanitizeMarkdown } from "~/lib/markdown-sanitize";
 
 interface MarkdownPreviewProps {
   source: string;
   className?: string;
 }
-
-const markedOptions: Parameters<typeof marked>[1] = {
-  gfm: true,
-  breaks: false,
-};
 
 export function MarkdownPreview({
   source,
@@ -27,8 +22,7 @@ export function MarkdownPreview({
     );
   }
 
-  const html = marked(source.trim(), markedOptions);
-  const htmlStr = String(html);
+  const htmlStr = sanitizeMarkdown(source.trim());
 
   return (
     <div className={className} dangerouslySetInnerHTML={{ __html: htmlStr }} />

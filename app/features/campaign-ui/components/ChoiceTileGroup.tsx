@@ -10,7 +10,7 @@ export interface ChoiceTileOption<T extends string = string> {
 }
 
 const tileBase = cn(
-  "border-border bg-card cursor-pointer rounded-lg border p-4 transition-colors",
+  "border-border bg-card cursor-pointer rounded-lg border transition-colors",
   "hover:border-primary/40",
   "focus-within:ring-ring focus-within:ring-1",
   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
@@ -28,6 +28,7 @@ export function ChoiceTileGroup<T extends string>({
   options,
   className,
   columnsClassName = "grid gap-3 sm:grid-cols-2",
+  compact = false,
 }: {
   name: string;
   value: T;
@@ -35,6 +36,8 @@ export function ChoiceTileGroup<T extends string>({
   options: ReadonlyArray<ChoiceTileOption<T>>;
   className?: string;
   columnsClassName?: string;
+  /** Slightly shorter tiles (campaign source mode). */
+  compact?: boolean;
 }) {
   return (
     <div className={cn(columnsClassName, className)} role="radiogroup">
@@ -43,6 +46,7 @@ export function ChoiceTileGroup<T extends string>({
           key={opt.value}
           className={cn(
             tileBase,
+            compact ? "p-3" : "p-4",
             value === opt.value ? tileSelected : "",
             opt.disabled ? "pointer-events-none" : ""
           )}
@@ -58,9 +62,21 @@ export function ChoiceTileGroup<T extends string>({
             }}
             className="sr-only"
           />
-          <p className="text-foreground font-medium">{opt.title}</p>
+          <p
+            className={cn(
+              "text-foreground font-medium",
+              compact && "text-sm leading-snug"
+            )}
+          >
+            {opt.title}
+          </p>
           {opt.description ? (
-            <p className="text-muted-foreground mt-1 text-sm leading-snug">
+            <p
+              className={cn(
+                "text-muted-foreground leading-snug",
+                compact ? "mt-0.5 text-xs" : "mt-1 text-sm"
+              )}
+            >
               {opt.description}
             </p>
           ) : null}
@@ -99,6 +115,7 @@ export function ChoiceTileGroupCustom<T extends string>({
           key={opt.value}
           className={cn(
             tileBase,
+            "p-4",
             value === opt.value ? tileSelected : "",
             opt.disabled ? "pointer-events-none opacity-60" : ""
           )}

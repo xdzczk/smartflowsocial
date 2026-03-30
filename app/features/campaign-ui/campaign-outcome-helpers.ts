@@ -11,7 +11,7 @@ export function buildGiveawayOutcomeLine(args: {
   if (plannedPayoutSats != null && plannedPayoutSats > 0) {
     return `Up to ${plannedPayoutSats.toLocaleString()} sats across ${winnerCount} winner${w}.`;
   }
-  return `Selection-focused · ${winnerCount} winner${w}.`;
+  return `Selection-only · ${winnerCount} winner${w}.`;
 }
 
 export function buildContestOutcomePoolLine(args: {

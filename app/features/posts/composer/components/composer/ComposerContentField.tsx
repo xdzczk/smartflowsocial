@@ -3,6 +3,8 @@
  * Intended inside ComposerLeftCanvas — no outer card; drafts live in canvas header.
  */
 
+import { useCallback, useLayoutEffect, useRef } from "react";
+
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
 
@@ -21,6 +23,10 @@ export interface ComposerContentFieldProps {
    * `card` — legacy bordered block if used outside the unified canvas.
    */
   surface?: "embedded" | "card";
+  /**
+   * `campaignSource` — shorter default height + auto-expand (contest/giveaway source post embed).
+   */
+  density?: "default" | "campaignSource";
 }
 
 const DEFAULT_MAX_LENGTH = 5000;
@@ -39,8 +45,24 @@ export function ComposerContentField({
   id = "content",
   className = "",
   surface = "embedded",
+  density = "default",
 }: ComposerContentFieldProps) {
   const isCard = surface === "card";
+  const isCampaignSource = density === "campaignSource";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const effectiveRows = isCampaignSource ? 2 : rows;
+
+  const syncCampaignSourceHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el || !isCampaignSource) return;
+    el.style.height = "auto";
+    const minPx = 72;
+    el.style.height = `${Math.max(minPx, el.scrollHeight)}px`;
+  }, [isCampaignSource]);
+
+  useLayoutEffect(() => {
+    syncCampaignSourceHeight();
+  }, [value, syncCampaignSourceHeight]);
 
   return (
     <div className={className}>
@@ -59,11 +81,15 @@ export function ComposerContentField({
           )}
         >
           <Textarea
+            ref={textareaRef}
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className={cn(
-              "text-foreground min-h-[150px] resize-y border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0",
+              "text-foreground resize-y border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0",
+              isCampaignSource
+                ? "max-h-[min(40vh,22rem)] min-h-[72px] overflow-y-auto"
+                : "min-h-[150px]",
               isCard
                 ? "text-[15px] leading-relaxed"
                 : "text-base leading-relaxed",
@@ -73,7 +99,7 @@ export function ComposerContentField({
                 "focus-visible:ring-destructive focus-visible:ring-2"
             )}
             placeholder={placeholder}
-            rows={rows}
+            rows={effectiveRows}
             disabled={disabled}
           />
         </div>

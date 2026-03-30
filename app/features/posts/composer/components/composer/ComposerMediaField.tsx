@@ -24,6 +24,8 @@ export interface ComposerMediaFieldProps {
   signerConnectionNote?: React.ReactNode;
   /** Tooltip on failed attachment tiles */
   attachmentFailedTitle?: string;
+  /** Lighter, shorter affordance (campaign source post embed). */
+  compact?: boolean;
 }
 
 export function ComposerMediaField({
@@ -38,6 +40,7 @@ export function ComposerMediaField({
   className = "",
   signerConnectionNote,
   attachmentFailedTitle,
+  compact = false,
 }: ComposerMediaFieldProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -79,7 +82,15 @@ export function ComposerMediaField({
 
   return (
     <div className={className}>
-      <ComposerCanvasSectionLabel>Media</ComposerCanvasSectionLabel>
+      <ComposerCanvasSectionLabel
+        className={
+          compact
+            ? "text-muted-foreground/75 mb-0.5 text-[10px] font-medium tracking-wide uppercase"
+            : undefined
+        }
+      >
+        Media
+      </ComposerCanvasSectionLabel>
       {signerConnectionNote ? (
         <div className="mb-1.5" role="note">
           {signerConnectionNote}
@@ -112,7 +123,8 @@ export function ComposerMediaField({
         <AttachmentsStrip
           variant="inline"
           emptyAffordance="composerWell"
-          emptyWellHint="Add images or videos"
+          emptyWellHint={compact ? "Add media" : "Add images or videos"}
+          density={compact ? "compact" : "default"}
           attachments={attachments}
           onRemove={onRemove}
           onAdd={onAdd}
@@ -121,7 +133,12 @@ export function ComposerMediaField({
           failedStatusTitle={attachmentFailedTitle}
         />
         {empty && !isDraggingOver && emptyHint ? (
-          <p className="text-muted-foreground/80 mt-1 text-[10px] leading-snug">
+          <p
+            className={cn(
+              "text-muted-foreground/70 leading-snug",
+              compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]"
+            )}
+          >
             {emptyHint}
           </p>
         ) : null}

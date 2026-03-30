@@ -144,7 +144,7 @@ export function GiveawayProofStudio({
       preview={
         <ProofPreviewStage>
           {selected && payload ? (
-            <div ref={cardRef}>
+            <div ref={cardRef} className="flex w-full justify-center">
               <ProofCardRenderer payload={payload} ratio={ratio} />
             </div>
           ) : (

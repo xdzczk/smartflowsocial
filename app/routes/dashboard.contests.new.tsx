@@ -76,8 +76,65 @@ import { getPostById, getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import { getUserById } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  formatForDateTimeLocal,
+  fromUnixTimestamp,
+  getNowForDateTimeLocal,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 import { cn } from "~/lib/utils";
+
+const MAX_HOURS_AFTER_PUBLISH = 8760;
+
+type ContestEndMode = "absolute" | "relative";
+
+/** Publish anchor for contest activation (rail: Now vs Schedule). */
+function nominalPublishUnixSecForContest(params: {
+  launchMode: "now" | "schedule";
+  scheduledActivationFor: string;
+  userTimezone: string;
+}): number | null {
+  if (params.launchMode === "now") {
+    return Math.floor(Date.now() / 1000);
+  }
+  const t = params.scheduledActivationFor.trim();
+  if (!t) return null;
+  try {
+    return Math.floor(
+      toUnixTimestamp(parseDateTimeLocal(t, params.userTimezone))
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Contest end as datetime-local string when using hours-after-publish. */
+function computeRelativeContestEndLocalString(params: {
+  launchMode: "now" | "schedule";
+  scheduledActivationFor: string;
+  userTimezone: string;
+  hours: number;
+}): string | null {
+  const publishUnix = nominalPublishUnixSecForContest({
+    launchMode: params.launchMode,
+    scheduledActivationFor: params.scheduledActivationFor,
+    userTimezone: params.userTimezone,
+  });
+  if (publishUnix == null) return null;
+  if (
+    !Number.isFinite(params.hours) ||
+    params.hours < 1 ||
+    params.hours > MAX_HOURS_AFTER_PUBLISH
+  ) {
+    return null;
+  }
+  const endUnix = publishUnix + Math.floor(params.hours * 3600);
+  return formatForDateTimeLocal(
+    fromUnixTimestamp(endUnix, params.userTimezone),
+    params.userTimezone
+  );
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
@@ -226,15 +283,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (prizeMode === "RANKED" && !rankRewards.some((r) => r.sats > 0)) {
     return json(
-      { error: "Rank-based mode requires at least one prize amount above 0." },
+      { error: "Enter at least one rank reward above 0 sats." },
       { status: 400 }
     );
   }
 
   const contestEndAt = new Date(contestEndAtRaw);
   if (!Number.isFinite(contestEndAt.getTime())) {
+    return json({ error: "Set a contest end time." }, { status: 400 });
+  }
+
+  if (contestEndAt.getTime() <= Date.now()) {
     return json(
-      { error: "Valid contest end date is required" },
+      { error: "Set a contest end time in the future." },
       { status: 400 }
     );
   }
@@ -248,13 +309,21 @@ export async function action({ request }: ActionFunctionArgs) {
       !Number.isFinite(scheduledActivationAt.getTime())
     ) {
       return json(
-        { error: "Choose a valid future date and time for scheduling." },
+        { error: "Choose a future activation date and time." },
         { status: 400 }
       );
     }
     if (scheduledActivationAt.getTime() <= Date.now()) {
       return json(
-        { error: "Scheduled activation must be in the future." },
+        { error: "Activation must be in the future." },
+        { status: 400 }
+      );
+    }
+    if (contestEndAt.getTime() <= scheduledActivationAt.getTime()) {
+      return json(
+        {
+          error: "End time must be after scheduled activation.",
+        },
         { status: 400 }
       );
     }
@@ -265,8 +334,8 @@ export async function action({ request }: ActionFunctionArgs) {
       {
         error:
           sourceMode === "create"
-            ? "Publish or schedule the source post from the contest actions first."
-            : "Select the published post to use as the contest source.",
+            ? "Publish the source post from the contest actions first."
+            : "Choose a source post.",
       },
       { status: 400 }
     );
@@ -451,8 +520,14 @@ function fairnessInitialFromPreset(
 function ContestNewFormSetupSteps({
   rankingMetric,
   setRankingMetric,
+  contestEndMode,
+  setContestEndMode,
+  contestEndHoursAfterPublish,
+  setContestEndHoursAfterPublish,
   contestEndAt,
   setContestEndAt,
+  contestEndDatetimeLocalMin,
+  resolvedContestEndAt,
   stepIssuesRanking,
   prizeMode,
   setPrizeMode,
@@ -480,8 +555,14 @@ function ContestNewFormSetupSteps({
 }: {
   rankingMetric: ContestRankingMetric;
   setRankingMetric: (v: ContestRankingMetric) => void;
+  contestEndMode: ContestEndMode;
+  setContestEndMode: (v: ContestEndMode) => void;
+  contestEndHoursAfterPublish: number;
+  setContestEndHoursAfterPublish: (v: number) => void;
   contestEndAt: string;
   setContestEndAt: (v: string) => void;
+  contestEndDatetimeLocalMin: string | undefined;
+  resolvedContestEndAt: string;
   stepIssuesRanking: string | null;
   prizeMode: "EQUAL" | "RANKED";
   setPrizeMode: (v: "EQUAL" | "RANKED") => void;
@@ -537,22 +618,90 @@ function ContestNewFormSetupSteps({
             </select>
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="contestEndMode">
+              Contest end
+            </label>
+            <select
+              id="contestEndMode"
+              value={contestEndMode}
+              onChange={(e) => {
+                setContestEndMode(
+                  e.target.value === "absolute" ? "absolute" : "relative"
+                );
+              }}
+              className={campaignFieldClassNames}
+            >
+              <option value="relative">Hours after publish</option>
+              <option value="absolute">Date and time</option>
+            </select>
+          </div>
+        </div>
+        {contestEndMode === "absolute" ? (
+          <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="contestEndAt">
-              Contest end time
+              Closes at
             </label>
             <input
               id="contestEndAt"
               name="contestEndAt"
               type="datetime-local"
               required={contestEndRequired}
+              min={contestEndDatetimeLocalMin}
               value={contestEndAt}
               onChange={(e) => {
                 setContestEndAt(e.target.value);
               }}
               className={campaignFieldClassNames}
             />
+            <p className="text-muted-foreground text-[11px] leading-snug">
+              Must be after activation time from the rail (Now or Schedule).
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-2">
+            <input
+              type="hidden"
+              name="contestEndAt"
+              value={resolvedContestEndAt}
+            />
+            <label
+              className="text-sm font-medium"
+              htmlFor="contestEndHoursAfterPublish"
+            >
+              Hours after publish
+            </label>
+            <input
+              id="contestEndHoursAfterPublish"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={MAX_HOURS_AFTER_PUBLISH}
+              step={1}
+              value={contestEndHoursAfterPublish}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") return;
+                const n = Number(raw);
+                if (!Number.isFinite(n)) return;
+                setContestEndHoursAfterPublish(n);
+              }}
+              className={campaignFieldClassNames}
+            />
+            {resolvedContestEndAt.trim() ? (
+              <p className="text-muted-foreground text-[11px] leading-snug">
+                Estimated end (from current activation time):{" "}
+                <span className="text-foreground font-medium tabular-nums">
+                  {resolvedContestEndAt.replace("T", " ")}
+                </span>
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-[11px] leading-snug">
+                Uses the same activation time as in the rail (Now or Schedule).
+                The contest ends this many hours after the post goes live.
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-muted-foreground text-xs">
             {contestCopy.tieBreakShort}
@@ -574,9 +723,12 @@ function ContestNewFormSetupSteps({
           </TooltipProvider>
         </div>
         {stepIssuesRanking ? (
-          <CompactStatusMessage variant="error">
+          <p
+            className="text-destructive mt-1 text-xs leading-snug"
+            role="alert"
+          >
             {stepIssuesRanking}
-          </CompactStatusMessage>
+          </p>
         ) : null}
       </section>
 
@@ -688,12 +840,14 @@ function ContestNewFormSetupSteps({
             </div>
           </div>
         ) : null}
-        <div className="space-y-2">
-          <RewardSummaryLine>{prizeSummary}</RewardSummaryLine>
+        <div className="border-border/50 mt-2 space-y-2 border-t pt-3">
+          <RewardSummaryLine className="text-foreground font-medium">
+            {prizeSummary}
+          </RewardSummaryLine>
           {stepIssuesRewards ? (
-            <CompactStatusMessage variant="warning">
+            <p className="text-destructive text-xs leading-snug" role="alert">
               {stepIssuesRewards}
-            </CompactStatusMessage>
+            </p>
           ) : null}
         </div>
       </section>
@@ -707,104 +861,111 @@ function ContestNewFormSetupSteps({
           title={contestCopy.eligibilitySectionTitle}
           description={contestCopy.eligibilitySectionLead}
         />
-        <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              name="excludeMuted"
-              checked={excludeMuted}
-              onChange={(e) => {
-                setExcludeMuted(e.target.checked);
-              }}
-            />
-            Exclude muted
-          </label>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              name="excludeBlocked"
-              checked={excludeBlocked}
-              onChange={(e) => {
-                setExcludeBlocked(e.target.checked);
-              }}
-            />
-            Exclude blocked
-          </label>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              name="excludeLowTrust"
-              checked={excludeLowTrust}
-              onChange={(e) => {
-                setExcludeLowTrust(e.target.checked);
-              }}
-            />
-            Exclude low trust
-          </label>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              name="excludeNonFollowers"
-              checked={excludeNonFollowers}
-              onChange={(e) => {
-                setExcludeNonFollowers(e.target.checked);
-              }}
-            />
-            Exclude non-followers
-          </label>
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-xs font-medium">
+            Exclusions
+          </p>
+          <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                name="excludeMuted"
+                checked={excludeMuted}
+                onChange={(e) => {
+                  setExcludeMuted(e.target.checked);
+                }}
+              />
+              Exclude muted
+            </label>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                name="excludeBlocked"
+                checked={excludeBlocked}
+                onChange={(e) => {
+                  setExcludeBlocked(e.target.checked);
+                }}
+              />
+              Exclude blocked
+            </label>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                name="excludeLowTrust"
+                checked={excludeLowTrust}
+                onChange={(e) => {
+                  setExcludeLowTrust(e.target.checked);
+                }}
+              />
+              Exclude low trust
+            </label>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                name="excludeNonFollowers"
+                checked={excludeNonFollowers}
+                onChange={(e) => {
+                  setExcludeNonFollowers(e.target.checked);
+                }}
+              />
+              Exclude non-followers
+            </label>
+          </div>
         </div>
-        <div className="border-border/60 grid grid-cols-1 gap-3 border-t pt-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="minAccountAgeDays"
-            >
-              Minimum account age (days)
-            </label>
-            <input
-              id="minAccountAgeDays"
-              name="minAccountAgeDays"
-              type="number"
-              min={0}
-              aria-describedby="minAccountAgeDays-hint"
-              value={minAccountAgeDays}
-              onChange={(e) => {
-                const n = parseInt(e.target.value, 10);
-                setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
-              }}
-              className={campaignFieldClassNames}
-            />
-            <p
-              id="minAccountAgeDays-hint"
-              className="text-muted-foreground text-xs"
-            >
-              0 = off
-            </p>
+        <div className="border-border/60 space-y-3 border-t pt-3">
+          <p className="text-muted-foreground text-xs font-medium">
+            Minimum thresholds
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label
+                className="text-foreground text-sm font-medium"
+                htmlFor="minAccountAgeDays"
+              >
+                Account age (days)
+              </label>
+              <input
+                id="minAccountAgeDays"
+                name="minAccountAgeDays"
+                type="number"
+                min={0}
+                aria-describedby="contest-min-thresholds-hint"
+                value={minAccountAgeDays}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setMinAccountAgeDays(Number.isFinite(n) ? Math.max(0, n) : 0);
+                }}
+                className={campaignFieldClassNames}
+              />
+            </div>
+            <div className="space-y-1">
+              <label
+                className="text-foreground text-sm font-medium"
+                htmlFor="minFollowers"
+              >
+                Followers
+              </label>
+              <input
+                id="minFollowers"
+                name="minFollowers"
+                type="number"
+                min={0}
+                aria-describedby="contest-min-thresholds-hint"
+                value={minFollowers}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
+                }}
+                className={campaignFieldClassNames}
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="minFollowers"
-            >
-              Minimum followers
-            </label>
-            <input
-              id="minFollowers"
-              name="minFollowers"
-              type="number"
-              min={0}
-              aria-describedby="minFollowers-hint"
-              value={minFollowers}
-              onChange={(e) => {
-                const n = parseInt(e.target.value, 10);
-                setMinFollowers(Number.isFinite(n) ? Math.max(0, n) : 0);
-              }}
-              className={campaignFieldClassNames}
-            />
-            <p id="minFollowers-hint" className="text-muted-foreground text-xs">
-              0 = off
-            </p>
-          </div>
+          <p
+            id="contest-min-thresholds-hint"
+            className="text-muted-foreground/80 text-[10px] leading-snug"
+          >
+            Use 0 to turn off a threshold.
+          </p>
         </div>
       </section>
     </div>
@@ -844,6 +1005,10 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
   const [selectedSourcePostId, setSelectedSourcePostId] = useState("");
   const [composerSessionKey, setComposerSessionKey] = useState(0);
   const [sourceMode, setSourceMode] = useState<"create" | "existing">("create");
+  const [contestEndMode, setContestEndMode] =
+    useState<ContestEndMode>("relative");
+  const [contestEndHoursAfterPublish, setContestEndHoursAfterPublish] =
+    useState(24);
   const [contestEndAt, setContestEndAt] = useState("");
   const [equalRewardSats, setEqualRewardSats] = useState(
     preset?.equalRewardSats ?? 1000
@@ -887,6 +1052,51 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     savedContestDraft,
   } = loaderData;
 
+  const publishAnchorUnixSec = useMemo(
+    () =>
+      nominalPublishUnixSecForContest({
+        launchMode,
+        scheduledActivationFor,
+        userTimezone: userTz,
+      }),
+    [launchMode, scheduledActivationFor, userTz]
+  );
+
+  const contestEndDatetimeLocalMin = useMemo(() => {
+    if (
+      contestEndMode !== "absolute" ||
+      publishAnchorUnixSec == null ||
+      !Number.isFinite(publishAnchorUnixSec)
+    ) {
+      return;
+    }
+    return formatForDateTimeLocal(
+      fromUnixTimestamp(publishAnchorUnixSec, userTz).add({ minutes: 1 }),
+      userTz
+    );
+  }, [contestEndMode, publishAnchorUnixSec, userTz]);
+
+  const resolvedContestEndAt = useMemo(() => {
+    if (contestEndMode === "relative") {
+      return (
+        computeRelativeContestEndLocalString({
+          launchMode,
+          scheduledActivationFor,
+          userTimezone: userTz,
+          hours: contestEndHoursAfterPublish,
+        }) ?? ""
+      );
+    }
+    return contestEndAt;
+  }, [
+    contestEndMode,
+    contestEndHoursAfterPublish,
+    launchMode,
+    scheduledActivationFor,
+    userTz,
+    contestEndAt,
+  ]);
+
   useEffect(() => {
     if (
       savedContestDraft &&
@@ -904,9 +1114,51 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         if (typeof d["scheduledActivationFor"] === "string") {
           setScheduledActivationFor(d["scheduledActivationFor"]);
         }
+        if (
+          d["contestEndMode"] === "absolute" ||
+          d["contestEndMode"] === "relative"
+        ) {
+          setContestEndMode(d["contestEndMode"]);
+        }
+        if (
+          typeof d["contestEndHoursAfterPublish"] === "number" &&
+          Number.isFinite(d["contestEndHoursAfterPublish"])
+        ) {
+          const h = Math.floor(d["contestEndHoursAfterPublish"]);
+          if (h >= 1 && h <= MAX_HOURS_AFTER_PUBLISH) {
+            setContestEndHoursAfterPublish(h);
+          }
+        }
+        if (typeof d["contestEndAt"] === "string") {
+          setContestEndAt(d["contestEndAt"]);
+        }
       });
     }
   }, [savedContestDraft]);
+
+  const applyFreshContestEndToFormData = useCallback(
+    (fd: FormData) => {
+      if (contestEndMode === "relative") {
+        const fresh = computeRelativeContestEndLocalString({
+          launchMode,
+          scheduledActivationFor,
+          userTimezone: userTz,
+          hours: contestEndHoursAfterPublish,
+        });
+        if (fresh) fd.set("contestEndAt", fresh);
+      } else if (contestEndAt.trim()) {
+        fd.set("contestEndAt", contestEndAt.trim());
+      }
+    },
+    [
+      contestEndMode,
+      contestEndHoursAfterPublish,
+      launchMode,
+      scheduledActivationFor,
+      userTz,
+      contestEndAt,
+    ]
+  );
 
   const onContestComposerPublished = useCallback(
     (payload: ContestEmbedPublishPayload) => {
@@ -922,6 +1174,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       if (pendingContestSubmitRef.current && formRef.current) {
         pendingContestSubmitRef.current = false;
         const fd = new FormData(formRef.current);
+        applyFreshContestEndToFormData(fd);
         fd.set("sourcePostId", payload.postId);
         fd.set("intent", "launch");
         fd.set("sourceMode", "create");
@@ -938,7 +1191,13 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       }
       revalidator.revalidate();
     },
-    [fetcher, launchMode, revalidator, scheduledActivationFor]
+    [
+      applyFreshContestEndToFormData,
+      fetcher,
+      launchMode,
+      revalidator,
+      scheduledActivationFor,
+    ]
   );
 
   const selectedSourcePost = useMemo(
@@ -965,25 +1224,79 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
 
   const entryRuleSummary = contestCopy.entryRuleShort;
 
-  const stepIssues = {
-    source:
-      sourceMode === "existing" && !selectedSourcePostId.trim()
-        ? "Choose a source post."
-        : null,
-    ranking: !contestEndAt
-      ? "Set a contest end time in the future."
-      : new Date(contestEndAt).getTime() <= now
-        ? "Set a contest end time in the future."
-        : null,
-    rewards:
-      prizeMode === "RANKED" && !rankRewards.some((r) => r > 0)
-        ? "Set at least one rank-based reward above 0."
-        : prizeMode === "EQUAL" && equalRewardSats <= 0
-          ? "Prize pool is 0 sats."
-          : null,
-  };
+  const rankingEndFutureMsg = "Set a contest end time in the future.";
 
-  const endOk = Boolean(contestEndAt) && new Date(contestEndAt).getTime() > now;
+  const rankingIssue = useMemo((): string | null => {
+    if (contestEndMode === "relative") {
+      if (
+        !Number.isFinite(contestEndHoursAfterPublish) ||
+        contestEndHoursAfterPublish < 1 ||
+        contestEndHoursAfterPublish > MAX_HOURS_AFTER_PUBLISH
+      ) {
+        return `Set contest end hours (1–${MAX_HOURS_AFTER_PUBLISH}).`;
+      }
+      if (!resolvedContestEndAt.trim()) {
+        return launchMode === "schedule"
+          ? "Set activation schedule in the rail so we can compute end time."
+          : "Could not compute contest end time.";
+      }
+      return null;
+    }
+    if (!contestEndAt.trim()) {
+      return rankingEndFutureMsg;
+    }
+    const endMs = new Date(contestEndAt).getTime();
+    if (!Number.isFinite(endMs) || endMs <= now) {
+      return rankingEndFutureMsg;
+    }
+    const anchor = nominalPublishUnixSecForContest({
+      launchMode,
+      scheduledActivationFor,
+      userTimezone: userTz,
+    });
+    if (anchor != null && Number.isFinite(anchor)) {
+      const endUnix = Math.floor(endMs / 1000);
+      if (endUnix <= anchor) {
+        return "Contest end must be after activation time from the rail.";
+      }
+    }
+    return null;
+  }, [
+    contestEndMode,
+    contestEndHoursAfterPublish,
+    contestEndAt,
+    launchMode,
+    scheduledActivationFor,
+    userTz,
+    resolvedContestEndAt,
+    now,
+  ]);
+
+  const stepIssues = useMemo(
+    () => ({
+      source:
+        sourceMode === "existing" && !selectedSourcePostId.trim()
+          ? "Select a source post."
+          : null,
+      ranking: rankingIssue,
+      rewards:
+        prizeMode === "RANKED" && !rankRewards.some((r) => r > 0)
+          ? "Set at least one rank reward above 0 sats."
+          : prizeMode === "EQUAL" && equalRewardSats <= 0
+            ? "Prize pool is 0 sats."
+            : null,
+    }),
+    [
+      sourceMode,
+      selectedSourcePostId,
+      rankingIssue,
+      prizeMode,
+      rankRewards,
+      equalRewardSats,
+    ]
+  );
+
+  const endOk = rankingIssue === null;
   const sourceOkExisting =
     sourceMode === "existing" && selectedSourcePostId.trim() !== "";
   const sourceOkCreate =
@@ -1090,7 +1403,10 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       launchMode,
       scheduledActivationFor,
       formTitle,
-      contestEndAt,
+      contestEndMode,
+      contestEndHoursAfterPublish,
+      contestEndAt:
+        contestEndMode === "relative" ? resolvedContestEndAt : contestEndAt,
       rankingMetric,
       prizeMode,
       winnerCount,
@@ -1113,7 +1429,10 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     launchMode,
     scheduledActivationFor,
     formTitle,
+    contestEndMode,
+    contestEndHoursAfterPublish,
     contestEndAt,
+    resolvedContestEndAt,
     rankingMetric,
     prizeMode,
     winnerCount,
@@ -1137,6 +1456,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       });
       if (formRef.current) {
         const fd = new FormData(formRef.current);
+        applyFreshContestEndToFormData(fd);
         fd.set("intent", "launch");
         fetcher.submit(fd, { method: "post" });
       }
@@ -1152,7 +1472,13 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     } else {
       embedApiRef.current?.schedulePost();
     }
-  }, [primaryCtaDisabled, sourceMode, launchMode, fetcher]);
+  }, [
+    applyFreshContestEndToFormData,
+    primaryCtaDisabled,
+    sourceMode,
+    launchMode,
+    fetcher,
+  ]);
 
   const primaryLabel = getContestLaunchCtaConfig(
     sourceMode,
@@ -1249,6 +1575,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
                 ? contestCopy.sourceModuleCreate
                 : contestCopy.sourceModuleExisting
             }
+            compactTiles
             mode={sourceMode}
             onModeChange={(m) => {
               setSourceMode(m);
@@ -1316,8 +1643,14 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           <ContestNewFormSetupSteps
             rankingMetric={rankingMetric}
             setRankingMetric={setRankingMetric}
+            contestEndMode={contestEndMode}
+            setContestEndMode={setContestEndMode}
+            contestEndHoursAfterPublish={contestEndHoursAfterPublish}
+            setContestEndHoursAfterPublish={setContestEndHoursAfterPublish}
             contestEndAt={contestEndAt}
             setContestEndAt={setContestEndAt}
+            contestEndDatetimeLocalMin={contestEndDatetimeLocalMin}
+            resolvedContestEndAt={resolvedContestEndAt}
             stepIssuesRanking={stepIssues.ranking}
             prizeMode={prizeMode}
             setPrizeMode={setPrizeMode}
@@ -1353,7 +1686,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
             hasSourcePost={selectedSourcePostId.trim() !== ""}
             hasValidNewPostComposer={sourceOkCreate}
             rankingMetric={rankingMetric}
-            contestEndAt={contestEndAt}
+            contestEndAt={resolvedContestEndAt}
             prizeMode={prizeMode}
             winnerCount={winnerCount}
             equalRewardSats={equalRewardSats}

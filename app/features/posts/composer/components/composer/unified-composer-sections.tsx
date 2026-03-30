@@ -49,6 +49,9 @@ export interface UnifiedComposerContentSectionProps {
   attachmentFailedTitleHint?: string;
   threadAutoNumberSegments?: boolean;
   onThreadAutoNumberSegmentsChange?: (enabled: boolean) => void;
+  /** Contest/giveaway embedded source post: compact text + media */
+  contentDensity?: "default" | "campaignSource";
+  mediaCompact?: boolean;
 }
 
 export function UnifiedComposerContentSection({
@@ -74,6 +77,8 @@ export function UnifiedComposerContentSection({
   attachmentFailedTitleHint,
   threadAutoNumberSegments = false,
   onThreadAutoNumberSegmentsChange,
+  contentDensity = "default",
+  mediaCompact = false,
 }: UnifiedComposerContentSectionProps) {
   if (isThreadMode) {
     return (
@@ -95,13 +100,22 @@ export function UnifiedComposerContentSection({
     );
   }
   return (
-    <div className="flex flex-col gap-3 sm:gap-4">
+    <div
+      className={
+        contentDensity === "campaignSource"
+          ? "flex flex-col gap-2 sm:gap-2.5"
+          : "flex flex-col gap-3 sm:gap-4"
+      }
+    >
       <ComposerContentField
         value={content}
         onChange={onContentChange}
         error={contentError != null ? { message: contentError } : undefined}
         disabled={disabled}
         surface="embedded"
+        density={
+          contentDensity === "campaignSource" ? "campaignSource" : "default"
+        }
       />
       <ComposerMediaField
         attachments={attachments}
@@ -112,6 +126,7 @@ export function UnifiedComposerContentSection({
         disabled={disabled || mediaUploadDisabled}
         signerConnectionNote={blossomSignerMediaNote}
         attachmentFailedTitle={attachmentFailedTitleHint}
+        compact={mediaCompact}
       />
     </div>
   );

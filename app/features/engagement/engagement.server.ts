@@ -252,8 +252,9 @@ export function shouldExcludeKind1FromGlobalMentionInbox(
 }
 
 /**
- * Best-effort root id for grouping: explicit `root` marker, then first `e` (NIP-10 ordering),
- * then `reply`, else the note id.
+ * Best-effort thread root id for grouping mentions.
+ * Prefer explicit `root` marker, then the sibling of a tagged `reply` (NIP-10),
+ * then two unmarked tags in [reply, root] order, then the lone `e` tag.
  */
 export function inferThreadRootEventIdFromTags(
   tags: NostrTag[] | undefined,
@@ -262,8 +263,23 @@ export function inferThreadRootEventIdFromTags(
   const eTags = (tags ?? []).filter((t) => t[0] === "e");
   const root = eTags.find((t) => (t[3] ?? "") === "root");
   if (root?.[1]) return root[1];
+
+  const replyTagged = eTags.find((t) => (t[3] ?? "").toLowerCase() === "reply");
+  if (replyTagged?.[1] && eTags.length > 1) {
+    const other = eTags.find((t) => t[1] && t[1] !== replyTagged[1]);
+    if (other?.[1]) return other[1];
+  }
+
+  if (eTags.length >= 2) {
+    const allUnmarked = eTags.every((t) => !(t[3] ?? "").trim());
+    if (allUnmarked && eTags[1]?.[1]) {
+      return eTags[1][1];
+    }
+  }
+
   if (eTags[0]?.[1]) return eTags[0][1];
-  const reply = eTags.find((t) => (t[3] ?? "") === "reply");
+
+  const reply = eTags.find((t) => (t[3] ?? "").toLowerCase() === "reply");
   if (reply?.[1]) return reply[1];
   return noteEventId;
 }

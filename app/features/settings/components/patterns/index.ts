@@ -1,5 +1,15 @@
 /**
- * Settings V2 section patterns — use consistently across tabs.
+ * Settings section patterns (V3 shell) — use consistently across tabs.
+ *
+ * Spec mapping:
+ * - Pattern A — PreferenceSection: timezone, formats, toggles, light defaults.
+ * - Pattern B — ManagementListSection: queues, presets, relays, blocklists, mirrors.
+ * - Pattern C — ProviderSelectionSection: Blossom, relay source, mutually exclusive infra.
+ * - Pattern D — AccountSummarySection: subscription/referral overview, plan state.
+ * - Pattern E — DestructiveSection: cancel, delete, risky resets (isolated).
+ *
+ * Surface hierarchy: prefer muted bordered sections + dividers; reserve heavy cards
+ * for dense or dangerous surfaces only.
  *
  * Action scale:
  * - Primary: high-stakes commits (billing, provider change, payout).

@@ -5,7 +5,7 @@ export { ActionRailNotice } from "./ActionRailNotice";
 export type { ActionRailNoticeVariant } from "./ActionRailNotice";
 export { ActionRailOutcome } from "./ActionRailOutcome";
 export { ActionRailRow } from "./ActionRailRow";
-export type { ActionRailRowTone } from "./ActionRailRow";
+export type { ActionRailRowEmphasis, ActionRailRowTone } from "./ActionRailRow";
 export { ActionRailSection } from "./ActionRailSection";
 export { ActionRailTabs } from "./ActionRailTabs";
 export {

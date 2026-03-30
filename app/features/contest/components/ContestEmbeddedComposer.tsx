@@ -5,9 +5,6 @@ import { useNewPostState } from "~/features/posts/composer/hooks/useNewPostState
 
 type ContestLoaderLike = Record<string, unknown>;
 
-const contestEmbedHint =
-  "Publishing is controlled from the contest rail — not here.";
-
 export function ContestEmbeddedComposer({
   loaderData,
   composerKey,
@@ -34,8 +31,7 @@ export function ContestEmbeddedComposer({
   } = useNewPostState();
 
   return (
-    <div className="space-y-2">
-      <p className="text-muted-foreground text-xs">{contestEmbedHint}</p>
+    <div className="min-w-0">
       <UnifiedComposer
         key={composerKey}
         queueTypes={parsed.typedQueueTypes}

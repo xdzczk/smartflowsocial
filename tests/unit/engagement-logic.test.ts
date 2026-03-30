@@ -209,6 +209,20 @@ describe("Engagement Logic Unit Tests", () => {
       ).toBe(threadRoot);
     });
 
+    it("uses second e-tag as root when both tags are unmarked (NIP-10 reply-then-root)", () => {
+      const immediateParent = "2".repeat(64);
+      const threadRoot = "1".repeat(64);
+      expect(
+        inferThreadRootEventIdFromTags(
+          [
+            ["e", immediateParent, ""],
+            ["e", threadRoot, ""],
+          ],
+          "3".repeat(64)
+        )
+      ).toBe(threadRoot);
+    });
+
     it("falls back to note id when no e-tags", () => {
       const id = "f".repeat(64);
       expect(inferThreadRootEventIdFromTags([], id)).toBe(id);

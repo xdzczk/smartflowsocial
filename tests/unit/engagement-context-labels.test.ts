@@ -18,12 +18,27 @@ function parent(partial: Partial<ParentPost>): ParentPost {
 }
 
 describe("engagement-context-labels", () => {
-  it("displayParentContextSublabel returns Unknown source note for bare mentions root", () => {
-    const p = parent({ contextLabel: undefined });
+  it("displayParentContextSublabel returns Unknown source note when source body is missing", () => {
+    const p = parent({ contextLabel: undefined, caption: null });
     expect(displayParentContextSublabel(p, "mentions")).toBe(
       "Unknown source note"
     );
     expect(displayParentContextSublabel(p, "replies")).toBeNull();
+  });
+
+  it("displayParentContextSublabel omits Unknown when Your post has caption or media", () => {
+    expect(
+      displayParentContextSublabel(
+        parent({ contextLabel: undefined, caption: "hello" }),
+        "mentions"
+      )
+    ).toBeNull();
+    expect(
+      displayParentContextSublabel(
+        parent({ contextLabel: undefined, caption: null, fileUrl: "/x.png" }),
+        "mentions"
+      )
+    ).toBeNull();
   });
 
   it("displayParentContextSublabel adds Referenced your note for referenced-note context in mentions", () => {

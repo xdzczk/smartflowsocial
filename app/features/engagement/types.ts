@@ -178,6 +178,8 @@ export interface ParentPost {
   stats?: EventStats;
   /** When set, engagement UI shows this instead of "Your post" (e.g. global / off-app mentions). */
   contextLabel?: string | null;
+  /** Resolved from Nostr profile cache for parent pubkey (left column avatar). */
+  authorPicture?: string | null;
 }
 
 /**

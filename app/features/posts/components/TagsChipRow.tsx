@@ -22,6 +22,7 @@ import {
 } from "~/features/posts/components/publishing-rail";
 import { ComposerCanvasSectionLabel } from "~/features/posts/composer/components/composer/composer-canvas-primitives";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 const RECENT_TAGS_STORAGE_KEY = "sfs-composer-recent-tags";
 const MAX_RECENT_TAGS = 12;
@@ -107,6 +108,10 @@ interface TagsChipRowProps {
   /** Per-post: append resolved tags to signed note text. */
   includeHashtagsInNoteBody?: boolean;
   onIncludeHashtagsInNoteBodyChange?: (value: boolean) => void;
+  /** Hide the section heading (e.g. when wrapped in a parent disclosure). */
+  hideSectionLabel?: boolean;
+  /** Tighter, secondary styling for campaign source embed. */
+  variant?: "default" | "campaignSource";
 }
 
 export function TagsChipRow({
@@ -119,7 +124,10 @@ export function TagsChipRow({
   queuePresetName,
   includeHashtagsInNoteBody = true,
   onIncludeHashtagsInNoteBodyChange,
+  hideSectionLabel = false,
+  variant = "default",
 }: TagsChipRowProps) {
+  const compact = variant === "campaignSource";
   const tagList = parseTags(tags);
   const [selectValue, setSelectValue] = useState("");
   const [manualInput, setManualInput] = useState("");
@@ -171,10 +179,19 @@ export function TagsChipRow({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <ComposerCanvasSectionLabel as="span" className="mb-0">
-        Tags
-      </ComposerCanvasSectionLabel>
+    <div className={cn("flex flex-col", compact ? "gap-2" : "gap-3")}>
+      {hideSectionLabel ? null : (
+        <ComposerCanvasSectionLabel
+          as="span"
+          className={cn(
+            "mb-0",
+            compact &&
+              "text-muted-foreground/75 text-[10px] font-medium tracking-wide uppercase"
+          )}
+        >
+          Tags
+        </ComposerCanvasSectionLabel>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -243,18 +260,32 @@ export function TagsChipRow({
       ) : null}
 
       {onIncludeHashtagsInNoteBodyChange ? (
-        <div className="flex items-start justify-between gap-3 pt-0.5">
+        <div
+          className={cn(
+            "flex items-start justify-between gap-3 pt-0.5",
+            compact && "gap-2 pt-0"
+          )}
+        >
           <div className="min-w-0 space-y-0.5">
             <Label
               htmlFor="tags-include-in-note-body"
-              className="text-muted-foreground text-xs leading-snug font-medium"
+              className={cn(
+                "text-muted-foreground leading-snug font-medium",
+                compact ? "text-[10px]" : "text-xs"
+              )}
             >
-              Hide tags
+              Hide tags from note text
             </Label>
-            <p className="text-muted-foreground/75 text-[10px] leading-snug">
-              Off by default. Turn on to keep tags out of the note text (topic
-              metadata only).
-            </p>
+            {!compact ? (
+              <p className="text-muted-foreground/75 text-[10px] leading-snug">
+                Off by default. Turn on to keep tags out of the note text (topic
+                metadata only).
+              </p>
+            ) : (
+              <p className="text-muted-foreground/65 text-[9px] leading-snug">
+                Topic metadata only when on.
+              </p>
+            )}
           </div>
           <Switch
             id="tags-include-in-note-body"

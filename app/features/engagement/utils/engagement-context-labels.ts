@@ -2,6 +2,17 @@ import type { ParentPost } from "../types";
 
 export type EngagementListVariant = "replies" | "mentions" | "all";
 
+function parentHasSourceBody(parent: ParentPost): boolean {
+  if (parent.fileUrl) return true;
+  if (parent.isLongform) {
+    return (
+      (parent.title?.trim() ?? "") !== "" ||
+      (parent.content?.trim() ?? "") !== ""
+    );
+  }
+  return Boolean(parent.caption?.trim());
+}
+
 /**
  * Human-readable source label for the left column (replaces robotic loader copy).
  */
@@ -31,7 +42,8 @@ export function displayParentContextSublabel(
   const raw = parent.contextLabel?.trim();
   const title = displayParentContextLabel(parent, listVariant);
   if (!raw && title === "Your post") {
-    return listVariant === "mentions" ? "Unknown source note" : null;
+    if (listVariant !== "mentions") return null;
+    return parentHasSourceBody(parent) ? null : "Unknown source note";
   }
   if (
     listVariant === "mentions" &&

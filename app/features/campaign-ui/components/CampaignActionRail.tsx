@@ -6,6 +6,7 @@ import {
   ActionRailNotice,
   type ActionRailNoticeVariant,
   ActionRailRow,
+  type ActionRailRowEmphasis,
   type ActionRailRowTone,
   ActionRailSection,
   RAIL_MAJOR_DIVIDE,
@@ -21,11 +22,13 @@ export interface CampaignActionRailSnapshotRow {
   value: ReactNode;
   placeholder?: boolean;
   tone?: ActionRailRowTone;
+  emphasis?: ActionRailRowEmphasis;
 }
 
 export interface CampaignActionRailFinancialRow {
   label: string;
   value: ReactNode;
+  emphasis?: ActionRailRowEmphasis;
 }
 
 export function CampaignActionRail({
@@ -34,6 +37,7 @@ export function CampaignActionRail({
   prependSections,
   snapshotLabel = "Campaign",
   snapshotRows,
+  snapshotSecondaryRows,
   financialLabel = "Payout & fees",
   financialRows,
   blocker,
@@ -49,6 +53,7 @@ export function CampaignActionRail({
   prependSections?: ReactNode;
   snapshotLabel?: string;
   snapshotRows: CampaignActionRailSnapshotRow[];
+  snapshotSecondaryRows?: CampaignActionRailSnapshotRow[];
   financialLabel?: string;
   financialRows: CampaignActionRailFinancialRow[];
   blocker?: {
@@ -77,9 +82,26 @@ export function CampaignActionRail({
                 value={row.value}
                 placeholder={row.placeholder}
                 tone={row.tone}
+                emphasis={row.emphasis ?? "default"}
               />
             ))}
           </div>
+          {snapshotSecondaryRows != null && snapshotSecondaryRows.length > 0 ? (
+            <div className="border-border/50 mt-2 border-t pt-2">
+              <div className={cn(RAIL_STACK_ROWS, "opacity-95")}>
+                {snapshotSecondaryRows.map((row) => (
+                  <ActionRailRow
+                    key={row.label}
+                    label={row.label}
+                    value={row.value}
+                    placeholder={row.placeholder}
+                    tone={row.tone}
+                    emphasis={row.emphasis ?? "muted"}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </ActionRailSection>
 
         <ActionRailSection>
@@ -90,6 +112,7 @@ export function CampaignActionRail({
                 key={row.label}
                 label={row.label}
                 value={row.value}
+                emphasis={row.emphasis ?? "default"}
               />
             ))}
           </div>

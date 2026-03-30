@@ -1,5 +1,5 @@
 import { Link, useFetcher, useNavigate, useNavigation } from "@remix-run/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ActionRailActions,
@@ -14,6 +14,7 @@ import {
   CompactStatusMessage,
   PublishedPostPickerGrid,
   RewardSummaryLine,
+  SourcePostModule,
   campaignFieldClassNames,
   campaignSelectClassNames,
 } from "~/features/campaign-ui";
@@ -22,12 +23,28 @@ import {
   getFinalizationFeeRateBps,
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { PlanType } from "~/features/payments/types";
+import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
   scopeAllowsEngagementEntryTypePick,
   scopeIsFollowGraphAccountPool,
 } from "../types";
+
+import { GiveawayEmbeddedComposer } from "./GiveawayEmbeddedComposer";
+
+const GIVEAWAY_SINGLE_POST_SOURCE_OPTIONS = [
+  {
+    value: "create" as const,
+    title: "Create new giveaway post",
+    description: "Compose the note entries will target.",
+  },
+  {
+    value: "existing" as const,
+    title: "Use existing published post",
+    description: "Pick a note that is already live.",
+  },
+] as const;
 
 const DEFAULT_ENGAGEMENT_ALL: Record<string, boolean> = {
   REACTION: true,
@@ -127,6 +144,8 @@ export interface GiveawayNewBuilderProps {
   };
   planType: PlanType;
   planDisplayName: string;
+  /** New-post route loader fields for embedded composer (single-post → create). */
+  composerLoader: Record<string, unknown>;
   actionError?: string;
 }
 
@@ -144,6 +163,7 @@ function GiveawayNewBuilderStickySummary({
   feePreview,
   isFollowGraphScope,
   selectedSinglePostId,
+  singlePostSourceMode,
   actionError,
   fetcherError,
   isBusy,
@@ -165,6 +185,7 @@ function GiveawayNewBuilderStickySummary({
   } | null;
   isFollowGraphScope: boolean;
   selectedSinglePostId: string;
+  singlePostSourceMode: "create" | "existing";
   actionError?: string;
   fetcherError?: string;
   isBusy: boolean;
@@ -191,24 +212,27 @@ function GiveawayNewBuilderStickySummary({
 
   const missingLines: string[] = [];
   if (scopeType === "SINGLE_POST" && !selectedSinglePostId.trim()) {
-    missingLines.push("Select a post for single-post scope.");
+    missingLines.push(
+      singlePostSourceMode === "create"
+        ? "Publish the giveaway post from the composer."
+        : "Select a post for single-post scope."
+    );
   }
   if (!isFollowGraphScope && selectedTypes.length === 0) {
     missingLines.push("Select at least one entry method.");
   }
 
-  const cautionLines: string[] = [];
-  if (winnerCount > 50) {
-    cautionLines.push("Winner count is high — confirm your plan cap.");
-  }
+  const cautionHint =
+    winnerCount > 50
+      ? "High winner count — confirm it fits your plan cap."
+      : null;
 
-  const blockerLines = [...missingLines, ...cautionLines];
   const blocker =
-    blockerLines.length > 0
+    missingLines.length > 0
       ? {
           variant: "warning" as const,
           title: "Before you continue",
-          lines: blockerLines,
+          lines: missingLines,
         }
       : null;
 
@@ -257,20 +281,35 @@ function GiveawayNewBuilderStickySummary({
       className="mt-10 self-start lg:mt-0"
       snapshotLabel="Snapshot"
       snapshotRows={[
-        { label: "Scope", value: asideScopeLine(scopeType, periodMode) },
+        {
+          label: "Scope",
+          value: asideScopeLine(scopeType, periodMode),
+          emphasis: "primary",
+        },
         {
           label: "Entry",
           value: entryValue,
           placeholder: !isFollowGraphScope ? selectedTypes.length === 0 : false,
+          emphasis: "primary",
         },
-        { label: "Winners", value: `${winnerCount} total` },
-        { label: "Rewards", value: rewardsValue },
+        {
+          label: "Winners",
+          value: `${winnerCount} total`,
+          emphasis: "primary",
+        },
+        { label: "Rewards", value: rewardsValue, emphasis: "primary" },
         { label: "Selection", value: selectionValue },
-        { label: "Plan", value: planDisplayName },
+      ]}
+      snapshotSecondaryRows={[
+        { label: "Plan", value: planDisplayName, emphasis: "muted" },
       ]}
       financialLabel="Payout & fees"
       financialRows={[
-        { label: "Planned payout", value: plannedPayoutDisplay },
+        {
+          label: "Planned payout",
+          value: plannedPayoutDisplay,
+          emphasis: "primary",
+        },
         { label: "Finalization fee", value: finalizationDisplay },
         { label: "Due at lock", value: dueAtLockDisplay },
       ]}
@@ -278,6 +317,7 @@ function GiveawayNewBuilderStickySummary({
       serverError={serverErr ?? null}
       outcomeHeadline="Ready to continue"
       outcomeLine={outcomeLine}
+      outcomeHint={cautionHint}
       footer={
         <ActionRailActions
           secondaryButton={
@@ -314,9 +354,42 @@ function GiveawayNewBuilderPresetTemplates({
   planLimits,
   presets,
 }: Pick<GiveawayNewBuilderProps, "planLimits" | "presets">) {
+  if (!planLimits.canUsePresets) {
+    return (
+      <section
+        className="border-border/50 mt-8 border-t pt-5"
+        aria-labelledby="preset-templates-heading"
+      >
+        <h2
+          id="preset-templates-heading"
+          className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
+        >
+          Presets
+        </h2>
+        <p className="text-muted-foreground mt-2 text-xs leading-snug">
+          Upgrade your plan to save and reuse giveaway templates.
+        </p>
+      </section>
+    );
+  }
+
+  if (presets.length === 0) {
+    return (
+      <section
+        className="border-border/50 mt-8 border-t pt-4"
+        aria-labelledby="preset-templates-heading"
+      >
+        <div className="bg-muted/25 text-muted-foreground rounded-md px-3 py-2 text-xs leading-snug">
+          <span className="text-foreground/90 font-medium">Presets</span> — none
+          yet. Save one from a giveaway detail page to start here next time.
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      className="border-border/60 space-y-3 border-t pt-10"
+      className="border-border/60 space-y-3 border-t pt-8"
       aria-labelledby="preset-templates-heading"
     >
       <h2
@@ -325,44 +398,34 @@ function GiveawayNewBuilderPresetTemplates({
       >
         Start from preset
       </h2>
-      {!planLimits.canUsePresets ? (
-        <p className="text-muted-foreground text-sm">
-          Upgrade to save and use templates.
-        </p>
-      ) : presets.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {presets.map((p) => (
-            <li key={p.id}>
-              <form
-                method="post"
-                className="flex flex-wrap items-center justify-between gap-2 py-1"
-              >
-                <input type="hidden" name="intent" value="createFromPreset" />
-                <input type="hidden" name="presetId" value={p.id} />
-                <span className="text-foreground text-sm">
-                  {p.name}{" "}
-                  <span className="text-muted-foreground">
-                    · {p.scopeType} · {p.winnerCount} winner
-                    {p.winnerCount !== 1 ? "s" : ""}
-                  </span>
+      <ul className="flex flex-col gap-2">
+        {presets.map((p) => (
+          <li key={p.id}>
+            <form
+              method="post"
+              className="flex flex-wrap items-center justify-between gap-2 py-1"
+            >
+              <input type="hidden" name="intent" value="createFromPreset" />
+              <input type="hidden" name="presetId" value={p.id} />
+              <span className="text-foreground text-sm">
+                {p.name}{" "}
+                <span className="text-muted-foreground">
+                  · {p.scopeType} · {p.winnerCount} winner
+                  {p.winnerCount !== 1 ? "s" : ""}
                 </span>
-                <Button
-                  type="submit"
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                >
-                  Use
-                </Button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-muted-foreground text-sm">
-          No presets yet — save one from a giveaway detail page.
-        </p>
-      )}
+              </span>
+              <Button
+                type="submit"
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+              >
+                Use
+              </Button>
+            </form>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -383,17 +446,16 @@ function GiveawayNewBuilderSelection({
         title="4. Winner selection"
         description={
           isFollowGraphScope
-            ? "Uniform random from your follower or following pool after filters."
-            : "How entries map to winners after filters."
+            ? "Random draw from your graph pool after filters (one entry per account)."
+            : "How weighted entries become winners after filters."
         }
       />
       {isFollowGraphScope ? (
         <>
           <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
-          <CompactStatusMessage variant="info">
-            One chance per eligible account. Pool is your follow graph at lock
-            time.
-          </CompactStatusMessage>
+          <p className="text-muted-foreground text-xs leading-snug">
+            One entry per account; pool is your follow graph at lock time.
+          </p>
         </>
       ) : (
         <div className="max-w-md space-y-1">
@@ -425,15 +487,16 @@ function GiveawayNewBuilderSelection({
           </select>
         </div>
       )}
-      <CompactStatusMessage variant="info">
+      <p className="text-muted-foreground/90 text-[11px] leading-snug">
         {isFollowGraphScope
-          ? "Preview winners before lock. Locked giveaways cannot be edited."
-          : "Random draw from eligible entries. Preview before lock — locked giveaways cannot be edited."}
-      </CompactStatusMessage>
+          ? "Preview winners before lock; locked giveaways cannot be edited."
+          : "Preview before lock — locked giveaways cannot be edited."}
+      </p>
     </section>
   );
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- builder form + rail + single-post embed */
 export function GiveawayNewBuilder({
   presets,
   queueTypes,
@@ -441,6 +504,7 @@ export function GiveawayNewBuilder({
   planLimits,
   planType,
   planDisplayName,
+  composerLoader,
   actionError,
 }: GiveawayNewBuilderProps) {
   const navigation = useNavigation();
@@ -487,6 +551,26 @@ export function GiveawayNewBuilder({
   >("PERIOD");
   const [periodMode, setPeriodMode] = useState<"days" | "custom">("days");
   const [selectedSinglePostId, setSelectedSinglePostId] = useState("");
+  const [singlePostSourceMode, setSinglePostSourceMode] = useState<
+    "create" | "existing"
+  >("existing");
+  const [composerSessionKey, setComposerSessionKey] = useState(0);
+
+  const onGiveawayEmbedPublish = useCallback(
+    (payload: ContestEmbedPublishPayload) => {
+      if (payload.postId) {
+        setSelectedSinglePostId(payload.postId);
+      }
+      setComposerSessionKey((k) => k + 1);
+      try {
+        localStorage.removeItem("composer-giveaway-embedded-draft");
+      } catch {
+        /* ignore */
+      }
+    },
+    []
+  );
+
   const [engagement, setEngagement] = useState<Record<string, boolean>>({
     REACTION: true,
     REPOST: true,
@@ -623,37 +707,39 @@ export function GiveawayNewBuilder({
                   </label>
                 </div>
                 {periodMode === "days" ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label
-                      htmlFor="periodDays"
-                      className="text-muted-foreground text-sm"
-                    >
-                      Days
-                    </label>
-                    <select
-                      id="periodDays"
-                      name="periodDays"
-                      className={`${campaignSelectClassNames} w-auto min-w-[140px]`}
-                      defaultValue="7"
-                    >
-                      {[7, 14, 30].map((d) => (
-                        <option key={d} value={d}>
-                          Last {d} days
-                        </option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-8 sm:gap-y-2">
+                    <div className="flex min-w-0 flex-col gap-1 sm:w-[min(100%,14rem)]">
+                      <label
+                        htmlFor="periodDays"
+                        className="text-muted-foreground text-xs font-medium"
+                      >
+                        Period
+                      </label>
+                      <select
+                        id="periodDays"
+                        name="periodDays"
+                        className={campaignSelectClassNames}
+                        defaultValue="7"
+                      >
+                        {[7, 14, 30].map((d) => (
+                          <option key={d} value={d}>
+                            Last {d} days
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     {planLimits.canUseQueueScope ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-col gap-1 sm:w-[min(100%,16rem)]">
                         <label
                           htmlFor="queueId"
-                          className="text-muted-foreground text-sm"
+                          className="text-muted-foreground text-xs font-medium"
                         >
                           Queue
                         </label>
                         <select
                           id="queueId"
                           name="queueId"
-                          className={`${campaignSelectClassNames} min-w-[160px]`}
+                          className={campaignSelectClassNames}
                         >
                           <option value="">All queues</option>
                           {queueTypes.map((q) => (
@@ -729,13 +815,54 @@ export function GiveawayNewBuilder({
                   name="postId"
                   value={selectedSinglePostId}
                 />
-                <PublishedPostPickerGrid
-                  posts={recentPosts}
-                  value={selectedSinglePostId}
-                  onValueChange={setSelectedSinglePostId}
-                  searchInputId="giveaway-single-post-search"
-                  emptyPostsMessage="No published posts in the last 90 days."
-                  emptyFilterMessage="No posts match your search."
+                <SourcePostModule
+                  id="giveaway-single-post-heading"
+                  title="Source post"
+                  description="Engagement on this note only — not nested replies deeper in the thread."
+                  compactTiles
+                  mode={singlePostSourceMode}
+                  onModeChange={(m) => {
+                    setSinglePostSourceMode(m);
+                    if (m === "create") {
+                      setSelectedSinglePostId("");
+                    }
+                  }}
+                  choiceGroupName="_giveawaySinglePostSourceMode"
+                  options={GIVEAWAY_SINGLE_POST_SOURCE_OPTIONS}
+                  errorMessage={
+                    singlePostSourceMode === "existing" &&
+                    !selectedSinglePostId.trim()
+                      ? "Choose a published post."
+                      : singlePostSourceMode === "create" &&
+                          !selectedSinglePostId.trim()
+                        ? "Publish the giveaway post from the composer, then create the draft."
+                        : null
+                  }
+                  createBody={
+                    <div className="space-y-3">
+                      <GiveawayEmbeddedComposer
+                        loaderData={composerLoader}
+                        composerKey={composerSessionKey}
+                        onEmbedPublishSuccess={onGiveawayEmbedPublish}
+                      />
+                      {selectedSinglePostId.trim() ? (
+                        <CompactStatusMessage variant="info">
+                          Source post set — you can create the giveaway draft
+                          below.
+                        </CompactStatusMessage>
+                      ) : null}
+                    </div>
+                  }
+                  existingBody={
+                    <PublishedPostPickerGrid
+                      posts={recentPosts}
+                      value={selectedSinglePostId}
+                      onValueChange={setSelectedSinglePostId}
+                      searchInputId="giveaway-single-post-search"
+                      emptyPostsMessage="No published posts in the last 90 days."
+                      emptyFilterMessage="No posts match your search."
+                    />
+                  }
                 />
               </div>
             ) : null}
@@ -925,67 +1052,67 @@ export function GiveawayNewBuilder({
             ) : null}
 
             {effectiveRewardMode === "simple" ? (
-              <div className="border-border/60 flex flex-wrap gap-6 border-t pt-4">
-                <div>
-                  <label
-                    htmlFor="winnerCount"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Number of winners
-                  </label>
-                  <input
-                    id="winnerCount"
-                    name="winnerCount"
-                    type="number"
-                    min={1}
-                    max={planLimits.maxWinnerCount}
-                    value={winnerCount}
-                    onChange={(e) => {
-                      setWinnerCount(
-                        Math.min(
-                          planLimits.maxWinnerCount,
-                          Math.max(1, parseInt(e.target.value, 10) || 1)
-                        )
-                      );
-                    }}
-                    className={`${campaignFieldClassNames} mt-1 block w-24`}
-                  />
+              <div className="border-border/60 space-y-3 border-t pt-4">
+                <div className="flex flex-wrap gap-6 sm:gap-8">
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="winnerCount"
+                      className="text-muted-foreground text-xs font-medium"
+                    >
+                      Winners
+                    </label>
+                    <input
+                      id="winnerCount"
+                      name="winnerCount"
+                      type="number"
+                      min={1}
+                      max={planLimits.maxWinnerCount}
+                      value={winnerCount}
+                      onChange={(e) => {
+                        setWinnerCount(
+                          Math.min(
+                            planLimits.maxWinnerCount,
+                            Math.max(1, parseInt(e.target.value, 10) || 1)
+                          )
+                        );
+                      }}
+                      className={`${campaignFieldClassNames} block w-24`}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="simpleSatsPerWinner"
+                      className="text-muted-foreground text-xs font-medium"
+                    >
+                      Sats per winner
+                    </label>
+                    <input
+                      id="simpleSatsPerWinner"
+                      name="simpleSatsPerWinner"
+                      type="number"
+                      min={0}
+                      value={simpleSats}
+                      onChange={(e) => {
+                        setSimpleSats(
+                          Math.max(0, parseInt(e.target.value, 10) || 0)
+                        );
+                      }}
+                      className={`${campaignFieldClassNames} block w-28`}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label
-                    htmlFor="simpleSatsPerWinner"
-                    className="text-muted-foreground text-sm"
-                  >
-                    Sats per winner
-                  </label>
-                  <input
-                    id="simpleSatsPerWinner"
-                    name="simpleSatsPerWinner"
-                    type="number"
-                    min={0}
-                    value={simpleSats}
-                    onChange={(e) => {
-                      setSimpleSats(
-                        Math.max(0, parseInt(e.target.value, 10) || 0)
-                      );
-                    }}
-                    className={`${campaignFieldClassNames} mt-1 block w-28`}
-                  />
-                </div>
-                <div className="text-muted-foreground flex min-w-[12rem] flex-col justify-end text-sm">
-                  <RewardSummaryLine>
-                    Max payout:{" "}
-                    <span className="text-foreground font-semibold tabular-nums">
-                      {(winnerCount * simpleSats).toLocaleString()}
-                    </span>{" "}
-                    sats
-                  </RewardSummaryLine>
-                  {simpleSats === 0 ? (
-                    <CompactStatusMessage variant="info" className="mt-2">
-                      Selection-only giveaway. No payout configured.
-                    </CompactStatusMessage>
-                  ) : null}
-                </div>
+                <RewardSummaryLine>
+                  Max payout{" "}
+                  <span className="text-foreground font-semibold tabular-nums">
+                    {(winnerCount * simpleSats).toLocaleString()}
+                  </span>{" "}
+                  sats
+                </RewardSummaryLine>
+                {simpleSats === 0 ? (
+                  <p className="text-muted-foreground/85 text-[11px] leading-snug">
+                    Selection-only — no payout.
+                  </p>
+                ) : null}
               </div>
             ) : (
               <div className="space-y-2">
@@ -1057,6 +1184,7 @@ export function GiveawayNewBuilder({
           feePreview={feePreview}
           isFollowGraphScope={isFollowGraphScope}
           selectedSinglePostId={selectedSinglePostId}
+          singlePostSourceMode={singlePostSourceMode}
           actionError={actionError}
           fetcherError={fetcherError}
           isBusy={isBusy}

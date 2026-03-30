@@ -22,6 +22,7 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { loadNewPostData } from "~/features/posts/server/composer";
 import { getQueueTypes } from "~/features/user";
 import {
   DeferredRouteLoaderProvider,
@@ -263,10 +264,11 @@ async function loadGiveawayNewData(request: Request) {
     subscriptionData.currentSubscription
   );
 
-  const [presets, queueTypes, recentPosts] = await Promise.all([
+  const [presets, queueTypes, recentPosts, composerLoader] = await Promise.all([
     getGiveawayPresetsByUser(userId),
     getQueueTypes(userId),
     getRecentPostsForGiveawaySelector(userId),
+    loadNewPostData(userId, null, null),
   ]);
 
   return {
@@ -285,6 +287,7 @@ async function loadGiveawayNewData(request: Request) {
     },
     planType,
     planDisplayName,
+    composerLoader,
   };
 }
 

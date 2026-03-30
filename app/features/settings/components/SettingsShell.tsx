@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { PublishingPageHeader } from "~/features/posts/components/publishing-suite/PublishingPageHeader";
 import { cn } from "~/lib/utils";
 
 import type { SettingsSectionDef, SettingsTabId } from "../settings-sections";
@@ -39,7 +40,7 @@ export function SettingsShell({
   sections,
   activeTab,
   title = "Settings",
-  subtitle = "Preferences and infrastructure for your workspace.",
+  subtitle = "Workspace preferences, publishing defaults, and infrastructure.",
   children,
 }: SettingsShellProps) {
   const location = useLocation();
@@ -48,61 +49,17 @@ export function SettingsShell({
 
   return (
     <div
-      className="mx-auto w-full max-w-7xl overflow-x-hidden p-4 sm:p-6"
+      className="mx-auto w-full max-w-[1400px] overflow-x-hidden px-4 pb-8 sm:px-6"
       data-testid="settings-page"
     >
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {title}
-        </h1>
-        <p className="text-muted-foreground mt-2 max-w-xl text-sm sm:text-base">
-          {subtitle}
-        </p>
+      <div className="pt-2 pb-4">
+        <PublishingPageHeader title={title} subtitle={subtitle} />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8">
-        <nav
-          className="hidden shrink-0 lg:block lg:w-60"
-          aria-label="Settings sections"
-          data-testid="settings-nav-desktop"
-        >
-          <ul className="flex flex-col gap-0.5">
-            {sections.map((section) => {
-              const isActive = section.id === activeTab;
-              return (
-                <li key={section.id}>
-                  <Link
-                    to={{
-                      pathname: location.pathname,
-                      search: searchWithTab(searchParams, section.id),
-                    }}
-                    replace
-                    preventScrollReset
-                    className={cn(
-                      "focus-visible:ring-ring block rounded-md px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                      isActive
-                        ? "bg-muted text-foreground border-l-primary border-l-2 font-medium"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border-l-2 border-transparent"
-                    )}
-                    data-testid={`settings-nav-item-${section.id}`}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <span className="block leading-snug">{section.label}</span>
-                    {section.description ? (
-                      <span className="text-muted-foreground mt-0.5 block text-xs font-normal">
-                        {section.description}
-                      </span>
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
+      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <div className="lg:hidden" data-testid="settings-nav-mobile">
           <Label htmlFor="settings-section-select" className="mb-2 block">
-            Section
+            Settings section
           </Label>
           <Select
             value={activeTab}
@@ -137,11 +94,57 @@ export function SettingsShell({
         </div>
 
         <div
-          className="max-w-[900px] min-w-0 flex-1 space-y-6 overflow-x-hidden"
+          className="w-full max-w-[880px] min-w-0 flex-1 overflow-x-hidden"
           data-testid="settings-active-panel"
         >
           {children}
         </div>
+
+        <aside
+          className="border-border bg-muted/25 hidden w-full shrink-0 rounded-xl border shadow-sm lg:sticky lg:top-[4.75rem] lg:flex lg:max-h-[calc(100vh-5.75rem)] lg:w-[300px] lg:flex-col lg:self-start xl:w-[320px]"
+          aria-label="Settings sections"
+          data-testid="settings-section-rail"
+        >
+          <nav className="min-h-0 flex-1 overflow-y-auto p-2">
+            <p className="text-muted-foreground px-2 pt-1 pb-2 text-[11px] font-medium tracking-wide uppercase">
+              Sections
+            </p>
+            <ul className="flex flex-col gap-0.5">
+              {sections.map((section) => {
+                const isActive = section.id === activeTab;
+                return (
+                  <li key={section.id}>
+                    <Link
+                      to={{
+                        pathname: location.pathname,
+                        search: searchWithTab(searchParams, section.id),
+                      }}
+                      replace
+                      preventScrollReset
+                      className={cn(
+                        "focus-visible:ring-ring block rounded-lg px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                        isActive
+                          ? "bg-background text-foreground ring-border/80 font-semibold ring-1 shadow-sm"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      )}
+                      data-testid={`settings-nav-item-${section.id}`}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <span className="block leading-snug">
+                        {section.label}
+                      </span>
+                      {section.description ? (
+                        <span className="text-muted-foreground mt-0.5 block text-xs font-normal">
+                          {section.description}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
       </div>
     </div>
   );

@@ -468,6 +468,12 @@ export function UnifiedComposer({
   });
 
   const content = form.watch("content");
+  const hasPostPreviewContent = useMemo(() => {
+    const t = String(content).trim();
+    return t.length > 0 || attachments.some((a) => Boolean(a.url));
+  }, [content, attachments]);
+  const skipEmptyPostPreview =
+    isContestSourcePostDensity && !isThreadMode && !hasPostPreviewContent;
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
   const formSelectedHashtagPresetId = form.watch("hashTagPresetId");
   const useHashtagPresetsActive = !!form.watch("useHashtagPresets");
@@ -1692,67 +1698,148 @@ export function UnifiedComposer({
               blossomSignerMediaNote={blossomSignerMediaNote}
               attachmentFailedTitleHint={attachmentFailedTitleHint}
               mediaUploadDisabled={blossomMediaBlocked}
+              contentDensity={
+                isContestSourcePostDensity ? "campaignSource" : "default"
+              }
+              mediaCompact={isContestSourcePostDensity}
             />
             {!isTemplateMode ? (
               <>
+                {!skipEmptyPostPreview ? (
+                  <>
+                    <ComposerCanvasDivider />
+                    <div
+                      className={cn(
+                        "flex flex-col",
+                        isContestSourcePostDensity
+                          ? "gap-2 sm:gap-3"
+                          : "gap-4 sm:gap-5"
+                      )}
+                    >
+                      <UnifiedComposerPreviewBlock
+                        isThreadMode={isThreadMode}
+                        content={content}
+                        attachments={attachments}
+                        selectedHashtags={selectedHashtags}
+                        useHashtagPresets={useHashtagPresetsActive}
+                        queueTypes={queueTypes}
+                        userId={user?.id}
+                        defaultTags={tags}
+                        includeHashtagsInNoteBody={
+                          includeHashtagsInNoteBody !== false
+                        }
+                        threadSegments={threadSegments}
+                        threadDelayMinutes={threadDelayMinutes}
+                        selectedQueue={selectedQueue}
+                        hideEmptyPreview={isContestSourcePostDensity}
+                      />
+                    </div>
+                  </>
+                ) : null}
                 <ComposerCanvasDivider />
-                <div className="flex flex-col gap-4 sm:gap-5">
-                  <UnifiedComposerPreviewBlock
-                    isThreadMode={isThreadMode}
-                    content={content}
-                    attachments={attachments}
-                    selectedHashtags={selectedHashtags}
-                    useHashtagPresets={useHashtagPresetsActive}
-                    queueTypes={queueTypes}
-                    userId={user?.id}
-                    defaultTags={tags}
-                    includeHashtagsInNoteBody={
-                      includeHashtagsInNoteBody !== false
-                    }
-                    threadSegments={threadSegments}
-                    threadDelayMinutes={threadDelayMinutes}
-                    selectedQueue={selectedQueue}
-                  />
-                  <ComposerCanvasDivider />
-                  <TagsChipRow
-                    tags={selectedHashtags}
-                    onTagsChange={(newTags) => {
-                      setSelectedHashtags(newTags);
-                      if (!newTags.trim()) {
-                        form.setValue("useHashtagPresets", false);
-                        form.setValue("hashTagPresetId", undefined);
-                        onHashtagPresetChange?.(null, "");
+                <div
+                  className={
+                    isContestSourcePostDensity
+                      ? "flex flex-col gap-2 sm:gap-2.5"
+                      : "flex flex-col gap-4 sm:gap-5"
+                  }
+                >
+                  {isContestSourcePostDensity ? (
+                    <details className="border-border/35 bg-muted/15 rounded-md border px-2 py-2">
+                      <summary className="text-muted-foreground/90 cursor-pointer list-none text-[10px] font-medium tracking-wide uppercase select-none [&::-webkit-details-marker]:hidden">
+                        Tags{" "}
+                        <span className="text-muted-foreground/70 font-normal normal-case">
+                          optional
+                        </span>
+                      </summary>
+                      <div className="mt-2 pt-1">
+                        <TagsChipRow
+                          tags={selectedHashtags}
+                          onTagsChange={(newTags) => {
+                            setSelectedHashtags(newTags);
+                            if (!newTags.trim()) {
+                              form.setValue("useHashtagPresets", false);
+                              form.setValue("hashTagPresetId", undefined);
+                              onHashtagPresetChange?.(null, "");
+                            }
+                          }}
+                          presets={hashTagPresets}
+                          selectedPresetId={formSelectedHashtagPresetId}
+                          onPresetSelect={(presetId, mergedTags) => {
+                            setSelectedHashtags(mergedTags);
+                            form.setValue("useHashtagPresets", true);
+                            form.setValue(
+                              "hashTagPresetId",
+                              presetId ?? undefined
+                            );
+                            onHashtagPresetChange?.(presetId, mergedTags);
+                          }}
+                          disabled={fetcher.state !== "idle"}
+                          includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                          onIncludeHashtagsInNoteBodyChange={(v) =>
+                            form.setValue("includeHashtagsInNoteBody", v)
+                          }
+                          queuePresetName={
+                            selectedQueue !== "unassigned"
+                              ? ((
+                                  queueTypes.find(
+                                    (q) =>
+                                      (typeof q === "string" ? q : q.name) ===
+                                      selectedQueue
+                                  ) as
+                                    | (QueueType & {
+                                        hashTagPreset?: { name: string } | null;
+                                      })
+                                    | undefined
+                                )?.hashTagPreset?.name ?? undefined)
+                              : undefined
+                          }
+                          hideSectionLabel
+                          variant="campaignSource"
+                        />
+                      </div>
+                    </details>
+                  ) : (
+                    <TagsChipRow
+                      tags={selectedHashtags}
+                      onTagsChange={(newTags) => {
+                        setSelectedHashtags(newTags);
+                        if (!newTags.trim()) {
+                          form.setValue("useHashtagPresets", false);
+                          form.setValue("hashTagPresetId", undefined);
+                          onHashtagPresetChange?.(null, "");
+                        }
+                      }}
+                      presets={hashTagPresets}
+                      selectedPresetId={formSelectedHashtagPresetId}
+                      onPresetSelect={(presetId, mergedTags) => {
+                        setSelectedHashtags(mergedTags);
+                        form.setValue("useHashtagPresets", true);
+                        form.setValue("hashTagPresetId", presetId ?? undefined);
+                        onHashtagPresetChange?.(presetId, mergedTags);
+                      }}
+                      disabled={fetcher.state !== "idle"}
+                      includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                      onIncludeHashtagsInNoteBodyChange={(v) =>
+                        form.setValue("includeHashtagsInNoteBody", v)
                       }
-                    }}
-                    presets={hashTagPresets}
-                    selectedPresetId={formSelectedHashtagPresetId}
-                    onPresetSelect={(presetId, mergedTags) => {
-                      setSelectedHashtags(mergedTags);
-                      form.setValue("useHashtagPresets", true);
-                      form.setValue("hashTagPresetId", presetId ?? undefined);
-                      onHashtagPresetChange?.(presetId, mergedTags);
-                    }}
-                    disabled={fetcher.state !== "idle"}
-                    includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-                    onIncludeHashtagsInNoteBodyChange={(v) =>
-                      form.setValue("includeHashtagsInNoteBody", v)
-                    }
-                    queuePresetName={
-                      selectedQueue !== "unassigned"
-                        ? ((
-                            queueTypes.find(
-                              (q) =>
-                                (typeof q === "string" ? q : q.name) ===
-                                selectedQueue
-                            ) as
-                              | (QueueType & {
-                                  hashTagPreset?: { name: string } | null;
-                                })
-                              | undefined
-                          )?.hashTagPreset?.name ?? undefined)
-                        : undefined
-                    }
-                  />
+                      queuePresetName={
+                        selectedQueue !== "unassigned"
+                          ? ((
+                              queueTypes.find(
+                                (q) =>
+                                  (typeof q === "string" ? q : q.name) ===
+                                  selectedQueue
+                              ) as
+                                | (QueueType & {
+                                    hashTagPreset?: { name: string } | null;
+                                  })
+                                | undefined
+                            )?.hashTagPreset?.name ?? undefined)
+                          : undefined
+                      }
+                    />
+                  )}
                 </div>
               </>
             ) : null}

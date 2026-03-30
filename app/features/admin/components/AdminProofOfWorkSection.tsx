@@ -113,7 +113,7 @@ export function AdminProofOfWorkSection({
       <ProofStudioAdminLayout
         preview={
           <ProofPreviewStage>
-            <div ref={cardRef}>
+            <div ref={cardRef} className="flex w-full justify-center">
               <ProofCardRenderer payload={payload} ratio={proofRatio} />
             </div>
           </ProofPreviewStage>

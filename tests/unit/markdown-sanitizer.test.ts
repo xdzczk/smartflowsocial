@@ -1,6 +1,6 @@
 /**
  * Unit tests for markdown sanitizer
- * Tests app/lib/markdown-sanitizer.server.ts
+ * Tests app/lib/markdown-sanitize.ts (server wrapper adds logging in markdown-sanitizer.server.ts)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -24,7 +24,7 @@ import {
   sanitizeMarkdown,
   extractPlainText,
   generateSummary,
-} from "~/lib/markdown-sanitizer.server";
+} from "~/lib/markdown-sanitize";
 
 describe("Markdown Sanitizer", () => {
   beforeEach(() => {

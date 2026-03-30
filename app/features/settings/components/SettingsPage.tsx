@@ -33,6 +33,7 @@ import type {
   Nip65ProfileRelayEntry,
   Nip65RelayScope,
 } from "~/features/relays/nip65-relay-entry";
+import { PreferenceSection } from "~/features/settings/components/patterns";
 import { SettingsShell } from "~/features/settings/components/SettingsShell";
 import {
   getVisibleSettingsSections,
@@ -406,7 +407,7 @@ function renderSettingsPanel(
   switch (tab) {
     case "general":
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <TimezoneSettings timezone={timezoneValue} />
           <TimeFormatSettings
             timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
@@ -447,7 +448,7 @@ function renderSettingsPanel(
       );
     case "content":
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <QueueTypesSettings
             queueTypes={queueTypes}
             hashTagPresets={hashTagPresets.map((p) => ({
@@ -471,7 +472,7 @@ function renderSettingsPanel(
       );
     case "network":
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <RelaysSettings
             relays={relaysList}
             publishRelaySource={publishRelaySourceValue}
@@ -534,7 +535,7 @@ function renderSettingsPanel(
       );
     case "storage":
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <UploadProviderSettings
             uploadProvider={uploadProviderValue}
             customBlossomUrl={customBlossomUrlValue}
@@ -543,20 +544,25 @@ function renderSettingsPanel(
             enableMirrorBlossom={enableMirrorBlossomValue}
             mirrorUploadUrls={mirrorUploadUrlsList}
           />
-          <div className="text-sm">
-            <Link
-              to="/dashboard/settings/media"
-              className="text-primary hover:underline"
-            >
-              Manage Blossom media (list, usage, delete records)
-            </Link>
-          </div>
+          <PreferenceSection
+            title="Blossom media library"
+            description="List uploads, usage, and delete stored media records."
+          >
+            <p className="text-sm">
+              <Link
+                to="/dashboard/settings/media"
+                className="text-primary font-medium hover:underline"
+              >
+                Manage Blossom media
+              </Link>
+            </p>
+          </PreferenceSection>
         </div>
       );
     case "subscription":
       if (isChildBool) return null;
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <SubscriptionSettings
             subscription={subscription}
             availablePlans={availablePlans}
@@ -573,7 +579,7 @@ function renderSettingsPanel(
     case "referral":
       if (isChildBool) return null;
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           <ReferralSettings
             referralLink={referral.referralLink}
             commissionRatePercent={referral.commissionRatePercent}
@@ -589,7 +595,7 @@ function renderSettingsPanel(
     case "accounts":
       if (!hasAccountsAccessBool) return null;
       return (
-        <div className="grid min-w-0 gap-6 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-8">
           {accounts ? (
             <AccountsSettings
               parentNpub={accounts.parentNpub}

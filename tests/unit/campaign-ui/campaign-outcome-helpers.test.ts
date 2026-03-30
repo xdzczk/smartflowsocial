@@ -12,10 +12,10 @@ describe("buildGiveawayOutcomeLine", () => {
     ).toBe("Up to 9,000 sats across 3 winners.");
   });
 
-  it("returns selection-focused line when no payout", () => {
+  it("returns selection-only line when no payout", () => {
     expect(
       buildGiveawayOutcomeLine({ plannedPayoutSats: null, winnerCount: 1 })
-    ).toBe("Selection-focused · 1 winner.");
+    ).toBe("Selection-only · 1 winner.");
   });
 });
 

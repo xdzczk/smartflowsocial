@@ -465,6 +465,38 @@ function filterGroupedExcludingUser(
     .filter((group) => group.notifications.length > 0);
 }
 
+function enrichGroupedParentAuthorPictures(
+  groups: GroupedNotification[],
+  userProfilesMap: Map<string, User>
+): GroupedNotification[] {
+  return groups.map((g) => {
+    const pic = userProfilesMap.get(g.parentPost.pubkey)?.picture;
+    return {
+      ...g,
+      parentPost: {
+        ...g.parentPost,
+        authorPicture: pic ?? g.parentPost.authorPicture ?? null,
+      },
+    };
+  });
+}
+
+function enrichGlobalMentionNotificationsWithProfiles(
+  notifications: NotificationMention[],
+  userProfilesMap: Map<string, User>
+): NotificationMention[] {
+  return notifications.map((n) => {
+    const u = userProfilesMap.get(n.pubkey);
+    if (!u) return n;
+    return {
+      ...n,
+      authorName: u.displayName ?? u.name ?? n.authorName,
+      authorPicture: u.picture ?? n.authorPicture ?? null,
+      authorNip05: u.nip05 ?? n.authorNip05,
+    };
+  });
+}
+
 /** Serialize grouped notifications for JSON response (publishedAt → ISO string). */
 function serializeGroupedForResponse(
   groups: GroupedNotification[]
@@ -848,6 +880,11 @@ async function loadPrimalSupplementalEngagementData(params: {
       ) as NotificationMention[];
     }
 
+    globalMentionNotifications = enrichGlobalMentionNotificationsWithProfiles(
+      globalMentionNotifications,
+      userProfilesMap
+    );
+
     groupedGlobalMentions = groupNotificationsByParent(
       globalMentionNotifications,
       postsAsPostData,
@@ -999,6 +1036,14 @@ export async function loadEngagementFeedData(
   const userProfilesMap = new Map<string, User>();
   const trustScoresMap = new Map<string, number>();
 
+  if (PUBKEY_HEX64.test(userPubkeyHex)) {
+    const selfProfile = await fetchUserProfile(userPubkeyHex);
+    if (selfProfile) {
+      userProfilesMap.set(userPubkeyHex, selfProfile);
+      trustScoresMap.set(userPubkeyHex, calculateTrustScore(selfProfile));
+    }
+  }
+
   try {
     const fetched = await fetchStatsAndNotificationsForPublishedPosts({
       eventIds,
@@ -1083,15 +1128,15 @@ export async function loadEngagementFeedData(
 
   const postsAsDTOs = toPostDTOArray(postsAsPostData);
   const serializedGroupedReplies = serializeGroupedForResponse(
-    groupedByParent.replies
+    enrichGroupedParentAuthorPictures(groupedByParent.replies, userProfilesMap)
   );
-  const quotesExcludingSelf = filterGroupedExcludingUser(
-    groupedQuoteReposts,
-    userPubkeyHex
+  const quotesExcludingSelf = enrichGroupedParentAuthorPictures(
+    filterGroupedExcludingUser(groupedQuoteReposts, userPubkeyHex),
+    userProfilesMap
   );
-  const mentionsExcludingSelf = filterGroupedExcludingUser(
-    groupedByParent.mentions,
-    userPubkeyHex
+  const mentionsExcludingSelf = enrichGroupedParentAuthorPictures(
+    filterGroupedExcludingUser(groupedByParent.mentions, userPubkeyHex),
+    userProfilesMap
   );
   const serializedGroupedQuotes =
     serializeGroupedForResponse(quotesExcludingSelf);
