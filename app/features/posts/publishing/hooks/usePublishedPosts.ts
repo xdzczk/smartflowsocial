@@ -11,10 +11,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { ToastMessage } from "~/components/types";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import type {
-  BulkPost,
   CombinedContent,
-  PostData,
   LongFormPostData,
+  PostData,
 } from "~/features/posts/types";
 import {
   convertQuoteDataToBulkPosts,
@@ -27,115 +26,34 @@ import {
   formatForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
-import type { UserData } from "~/lib/validation/user-data";
 
+import {
+  isPublishedPostsCacheObject,
+  parseBulkDeleteIds,
+  prunePublishedPageData,
+} from "./usePublishedPostsCache";
+import {
+  ACTION_BULK_DELETE,
+  ACTION_BULK_DELETE_LONGFORM,
+  ACTION_BULK_DELETE_MIXED,
+  ACTION_BULK_QUOTE,
+  ACTION_BULK_REPOST,
+  ACTION_BULK_SCHEDULED_REPOST,
+  PATH_BULK_POSTS_QUOTE,
+  PATH_BULK_POSTS_RECYCLE,
+  PATH_BULK_POSTS_REPOST,
+  STORAGE_KEY_QUOTE_POST_DATA,
+  STORAGE_KEY_REPOST_DATA,
+  STORAGE_KEY_SCHEDULED_REPOST_DATA,
+} from "./usePublishedPostsConstants";
 import { publishedPostsKeys } from "./usePublishedPostsQuery";
+import type {
+  FetcherErrorResponse,
+  QuotePostData,
+  UsePublishedPostsProps,
+} from "./usePublishedPostsTypes";
 
-// Action constants
-const ACTION_BULK_SCHEDULED_REPOST = "bulkScheduledRepost";
-const ACTION_BULK_QUOTE = "bulkQuote";
-const ACTION_BULK_DELETE = "bulkDelete";
-const ACTION_BULK_DELETE_LONGFORM = "bulkDeleteLongForm";
-const ACTION_BULK_DELETE_MIXED = "bulkDeleteMixed";
-const ACTION_BULK_REPOST = "bulkRepost";
-
-// Session storage keys
-const STORAGE_KEY_REPOST_DATA = "repostData";
-const STORAGE_KEY_SCHEDULED_REPOST_DATA = "scheduledRepostData";
-const STORAGE_KEY_QUOTE_POST_DATA = "quotePostData";
-
-// Navigation paths
-const PATH_BULK_POSTS_RECYCLE = "/dashboard/bulkposts?mode=recycle";
-const PATH_BULK_POSTS_REPOST = "/dashboard/bulkposts?mode=repost";
-const PATH_BULK_POSTS_QUOTE = "/dashboard/bulkposts?mode=quote";
-
-// Common type definitions to avoid duplication
-interface QuotePostData {
-  caption: string;
-  fileUrl: string;
-  queueType: string;
-  scheduledFor: string;
-  originalPostId: string;
-  originalEventId?: string;
-  originalEventPubkey?: string;
-  isQuotePost?: boolean;
-  originalCaption?: string;
-}
-
-interface FetcherErrorResponse {
-  error?: string;
-  message?: string;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function filterRowsById(rows: unknown, deletedIds: Set<string>): unknown {
-  if (!Array.isArray(rows)) {
-    return rows;
-  }
-  return rows.filter((row) => {
-    if (!isObject(row)) return true;
-    const id = row["id"];
-    return typeof id !== "string" || !deletedIds.has(id);
-  });
-}
-
-function prunePublishedPageData(
-  page: unknown,
-  deletedIds: Set<string>
-): unknown {
-  if (!isObject(page)) {
-    return page;
-  }
-  return {
-    ...page,
-    posts: filterRowsById(page["posts"], deletedIds),
-    longformPosts: filterRowsById(page["longformPosts"], deletedIds),
-    allContent: filterRowsById(page["allContent"], deletedIds),
-  };
-}
-
-function parseBulkDeleteIds(formData: FormData): string[] {
-  const action = formData.get("_action");
-  const raw = formData.get("postIds");
-  const rawMixed = formData.get("itemData");
-
-  if (action === ACTION_BULK_DELETE_MIXED && typeof rawMixed === "string") {
-    try {
-      const mixed = JSON.parse(rawMixed) as Array<{ id?: unknown }>;
-      return mixed
-        .map((item) => (typeof item.id === "string" ? item.id : null))
-        .filter((id): id is string => id !== null);
-    } catch {
-      return [];
-    }
-  }
-
-  if (typeof raw !== "string") {
-    return [];
-  }
-  try {
-    const parsed = JSON.parse(raw) as unknown[];
-    return parsed.filter((id): id is string => typeof id === "string");
-  } catch {
-    return [];
-  }
-}
-
-export type BulkComposerPayload =
-  | { mode: "recycle"; initialPosts: BulkPost[] }
-  | { mode: "repost"; scheduledRepostData: unknown[] }
-  | { mode: "quote"; initialPosts: BulkPost[] };
-
-interface UsePublishedPostsProps {
-  user: UserData | null;
-  allContent: CombinedContent[];
-  posts: PostData[];
-  /** When set, bulk repost/quote/recycle open the in-page composer modal instead of redirecting. */
-  onOpenBulkComposer?: (payload: BulkComposerPayload) => void;
-}
+export type { BulkComposerPayload } from "./usePublishedPostsTypes";
 
 export function usePublishedPosts({
   user,
@@ -223,7 +141,7 @@ export function usePublishedPosts({
       queryClient.setQueriesData(
         { queryKey: publishedPostsKeys.all },
         (old) => {
-          if (!isObject(old)) {
+          if (!isPublishedPostsCacheObject(old)) {
             return old;
           }
           if (Array.isArray(old["pages"])) {

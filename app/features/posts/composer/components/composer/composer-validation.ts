@@ -5,6 +5,8 @@
 
 export const COMPOSER_CONTENT_REQUIRED = "Post content cannot be empty";
 export const COMPOSER_SCHEDULE_FUTURE = "Schedule time must be in the future.";
+export const COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED =
+  "Schedule time is required, or select a queue so we can pick the next slot.";
 export const COMPOSER_UPLOAD_WAIT = "Please wait for uploads to finish.";
 export const COMPOSER_REMOVE_FAILED_ATTACHMENTS =
   "Remove or retry failed attachments before publishing.";

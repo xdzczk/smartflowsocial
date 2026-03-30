@@ -40,9 +40,6 @@ import {
   ComposerCanvasSectionLabel,
   ComposerErrors,
   ComposerLeftCanvas,
-  ComposerQueueField,
-  ComposerScheduleRandomWindowField,
-  ComposerScheduleField,
   composerCanvasFieldStackClass,
   type ComposerPublishMode,
   buildPublishPathSummary,
@@ -61,85 +58,19 @@ import {
   ACTION_SCHEDULE_POLL,
   parseScheduledTime,
 } from "./composer/composer-submit-utils";
-
-const MAX_OPTIONS = 10;
-const MIN_OPTIONS = 2;
-const COMPOSER_SCHEDULE_FUTURE = "Schedule time must be in the future.";
-
-const POLL_QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS = [5, 10, 15] as const;
-
-const MAX_HOURS_AFTER_PUBLISH = 8760;
-
-type PollEndMode = "absolute" | "relative";
-
-function randomScheduleHalfWidthSeconds(windowMinutes: number): number {
-  if (!Number.isFinite(windowMinutes) || windowMinutes <= 0) return 0;
-  return Math.min(Math.floor(windowMinutes * 60), 24 * 60 * 60);
-}
-
-async function resolvePollEndsAtUnixForSubmit(params: {
-  pollEndMode: PollEndMode;
-  pollEndHoursAfterPublish: number;
-  endsAtLocal: string;
-  createdUnix: number;
-  userTimezone: string;
-}): Promise<
-  { ok: true; endsAtUnix: number | undefined } | { ok: false; message: string }
-> {
-  if (params.pollEndMode === "relative") {
-    const hours = params.pollEndHoursAfterPublish;
-    if (
-      !Number.isFinite(hours) ||
-      hours < 1 ||
-      hours > MAX_HOURS_AFTER_PUBLISH
-    ) {
-      return {
-        ok: false,
-        message: `Hours after publish must be between 1 and ${MAX_HOURS_AFTER_PUBLISH}.`,
-      };
-    }
-    return {
-      ok: true,
-      endsAtUnix: params.createdUnix + Math.floor(hours * 3600),
-    };
-  }
-  if (!params.endsAtLocal.trim()) {
-    return { ok: true, endsAtUnix: undefined };
-  }
-  const endMs = await parseScheduledTime(
-    params.endsAtLocal,
-    params.userTimezone
-  );
-  const endsAtUnix = Math.floor(endMs / 1000);
-  if (endsAtUnix <= params.createdUnix) {
-    return { ok: false, message: "Poll end time must be after publish time." };
-  }
-  return { ok: true, endsAtUnix };
-}
-
-function newPollOptionRowId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `opt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function parseTopicTagValues(hashtagLine: string): string[] {
-  return hashtagLine
-    .split(/\s+/u)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0)
-    .map((t) => t.replace(/^#/u, ""));
-}
-
-function pollQuestionForSignedEvent(
-  questionTrimmed: string,
-  tagLine: string,
-  appendTagsToBody: boolean
-): string {
-  return appendTagsToBody && tagLine
-    ? `${questionTrimmed}\n${tagLine}`.trim()
-    : questionTrimmed;
-}
+import {
+  POLL_COMPOSER_MAX_OPTIONS,
+  POLL_COMPOSER_MIN_OPTIONS,
+  POLL_COMPOSER_SCHEDULE_FUTURE_MSG,
+  POLL_MAX_HOURS_AFTER_PUBLISH,
+  type PollEndMode,
+  newPollOptionRowId,
+  parseTopicTagValues,
+  pollQuestionForSignedEvent,
+  randomScheduleHalfWidthSeconds,
+  resolvePollEndsAtUnixForSubmit,
+} from "./poll-composer/poll-composer-utils";
+import { getPollComposerModeSpecificSection } from "./poll-composer/PollComposerRailScheduleSection";
 
 export interface PollComposerProps {
   queueTypes?: Array<string | QueueType>;
@@ -331,8 +262,9 @@ export function PollComposer({
   );
 
   const hasContent =
-    question.trim().length > 0 && trimmedOptions.length >= MIN_OPTIONS;
-  const canSubmit = trimmedOptions.length >= MIN_OPTIONS;
+    question.trim().length > 0 &&
+    trimmedOptions.length >= POLL_COMPOSER_MIN_OPTIONS;
+  const canSubmit = trimmedOptions.length >= POLL_COMPOSER_MIN_OPTIONS;
   const hasScheduleTime = scheduledFor.trim().length > 0;
   const isSubmitting = fetcher.state !== "idle";
 
@@ -425,8 +357,8 @@ export function PollComposer({
       tagLine,
       appendTagsToQuestion
     );
-    if (trimmedOptions.length < MIN_OPTIONS) {
-      toast.error(`Add at least ${MIN_OPTIONS} options.`);
+    if (trimmedOptions.length < POLL_COMPOSER_MIN_OPTIONS) {
+      toast.error(`Add at least ${POLL_COMPOSER_MIN_OPTIONS} options.`);
       return;
     }
     if (relayUrls.length === 0) {
@@ -456,7 +388,7 @@ export function PollComposer({
         userTimezone
       );
       if (scheduledTimeMs < Date.now()) {
-        toast.error(COMPOSER_SCHEDULE_FUTURE);
+        toast.error(POLL_COMPOSER_SCHEDULE_FUTURE_MSG);
         return;
       }
     }
@@ -542,9 +474,9 @@ export function PollComposer({
   if (question.trim().length === 0) {
     deferrableBlockers.push("Question is required");
   }
-  if (trimmedOptions.length < MIN_OPTIONS) {
+  if (trimmedOptions.length < POLL_COMPOSER_MIN_OPTIONS) {
     deferrableBlockers.push(
-      `At least ${MIN_OPTIONS} poll options are required`
+      `At least ${POLL_COMPOSER_MIN_OPTIONS} poll options are required`
     );
   }
   if (publishMode === "schedule" && !hasScheduleTime) {
@@ -560,10 +492,10 @@ export function PollComposer({
     if (
       !Number.isFinite(pollEndHoursAfterPublish) ||
       pollEndHoursAfterPublish < 1 ||
-      pollEndHoursAfterPublish > MAX_HOURS_AFTER_PUBLISH
+      pollEndHoursAfterPublish > POLL_MAX_HOURS_AFTER_PUBLISH
     ) {
       deferrableBlockers.push(
-        `Poll end: set hours after publish (1–${MAX_HOURS_AFTER_PUBLISH})`
+        `Poll end: set hours after publish (1–${POLL_MAX_HOURS_AFTER_PUBLISH})`
       );
     }
   } else if (endsAtLocal.trim()) {
@@ -690,12 +622,12 @@ export function PollComposer({
     appliedPollRestoreRef.current = true;
     setQuestion(pollDraftRestored.question);
     setOptions(
-      pollDraftRestored.options.length >= MIN_OPTIONS
+      pollDraftRestored.options.length >= POLL_COMPOSER_MIN_OPTIONS
         ? pollDraftRestored.options
         : ["", ""]
     );
     setOptionRowIds(
-      (pollDraftRestored.options.length >= MIN_OPTIONS
+      (pollDraftRestored.options.length >= POLL_COMPOSER_MIN_OPTIONS
         ? pollDraftRestored.options
         : ["", ""]
       ).map(() => newPollOptionRowId())
@@ -743,12 +675,12 @@ export function PollComposer({
     serverPollRestoreAppliedRef.current = true;
     setQuestion(initialPollRestore.question);
     setOptions(
-      initialPollRestore.options.length >= MIN_OPTIONS
+      initialPollRestore.options.length >= POLL_COMPOSER_MIN_OPTIONS
         ? initialPollRestore.options
         : ["", ""]
     );
     setOptionRowIds(
-      (initialPollRestore.options.length >= MIN_OPTIONS
+      (initialPollRestore.options.length >= POLL_COMPOSER_MIN_OPTIONS
         ? initialPollRestore.options
         : ["", ""]
       ).map(() => newPollOptionRowId())
@@ -980,8 +912,8 @@ export function PollComposer({
                 Options
               </ComposerCanvasSectionLabel>
               <p className="text-muted-foreground/80 text-[10px] leading-snug">
-                {options.length} of {MAX_OPTIONS} · paste multiple lines to fill
-                options
+                {options.length} of {POLL_COMPOSER_MAX_OPTIONS} · paste multiple
+                lines to fill options
               </p>
             </div>
             <div className="border-border/35 bg-muted/[0.06] border-l-primary/30 overflow-hidden rounded-lg border border-l-2">
@@ -1013,7 +945,7 @@ export function PollComposer({
                           .split("\n")
                           .map((r) => r.trim())
                           .filter(Boolean)
-                          .slice(0, MAX_OPTIONS);
+                          .slice(0, POLL_COMPOSER_MAX_OPTIONS);
                         if (rows.length < 2) return;
                         setOptions(rows);
                         setOptionRowIds(rows.map(() => newPollOptionRowId()));
@@ -1021,7 +953,7 @@ export function PollComposer({
                       onKeyDown={(e) => {
                         if (e.key !== "Enter") return;
                         e.preventDefault();
-                        if (options.length >= MAX_OPTIONS) return;
+                        if (options.length >= POLL_COMPOSER_MAX_OPTIONS) return;
                         if (i !== options.length - 1) return;
                         setOptions((prev) => [...prev, ""]);
                         setOptionRowIds((ids) => [
@@ -1034,7 +966,7 @@ export function PollComposer({
                       className="border-border/40 bg-background/70 h-8 flex-1 border text-sm shadow-none"
                       aria-label={`Poll option ${i + 1}`}
                     />
-                    {options.length > MIN_OPTIONS ? (
+                    {options.length > POLL_COMPOSER_MIN_OPTIONS ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -1061,7 +993,9 @@ export function PollComposer({
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={disabled || options.length >= MAX_OPTIONS}
+                disabled={
+                  disabled || options.length >= POLL_COMPOSER_MAX_OPTIONS
+                }
                 className="text-muted-foreground hover:text-foreground border-border/30 h-9 w-full rounded-none rounded-b-lg border-t border-dashed text-xs font-normal"
                 onClick={() => {
                   setOptions((o) => [...o, ""]);
@@ -1159,7 +1093,7 @@ export function PollComposer({
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={MAX_HOURS_AFTER_PUBLISH}
+                max={POLL_MAX_HOURS_AFTER_PUBLISH}
                 step={1}
                 value={pollEndHoursAfterPublish}
                 onChange={(e) => {
@@ -1251,84 +1185,23 @@ export function PollComposer({
           onRelayClick: handleRelayRailClick,
           signerLabel: user != null ? "NIP-07" : "Not connected",
         }}
-        modeSpecificSection={
-          publishMode === "now"
-            ? undefined
-            : {
-                lines:
-                  publishMode === "queue"
-                    ? [
-                        ...(selectedQueueType &&
-                        typeof selectedQueueType === "object" &&
-                        (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                          selectedQueueType.scheduleType === "WEEKLY_SLOTS") &&
-                        pollQueueNextSlotLabel
-                          ? [`Next slot (estimate): ${pollQueueNextSlotLabel}`]
-                          : []),
-                      ]
-                    : [],
-                controls:
-                  publishMode === "queue" ? (
-                    <div className="space-y-3">
-                      <ComposerQueueField
-                        queueTypes={queueTypes}
-                        value={selectedQueue}
-                        onChange={handlePollQueueChange}
-                        disabled={disabled}
-                        nextSlot={
-                          selectedQueueType &&
-                          typeof selectedQueueType === "object" &&
-                          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                            selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                            ? getQueueNextSlotLabel(scheduledFor)
-                            : undefined
-                        }
-                      />
-                      {selectedQueue !== "unassigned" ? (
-                        <ComposerScheduleRandomWindowField
-                          scheduleRandomWindowMinutes={
-                            scheduleRandomWindowMinutes
-                          }
-                          onScheduleRandomWindowMinutesChange={
-                            setScheduleRandomWindowMinutes
-                          }
-                          disabled={disabled}
-                          windowOptions={
-                            POLL_QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS
-                          }
-                          label="Randomize within queue slot"
-                          idPrefix="poll-queue-schedule-randomize"
-                          description="Optional jitter around the next slot time. Queue settings load a default; change here for this post only."
-                        />
-                      ) : null}
-                    </div>
-                  ) : (
-                    <ComposerScheduleField
-                      layout="full"
-                      value={scheduledFor}
-                      onValueChange={setScheduledFor}
-                      scheduleIntervals={scheduleIntervals}
-                      queueTypes={queueTypes}
-                      selectedQueue={selectedQueue}
-                      onScheduleIntervalClick={handleScheduleIntervalClick}
-                      onCalculateNextSlot={() => {
-                        void calculateQueueScheduleTime(selectedQueue);
-                      }}
-                      scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
-                      onScheduleRandomWindowMinutesChange={
-                        setScheduleRandomWindowMinutes
-                      }
-                      postOptionsOpen={false}
-                      onPostOptionsOpenChange={() => void 0}
-                      isThreadMode={false}
-                      onThreadModeChange={() => void 0}
-                      disabled={disabled}
-                      userTimezone={userTimezone}
-                      showThreadModeToggle={false}
-                    />
-                  ),
-              }
-        }
+        modeSpecificSection={getPollComposerModeSpecificSection({
+          publishMode,
+          disabled,
+          queueTypes,
+          selectedQueue,
+          handlePollQueueChange,
+          selectedQueueType,
+          scheduledFor,
+          setScheduledFor,
+          scheduleIntervals,
+          handleScheduleIntervalClick,
+          calculateQueueScheduleTime,
+          scheduleRandomWindowMinutes,
+          setScheduleRandomWindowMinutes,
+          userTimezone,
+          pollQueueNextSlotLabel,
+        })}
         recyclableControl={{
           switchId: "poll-recyclable",
           checked: isRecyclable,

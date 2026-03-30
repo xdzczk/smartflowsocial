@@ -48,3 +48,4 @@ export {
   confidenceForCount,
   confidenceForRate,
 } from "./metrics/resolve-confidence";
+export { AdminOperationsPageInner } from "./components/operations/AdminOperationsPageInner";

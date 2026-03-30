@@ -1,4 +1,5 @@
 export { ContestEmbeddedComposer } from "./components/ContestEmbeddedComposer";
+export { default as ContestNewPage } from "./components/ContestNewPage";
 export { ContestBuilderSummaryRail } from "./components/ContestBuilderSummaryRail";
 export type { ContestReadinessItem } from "./components/ContestBuilderSummaryRail";
 export { ContestDetailView } from "./components/ContestDetailView";

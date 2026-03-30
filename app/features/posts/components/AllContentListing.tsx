@@ -17,15 +17,9 @@ import {
   PublishingEmptyState,
 } from "~/features/posts/components/publishing-suite";
 import { getShortDraftEditRedirectPath } from "~/features/posts/drafts/utils/draft-editor-navigation";
-import {
-  appendDraftListSearchExtras,
-  buildShortDraftSearchHaystack,
-  matchesDraftSearch,
-} from "~/features/posts/drafts/utils/draft-search-haystack";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
-import { getContentTypeBadge } from "~/features/posts/utils/content-helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromISOString } from "~/lib/temporal";
 
@@ -37,6 +31,14 @@ import type {
   QueueType,
 } from "../types";
 
+import {
+  getContentListDateSortKey,
+  getInitialContentSortConfig,
+} from "./all-content-listing-sort";
+import {
+  combinedContentMatchesSearch,
+  getContentScrollElement,
+} from "./all-content-listing-utils";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_LIST_CARD_HEIGHT_PX,
@@ -51,76 +53,6 @@ import { ContentTableRow } from "./ContentTableRow";
 import { DraftsHybridTableHeader } from "./DraftsHybridTableHeader";
 import { DraftsHybridTableRow } from "./DraftsHybridTableRow";
 import { MixedDraftsBulkActions } from "./MixedDraftsBulkActions";
-
-function getContentListDateSortKey(
-  type: "scheduled" | "draft" | "published"
-): "publishedAt" | "scheduledAtUtc" | "updatedAt" {
-  if (type === "published") return "publishedAt";
-  if (type === "scheduled") return "scheduledAtUtc";
-  return "updatedAt";
-}
-
-function getInitialContentSortConfig(
-  type: "scheduled" | "draft" | "published"
-): {
-  key: string;
-  direction: "asc" | "desc";
-} {
-  const key = getContentListDateSortKey(type);
-  const direction = type === "scheduled" ? "asc" : "desc";
-  return { key, direction };
-}
-
-function combinedContentMatchesSearch(
-  item: CombinedContent,
-  type: "scheduled" | "draft" | "published",
-  searchTerm: string
-): boolean {
-  if (type === "draft" && item.type === "post") {
-    const od = item.originalData as {
-      caption?: string | null;
-      content?: string | null;
-      draftMeta?: unknown;
-    };
-    const haystack = appendDraftListSearchExtras(
-      buildShortDraftSearchHaystack(od),
-      item.queueType?.name,
-      getContentTypeBadge(item).text
-    );
-    return matchesDraftSearch(haystack, searchTerm);
-  }
-  if (type === "draft" && item.type === "longform") {
-    const od = item.originalData as {
-      title?: string | null;
-      summary?: string | null;
-      content?: string | null;
-    };
-    const base = `${(od.title ?? "").toLowerCase()} ${(od.summary ?? "").toLowerCase()} ${(od.content ?? "").toLowerCase()}`;
-    const haystack = appendDraftListSearchExtras(
-      base,
-      item.queueType?.name,
-      getContentTypeBadge(item).text
-    );
-    return matchesDraftSearch(haystack, searchTerm);
-  }
-  return Boolean(
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-    item.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-    item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
-    item.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.summary?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-}
-
-function getContentScrollElement(
-  useDedicatedScroll: boolean,
-  scrollRef: { current: HTMLDivElement | null }
-): Element | null {
-  if (useDedicatedScroll && scrollRef.current) return scrollRef.current;
-  return typeof document !== "undefined" ? document.documentElement : null;
-}
 
 interface AllContentListingProps {
   content: CombinedContent[];

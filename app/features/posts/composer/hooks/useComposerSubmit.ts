@@ -2,24 +2,16 @@
  * Composer submit/schedule orchestration: build payload, call actions, handle loading and errors.
  */
 
-import type { FetcherWithComponents } from "@remix-run/react";
 import * as React from "react";
-import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { buildThreadSubmitFormData } from "~/features/posts/composer/composer-submit/build-thread-submit-form-data";
+import { signThreadSegmentsWithRetry } from "~/features/posts/composer/composer-submit/sign-thread-segments";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import { nowMillis } from "~/lib/temporal";
-import type { textPostClientSchema } from "~/lib/validation";
 
-import type {
-  QueueType,
-  ComposerAttachment,
-  RepostConditions,
-} from "../../types";
 import { resolveContentForSigning } from "../../utils/inline-tokens.client";
-import { getThreadReplyTags } from "../../utils/repost-quote-events.client";
 import {
   ACTION_POST_TEXT,
   ACTION_SCHEDULE_TEXT,
@@ -32,74 +24,19 @@ import {
 import {
   COMPOSER_CONTENT_REQUIRED,
   COMPOSER_SCHEDULE_FUTURE,
+  COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED,
   COMPOSER_UPLOAD_WAIT,
   COMPOSER_REMOVE_FAILED_ATTACHMENTS,
 } from "../components/composer/composer-validation";
-import type { ComposerPublishMode } from "../components/composer/publish-mode";
 import { MIN_THREAD_SEGMENTS } from "../components/composer/thread-constants";
 
-const COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED =
-  "Schedule time is required, or select a queue so we can pick the next slot.";
+import type {
+  TextPostFormData,
+  ThreadSegment,
+  UseComposerSubmitOptions,
+} from "./composer-submit-types";
 
-export type TextPostFormData = z.infer<typeof textPostClientSchema>;
-
-export interface ThreadSegment {
-  id: string;
-  content: string;
-  attachments: ComposerAttachment[];
-}
-
-export interface UseComposerSubmitOptions {
-  form: UseFormReturn<TextPostFormData>;
-  fetcher: FetcherWithComponents<unknown>;
-  setPublishSubmitInFlight: (v: boolean) => void;
-  setLastPublishFailed: (v: boolean) => void;
-  /** Template mode: save-as-template flow */
-  isTemplateMode: boolean;
-  templateName: string;
-  editTemplateContext: { templateId: string; postId: string } | null;
-  clearLocalSnapshot: () => void;
-  attachments: ComposerAttachment[];
-  selectedHashtags: string;
-  selectedQueue: string;
-  queueTypeId: string | null;
-  queueTypes: Array<string | QueueType>;
-  initialDraftId: string | null;
-  relayOverride?: string[];
-  scheduleRandomWindowMinutes: number;
-  alsoScheduleRepost: boolean;
-  repostDelayList: Array<{
-    id: string;
-    value: number;
-    unit: "hours" | "minutes";
-  }>;
-  repostConditions: RepostConditions | null;
-  alsoScheduleQuote: boolean;
-  quoteEntries: Array<{
-    id: string;
-    value: number;
-    unit: "hours" | "minutes";
-    caption: string;
-  }>;
-  isThreadMode: boolean;
-  threadSegments: ThreadSegment[];
-  threadDelayMinutes: number;
-  user: {
-    id?: string;
-    timezone?: string;
-  } | null;
-  defaultTags?: string[];
-  /** When set, all fetcher.submit calls POST to this path (e.g. `/dashboard/compose?type=post` when composer is embedded). */
-  submitAction?: string;
-  /** Sent as `_embedContext` so the newpost action can return JSON instead of redirects. */
-  embedContext?: "contest";
-  /** Delivery mode: queue uses API-derived slot when `scheduledFor` is empty. */
-  publishMode?: ComposerPublishMode;
-  /** From `usePostScheduling`; used to resolve queue slot at submit when mode is queue. */
-  calculateQueueScheduleTime?: (queueName: string) => Promise<string | null>;
-  /** Fires when the user submits a server draft save (`save-draft` / `draft-text`). */
-  onBeginSaveDraft?: () => void;
-}
+export type { TextPostFormData, ThreadSegment, UseComposerSubmitOptions };
 
 export function useComposerSubmit(options: UseComposerSubmitOptions) {
   const {
@@ -348,12 +285,15 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { signedByIndex, failedIndices } =
-            await signThreadSegmentsWithRetry(
-              threadSegments,
-              threadSignBase,
+            await signThreadSegmentsWithRetry({
+              segments: threadSegments,
+              baseTime: threadSignBase,
               tagArray,
-              effectiveHashtags
-            );
+              effectiveHashtags,
+              threadDelayMinutes,
+              includeHashtagsInNoteBody:
+                data.includeHashtagsInNoteBody !== false,
+            });
           if (generation !== submitGenerationRef.current) {
             return;
           }
@@ -377,20 +317,29 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           }
 
           const segmentsToSubmit = threadSegments.slice(0, signedEvents.length);
-          const threadPayload = await buildThreadPayload(
+          const builtThread = buildThreadSubmitFormData({
             segmentsToSubmit,
             signedEvents,
-            data,
-            submitType,
-            submitType === ACTION_SCHEDULE_TEXT
-              ? {
-                  scheduledFirstUnix: threadSignBase,
-                  nominalFirstUnix:
-                    threadRandomMinutes > 0 ? nominalThreadBase : undefined,
-                }
-              : undefined
-          );
-          if (!threadPayload) return;
+            formData: data,
+            actionSubmitType: submitType,
+            threadSchedule:
+              submitType === ACTION_SCHEDULE_TEXT
+                ? {
+                    scheduledFirstUnix: threadSignBase,
+                    nominalFirstUnix:
+                      threadRandomMinutes > 0 ? nominalThreadBase : undefined,
+                  }
+                : undefined,
+            queueTypeId: queueTypeId ?? undefined,
+            threadDelayMinutes,
+            relayOverride,
+            embedContext: embedContext ?? undefined,
+          });
+          if (!builtThread.ok) {
+            setSigningError(builtThread.reason);
+            return;
+          }
+          const threadPayload = builtThread.formData;
 
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
@@ -420,184 +369,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             err instanceof Error ? err.message : "Failed to sign thread."
           );
         }
-      }
-
-      async function signThreadSegmentsWithRetry(
-        segments: ThreadSegment[],
-        baseTime: number,
-        tagArray: string[][],
-        effectiveHashtags: string
-      ): Promise<{
-        signedByIndex: Array<SignedEvent | null>;
-        failedIndices: number[];
-      }> {
-        const signedByIndex: Array<SignedEvent | null> = Array.from(
-          { length: segments.length },
-          (): SignedEvent | null => null
-        );
-        let rootEventId: string | null = null;
-        let previousEventId: string | null = null;
-        let failedIndices: number[] = [];
-
-        for (let i = 0; i < segments.length; i++) {
-          const seg = segments[i];
-          if (!seg) continue;
-          const result = await trySignSegmentAt(
-            i,
-            seg,
-            baseTime,
-            tagArray,
-            effectiveHashtags,
-            rootEventId,
-            previousEventId
-          );
-          if (result.signedEvent) {
-            signedByIndex[i] = result.signedEvent;
-            rootEventId = i === 0 ? result.signedEvent.id : rootEventId;
-            previousEventId = result.signedEvent.id;
-          } else {
-            failedIndices.push(i);
-          }
-        }
-
-        if (failedIndices.length > 0) {
-          await new Promise((r) => setTimeout(r, 1500));
-          const stillFailed: number[] = [];
-          for (const i of failedIndices) {
-            const seg = segments[i];
-            if (!seg) continue;
-            const prevId = i === 0 ? null : (signedByIndex[i - 1]?.id ?? null);
-            const rootId = signedByIndex[0]?.id ?? null;
-            const result = await trySignSegmentAt(
-              i,
-              seg,
-              baseTime,
-              tagArray,
-              effectiveHashtags,
-              rootId,
-              prevId
-            );
-            if (result.signedEvent) {
-              signedByIndex[i] = result.signedEvent;
-            } else {
-              stillFailed.push(i);
-            }
-          }
-          failedIndices = stillFailed;
-        }
-
-        return { signedByIndex, failedIndices };
-      }
-
-      async function trySignSegmentAt(
-        index: number,
-        seg: ThreadSegment,
-        baseTime: number,
-        tagArray: string[][],
-        effectiveHashtags: string,
-        rootEventId: string | null,
-        previousEventId: string | null
-      ): Promise<{ signedEvent: SignedEvent | null }> {
-        const withUrl = seg.attachments.filter((a) => a.url);
-        const contentToSign = resolveContentForSigning(seg.content, withUrl);
-        const appendTags = data.includeHashtagsInNoteBody !== false;
-        const contentWithTags = appendTags
-          ? `${contentToSign}\n${effectiveHashtags}`
-          : contentToSign;
-        const created_at = baseTime + index * threadDelayMinutes * 60;
-        const tags =
-          index === 0
-            ? tagArray
-            : [
-                ...getThreadReplyTags(previousEventId!, rootEventId!),
-                ...tagArray,
-              ];
-        try {
-          const { signedEvent } = await nostrAdapter.signEvent(
-            {
-              content: contentWithTags,
-              created_at,
-              kind: 1,
-              tags,
-            },
-            { clearCacheOnError: false }
-          );
-          return { signedEvent };
-        } catch {
-          return { signedEvent: null };
-        }
-      }
-
-      async function buildThreadPayload(
-        segmentsToSubmit: ThreadSegment[],
-        signedEvents: SignedEvent[],
-        formData: TextPostFormData,
-        actionSubmitType: string,
-        threadSchedule?: {
-          scheduledFirstUnix: number;
-          nominalFirstUnix?: number;
-        }
-      ): Promise<FormData | null> {
-        const threadPayload = new FormData();
-        threadPayload.set(
-          "_action",
-          actionSubmitType === ACTION_POST_TEXT
-            ? "post-thread"
-            : "schedule-thread"
-        );
-        threadPayload.set(
-          "threadSegments",
-          JSON.stringify(
-            segmentsToSubmit.map((s) => ({
-              content: s.content,
-              attachmentMeta: s.attachments
-                .filter((a) => a.url)
-                .map((a) => ({
-                  localId: a.localId,
-                  url: a.url,
-                  alt: a.alt,
-                })),
-            }))
-          )
-        );
-        threadPayload.set("threadSignedEvents", JSON.stringify(signedEvents));
-        threadPayload.set(
-          "threadDelaySeconds",
-          String(threadDelayMinutes * 60)
-        );
-        threadPayload.set("queueType", formData.queueType);
-        if (queueTypeId) threadPayload.set("queueTypeId", queueTypeId);
-        if (formData.hashTagPresetId)
-          threadPayload.set("hashTagPresetId", formData.hashTagPresetId);
-        if (actionSubmitType === ACTION_SCHEDULE_TEXT) {
-          if (!threadSchedule) {
-            setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
-            return null;
-          }
-          const unix = threadSchedule.scheduledFirstUnix;
-          if (unix < Math.floor(Date.now() / 1000)) {
-            setSigningError(COMPOSER_SCHEDULE_FUTURE);
-            return null;
-          }
-          threadPayload.set("scheduledFor", String(unix));
-          if (
-            threadSchedule.nominalFirstUnix != null &&
-            threadSchedule.nominalFirstUnix !== unix
-          ) {
-            threadPayload.set(
-              "nominalScheduledFor",
-              String(threadSchedule.nominalFirstUnix)
-            );
-          }
-        }
-        if (relayOverride && relayOverride.length > 0)
-          threadPayload.set("relays", JSON.stringify(relayOverride));
-        if (embedContext) threadPayload.set("_embedContext", embedContext);
-        threadPayload.set(
-          "includeHashtagsInNoteBody",
-          String(Boolean(formData.includeHashtagsInNoteBody))
-        );
-        return threadPayload;
       }
 
       function getSinglePostValidationError(): string | null {

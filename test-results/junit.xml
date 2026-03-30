@@ -1,73 +1,61 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="33" failures="0" errors="0" time="0.02330975">
-    <testsuite name="tests/security/xss-prevention.test.ts" timestamp="2026-03-30T16:32:11.571Z" hostname="Ivans-MacBook-Pro.local" tests="19" failures="0" errors="0" skipped="0" time="0.017987375">
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove script tags" time="0.004306166">
+<testsuites name="vitest tests" tests="27" failures="0" errors="0" time="0.033368458">
+    <testsuite name="tests/unit/giveaway-display.test.ts" timestamp="2026-03-30T18:37:59.162Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.015861">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: Last N days when only days" time="0.000795583">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove inline event handlers" time="0.002180875">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: date range when from/to set" time="0.012378666">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove javascript: protocol" time="0.004193583">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; PERIOD: appends queue name when provided" time="0.000126292">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove data: protocol" time="0.002389042">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; SINGLE_POST: Single post" time="0.000080208">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove iframe tags" time="0.000171125">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; QUEUE: Queue or Queue: name" time="0.000098334">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove embed tags" time="0.000126042">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatScopeSummaryLabel &gt; FOLLOWERS / FOLLOWING" time="0.000074833">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove object tags" time="0.000240875">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatStatusLabel &gt; maps known statuses to human label" time="0.000128958">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove form tags" time="0.000149708">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; formatStatusLabel &gt; falls back to replacing underscores" time="0.00005275">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should remove style tags" time="0.000150041">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns null when scopeReference has no queueId" time="0.000230542">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should sanitize HTML entities in code blocks" time="0.000339333">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns queue name when queueId present and found" time="0.000764667">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should allow safe HTML tags" time="0.002331875">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; resolveGiveawayQueueName &gt; returns null when queueId not string" time="0.000060083">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should escape HTML in text content" time="0.00017075">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; getQueueNamesByIds &gt; returns empty map for empty array" time="0.000146041">
         </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should handle nested script tags" time="0.000083667">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should handle script tags with attributes" time="0.000064209">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Markdown Sanitization &gt; should handle case-insensitive script tags" time="0.000063291">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Input Validation &gt; should reject null input" time="0.000092334">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Input Validation &gt; should reject undefined input" time="0.000031958">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Input Validation &gt; should reject non-string input" time="0.000031167">
-        </testcase>
-        <testcase classname="tests/security/xss-prevention.test.ts" name="XSS Prevention: Input Validation &gt; should handle empty strings" time="0.000028917">
+        <testcase classname="tests/unit/giveaway-display.test.ts" name="giveaway-display &gt; getQueueNamesByIds &gt; returns map of queueId to name" time="0.000106167">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/markdown-sanitizer.test.ts" timestamp="2026-03-30T16:32:11.573Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.005322375">
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should sanitize basic markdown" time="0.002166084">
+    <testsuite name="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" timestamp="2026-03-30T18:37:59.164Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.017507458">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; returns em dash for undefined" time="0.000729125">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should remove script tags" time="0.000314166">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats unix timestamp (seconds)" time="0.001441125">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should sanitize links" time="0.000557416">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats ISO date string" time="0.000898667">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should remove dangerous protocols" time="0.000180958">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats number (unix seconds)" time="0.0002055">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should handle empty input" time="0.000150583">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; formats Date object" time="0.000183542">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should sanitize images" time="0.00014475">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; formatDateCell &gt; uses dateLocale for display" time="0.000290583">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; sanitizeMarkdown &gt; should escape code blocks properly" time="0.000174625">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; returns &apos;0 min read&apos; for empty or undefined" time="0.000091625">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; extractPlainText &gt; should extract plain text from markdown" time="0.00029875">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; returns &apos;1 min read&apos; for short content" time="0.000298792">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; extractPlainText &gt; should handle empty input" time="0.000084084">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; estimates reading time from word count (200 words ≈ 1 min)" time="0.000079833">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; extractPlainText &gt; should remove markdown formatting" time="0.000155625">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; rounds up to next minute for 201+ words" time="0.000089334">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; generateSummary &gt; should return full text if under max length" time="0.000076333">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getReadingTime &gt; strips markdown before counting words" time="0.000061666">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; generateSummary &gt; should truncate text at word boundary" time="0.000075833">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Draft badge for type draft" time="0.010573583">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; generateSummary &gt; should truncate at end if no word boundary found" time="0.000053958">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Scheduled badge for type scheduled" time="0.000880666">
         </testcase>
-        <testcase classname="tests/unit/markdown-sanitizer.test.ts" name="Markdown Sanitizer &gt; generateSummary &gt; should use default max length" time="0.000053083">
+        <testcase classname="tests/unit/posts/longform/longform-listing-format.utils.test.tsx" name="longform-listing-format.utils &gt; getStatusBadge &gt; renders Published badge for type published" time="0.00078725">
         </testcase>
     </testsuite>
 </testsuites>

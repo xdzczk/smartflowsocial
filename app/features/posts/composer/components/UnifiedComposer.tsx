@@ -4,38 +4,17 @@
  * Layout + composition of composer subcomponents and hooks.
  */
 
-import { Link, useFetcher, useNavigate } from "@remix-run/react";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useFetcher, useNavigate } from "@remix-run/react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 
-import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { AlsoScheduleBlock } from "~/features/posts/components/AlsoScheduleBlock";
-import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import {
   buildFollowUpCollapsedSummary,
   countRepostConditionRules,
 } from "~/features/posts/components/follow-up";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
-import {
-  RailChip,
-  RailChipGroup,
-} from "~/features/posts/components/publishing-rail";
-import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import {
   applyThreadSegmentNumberingToSegments,
@@ -46,12 +25,7 @@ import {
   type ShortDraftFilter,
 } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
-import { TemplateSettingsRail } from "~/features/templates/components/TemplateSettingsRail";
-import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate.client";
-import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
-import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
-import { getUploadProvider } from "~/lib/query/hooks/useApiQuery";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
 import { textPostClientSchema } from "~/lib/validation";
@@ -62,11 +36,7 @@ import {
   type QueueType,
   type ComposerAttachment,
 } from "../../types";
-import {
-  appendToken,
-  removeToken,
-  reorderAttachmentTokensInContent,
-} from "../../utils/inline-tokens.client";
+import type { TextPostFormData } from "../hooks/composer-submit-types";
 import {
   useComposerLocalDraft,
   type ComposerLocalSnapshot,
@@ -81,43 +51,36 @@ import {
   ComposerCanvasDivider,
   ComposerErrors,
   ComposerLeftCanvas,
-  ComposerQueueField,
-  ComposerScheduleRandomWindowField,
-  ComposerScheduleField,
   type ComposerPublishMode,
   getTextSubmitActionForMode,
-  getPrimaryCtaLabelForMode,
-  getPrimaryCtaPendingLabelForMode,
   getReadinessPresentation,
   resolveComposerIssueDisplayPhase,
   buildPublishPathSummary,
   buildComposerContentSummaryLines,
   buildPublishingOutcomeSentence,
   formatPostStatusSummaryInline,
-  formatPublishSummaryOptionsLine,
   getQueueNextSlotLabel,
 } from "./composer";
-import {
-  composerAttachmentMime,
-  filterMediaFiles,
-} from "./composer/composer-helpers";
 import { MIN_THREAD_SEGMENTS } from "./composer/thread-constants";
 import { UnifiedComposerContentSection } from "./composer/unified-composer-sections";
+import type { ContestEmbedPublishPayload } from "./unified-composer/contest-embed-types";
+import { THREAD_CADENCE_MINUTES_CHIPS } from "./unified-composer/unified-composer-constants";
+import {
+  buildUnifiedComposerHardAndDeferrableBlockers,
+  buildUnifiedComposerTemplateRailWarnings,
+} from "./unified-composer/unified-composer-issue-lists";
+import { UnifiedComposerDraftHeaderTrailing } from "./unified-composer/UnifiedComposerDraftHeaderTrailing";
+import { UnifiedComposerPublishingSummaryRail } from "./unified-composer/UnifiedComposerPublishingSummaryRail";
+import { UnifiedComposerTagsSection } from "./unified-composer/UnifiedComposerTagsSection";
+import { UnifiedComposerTemplateSettingsRail } from "./unified-composer/UnifiedComposerTemplateSettingsRail";
+import { UnifiedComposerThreadPartialSignDialog } from "./unified-composer/UnifiedComposerThreadPartialSignDialog";
+import { useUnifiedComposerAttachmentHandlers } from "./unified-composer/useUnifiedComposerAttachmentHandlers";
+import { useUnifiedComposerDraftStateLabelEffect } from "./unified-composer/useUnifiedComposerDraftStateLabelEffect";
+import { useUnifiedComposerKeyboardShortcuts } from "./unified-composer/useUnifiedComposerKeyboardShortcuts";
+import { useUnifiedComposerMediaUploadGate } from "./unified-composer/useUnifiedComposerMediaUploadGate";
+import { useUnifiedComposerPublishTouchEffects } from "./unified-composer/useUnifiedComposerPublishTouchEffects";
 
-/** Minute spacing options for thread cadence (publish rail). */
-const THREAD_CADENCE_MINUTES_CHIPS = [1, 2, 3, 4, 5] as const;
-
-/** Matches queue-type settings (`scheduleRandomWindowMinutes`). */
-const QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS = [5, 10, 15] as const;
-
-export interface ContestEmbedPublishPayload {
-  ok: true;
-  embedContext: "contest";
-  postId: string;
-  nostrEventId: string | null;
-  caption: string | null;
-  publishedAt: string | null;
-}
+export type { ContestEmbedPublishPayload };
 
 export interface UnifiedComposerProps {
   queueTypes?: Array<string | QueueType>;
@@ -361,85 +324,11 @@ export function UnifiedComposer({
   const alsoScheduleRepost = repostDelayList.length > 0;
   const alsoScheduleQuote = quoteEntries.length > 0;
 
-  const [mediaUploadProvider, setMediaUploadProvider] = useState<
-    string | undefined
-  >();
-  const [mediaUploadProviderKnown, setMediaUploadProviderKnown] =
-    useState(false);
-
-  const uploadProviderFetchActiveRef = useRef(false);
-  useEffect(() => {
-    uploadProviderFetchActiveRef.current = true;
-    void (async () => {
-      try {
-        const d = await getUploadProvider();
-        if (uploadProviderFetchActiveRef.current) {
-          setMediaUploadProvider(d.provider);
-        }
-      } catch {
-        // ignore — treat as unknown provider until a later refresh
-      } finally {
-        if (uploadProviderFetchActiveRef.current) {
-          setMediaUploadProviderKnown(true);
-        }
-      }
-    })();
-    return () => {
-      uploadProviderFetchActiveRef.current = false;
-    };
-  }, []);
-
-  const blossomMediaUploads =
-    mediaUploadProviderKnown && isBlossomProvider(mediaUploadProvider);
-
-  const blossomMediaBlocked = useMemo(
-    () =>
-      isBlossomMediaUploadBlocked({
-        uploadProviderKnown: mediaUploadProviderKnown,
-        uploadProvider: mediaUploadProvider,
-        signerReady,
-        windowNostrBridgePresent,
-      }),
-    [
-      mediaUploadProviderKnown,
-      mediaUploadProvider,
-      signerReady,
-      windowNostrBridgePresent,
-    ]
-  );
-
-  const blossomSignerMediaNote = useMemo(() => {
-    if (!blossomMediaUploads || !blossomMediaBlocked) {
-      return;
-    }
-    return (
-      <div
-        className={cn(
-          "rounded-md border px-2.5 py-2 text-[11px] leading-snug",
-          "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
-        )}
-      >
-        <span className="font-medium">Media uploads disabled</span>
-        {" — "}
-        Blossom storage needs a{" "}
-        <span className="font-medium">browser extension</span> (NIP-07) or a{" "}
-        <span className="font-medium">connected remote signer</span> (NIP-46).
-        Open{" "}
-        <Link
-          to="/dashboard/settings"
-          className="text-primary font-medium underline underline-offset-2"
-        >
-          Settings
-        </Link>{" "}
-        to connect. Text-only posts still work.
-      </div>
-    );
-  }, [blossomMediaUploads, blossomMediaBlocked]);
-
-  const attachmentFailedTitleHint =
-    blossomMediaUploads && blossomMediaBlocked
-      ? "Upload failed. Reconnect your Nostr signer in Settings, remove this file, and add it again."
-      : undefined;
+  const {
+    blossomMediaBlocked,
+    blossomSignerMediaNote,
+    attachmentFailedTitleHint,
+  } = useUnifiedComposerMediaUploadGate(signerReady, windowNostrBridgePresent);
 
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [composerTouched, setComposerTouched] = useState(false);
@@ -477,6 +366,24 @@ export function UnifiedComposer({
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
   const formSelectedHashtagPresetId = form.watch("hashTagPresetId");
   const useHashtagPresetsActive = !!form.watch("useHashtagPresets");
+
+  const {
+    processNewFilesForSingleNote,
+    processNewFilesForSegment,
+    handleAddAttachment,
+    onFileChange,
+    handleRemoveAttachment,
+    handleReorderAttachments,
+  } = useUnifiedComposerAttachmentHandlers({
+    blossomMediaBlocked,
+    content,
+    form: form as UseFormReturn<TextPostFormData>,
+    setAttachments,
+    mergeThreadSegments,
+    isThreadMode,
+    threadSegments,
+    fileInputRef,
+  });
 
   const {
     selectedQueue,
@@ -967,209 +874,6 @@ export function UnifiedComposer({
     onHashtagPresetChange?.(presetId, hashtags);
   };
 
-  const processNewFilesForSingleNote = React.useCallback(
-    (files: File[]) => {
-      if (blossomMediaBlocked) return;
-      const accepted = filterMediaFiles(files);
-      if (accepted.length === 0) return;
-      const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
-        localId: crypto.randomUUID(),
-        status: "uploading",
-        file,
-        mime: composerAttachmentMime(file),
-      }));
-      let newContent = content;
-      for (const a of newAttachments) {
-        newContent = appendToken(newContent, a.localId);
-      }
-      form.setValue("content", newContent);
-      setAttachments((prev) => [...prev, ...newAttachments]);
-      void (async () => {
-        try {
-          const results = await uploadMultipleFiles(accepted);
-          setAttachments((prev) =>
-            prev.map((a) => {
-              const idx = newAttachments.findIndex(
-                (n) => n.localId === a.localId
-              );
-              if (idx < 0) return a;
-              const r = results[idx];
-              if (r?.success && r.file?.url) {
-                return { ...a, status: "done" as const, url: r.file.url };
-              }
-              if (r && !r.success) {
-                return { ...a, status: "failed" as const };
-              }
-              return a;
-            })
-          );
-        } catch {
-          setAttachments((prev) =>
-            prev.map((a) => {
-              const idx = newAttachments.findIndex(
-                (n) => n.localId === a.localId
-              );
-              if (idx >= 0) return { ...a, status: "failed" as const };
-              return a;
-            })
-          );
-        }
-      })();
-    },
-    [blossomMediaBlocked, content, form, setAttachments]
-  );
-
-  const processNewFilesForSegment = React.useCallback(
-    (segmentId: string, files: File[]) => {
-      if (blossomMediaBlocked) return;
-      const accepted = filterMediaFiles(files);
-      if (accepted.length === 0) return;
-      const newAttachments: ComposerAttachment[] = accepted.map((file) => ({
-        localId: crypto.randomUUID(),
-        status: "uploading" as const,
-        file,
-        mime: composerAttachmentMime(file),
-      }));
-      mergeThreadSegments((prev) =>
-        prev.map((p) => {
-          if (p.id !== segmentId) return p;
-          let newContent = p.content;
-          for (const a of newAttachments) {
-            newContent = appendToken(newContent, a.localId);
-          }
-          return {
-            ...p,
-            content: newContent,
-            attachments: [...p.attachments, ...newAttachments],
-          };
-        })
-      );
-      void (async () => {
-        try {
-          const results = await uploadMultipleFiles(accepted);
-          mergeThreadSegments((prev) =>
-            prev.map((p) => {
-              if (p.id !== segmentId) return p;
-              return {
-                ...p,
-                attachments: p.attachments.map((a) => {
-                  const idx = newAttachments.findIndex(
-                    (n) => n.localId === a.localId
-                  );
-                  if (idx < 0) return a;
-                  const r = results[idx];
-                  if (r?.success && r.file?.url)
-                    return {
-                      ...a,
-                      status: "done" as const,
-                      url: r.file.url,
-                    };
-                  if (r && !r.success)
-                    return { ...a, status: "failed" as const };
-                  return a;
-                }),
-              };
-            })
-          );
-        } catch {
-          mergeThreadSegments((prev) =>
-            prev.map((p) => {
-              if (p.id !== segmentId) return p;
-              return {
-                ...p,
-                attachments: p.attachments.map((a) => {
-                  const idx = newAttachments.findIndex(
-                    (n) => n.localId === a.localId
-                  );
-                  return idx >= 0 ? { ...a, status: "failed" as const } : a;
-                }),
-              };
-            })
-          );
-        }
-      })();
-    },
-    [blossomMediaBlocked, mergeThreadSegments]
-  );
-
-  const handleAddAttachment = () => {
-    if (blossomMediaBlocked) return;
-    fileInputRef.current?.click();
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    e.target.value = "";
-    if (files.length === 0) return;
-    if (blossomMediaBlocked) return;
-    processNewFilesForSingleNote(files);
-  };
-
-  useEffect(() => {
-    const onPaste = (e: ClipboardEvent) => {
-      if (blossomMediaBlocked) return;
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      const raw: File[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item?.kind === "file") {
-          const file = item.getAsFile();
-          if (file) raw.push(file);
-        }
-      }
-      const files = filterMediaFiles(raw);
-      if (files.length === 0) return;
-      e.preventDefault();
-      const firstSegment = threadSegments[0];
-      if (isThreadMode && firstSegment) {
-        processNewFilesForSegment(firstSegment.id, files);
-      } else {
-        processNewFilesForSingleNote(files);
-      }
-    };
-    document.addEventListener("paste", onPaste);
-    return () => document.removeEventListener("paste", onPaste);
-  }, [
-    blossomMediaBlocked,
-    isThreadMode,
-    threadSegments,
-    processNewFilesForSingleNote,
-    processNewFilesForSegment,
-  ]);
-
-  const handleRemoveAttachment = (localId: string) => {
-    form.setValue("content", removeToken(content, localId));
-    setAttachments((prev) => prev.filter((a) => a.localId !== localId));
-  };
-
-  const handleReorderAttachments = React.useCallback(
-    (fromIndex: number, toIndex: number) => {
-      if (fromIndex === toIndex) return;
-      setAttachments((prev) => {
-        if (
-          fromIndex < 0 ||
-          toIndex < 0 ||
-          fromIndex >= prev.length ||
-          toIndex >= prev.length
-        ) {
-          return prev;
-        }
-        const next = [...prev];
-        const moved = next.splice(fromIndex, 1)[0];
-        if (!moved) return prev;
-        next.splice(toIndex, 0, moved);
-        const ids = next.map((a) => a.localId);
-        const body = form.getValues("content");
-        form.setValue("content", reorderAttachmentTokensInContent(body, ids), {
-          shouldDirty: true,
-        });
-        return next;
-      });
-    },
-    [form, setAttachments]
-  );
-
   const disabled = fetcher.state !== "idle" || isSigning;
   const primarySubmitRef = useRef<HTMLButtonElement>(null);
   const draftSubmitRef = useRef<HTMLButtonElement>(null);
@@ -1179,8 +883,6 @@ export function UnifiedComposer({
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
 
-  const hardBlockers: string[] = [];
-  const deferrableBlockers: string[] = [];
   const relayCount =
     relayCountProp > 0
       ? relayCountProp
@@ -1188,69 +890,34 @@ export function UnifiedComposer({
         ? relayOverride.length
         : relayCountProp;
 
-  if (isTemplateMode) {
-    if (!canSubmit) {
-      hardBlockers.push(
-        "Resolve media upload issues before saving the template."
-      );
-    }
-  } else {
-    if (signerReady === false) {
-      hardBlockers.push("Signer not connected");
-    }
-    if (!canSubmit) {
-      deferrableBlockers.push("Resolve media upload issues before publishing");
-    }
-    if (
-      (embedContext === "contest" ? contestSubmitMode : publishMode) ===
-        "schedule" &&
-      !hasScheduleTimeForSubmit
-    ) {
-      deferrableBlockers.push("Publish time is required");
-    }
-    if (publishMode === "queue" && selectedQueue === "unassigned") {
-      deferrableBlockers.push("Choose a queue");
-    }
-    if (isThreadMode && threadSegments.length < MIN_THREAD_SEGMENTS) {
-      deferrableBlockers.push(
-        "Threads need at least two segments. Add another below the first."
-      );
-    }
-    if (!hasContent) {
-      deferrableBlockers.push(
-        isThreadMode
-          ? "Each thread segment needs text or at least one media item."
-          : "Add text or at least one media item."
-      );
-    }
-    if (relayCount <= 0) {
-      deferrableBlockers.push("Select at least one relay.");
-    }
-  }
+  const { hardBlockers, deferrableBlockers } =
+    buildUnifiedComposerHardAndDeferrableBlockers({
+      isTemplateMode,
+      canSubmit,
+      signerReady,
+      embedContext,
+      contestSubmitMode,
+      publishMode,
+      hasScheduleTimeForSubmit,
+      selectedQueue,
+      isThreadMode,
+      threadSegmentsLength: threadSegments.length,
+      hasContent,
+      relayCount,
+      content,
+      threadSegments,
+      attachmentsLength: attachments.length,
+    });
 
   const issueList = [...hardBlockers, ...deferrableBlockers];
 
-  const templateRailWarnings: string[] = [];
-  if (isTemplateMode) {
-    if (isThreadMode) {
-      if (threadSegments.length < MIN_THREAD_SEGMENTS) {
-        templateRailWarnings.push(
-          "Thread templates usually need at least two segments."
-        );
-      }
-      if (
-        threadSegments.some(
-          (s) => s.content.trim() === "" && s.attachments.length === 0
-        )
-      ) {
-        templateRailWarnings.push("Some thread segments are still empty.");
-      }
-    } else if (content.trim() === "" && attachments.length === 0) {
-      templateRailWarnings.push(
-        "Template body is empty — you can still save a starter blueprint."
-      );
-    }
-  }
+  const templateRailWarnings = buildUnifiedComposerTemplateRailWarnings({
+    isTemplateMode,
+    isThreadMode,
+    threadSegments,
+    content,
+    attachmentsLength: attachments.length,
+  });
 
   const issueDisplayPhase = resolveComposerIssueDisplayPhase(
     publishAttempted,
@@ -1292,51 +959,21 @@ export function UnifiedComposer({
           } as const)
         : getReadinessPresentation(publishModeForRail, [], signerReady);
 
-  // Defer setState to satisfy react-hooks/set-state-in-effect.
-  useEffect(() => {
-    if (issueList.length === 0 && publishAttempted) {
-      queueMicrotask(() => setPublishAttempted(false));
-    }
-  }, [issueList.length, publishAttempted]);
-
-  useEffect(() => {
-    const threadTouch = isThreadMode
-      ? threadSegments.some(
-          (s) => s.content.trim().length > 0 || s.attachments.length > 0
-        )
-      : false;
-    if (
-      content.trim().length > 0 ||
-      attachments.length > 0 ||
-      selectedHashtags.trim().length > 0 ||
-      threadTouch
-    ) {
-      queueMicrotask(() => setComposerTouched(true));
-    }
-  }, [
+  useUnifiedComposerPublishTouchEffects(
+    issueList.length,
+    publishAttempted,
+    setPublishAttempted,
     content,
     attachments.length,
     selectedHashtags,
     isThreadMode,
     threadSegments,
-  ]);
-
-  useEffect(() => {
-    if (publishMode !== "now") {
-      queueMicrotask(() => setComposerTouched(true));
-    }
-  }, [publishMode]);
-
-  useEffect(() => {
-    if (selectedQueue !== "unassigned") {
-      queueMicrotask(() => setComposerTouched(true));
-    }
-  }, [selectedQueue]);
-
-  useEffect(() => {
-    const t = (formScheduledFor ?? schedulingScheduledFor).trim();
-    if (t) queueMicrotask(() => setComposerTouched(true));
-  }, [formScheduledFor, schedulingScheduledFor]);
+    setComposerTouched,
+    publishMode,
+    selectedQueue,
+    formScheduledFor,
+    schedulingScheduledFor
+  );
 
   const handleRelayRailClick = useCallback(() => {
     setComposerTouched(true);
@@ -1416,110 +1053,27 @@ export function UnifiedComposer({
 
   const primaryActionLoading = fetcher.state !== "idle" || isSigning;
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        if (!disabled) {
-          if (isTemplateMode) {
-            primarySubmitRef.current?.click();
-          } else {
-            draftSubmitRef.current?.click();
-          }
-        }
-        return;
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        if (disabled) return;
-        if (isTemplateMode) {
-          primarySubmitRef.current?.click();
-          return;
-        }
-        if (signerReady === false) return;
-        primarySubmitRef.current?.click();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [disabled, signerReady, isTemplateMode]);
+  useUnifiedComposerKeyboardShortcuts(
+    disabled,
+    signerReady,
+    isTemplateMode,
+    primarySubmitRef,
+    draftSubmitRef
+  );
 
-  useEffect(() => {
-    if (!onDraftStateLabelChange) return;
-
-    const busy = fetcher.state !== "idle";
-
-    if (busy) {
-      fetcherWasBusyRef.current = true;
-      onDraftStateLabelChange(
-        pendingExplicitSaveDraftRef.current ? "Saving draft…" : "Saving…"
-      );
-      return;
-    }
-
-    const completedNetworkRequest = fetcherWasBusyRef.current;
-    fetcherWasBusyRef.current = false;
-
-    if (completedNetworkRequest && pendingExplicitSaveDraftRef.current) {
-      pendingExplicitSaveDraftRef.current = false;
-      const data = fetcher.data as
-        | { error?: unknown; draftSaved?: boolean; draftId?: string }
-        | undefined;
-      const jsonError =
-        data &&
-        typeof data === "object" &&
-        "error" in data &&
-        data.error != null &&
-        data.error !== "";
-      const serverConfirmedSave =
-        data &&
-        typeof data === "object" &&
-        data.draftSaved === true &&
-        typeof data.draftId === "string" &&
-        data.draftId.length > 0;
-      if (!jsonError && serverConfirmedSave) {
-        const savedDraftId = data.draftId;
-        queueMicrotask(() => {
-          setServerDraftSavedBaseline(composerDraftFingerprint);
-          onDraftStateLabelChange("Draft saved");
-          if (!initialDraftId && savedDraftId) {
-            const base = draftPickerNavigateBase;
-            const sep = base.includes("?") ? "&" : "?";
-            navigate(
-              `${base}${sep}draftId=${encodeURIComponent(savedDraftId)}`,
-              { replace: true }
-            );
-          }
-        });
-        return;
-      }
-    }
-
-    if (
-      serverDraftSavedBaseline !== null &&
-      composerDraftFingerprint === serverDraftSavedBaseline
-    ) {
-      onDraftStateLabelChange("Draft saved");
-      return;
-    }
-
-    if (!initialDraftId && !skipLocalDraftRestore) {
-      onDraftStateLabelChange("Saved locally");
-      return;
-    }
-
-    onDraftStateLabelChange("");
-  }, [
-    fetcher.state,
-    fetcher.data,
-    draftPickerNavigateBase,
-    navigate,
+  useUnifiedComposerDraftStateLabelEffect(
+    fetcher,
+    onDraftStateLabelChange,
+    pendingExplicitSaveDraftRef,
+    fetcherWasBusyRef,
     composerDraftFingerprint,
     serverDraftSavedBaseline,
+    setServerDraftSavedBaseline,
     initialDraftId,
     skipLocalDraftRestore,
-    onDraftStateLabelChange,
-  ]);
+    draftPickerNavigateBase,
+    navigate
+  );
 
   const primarySubmitAction = isTemplateMode
     ? "save-as-template"
@@ -1541,32 +1095,12 @@ export function UnifiedComposer({
 
   const composerHeaderTrailing =
     !isTemplateMode && !suppressBuiltInDraftPicker ? (
-      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => openDraftPicker("drafts")}
-          disabled={disabled}
-          aria-label="Open drafts"
-          className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
-        >
-          Drafts
-        </Button>
-        {draftTemplatesPickerEnabled ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => openDraftPicker("templates")}
-            disabled={disabled}
-            aria-label="Open templates"
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
-          >
-            Templates
-          </Button>
-        ) : null}
-      </div>
+      <UnifiedComposerDraftHeaderTrailing
+        disabled={disabled}
+        draftTemplatesPickerEnabled={draftTemplatesPickerEnabled}
+        onOpenDrafts={() => openDraftPicker("drafts")}
+        onOpenTemplates={() => openDraftPicker("templates")}
+      />
     ) : null;
 
   return (
@@ -1618,48 +1152,17 @@ export function UnifiedComposer({
             signerReady={signerReady}
           />
         ) : null}
-        <Dialog
+        <UnifiedComposerThreadPartialSignDialog
           open={partialThreadState !== null}
+          threadSegmentCount={threadSegments.length}
+          partialThreadState={partialThreadState}
           onOpenChange={(open) => {
             if (!open) cancelSigningState();
           }}
-        >
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                Some thread segments could not be signed
-              </DialogTitle>
-              <DialogDescription>
-                {partialThreadState
-                  ? `${partialThreadState.failedIndices.length} of ${threadSegments.length} segments failed to sign after retry. You can schedule only the ${partialThreadState.signedEvents.length} successfully signed segments, or retry signing the failed ones.`
-                  : ""}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={cancelSigningState}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={retryThreadFailed}
-              >
-                Retry failed signing
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void submitThreadSuccessfulOnly()}
-                className="bg-success hover:bg-success/90 text-white"
-              >
-                Schedule {partialThreadState?.signedEvents.length ?? 0} segments
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          onCancelSigning={cancelSigningState}
+          onRetryThreadFailed={retryThreadFailed}
+          onSubmitThreadSuccessfulOnly={submitThreadSuccessfulOnly}
+        />
         <div className={cn("mb-4", isContestSourcePostDensity && "mb-2")}>
           <ComposerLeftCanvas
             headerTrailing={composerHeaderTrailing ?? undefined}
@@ -1744,102 +1247,19 @@ export function UnifiedComposer({
                       : "flex flex-col gap-4 sm:gap-5"
                   }
                 >
-                  {isContestSourcePostDensity ? (
-                    <details className="border-border/35 bg-muted/15 rounded-md border px-2 py-2">
-                      <summary className="text-muted-foreground/90 cursor-pointer list-none text-[10px] font-medium tracking-wide uppercase select-none [&::-webkit-details-marker]:hidden">
-                        Tags{" "}
-                        <span className="text-muted-foreground/70 font-normal normal-case">
-                          optional
-                        </span>
-                      </summary>
-                      <div className="mt-2 pt-1">
-                        <TagsChipRow
-                          tags={selectedHashtags}
-                          onTagsChange={(newTags) => {
-                            setSelectedHashtags(newTags);
-                            if (!newTags.trim()) {
-                              form.setValue("useHashtagPresets", false);
-                              form.setValue("hashTagPresetId", undefined);
-                              onHashtagPresetChange?.(null, "");
-                            }
-                          }}
-                          presets={hashTagPresets}
-                          selectedPresetId={formSelectedHashtagPresetId}
-                          onPresetSelect={(presetId, mergedTags) => {
-                            setSelectedHashtags(mergedTags);
-                            form.setValue("useHashtagPresets", true);
-                            form.setValue(
-                              "hashTagPresetId",
-                              presetId ?? undefined
-                            );
-                            onHashtagPresetChange?.(presetId, mergedTags);
-                          }}
-                          disabled={fetcher.state !== "idle"}
-                          includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-                          onIncludeHashtagsInNoteBodyChange={(v) =>
-                            form.setValue("includeHashtagsInNoteBody", v)
-                          }
-                          queuePresetName={
-                            selectedQueue !== "unassigned"
-                              ? ((
-                                  queueTypes.find(
-                                    (q) =>
-                                      (typeof q === "string" ? q : q.name) ===
-                                      selectedQueue
-                                  ) as
-                                    | (QueueType & {
-                                        hashTagPreset?: { name: string } | null;
-                                      })
-                                    | undefined
-                                )?.hashTagPreset?.name ?? undefined)
-                              : undefined
-                          }
-                          hideSectionLabel
-                          variant="campaignSource"
-                        />
-                      </div>
-                    </details>
-                  ) : (
-                    <TagsChipRow
-                      tags={selectedHashtags}
-                      onTagsChange={(newTags) => {
-                        setSelectedHashtags(newTags);
-                        if (!newTags.trim()) {
-                          form.setValue("useHashtagPresets", false);
-                          form.setValue("hashTagPresetId", undefined);
-                          onHashtagPresetChange?.(null, "");
-                        }
-                      }}
-                      presets={hashTagPresets}
-                      selectedPresetId={formSelectedHashtagPresetId}
-                      onPresetSelect={(presetId, mergedTags) => {
-                        setSelectedHashtags(mergedTags);
-                        form.setValue("useHashtagPresets", true);
-                        form.setValue("hashTagPresetId", presetId ?? undefined);
-                        onHashtagPresetChange?.(presetId, mergedTags);
-                      }}
-                      disabled={fetcher.state !== "idle"}
-                      includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-                      onIncludeHashtagsInNoteBodyChange={(v) =>
-                        form.setValue("includeHashtagsInNoteBody", v)
-                      }
-                      queuePresetName={
-                        selectedQueue !== "unassigned"
-                          ? ((
-                              queueTypes.find(
-                                (q) =>
-                                  (typeof q === "string" ? q : q.name) ===
-                                  selectedQueue
-                              ) as
-                                | (QueueType & {
-                                    hashTagPreset?: { name: string } | null;
-                                  })
-                                | undefined
-                            )?.hashTagPreset?.name ?? undefined)
-                          : undefined
-                      }
-                    />
-                  )}
+                  <UnifiedComposerTagsSection
+                    isContestSourcePostDensity={isContestSourcePostDensity}
+                    selectedHashtags={selectedHashtags}
+                    setSelectedHashtags={setSelectedHashtags}
+                    hashTagPresets={hashTagPresets}
+                    formSelectedHashtagPresetId={formSelectedHashtagPresetId}
+                    form={form}
+                    onHashtagPresetChange={onHashtagPresetChange}
+                    fetcherIdle={fetcher.state === "idle"}
+                    includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                    selectedQueue={selectedQueue}
+                    queueTypes={queueTypes}
+                  />
                 </div>
               </>
             ) : null}
@@ -1901,260 +1321,81 @@ export function UnifiedComposer({
         ) : null}
       </fetcher.Form>
       {!hidePublishingRail && isTemplateMode ? (
-        <TemplateSettingsRail
-          variant="post"
-          typeLabel={isThreadMode ? "Thread" : "Short post"}
+        <UnifiedComposerTemplateSettingsRail
+          isThreadMode={isThreadMode}
           templateName={templateName}
-          lastUpdatedLabel={templateLastUpdatedLabel ?? undefined}
-          summaryRows={
-            isThreadMode
-              ? [
-                  {
-                    label: "Segments",
-                    value: String(threadSegments.length),
-                  },
-                  {
-                    label: "Characters",
-                    value: String(threadCharCount),
-                  },
-                  {
-                    label: "Media",
-                    value: String(threadMediaCount),
-                  },
-                  ...(repostDelayList.length > 0
-                    ? [
-                        {
-                          label: "Follow-up reposts",
-                          value: String(repostDelayList.length),
-                        },
-                      ]
-                    : []),
-                  ...(quoteEntries.length > 0
-                    ? [
-                        {
-                          label: "Quotes",
-                          value: String(quoteEntries.length),
-                        },
-                      ]
-                    : []),
-                ]
-              : [
-                  {
-                    label: "Characters",
-                    value: String(content.length),
-                  },
-                  {
-                    label: "Media",
-                    value: String(attachments.length),
-                  },
-                  ...(repostDelayList.length > 0
-                    ? [
-                        {
-                          label: "Follow-up reposts",
-                          value: String(repostDelayList.length),
-                        },
-                      ]
-                    : []),
-                  ...(quoteEntries.length > 0
-                    ? [
-                        {
-                          label: "Quotes",
-                          value: String(quoteEntries.length),
-                        },
-                      ]
-                    : []),
-                  ...(isRecyclableVal
-                    ? [{ label: "Recyclable", value: "Yes" }]
-                    : []),
-                ]
-          }
-          warnings={templateRailWarnings}
-          saveLabel="Save template"
-          saveLoading={primaryActionLoading}
-          saveLoadingLabel="Saving…"
-          onSaveTemplate={() => primarySubmitRef.current?.click()}
-          saveDisabled={
+          templateLastUpdatedLabel={templateLastUpdatedLabel}
+          threadSegmentsLength={threadSegments.length}
+          threadCharCount={threadCharCount}
+          threadMediaCount={threadMediaCount}
+          repostDelayListLength={repostDelayList.length}
+          quoteEntriesLength={quoteEntries.length}
+          contentLength={content.length}
+          attachmentsLength={attachments.length}
+          isRecyclableVal={isRecyclableVal}
+          templateRailWarnings={templateRailWarnings}
+          primaryActionLoading={primaryActionLoading}
+          primarySubmitDisabled={
             disabled || !templateName.trim() || issueList.length > 0
           }
-          useTemplateHref={
-            editTemplateContext?.templateId
-              ? `/dashboard/compose?type=${isThreadMode ? "thread" : "post"}&templateId=${encodeURIComponent(editTemplateContext.templateId)}`
-              : null
-          }
-          showDelete={Boolean(onTemplateDeleteClick)}
-          onDeleteTemplate={onTemplateDeleteClick}
-          deleteDisabled={disabled}
+          editTemplateContext={editTemplateContext}
+          onSaveTemplate={() => primarySubmitRef.current?.click()}
+          onTemplateDeleteClick={onTemplateDeleteClick}
+          disabled={disabled}
         />
       ) : null}
       {!hidePublishingRail && !isTemplateMode ? (
-        <PublishingSummaryRail
+        <UnifiedComposerPublishingSummaryRail
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
           outcomeSentence={outcomeSentence}
-          readiness={readinessForRail}
-          sessionStrip={{
-            composerStatus,
-            relayCount,
-            onRelayClick: handleRelayRailClick,
-            signerLabel: signerReady === false ? "Not connected" : signerLabel,
-          }}
-          modeSpecificSection={
-            publishMode === "now"
-              ? undefined
-              : {
-                  lines:
-                    publishMode === "queue"
-                      ? [
-                          ...(selectedQueueType &&
-                          typeof selectedQueueType === "object" &&
-                          (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                            selectedQueueType.scheduleType ===
-                              "WEEKLY_SLOTS") &&
-                          queueNextSlotLabel
-                            ? [`Next slot (estimate): ${queueNextSlotLabel}`]
-                            : []),
-                        ]
-                      : [],
-                  controls:
-                    publishMode === "queue" ? (
-                      <div className="space-y-3">
-                        <ComposerQueueField
-                          queueTypes={queueTypes}
-                          value={selectedQueue}
-                          onChange={setSelectedQueue}
-                          disabled={disabled}
-                          nextSlot={
-                            selectedQueueType &&
-                            typeof selectedQueueType === "object" &&
-                            (selectedQueueType.scheduleType === "FIXED_SLOTS" ||
-                              selectedQueueType.scheduleType === "WEEKLY_SLOTS")
-                              ? getQueueNextSlotLabel(
-                                  formScheduledFor ?? schedulingScheduledFor
-                                )
-                              : undefined
-                          }
-                        />
-                        {selectedQueue !== "unassigned" ? (
-                          <ComposerScheduleRandomWindowField
-                            scheduleRandomWindowMinutes={
-                              scheduleRandomWindowMinutes
-                            }
-                            onScheduleRandomWindowMinutesChange={
-                              setScheduleRandomWindowMinutes
-                            }
-                            disabled={disabled}
-                            windowOptions={QUEUE_SCHEDULE_RANDOM_WINDOW_OPTIONS}
-                            label="Randomize within queue slot"
-                            idPrefix="queue-schedule-randomize"
-                            description="Optional jitter around the next slot time. Cadence still follows the nominal slot. Queue settings load a default; change here for this post only."
-                          />
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <ComposerScheduleField
-                          value={formScheduledFor ?? ""}
-                          onValueChange={(v) => {
-                            form.setValue("scheduledFor", v);
-                            setSchedulingScheduledFor(v);
-                          }}
-                          scheduleIntervals={scheduleIntervals}
-                          queueTypes={queueTypes}
-                          selectedQueue={selectedQueue}
-                          onScheduleIntervalClick={handleScheduleIntervalClick}
-                          onCalculateNextSlot={() =>
-                            void calculateQueueScheduleTime(selectedQueue)
-                          }
-                          scheduleRandomWindowMinutes={
-                            scheduleRandomWindowMinutes
-                          }
-                          onScheduleRandomWindowMinutesChange={
-                            setScheduleRandomWindowMinutes
-                          }
-                          disabled={disabled}
-                          userTimezone={user?.timezone ?? "UTC"}
-                        />
-                      </div>
-                    ),
-                }
-          }
-          followUp={{
-            summaryLine: followUpSummaryLine,
-            children: (
-              <AlsoScheduleBlock
-                repostDelayList={repostDelayList}
-                onRepostDelayListChange={setRepostDelayList}
-                repostConditions={repostConditions}
-                onRepostConditionsChange={setRepostConditions}
-                quoteEntries={quoteEntries}
-                onQuoteEntriesChange={setQuoteEntries}
-                disabled={disabled}
-              />
-            ),
-          }}
+          readinessForRail={readinessForRail}
+          composerStatus={composerStatus}
+          relayCount={relayCount}
+          signerReady={signerReady}
+          signerLabel={signerLabel}
+          handleRelayRailClick={handleRelayRailClick}
+          queueTypes={queueTypes}
+          selectedQueue={selectedQueue}
+          setSelectedQueue={setSelectedQueue}
+          disabled={disabled}
+          form={form as UseFormReturn<TextPostFormData>}
+          formScheduledFor={formScheduledFor}
+          schedulingScheduledFor={schedulingScheduledFor}
+          setSchedulingScheduledFor={setSchedulingScheduledFor}
+          scheduleIntervals={scheduleIntervals}
+          handleScheduleIntervalClick={handleScheduleIntervalClick}
+          calculateQueueScheduleTime={calculateQueueScheduleTime}
+          scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+          setScheduleRandomWindowMinutes={setScheduleRandomWindowMinutes}
+          userTimezone={user?.timezone ?? "UTC"}
+          selectedQueueType={selectedQueueType}
+          repostDelayList={repostDelayList}
+          setRepostDelayList={setRepostDelayList}
+          repostConditions={repostConditions}
+          setRepostConditions={setRepostConditions}
+          quoteEntries={quoteEntries}
+          setQuoteEntries={setQuoteEntries}
+          followUpSummaryLine={followUpSummaryLine}
           postStatusSummaryInline={postStatusSummaryInline}
           publishSummaryTagsLine={publishSummaryTagsLine}
-          publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
-            followUpSummaryLine: followUpSummaryLine,
-            showRecyclable: true,
-            isRecyclable: isRecyclableVal,
-          })}
+          isRecyclableVal={isRecyclableVal}
           contentSummaryLines={contentSummaryLines}
           publishPath={publishPath}
-          recyclableControl={{
-            switchId: "composer-recyclable",
-            checked: isRecyclableVal,
-            onCheckedChange: (checked) =>
-              form.setValue("isRecyclable", checked === true),
-            disabled,
-          }}
-          threadSettingsSection={
-            isThreadMode
-              ? {
-                  title: "Thread settings",
-                  lines: threadSettingsLines,
-                  controls: (
-                    <RailChipGroup>
-                      {THREAD_CADENCE_MINUTES_CHIPS.map((v) => (
-                        <RailChip
-                          key={v}
-                          type="button"
-                          selected={threadDelayMinutes === v}
-                          onClick={() => {
-                            setComposerTouched(true);
-                            setThreadDelayMinutes(v);
-                          }}
-                          disabled={disabled}
-                        >
-                          {v}m
-                        </RailChip>
-                      ))}
-                    </RailChipGroup>
-                  ),
-                }
-              : undefined
-          }
-          issues={displayRedIssues}
-          warnings={displayAmberIssues}
+          isThreadMode={isThreadMode}
+          threadDelayMinutes={threadDelayMinutes}
+          setThreadDelayMinutes={setThreadDelayMinutes}
+          setComposerTouched={setComposerTouched}
+          threadSettingsLines={threadSettingsLines}
+          displayRedIssues={displayRedIssues}
+          displayAmberIssues={displayAmberIssues}
           pristineHint={pristineHint}
           idleStatusLabel={idleStatusLabel}
-          primaryActionLabel={getPrimaryCtaLabelForMode(
-            publishMode,
-            isThreadMode ? "thread" : "post"
-          )}
           primaryActionLoading={primaryActionLoading}
-          primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
-            publishMode,
-            isThreadMode ? "thread" : "post"
-          )}
-          onPrimaryAction={() => primarySubmitRef.current?.click()}
+          issueListLength={issueList.length}
+          primarySubmitRef={primarySubmitRef}
+          draftSubmitRef={draftSubmitRef}
           onPrimaryActionBlocked={() => setPublishAttempted(true)}
-          primaryActionDisabled={
-            disabled || signerReady === false || issueList.length > 0
-          }
-          secondaryActionLabel="Save draft"
-          onSecondaryAction={() => draftSubmitRef.current?.click()}
-          secondaryActionDisabled={disabled}
         />
       ) : null}
       {!suppressBuiltInDraftPicker ? (

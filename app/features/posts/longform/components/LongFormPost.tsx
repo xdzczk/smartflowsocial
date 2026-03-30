@@ -1,16 +1,14 @@
 import { useFetcher } from "@remix-run/react";
 import { Hash } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Textarea } from "~/components/ui/textarea";
-import { requestNewSignerSession } from "~/features/auth/signer";
-import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import { buildFollowUpCollapsedSummary } from "~/features/posts/components/follow-up";
 import { useComposerState, useLocalDraft } from "~/features/posts/composer";
 import {
@@ -20,25 +18,17 @@ import {
   ComposerCanvasDivider,
   ComposerCanvasSectionLabel,
   ComposerLeftCanvas,
-  formatPublishSummaryOptionsLine,
-  getPrimaryCtaLabelForMode,
-  getPrimaryCtaPendingLabelForMode,
   getQueueNextSlotLabel,
   getReadinessPresentation,
   resolveComposerIssueDisplayPhase,
-  type ComposerPublishMode,
 } from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
 import type { LongformQuoteEntry } from "~/features/posts/hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 import { useLongFormScheduling } from "~/features/posts/useLongFormScheduling";
-import { TemplateSettingsRail } from "~/features/templates/components/TemplateSettingsRail";
 import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate.client";
-import {
-  formatAttemptElapsed,
-  useSignAttemptProgress,
-} from "~/lib/hooks/useSignAttemptProgress";
+import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -53,83 +43,15 @@ import {
   defaultIncludeHashtagsForQueueSelection,
 } from "../../types";
 
-import { AlsoScheduleLongformQuote } from "./AlsoScheduleLongformQuote";
+import {
+  LongFormPostArticleHead,
+  LongFormPostSigningProgress,
+  LongFormPostSummaryRails,
+  useLongFormPostDraftStateLabelEffect,
+  type LongFormHashTagPreset,
+  type LongFormPostProps,
+} from "./longform-post";
 import { LongFormContentEditor } from "./LongFormContentEditor";
-import { LongFormCoverImage } from "./LongFormCoverImage";
-import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
-
-interface QueueType {
-  id?: string;
-  name: string;
-  color?: string | null;
-  hashtags?: string | null;
-  scheduleType?: string;
-  isEnabled?: boolean;
-  includeHashtagsInNoteBody?: boolean;
-}
-
-interface HashTagPreset {
-  id: string;
-  name: string;
-  tags: string;
-  description?: string | null;
-}
-
-interface InitialData {
-  id?: string;
-  title?: string;
-  summary?: string;
-  content?: string;
-  image?: string;
-  tags?: string[];
-  queueType?: { name: string };
-}
-
-interface LongFormPostProps {
-  queueTypes?: Array<string | QueueType>;
-  scheduleIntervals?: number[];
-  userTags?: string;
-  uploadProvider?: string | null;
-  userTimezone?: string;
-  onQueueTypeChange?: (name: string) => void;
-  onPreview?: (data: {
-    title: string;
-    summary: string;
-    content: string;
-    image: string;
-  }) => void;
-  initialData?: InitialData | null;
-  isEditing?: boolean;
-  hashTagPresets?: HashTagPreset[];
-  useHashtagPresets?: boolean;
-  selectedHashtagPresetId?: string | null;
-  selectedHashtags?: string;
-  onUseHashtagPresetsChange?: (value: boolean) => void;
-  onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
-  /** When "template", only "Save as template" and Cancel are shown. */
-  mode?: "default" | "template";
-  /** When set with mode="template", submit uses updateTemplateLongform instead of createTemplate. */
-  editTemplateContext?: { templateId: string; longFormPostId: string } | null;
-  /** When editing a template, pass the current template name to prefill the composer field. */
-  initialTemplateName?: string | null;
-  /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
-  initialScheduledFor?: string | null;
-  /** When true, skip restoring local browser draft and clear any cached snapshot. */
-  skipLocalDraftRestore?: boolean;
-  publishMode?: ComposerPublishMode;
-  onPublishModeChange?: (next: ComposerPublishMode) => void;
-  onDraftStateLabelChange?: (label: string) => void;
-  /** Default relays from loader (count + relay modal seed). */
-  defaultRelays?: string[];
-  /** When user saved a custom set from the relay modal. */
-  relayOverride?: string[];
-  /** Opens relay selector (parent owns `RelaySelectorModal`). */
-  onRelayClick?: () => void;
-  /** Template edit: preformatted updated line for template rail */
-  templateLastUpdatedLabel?: string | null;
-  /** Template edit: parent opens delete confirmation */
-  onTemplateDeleteClick?: () => void;
-}
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
 export default function LongFormPost({
@@ -681,77 +603,18 @@ export default function LongFormPost({
     return plain.trim().split(/\s+/).filter(Boolean).length;
   })();
 
-  useEffect(() => {
-    if (!onDraftStateLabelChange) return;
-
-    const busy = fetcher.state !== "idle";
-
-    if (busy) {
-      longformFetcherWasBusyRef.current = true;
-      onDraftStateLabelChange(
-        pendingLongformSaveDraftRef.current ? "Saving draft…" : "Saving…"
-      );
-      return;
-    }
-
-    const completedNetworkRequest = longformFetcherWasBusyRef.current;
-    longformFetcherWasBusyRef.current = false;
-
-    if (completedNetworkRequest && pendingLongformSaveDraftRef.current) {
-      pendingLongformSaveDraftRef.current = false;
-      const data = fetcher.data as
-        | {
-            error?: unknown;
-            draftSaved?: boolean;
-            longFormPostId?: string;
-          }
-        | undefined;
-      const jsonError =
-        data &&
-        typeof data === "object" &&
-        "error" in data &&
-        data.error != null &&
-        data.error !== "";
-      const serverSaved =
-        data &&
-        typeof data === "object" &&
-        data.draftSaved === true &&
-        typeof data.longFormPostId === "string" &&
-        data.longFormPostId.length > 0;
-      if (!jsonError && serverSaved) {
-        const savedId = (data as { longFormPostId: string }).longFormPostId;
-        queueMicrotask(() => {
-          setServerLongFormPostId(savedId);
-          setLongformDraftSavedBaseline(longformDraftFingerprint);
-          onDraftStateLabelChange("Draft saved");
-        });
-        return;
-      }
-    }
-
-    if (
-      longformDraftSavedBaseline !== null &&
-      longformDraftFingerprint === longformDraftSavedBaseline
-    ) {
-      onDraftStateLabelChange("Draft saved");
-      return;
-    }
-
-    if (!initialData && !skipLocalDraftRestore) {
-      onDraftStateLabelChange("Saved locally");
-      return;
-    }
-
-    onDraftStateLabelChange("");
-  }, [
-    fetcher.state,
-    fetcher.data,
+  useLongFormPostDraftStateLabelEffect(
+    fetcher,
+    onDraftStateLabelChange,
+    pendingLongformSaveDraftRef,
+    longformFetcherWasBusyRef,
     longformDraftFingerprint,
     longformDraftSavedBaseline,
+    setLongformDraftSavedBaseline,
+    setServerLongFormPostId,
     initialData,
-    skipLocalDraftRestore,
-    onDraftStateLabelChange,
-  ]);
+    skipLocalDraftRestore
+  );
 
   const deferrableBlockers: string[] = [];
   if (!isTemplateMode) {
@@ -959,74 +822,27 @@ export default function LongFormPost({
       <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
         <div className="mb-4 min-w-0 flex-1 lg:mb-0">
           <ComposerLeftCanvas>
-            {/* Article identity: title, summary, cover */}
-            <div className={articleColumnClass}>
-              <div className="space-y-5">
-                <input
-                  key={initialData?.id ?? "new"}
-                  type="text"
-                  id="article-composer-title"
-                  placeholder="Write a title"
-                  className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem] dark:text-white"
-                  aria-label="Article title"
-                  name={titleFieldReg.name}
-                  onChange={(e) => void titleFieldReg.onChange(e)}
-                  onBlur={(e) => void titleFieldReg.onBlur(e)}
-                  ref={stableTitleRef}
-                />
-
-                <div className="pt-0.5">
-                  <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <ComposerCanvasSectionLabel
-                      as="label"
-                      className="mb-0"
-                      htmlFor="article-composer-summary"
-                      tone="article"
-                    >
-                      Summary
-                    </ComposerCanvasSectionLabel>
-                    <button
-                      type="button"
-                      className={cn(
-                        "text-[10px] font-normal underline-offset-2 transition-colors",
-                        !content
-                          ? "text-muted-foreground/35 pointer-events-none cursor-not-allowed"
-                          : "text-muted-foreground/50 hover:text-muted-foreground/70 underline"
-                      )}
-                      onClick={handleGenerateSummary}
-                      disabled={!content}
-                    >
-                      Auto-generate
-                    </button>
-                  </div>
-                  <Textarea
-                    id="article-composer-summary"
-                    name="summary"
-                    value={summary ?? ""}
-                    onChange={(e) =>
-                      form.setValue("summary", e.target.value, {
-                        shouldValidate: true,
-                      })
-                    }
-                    placeholder="Short line for previews and search (recommended)."
-                    rows={2}
-                    className="border-border/25 focus-visible:border-border/45 resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none transition-colors focus-visible:ring-0"
-                  />
-                </div>
-
-                <LongFormCoverImage
-                  image={image}
-                  uploadError={uploadError}
-                  uploadProvider={uploadProvider}
-                  uploadFetcherState={uploadFetcherState}
-                  onImageUpload={(e) => void handleImageUpload(e)}
-                  onRemove={() => setCoverImage("")}
-                  onOpenAssetBrowser={() => {}}
-                  softLabel
-                  coverFileUploadDisabled={mediaUploadBlocked}
-                />
-              </div>
-            </div>
+            <LongFormPostArticleHead
+              initialPostId={initialData?.id}
+              titleFieldReg={titleFieldReg}
+              stableTitleRef={stableTitleRef}
+              summary={summary}
+              content={content}
+              form={
+                form as UseFormReturn<z.infer<typeof longformPostClientSchema>>
+              }
+              onGenerateSummary={handleGenerateSummary}
+              image={image}
+              uploadError={uploadError}
+              uploadProvider={uploadProvider}
+              uploadFetcherState={uploadFetcherState}
+              onImageUpload={(e) => {
+                void handleImageUpload(e);
+              }}
+              onRemoveCover={() => setCoverImage("")}
+              mediaUploadBlocked={mediaUploadBlocked}
+              articleColumnClass={articleColumnClass}
+            />
 
             <ComposerCanvasDivider />
 
@@ -1108,7 +924,7 @@ export default function LongFormPost({
                     return qt as {
                       id: string;
                       name: string;
-                      hashTagPreset?: HashTagPreset | null;
+                      hashTagPreset?: LongFormHashTagPreset | null;
                     };
                   }
                   return null;
@@ -1173,234 +989,85 @@ export default function LongFormPost({
                       />
                     </div>
                   ) : (
-                    <>
-                      {isSigning ? (
-                        <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
-                          <span>
-                            Waiting for signer approval…
-                            {signAttempt ? (
-                              <>
-                                {" "}
-                                Attempt {signAttempt.attempt} of{" "}
-                                {signAttempt.maxAttempts} ·{" "}
-                                {formatAttemptElapsed(
-                                  signElapsedSeconds,
-                                  signAttempt.timeoutMs
-                                )}
-                              </>
-                            ) : null}
-                            {" — "}
-                            If you’re using a remote signer, open it to approve
-                            the request. To use a new session in the signer app,
-                            click &quot;Use new session&quot;.
-                          </span>
-                          <span className="flex shrink-0 items-center gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-muted-foreground hover:text-foreground"
-                              onClick={() =>
-                                void requestNewSignerSession(cancelSigning)
-                              }
-                            >
-                              Use new session
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-muted-foreground hover:text-foreground"
-                              onClick={cancelSigning}
-                            >
-                              Cancel
-                            </Button>
-                          </span>
-                        </div>
-                      ) : null}
-                      {signingError ? (
-                        <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
-                          {signingError}
-                        </div>
-                      ) : null}
-                    </>
+                    <LongFormPostSigningProgress
+                      isSigning={isSigning}
+                      signingError={signingError}
+                      signAttempt={signAttempt}
+                      signElapsedSeconds={signElapsedSeconds}
+                      cancelSigning={cancelSigning}
+                    />
                   )}
                 </div>
               </>
             ) : null}
           </ComposerLeftCanvas>
         </div>
-        {isTemplateMode ? (
-          <TemplateSettingsRail
-            variant="article"
-            typeLabel="Article"
-            templateName={templateName}
-            lastUpdatedLabel={templateLastUpdatedLabel ?? undefined}
-            summaryRows={[
-              {
-                label: "Title",
-                value: title.trim() ? "Present" : "Missing",
-              },
-              {
-                label: "Summary",
-                value: (summary ?? "").trim() ? "Present" : "Missing",
-              },
-              {
-                label: "Cover",
-                value: image ? "Present" : "Missing",
-              },
-              {
-                label: "Body words",
-                value: String(wordCount),
-              },
-            ]}
-            warnings={templateRailWarnings}
-            saveLabel="Save template"
-            saveLoading={primaryActionLoading}
-            saveLoadingLabel="Saving…"
-            onSaveTemplate={() => handleSaveAsTemplate()}
-            saveDisabled={!templateName.trim() || templateArticleSaveBusy}
-            useTemplateHref={
-              editTemplateContext?.templateId
-                ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(editTemplateContext.templateId)}`
-                : null
-            }
-            showDelete={Boolean(onTemplateDeleteClick)}
-            onDeleteTemplate={onTemplateDeleteClick}
-            deleteDisabled={templateArticleSaveBusy}
-          />
-        ) : (
-          <PublishingSummaryRail
-            publishMode={publishMode}
-            onPublishModeChange={onPublishModeChange ?? (() => void 0)}
-            outcomeSentence={outcomeSentence}
-            readiness={readinessForRail}
-            sessionStrip={{
-              composerStatus,
-              relayCount,
-              signerLabel: "NIP-07",
-              onRelayClick: onRelayClick ? handleRelayRailClick : undefined,
-            }}
-            modeSpecificSection={
-              publishMode === "now"
-                ? undefined
-                : {
-                    lines:
-                      publishMode === "queue"
-                        ? [
-                            ...(longformQueueNextSlotLabel
-                              ? [
-                                  `Next slot (estimate): ${longformQueueNextSlotLabel}`,
-                                ]
-                              : []),
-                          ]
-                        : [],
-                    controls: (
-                      <LongFormPublishingOptions
-                        layout="rail"
-                        queueTypes={queueTypes}
-                        selectedQueueType={selectedQueueType}
-                        onQueueTypeChange={(name) => {
-                          void updateDisplayedHashtags(name);
-                        }}
-                        scheduledFor={scheduledFor}
-                        onScheduledForChange={setScheduledFor}
-                        scheduleIntervals={scheduleIntervals}
-                        onScheduleIntervalClick={(intervalHours) => {
-                          handleScheduleIntervalClick(intervalHours);
-                        }}
-                        onNextSlotClick={() => {
-                          void calculateQueueScheduleTime(selectedQueueType);
-                        }}
-                        hashTagPresets={hashTagPresets}
-                        useHashtagPresets={useHashtagPresets}
-                        selectedHashtagPresetId={selectedHashtagPresetId}
-                        selectedHashtags={selectedHashtags}
-                        onHashtagPresetChange={
-                          onHashtagPresetChange ??
-                          ((_id, _tags) => {
-                            void _id;
-                            void _tags;
-                          })
-                        }
-                        onUseHashtagPresetsChange={
-                          onUseHashtagPresetsChange ??
-                          (() => {
-                            void 0;
-                          })
-                        }
-                        userTimezone={userTimezone}
-                        showHashtagPresets={false}
-                        hideScheduleControls={publishMode === "queue"}
-                        hideQueueControls={publishMode === "schedule"}
-                      />
-                    ),
-                  }
-            }
-            followUp={{
-              summaryLine: longformFollowUpSummary,
-              children: (
-                <AlsoScheduleLongformQuote
-                  quoteEntries={quoteEntries}
-                  onQuoteEntriesChange={setQuoteEntries}
-                  disabled={fetcher.state !== "idle" || isSigning}
-                />
-              ),
-            }}
-            publishSummaryOptionsLine={formatPublishSummaryOptionsLine({
-              followUpSummaryLine: longformFollowUpSummary,
-              showRecyclable: false,
-            })}
-            contentSummaryLines={contentSummaryLines}
-            contentSummaryDisplay="stacked"
-            publishPath={publishPath}
-            issues={displayRedIssues}
-            warnings={displayAmberIssues}
-            pristineHint={pristineHint}
-            idleStatusLabel={idleStatusLabel}
-            primaryActionLabel={getPrimaryCtaLabelForMode(
-              publishMode,
-              "article"
-            )}
-            primaryActionLoading={primaryActionLoading}
-            primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
-              publishMode,
-              "article"
-            )}
-            onPrimaryAction={() => {
-              flushSync();
-              void handleSchedule(
-                publishMode === "now" ? "publish" : "schedule"
-              );
-            }}
-            onPrimaryActionBlocked={() => setPublishAttempted(true)}
-            primaryActionDisabled={
-              fetcher.state !== "idle" ||
-              !isFormValid ||
-              isSigning ||
-              issueList.length > 0
-            }
-            secondaryActionLabel={
-              secondaryIsSaveDraft ? "Save draft" : "Preview"
-            }
-            onSecondaryAction={
-              secondaryIsSaveDraft
-                ? () => {
-                    handleSaveDraft();
-                  }
-                : onPreview
-                  ? () =>
-                      onPreview({
-                        title,
-                        summary: summary ?? generateSummaryFromContent(content),
-                        content,
-                        image,
-                      })
-                  : undefined
-            }
-            secondaryActionDisabled={fetcher.state !== "idle" || isSigning}
-          />
-        )}
+        <LongFormPostSummaryRails
+          isTemplateMode={isTemplateMode}
+          templateName={templateName}
+          templateLastUpdatedLabel={templateLastUpdatedLabel}
+          title={title}
+          summary={summary}
+          image={image}
+          wordCount={wordCount}
+          templateRailWarnings={templateRailWarnings}
+          primaryActionLoading={primaryActionLoading}
+          handleSaveAsTemplate={handleSaveAsTemplate}
+          templateArticleSaveBusy={templateArticleSaveBusy}
+          editTemplateContext={editTemplateContext}
+          onTemplateDeleteClick={onTemplateDeleteClick}
+          publishMode={publishMode}
+          onPublishModeChange={onPublishModeChange}
+          outcomeSentence={outcomeSentence}
+          readinessForRail={readinessForRail}
+          composerStatus={composerStatus}
+          relayCount={relayCount}
+          onRelayClick={onRelayClick}
+          handleRelayRailClick={handleRelayRailClick}
+          longformQueueNextSlotLabel={longformQueueNextSlotLabel}
+          queueTypes={queueTypes}
+          selectedQueueType={selectedQueueType}
+          updateDisplayedHashtags={(name) => {
+            const r = updateDisplayedHashtags(name);
+            void r;
+          }}
+          scheduledFor={scheduledFor}
+          setScheduledFor={setScheduledFor}
+          scheduleIntervals={scheduleIntervals}
+          handleScheduleIntervalClick={handleScheduleIntervalClick}
+          calculateQueueScheduleTime={calculateQueueScheduleTime}
+          hashTagPresets={hashTagPresets}
+          useHashtagPresets={useHashtagPresets}
+          selectedHashtagPresetId={selectedHashtagPresetId}
+          selectedHashtags={selectedHashtags}
+          onHashtagPresetChange={onHashtagPresetChange}
+          onUseHashtagPresetsChange={onUseHashtagPresetsChange}
+          userTimezone={userTimezone}
+          longformFollowUpSummary={longformFollowUpSummary}
+          quoteEntries={quoteEntries}
+          setQuoteEntries={setQuoteEntries}
+          fetcherState={fetcher.state}
+          isSigning={isSigning}
+          contentSummaryLines={contentSummaryLines}
+          publishPath={publishPath}
+          displayRedIssues={displayRedIssues}
+          displayAmberIssues={displayAmberIssues}
+          pristineHint={pristineHint}
+          idleStatusLabel={idleStatusLabel}
+          isFormValid={isFormValid}
+          issueList={issueList}
+          handleSchedule={(mode) => {
+            const r = handleSchedule(mode);
+            void r;
+          }}
+          setPublishAttempted={setPublishAttempted}
+          generateSummaryFromContent={generateSummaryFromContent}
+          content={content}
+          onPreview={onPreview}
+          secondaryIsSaveDraft={secondaryIsSaveDraft}
+          handleSaveDraft={handleSaveDraft}
+          flushSync={flushSync}
+        />
       </div>
     </>
   );

@@ -1,5 +1,4 @@
 import { Form, Link, useFetcher } from "@remix-run/react";
-import { format } from "date-fns";
 import {
   Crown,
   Calendar,
@@ -19,118 +18,23 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  enableLifetimeAccess: boolean;
-}
+import {
+  formatBillingPaymentMethod,
+  formatCadence,
+  formatRenewalMode,
+  formatSubscriptionDate,
+  formatSubscriptionDateTime,
+  getDisplaySubscriptionStatus,
+  getStatusColor,
+} from "./subscription/subscription-settings-helpers";
+import type {
+  PaymentHistory,
+  Plan,
+  Subscription,
+  SubscriptionSettingsProps,
+} from "./subscription/subscription-settings-types";
 
-interface Subscription {
-  id: string;
-  planId: string | null;
-  status: string;
-  renewalMode?: string;
-  billingCadence?: string;
-  accessDurationMonths?: number;
-  billingPaymentMethod?: string;
-  renewalFailureCount?: number;
-  lastRenewalAttemptAt?: Date | null;
-  nextRenewalAttemptAt?: Date | null;
-  gracePeriodEndsAt?: Date | null;
-  startDate: Date;
-  currentPeriodEnd: Date | null;
-  nextPaymentDue: Date | null;
-  cancelAtPeriodEnd: boolean;
-  plan: Plan | null;
-}
-
-interface PaymentHistory {
-  id: string;
-  amount: number;
-  amountUsd: number | null;
-  description: string | null;
-  paidAt: Date | null;
-  paymentMethod: string | null;
-  paymentHash: string;
-  planName?: string;
-  planPrice?: number;
-}
-
-interface SubscriptionSettingsProps {
-  subscription: Subscription | null;
-  availablePlans: Plan[];
-  paymentHistory: PaymentHistory[];
-  nwcEnabled: boolean;
-}
-
-/**
- * Display status for the UI: show EXPIRED when the billing period has ended
- * even if the DB still has status ACTIVE.
- */
-function getDisplaySubscriptionStatus(subscription: Subscription): string {
-  if (subscription.status !== "ACTIVE") {
-    return subscription.status;
-  }
-  if (subscription.plan?.enableLifetimeAccess) {
-    return "ACTIVE";
-  }
-  const periodEnd =
-    subscription.currentPeriodEnd ?? subscription.nextPaymentDue;
-  if (!periodEnd) {
-    return "ACTIVE";
-  }
-  if (new Date(periodEnd) < new Date()) {
-    return "EXPIRED";
-  }
-  return "ACTIVE";
-}
-
-function getStatusColor(status: string) {
-  switch (status.toUpperCase()) {
-    case "ACTIVE":
-      return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
-    case "EXPIRED":
-      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
-    case "CANCELED":
-      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
-    case "PAST_DUE":
-      return "text-yellow-600 bg-yellow-100 dark:text-foreground dark:bg-muted";
-    case "INACTIVE":
-      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
-    default:
-      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
-  }
-}
-
-function formatSubscriptionDate(date: Date | null) {
-  if (!date) return "N/A";
-  return format(new Date(date), "dd MMM yyyy");
-}
-
-function formatSubscriptionDateTime(date: Date | null) {
-  if (!date) return "N/A";
-  return format(new Date(date), "dd MMM yyyy 'at' h:mm a");
-}
-
-function formatRenewalMode(mode: string | undefined) {
-  if (mode === "auto_renew") return "Auto-renew";
-  if (mode === "manual") return "Manual";
-  return "Manual";
-}
-
-function formatCadence(cadence: string | undefined) {
-  if (cadence === "yearly") return "Yearly";
-  if (cadence === "monthly") return "Monthly";
-  return "Monthly";
-}
-
-function formatBillingPaymentMethod(method: string | undefined) {
-  if (method === "nwc_auto_renew") return "Connected wallet (auto-renew)";
-  if (method === "lightning_one_time") return "Manual Lightning invoice";
-  if (method === "btc_btcpay_onchain") return "Bitcoin on-chain (BTCPay)";
-  return "Manual Lightning invoice";
-}
+export type { PaymentHistory, Plan, Subscription, SubscriptionSettingsProps };
 
 function formatSubscriptionCurrency(
   amount: number | null,
