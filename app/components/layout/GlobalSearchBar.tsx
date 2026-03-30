@@ -53,7 +53,6 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
   const priorityContext = getSearchPriorityContext(location.pathname);
 
   const [isOpen, setIsOpen] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GlobalSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -247,14 +246,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               type="text"
               value={query}
               onChange={handleInputChange}
-              onFocus={() => {
-                setInputFocused(true);
-                handleInputFocus();
-              }}
-              onBlur={() => {
-                setInputFocused(false);
-              }}
-              aria-describedby={inputFocused ? "global-search-hint" : undefined}
+              onFocus={handleInputFocus}
               placeholder="Paste note, nevent, naddr, event ID, or Nostr URL"
               title="Examples: note1…, nevent1…, naddr1…, nostr:note1… — ⌘K to focus"
               className={cn(
@@ -290,14 +282,6 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
                 Detected format
               </span>
             </div>
-          ) : null}
-          {inputFocused ? (
-            <p
-              id="global-search-hint"
-              className="text-muted-foreground mt-1.5 hidden px-0.5 text-xs sm:block"
-            >
-              Examples: note1…, nevent1…, naddr1…, nostr:note1…
-            </p>
           ) : null}
         </div>
       </PopoverAnchor>

@@ -20,7 +20,6 @@ import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
 import { getTrustLevel, getTrustScoreBadgeColor } from "../trust-score";
-import type { EngagementQueueTypeOption } from "../types";
 import { buildEngagementContentPreview } from "../utils/engagement-content-preview";
 
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
@@ -29,6 +28,7 @@ import {
   type NotificationStats,
 } from "./NotificationActionButtons";
 import {
+  RepostEngagementTray,
   UnifiedEngagementComposer,
   type EngagementComposerMode,
 } from "./NotificationInputPanels";
@@ -126,7 +126,6 @@ interface NotificationItemProps {
   onSelect?: () => void;
   contentVariant?: "default" | "mention";
   isFollowingAuthor?: boolean;
-  queueTypes?: EngagementQueueTypeOption[];
 }
 
 const MUTED_BG_CLASS = "bg-muted";
@@ -194,10 +193,10 @@ export function NotificationItem({
   onSelect,
   contentVariant = "default",
   isFollowingAuthor = false,
-  queueTypes = [],
 }: NotificationItemProps) {
   const { formatDate } = useFormattedDate();
   const [zapModalNpub, setZapModalNpub] = useState<string | null>(null);
+  const [showRepostPanel, setShowRepostPanel] = useState(false);
   const [composerMode, setComposerMode] =
     useState<EngagementComposerMode>("reply");
   const trayRef = useRef<HTMLDivElement>(null);
@@ -217,6 +216,7 @@ export function NotificationItem({
       actions.setShowReplyInput(false);
       actions.setReplyContent("");
       actions.setQuoteContent("");
+      setShowRepostPanel(false);
     }
     // actions identity changes each render; collapsing tray only depends on selection
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
@@ -229,13 +229,13 @@ export function NotificationItem({
   }, [isKeyboardFocused, onSelect]);
 
   useEffect(() => {
-    if (actions.showReplyInput && trayRef.current) {
+    if ((actions.showReplyInput || showRepostPanel) && trayRef.current) {
       trayRef.current.scrollIntoView({
         block: "nearest",
         behavior: "smooth",
       });
     }
-  }, [actions.showReplyInput]);
+  }, [actions.showReplyInput, showRepostPanel]);
 
   const displayName =
     notification.authorName ??
@@ -262,15 +262,18 @@ export function NotificationItem({
 
   const handlersRef = useRef({
     openReply: () => {
+      setShowRepostPanel(false);
       setComposerMode("reply");
       actions.setShowReplyInput(true);
     },
     openQuote: () => {
+      setShowRepostPanel(false);
       setComposerMode("quote");
       actions.setShowReplyInput(true);
     },
     openRepost: () => {
-      void actions.handleRepost();
+      actions.setShowReplyInput(false);
+      setShowRepostPanel(true);
     },
     like: () => {
       void actions.handleLike();
@@ -321,15 +324,18 @@ export function NotificationItem({
   useEffect(() => {
     handlersRef.current = {
       openReply: () => {
+        setShowRepostPanel(false);
         setComposerMode("reply");
         actions.setShowReplyInput(true);
       },
       openQuote: () => {
+        setShowRepostPanel(false);
         setComposerMode("quote");
         actions.setShowReplyInput(true);
       },
       openRepost: () => {
-        void actions.handleRepost();
+        actions.setShowReplyInput(false);
+        setShowRepostPanel(true);
       },
       like: () => {
         void actions.handleLike();
@@ -399,19 +405,28 @@ export function NotificationItem({
   }, [keyboardIndex, registerKeyboardHandlers]);
 
   const openComposer = (mode: EngagementComposerMode) => {
+    setShowRepostPanel(false);
     setComposerMode(mode);
     actions.setShowReplyInput(true);
+  };
+
+  const openRepostPanel = () => {
+    actions.setShowReplyInput(false);
+    setShowRepostPanel(true);
   };
 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- Selection shell only; real actions use nested buttons/links
     <div
-      className={`border-l-4 p-3 transition-colors ${
+      data-testid="engagement-item"
+      className={`border-l-4 transition-colors ${
+        contentVariant === "mention" ? "px-2.5 py-2 sm:px-3" : "p-2.5 sm:p-3"
+      } ${
         isSelected
-          ? "border-primary bg-muted/80 shadow-sm"
-          : "hover:bg-muted/30 border-transparent"
+          ? "border-primary bg-muted/50 ring-primary/10 ring-1 shadow-sm"
+          : "hover:bg-muted/25 border-transparent"
       } ${dimmed ? "opacity-[0.88]" : ""} ${
-        isKeyboardFocused ? "ring-primary/40 ring-2 ring-inset" : ""
+        isKeyboardFocused ? "ring-primary/35 ring-2 ring-inset" : ""
       }`}
       onClick={(e) => {
         const t = e.target as HTMLElement;
@@ -441,38 +456,42 @@ export function NotificationItem({
           )}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span
-              className={`text-sm font-semibold ${isSelected ? "text-foreground" : "text-foreground/95"}`}
-            >
+        <div
+          className={`min-w-0 flex-1 ${
+            isSelected
+              ? "border-border/60 bg-muted/25 border-l-primary/35 -mr-px rounded-r-md border-l-2 pl-2.5"
+              : ""
+          }`}
+        >
+          <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-foreground text-sm font-semibold tracking-tight">
               {displayName}
             </span>
             {notification.authorNip05 ? (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-muted-foreground/90 text-[11px]">
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
             {isFollowingAuthor && contentVariant === "mention" ? (
-              <span className="text-primary text-xs font-medium">
+              <span className="text-foreground/85 text-[11px] font-medium">
                 Following
               </span>
             ) : null}
             {trustInfo && trustBadgeColor && trustScore !== undefined ? (
               <span
-                className={`inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium ${trustBadgeColor}`}
+                className={`inline-flex h-5 items-center gap-0.5 rounded-md border px-1.5 text-[10px] font-medium ${trustBadgeColor}`}
                 title={`Trust Score: ${trustScore} - ${trustInfo.description}`}
               >
                 {trustInfo.level}
               </span>
             ) : null}
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ${typeBadge.bgClass} ${typeBadge.textClass}`}
+              className={`inline-flex h-5 items-center gap-1 rounded-md px-1.5 text-[10px] font-medium ${typeBadge.bgClass} ${typeBadge.textClass}`}
             >
               {typeBadge.icon}
               {typeBadge.label}
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground/80 text-[10px] tabular-nums">
               {formatDate(notification.createdAt, {
                 isUnixTimestamp: true,
               })}
@@ -480,23 +499,18 @@ export function NotificationItem({
           </div>
 
           <p
-            className={`mb-1.5 text-sm break-words whitespace-pre-wrap ${
+            className={`mb-1 text-sm leading-snug break-words whitespace-pre-wrap ${
               contentVariant === "mention"
-                ? "text-muted-foreground"
+                ? "text-foreground/88"
                 : "text-foreground"
             } ${preview.noisy ? "line-clamp-3" : "line-clamp-4"}`}
             title={notification.content}
           >
             {preview.text}
-            {preview.isTruncated || preview.noisy ? (
-              <span className="text-muted-foreground ml-1 text-[10px]">
-                truncated
-              </span>
-            ) : null}
           </p>
 
-          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-muted-foreground text-[11px] font-medium">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span className="text-muted-foreground/90 text-[10px] font-medium">
               {workflowStatusLabel(workflowState)}
             </span>
             {linkedActions.map((action) => {
@@ -546,7 +560,8 @@ export function NotificationItem({
               openComposer("reply");
             }}
             onRepost={() => {
-              void actions.handleRepost();
+              onSelect?.();
+              openRepostPanel();
             }}
             onOpenQuote={() => {
               onSelect?.();
@@ -598,11 +613,8 @@ export function NotificationItem({
                 if (composerMode === "reply") actions.setReplyContent(value);
                 else actions.setQuoteContent(value);
               }}
-              isSubmitting={
-                actions.isReplying || actions.isQuoting || actions.isReposting
-              }
+              isSubmitting={actions.isReplying || actions.isQuoting}
               userTimezone={userTimezone}
-              queueTypes={queueTypes}
               trayRef={trayRef}
               onPostNow={() => {
                 void (async () => {
@@ -641,25 +653,34 @@ export function NotificationItem({
                   scheduledFor: scheduledForIso,
                 });
               }}
-              onAddToQueue={(queueTypeId) => {
-                const actionType = composerMode === "reply" ? "reply" : "quote";
-                const content =
-                  composerMode === "reply"
-                    ? actions.replyContent
-                    : actions.quoteContent;
-                void actions.deferAction({
-                  actionType,
-                  mode: "queue",
-                  content,
-                  queueTypeId,
-                });
-              }}
               onCancel={() => {
                 actions.setShowReplyInput(false);
                 actions.setReplyContent("");
                 actions.setQuoteContent("");
               }}
               templates={replyTemplates}
+            />
+          ) : null}
+
+          {showRepostPanel ? (
+            <RepostEngagementTray
+              userTimezone={userTimezone}
+              isSubmitting={actions.isReposting}
+              trayRef={trayRef}
+              onRepostNow={() => {
+                void actions.handleRepost();
+                setShowRepostPanel(false);
+              }}
+              onScheduleRepost={(scheduledForIso) => {
+                void actions.deferAction({
+                  actionType: "repost",
+                  mode: "schedule",
+                  content: "",
+                  scheduledFor: scheduledForIso,
+                });
+                setShowRepostPanel(false);
+              }}
+              onCancel={() => setShowRepostPanel(false)}
             />
           ) : null}
 

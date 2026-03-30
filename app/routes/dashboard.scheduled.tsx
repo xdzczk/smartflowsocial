@@ -123,7 +123,7 @@ function ScheduledFeedRoute() {
       fallback={
         <DeferredListPageSkeleton
           title="Scheduled"
-          subtitle="Upcoming publishes and time slots"
+          subtitle="Manage upcoming posts, replies, reposts, articles, and queued publishing."
         />
       }
     >

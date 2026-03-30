@@ -48,7 +48,7 @@ export function PostDetailHeader({
   publishedPillLabel?: string;
 }) {
   return (
-    <div className="border-border bg-card/95 shrink-0 border-b px-5 py-3.5 backdrop-blur-sm">
+    <div className="border-border/60 bg-card/95 shrink-0 border-b px-5 py-3.5 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <DialogTitle

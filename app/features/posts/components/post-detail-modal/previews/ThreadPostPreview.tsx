@@ -31,17 +31,15 @@ function ThreadSegmentRow({
   hasMedia: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "text-muted-foreground bg-muted/15 rounded-lg px-3 py-2 text-sm"
-      )}
-    >
-      <span className="text-muted-foreground/80 mr-2 font-mono text-xs tabular-nums">
-        {position}.
-      </span>
-      <span className="line-clamp-3 whitespace-pre-wrap">{text}</span>
+    <div className="pl-0.5">
+      <p className="text-muted-foreground/90 mb-1 text-[10px] font-medium tracking-tight">
+        Part {position}
+      </p>
+      <p className="text-muted-foreground line-clamp-3 text-sm whitespace-pre-wrap">
+        {text}
+      </p>
       {hasMedia ? (
-        <span className="text-muted-foreground/80 mt-1 block text-xs">
+        <span className="text-muted-foreground/80 mt-1 block text-[10px]">
           Media attached
         </span>
       ) : null}
@@ -57,6 +55,7 @@ function CurrentInnerBody({
   contextLine,
   heightMode,
   onImageClick,
+  emphasizeText,
 }: {
   innerVariant: Inner;
   post: PostDetailModalPost;
@@ -65,6 +64,7 @@ function CurrentInnerBody({
   contextLine: string;
   heightMode: PostDetailHeightMode;
   onImageClick: (url: string) => void;
+  emphasizeText?: boolean;
 }) {
   const compact = heightMode === "compact";
   if (innerVariant === "poll") {
@@ -87,7 +87,12 @@ function CurrentInnerBody({
     );
   }
   return (
-    <TextPostPreview post={post} contextLine={contextLine} compact={compact} />
+    <TextPostPreview
+      post={post}
+      contextLine={contextLine}
+      compact={compact}
+      bodyEmphasis={emphasizeText ? "strong" : "default"}
+    />
   );
 }
 
@@ -164,7 +169,7 @@ export function ThreadPostPreview({
         : null;
 
   return (
-    <div className="space-y-4 py-1">
+    <div className="space-y-3 py-0.5">
       {groupId && isPending ? (
         <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <Loader2
@@ -176,8 +181,8 @@ export function ThreadPostPreview({
       ) : null}
 
       {showStack ? (
-        <div className="space-y-3">
-          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <div className="border-border/40 space-y-2 border-l border-dashed pl-3">
+          <p className="text-muted-foreground/80 -ml-3 pl-3 text-[10px] font-medium tracking-tight">
             Thread
           </p>
           {prevSeg ? (
@@ -187,7 +192,18 @@ export function ThreadPostPreview({
               hasMedia={prevSeg.hasMedia}
             />
           ) : null}
-          <div className="border-primary/20 bg-primary/5 rounded-xl border p-3">
+          <div
+            className={cn(
+              "bg-primary/[0.06] -ml-3 rounded-r-md py-2.5 pr-2 pl-3",
+              "ring-primary/10 ring-1 ring-inset"
+            )}
+          >
+            <p className="text-primary/80 mb-2 text-[10px] font-semibold tracking-tight">
+              Part {segments[currentIndex]?.position ?? currentIndex + 1}{" "}
+              <span className="text-muted-foreground/80 font-normal">
+                (current)
+              </span>
+            </p>
             <CurrentInnerBody
               innerVariant={innerVariant}
               post={post}
@@ -196,6 +212,7 @@ export function ThreadPostPreview({
               contextLine=""
               heightMode={heightMode}
               onImageClick={onImageClick}
+              emphasizeText
             />
           </div>
           {nextSeg ? (
@@ -205,10 +222,10 @@ export function ThreadPostPreview({
               hasMedia={nextSeg.hasMedia}
             />
           ) : null}
-          <p className="text-muted-foreground text-xs">{contextLine}</p>
-          {positionLabel ? (
-            <p className="text-muted-foreground text-xs">{positionLabel}</p>
-          ) : null}
+          <div className="text-muted-foreground/70 -ml-3 space-y-0.5 pl-3 text-[11px]">
+            <p>{contextLine}</p>
+            {positionLabel ? <p>{positionLabel}</p> : null}
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -222,9 +239,13 @@ export function ThreadPostPreview({
             onImageClick={onImageClick}
           />
           {positionLabel ? (
-            <p className="text-muted-foreground text-xs">{positionLabel}</p>
+            <p className="text-muted-foreground/70 text-[11px]">
+              {positionLabel}
+            </p>
           ) : threadKindOnly ? (
-            <p className="text-muted-foreground text-xs">{threadKindOnly}</p>
+            <p className="text-muted-foreground/70 text-[11px]">
+              {threadKindOnly}
+            </p>
           ) : null}
         </div>
       )}

@@ -5,7 +5,7 @@
 
 import { useRouteLoaderData } from "@remix-run/react";
 import { nip19 } from "nostr-tools";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import type { SearchLookupResolution } from "~/features/search";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -14,6 +14,8 @@ import {
   getNostrClientDisplayName,
 } from "~/lib/nostr-client-urls";
 
+import { LookupEngageNowSection } from "./lookup-engage/LookupEngageNowSection";
+import { LookupCopySection } from "./LookupCopySection";
 import { LookupInspectorRail } from "./LookupInspectorRail";
 import { LookupPrimaryActions } from "./LookupPrimaryActions";
 import { LookupResultHeader } from "./LookupResultHeader";
@@ -45,6 +47,25 @@ interface SearchResultProps {
   onScheduleQuote: () => void;
   onScheduleRepost: () => void;
   onRetryLookup?: () => void;
+  /** Effective publish relays for client-side tag hints and zap flow. */
+  publishRelays?: string[];
+}
+
+function MobileRailCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-border bg-card rounded-xl border p-4 shadow-sm">
+      <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
 }
 
 export function SearchResult({
@@ -57,6 +78,7 @@ export function SearchResult({
   onScheduleQuote,
   onScheduleRepost,
   onRetryLookup,
+  publishRelays = [],
 }: SearchResultProps) {
   const { formatDate } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -104,19 +126,21 @@ export function SearchResult({
         onRetry={onRetryLookup}
       />
 
-      <div className="lg:hidden">
-        <div className="border-border bg-card rounded-xl border p-4 shadow-sm">
-          <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
-            Actions
-          </p>
-          <LookupPrimaryActions
+      <div className="space-y-4 lg:hidden">
+        <MobileRailCard title="Engage now">
+          <LookupEngageNowSection
             eventId={result.id}
-            nostrClientConfig={nostrClientConfig}
-            viewEventLabel={viewEventLabel}
+            authorPubkey={result.pubkey}
+            authorDisplayName={result.authorName}
+            publishRelays={publishRelays}
+          />
+        </MobileRailCard>
+        <MobileRailCard title="Actions">
+          <LookupPrimaryActions
             onScheduleQuote={onScheduleQuote}
             onScheduleRepost={onScheduleRepost}
           />
-        </div>
+        </MobileRailCard>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
@@ -150,6 +174,16 @@ export function SearchResult({
             formatDate={formatDate}
             topLevelCount={resolution?.topLevelReplyCount}
           />
+          <div className="lg:hidden">
+            <MobileRailCard title="Copy">
+              <LookupCopySection
+                result={result}
+                nostrClientConfig={nostrClientConfig}
+                viewEventLabel={viewEventLabel}
+                noteOrNeventDisplay={noteOrNeventDisplay}
+              />
+            </MobileRailCard>
+          </div>
           <TechnicalDetailsCollapsible
             eventId={result.id}
             pubkey={result.pubkey}
@@ -171,6 +205,7 @@ export function SearchResult({
             onScheduleQuote={onScheduleQuote}
             onScheduleRepost={onScheduleRepost}
             noteOrNeventDisplay={noteOrNeventDisplay}
+            publishRelays={publishRelays}
           />
         </aside>
       </div>

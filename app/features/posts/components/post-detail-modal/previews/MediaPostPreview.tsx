@@ -19,7 +19,7 @@ export function MediaPostPreview({
   const caption = post.caption?.trim();
 
   return (
-    <div className="space-y-4 py-1">
+    <div className="space-y-3 py-1">
       {singleImageUrl ? (
         <button
           type="button"
@@ -67,7 +67,11 @@ export function MediaPostPreview({
         ) : (
           <p className="text-muted-foreground text-sm italic">No caption</p>
         )}
-        <p className="text-muted-foreground mt-2 text-xs">{contextLine}</p>
+        {contextLine ? (
+          <p className="text-muted-foreground/70 mt-1.5 text-[11px] leading-snug">
+            {contextLine}
+          </p>
+        ) : null}
       </div>
     </div>
   );

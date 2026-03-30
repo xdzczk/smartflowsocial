@@ -1,7 +1,5 @@
-import { Link } from "@remix-run/react";
-import { Copy } from "lucide-react";
 import { nip19 } from "nostr-tools";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { ActionRail } from "~/components/action-rail/ActionRail";
 import { Button } from "~/components/ui/button";
@@ -12,10 +10,10 @@ import {
   RailSettingsValueRow,
 } from "~/features/posts/components/publishing-rail";
 import type { SearchLookupResolution } from "~/features/search";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { NostrClientConfig } from "~/lib/nostr-client-urls";
-import { eventUrl } from "~/lib/nostr-client-urls";
 
+import { LookupEngageNowSection } from "./lookup-engage/LookupEngageNowSection";
+import { LookupCopySection } from "./LookupCopySection";
 import { LookupPrimaryActions } from "./LookupPrimaryActions";
 import type { SearchStatsShape } from "./MetricsBand";
 import type { ResolvedPostCardData } from "./ResolvedPostCard";
@@ -34,6 +32,7 @@ export interface LookupInspectorRailProps {
   onScheduleQuote: () => void;
   onScheduleRepost: () => void;
   noteOrNeventDisplay: string | null;
+  publishRelays: string[];
   className?: string;
 }
 
@@ -46,14 +45,10 @@ export function LookupInspectorRail({
   onScheduleQuote,
   onScheduleRepost,
   noteOrNeventDisplay,
+  publishRelays,
   className,
 }: LookupInspectorRailProps) {
   const [idExpanded, setIdExpanded] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
-  const flash = useCallback((k: string) => {
-    setCopied(k);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
 
   const npub = useMemo(() => {
     try {
@@ -62,20 +57,6 @@ export function LookupInspectorRail({
       return result.pubkey;
     }
   }, [result.pubkey]);
-
-  const externalUrl = eventUrl(result.id, nostrClientConfig);
-
-  const copy = useCallback(
-    async (label: string, text: string) => {
-      try {
-        await navigator.clipboard.writeText(text);
-        flash(label);
-      } catch {
-        flash(label);
-      }
-    },
-    [flash]
-  );
 
   const idShown = idExpanded ? result.id : truncateMiddle(result.id, 12, 10);
   const topReplies = resolution?.topLevelReplyCount ?? 0;
@@ -87,11 +68,20 @@ export function LookupInspectorRail({
       footer={null}
     >
       <div className={`${RAIL_PAD_X} ${RAIL_ZONE_PY} space-y-1`}>
+        <RailSectionHeader>Engage now</RailSectionHeader>
+        <LookupEngageNowSection
+          eventId={result.id}
+          authorPubkey={result.pubkey}
+          authorDisplayName={result.authorName}
+          publishRelays={publishRelays}
+        />
+      </div>
+
+      <div
+        className={`${RAIL_PAD_X} ${RAIL_ZONE_PY} border-border space-y-1 border-t`}
+      >
         <RailSectionHeader>Actions</RailSectionHeader>
         <LookupPrimaryActions
-          eventId={result.id}
-          nostrClientConfig={nostrClientConfig}
-          viewEventLabel={viewEventLabel}
           onScheduleQuote={onScheduleQuote}
           onScheduleRepost={onScheduleRepost}
         />
@@ -101,55 +91,12 @@ export function LookupInspectorRail({
         className={`${RAIL_PAD_X} ${RAIL_ZONE_PY} border-border space-y-2 border-t`}
       >
         <RailSectionHeader>Copy</RailSectionHeader>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 w-full justify-start gap-2 px-3 text-xs"
-          onClick={() => {
-            void copy("hex", result.id);
-          }}
-        >
-          <Copy className="h-3.5 w-3.5" strokeWidth={INLINE_ICON_STROKE} />
-          {copied === "hex" ? "Copied" : "Event ID (hex)"}
-        </Button>
-        {noteOrNeventDisplay ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 w-full justify-start gap-2 px-3 text-xs"
-            onClick={() => {
-              void copy("nv", noteOrNeventDisplay);
-            }}
-          >
-            <Copy className="h-3.5 w-3.5" strokeWidth={INLINE_ICON_STROKE} />
-            {copied === "nv" ? "Copied" : "Note / nevent"}
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 w-full justify-start gap-2 px-3 text-xs"
-          onClick={() => {
-            void copy("npub", npub);
-          }}
-        >
-          <Copy className="h-3.5 w-3.5" strokeWidth={INLINE_ICON_STROKE} />
-          {copied === "npub" ? "Copied" : "Author npub"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 w-full justify-start gap-2 px-3 text-xs"
-          asChild
-        >
-          <Link to={externalUrl} target="_blank" rel="noopener noreferrer">
-            Open external URL
-          </Link>
-        </Button>
+        <LookupCopySection
+          result={result}
+          nostrClientConfig={nostrClientConfig}
+          viewEventLabel={viewEventLabel}
+          noteOrNeventDisplay={noteOrNeventDisplay}
+        />
       </div>
 
       <div className={`${RAIL_PAD_X} ${RAIL_ZONE_PY} border-border border-t`}>

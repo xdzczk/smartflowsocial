@@ -8,21 +8,25 @@ export function TextPostPreview({
   post,
   contextLine,
   compact,
+  bodyEmphasis = "default",
 }: {
   post: PostDetailModalPost;
   contextLine: string;
   compact: boolean;
+  bodyEmphasis?: "default" | "strong";
 }) {
   const primary = getPrimaryNoteText(post);
   const secondary = getSecondaryCaption(post, primary);
   const pad = compact ? "py-1" : "py-2";
+  const primaryClass =
+    bodyEmphasis === "strong"
+      ? "text-foreground text-[15px] font-medium leading-relaxed whitespace-pre-wrap"
+      : "text-foreground text-[15px] leading-relaxed whitespace-pre-wrap";
 
   return (
     <div className={pad}>
       {primary ? (
-        <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
-          {primary}
-        </p>
+        <p className={primaryClass}>{primary}</p>
       ) : (
         <p className="text-muted-foreground text-sm italic">Empty post</p>
       )}
@@ -31,7 +35,11 @@ export function TextPostPreview({
           {secondary}
         </p>
       ) : null}
-      <p className="text-muted-foreground mt-3 text-xs">{contextLine}</p>
+      {contextLine ? (
+        <p className="text-muted-foreground/70 mt-2 text-[11px] leading-snug">
+          {contextLine}
+        </p>
+      ) : null}
     </div>
   );
 }

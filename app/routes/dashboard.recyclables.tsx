@@ -86,7 +86,7 @@ function RecyclablesFeedRoute() {
       fallback={
         <DeferredListPageSkeleton
           title="Recyclables"
-          subtitle="Repost, quote, or build on published posts"
+          subtitle="Reuse high-performing published posts as templates for new content."
         />
       }
     >

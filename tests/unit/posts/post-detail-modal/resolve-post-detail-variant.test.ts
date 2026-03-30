@@ -22,6 +22,25 @@ describe("resolvePostDetailVariant", () => {
     });
     expect(r.variant).toBe("thread");
     expect(r.innerVariant).toBe("text");
+    expect(r.heightMode).toBe("compact");
+  });
+
+  it("uses large height for thread with media", () => {
+    const post = {
+      id: "a",
+      fileUrl: ["https://x.test/a.jpg"],
+      threadGroupId: "g1",
+      postKind: "POST",
+      postType: "IMAGE",
+    } as const;
+    const r = resolvePostDetailVariant({
+      nip88PollsEnabled: false,
+      post: post as never,
+      type: "published",
+    });
+    expect(r.variant).toBe("thread");
+    expect(r.innerVariant).toBe("media");
+    expect(r.heightMode).toBe("large");
   });
 
   it("uses poll inner variant when NIP-88 poll", () => {
@@ -54,6 +73,22 @@ describe("resolvePostDetailVariant", () => {
     });
     expect(r.variant).toBe("media");
     expect(r.heightMode).toBe("large");
+  });
+
+  it("uses medium height for standalone poll", () => {
+    const post = {
+      id: "p",
+      fileUrl: [],
+      postType: "POLL",
+      postKind: "POST",
+    } as const;
+    const r = resolvePostDetailVariant({
+      nip88PollsEnabled: true,
+      post: post as never,
+      type: "published",
+    });
+    expect(r.variant).toBe("poll");
+    expect(r.heightMode).toBe("medium");
   });
 
   it("header label for poll", () => {

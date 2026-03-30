@@ -6,7 +6,7 @@
 import type { EngagementItemStateMap } from "../engagement-filter";
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
-import type { EngagementQueueTypeOption, GroupedNotification } from "../types";
+import type { GroupedNotification } from "../types";
 
 import GroupedNotificationList from "./GroupedNotificationList";
 
@@ -70,7 +70,6 @@ interface EngagementContentProps {
     }
   >;
   followedPubkeys?: string[];
-  queueTypes?: EngagementQueueTypeOption[];
 }
 
 export function EngagementContent({
@@ -89,7 +88,6 @@ export function EngagementContent({
   engagementLinkedActions = {},
   groupSummaries = {},
   followedPubkeys = [],
-  queueTypes = [],
 }: EngagementContentProps) {
   const defaultRelays = ["wss://relay.primal.net"];
   const listProps = {
@@ -104,7 +102,6 @@ export function EngagementContent({
     engagementLinkedActions,
     groupSummaries,
     followedPubkeys,
-    queueTypes,
   };
 
   const repliesFlatCount = groupedReplies.reduce(

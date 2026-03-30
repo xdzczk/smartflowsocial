@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Copy, FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -34,6 +33,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import {
+  PublishingEmptyState,
+  PublishingFilterRow,
+  PublishingLibraryShell,
+  PublishingPageHeader,
+  PublishingSegmentedControlButtons,
+  TemplateKindChip,
+} from "~/features/posts/ui";
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -195,6 +202,11 @@ export default function TemplatesPage() {
     }
   }, [actionFetcher.state, actionFetcher.data, queryClient]);
 
+  const rawTemplatesCount = useMemo(
+    () => (Array.isArray(data?.templates) ? data.templates.length : 0),
+    [data?.templates]
+  );
+
   const templates = useMemo(() => {
     const templatesRaw = Array.isArray(data?.templates) ? data.templates : [];
     let list = templatesRaw as unknown as Template[];
@@ -244,59 +256,12 @@ export default function TemplatesPage() {
   return (
     <>
       {!isOnChildRoute ? (
-        <div className="p-6">
-          <div className="mb-6 flex flex-col gap-4 sm:mb-8">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-tight">Templates</h1>
-              <p className="text-muted-foreground text-sm">
-                Reusable blueprints for posts and articles.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div
-                className="flex flex-wrap gap-2"
-                role="tablist"
-                aria-label="Template type"
-              >
-                {(
-                  [
-                    ["all", "All"],
-                    ["POST", "Posts"],
-                    ["LONGFORM", "Articles"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    size="sm"
-                    variant={typeFilter === key ? "default" : "outline"}
-                    className="rounded-full"
-                    onClick={() => setTypeFilter(key)}
-                    role="tab"
-                    aria-selected={typeFilter === key}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                <Select
-                  value={sort}
-                  onValueChange={(v) => setSort(v as TemplateSort)}
-                >
-                  <SelectTrigger
-                    className="w-full sm:w-[200px]"
-                    aria-label="Sort templates"
-                  >
-                    <SelectValue placeholder="Sort" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated">Recently updated</SelectItem>
-                    <SelectItem value="name">Name</SelectItem>
-                  </SelectContent>
-                </Select>
+        <PublishingLibraryShell>
+          <div className="pt-2 pb-4">
+            <PublishingPageHeader
+              title="Templates"
+              subtitle="Reusable blueprints for posts, articles, and publishing workflows."
+              actions={
                 <Button
                   type="button"
                   className="shrink-0"
@@ -304,37 +269,84 @@ export default function TemplatesPage() {
                 >
                   Create template
                 </Button>
-              </div>
-            </div>
+              }
+            />
           </div>
+
+          <PublishingFilterRow
+            leading={
+              <PublishingSegmentedControlButtons
+                data-testid="templates-type-segments"
+                radiogroupAriaLabel="Template type"
+                value={typeFilter}
+                onValueChange={(v) => setTypeFilter(v as TemplateFilter)}
+                items={[
+                  { id: "all", label: "All", ariaLabel: "All templates" },
+                  { id: "POST", label: "Posts", ariaLabel: "Post templates" },
+                  {
+                    id: "LONGFORM",
+                    label: "Articles",
+                    ariaLabel: "Article templates",
+                  },
+                ]}
+              />
+            }
+            trailing={
+              <Select
+                value={sort}
+                onValueChange={(v) => setSort(v as TemplateSort)}
+              >
+                <SelectTrigger
+                  className="border-border h-9 w-full sm:w-[200px]"
+                  aria-label="Sort templates"
+                >
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated">Recently updated</SelectItem>
+                  <SelectItem value="name">Name</SelectItem>
+                </SelectContent>
+              </Select>
+            }
+          />
 
           <CreateTemplateTypeDialog
             open={createOpen}
             onOpenChange={setCreateOpen}
           />
 
-          <div className="rounded-xl border">
-            {templates.length === 0 ? (
-              <div
-                className="text-muted-foreground flex flex-col items-center justify-center gap-3 px-4 py-16 text-center"
-                data-testid="empty-state"
-              >
-                <h2 className="text-foreground text-base font-semibold">
-                  No templates yet
-                </h2>
-                <p className="max-w-sm text-sm">
-                  Save reusable blueprints for recurring posts and articles.
-                </p>
-                <p className="text-muted-foreground/90 max-w-md text-xs leading-relaxed">
-                  Templates help speed up repeated formats like weekly posts,
-                  announcements, and article structures.
-                </p>
-                <Button type="button" onClick={() => setCreateOpen(true)}>
-                  Create template
-                </Button>
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            {rawTemplatesCount === 0 ? (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="empty-state"
+                  icon={<FileText strokeWidth={1.25} aria-hidden />}
+                  title="No templates yet"
+                  description="Save reusable blueprints for recurring posts and articles. Speed up weekly posts, announcements, and article structures."
+                >
+                  <Button type="button" onClick={() => setCreateOpen(true)}>
+                    Create template
+                  </Button>
+                </PublishingEmptyState>
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="templates-filtered-empty"
+                  title="No templates match these filters"
+                  description="Try another type or clear filters to see all templates."
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setTypeFilter("all")}
+                  >
+                    Clear filters
+                  </Button>
+                </PublishingEmptyState>
               </div>
             ) : (
-              <ul className="divide-y">
+              <ul className="flex flex-col gap-3">
                 {templates.map((template) => {
                   const t = template as Template & {
                     post?: unknown;
@@ -346,116 +358,135 @@ export default function TemplatesPage() {
                     t.templateType === "LONGFORM"
                       ? `/dashboard/compose?type=article&templateId=${encodeURIComponent(id)}`
                       : `/dashboard/compose?type=post&templateId=${encodeURIComponent(id)}`;
-                  const mediaCount = templateToDetailPayload(t).mediaCount;
+                  const payload = templateToDetailPayload(t);
+                  const mediaCount = payload.mediaCount;
+                  const thumb = payload.imageUrl;
 
                   return (
                     <li key={id}>
-                      <div className="hover:bg-muted/40 flex flex-col gap-3 p-4 transition-colors sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                        <button
-                          type="button"
-                          className="min-w-0 flex-1 text-left"
-                          onClick={() => setSheetTemplate(template)}
-                        >
-                          <div className="font-medium">
-                            {t.name ?? "Unnamed template"}
-                          </div>
-                          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
-                            {previewSnippet(t)}
-                          </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {typeLabel(t)}
-                            </Badge>
-                            {mediaCount > 0 ? (
-                              <span className="text-muted-foreground text-xs">
-                                {mediaCount}{" "}
-                                {mediaCount === 1
-                                  ? "attachment"
-                                  : "attachments"}
+                      <div className="border-border bg-card hover:border-border hover:bg-muted/25 rounded-xl border p-4 transition-colors">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-5">
+                          {thumb ? (
+                            <div className="shrink-0">
+                              <img
+                                src={thumb}
+                                alt=""
+                                className="border-border/60 size-14 rounded-lg border object-cover sm:size-16"
+                              />
+                            </div>
+                          ) : null}
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <button
+                              type="button"
+                              className="text-left"
+                              onClick={() => setSheetTemplate(template)}
+                            >
+                              <div className="text-foreground leading-snug font-semibold">
+                                {t.name ?? "Unnamed template"}
+                              </div>
+                              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
+                                {previewSnippet(t)}
+                              </p>
+                            </button>
+                            <div className="mt-3 flex min-h-[1.75rem] flex-wrap items-center gap-2">
+                              <TemplateKindChip label={typeLabel(t)} />
+                              {mediaCount > 0 ? (
+                                <span className="text-muted-foreground text-xs">
+                                  {mediaCount}{" "}
+                                  {mediaCount === 1
+                                    ? "attachment"
+                                    : "attachments"}
+                                </span>
+                              ) : null}
+                              <span className="text-muted-foreground text-xs sm:hidden">
+                                {formatTemplateUpdated(t as never, dateLocale)}
                               </span>
-                            ) : null}
+                            </div>
                           </div>
-                        </button>
 
-                        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end md:flex-row md:items-center">
-                          <span className="text-muted-foreground order-last w-full text-xs sm:order-none sm:w-auto sm:text-right">
-                            {formatTemplateUpdated(t as never, dateLocale)}
-                          </span>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <Button size="sm" className="gap-1.5" asChild>
-                              <Link to={rowUseHref}>Use template</Link>
-                            </Button>
-                            <Button variant="outline" size="sm" asChild>
-                              <Link
-                                to={`/dashboard/templates/edit/${id}`}
-                                className="gap-1.5"
-                              >
-                                <Pencil
-                                  className="h-3.5 w-3.5"
-                                  strokeWidth={INLINE_ICON_STROKE}
-                                  aria-hidden
-                                />
-                                Edit template
-                              </Link>
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0"
-                                  aria-label="More actions"
-                                >
-                                  <MoreHorizontal
-                                    className="h-4 w-4"
-                                    aria-hidden
-                                  />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    const fd = new FormData();
-                                    fd.set("_action", "duplicate");
-                                    fd.set("templateId", id);
-                                    submitAction(fd);
-                                  }}
-                                >
-                                  <Copy className="mr-2 h-4 w-4" aria-hidden />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setRenameTarget(template);
-                                    setRenameValue(t.name ?? "");
-                                    setRenameOpen(true);
-                                  }}
+                          <div className="flex shrink-0 flex-col gap-3 sm:min-w-[12.5rem] sm:items-end">
+                            <span className="text-muted-foreground hidden text-xs sm:block sm:text-right">
+                              {formatTemplateUpdated(t as never, dateLocale)}
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                              <Button size="sm" className="gap-1.5" asChild>
+                                <Link to={rowUseHref}>Use template</Link>
+                              </Button>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link
+                                  to={`/dashboard/templates/edit/${id}`}
+                                  className="gap-1.5"
                                 >
                                   <Pencil
-                                    className="mr-2 h-4 w-4"
+                                    className="h-3.5 w-3.5"
+                                    strokeWidth={INLINE_ICON_STROKE}
                                     aria-hidden
                                   />
-                                  Rename
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => {
-                                    const fd = new FormData();
-                                    fd.set("_action", "delete");
-                                    fd.set("templateId", id);
-                                    submitAction(fd);
-                                  }}
-                                >
-                                  <Trash2
-                                    className="mr-2 h-4 w-4"
-                                    aria-hidden
-                                  />
-                                  Delete template
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  Edit template
+                                </Link>
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    aria-label="More actions"
+                                  >
+                                    <MoreHorizontal
+                                      className="h-4 w-4"
+                                      aria-hidden
+                                    />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const fd = new FormData();
+                                      fd.set("_action", "duplicate");
+                                      fd.set("templateId", id);
+                                      submitAction(fd);
+                                    }}
+                                  >
+                                    <Copy
+                                      className="mr-2 h-4 w-4"
+                                      aria-hidden
+                                    />
+                                    Duplicate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setRenameTarget(template);
+                                      setRenameValue(t.name ?? "");
+                                      setRenameOpen(true);
+                                    }}
+                                  >
+                                    <Pencil
+                                      className="mr-2 h-4 w-4"
+                                      aria-hidden
+                                    />
+                                    Rename
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      const fd = new FormData();
+                                      fd.set("_action", "delete");
+                                      fd.set("templateId", id);
+                                      submitAction(fd);
+                                    }}
+                                  >
+                                    <Trash2
+                                      className="mr-2 h-4 w-4"
+                                      aria-hidden
+                                    />
+                                    Delete template
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -480,11 +511,13 @@ export default function TemplatesPage() {
                       {detail.name || "Unnamed template"}
                     </SheetTitle>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary">
-                        {detail.templateType === "LONGFORM"
-                          ? "Article"
-                          : "Post"}
-                      </Badge>
+                      <TemplateKindChip
+                        label={
+                          detail.templateType === "LONGFORM"
+                            ? "Article"
+                            : "Post"
+                        }
+                      />
                       <span className="text-muted-foreground text-xs">
                         Updated {formatDate(detail.updatedAt)}
                       </span>
@@ -597,7 +630,7 @@ export default function TemplatesPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
+        </PublishingLibraryShell>
       ) : null}
       <Outlet />
     </>

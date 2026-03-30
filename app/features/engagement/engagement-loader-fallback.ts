@@ -23,5 +23,4 @@ export const ENGAGEMENT_LOADER_FALLBACK: EngagementLoaderData = {
   groupSummaries: {},
   lastCheckedAt: null,
   followedPubkeys: [],
-  queueTypes: [],
 };

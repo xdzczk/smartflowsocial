@@ -1,3 +1,5 @@
+import { useNavigate } from "@remix-run/react";
+
 import {
   BulkDraftsListing,
   DraftBulkResume,
@@ -96,6 +98,8 @@ export function DraftsPageContent({
   isFetchingNextPage,
   setScrollRoot,
 }: DraftsPageContentProps) {
+  const navigate = useNavigate();
+
   const showQueueTabs =
     currentTab === "all" ||
     currentTab === "posts" ||
@@ -169,6 +173,11 @@ export function DraftsPageContent({
             sentinelRef={isMobile ? sentinelRef : undefined}
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            queueTypes={queueTypes}
+            onResetDraftFilters={() => {
+              navigate("/dashboard/drafts?tab=all");
+              setSearchTerm("");
+            }}
           />
         </div>
       </>

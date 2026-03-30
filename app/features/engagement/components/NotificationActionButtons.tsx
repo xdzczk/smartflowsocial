@@ -16,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
@@ -52,8 +51,14 @@ interface NotificationActionButtonsProps {
   viewEventLabel?: string;
 }
 
-const actionBtnClass =
-  "text-muted-foreground hover:text-foreground h-8 gap-1 px-2 text-xs";
+const primaryActionClass =
+  "text-muted-foreground hover:text-foreground h-8 gap-1 px-2 text-xs font-medium";
+
+const secondaryAckClass =
+  "text-muted-foreground/80 hover:text-foreground h-7 gap-0.5 px-1.5 text-[11px] font-normal";
+
+const utilityLinkClass =
+  "text-muted-foreground/75 hover:text-foreground/90 text-[11px] leading-none";
 
 export function NotificationActionButtons({
   eventId,
@@ -77,13 +82,13 @@ export function NotificationActionButtons({
   const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
 
   return (
-    <div className="mb-1 space-y-1.5">
-      <div className="flex flex-wrap items-center gap-1">
+    <div className="mt-0.5 space-y-1">
+      <div className="flex flex-wrap items-center gap-0.5">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className={actionBtnClass}
+          className={primaryActionClass}
           onClick={(e) => {
             e.stopPropagation();
             onOpenReply();
@@ -100,7 +105,7 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={actionBtnClass}
+          className={primaryActionClass}
           onClick={(e) => {
             e.stopPropagation();
             onOpenQuote();
@@ -117,7 +122,7 @@ export function NotificationActionButtons({
           type="button"
           variant="ghost"
           size="sm"
-          className={actionBtnClass}
+          className={primaryActionClass}
           disabled={isReposting}
           onClick={(e) => {
             e.stopPropagation();
@@ -136,7 +141,7 @@ export function NotificationActionButtons({
             type="button"
             variant="ghost"
             size="sm"
-            className={actionBtnClass}
+            className={primaryActionClass}
             onClick={(e) => {
               e.stopPropagation();
               onMarkHandled();
@@ -152,7 +157,7 @@ export function NotificationActionButtons({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 shrink-0"
               aria-label="More actions"
               onClick={(e) => e.stopPropagation()}
             >
@@ -160,44 +165,6 @@ export function NotificationActionButtons({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem
-              onSelect={() => {
-                onLike();
-              }}
-            >
-              <Heart
-                className="mr-2 h-3.5 w-3.5"
-                strokeWidth={INLINE_ICON_STROKE}
-                aria-hidden
-              />
-              Like
-              {stats?.likes != null && stats.likes > 0
-                ? ` (${stats.likes})`
-                : ""}
-            </DropdownMenuItem>
-            {zapNpub && onZapClick ? (
-              <DropdownMenuItem
-                onSelect={() => {
-                  onZapClick(zapNpub);
-                }}
-              >
-                <Zap
-                  className="mr-2 h-3.5 w-3.5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-                Zap
-              </DropdownMenuItem>
-            ) : null}
-            {(stats?.zaps && stats.zaps > 0) ||
-            (stats?.satszapped && stats.satszapped > 0) ? (
-              <div className="text-muted-foreground px-2 py-1.5 text-xs">
-                {stats.satszapped
-                  ? `${Number(stats.satszapped).toLocaleString()} sats on note`
-                  : `${stats.zaps ?? 0} zap${(stats.zaps ?? 0) === 1 ? "" : "s"}`}
-              </div>
-            ) : null}
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={() => {
                 onCopyNevent();
@@ -245,26 +212,70 @@ export function NotificationActionButtons({
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {onSnooze ? (
+      <div className="flex flex-wrap items-center gap-1 pl-0.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={secondaryAckClass}
+          aria-label="Like"
+          onClick={(e) => {
+            e.stopPropagation();
+            onLike();
+          }}
+        >
+          <Heart
+            className="h-3.5 w-3.5"
+            strokeWidth={INLINE_ICON_STROKE}
+            aria-hidden
+          />
+          Like
+          {stats?.likes != null && stats.likes > 0 ? (
+            <span className="text-muted-foreground/70 tabular-nums">
+              {stats.likes}
+            </span>
+          ) : null}
+        </Button>
+        {zapNpub && onZapClick ? (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className={`${actionBtnClass} h-7`}
+            className={secondaryAckClass}
+            aria-label="Zap"
+            onClick={(e) => {
+              e.stopPropagation();
+              onZapClick(zapNpub);
+            }}
+          >
+            <Zap
+              className="h-3.5 w-3.5"
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
+            Zap
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-0.5">
+        {onSnooze ? (
+          <button
+            type="button"
+            className={`${utilityLinkClass} hover:underline`}
             onClick={(e) => {
               e.stopPropagation();
               onSnooze();
             }}
           >
-            Snooze
-          </Button>
+            Snooze →
+          </button>
         ) : null}
         <Link
           to={eventViewUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-muted-foreground hover:text-foreground text-xs"
+          className={`${utilityLinkClass} inline-flex items-center gap-0.5 hover:underline`}
           onClick={(e) => e.stopPropagation()}
         >
           {viewEventLabel} →

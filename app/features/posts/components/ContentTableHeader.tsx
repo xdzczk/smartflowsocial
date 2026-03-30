@@ -55,15 +55,12 @@ export function ContentTableHeader({
           className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
           onClick={() => onRequestSort("caption")}
         >
-          Title/Caption{" "}
+          Title / caption{" "}
           {sortConfig.key === "caption"
             ? sortConfig.direction === "asc"
               ? "↑"
               : "↓"
             : null}
-        </th>
-        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
-          Preview
         </th>
         <th
           className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"

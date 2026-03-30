@@ -60,7 +60,7 @@ function PublishedFeedRoute() {
       fallback={
         <DeferredListPageSkeleton
           title="Published"
-          subtitle="Posts from your publishing queues"
+          subtitle="Review published content, queue history, and recyclable posts."
         />
       }
     >

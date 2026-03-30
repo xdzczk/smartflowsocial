@@ -24,8 +24,9 @@ export {
   proofRatioLabel,
 } from "./ratios";
 export {
+  proofCardAspectOuterClass,
   proofCardInnerPadClass,
-  proofCardShellClass,
+  proofCardShellSurfaceClass,
   proofEyebrowClass,
   proofFooterTextClass,
   proofHeroClass,

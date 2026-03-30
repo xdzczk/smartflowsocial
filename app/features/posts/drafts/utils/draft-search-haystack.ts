@@ -27,3 +27,13 @@ export function matchesDraftSearch(haystack: string, term: string): boolean {
   if (!q) return true;
   return haystack.includes(q);
 }
+
+/** Extra tokens for in-list draft filtering (queue name, content-type label). */
+export function appendDraftListSearchExtras(
+  base: string,
+  queueName: string | null | undefined,
+  contentTypeLabel: string
+): string {
+  const q = (queueName ?? "").toLowerCase();
+  return `${base} ${q} ${contentTypeLabel.toLowerCase()}`.trim();
+}

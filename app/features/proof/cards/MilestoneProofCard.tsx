@@ -1,7 +1,8 @@
 import type { ProofCardPayload, ProofRatio } from "~/lib/proof";
-import { proofCardInnerPadClass, proofCardShellClass } from "~/lib/proof";
+import { proofCardInnerPadClass } from "~/lib/proof";
 
 import { ProofCardBody } from "../components/ProofCardBody";
+import { ProofCardShell } from "../components/ProofCardShell";
 
 export function MilestoneProofCard({
   payload,
@@ -11,10 +12,10 @@ export function MilestoneProofCard({
   ratio: ProofRatio;
 }) {
   return (
-    <div className={proofCardShellClass(ratio, "admin")}>
+    <ProofCardShell ratio={ratio} variant="admin">
       <div className={proofCardInnerPadClass(ratio)}>
         <ProofCardBody payload={payload} ratio={ratio} variant="admin" />
       </div>
-    </div>
+    </ProofCardShell>
   );
 }

@@ -1,4 +1,4 @@
-import { Link, useFetcher, useParams, useSearchParams } from "@remix-run/react";
+import { useFetcher, useParams, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EngagementFilter } from "~/features/posts/components/EngagementFilter";
@@ -11,7 +11,13 @@ import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { CombinedContent, PostData } from "~/features/posts/server";
 import type { BulkPost } from "~/features/posts/types";
-import { PostDetailsModal } from "~/features/posts/ui";
+import {
+  PostDetailsModal,
+  PublishingArchiveModeLinks,
+  PublishingFilterRow,
+  PublishingLibraryShell,
+  PublishingPageHeader,
+} from "~/features/posts/ui";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
@@ -198,40 +204,24 @@ export default function RecyclablesPage() {
   });
 
   return (
-    <div>
-      <div className="flex flex-shrink-0 flex-row items-center gap-4">
-        <h3 className="min-w-0 flex-shrink-0 font-semibold">
-          Recyclable Posts
-        </h3>
-        <nav
-          className="bg-muted text-muted-foreground ml-auto inline-flex h-9 flex-shrink-0 items-center justify-center rounded-lg p-1"
-          aria-label="Switch between Published and Recyclables view"
-        >
-          <Link
-            to="/dashboard/published"
-            prefetch="intent"
-            className="hover:text-foreground focus-visible:ring-ring inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
-          >
-            Published
-          </Link>
-          <span
-            className="bg-background text-foreground inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap shadow"
-            aria-current="page"
-          >
-            Recyclables
-          </span>
-        </nav>
+    <PublishingLibraryShell>
+      <div className="pt-2 pb-4">
+        <PublishingPageHeader
+          title="Recyclables"
+          subtitle="Reuse high-performing published posts as templates for new content."
+          actions={<PublishingArchiveModeLinks active="recyclables" />}
+        />
       </div>
 
-      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
-        <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-2">
-          <OlderThanFilter />
-          <EngagementFilter />
-        </div>
-        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
-          <RecyclablesQueueFilter queueTypes={queueTypes} />
-        </div>
-      </div>
+      <PublishingFilterRow
+        leading={
+          <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-2">
+            <OlderThanFilter />
+            <EngagementFilter />
+          </div>
+        }
+        trailing={<RecyclablesQueueFilter queueTypes={queueTypes} />}
+      />
 
       <RecyclablesBulkActions
         selectedCount={selectedPosts.size}
@@ -383,6 +373,6 @@ export default function RecyclablesPage() {
       ) : null}
 
       <RecyclablesToast toast={toast} onClose={() => setToast(null)} />
-    </div>
+    </PublishingLibraryShell>
   );
 }

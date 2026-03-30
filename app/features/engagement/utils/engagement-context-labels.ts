@@ -22,3 +22,24 @@ export function displayParentContextLabel(
 
   return raw;
 }
+
+/** Compact second line under the source title when extra context helps scanning. */
+export function displayParentContextSublabel(
+  parent: ParentPost,
+  listVariant: EngagementListVariant
+): string | null {
+  const raw = parent.contextLabel?.trim();
+  const title = displayParentContextLabel(parent, listVariant);
+  if (!raw && title === "Your post") {
+    return listVariant === "mentions" ? "Unknown source note" : null;
+  }
+  if (
+    listVariant === "mentions" &&
+    raw &&
+    (raw === "Referenced note (Nostr)" ||
+      raw.toLowerCase().includes("referenced note"))
+  ) {
+    return "Referenced your note";
+  }
+  return null;
+}

@@ -65,7 +65,7 @@ export function resolvePostDetailVariant(args: {
 
   if (isThreadContext) {
     const heightMode: PostDetailHeightMode =
-      innerVariant === "media" ? "large" : "medium";
+      innerVariant === "media" ? "large" : "compact";
     return { variant: "thread", heightMode, innerVariant };
   }
 

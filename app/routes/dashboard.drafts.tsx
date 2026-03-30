@@ -102,7 +102,7 @@ function DraftsFeedRoute() {
       fallback={
         <DeferredListPageSkeleton
           title="Drafts"
-          subtitle="Work in progress before publishing"
+          subtitle="Resume unfinished posts, threads, polls, articles, and bulk drafts."
         />
       }
     >

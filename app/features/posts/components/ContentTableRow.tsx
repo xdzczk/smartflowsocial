@@ -13,6 +13,12 @@ import {
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
+  ContentStatusChip,
+  PUBLISHING_DATETIME_CELL_CLASS,
+  PUBLISHING_TABLE_ROW_CLASS,
+  QueueStatusChip,
+} from "~/features/posts/components/publishing-suite";
+import {
   getLongFormDraftEditUrl,
   getShortDraftComposeUrl,
 } from "~/features/posts/drafts/utils/draft-editor-navigation";
@@ -22,6 +28,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { cn } from "~/lib/utils";
 
 import type {
   CombinedContent,
@@ -36,9 +43,6 @@ import {
   getContentTypeBadge,
   getImageUrls,
   getPostRowThumbnailBadge,
-  getQueueTypeDisplay,
-  getStatusColor,
-  getStatusText,
   isRepostContent,
 } from "../utils/content-helpers";
 
@@ -96,13 +100,13 @@ export function ContentTableRow({
 }: ContentTableRowProps) {
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
-  const queueDisplay = getQueueTypeDisplay(item.queueType);
-  const queueRowLabel =
-    type === "draft" &&
-    (!item.queueType?.name || item.queueType.name === "unassigned")
-      ? "No queue"
-      : queueDisplay.name;
   const isRepost = isRepostContent(item);
+  const titleText = getContentTitle(item);
+  const previewRaw = getContentPreview(item)?.trim() ?? "";
+  const excerpt =
+    previewRaw.length > 0 && previewRaw !== titleText.trim()
+      ? previewRaw
+      : null;
   const postThumbnailBadge =
     item.type === "longform"
       ? ("ART" as const)
@@ -114,10 +118,15 @@ export function ContentTableRow({
           postKind: item.postKind ?? null,
         });
 
+  const isSelected = selectedItems.has(item.id);
+
   return (
     <tr
       key={`${item.type}-${item.id}`}
-      className="group border-border hover:bg-muted cursor-pointer border-b"
+      className={cn(
+        PUBLISHING_TABLE_ROW_CLASS,
+        isSelected && "bg-muted/40 hover:bg-muted/50"
+      )}
       onClick={() => {
         if (type === "draft" && onResumeDraft) {
           onResumeDraft();
@@ -208,16 +217,23 @@ export function ContentTableRow({
           );
         })()}
       </td>
-      <td className="p-3">
-        <p className="font-medium">{getContentTitle(item)}</p>
-      </td>
-      <td className="p-3">
-        <p className="text-muted-foreground text-sm">
-          {getContentPreview(item)?.slice(0, 20) ?? ""}
-          {(getContentPreview(item)?.length ?? 0) > 20 ? "…" : ""}
+      <td className="max-w-md p-3 whitespace-normal">
+        <p className="text-foreground leading-snug font-semibold">
+          {titleText}
         </p>
+        {excerpt ? (
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
+            {excerpt}
+          </p>
+        ) : null}
       </td>
-      <td className="text-foreground p-3">
+      <td
+        className={cn(
+          "p-3",
+          (type === "scheduled" || type === "published") &&
+            PUBLISHING_DATETIME_CELL_CLASS
+        )}
+      >
         {type === "scheduled"
           ? formatDate(
               item.scheduledAtUtc ?? undefined,
@@ -243,16 +259,17 @@ export function ContentTableRow({
               )}
       </td>
       <td className="p-3 text-center">
-        <div className={queueDisplay.className} style={queueDisplay.style}>
-          {queueRowLabel}
+        <div className="flex justify-center">
+          <QueueStatusChip
+            queueType={item.queueType}
+            mode={type === "draft" ? "draft" : "default"}
+          />
         </div>
       </td>
       {type === "draft" ? null : (
         <td className="p-3 text-center">
-          <div
-            className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${getStatusColor(item)}`}
-          >
-            {getStatusText(item)}
+          <div className="flex justify-center">
+            <ContentStatusChip item={item} />
           </div>
         </td>
       )}
@@ -276,7 +293,7 @@ export function ContentTableRow({
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Row actions menu composes many conditional fetcher targets */
-function ContentRowActions({
+export function ContentRowActions({
   item,
   type,
   draftsActionFetcher,

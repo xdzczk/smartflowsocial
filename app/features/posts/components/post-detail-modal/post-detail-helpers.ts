@@ -1,3 +1,4 @@
+import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import {
   formatForDisplay,
   fromDate,
@@ -148,4 +149,13 @@ export function getSecondaryCaption(
 
 export function hasMediaAttachments(post: PostDetailModalPost): boolean {
   return Boolean(post.fileUrl && post.fileUrl.length > 0);
+}
+
+/** Drop replies whose event id is a thread segment (continuations, not “real” replies). */
+export function filterRepliesExcludingThreadSegments(
+  replies: ChildReply[],
+  segmentIds: ReadonlySet<string>
+): ChildReply[] {
+  if (segmentIds.size === 0) return replies;
+  return replies.filter((r) => !r.id || !segmentIds.has(r.id));
 }

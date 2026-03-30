@@ -37,9 +37,12 @@ import type { NostrClientConfig } from "~/lib/nostr-client-urls";
 
 import type { Notification } from "../engagement.server";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
-import type { EngagementQueueTypeOption, GroupedNotification } from "../types";
+import type { GroupedNotification } from "../types";
 import type { EngagementListVariant } from "../utils/engagement-context-labels";
-import { displayParentContextLabel } from "../utils/engagement-context-labels";
+import {
+  displayParentContextLabel,
+  displayParentContextSublabel,
+} from "../utils/engagement-context-labels";
 
 import { NotificationItem } from "./NotificationItem";
 
@@ -120,7 +123,6 @@ interface GroupedNotificationListProps {
   >;
   listVariant?: EngagementListVariant;
   followedPubkeys?: string[];
-  queueTypes?: EngagementQueueTypeOption[];
 }
 
 export default function GroupedNotificationList({
@@ -138,7 +140,6 @@ export default function GroupedNotificationList({
   groupSummaries = {},
   listVariant = "all",
   followedPubkeys = [],
-  queueTypes = [],
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -206,7 +207,6 @@ export default function GroupedNotificationList({
           viewEventLabel={viewEventLabel}
           listVariant={listVariant}
           followedPubkeys={followedPubkeys}
-          queueTypes={queueTypes}
         />
       ))}
     </div>
@@ -230,7 +230,6 @@ function GroupedNotificationCard({
   viewEventLabel,
   listVariant,
   followedPubkeys,
-  queueTypes,
 }: {
   group: GroupedNotification;
   userTimezone?: string;
@@ -278,7 +277,6 @@ function GroupedNotificationCard({
   viewEventLabel: string;
   listVariant: EngagementListVariant;
   followedPubkeys: string[];
-  queueTypes: EngagementQueueTypeOption[];
 }) {
   const { formatDate, userTimezone } = useFormattedDate();
   const { parentPost, notifications } = group;
@@ -289,6 +287,7 @@ function GroupedNotificationCard({
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const contextTitle = displayParentContextLabel(parentPost, listVariant);
+  const contextSublabel = displayParentContextSublabel(parentPost, listVariant);
 
   const copyParentNevent = async () => {
     try {
@@ -323,19 +322,28 @@ function GroupedNotificationCard({
 
   return (
     <div className="border-border bg-card overflow-hidden rounded-lg border">
-      <div className="flex flex-col lg:flex-row">
-        <div className="border-border flex flex-shrink-0 flex-col border-b p-3 lg:w-[40%] lg:border-r lg:border-b-0">
-          <div className="text-muted-foreground mb-1.5 flex flex-wrap items-center gap-2 text-xs">
+      <div className="flex flex-col items-stretch lg:flex-row lg:items-start">
+        <div className="border-border flex flex-shrink-0 flex-col border-b p-2.5 lg:w-[38%] lg:border-r lg:border-b-0 lg:py-2.5 lg:pr-2.5 lg:pl-3">
+          <div className="text-muted-foreground mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-tight">
             <MessageCircle
-              className="h-4 w-4 shrink-0"
+              className="h-3.5 w-3.5 shrink-0 translate-y-px"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
-            <span className="text-foreground/90 font-medium">
-              {contextTitle}
-            </span>
+            <div className="min-w-0">
+              <span className="text-foreground font-medium">
+                {contextTitle}
+              </span>
+              {contextSublabel ? (
+                <span className="text-muted-foreground/85 mt-0.5 block text-[10px] leading-snug">
+                  {contextSublabel}
+                </span>
+              ) : null}
+            </div>
             {parentPost.publishedAt ? (
-              <span>· {formatDate(parentPost.publishedAt)}</span>
+              <span className="text-muted-foreground/80 text-[10px] whitespace-nowrap">
+                · {formatDate(parentPost.publishedAt)}
+              </span>
             ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -361,7 +369,7 @@ function GroupedNotificationCard({
             </DropdownMenu>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {parentPost.fileUrl ? (
               <div className="flex-shrink-0">
                 <MediaThumbnail
@@ -426,7 +434,7 @@ function GroupedNotificationCard({
               </Tooltip>
 
               {parentPost.stats ? (
-                <div className="text-muted-foreground mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                <div className="text-muted-foreground/90 mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px]">
                   <span className="inline-flex items-center gap-1">
                     <MessageCircle
                       className={INLINE_ICON_SIZE_CLASS}
@@ -465,14 +473,18 @@ function GroupedNotificationCard({
               ) : null}
 
               {summary ? (
-                <div className="text-muted-foreground mt-1.5 text-xs font-medium tracking-tight">
-                  <span className="text-foreground/80">
+                <div className="text-muted-foreground/85 mt-1 text-[11px] leading-snug tracking-tight">
+                  <span className="text-foreground/80 font-medium tabular-nums">
                     {summary.total} total
                   </span>
-                  <span className="text-border mx-1.5">·</span>
-                  <span>{summary.needResponse} need response</span>
-                  <span className="text-border mx-1.5">·</span>
-                  <span>{summary.scheduled} scheduled</span>
+                  <span className="text-border/80 mx-1">·</span>
+                  <span className="text-foreground/90 font-semibold tabular-nums">
+                    {summary.needResponse} need response
+                  </span>
+                  <span className="text-border/80 mx-1">·</span>
+                  <span className="tabular-nums">
+                    {summary.scheduled} scheduled
+                  </span>
                 </div>
               ) : null}
 
@@ -480,7 +492,7 @@ function GroupedNotificationCard({
                 to={eventUrl(parentPost.eventId, nostrClientConfig)}
                 target="_blank"
                 rel="noreferrer"
-                className="text-muted-foreground hover:text-primary mt-1.5 inline-block text-xs"
+                className="text-muted-foreground/70 hover:text-foreground/85 mt-1 inline-block text-[11px] hover:underline"
               >
                 View original post →
               </Link>
@@ -500,8 +512,8 @@ function GroupedNotificationCard({
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1 lg:w-[60%]">
-          <div className="divide-border max-h-[500px] divide-y overflow-y-auto">
+        <div className="min-w-0 flex-1 lg:w-[62%]">
+          <div className="divide-border max-h-[500px] divide-y overflow-y-auto lg:pt-0.5">
             {notifications.map((notification: Notification) => {
               const workflowState =
                 engagementItemStates[notification.eventId]?.state;
@@ -535,7 +547,6 @@ function GroupedNotificationCard({
                   isFollowingAuthor={followedPubkeys.includes(
                     notification.pubkey
                   )}
-                  queueTypes={queueTypes}
                 />
               );
             })}

@@ -35,6 +35,13 @@ describe("Drafts Management", () => {
       cy.get("body").should("be.visible");
     });
 
+    it("should show drafts type segmented control", () => {
+      cy.visitAndCheck("/dashboard/drafts");
+      cy.get('[data-testid="drafts-type-segments"]', {
+        timeout: 15000,
+      }).should("exist");
+    });
+
     it("should display drafts list or empty state", () => {
       cy.visitAndCheck("/dashboard/drafts");
 
@@ -48,7 +55,9 @@ describe("Drafts Management", () => {
             'table tbody tr, [data-testid="draft-item"], .draft-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
-          $body.find('[data-testid="empty-state"]').length > 0 ||
+          $body.find(
+            '[data-testid="empty-state"], [data-testid="drafts-empty-state"]'
+          ).length > 0 ||
           $body.text().toLowerCase().includes("no drafts") ||
           $body.text().toLowerCase().includes("empty") ||
           $body.text().toLowerCase().includes("no items");

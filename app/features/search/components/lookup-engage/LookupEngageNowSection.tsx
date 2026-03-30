@@ -1,0 +1,130 @@
+import { Heart, MessageCircle, Zap } from "lucide-react";
+import { nip19 } from "nostr-tools";
+import { useMemo, useState } from "react";
+
+import { Button } from "~/components/ui/button";
+import { useLookupNoteEngagement } from "~/features/search/hooks/useLookupNoteEngagement";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
+
+import { LookupReplyComposerDrawer } from "./LookupReplyComposerDrawer";
+import { ZapNoteDrawer } from "./ZapNoteDrawer";
+
+export interface LookupEngageNowSectionProps {
+  eventId: string;
+  authorPubkey: string;
+  authorDisplayName: string;
+  publishRelays: string[];
+  className?: string;
+}
+
+export function LookupEngageNowSection({
+  eventId,
+  authorPubkey,
+  authorDisplayName,
+  publishRelays,
+  className,
+}: LookupEngageNowSectionProps) {
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [zapOpen, setZapOpen] = useState(false);
+
+  const engagement = useLookupNoteEngagement({
+    eventId,
+    authorPubkey,
+    publishRelays,
+  });
+
+  const authorNpub = useMemo(() => {
+    try {
+      return nip19.npubEncode(authorPubkey);
+    } catch {
+      return "";
+    }
+  }, [authorPubkey]);
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={cn(
+          "h-9 w-full justify-start gap-2 px-3 text-xs font-medium",
+          engagement.isLiked &&
+            "border-primary/50 bg-primary/10 text-primary hover:bg-primary/15"
+        )}
+        disabled={engagement.isLikeSending || engagement.isLiked}
+        onClick={() => void engagement.likeNote()}
+      >
+        <Heart
+          className="h-3.5 w-3.5 shrink-0"
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+          fill={engagement.isLiked ? "currentColor" : "none"}
+        />
+        {engagement.isLikeSending
+          ? "Liking…"
+          : engagement.isLiked
+            ? "Liked"
+            : "Like"}
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-9 w-full justify-start gap-2 px-3 text-xs font-medium"
+        onClick={() => setReplyOpen(true)}
+      >
+        <MessageCircle
+          className="h-3.5 w-3.5 shrink-0"
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
+        Reply
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-9 w-full justify-start gap-2 border-amber-500/35 bg-amber-500/[0.07] px-3 text-xs font-medium text-amber-950 hover:bg-amber-500/15 dark:text-amber-100"
+        disabled={!authorNpub}
+        onClick={() => setZapOpen(true)}
+      >
+        <Zap
+          className="h-3.5 w-3.5 shrink-0"
+          strokeWidth={INLINE_ICON_STROKE}
+          aria-hidden
+        />
+        Zap
+      </Button>
+
+      {engagement.likeError ? (
+        <p className="text-destructive text-[11px]" role="alert">
+          {engagement.likeError}
+        </p>
+      ) : null}
+
+      <LookupReplyComposerDrawer
+        open={replyOpen}
+        onOpenChange={setReplyOpen}
+        authorDisplayName={authorDisplayName}
+        onSend={engagement.sendReply}
+        isSending={engagement.isReplySending}
+        sendError={engagement.replyError}
+        onClearSendError={engagement.clearReplyError}
+      />
+
+      {authorNpub ? (
+        <ZapNoteDrawer
+          open={zapOpen}
+          onOpenChange={setZapOpen}
+          authorNpub={authorNpub}
+          eventIdHex={eventId}
+          publishRelays={publishRelays}
+        />
+      ) : null}
+    </div>
+  );
+}

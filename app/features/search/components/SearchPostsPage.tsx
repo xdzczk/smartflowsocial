@@ -36,6 +36,7 @@ export default function SearchPostsPage() {
   const navigation = useNavigation();
   const loaderData = useLoaderData<{
     user: { timezone?: string | null } | null;
+    publishRelays?: string[];
     searchResult?: {
       event?: unknown;
       stats?: unknown;
@@ -47,6 +48,7 @@ export default function SearchPostsPage() {
   }>();
   const {
     user,
+    publishRelays = [],
     searchResult: loaderSearchResult,
     searchResultPromise,
   } = loaderData;
@@ -65,6 +67,7 @@ export default function SearchPostsPage() {
           {(resolvedSearchResult) => (
             <SearchPostsPageContent
               user={user}
+              publishRelays={publishRelays}
               fetcherData={fetcher.data}
               loaderSearchResult={resolvedSearchResult}
               forceShowSkeleton={isNavigatingToSearchResult}
@@ -78,6 +81,7 @@ export default function SearchPostsPage() {
   return (
     <SearchPostsPageContent
       user={user}
+      publishRelays={publishRelays}
       fetcherData={fetcher.data}
       loaderSearchResult={loaderSearchResult ?? null}
       forceShowSkeleton={isNavigatingToSearchResult}
@@ -87,6 +91,7 @@ export default function SearchPostsPage() {
 
 interface SearchPostsPageContentProps {
   user: { timezone?: string | null } | null;
+  publishRelays: string[];
   fetcherData: unknown;
   loaderSearchResult: {
     event?: unknown;
@@ -100,6 +105,7 @@ interface SearchPostsPageContentProps {
 
 function SearchPostsPageContent({
   user,
+  publishRelays,
   fetcherData,
   loaderSearchResult,
   forceShowSkeleton,
@@ -181,6 +187,7 @@ function SearchPostsPageContent({
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}
+          publishRelays={publishRelays}
           onRetryLookup={() => {
             revalidator.revalidate();
           }}

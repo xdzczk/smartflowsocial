@@ -14,9 +14,14 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
 import type { PostDetailModalPost } from "../post-detail-helpers";
+import type { PostDetailContentVariant } from "../resolve-post-detail-variant";
 import type { PostThreadGroupResponse } from "../usePostThreadGroup";
 
 import { DetailModalReplySnippet } from "./DetailModalReplySnippet";
+
+const RAIL_SECTION_LABEL = cn(
+  "normal-case tracking-tight text-muted-foreground/70 !mb-1 text-[10px] font-medium"
+);
 
 function QueueTypeCalm({
   queueType,
@@ -43,6 +48,7 @@ function QueueTypeCalm({
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- conditional rail sections
 export function PostDetailRail({
+  variant,
   type,
   post,
   queueType,
@@ -109,9 +115,10 @@ export function PostDetailRail({
   pollOptionCount: number | null;
   statusLabel: string;
   typeLabel: string;
+  variant: PostDetailContentVariant;
 }) {
   const pad = cn(RAIL_PAD_X, RAIL_ZONE_PY, "flex flex-col gap-0");
-  const divide = cn(RAIL_MAJOR_DIVIDE, "my-3");
+  const divide = cn(RAIL_MAJOR_DIVIDE, "my-2.5");
 
   const threadPos =
     threadGroupSummary &&
@@ -141,6 +148,10 @@ export function PostDetailRail({
     type === "published" && showStats && stats && eventId ? stats : null;
 
   const previewReplies = directReplies.slice(0, 2);
+  const showRepliesSection =
+    type === "published" &&
+    eventId &&
+    (variant !== "thread" || isThreadLoading || directReplies.length > 0);
 
   return (
     <aside
@@ -150,8 +161,10 @@ export function PostDetailRail({
       )}
     >
       <div className={pad}>
-        <RailSectionHeader>Overview</RailSectionHeader>
-        <div className="mt-2 space-y-2.5">
+        <RailSectionHeader className={RAIL_SECTION_LABEL}>
+          Overview
+        </RailSectionHeader>
+        <div className="mt-1.5 space-y-2.5">
           <RailSettingsValueRow
             label="Status"
             value={statusLabel}
@@ -250,8 +263,10 @@ export function PostDetailRail({
         {showStructure ? (
           <>
             <div className={divide} />
-            <RailSectionHeader>Structure</RailSectionHeader>
-            <div className="mt-2 space-y-1">
+            <RailSectionHeader className={RAIL_SECTION_LABEL}>
+              Structure
+            </RailSectionHeader>
+            <div className="mt-1.5 space-y-1">
               {structureRows.map((row) => (
                 <RailSettingsValueRow
                   key={row.label + row.value}
@@ -264,12 +279,14 @@ export function PostDetailRail({
           </>
         ) : null}
 
-        {type === "published" && eventId ? (
+        {showRepliesSection ? (
           <>
             <div className={divide} />
-            <RailSectionHeader>Replies</RailSectionHeader>
+            <RailSectionHeader className={RAIL_SECTION_LABEL}>
+              Replies
+            </RailSectionHeader>
             <div
-              className="mt-2 space-y-2"
+              className="mt-1.5 space-y-2"
               aria-live="polite"
               aria-busy={isThreadLoading}
             >
@@ -304,8 +321,10 @@ export function PostDetailRail({
         {engagementStats ? (
           <>
             <div className={divide} />
-            <RailSectionHeader>Engagement</RailSectionHeader>
-            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
+            <RailSectionHeader className={RAIL_SECTION_LABEL}>
+              Engagement
+            </RailSectionHeader>
+            <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
               <div>
                 <p className="text-foreground font-semibold tabular-nums">
                   {engagementStats.likes}
@@ -361,7 +380,9 @@ export function PostDetailRail({
           <>
             <div className={divide} />
             <div className="flex items-center justify-between gap-2">
-              <RailSectionHeader className="mb-0">
+              <RailSectionHeader
+                className={cn(RAIL_SECTION_LABEL, "!mb-0 leading-none")}
+              >
                 Technical details
               </RailSectionHeader>
               <button

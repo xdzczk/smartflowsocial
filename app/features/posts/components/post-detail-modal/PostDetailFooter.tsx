@@ -22,7 +22,7 @@ export function PostDetailFooterBar({
   deleteForm: React.ReactNode;
 }) {
   return (
-    <div className="border-border bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm">
+    <div className="border-border/60 bg-card/95 shrink-0 border-t px-5 py-3.5 backdrop-blur-sm">
       <div className="flex flex-wrap items-center justify-end gap-2">
         {type === "published" && showOpenOnNostr && openOnNostrUrl ? (
           <Button variant="default" size="sm" asChild>
@@ -63,7 +63,7 @@ export function PostDetailFooterBar({
             Reschedule
           </Button>
         ) : null}
-        <div className="border-border ml-1 flex items-center border-l border-dashed pl-3">
+        <div className="border-border/60 ml-1 flex items-center border-l border-dashed pl-3">
           {deleteForm}
         </div>
       </div>

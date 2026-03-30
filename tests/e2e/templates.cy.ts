@@ -37,9 +37,16 @@ describe("Templates", () => {
       cy.location("pathname").should("include", "templates");
       cy.get("body").should("be.visible");
       cy.contains("h1", "Templates").should("be.visible");
-      cy.contains("Reusable blueprints for posts and articles").should(
-        "be.visible"
-      );
+      cy.contains(
+        "Reusable blueprints for posts, articles, and publishing workflows"
+      ).should("be.visible");
+    });
+
+    it("should show templates type segmented control", () => {
+      cy.visitAndCheck("/dashboard/templates");
+      cy.get('[data-testid="templates-type-segments"]', {
+        timeout: 15000,
+      }).should("exist");
     });
   });
 

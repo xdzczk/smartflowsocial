@@ -32,6 +32,11 @@ import {
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "~/features/posts/components/constants";
 import { ContentListCard } from "~/features/posts/components/ContentListCard";
+import {
+  PUBLISHING_DATETIME_CELL_CLASS,
+  PUBLISHING_LIST_SURFACE_CLASS,
+  PUBLISHING_TABLE_ROW_CLASS,
+} from "~/features/posts/components/publishing-suite/constants";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import {
   getQueueColor,
@@ -49,6 +54,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 import { scheduledPostsKeys } from "../hooks/useScheduledPostsQuery";
 
@@ -246,7 +252,7 @@ export function ScheduledPostsTable({
     <>
       {/* Desktop: table (hidden on mobile) */}
       <div className="hidden md:block">
-        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+        <div className={PUBLISHING_LIST_SURFACE_CLASS}>
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
@@ -302,7 +308,11 @@ export function ScheduledPostsTable({
                 return (
                   <tr
                     key={post.id}
-                    className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                    className={cn(
+                      PUBLISHING_TABLE_ROW_CLASS,
+                      selectedPosts.has(post.id) &&
+                        "bg-muted/40 hover:bg-muted/50"
+                    )}
                     onClick={() => onPostClick(post)}
                   >
                     <td className="p-3 text-center">
@@ -377,7 +387,7 @@ export function ScheduledPostsTable({
                           : post.caption}
                       </p>
                     </td>
-                    <td className="text-foreground p-3">
+                    <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {formatDate(post.scheduledAtUtc)}
                     </td>
                     <td className="p-3 text-center">

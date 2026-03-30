@@ -114,6 +114,33 @@ export { default as QueueHealth } from "./components/QueueHealth";
 export { default as QueueSelectionTabs } from "./components/QueueSelectionTabs";
 export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { ContentListPageHeader } from "./components/ContentListPageHeader";
+export {
+  AttachmentCountChip,
+  buildLibraryContentSegmentLinkItems,
+  ContentStatusChip,
+  ContentTypeChip,
+  PublishingArchiveModeLinks,
+  PublishingEmptyState,
+  PublishingFilterRow,
+  PublishingLibraryContentSegments,
+  PublishingLibraryShell,
+  PublishingPageHeader,
+  PublishingQueueFilter,
+  PublishingSegmentedControlButtons,
+  PublishingSegmentedControlLinks,
+  QueueStatusChip,
+  TemplateKindChip,
+  TextOnlyIndicatorChip,
+} from "./components/publishing-suite";
+export type {
+  PublishingSegmentButtonItem,
+  PublishingSegmentLinkItem,
+} from "./components/publishing-suite";
+export {
+  PUBLISHING_DATETIME_CELL_CLASS,
+  PUBLISHING_LIST_SURFACE_CLASS,
+  PUBLISHING_TABLE_ROW_CLASS,
+} from "./components/publishing-suite/constants";
 export { default as AllContentListing } from "./components/AllContentListing";
 export { BulkDeleteBar } from "./components/BulkDeleteBar";
 export { default as Statistics } from "./components/Statistics";

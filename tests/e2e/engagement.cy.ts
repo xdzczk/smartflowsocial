@@ -62,5 +62,26 @@ describe("Engagement Feed", () => {
     it("should show engagement sort control", () => {
       cy.get('[data-testid="engagement-sort"]').should("exist");
     });
+
+    it("should expose Like outside overflow when an item exists", () => {
+      cy.get("body").then(($body) => {
+        const item = $body.find('[data-testid="engagement-item"]').first();
+        if (!item.length) return;
+        cy.get('[aria-label="Like"]').should("exist");
+      });
+    });
+
+    it("should not show Queue control in response tray when reply is open", () => {
+      cy.get("body").then(($body) => {
+        const item = $body.find('[data-testid="engagement-item"]').first();
+        if (!item.length) return;
+        cy.wrap(item).click({ force: true });
+        cy.contains("button", /^Reply$/i)
+          .first()
+          .click({ force: true });
+        cy.get('[data-testid="engagement-response-tray"]').should("exist");
+        cy.contains("button", /^Queue$/i).should("not.exist");
+      });
+    });
   });
 });

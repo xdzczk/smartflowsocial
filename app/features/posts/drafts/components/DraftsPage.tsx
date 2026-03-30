@@ -4,7 +4,9 @@ import {
   useParams,
   useSearchParams,
 } from "@remix-run/react";
+import { useMemo } from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   getLongFormDraftEditUrl,
   getShortDraftComposeUrl,
@@ -20,7 +22,11 @@ import type {
   LongFormPostType,
   PostData,
 } from "~/features/posts/server";
-import { ContentListPageHeader } from "~/features/posts/ui";
+import type { CombinedContent } from "~/features/posts/types";
+import {
+  PublishingLibraryShell,
+  PublishingPageHeader,
+} from "~/features/posts/ui";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -112,18 +118,46 @@ export default function DraftsPage() {
     navigate(getLongFormDraftEditUrl(post.id));
   };
 
+  const latestDraft = useMemo((): CombinedContent | null => {
+    if (allContent.length === 0) return null;
+    return allContent.reduce((best, item) => {
+      const t = item.updatedAt.getTime();
+      const bt = best.updatedAt.getTime();
+      return t > bt ? item : best;
+    });
+  }, [allContent]);
+
+  const resumeLatestDraft = () => {
+    if (!latestDraft) return;
+    if (latestDraft.type === "post") {
+      resumeShortDraft(latestDraft.originalData as PostData);
+    } else {
+      resumeLongform(latestDraft.originalData as LongFormPostData);
+    }
+  };
+
   if (isChildRoute) {
     return <Outlet />;
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-4 pb-8">
+    <PublishingLibraryShell>
       <div className="pt-2 pb-4">
-        <ContentListPageHeader
-          pageType="drafts"
-          currentTab={currentTab}
-          titleOverride="Drafts"
+        <PublishingPageHeader
+          title="Drafts"
           subtitle="Resume unfinished posts, threads, polls, articles, and bulk drafts."
+          actions={
+            latestDraft && currentTab !== "bulk" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={resumeLatestDraft}
+              >
+                Resume latest
+              </Button>
+            ) : null
+          }
         />
       </div>
 
@@ -189,6 +223,6 @@ export default function DraftsPage() {
           ) : null}
         </>
       ) : null}
-    </div>
+    </PublishingLibraryShell>
   );
 }

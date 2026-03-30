@@ -28,6 +28,11 @@ import {
 } from "~/features/posts/components/constants";
 import { ContentListCard } from "~/features/posts/components/ContentListCard";
 import {
+  PUBLISHING_DATETIME_CELL_CLASS,
+  PUBLISHING_LIST_SURFACE_CLASS,
+  PUBLISHING_TABLE_ROW_CLASS,
+} from "~/features/posts/components/publishing-suite/constants";
+import {
   getQueueColor,
   getQueueColorBundle,
   QUEUE_PILL_OPACITY_CLASS,
@@ -47,6 +52,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { cn } from "~/lib/utils";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
@@ -185,7 +191,7 @@ export default function PublishedPostsTable({
   return (
     <>
       <div className="hidden md:block">
-        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+        <div className={PUBLISHING_LIST_SURFACE_CLASS}>
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
@@ -282,7 +288,11 @@ export default function PublishedPostsTable({
                 return (
                   <tr
                     key={post.id}
-                    className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                    className={cn(
+                      PUBLISHING_TABLE_ROW_CLASS,
+                      selectedPosts.has(post.id) &&
+                        "bg-muted/40 hover:bg-muted/50"
+                    )}
                     onClick={() => setSelectedPost(post)}
                   >
                     <td className="p-3 text-center">
@@ -358,7 +368,7 @@ export default function PublishedPostsTable({
                           : (post.caption ?? "")}
                       </p>
                     </td>
-                    <td className="p-3">
+                    <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {post.publishedAt
                         ? formatDate(
                             post.publishedAt,

@@ -1,9 +1,13 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useState } from "react";
 
+import type { SignedEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { NotificationEvent, NostrTag } from "../types";
+
+import { engagementKeys } from "./useEngagementQuery";
 
 const DEFAULT_RELAY = "wss://relay.primal.net";
 const PUBLISH_API_ENDPOINT = "/api/publish";
@@ -36,6 +40,8 @@ export function useNotificationActions({
   notification,
   userRelays = [DEFAULT_RELAY],
 }: UseNotificationActionsProps) {
+  const queryClient = useQueryClient();
+
   // UI state
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent] = useState("");
@@ -291,12 +297,69 @@ export function useNotificationActions({
 
   const deferAction = async (params: {
     actionType: "reply" | "quote" | "repost";
-    mode: "draft" | "schedule" | "queue";
+    mode: "draft" | "schedule";
     content: string;
     scheduledFor?: string | null;
-    queueTypeId?: string | null;
+    signedEvent?: SignedEvent | null;
   }) => {
     try {
+      let signedEvent: SignedEvent | null = params.signedEvent ?? null;
+      if (params.mode === "schedule") {
+        if (!params.scheduledFor) {
+          showToast("error", "Pick a schedule time");
+          return;
+        }
+        const unix = Math.floor(new Date(params.scheduledFor).getTime() / 1000);
+        const relay = userRelays[0] ?? DEFAULT_RELAY;
+        if (!signedEvent) {
+          if (params.actionType === "reply") {
+            const { signedEvent: se } =
+              await nostrAdapter.signEventWithOneRetry({
+                kind: 1,
+                content: params.content,
+                tags: [
+                  ["e", notification.eventId, relay, "reply"],
+                  ["p", notification.pubkey],
+                ],
+                created_at: unix,
+              });
+            signedEvent = se;
+          } else if (params.actionType === "quote") {
+            const neventEncoded = nip19.neventEncode({
+              id: notification.eventId,
+              relays: [relay],
+              author: notification.pubkey,
+            });
+            const quotePostContent = [params.content, `nostr:${neventEncoded}`]
+              .filter(Boolean)
+              .join("\n\n");
+            const { signedEvent: se } =
+              await nostrAdapter.signEventWithOneRetry({
+                kind: 1,
+                content: quotePostContent,
+                tags: [
+                  ["e", notification.eventId, relay, "mention"],
+                  ["p", notification.pubkey, "", "mention"],
+                ],
+                created_at: unix,
+              });
+            signedEvent = se;
+          } else {
+            const { signedEvent: se } =
+              await nostrAdapter.signEventWithOneRetry({
+                kind: 6,
+                content: "",
+                tags: [
+                  ["e", notification.eventId, relay],
+                  ["p", notification.pubkey],
+                ],
+                created_at: unix,
+              });
+            signedEvent = se;
+          }
+        }
+      }
+
       const response = await fetch("/api/engagement/defer-action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -306,18 +369,16 @@ export function useNotificationActions({
           mode: params.mode,
           content: params.content,
           scheduledFor: params.scheduledFor ?? null,
-          queueTypeId: params.queueTypeId ?? null,
+          signedEvent:
+            params.mode === "schedule" && signedEvent ? signedEvent : undefined,
         }),
       });
       if (!response.ok) throw new Error("Failed to defer action");
       showToast(
         "success",
-        params.mode === "draft"
-          ? "Draft saved"
-          : params.mode === "schedule"
-            ? "Action scheduled"
-            : "Added to queue"
+        params.mode === "draft" ? "Draft saved" : "Action scheduled"
       );
+      await queryClient.invalidateQueries({ queryKey: engagementKeys.lists() });
     } catch (error) {
       const { handleAsyncError, getErrorMessage } =
         await import("~/lib/error-handler.client");

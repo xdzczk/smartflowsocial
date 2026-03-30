@@ -24,11 +24,13 @@ import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
   AllContentListing,
   BulkDeleteBar,
-  ContentListPageHeader,
   EditPostModal,
   PostDetailsModal,
-  PostTypeTabs,
-  QueueSelectionTabs,
+  PublishingFilterRow,
+  PublishingLibraryContentSegments,
+  PublishingLibraryShell,
+  PublishingPageHeader,
+  PublishingQueueFilter,
 } from "~/features/posts/ui";
 import {
   convertQuoteDataToBulkPosts,
@@ -116,15 +118,18 @@ export default function ScheduledPostsPage() {
   const dateTo = searchParams.get("dateTo") ?? "";
   const dateRange = { from: dateFrom, to: dateTo };
 
-  const setDateRange = (range: { from: string; to: string }) => {
-    const next = new URLSearchParams(searchParams);
-    if (range.from) next.set("dateFrom", range.from);
-    else next.delete("dateFrom");
-    if (range.to) next.set("dateTo", range.to);
-    else next.delete("dateTo");
-    next.delete("page"); // reset to first page when changing date range
-    setSearchParams(next);
-  };
+  const setDateRange = useCallback(
+    (range: { from: string; to: string }) => {
+      const next = new URLSearchParams(searchParams);
+      if (range.from) next.set("dateFrom", range.from);
+      else next.delete("dateFrom");
+      if (range.to) next.set("dateTo", range.to);
+      else next.delete("dateTo");
+      next.delete("page"); // reset to first page when changing date range
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams]
+  );
 
   usePostResultFromUrl({
     paramName: "scheduled",
@@ -329,57 +334,77 @@ export default function ScheduledPostsPage() {
     bulkComposer?.pendingScheduledRepostData,
   ]);
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <ContentListPageHeader pageType="scheduled" currentTab={currentTab} />
+  const resetListFilters = useCallback(() => {
+    setSearchTerm("");
+    setDateRange({ from: "", to: "" });
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "all");
+    next.delete("queueType");
+    next.delete("dateFrom");
+    next.delete("dateTo");
+    next.delete("page");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams, setSearchTerm, setDateRange]);
 
-      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
-        <div className="min-w-0 flex-1">
-          <PostTypeTabs
-            currentTab={currentTab}
-            allContent={allContent}
-            posts={filteredPosts}
-            longformPosts={longformPosts}
+  const showQueueOnScheduled =
+    currentTab === "all" ||
+    currentTab === "posts" ||
+    currentTab === "reposts" ||
+    currentTab === "longform";
+
+  return (
+    <PublishingLibraryShell>
+      <div className="pt-2 pb-4">
+        <PublishingPageHeader
+          title="Scheduled"
+          subtitle="Manage upcoming posts, replies, reposts, articles, and queued publishing."
+        />
+      </div>
+
+      <PublishingFilterRow
+        leading={
+          <PublishingLibraryContentSegments
             basePath="/dashboard/scheduled"
+            currentTab={currentTab}
             totalContentCount={totalContentCount}
             totalPostsCount={totalPostsCount}
             totalRepostsCount={totalRepostsCount}
             totalLongformCount={totalLongformCount}
-            inRow
+            data-testid="scheduled-type-segments"
           />
-        </div>
-        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
-          <DateRangeFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            idPrefix="scheduled"
-            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
-            minDate={getTodayInTimezone(userTimezone)}
-            userDateFormat={
-              user?.dateFormat === "mmddyyyy"
-                ? "mmddyyyy"
-                : user?.dateFormat === "yyyymmdd"
-                  ? "yyyymmdd"
-                  : "ddmmyyyy"
-            }
-          />
-          <DateRangeQuickPresets
-            variant="future"
-            userTimezone={userTimezone}
-            onDateRangeChange={setDateRange}
-          />
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
-            <QueueSelectionTabs
-              currentTab={currentTab}
-              queueTypes={queueTypes}
-              basePath="/dashboard/scheduled"
+        }
+        trailing={
+          <div className="flex w-full flex-wrap items-end gap-3 md:ml-auto md:w-auto md:justify-end">
+            <DateRangeFilter
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              idPrefix="scheduled"
+              className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
+              minDate={getTodayInTimezone(userTimezone)}
+              userDateFormat={
+                user?.dateFormat === "mmddyyyy"
+                  ? "mmddyyyy"
+                  : user?.dateFormat === "yyyymmdd"
+                    ? "yyyymmdd"
+                    : "ddmmyyyy"
+              }
             />
-          ) : null}
-        </div>
-      </div>
+            <DateRangeQuickPresets
+              variant="future"
+              userTimezone={userTimezone}
+              onDateRangeChange={setDateRange}
+              className="items-center gap-2"
+            />
+            {showQueueOnScheduled ? (
+              <PublishingQueueFilter
+                currentTab={currentTab}
+                queueTypes={queueTypes}
+                basePath="/dashboard/scheduled"
+              />
+            ) : null}
+          </div>
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* Content based on current tab */}
@@ -433,6 +458,7 @@ export default function ScheduledPostsPage() {
             sentinelRef={isMobile ? sentinelRef : undefined}
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            onResetListFilters={resetListFilters}
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
@@ -651,7 +677,7 @@ export default function ScheduledPostsPage() {
           }}
         />
       ) : null}
-    </div>
+    </PublishingLibraryShell>
   );
   /* eslint-enable sonarjs/cognitive-complexity */
 }

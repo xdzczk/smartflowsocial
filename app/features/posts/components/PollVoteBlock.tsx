@@ -12,6 +12,7 @@ import { isPollPostItem, parsePollFromSignedEvent } from "~/features/polls";
 import type { PollTallyResult } from "~/features/polls/nip88.types";
 import { publishPollVote } from "~/features/polls/poll-vote.client";
 import { usePollTally } from "~/features/polls/use-poll-tally.client";
+import { cn } from "~/lib/utils";
 
 import type { Post } from "../data/posts-prisma-types.server";
 import type { CombinedContent, PostData } from "../types";
@@ -92,17 +93,20 @@ export function PollVoteBlock({
 
   const optionRowClass =
     layout === "inline"
-      ? "flex items-center justify-between gap-2 rounded-lg bg-muted/25 px-3 py-2.5"
+      ? cn(
+          "flex items-center justify-between gap-2 rounded-md px-3 py-2",
+          "bg-muted/20 ring-border/50 ring-1 ring-inset"
+        )
       : "flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2";
 
   const inner = (
     <>
       {showQuestionLine ? (
-        <p className="text-foreground mb-3 text-base leading-snug font-medium">
+        <p className="text-foreground mb-2.5 text-base leading-snug font-semibold">
           {questionText}
         </p>
       ) : null}
-      <ul className="space-y-1.5">
+      <ul className="space-y-1">
         {pollDef.options.map((opt) => {
           const c = tally?.counts[opt.id] ?? 0;
           const total = tally != null ? sumPollCounts(tally) : 0;
@@ -135,11 +139,33 @@ export function PollVoteBlock({
             );
           }
 
+          if (layout === "inline") {
+            return (
+              <li key={opt.id} className={optionRowClass}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-foreground hover:bg-muted/35 h-auto min-h-8 w-full flex-1 justify-between gap-2 rounded-sm px-0 font-normal shadow-none"
+                  disabled={closed || voting}
+                  onClick={() => void submitVotes([opt.id])}
+                >
+                  <span className="min-w-0 flex-1 truncate text-left text-sm">
+                    {opt.label}
+                  </span>
+                  <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                    {tallyLoading ? "…" : `${c} (${pct}%)`}
+                  </span>
+                </Button>
+              </li>
+            );
+          }
+
           return (
             <li key={opt.id}>
               <Button
                 type="button"
-                variant={layout === "inline" ? "ghost" : "outline"}
+                variant="outline"
                 size="sm"
                 className="hover:bg-muted/40 h-auto min-h-9 w-full justify-start rounded-lg px-3 py-2 text-left font-normal"
                 disabled={closed || voting}
@@ -166,9 +192,11 @@ export function PollVoteBlock({
         </Button>
       ) : null}
       {closed ? (
-        <p className="text-muted-foreground mt-2 text-xs">Poll closed</p>
+        <p className="text-muted-foreground/70 mt-1.5 text-[10px] leading-snug">
+          Poll closed
+        </p>
       ) : (
-        <p className="text-muted-foreground mt-2 text-xs">
+        <p className="text-muted-foreground/70 mt-1.5 text-[10px] leading-snug">
           Results load from the poll&apos;s relays (NIP-88).
         </p>
       )}

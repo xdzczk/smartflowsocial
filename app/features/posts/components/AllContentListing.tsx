@@ -1,8 +1,9 @@
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useRef, useState, type Key } from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,14 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { TooltipProvider } from "~/components/ui/tooltip";
+import {
+  PUBLISHING_LIST_SURFACE_CLASS,
+  PublishingEmptyState,
+} from "~/features/posts/components/publishing-suite";
 import { getShortDraftEditRedirectPath } from "~/features/posts/drafts/utils/draft-editor-navigation";
 import {
+  appendDraftListSearchExtras,
   buildShortDraftSearchHaystack,
   matchesDraftSearch,
 } from "~/features/posts/drafts/utils/draft-search-haystack";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import { getContentTypeBadge } from "~/features/posts/utils/content-helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { fromISOString } from "~/lib/temporal";
 
@@ -26,6 +34,7 @@ import type {
   LongFormPostData,
   PostData,
   PostFetcher,
+  QueueType,
 } from "../types";
 
 import {
@@ -39,6 +48,9 @@ import { ContentBulkActions } from "./ContentBulkActions";
 import { ContentListCard } from "./ContentListCard";
 import { ContentTableHeader } from "./ContentTableHeader";
 import { ContentTableRow } from "./ContentTableRow";
+import { DraftsHybridTableHeader } from "./DraftsHybridTableHeader";
+import { DraftsHybridTableRow } from "./DraftsHybridTableRow";
+import { MixedDraftsBulkActions } from "./MixedDraftsBulkActions";
 
 function getContentListDateSortKey(
   type: "scheduled" | "draft" | "published"
@@ -70,7 +82,12 @@ function combinedContentMatchesSearch(
       content?: string | null;
       draftMeta?: unknown;
     };
-    return matchesDraftSearch(buildShortDraftSearchHaystack(od), searchTerm);
+    const haystack = appendDraftListSearchExtras(
+      buildShortDraftSearchHaystack(od),
+      item.queueType?.name,
+      getContentTypeBadge(item).text
+    );
+    return matchesDraftSearch(haystack, searchTerm);
   }
   if (type === "draft" && item.type === "longform") {
     const od = item.originalData as {
@@ -78,8 +95,13 @@ function combinedContentMatchesSearch(
       summary?: string | null;
       content?: string | null;
     };
-    const h = `${(od.title ?? "").toLowerCase()} ${(od.summary ?? "").toLowerCase()} ${(od.content ?? "").toLowerCase()}`;
-    return matchesDraftSearch(h, searchTerm);
+    const base = `${(od.title ?? "").toLowerCase()} ${(od.summary ?? "").toLowerCase()} ${(od.content ?? "").toLowerCase()}`;
+    const haystack = appendDraftListSearchExtras(
+      base,
+      item.queueType?.name,
+      getContentTypeBadge(item).text
+    );
+    return matchesDraftSearch(haystack, searchTerm);
   }
   return Boolean(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
@@ -136,13 +158,20 @@ interface AllContentListingProps {
   sentinelRef?: React.Ref<HTMLDivElement | null>;
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
+  /** Drafts All tab: queue types for mixed bulk assign */
+  queueTypes?: QueueType[];
+  /** Drafts: clear tab/queue filters (e.g. navigate to defaults) */
+  onResetDraftFilters?: () => void;
+  /** Scheduled / Published "all" tab: clear search, date, queue filters */
+  onResetListFilters?: () => void;
 }
 
+/* eslint-disable sonarjs/cognitive-complexity -- table vs hybrid draft rows, virtualized mobile list, bulk bars, empty states */
 export default function AllContentListing({
   content,
   type,
   searchTerm,
-  onSearchChange: _onSearchChange,
+  onSearchChange,
   userTimezone,
   userTimeFormat = "12h",
   onPostSelect,
@@ -172,6 +201,9 @@ export default function AllContentListing({
   sentinelRef,
   isFetchingNextPage = false,
   onScrollContainerReady,
+  queueTypes = [],
+  onResetDraftFilters,
+  onResetListFilters,
 }: AllContentListingProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -327,6 +359,10 @@ export default function AllContentListing({
     combinedContentMatchesSearch(item, type, searchTerm)
   );
 
+  const selectedDraftContent = filteredContent.filter((item) =>
+    selectedItems.has(item.id)
+  );
+
   const dateSortKey = getContentListDateSortKey(type);
 
   // TanStack Virtual returns unstable refs by design; virtualization is intentional (plan: mobile card lists)
@@ -363,7 +399,14 @@ export default function AllContentListing({
 
   return (
     <div>
-      {showBulkActions ? (
+      {showBulkActions && type === "draft" ? (
+        <MixedDraftsBulkActions
+          selectedDrafts={selectedDraftContent}
+          queueTypes={queueTypes}
+          onBulkDelete={onBulkDelete ?? (() => {})}
+          bulkDeleteState={bulkDeleteState}
+        />
+      ) : showBulkActions ? (
         <ContentBulkActions
           type={type}
           selectedCount={selectedItems.size}
@@ -379,50 +422,78 @@ export default function AllContentListing({
 
       {/* Desktop: Content Table (hidden on mobile) */}
       <div className="hidden md:block">
-        <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
-          <table className="min-w-full align-middle text-sm whitespace-nowrap">
-            <ContentTableHeader
-              type={type}
-              showBulkActions={showBulkActions}
-              sortConfig={sortConfig}
-              filteredContentLength={filteredContent.length}
-              selectedItemsSize={selectedItems.size}
-              onToggleSelectAll={onToggleSelectAll}
-              onRequestSort={requestSort}
-            />
-            <tbody>
-              {filteredContent.map((item) => (
-                <ContentTableRow
-                  key={`${item.type}-${item.id}`}
-                  item={item}
-                  type={type}
-                  userTimezone={userTimezone}
-                  userTimeFormat={userTimeFormat}
+        <TooltipProvider delayDuration={300}>
+          <div className={PUBLISHING_LIST_SURFACE_CLASS}>
+            <table
+              className={
+                type === "draft"
+                  ? "min-w-full table-fixed align-middle text-sm"
+                  : "min-w-full align-middle text-sm whitespace-nowrap"
+              }
+            >
+              {type === "draft" ? (
+                <DraftsHybridTableHeader
                   showBulkActions={showBulkActions}
-                  selectedItems={selectedItems}
-                  onToggleSelection={onToggleSelection}
-                  onPostSelect={onPostSelect}
-                  onResumeDraft={
-                    type === "draft" && onResumeDraft
-                      ? () => onResumeDraft(item)
-                      : undefined
-                  }
-                  draftsActionFetcher={
-                    type === "draft" ? draftsListActionFetcher : undefined
-                  }
-                  onEditPost={onEditPost}
-                  onReschedulePost={onReschedulePost}
-                  deleteFetcher={deleteFetcher as unknown as PostFetcher}
-                  individualRepostFetcher={individualRepostFetcher}
-                  longformRepostFetcher={longformRepostFetcher}
-                  longformQuoteFetcher={longformQuoteFetcher}
-                  onScheduleRepost={onScheduleRepost}
-                  onScheduleQuote={onScheduleQuote}
+                  sortConfig={sortConfig}
+                  filteredContentLength={filteredContent.length}
+                  selectedItemsSize={selectedItems.size}
+                  onToggleSelectAll={onToggleSelectAll}
+                  onRequestSort={requestSort}
                 />
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ) : (
+                <ContentTableHeader
+                  type={type}
+                  showBulkActions={showBulkActions}
+                  sortConfig={sortConfig}
+                  filteredContentLength={filteredContent.length}
+                  selectedItemsSize={selectedItems.size}
+                  onToggleSelectAll={onToggleSelectAll}
+                  onRequestSort={requestSort}
+                />
+              )}
+              <tbody>
+                {filteredContent.map((item) =>
+                  type === "draft" ? (
+                    <DraftsHybridTableRow
+                      key={`${item.type}-${item.id}`}
+                      item={item}
+                      userTimezone={userTimezone}
+                      userTimeFormat={userTimeFormat}
+                      showBulkActions={showBulkActions}
+                      selectedItems={selectedItems}
+                      onToggleSelection={onToggleSelection}
+                      onResumeDraft={
+                        onResumeDraft ? () => onResumeDraft(item) : undefined
+                      }
+                      draftsActionFetcher={draftsListActionFetcher}
+                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                    />
+                  ) : (
+                    <ContentTableRow
+                      key={`${item.type}-${item.id}`}
+                      item={item}
+                      type={type}
+                      userTimezone={userTimezone}
+                      userTimeFormat={userTimeFormat}
+                      showBulkActions={showBulkActions}
+                      selectedItems={selectedItems}
+                      onToggleSelection={onToggleSelection}
+                      onPostSelect={onPostSelect}
+                      onEditPost={onEditPost}
+                      onReschedulePost={onReschedulePost}
+                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                      individualRepostFetcher={individualRepostFetcher}
+                      longformRepostFetcher={longformRepostFetcher}
+                      longformQuoteFetcher={longformQuoteFetcher}
+                      onScheduleRepost={onScheduleRepost}
+                      onScheduleQuote={onScheduleQuote}
+                    />
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+        </TooltipProvider>
       </div>
 
       {/* Mobile: Sort + virtualized card list (visible only on mobile) */}
@@ -608,10 +679,136 @@ export default function AllContentListing({
       ) : null}
 
       {filteredContent.length === 0 ? (
-        <div className="mt-8 text-center">
-          <p className="text-muted-foreground">No content found.</p>
+        <div className="mt-8">
+          {type === "draft" ? (
+            content.length === 0 ? (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="drafts-empty-state"
+                  title="No drafts yet"
+                  description="Drafts appear here when you save unfinished posts, articles, or other work before publishing."
+                >
+                  <Button type="button" asChild>
+                    <Link to="/dashboard/compose">Create post</Link>
+                  </Button>
+                  <Button type="button" variant="outline" asChild>
+                    <Link to="/dashboard/bulkposts">Open bulk composer</Link>
+                  </Button>
+                </PublishingEmptyState>
+              </div>
+            ) : (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="drafts-filtered-empty"
+                  title="No drafts match these filters"
+                  description="Try another type tab or queue, or reset filters to see everything."
+                >
+                  {onResetDraftFilters ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onResetDraftFilters}
+                    >
+                      Reset filters
+                    </Button>
+                  ) : null}
+                </PublishingEmptyState>
+              </div>
+            )
+          ) : type === "scheduled" ? (
+            content.length === 0 ? (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="scheduled-empty-state"
+                  title="Nothing scheduled"
+                  description="Upcoming posts and articles will appear here. Create something new or move drafts into the schedule."
+                >
+                  <Button type="button" asChild>
+                    <Link to="/dashboard/compose?type=post">Open Composer</Link>
+                  </Button>
+                  <Button type="button" variant="outline" asChild>
+                    <Link to="/dashboard/bulkposts">Bulk composer</Link>
+                  </Button>
+                </PublishingEmptyState>
+              </div>
+            ) : (
+              <div className="border-border bg-card rounded-xl border">
+                <PublishingEmptyState
+                  data-testid="scheduled-filtered-empty"
+                  title="No items match these filters"
+                  description="Try another content tab, queue, or date range."
+                >
+                  {onResetListFilters ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onResetListFilters}
+                    >
+                      Reset filters
+                    </Button>
+                  ) : null}
+                  {searchTerm.trim() ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => onSearchChange("")}
+                    >
+                      Clear search
+                    </Button>
+                  ) : null}
+                </PublishingEmptyState>
+              </div>
+            )
+          ) : (
+            <>
+              {content.length === 0 ? (
+                <div className="border-border bg-card rounded-xl border">
+                  <PublishingEmptyState
+                    data-testid="published-empty-state"
+                    title="No published content yet"
+                    description="Published posts and articles show up here once they go live."
+                  >
+                    <Button type="button" asChild>
+                      <Link to="/dashboard/compose?type=post">Create post</Link>
+                    </Button>
+                    <Button type="button" variant="outline" asChild>
+                      <Link to="/dashboard/scheduled">View scheduled</Link>
+                    </Button>
+                  </PublishingEmptyState>
+                </div>
+              ) : (
+                <div className="border-border bg-card rounded-xl border">
+                  <PublishingEmptyState
+                    data-testid="published-filtered-empty"
+                    title="No items match these filters"
+                    description="Try another tab, queue, or date range."
+                  >
+                    {onResetListFilters ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onResetListFilters}
+                      >
+                        Reset filters
+                      </Button>
+                    ) : null}
+                    {searchTerm.trim() ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => onSearchChange("")}
+                      >
+                        Clear search
+                      </Button>
+                    ) : null}
+                  </PublishingEmptyState>
+                </div>
+              )}
+            </>
+          )}
         </div>
       ) : null}
     </div>
   );
 }
+/* eslint-enable sonarjs/cognitive-complexity */

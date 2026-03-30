@@ -10,13 +10,6 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import {
   addHours,
   formatForDateTimeLocal,
   getNowForDateTimeLocal,
@@ -37,6 +30,18 @@ const POSTING_LABEL = "Posting...";
 
 const PUBLISH_TOGGLE_ACTIVE = "bg-primary text-primary-foreground shadow-sm";
 const PUBLISH_TOGGLE_IDLE = "bg-muted/60 text-muted-foreground hover:bg-muted";
+
+function useCancelOnEscape(onCancel: () => void) {
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+}
 
 interface ReplyInputPanelProps {
   replyContent: string;
@@ -241,11 +246,9 @@ interface UnifiedEngagementComposerProps {
   onValueChange: (value: string) => void;
   isSubmitting: boolean;
   userTimezone?: string;
-  queueTypes: Array<{ id: string; name: string }>;
   onPostNow: () => void;
   onSaveDraft: () => void;
   onSchedule: (scheduledForIso: string) => void;
-  onAddToQueue: (queueTypeId: string | null) => void;
   onCancel: () => void;
   templates?: ReplyTemplate[];
   trayRef?: React.RefObject<HTMLDivElement | null>;
@@ -258,44 +261,22 @@ export function UnifiedEngagementComposer({
   onValueChange,
   isSubmitting,
   userTimezone = "UTC",
-  queueTypes,
   onPostNow,
   onSaveDraft,
   onSchedule,
-  onAddToQueue,
   onCancel,
   templates = [],
   trayRef,
 }: UnifiedEngagementComposerProps) {
   const tz = userTimezone.trim() || "UTC";
-  const [publishMode, setPublishMode] = React.useState<
-    "now" | "schedule" | "queue"
-  >("now");
+  const [publishMode, setPublishMode] = React.useState<"now" | "schedule">(
+    "now"
+  );
   const [scheduleLocal, setScheduleLocal] = React.useState(() =>
     formatForDateTimeLocal(addHours(nowInTimezone(tz), 1), tz)
   );
-  const [queueTypeId, setQueueTypeId] = React.useState(
-    () => queueTypes[0]?.id ?? ""
-  );
 
-  React.useEffect(() => {
-    if (
-      queueTypes.length > 0 &&
-      !queueTypes.some((q) => q.id === queueTypeId)
-    ) {
-      setQueueTypeId(queueTypes[0]?.id ?? "");
-    }
-  }, [queueTypes, queueTypeId]);
-
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onCancel();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  useCancelOnEscape(onCancel);
 
   const placeholder =
     mode === "reply" ? "Write your reply…" : "Add your comment…";
@@ -308,12 +289,8 @@ export function UnifiedEngagementComposer({
       onPostNow();
       return;
     }
-    if (publishMode === "schedule") {
-      const zdt = parseDateTimeLocal(scheduleLocal, tz);
-      onSchedule(toDate(zdt).toISOString());
-      return;
-    }
-    onAddToQueue(queueTypeId || null);
+    const zdt = parseDateTimeLocal(scheduleLocal, tz);
+    onSchedule(toDate(zdt).toISOString());
   };
 
   const showSpinner = isSubmitting && publishMode === "now";
@@ -321,14 +298,13 @@ export function UnifiedEngagementComposer({
     ? POSTING_LABEL
     : publishMode === "now"
       ? "Post now"
-      : publishMode === "schedule"
-        ? "Schedule"
-        : "Add to queue";
+      : "Schedule";
 
   return (
     <div
       ref={trayRef}
-      className="border-border bg-background/95 mt-0 border-t px-3 py-3"
+      data-testid="engagement-response-tray"
+      className="border-border/70 bg-muted/15 mt-1 border-t px-3 pt-2 pb-3"
       role="region"
       aria-label="Response tray"
     >
@@ -353,28 +329,11 @@ export function UnifiedEngagementComposer({
         </button>
       </div>
 
-      <textarea
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            if (publishMode === "now" && canSubmit && !isSubmitting) {
-              onPostNow();
-            }
-          }
-        }}
-        placeholder={placeholder}
-        className="text-foreground placeholder:text-muted-foreground focus-visible:ring-ring min-h-[88px] w-full resize-y rounded-md border-0 bg-transparent px-1 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-        rows={4}
-      />
-
-      <div className="mt-2 flex flex-wrap gap-1">
+      <div className="mb-2 flex flex-wrap gap-1">
         {(
           [
             ["now", "Now"],
             ["schedule", "Schedule"],
-            ["queue", "Queue"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -390,8 +349,26 @@ export function UnifiedEngagementComposer({
         ))}
       </div>
 
+      <div className="border-border/80 bg-background/80 rounded-md border px-2 py-2">
+        <textarea
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              if (publishMode === "now" && canSubmit && !isSubmitting) {
+                onPostNow();
+              }
+            }
+          }}
+          placeholder={placeholder}
+          className="text-foreground placeholder:text-muted-foreground focus-visible:ring-ring min-h-[88px] w-full resize-y rounded-sm border-0 bg-transparent px-1.5 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
+          rows={4}
+        />
+      </div>
+
       {publishMode === "schedule" ? (
-        <div className="mt-2">
+        <div className="mt-2.5">
           <Input
             type="datetime-local"
             value={scheduleLocal}
@@ -403,38 +380,11 @@ export function UnifiedEngagementComposer({
         </div>
       ) : null}
 
-      {publishMode === "queue" && queueTypes.length > 0 ? (
-        <div className="mt-2 max-w-xs">
-          <Select value={queueTypeId} onValueChange={setQueueTypeId}>
-            <SelectTrigger className="h-9 text-sm" aria-label="Queue">
-              <SelectValue placeholder="Select queue" />
-            </SelectTrigger>
-            <SelectContent>
-              {queueTypes.map((q) => (
-                <SelectItem key={q.id} value={q.id}>
-                  {q.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-
-      {publishMode === "queue" && queueTypes.length === 0 ? (
-        <p className="text-muted-foreground mt-2 text-xs">
-          No queues configured. Save a draft or post now.
-        </p>
-      ) : null}
-
       <div className="border-border/60 mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
         <Button
           type="button"
           size="sm"
-          disabled={
-            !canSubmit ||
-            (publishMode === "now" && isSubmitting) ||
-            (publishMode === "queue" && queueTypes.length === 0)
-          }
+          disabled={!canSubmit || (publishMode === "now" && isSubmitting)}
           onClick={() => handlePrimary()}
         >
           {primaryButtonText}
@@ -484,9 +434,113 @@ export function UnifiedEngagementComposer({
           Cancel
         </Button>
       </div>
-      <p className="text-muted-foreground mt-2 text-[10px]">
+      <p className="text-muted-foreground/80 mt-1.5 text-[10px] leading-tight">
         {publishMode === "now" ? "⌘/Ctrl+Enter to post now" : null}
       </p>
+    </div>
+  );
+}
+
+export interface RepostEngagementTrayProps {
+  userTimezone?: string;
+  isSubmitting: boolean;
+  trayRef?: React.RefObject<HTMLDivElement | null>;
+  onRepostNow: () => void;
+  onScheduleRepost: (scheduledForIso: string) => void;
+  onCancel: () => void;
+}
+
+export function RepostEngagementTray({
+  userTimezone = "UTC",
+  isSubmitting,
+  trayRef,
+  onRepostNow,
+  onScheduleRepost,
+  onCancel,
+}: RepostEngagementTrayProps) {
+  const tz = userTimezone.trim() || "UTC";
+  const [publishMode, setPublishMode] = React.useState<"now" | "schedule">(
+    "now"
+  );
+  const [scheduleLocal, setScheduleLocal] = React.useState(() =>
+    formatForDateTimeLocal(addHours(nowInTimezone(tz), 1), tz)
+  );
+
+  useCancelOnEscape(onCancel);
+
+  const handlePrimary = () => {
+    if (publishMode === "now") {
+      onRepostNow();
+      return;
+    }
+    const zdt = parseDateTimeLocal(scheduleLocal, tz);
+    onScheduleRepost(toDate(zdt).toISOString());
+  };
+
+  const showSpinner = isSubmitting && publishMode === "now";
+  const primaryLabel =
+    publishMode === "schedule" ? "Schedule repost" : "Repost now";
+
+  return (
+    <div
+      ref={trayRef}
+      data-testid="engagement-repost-tray"
+      className="border-border/70 bg-muted/10 mt-1 border-t px-3 pt-2 pb-3"
+      role="region"
+      aria-label="Repost tray"
+    >
+      <div className="mb-2 flex flex-wrap gap-1">
+        {(
+          [
+            ["now", "Now"],
+            ["schedule", "Schedule"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setPublishMode(key)}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+              publishMode === key ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {publishMode === "schedule" ? (
+        <div className="mb-3">
+          <Input
+            type="datetime-local"
+            value={scheduleLocal}
+            min={getNowForDateTimeLocal(tz)}
+            onChange={(e) => setScheduleLocal(e.target.value)}
+            className="bg-muted/40 border-border h-9 max-w-xs text-sm"
+            aria-label="Schedule repost for"
+          />
+        </div>
+      ) : null}
+
+      <div className="border-border/60 flex flex-wrap items-center gap-2 border-t pt-3">
+        <Button
+          type="button"
+          size="sm"
+          disabled={publishMode === "now" ? isSubmitting : null}
+          onClick={() => handlePrimary()}
+        >
+          {showSpinner ? POSTING_LABEL : primaryLabel}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground ml-auto"
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

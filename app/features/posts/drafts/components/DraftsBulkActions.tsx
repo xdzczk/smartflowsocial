@@ -95,7 +95,7 @@ export function DraftsBulkActions({
   };
 
   return (
-    <div className="border-border bg-muted mb-4 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 mb-4 flex flex-col gap-3 rounded-xl border p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
       <span className="text-foreground text-sm font-medium">
         {selectedCount} draft{selectedCount !== 1 ? "s" : ""} selected
       </span>

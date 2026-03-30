@@ -10,8 +10,15 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+vi.mock("~/features/relays/relay-resolution.server", () => ({
+  resolveExecutionRelays: vi
+    .fn()
+    .mockResolvedValue(["wss://relay.example.test"]),
+}));
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
+import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { loadSearchData } from "~/features/search/services/search-loader.server";
 import { getUserById } from "~/features/user";
 
@@ -33,8 +40,10 @@ describe("Search Loader", () => {
       const result = await loadSearchData(TEST_USER_ID);
 
       expect(getUserById).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(resolveExecutionRelays).toHaveBeenCalledWith(TEST_USER_ID);
       expect(result).toEqual({
         user: mockUser,
+        publishRelays: ["wss://relay.example.test"],
       });
     });
 

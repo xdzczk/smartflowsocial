@@ -3,6 +3,8 @@
  * Renders next to the date range filter on Scheduled (next) and Published/Recyclables (past).
  */
 
+import { cn } from "~/lib/utils";
+
 import {
   getNext7DaysRange,
   getNext30DaysRange,
@@ -30,7 +32,10 @@ export function DateRangeQuickPresets({
   if (variant === "future") {
     return (
       <div
-        className={`flex flex-shrink-0 items-center gap-1 ${className ?? ""}`}
+        className={cn(
+          "flex flex-shrink-0 flex-wrap items-center gap-2",
+          className
+        )}
         role="group"
         aria-label="Quick date range presets"
       >
@@ -57,7 +62,10 @@ export function DateRangeQuickPresets({
 
   return (
     <div
-      className={`flex flex-shrink-0 items-center gap-1 ${className ?? ""}`}
+      className={cn(
+        "flex flex-shrink-0 flex-wrap items-center gap-2",
+        className
+      )}
       role="group"
       aria-label="Quick date range presets"
     >

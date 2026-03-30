@@ -1,14 +1,18 @@
-import { createDeferredActionPost } from "../repositories/engagement-deferred-action-data.server";
+import type { SignedEvent } from "~/features/nostr/types";
+
+import {
+  createDeferredActionPost,
+  createScheduledEngagementPostWithOutbox,
+} from "../repositories/engagement-deferred-action-data.server";
 import { upsertLinkedActionForEngagementItem } from "../repositories/engagement-item-state.server";
 
 import {
   buildDraftDeepLink,
-  buildQueueDeepLink,
   buildScheduledDeepLink,
 } from "./engagement-deep-links";
 
 export type DeferredActionType = "reply" | "quote" | "repost";
-export type DeferredMode = "draft" | "schedule" | "queue";
+export type DeferredMode = "draft" | "schedule";
 
 export async function createDeferredEngagementAction(params: {
   userId: string;
@@ -18,6 +22,8 @@ export async function createDeferredEngagementAction(params: {
   content?: string;
   scheduledFor?: string | null;
   queueTypeId?: string | null;
+  /** Required when mode is schedule — client-signed Nostr event (publish time = scheduledFor). */
+  signedEvent?: SignedEvent | null;
 }): Promise<{
   postId: string;
   deepLink: string;
@@ -31,18 +37,62 @@ export async function createDeferredEngagementAction(params: {
     content = "",
     scheduledFor = null,
     queueTypeId = null,
+    signedEvent = null,
   } = params;
   const now = new Date();
   const isDraft = mode === "draft";
   const isScheduled = mode === "schedule";
-  const isQueue = mode === "queue";
   const scheduledAt = isDraft
     ? null
-    : isScheduled
-      ? scheduledFor
-        ? new Date(scheduledFor)
-        : now
+    : scheduledFor
+      ? new Date(scheduledFor)
       : now;
+
+  if (isScheduled) {
+    if (!signedEvent || typeof signedEvent !== "object") {
+      throw new Error(
+        "signedEvent is required for scheduled engagement actions"
+      );
+    }
+    if (!scheduledAt || Number.isNaN(scheduledAt.getTime())) {
+      throw new Error(
+        "scheduledFor is required for scheduled engagement actions"
+      );
+    }
+    const post = await createScheduledEngagementPostWithOutbox({
+      userId,
+      eventId,
+      actionType,
+      scheduledAt,
+      content,
+      signedEvent,
+      queueTypeId,
+    });
+
+    const kind =
+      actionType === "reply"
+        ? "SCHEDULED_REPLY"
+        : actionType === "quote"
+          ? "SCHEDULED_QUOTE"
+          : "SCHEDULED_REPOST";
+
+    await upsertLinkedActionForEngagementItem({
+      userId,
+      eventId,
+      state: "SCHEDULED",
+      kind,
+      postId: post.id,
+      queueTypeId: post.queueTypeId,
+      scheduledFor: scheduledAt,
+      label: "Scheduled action",
+    });
+    return {
+      postId: post.id,
+      deepLink: buildScheduledDeepLink(post.id),
+      state: "SCHEDULED",
+    };
+  }
+
   const post = await createDeferredActionPost({
     userId,
     eventId,
@@ -69,31 +119,5 @@ export async function createDeferredEngagementAction(params: {
     };
   }
 
-  const kind =
-    actionType === "reply"
-      ? isQueue
-        ? "QUEUED_REPLY"
-        : "SCHEDULED_REPLY"
-      : actionType === "quote"
-        ? isQueue
-          ? "QUEUED_QUOTE"
-          : "SCHEDULED_QUOTE"
-        : isQueue
-          ? "QUEUED_REPOST"
-          : "SCHEDULED_REPOST";
-
-  await upsertLinkedActionForEngagementItem({
-    userId,
-    eventId,
-    state: "SCHEDULED",
-    kind,
-    postId: post.id,
-    queueTypeId: post.queueTypeId,
-    scheduledFor: scheduledAt,
-    label: isQueue ? "Queued action" : "Scheduled action",
-  });
-  const deepLink = isQueue
-    ? buildQueueDeepLink(post.queueTypeId ?? "all")
-    : buildScheduledDeepLink(post.id);
-  return { postId: post.id, deepLink, state: "SCHEDULED" };
+  throw new Error("Invalid deferred engagement mode");
 }

@@ -212,7 +212,6 @@ export function useEngagementData() {
       engagementItemStates: emptyEngagementItemStates,
       engagementLinkedActions: emptyEngagementLinkedActions,
       groupSummaries: emptyGroupSummaries,
-      queueTypes: [] as NonNullable<EngagementLoaderData["queueTypes"]>,
       isLoading: query.isLoading,
       rawData: null,
     };
@@ -287,9 +286,6 @@ export function useEngagementData() {
     }
   > = rawData.groupSummaries ?? {};
 
-  const queueTypes: NonNullable<EngagementLoaderData["queueTypes"]> =
-    Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [];
-
   return {
     posts,
     stats,
@@ -299,7 +295,6 @@ export function useEngagementData() {
     engagementItemStates,
     engagementLinkedActions,
     groupSummaries,
-    queueTypes,
     isLoading: query.isLoading,
     rawData,
   };
@@ -355,7 +350,6 @@ export function useEngagementInfiniteData() {
       groupSummaries: emptyGroupSummaries,
       lastCheckedAt: null,
       followedPubkeys: [] as string[],
-      queueTypes: [] as NonNullable<EngagementLoaderData["queueTypes"]>,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -461,8 +455,6 @@ export function useEngagementInfiniteData() {
   const followedPubkeys: string[] = Array.isArray(firstPage?.followedPubkeys)
     ? firstPage.followedPubkeys
     : [];
-  const queueTypes: NonNullable<EngagementLoaderData["queueTypes"]> =
-    Array.isArray(firstPage?.queueTypes) ? firstPage.queueTypes : [];
 
   if (!lastPage) {
     return {
@@ -480,7 +472,6 @@ export function useEngagementInfiniteData() {
       groupSummaries: allGroupSummaries,
       lastCheckedAt: null,
       followedPubkeys,
-      queueTypes,
       isLoading,
       isFetchingNextPage,
       hasNextPage: false,
@@ -511,7 +502,6 @@ export function useEngagementInfiniteData() {
     groupSummaries: allGroupSummaries,
     lastCheckedAt,
     followedPubkeys,
-    queueTypes,
     isLoading,
     isFetchingNextPage,
     hasNextPage,

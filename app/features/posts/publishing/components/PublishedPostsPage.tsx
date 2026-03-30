@@ -1,9 +1,4 @@
-import {
-  Link,
-  useParams,
-  useSearchParams,
-  useNavigate,
-} from "@remix-run/react";
+import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
@@ -29,10 +24,13 @@ import type { PostStats } from "~/features/posts/stats.server";
 import type { BulkPost } from "~/features/posts/types";
 import {
   AllContentListing,
-  ContentListPageHeader,
   PostDetailsModal,
-  PostTypeTabs,
-  QueueSelectionTabs,
+  PublishingArchiveModeLinks,
+  PublishingFilterRow,
+  PublishingLibraryContentSegments,
+  PublishingLibraryShell,
+  PublishingPageHeader,
+  PublishingQueueFilter,
 } from "~/features/posts/ui";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
@@ -110,15 +108,18 @@ export default function PublishedPostsPage() {
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
   const dateRange = { from: dateFrom, to: dateTo };
-  const setDateRange = (range: { from: string; to: string }) => {
-    const next = new URLSearchParams(searchParams);
-    if (range.from) next.set("dateFrom", range.from);
-    else next.delete("dateFrom");
-    if (range.to) next.set("dateTo", range.to);
-    else next.delete("dateTo");
-    next.delete("page");
-    setSearchParams(next);
-  };
+  const setDateRange = useCallback(
+    (range: { from: string; to: string }) => {
+      const next = new URLSearchParams(searchParams);
+      if (range.from) next.set("dateFrom", range.from);
+      else next.delete("dateFrom");
+      if (range.to) next.set("dateTo", range.to);
+      else next.delete("dateTo");
+      next.delete("page");
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams]
+  );
 
   usePostResultFromUrl({
     paramName: "published",
@@ -267,6 +268,24 @@ export default function PublishedPostsPage() {
   // Call hook before any conditional returns
   const { userTimezone, userTimeFormat } = useFormattedDate();
 
+  const resetListFilters = useCallback(() => {
+    setSearchTerm("");
+    setDateRange({ from: "", to: "" });
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "all");
+    next.delete("queueType");
+    next.delete("dateFrom");
+    next.delete("dateTo");
+    next.delete("page");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams, setSearchTerm, setDateRange]);
+
+  const showQueueOnPublished =
+    currentTab === "all" ||
+    currentTab === "posts" ||
+    currentTab === "reposts" ||
+    currentTab === "longform";
+
   // Handle nullable user - if user is null, we should not render the component
   if (!user) {
     return (
@@ -289,77 +308,59 @@ export default function PublishedPostsPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex flex-shrink-0 flex-row items-center gap-4">
-        <ContentListPageHeader
-          pageType="published"
-          currentTab={currentTab}
-          className="min-w-0"
+    <PublishingLibraryShell>
+      <div className="pt-2 pb-4">
+        <PublishingPageHeader
+          title="Published"
+          subtitle="Review published content, queue history, and recyclable posts."
+          actions={<PublishingArchiveModeLinks active="published" />}
         />
-        <nav
-          className="bg-muted text-muted-foreground ml-auto inline-flex h-9 flex-shrink-0 items-center justify-center rounded-lg p-1"
-          aria-label="Switch between Published and Recyclables view"
-        >
-          <span
-            className="bg-background text-foreground inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap shadow"
-            aria-current="page"
-          >
-            Published
-          </span>
-          <Link
-            to="/dashboard/recyclables"
-            prefetch="intent"
-            className="hover:text-foreground focus-visible:ring-ring inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
-          >
-            Recyclables
-          </Link>
-        </nav>
       </div>
 
-      <div className="border-border mb-6 flex flex-col items-end gap-2 border-b md:flex-row md:flex-nowrap md:items-center">
-        <div className="min-w-0 flex-1">
-          <PostTypeTabs
-            currentTab={currentTab}
+      <PublishingFilterRow
+        leading={
+          <PublishingLibraryContentSegments
             basePath="/dashboard/published"
+            currentTab={currentTab}
             totalContentCount={totalContentCount}
             totalPostsCount={totalPostsCount}
             totalRepostsCount={totalRepostsCount}
             totalLongformCount={totalLongformCount}
-            inRow
+            data-testid="published-type-segments"
           />
-        </div>
-        <div className="flex w-full flex-row flex-nowrap items-center gap-2 md:ml-auto md:w-auto md:flex-shrink-0">
-          <DateRangeFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            idPrefix="published"
-            className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
-            maxDate={getTodayInTimezone(userTimezone)}
-            userDateFormat={
-              user.dateFormat === "mmddyyyy"
-                ? "mmddyyyy"
-                : user.dateFormat === "yyyymmdd"
-                  ? "yyyymmdd"
-                  : "ddmmyyyy"
-            }
-          />
-          <DateRangeQuickPresets
-            variant="past"
-            userTimezone={userTimezone}
-            onDateRangeChange={setDateRange}
-          />
-          {currentTab === "all" ||
-          currentTab === "posts" ||
-          currentTab === "reposts" ||
-          currentTab === "longform" ? (
-            <QueueSelectionTabs
-              currentTab={currentTab}
-              queueTypes={queueTypes}
-              basePath="/dashboard/published"
+        }
+        trailing={
+          <div className="flex w-full flex-wrap items-end gap-3 md:ml-auto md:w-auto md:justify-end">
+            <DateRangeFilter
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              idPrefix="published"
+              className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
+              maxDate={getTodayInTimezone(userTimezone)}
+              userDateFormat={
+                user.dateFormat === "mmddyyyy"
+                  ? "mmddyyyy"
+                  : user.dateFormat === "yyyymmdd"
+                    ? "yyyymmdd"
+                    : "ddmmyyyy"
+              }
             />
-          ) : null}
-        </div>
-      </div>
+            <DateRangeQuickPresets
+              variant="past"
+              userTimezone={userTimezone}
+              onDateRangeChange={setDateRange}
+              className="items-center gap-2"
+            />
+            {showQueueOnPublished ? (
+              <PublishingQueueFilter
+                currentTab={currentTab}
+                queueTypes={queueTypes}
+                basePath="/dashboard/published"
+              />
+            ) : null}
+          </div>
+        }
+      />
 
       <div className="flex min-h-0 flex-1 flex-col">
         {currentTab === "all" ? (
@@ -412,6 +413,7 @@ export default function PublishedPostsPage() {
             sentinelRef={isMobile ? sentinelRef : undefined}
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+            onResetListFilters={resetListFilters}
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <PublishedPostsTable
@@ -559,7 +561,7 @@ export default function PublishedPostsPage() {
           }}
         />
       ) : null}
-    </div>
+    </PublishingLibraryShell>
   );
 }
 /* eslint-enable sonarjs/cognitive-complexity */

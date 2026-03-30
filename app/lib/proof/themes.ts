@@ -2,26 +2,33 @@ import { cn } from "~/lib/utils";
 
 import type { ProofRatio } from "./types";
 
-/** Outer card shell — calmer than legacy admin gradient; trust-first */
-export function proofCardShellClass(
-  ratio: ProofRatio,
+/**
+ * Fixed-aspect outer box. Content must live in a child with `absolute inset-0`
+ * so tall templates cannot stretch the preview (flex min-height was fighting
+ * `aspect-ratio` across card types).
+ */
+export function proofCardAspectOuterClass(ratio: ProofRatio): string {
+  switch (ratio) {
+    case "portrait":
+      return "relative w-full max-w-[min(100%,380px)] shrink-0 aspect-[4/5]";
+    case "square":
+      return "relative w-full max-w-[min(100%,380px)] shrink-0 aspect-square";
+    case "landscape":
+      return "relative w-full max-w-[min(100%,720px)] shrink-0 aspect-video";
+  }
+}
+
+/** Visual shell; use inside `proofCardAspectOuterClass` as `absolute inset-0` */
+export function proofCardShellSurfaceClass(
   variant: "campaign" | "admin"
 ): string {
   const base =
-    "bg-card text-card-foreground box-border shrink-0 overflow-hidden rounded-2xl border border-l-4 border-l-primary shadow-lg";
+    "absolute inset-0 box-border flex flex-col overflow-hidden rounded-2xl border border-l-4 border-l-primary bg-card text-card-foreground shadow-lg";
   const campaignTint =
     variant === "campaign"
       ? "bg-gradient-to-br from-primary/[0.04] to-transparent"
       : "";
-
-  const size =
-    ratio === "portrait"
-      ? cn("flex w-full max-w-[min(100%,380px)] flex-col", "aspect-[4/5]")
-      : ratio === "square"
-        ? cn("flex aspect-square w-full max-w-[min(100%,380px)] flex-col")
-        : cn("flex w-full max-w-[min(100%,720px)] flex-col", "aspect-video");
-
-  return cn(base, campaignTint, size);
+  return cn(base, campaignTint);
 }
 
 export function proofCardInnerPadClass(ratio: ProofRatio): string {

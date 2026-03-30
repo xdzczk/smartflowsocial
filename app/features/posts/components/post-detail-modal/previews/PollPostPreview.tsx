@@ -40,7 +40,7 @@ export function PollPostPreview({
   const showIntro = Boolean(primary) && primary.trim() !== questionTrim;
 
   return (
-    <div className="space-y-3 py-1">
+    <div className="space-y-2 py-1">
       {showIntro ? (
         <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
           {primary}
@@ -53,7 +53,11 @@ export function PollPostPreview({
         layout="inline"
         hideQuestion={hideQuestionInPoll}
       />
-      <p className="text-muted-foreground text-xs">{contextLine}</p>
+      {contextLine ? (
+        <p className="text-muted-foreground/70 text-[11px] leading-snug">
+          {contextLine}
+        </p>
+      ) : null}
     </div>
   );
 }

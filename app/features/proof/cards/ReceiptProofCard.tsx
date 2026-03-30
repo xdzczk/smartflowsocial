@@ -1,7 +1,8 @@
 import type { ProofCardPayload, ProofRatio } from "~/lib/proof";
-import { proofCardInnerPadClass, proofCardShellClass } from "~/lib/proof";
+import { proofCardInnerPadClass } from "~/lib/proof";
 
 import { ProofCardBody } from "../components/ProofCardBody";
+import { ProofCardShell } from "../components/ProofCardShell";
 
 export function ReceiptProofCard({
   payload,
@@ -11,10 +12,10 @@ export function ReceiptProofCard({
   ratio: ProofRatio;
 }) {
   return (
-    <div className={proofCardShellClass(ratio, "campaign")}>
+    <ProofCardShell ratio={ratio} variant="campaign">
       <div className={proofCardInnerPadClass(ratio)}>
         <ProofCardBody payload={payload} ratio={ratio} variant="campaign" />
       </div>
-    </div>
+    </ProofCardShell>
   );
 }

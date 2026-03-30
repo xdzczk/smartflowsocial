@@ -1,3 +1,5 @@
+import { useParams, useSearchParams } from "@remix-run/react";
+
 import {
   Select,
   SelectContent,
@@ -10,10 +12,15 @@ import {
   MOBILE_FILTER_LABEL_CLASS,
   MOBILE_FILTER_SELECT_TRIGGER_CLASS,
 } from "~/features/posts/components/constants";
-import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
-import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
 import type { QueueType } from "~/features/posts/types";
+import {
+  PublishingFilterRow,
+  PublishingQueueFilter,
+  PublishingSegmentedControlLinks,
+} from "~/features/posts/ui";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+
+import { buildDraftsSegmentLinkItems } from "../utils/drafts-toolbar-segments";
 
 export interface DraftsToolbarProps {
   currentTab: string;
@@ -48,7 +55,24 @@ export function DraftsToolbar({
   sortConfig,
   onSortChange,
 }: DraftsToolbarProps) {
+  const params = useParams();
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
+
+  const queuePathSegment = params["queueType"] ? `/${params["queueType"]}` : "";
+
+  const segmentItems = buildDraftsSegmentLinkItems({
+    basePath,
+    queuePathSegment,
+    searchParams,
+    totalContentCount,
+    totalPostsCount,
+    totalPollsCount,
+    totalThreadsCount,
+    totalRepostsCount,
+    totalLongformCount,
+    bulkCount,
+  });
 
   const sortControl = showSort ? (
     <div className="flex min-w-0 flex-shrink-0 items-center gap-2">
@@ -92,36 +116,30 @@ export function DraftsToolbar({
   ) : null;
 
   return (
-    <div
-      className={`border-border mb-6 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3`}
-    >
-      <div className="min-w-0 flex-1">
-        <PostTypeTabs
-          currentTab={currentTab}
-          basePath={basePath}
-          totalContentCount={totalContentCount}
-          totalPostsCount={totalPostsCount}
-          totalPollsCount={totalPollsCount}
-          totalThreadsCount={totalThreadsCount}
-          totalRepostsCount={totalRepostsCount}
-          totalLongformCount={totalLongformCount}
-          bulkCount={bulkCount}
-          inRow
+    <PublishingFilterRow
+      leading={
+        <PublishingSegmentedControlLinks
+          data-testid="drafts-type-segments"
+          ariaLabel="Draft type"
+          activeId={currentTab}
+          items={segmentItems}
         />
-      </div>
-      <div className="flex flex-shrink-0 flex-wrap items-end gap-3 sm:justify-end">
-        {showQueueFilter ? (
-          <QueueSelectionTabs
-            currentTab={currentTab}
-            queueTypes={queueTypes}
-            basePath={basePath}
-          />
-        ) : null}
-        {!isMobile ? sortControl : null}
-      </div>
-      {isMobile && showSort ? (
-        <div className="sm:hidden">{sortControl}</div>
-      ) : null}
-    </div>
+      }
+      trailing={
+        <>
+          {showQueueFilter ? (
+            <PublishingQueueFilter
+              currentTab={currentTab}
+              queueTypes={queueTypes}
+              basePath={basePath}
+            />
+          ) : null}
+          {!isMobile ? sortControl : null}
+          {isMobile && showSort ? (
+            <div className="w-full sm:hidden">{sortControl}</div>
+          ) : null}
+        </>
+      }
+    />
   );
 }

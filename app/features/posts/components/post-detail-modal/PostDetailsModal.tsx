@@ -17,6 +17,7 @@ import type { Post } from "../../data/posts-prisma-types.server";
 import type { CombinedContent, PostData } from "../../types";
 
 import {
+  filterRepliesExcludingThreadSegments,
   formatScheduledDate,
   getDeleteButtonLabel,
   getPostContextLine,
@@ -242,6 +243,20 @@ export default function PostDetailsModal({
     setIsMediaOpen(true);
   }, []);
 
+  const threadSegmentIds = useMemo(() => {
+    const segs = threadGroupQuery.data?.segments;
+    if (!segs?.length) return null;
+    return new Set(segs.map((s) => s.id).filter(Boolean));
+  }, [threadGroupQuery.data?.segments]);
+
+  const railDirectReplies = useMemo(() => {
+    if (variant !== "thread" || !threadSegmentIds?.size) return directReplies;
+    return filterRepliesExcludingThreadSegments(
+      directReplies,
+      threadSegmentIds
+    );
+  }, [variant, threadSegmentIds, directReplies]);
+
   const leftBody = (() => {
     if (variant === "thread") {
       return (
@@ -296,10 +311,10 @@ export default function PostDetailsModal({
       <input type="hidden" name="_action" value="delete" />
       <Button
         type="submit"
-        variant="outline"
+        variant="ghost"
         size="sm"
         disabled={deleteFetcher.state !== "idle"}
-        className="border-destructive text-destructive hover:bg-destructive/10"
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
       >
         {deleteFetcher.state !== "idle" &&
         deleteFetcher.formData?.get("postId") === post.id
@@ -320,10 +335,10 @@ export default function PostDetailsModal({
         >
           <PostDetailHeader typeLabel={headerTypeLabel} statusType={type} />
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row md:items-stretch">
+          <div className="flex min-h-0 shrink flex-col overflow-hidden md:flex-row md:items-stretch">
             <div
               className={cn(
-                "border-border min-h-0 min-w-0 flex-1 overflow-y-auto md:w-[70%] md:max-w-[72%] md:border-r",
+                "border-border min-h-0 min-w-0 grow overflow-y-auto md:w-[70%] md:max-w-[72%] md:border-r",
                 heightMode === "compact" ? "px-5 py-4" : "px-5 py-5 md:px-6"
               )}
             >
@@ -331,6 +346,7 @@ export default function PostDetailsModal({
             </div>
 
             <PostDetailRail
+              variant={variant}
               type={type}
               post={post}
               queueType={queueType}
@@ -339,7 +355,7 @@ export default function PostDetailsModal({
               eventId={eventId}
               viewThreadUrl={viewThreadUrl}
               openOnNostrUrl={openOnNostrUrl}
-              directReplies={directReplies}
+              directReplies={railDirectReplies}
               isThreadLoading={isThreadLoading}
               threadMetadata={threadMetadata}
               showSignedEvent={showSignedEvent}

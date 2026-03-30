@@ -26,6 +26,8 @@ export interface ZapRecipientOptions {
   npub: string;
   amountSats?: number;
   relays?: string[];
+  /** When set, adds an `e` tag so the zap request targets this note (NIP-57). */
+  eventIdHex?: string;
 }
 
 /**
@@ -101,6 +103,24 @@ export interface ZapRecipientResult {
   paid: boolean;
 }
 
+/** Build kind 9734 tags for LNURL zap request (NIP-57). */
+export function buildZapRequestKind9734Tags(params: {
+  recipientHex: string;
+  millisats: number;
+  relays: string[];
+  eventIdHex?: string;
+}): string[][] {
+  const { recipientHex, millisats, relays, eventIdHex } = params;
+  return [
+    ["p", recipientHex],
+    ...(eventIdHex && /^[a-fA-F0-9]{64}$/.test(eventIdHex)
+      ? ([["e", eventIdHex.toLowerCase()]] as string[][])
+      : []),
+    ["amount", String(millisats)],
+    ["relays", ...relays],
+  ];
+}
+
 /**
  * Run the full NIP-57 zap flow: get lud16 -> LNURL metadata -> build and sign zap request -> callback -> invoice -> webln.sendPayment.
  * Resolves with { paid: true } when payment succeeds; { paid: false } when fallback (e.g. opened in new tab); rejects on failure.
@@ -108,7 +128,7 @@ export interface ZapRecipientResult {
 export async function zapRecipient(
   options: ZapRecipientOptions
 ): Promise<ZapRecipientResult> {
-  const { npub, amountSats, relays = DEFAULT_RELAYS } = options;
+  const { npub, amountSats, relays = DEFAULT_RELAYS, eventIdHex } = options;
 
   const lud16 = await fetchLud16(npub);
   if (!lud16) {
@@ -138,11 +158,12 @@ export async function zapRecipient(
 
   const recipientHex = npubToHex(npub);
   const created_at = Math.floor(Date.now() / 1000);
-  const tags: string[][] = [
-    ["p", recipientHex],
-    ["amount", String(millisats)],
-    ["relays", ...relays],
-  ];
+  const tags = buildZapRequestKind9734Tags({
+    recipientHex,
+    millisats,
+    relays,
+    eventIdHex,
+  });
 
   const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
     kind: 9734,
