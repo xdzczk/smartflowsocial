@@ -116,9 +116,12 @@ export { default as PostTypeTabs } from "./components/PostTypeTabs";
 export { ContentListPageHeader } from "./components/ContentListPageHeader";
 export {
   AttachmentCountChip,
+  buildDashboardContentTypeFilterItems,
   buildLibraryContentTypeFilterItems,
   ContentStatusChip,
   ContentTypeChip,
+  FilterDateRangeControls,
+  FilterToolbarRow,
   PublishingArchiveModeLinks,
   PublishingBatchSelectionBar,
   PublishingContentTypeFilter,

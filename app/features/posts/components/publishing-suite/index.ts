@@ -4,6 +4,11 @@ export {
   PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS,
   PUBLISHING_DATETIME_CELL_CLASS,
   PUBLISHING_FILTER_SELECT_TRIGGER_CLASS,
+  PUBLISHING_FILTER_CONTROL_BASE_CLASS,
+  PUBLISHING_FILTER_CONTROL_H,
+  PUBLISHING_FILTER_CONTROL_RADIUS,
+  PUBLISHING_FILTER_WIDTH_DATE,
+  PUBLISHING_FILTER_WIDTH_STANDARD,
   PUBLISHING_LIBRARY_SHELL_CLASS,
   PUBLISHING_LIST_SURFACE_CLASS,
   PUBLISHING_METADATA_CHIP_GAP_CLASS,
@@ -30,6 +35,10 @@ export { PublishingQueueFilter } from "./PublishingQueueFilter";
 export { PublishingContentTypeFilter } from "./PublishingContentTypeFilter";
 export type { PublishingContentTypeFilterItem } from "./PublishingContentTypeFilter";
 export { buildLibraryContentTypeFilterItems } from "./build-library-content-segment-links";
+export { buildDashboardContentTypeFilterItems } from "./build-dashboard-content-type-filter-items";
+export { FilterDateField } from "./FilterDateField";
+export { FilterDateRangeControls } from "./FilterDateRangeControls";
+export { FilterToolbarRow } from "./FilterToolbarRow";
 export {
   AttachmentCountChip,
   ContentStatusChip,

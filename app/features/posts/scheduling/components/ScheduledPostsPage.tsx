@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
-import { DateRangeFilter } from "~/features/posts/components/DateRangeFilter";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { BulkComposerModal } from "~/features/posts/composer";
@@ -31,6 +30,8 @@ import type { BulkPost, PostFetcher } from "~/features/posts/types";
 import {
   AllContentListing,
   PostDetailsModal,
+  FilterDateRangeControls,
+  FilterToolbarRow,
   PublishingFilterRow,
   PublishingLibraryContentSegments,
   PublishingLibraryShell,
@@ -367,25 +368,33 @@ export default function ScheduledPostsPage() {
         />
       </div>
 
-      <PublishingFilterRow
-        leading={
-          <PublishingLibraryContentSegments
-            basePath="/dashboard/scheduled"
-            currentTab={currentTab}
-            totalContentCount={totalContentCount}
-            totalPostsCount={totalPostsCount}
-            totalRepostsCount={totalRepostsCount}
-            totalLongformCount={totalLongformCount}
-            data-testid="scheduled-type-segments"
-          />
-        }
-        trailing={
-          <div className="flex w-full flex-wrap items-end gap-3 md:ml-auto md:w-auto md:justify-end">
-            <DateRangeFilter
+      <PublishingFilterRow>
+        <FilterToolbarRow
+          typeControl={
+            <PublishingLibraryContentSegments
+              basePath="/dashboard/scheduled"
+              currentTab={currentTab}
+              totalContentCount={totalContentCount}
+              totalPostsCount={totalPostsCount}
+              totalRepostsCount={totalRepostsCount}
+              totalLongformCount={totalLongformCount}
+              data-testid="scheduled-type-segments"
+            />
+          }
+          queueControl={
+            showQueueOnScheduled ? (
+              <PublishingQueueFilter
+                currentTab={currentTab}
+                queueTypes={queueTypes}
+                basePath="/dashboard/scheduled"
+              />
+            ) : null
+          }
+          dateControls={
+            <FilterDateRangeControls
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
               idPrefix="scheduled"
-              className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
               minDate={getTodayInTimezone(userTimezone)}
               userDateFormat={
                 user?.dateFormat === "mmddyyyy"
@@ -395,22 +404,17 @@ export default function ScheduledPostsPage() {
                     : "ddmmyyyy"
               }
             />
+          }
+          presetControls={
             <DateRangeQuickPresets
               variant="future"
               userTimezone={userTimezone}
+              dateRange={dateRange}
               onDateRangeChange={setDateRange}
-              className="items-center gap-2"
             />
-            {showQueueOnScheduled ? (
-              <PublishingQueueFilter
-                currentTab={currentTab}
-                queueTypes={queueTypes}
-                basePath="/dashboard/scheduled"
-              />
-            ) : null}
-          </div>
-        }
-      />
+          }
+        />
+      </PublishingFilterRow>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {currentTab === "all" && scheduledContestLaunches.length > 0 ? (

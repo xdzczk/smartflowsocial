@@ -1,7 +1,9 @@
+import { useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -9,8 +11,12 @@ import {
 } from "~/components/ui/popover";
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
-import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
+import {
+  PublishingContentTypeFilter,
+  PublishingQueueFilter,
+  PublishingSegmentedControlButtons,
+  type PublishingSegmentButtonItem,
+} from "~/features/posts/components/publishing-suite";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
@@ -44,6 +50,7 @@ import {
 } from "~/lib/temporal";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { buildCalendarContentTypeFilterItems } from "./build-calendar-content-type-filter-items";
 import { getPostIsLongform, isSameCalendarSlot } from "./calendar-helpers";
 import { CalendarErrorBoundary } from "./CalendarErrorBoundary";
 import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
@@ -78,6 +85,198 @@ interface CalendarProps {
 
 const VIEW_VALUES = ["day", "week", "month"] as const;
 
+function CalendarToolbar({
+  view,
+  onViewChange,
+  currentDate,
+  onToday,
+  onPrevious,
+  onNext,
+  userTimezone,
+  dateLocale,
+  miniCalendarOpen,
+  onMiniCalendarOpenChange,
+  miniCalendarMonth,
+  onMiniCalendarMonthChange,
+  onMiniCalendarSelectDate,
+  calendarPageTabs,
+  queueTypes,
+}: {
+  view: "day" | "week" | "month";
+  onViewChange: (v: "day" | "week" | "month") => void;
+  currentDate: Date;
+  onToday: () => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  userTimezone: string;
+  dateLocale: "en-GB" | "en-US" | "en-CA";
+  miniCalendarOpen: boolean;
+  onMiniCalendarOpenChange: (open: boolean) => void;
+  miniCalendarMonth: Date;
+  onMiniCalendarMonthChange: (d: Date) => void;
+  onMiniCalendarSelectDate: (d: Date) => void;
+  calendarPageTabs?: CalendarProps["calendarPageTabs"];
+  queueTypes?: QueueType[];
+}) {
+  const [searchParams] = useSearchParams();
+  const showPeriodLabel = view === "month" || view === "week";
+  const periodLabel = showPeriodLabel
+    ? formatForDisplay(
+        fromDate(currentDate, userTimezone),
+        userTimezone,
+        { month: "long", year: "numeric" },
+        undefined,
+        dateLocale
+      )
+    : null;
+
+  const viewItems: PublishingSegmentButtonItem[] = [
+    { id: "day", label: "Day", ariaLabel: "Day view" },
+    { id: "week", label: "Week", ariaLabel: "Week view" },
+    { id: "month", label: "Month", ariaLabel: "Month view" },
+  ];
+
+  return (
+    <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-3 sm:px-3">
+      <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        {/* Left cluster: nav + view + period label */}
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg"
+              onClick={onPrevious}
+              aria-label="Previous"
+            >
+              <ChevronLeft
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-9 rounded-lg px-3 text-sm shadow-none"
+              onClick={onToday}
+              title="Today (T)"
+            >
+              Today
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg"
+              onClick={onNext}
+              aria-label="Next"
+            >
+              <ChevronRight
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                strokeWidth={INLINE_ICON_STROKE}
+                aria-hidden
+              />
+            </Button>
+
+            {/* Mini calendar: day view only (mobile header). */}
+            {view === "day" ? (
+              <div className="lg:hidden">
+                <Popover
+                  open={miniCalendarOpen}
+                  onOpenChange={onMiniCalendarOpenChange}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-lg"
+                      aria-label="Pick a date"
+                    >
+                      <CalendarDays
+                        className="h-4 w-4 sm:h-5 sm:w-5"
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto rounded-[var(--calendar-radius-md)] border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] p-3"
+                    align="end"
+                  >
+                    <MiniCalendarGrid
+                      displayedMonth={miniCalendarMonth}
+                      currentDate={currentDate}
+                      userTimezone={userTimezone}
+                      dateLocale={dateLocale}
+                      onMonthChange={onMiniCalendarMonthChange}
+                      onSelectDate={onMiniCalendarSelectDate}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            ) : null}
+          </div>
+
+          <PublishingSegmentedControlButtons
+            items={viewItems}
+            value={view}
+            onValueChange={(next) => onViewChange(next as typeof view)}
+            radiogroupAriaLabel="Calendar view"
+            className="shrink-0"
+            rowHeightClassName="h-9"
+            data-testid="calendar-view-switcher"
+          />
+
+          {periodLabel ? (
+            <h2 className="text-foreground min-w-0 truncate text-sm leading-tight font-medium">
+              {periodLabel}
+            </h2>
+          ) : null}
+        </div>
+
+        {/* Right cluster: type + queue filters (Calendar main page only). */}
+        {calendarPageTabs ? (
+          <div className="grid w-full min-w-0 grid-cols-2 gap-2 md:flex md:w-auto md:items-center md:justify-end">
+            <div className="min-w-0">
+              <PublishingContentTypeFilter
+                value={calendarPageTabs.currentTab}
+                ariaLabel="Filter by content type"
+                items={buildCalendarContentTypeFilterItems({
+                  basePath: calendarPageTabs.basePath,
+                  searchParams,
+                  totals: {
+                    all: calendarPageTabs.totalContentCount ?? 0,
+                    posts: calendarPageTabs.totalPostsCount ?? 0,
+                    reposts: calendarPageTabs.totalRepostsCount ?? 0,
+                    longform: calendarPageTabs.totalLongformCount ?? 0,
+                  },
+                })}
+                data-testid="calendar-filter-type"
+                triggerClassName="w-full sm:w-[14rem]"
+              />
+            </div>
+            {queueTypes ? (
+              <div className="min-w-0">
+                <PublishingQueueFilter
+                  currentTab={calendarPageTabs.currentTab}
+                  basePath={calendarPageTabs.basePath}
+                  queueTypes={queueTypes}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function getCalendarPostModalType(
   post: CalendarPost
 ): "published" | "scheduled" {
@@ -103,7 +302,6 @@ function parseInitialDate(
     : parsed;
 }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity -- calendar shell: modals, drag/drop, view state
 export function Calendar({
   scheduledPosts,
   pastPosts = [],
@@ -366,190 +564,56 @@ export function Calendar({
       >
         {calendarLiveMessage}
       </div>
-      {/* Header: mobile = row1 (nav + Today + view), row2 (content 50% + queue 50%); desktop = single row. Calendar controls use text-sm to match content type and queue filter labels. */}
-      <div className="border-border/60 flex min-h-14 flex-col justify-center border-b bg-[hsl(var(--calendar-surface-1-bg))] px-2 py-3 select-none sm:px-3">
-        <div className="flex h-fit min-h-0 flex-shrink-0 flex-col justify-center gap-2 md:flex-row md:flex-nowrap md:items-center md:gap-4">
-          {/* Row 1 on mobile: calendar controls + Today + view selector */}
-          <div className="flex w-full min-w-0 items-center justify-between gap-2 md:w-auto md:flex-shrink-0">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <button
-                onClick={() => {
-                  const currentZoned = fromDate(currentDate, userTimezone);
-                  const newZoned =
-                    view === "day"
-                      ? addDays(currentZoned, -1)
-                      : view === "week"
-                        ? addDays(currentZoned, -7)
-                        : addMonths(currentZoned, -1);
-                  setSelectedPost(null);
-                  setCurrentDate(toDate(newZoned));
-                }}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
-                aria-label="Previous"
-              >
-                <ChevronLeft
-                  className="h-4 w-4 sm:h-5 sm:w-5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              </button>
-
-              <button
-                onClick={() => {
-                  const now = nowInTimezone(userTimezone);
-                  setSelectedPost(null);
-                  setCurrentDate(toDate(now));
-                }}
-                className="text-primary hover:text-primary/80 bg-muted/50 flex h-9 shrink-0 items-center rounded-[var(--calendar-radius-sm)] px-2 py-1.5 text-sm font-medium sm:px-3"
-                title="Today (T)"
-              >
-                Today
-              </button>
-
-              <button
-                onClick={() => {
-                  const currentZoned = fromDate(currentDate, userTimezone);
-                  const newZoned =
-                    view === "day"
-                      ? addDays(currentZoned, 1)
-                      : view === "week"
-                        ? addDays(currentZoned, 7)
-                        : addMonths(currentZoned, 1);
-                  setSelectedPost(null);
-                  setCurrentDate(toDate(newZoned));
-                }}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
-                aria-label="Next"
-              >
-                <ChevronRight
-                  className="h-4 w-4 sm:h-5 sm:w-5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
-              </button>
-
-              {/* Mini calendar: in Day view only. On desktop (lg) it lives in the sidebar; below lg use header popover */}
-              {view === "day" ? (
-                <div className="lg:hidden">
-                  <Popover
-                    open={miniCalendarOpen}
-                    onOpenChange={(open) => {
-                      setMiniCalendarOpen(open);
-                      if (open) setMiniCalendarMonth(currentDate);
-                    }}
-                  >
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-9 min-w-9 items-center justify-center rounded-[var(--calendar-radius-sm)] p-1.5 sm:p-2"
-                        aria-label="Pick a date"
-                      >
-                        <CalendarDays
-                          className="h-4 w-4 sm:h-5 sm:w-5"
-                          strokeWidth={INLINE_ICON_STROKE}
-                          aria-hidden
-                        />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto rounded-[var(--calendar-radius-md)] border-[hsl(var(--calendar-surface-2-border))] bg-[hsl(var(--calendar-surface-2-bg))] p-3"
-                      align="end"
-                    >
-                      <MiniCalendarGrid
-                        displayedMonth={miniCalendarMonth}
-                        currentDate={currentDate}
-                        userTimezone={userTimezone}
-                        dateLocale={dateLocale}
-                        onMonthChange={setMiniCalendarMonth}
-                        onSelectDate={(date) => {
-                          setSelectedPost(null);
-                          setCurrentDate(date);
-                          setMiniCalendarOpen(false);
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Month label on mobile only: between < Today > and Day/Week/Month switch (Month and Week views) */}
-            {view === "month" || view === "week" ? (
-              <h2 className="text-foreground flex min-w-0 flex-1 items-center justify-center truncate text-sm leading-tight font-medium max-md:flex md:hidden">
-                {formatForDisplay(
-                  fromDate(currentDate, userTimezone),
-                  userTimezone,
-                  { month: "long", year: "numeric" },
-                  undefined,
-                  dateLocale
-                )}
-              </h2>
-            ) : null}
-
-            {/* View toggle: same row on mobile, right side */}
-            <div className="bg-muted/50 flex h-9 shrink-0 items-center gap-0.5 rounded-[var(--calendar-radius-sm)] p-0.5 sm:gap-1 sm:p-1">
-              {(["day", "week", "month"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => {
-                    setSelectedPost(null);
-                    setView(v);
-                  }}
-                  className={`flex h-8 items-center rounded-[var(--calendar-radius-sm)] px-1.5 py-0.5 text-sm font-medium sm:px-2 sm:py-1 md:px-3 ${
-                    view === v
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {/* Month label: in Month and Week view, after Day/Week/Month controls (desktop); on mobile shown between nav and view toggle */}
-            {view === "month" || view === "week" ? (
-              <h2 className="text-foreground hidden min-w-0 items-center truncate text-sm leading-tight font-medium md:flex">
-                {formatForDisplay(
-                  fromDate(currentDate, userTimezone),
-                  userTimezone,
-                  { month: "long", year: "numeric" },
-                  undefined,
-                  dateLocale
-                )}
-              </h2>
-            ) : null}
-          </div>
-
-          {/* Row 2 on mobile: content type 50% + queue 50%. On desktop: right-aligned, same-width filters */}
-          {calendarPageTabs ? (
-            <div className="border-border/60 flex w-full items-center gap-2 border-b-0 md:min-w-0 md:flex-1 md:justify-end">
-              <div className="flex min-w-0 flex-1 justify-center md:w-40 md:min-w-40 md:flex-none md:[&_button]:w-full">
-                <PostTypeTabs
-                  currentTab={calendarPageTabs.currentTab}
-                  basePath={calendarPageTabs.basePath}
-                  totalContentCount={calendarPageTabs.totalContentCount}
-                  totalPostsCount={calendarPageTabs.totalPostsCount}
-                  totalRepostsCount={calendarPageTabs.totalRepostsCount}
-                  totalLongformCount={calendarPageTabs.totalLongformCount}
-                  inRow
-                  forceDropdown
-                />
-              </div>
-              {["all", "posts", "reposts", "longform"].includes(
-                calendarPageTabs.currentTab
-              ) && queueTypes ? (
-                <div className="flex min-w-0 flex-1 justify-center md:w-40 md:min-w-40 md:flex-none md:[&_button]:w-full">
-                  <QueueSelectionTabs
-                    currentTab={calendarPageTabs.currentTab}
-                    queueTypes={queueTypes}
-                    basePath={calendarPageTabs.basePath}
-                  />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
+      <CalendarToolbar
+        view={view}
+        onViewChange={(next) => {
+          setSelectedPost(null);
+          setView(next);
+        }}
+        currentDate={currentDate}
+        onToday={() => {
+          setSelectedPost(null);
+          setCurrentDate(toDate(nowInTimezone(userTimezone)));
+        }}
+        onPrevious={() => {
+          const currentZoned = fromDate(currentDate, userTimezone);
+          const newZoned =
+            view === "day"
+              ? addDays(currentZoned, -1)
+              : view === "week"
+                ? addDays(currentZoned, -7)
+                : addMonths(currentZoned, -1);
+          setSelectedPost(null);
+          setCurrentDate(toDate(newZoned));
+        }}
+        onNext={() => {
+          const currentZoned = fromDate(currentDate, userTimezone);
+          const newZoned =
+            view === "day"
+              ? addDays(currentZoned, 1)
+              : view === "week"
+                ? addDays(currentZoned, 7)
+                : addMonths(currentZoned, 1);
+          setSelectedPost(null);
+          setCurrentDate(toDate(newZoned));
+        }}
+        userTimezone={userTimezone}
+        dateLocale={dateLocale}
+        miniCalendarOpen={miniCalendarOpen}
+        onMiniCalendarOpenChange={(open) => {
+          setMiniCalendarOpen(open);
+          if (open) setMiniCalendarMonth(currentDate);
+        }}
+        miniCalendarMonth={miniCalendarMonth}
+        onMiniCalendarMonthChange={setMiniCalendarMonth}
+        onMiniCalendarSelectDate={(date) => {
+          setSelectedPost(null);
+          setCurrentDate(date);
+          setMiniCalendarOpen(false);
+        }}
+        calendarPageTabs={calendarPageTabs}
+        queueTypes={queueTypes}
+      />
 
       {/* Calendar content: Day view on lg shows main + right sidebar */}
       <div className="flex min-h-0 flex-1 overflow-x-visible overflow-y-hidden">

@@ -22,39 +22,46 @@ import { featureFlags } from "~/lib/feature-flags.server";
 
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
-    "Core composer and publishing",
-    "Limited scheduling",
-    "Enough to validate your workflow",
+    "Calendar, engagement, drafts, and templates",
+    "Up to 10 scheduled items",
+    "1 queue included",
+    "Explore broadcasts and run campaigns",
   ],
   basic: [
-    "Scheduled publishing",
-    "Drafts and templates",
-    "Calendar planning",
-    "Stronger workflow controls",
+    "Higher scheduling and queue limits",
+    "Bulk workflow access",
+    "Broadcast sending",
+    "Better campaign economics",
   ],
   premium: [
-    "Queue publishing",
-    "Bulk workflows",
-    "Engagement operations",
-    "Recyclable content tooling",
-    "Deeper analytics and giveaways",
+    "Highest limits across workflows",
+    "Best campaign economics",
+    "Strongest publishing control",
+    "Built for power users",
   ],
   teams: [
-    "Multi-user workflows",
-    "Shared publishing operations",
-    "Role-based collaboration",
+    "Shared workflows",
+    "Multi-user publishing",
+    "Role-based operations",
     "Team-grade controls",
   ],
 };
 
 const FOUNDER_BENEFITS = [
   "Lifetime access — non-recurring",
-  "Highest individual tier feature access",
+  "Top individual-tier economics",
   "Priority support",
   "Early access to major features",
   "Best campaign / finalization economics",
   "Founder recognition",
 ];
+
+const PLAN_SUBTITLES: Record<string, string> = {
+  free: "Full surface, tight limits",
+  basic: "Serious solo workflow",
+  premium: "Operate at full power",
+  teams: "Built for collaborative publishing",
+};
 
 function toBillingModelString(
   m: PlanBillingModel
@@ -235,6 +242,8 @@ export async function loadPlansData(request: Request) {
       );
     }
 
+    const subtitle = PLAN_SUBTITLES[plan.id] ?? plan.description ?? "";
+
     return {
       id: plan.id,
       name: plan.name,
@@ -242,7 +251,7 @@ export async function loadPlansData(request: Request) {
       yearlyPriceUsd,
       yearlySavingsNote,
       checkoutPricing,
-      description: plan.description ?? "",
+      description: subtitle,
       features,
       isPopular: plan.id === "basic",
       planBillingModel: toBillingModelString(plan.planBillingModel),

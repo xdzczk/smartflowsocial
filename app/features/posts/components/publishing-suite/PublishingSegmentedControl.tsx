@@ -2,15 +2,19 @@ import { Link } from "@remix-run/react";
 
 import { cn } from "~/lib/utils";
 
-import { PUBLISHING_SEGMENTED_ROW_H } from "./constants";
+import {
+  PUBLISHING_FILTER_CONTROL_BASE_CLASS,
+  PUBLISHING_FILTER_CONTROL_RADIUS,
+  PUBLISHING_SEGMENTED_ROW_H,
+} from "./constants";
 
-const segmentClass = (active: boolean) =>
+const segmentClass = (active: boolean, rowHeightClassName?: string) =>
   cn(
-    PUBLISHING_SEGMENTED_ROW_H,
-    "flex min-w-0 flex-1 items-center justify-center px-2 text-center text-xs transition-colors sm:min-w-[3.5rem] sm:px-2.5",
+    rowHeightClassName ?? PUBLISHING_SEGMENTED_ROW_H,
+    "focus-visible:ring-ring flex min-w-0 flex-1 items-center justify-center px-2 text-center text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none sm:min-w-[3.5rem] sm:px-2.5",
     active
-      ? "text-foreground bg-muted/40 relative z-[1] font-semibold"
-      : "text-muted-foreground hover:text-foreground hover:bg-muted/20 font-medium"
+      ? "bg-muted/40 text-foreground relative z-[1] font-semibold"
+      : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
   );
 
 export interface PublishingSegmentLinkItem {
@@ -25,12 +29,14 @@ export function PublishingSegmentedControlLinks({
   activeId,
   ariaLabel,
   className,
+  rowHeightClassName,
   "data-testid": dataTestId,
 }: {
   items: PublishingSegmentLinkItem[];
   activeId: string;
   ariaLabel: string;
   className?: string;
+  rowHeightClassName?: string;
   "data-testid"?: string;
 }) {
   return (
@@ -38,7 +44,9 @@ export function PublishingSegmentedControlLinks({
       aria-label={ariaLabel}
       data-testid={dataTestId}
       className={cn(
-        "border-border/60 bg-background inline-flex max-w-full min-w-0 overflow-x-auto rounded-lg border",
+        PUBLISHING_FILTER_CONTROL_BASE_CLASS,
+        PUBLISHING_FILTER_CONTROL_RADIUS,
+        "inline-flex max-w-full min-w-0 overflow-x-auto border",
         className
       )}
     >
@@ -51,7 +59,7 @@ export function PublishingSegmentedControlLinks({
             aria-current={active ? "page" : undefined}
             aria-label={item.ariaLabel}
             className={cn(
-              segmentClass(active),
+              segmentClass(active, rowHeightClassName),
               index > 0 && "border-border/60 border-l"
             )}
           >
@@ -75,6 +83,7 @@ export function PublishingSegmentedControlButtons({
   onValueChange,
   radiogroupAriaLabel,
   className,
+  rowHeightClassName,
   "data-testid": dataTestId,
 }: {
   items: PublishingSegmentButtonItem[];
@@ -82,6 +91,7 @@ export function PublishingSegmentedControlButtons({
   onValueChange: (next: string) => void;
   radiogroupAriaLabel: string;
   className?: string;
+  rowHeightClassName?: string;
   "data-testid"?: string;
 }) {
   return (
@@ -90,7 +100,9 @@ export function PublishingSegmentedControlButtons({
       aria-label={radiogroupAriaLabel}
       data-testid={dataTestId}
       className={cn(
-        "border-border/60 bg-background inline-flex max-w-full min-w-0 overflow-x-auto rounded-lg border",
+        PUBLISHING_FILTER_CONTROL_BASE_CLASS,
+        PUBLISHING_FILTER_CONTROL_RADIUS,
+        "inline-flex max-w-full min-w-0 overflow-x-auto border",
         className
       )}
     >
@@ -104,7 +116,7 @@ export function PublishingSegmentedControlButtons({
             aria-checked={active}
             aria-label={item.ariaLabel}
             className={cn(
-              segmentClass(active),
+              segmentClass(active, rowHeightClassName),
               index > 0 && "border-border/60 border-l"
             )}
             onClick={() => onValueChange(item.id)}

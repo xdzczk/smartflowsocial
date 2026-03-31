@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
-import { DateRangeFilter } from "~/features/posts/components/DateRangeFilter";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { BulkComposerModal } from "~/features/posts/composer";
@@ -25,6 +24,8 @@ import type { PostStats } from "~/features/posts/stats.server";
 import type { BulkPost } from "~/features/posts/types";
 import {
   AllContentListing,
+  FilterDateRangeControls,
+  FilterToolbarRow,
   PostDetailsModal,
   PublishingArchiveModeLinks,
   PublishingFilterRow,
@@ -319,25 +320,33 @@ export default function PublishedPostsPage() {
         />
       </div>
 
-      <PublishingFilterRow
-        leading={
-          <PublishingLibraryContentSegments
-            basePath="/dashboard/published"
-            currentTab={currentTab}
-            totalContentCount={totalContentCount}
-            totalPostsCount={totalPostsCount}
-            totalRepostsCount={totalRepostsCount}
-            totalLongformCount={totalLongformCount}
-            data-testid="published-type-segments"
-          />
-        }
-        trailing={
-          <div className="flex w-full flex-wrap items-end gap-3 md:ml-auto md:w-auto md:justify-end">
-            <DateRangeFilter
+      <PublishingFilterRow>
+        <FilterToolbarRow
+          typeControl={
+            <PublishingLibraryContentSegments
+              basePath="/dashboard/published"
+              currentTab={currentTab}
+              totalContentCount={totalContentCount}
+              totalPostsCount={totalPostsCount}
+              totalRepostsCount={totalRepostsCount}
+              totalLongformCount={totalLongformCount}
+              data-testid="published-type-segments"
+            />
+          }
+          queueControl={
+            showQueueOnPublished ? (
+              <PublishingQueueFilter
+                currentTab={currentTab}
+                queueTypes={queueTypes}
+                basePath="/dashboard/published"
+              />
+            ) : null
+          }
+          dateControls={
+            <FilterDateRangeControls
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
               idPrefix="published"
-              className="w-full max-md:w-auto md:w-auto md:flex-shrink-0"
               maxDate={getTodayInTimezone(userTimezone)}
               userDateFormat={
                 user.dateFormat === "mmddyyyy"
@@ -347,22 +356,17 @@ export default function PublishedPostsPage() {
                     : "ddmmyyyy"
               }
             />
+          }
+          presetControls={
             <DateRangeQuickPresets
               variant="past"
               userTimezone={userTimezone}
+              dateRange={dateRange}
               onDateRangeChange={setDateRange}
-              className="items-center gap-2"
             />
-            {showQueueOnPublished ? (
-              <PublishingQueueFilter
-                currentTab={currentTab}
-                queueTypes={queueTypes}
-                basePath="/dashboard/published"
-              />
-            ) : null}
-          </div>
-        }
-      />
+          }
+        />
+      </PublishingFilterRow>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {currentTab === "all" ? (

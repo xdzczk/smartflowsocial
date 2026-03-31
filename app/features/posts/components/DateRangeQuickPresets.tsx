@@ -1,6 +1,7 @@
 /**
- * Quick preset buttons for date range: next/past 7 days and 30 days.
- * Renders next to the date range filter on Scheduled (next) and Published/Recyclables (past).
+ * Selectable preset pills for date range:
+ * - Scheduled: Next 7 days, Next 30 days
+ * - Published/Recyclables: Past 7 days, Past 30 days
  */
 
 import { cn } from "~/lib/utils";
@@ -17,6 +18,7 @@ import type { DateRangeValue } from "./DateRangeFilter";
 interface DateRangeQuickPresetsProps {
   variant: "future" | "past";
   userTimezone: string;
+  dateRange: DateRangeValue;
   onDateRangeChange: (range: DateRangeValue) => void;
   className?: string;
 }
@@ -24,41 +26,46 @@ interface DateRangeQuickPresetsProps {
 export function DateRangeQuickPresets({
   variant,
   userTimezone,
+  dateRange,
   onDateRangeChange,
   className,
 }: DateRangeQuickPresetsProps) {
   const tz = userTimezone.trim() || "UTC";
 
-  if (variant === "future") {
-    return (
-      <div
-        className={cn(
-          "flex flex-shrink-0 flex-wrap items-center gap-2",
-          className
-        )}
-        role="group"
-        aria-label="Quick date range presets"
-      >
-        <button
-          type="button"
-          onClick={() => onDateRangeChange(getNext7DaysRange(tz))}
-          className="text-muted-foreground hover:text-foreground focus:ring-ring rounded px-2 py-1 text-xs font-medium underline-offset-2 transition-colors hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
-        >
-          Next 7 days
-        </button>
-        <span className="text-muted-foreground/60 text-xs" aria-hidden>
-          |
-        </span>
-        <button
-          type="button"
-          onClick={() => onDateRangeChange(getNext30DaysRange(tz))}
-          className="text-muted-foreground hover:text-foreground focus:ring-ring rounded px-2 py-1 text-xs font-medium underline-offset-2 transition-colors hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
-        >
-          Next 30 days
-        </button>
-      </div>
-    );
-  }
+  const presets =
+    variant === "future"
+      ? [
+          {
+            id: "next7",
+            label: "Next 7 days",
+            range: getNext7DaysRange(tz),
+          },
+          {
+            id: "next30",
+            label: "Next 30 days",
+            range: getNext30DaysRange(tz),
+          },
+        ]
+      : [
+          {
+            id: "past7",
+            label: "Past 7 days",
+            range: getPast7DaysRange(tz),
+          },
+          {
+            id: "past30",
+            label: "Past 30 days",
+            range: getPast30DaysRange(tz),
+          },
+        ];
+
+  const activePresetId =
+    presets.find(
+      (p) => p.range.from === dateRange.from && p.range.to === dateRange.to
+    )?.id ?? null;
+
+  const basePillClass =
+    "focus-visible:ring-ring inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none";
 
   return (
     <div
@@ -69,23 +76,31 @@ export function DateRangeQuickPresets({
       role="group"
       aria-label="Quick date range presets"
     >
-      <button
-        type="button"
-        onClick={() => onDateRangeChange(getPast7DaysRange(tz))}
-        className="text-muted-foreground hover:text-foreground focus:ring-ring rounded px-2 py-1 text-xs font-medium underline-offset-2 transition-colors hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
-      >
-        Past 7 days
-      </button>
-      <span className="text-muted-foreground/60 text-xs" aria-hidden>
-        |
-      </span>
-      <button
-        type="button"
-        onClick={() => onDateRangeChange(getPast30DaysRange(tz))}
-        className="text-muted-foreground hover:text-foreground focus:ring-ring rounded px-2 py-1 text-xs font-medium underline-offset-2 transition-colors hover:underline focus:ring-2 focus:ring-offset-0 focus:outline-none"
-      >
-        Past 30 days
-      </button>
+      {presets.map((p) => {
+        const active = p.id === activePresetId;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => {
+              if (active) {
+                onDateRangeChange({ from: "", to: "" });
+                return;
+              }
+              onDateRangeChange(p.range);
+            }}
+            className={cn(
+              basePillClass,
+              active
+                ? "border-border bg-muted/50 text-foreground ring-border/60 ring-1 ring-inset"
+                : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+            )}
+          >
+            {p.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

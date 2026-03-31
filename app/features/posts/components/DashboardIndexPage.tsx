@@ -1,7 +1,5 @@
 import {
-  Link,
   useLoaderData,
-  useNavigate,
   useNavigation,
   useRevalidator,
   useRouteLoaderData,
@@ -10,13 +8,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
   EditScheduledPostModal,
@@ -30,16 +21,18 @@ import {
   ContentListPageHeader,
   FlowView,
   PostDetailsModal,
+  PublishingContentTypeFilter,
+  PublishingFilterRow,
+  PublishingQueueFilter,
   QueueHealth,
-  QueueSelectionTabs,
   RunwaySettingsModal,
   Statistics,
   SuccessMessage,
+  buildDashboardContentTypeFilterItems,
   type FlowViewHandle,
   useFlowData,
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
   extractLongFormPostData,
   extractPostData,
@@ -84,100 +77,6 @@ function handleContentSelection(
       setSelectedLongFormPost(longFormData);
     }
   }
-}
-
-const DASHBOARD_TAB_ACTIVE_CLASSES =
-  "border-border text-foreground dark:border-primary dark:text-primary";
-const DASHBOARD_TAB_INACTIVE_CLASSES =
-  "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
-
-function DashboardContentTypeTabs({
-  currentContentTab,
-  queueType,
-  nip88PollsEnabled,
-}: {
-  currentContentTab: string;
-  queueType: string;
-  nip88PollsEnabled: boolean;
-}) {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile(768);
-  const baseHref =
-    queueType !== "all" ? `?queueType=${queueType}&tab=` : "?tab=";
-
-  const handleMobileTabChange = (value: string) => {
-    navigate(`/dashboard${baseHref}${value}`);
-  };
-
-  if (isMobile) {
-    const label =
-      currentContentTab === "all"
-        ? "All Types"
-        : currentContentTab === "posts"
-          ? "Posts"
-          : currentContentTab === "longform"
-            ? "Articles"
-            : currentContentTab === "polls"
-              ? "Polls"
-              : "Reposts";
-    return (
-      <div className="min-w-0 flex-1">
-        <Select value={currentContentTab} onValueChange={handleMobileTabChange}>
-          <SelectTrigger
-            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
-            aria-label="Content type"
-          >
-            <SelectValue>{label}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="posts">Posts</SelectItem>
-            <SelectItem value="longform">Articles</SelectItem>
-            <SelectItem value="reposts">Reposts</SelectItem>
-            {nip88PollsEnabled ? (
-              <SelectItem value="polls">Polls</SelectItem>
-            ) : null}
-          </SelectContent>
-        </Select>
-      </div>
-    );
-  }
-
-  const tabClass = (tab: string) =>
-    `border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-      currentContentTab === tab
-        ? DASHBOARD_TAB_ACTIVE_CLASSES
-        : DASHBOARD_TAB_INACTIVE_CLASSES
-    }`;
-  return (
-    <div className="min-w-0 flex-1">
-      <nav className="-mb-px flex space-x-6" aria-label="Content types">
-        <Link to={`/dashboard${baseHref}all`} className={tabClass("all")}>
-          All
-        </Link>
-        <Link to={`/dashboard${baseHref}posts`} className={tabClass("posts")}>
-          Posts
-        </Link>
-        <Link
-          to={`/dashboard${baseHref}longform`}
-          className={tabClass("longform")}
-        >
-          Articles
-        </Link>
-        <Link
-          to={`/dashboard${baseHref}reposts`}
-          className={tabClass("reposts")}
-        >
-          Reposts
-        </Link>
-        {nip88PollsEnabled ? (
-          <Link to={`/dashboard${baseHref}polls`} className={tabClass("polls")}>
-            Polls
-          </Link>
-        ) : null}
-      </nav>
-    </div>
-  );
 }
 
 function canAutoRevalidateDashboard(): boolean {
@@ -420,22 +319,33 @@ export default function DashboardIndexPage() {
               </button>
             ) : null}
           </div>
-          <div className="border-border mt-2 flex flex-row items-end justify-between gap-2 border-b">
-            <DashboardContentTypeTabs
-              currentContentTab={currentContentTab}
-              queueType={queueType}
-              nip88PollsEnabled={nip88PollsEnabled}
-            />
-            <QueueSelectionTabs
-              currentTab="all"
-              queueTypes={queueTypesFiltered}
-              basePath="/dashboard"
-            />
-          </div>
+
+          <PublishingFilterRow
+            className="mt-4 mb-0"
+            leading={
+              <PublishingContentTypeFilter
+                data-testid="dashboard-type-filter"
+                value={currentContentTab}
+                ariaLabel="Dashboard content type"
+                items={buildDashboardContentTypeFilterItems({
+                  basePath: "/dashboard",
+                  searchParams,
+                  nip88PollsEnabled,
+                })}
+              />
+            }
+            trailing={
+              <PublishingQueueFilter
+                currentTab={currentContentTab}
+                queueTypes={queueTypesFiltered}
+                basePath="/dashboard"
+              />
+            }
+          />
         </div>
 
         {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-4 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
+        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
           {flowError ? (
             <Alert
               variant="destructive"

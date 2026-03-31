@@ -332,13 +332,13 @@ export function PlansPage(): ReactNode {
             </h1>
             <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed font-medium md:text-xl">
               Run posts, queues, engagement, and campaigns from one Nostr-native
-              control surface.
+              operating surface.
             </p>
           </div>
 
           <div className="mb-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Billing interval applies to <strong>Basic</strong> and{" "}
+              Yearly billing applies to <strong>Basic</strong> and{" "}
               <strong>Premium</strong> only.
             </p>
           </div>
@@ -430,9 +430,9 @@ export function PlansPage(): ReactNode {
           </div>
 
           {founderOffering ? (
-            <section className="border-border from-card to-muted/30 mb-16 rounded-2xl border bg-gradient-to-br p-8 shadow-lg md:p-10">
+            <section className="border-border from-card to-muted/30 mb-12 rounded-2xl border bg-gradient-to-br p-8 shadow-lg md:p-10">
               <p className="text-primary mb-2 text-xs font-semibold tracking-wider uppercase">
-                Limited lifetime access
+                LIMITED LIFETIME ACCESS
               </p>
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-xl flex-1">
@@ -440,8 +440,8 @@ export function PlansPage(): ReactNode {
                     {founderOffering.name}
                   </h2>
                   <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
-                    {founderOffering.description}. One-time payment for early
-                    believers. Limited to {founderOffering.seatCap} seats.
+                    One-time lifetime access for early supporters and power
+                    users. Limited to {founderOffering.seatCap} seats.
                   </p>
                   <p className="text-foreground mb-6 text-4xl font-bold">
                     ${founderOffering.oneTimePriceUsd}{" "}
@@ -449,16 +449,32 @@ export function PlansPage(): ReactNode {
                       one-time
                     </span>
                   </p>
-                  <div className="border-border bg-background/60 mb-6 rounded-lg border px-4 py-3 text-sm">
-                    <p className="text-foreground font-medium">
-                      {founderOffering.seatsClaimed} / {founderOffering.seatCap}{" "}
-                      claimed
+                  <div className="border-border bg-background/60 mb-6 rounded-lg border px-4 py-4">
+                    <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                      {founderOffering.seatCap} lifetime seats total
                     </p>
-                    <p className="text-muted-foreground">
-                      {founderOffering.seatsRemaining} seats remaining
+                    <p className="text-foreground mt-2 text-2xl font-bold tabular-nums">
+                      {founderOffering.seatsClaimed} claimed ·{" "}
+                      {founderOffering.seatsRemaining} remaining
                     </p>
+                    <div className="bg-muted/50 mt-3 h-2 w-full overflow-hidden rounded-full">
+                      <div
+                        className="bg-primary h-full"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              (founderOffering.seatsClaimed /
+                                founderOffering.seatCap) *
+                                100
+                            )
+                          )}%`,
+                        }}
+                      />
+                    </div>
                     {showLowSeatsWarning ? (
-                      <p className="text-primary mt-2 text-xs font-medium">
+                      <p className="text-muted-foreground mt-2 text-xs">
                         Only {founderOffering.seatsRemaining} seats left.
                       </p>
                     ) : null}
@@ -521,16 +537,16 @@ export function PlansPage(): ReactNode {
               Compare plans
             </h2>
             <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
-              Free includes the full app surface: browse every workflow,
-              schedule up to 10 future posts, one queue, and explore broadcasts
-              and bulk composer. Paid plans unlock sending broadcasts, bulk
-              execution at scale, unlimited scheduling and queues, and deeper
-              automation.
+              Free includes the full product surface with strict operating
+              limits: Calendar, Engagement Feed, Drafts/Templates, campaigns, up
+              to 10 scheduled items, and 1 queue. Paid plans unlock higher
+              limits, broadcast sending, bulk workflows, and better campaign
+              economics.
             </p>
             <FeatureComparisonTable plans={comparisonTablePlans} />
           </div>
 
-          <div className="border-border bg-muted/30 mb-16 rounded-lg border p-6">
+          <div className="border-border bg-muted/30 mb-12 rounded-lg border p-6">
             <h3 className="text-foreground mb-3 text-lg font-semibold">
               Founder includes
             </h3>
@@ -541,19 +557,19 @@ export function PlansPage(): ReactNode {
             </ul>
           </div>
 
-          <div className="mx-auto mb-16 max-w-3xl">
+          <div className="mx-auto mb-12 max-w-3xl">
             <h2 className="text-foreground mb-6 text-center text-2xl font-bold">
               FAQ
             </h2>
-            <dl className="space-y-6 text-sm">
+            <dl className="space-y-5 text-sm">
               <div>
                 <dt className="text-foreground font-semibold">
                   What does lifetime Founder access include?
                 </dt>
                 <dd className="text-muted-foreground mt-1 leading-relaxed">
-                  Permanent access to the highest individual self-serve tier and
-                  related perks (support, economics, early features) as
-                  described above — not a subscription.
+                  Permanent access to the top individual self-serve tier and
+                  related Founder perks described above. It is a one-time
+                  purchase, not a subscription.
                 </dd>
               </div>
               <div>
@@ -579,7 +595,7 @@ export function PlansPage(): ReactNode {
                   Why is Teams not available yet?
                 </dt>
                 <dd className="text-muted-foreground mt-1 leading-relaxed">
-                  Teams adds shared workflows and roles; we are shipping it when
+                  Teams adds shared workflows and roles. We are shipping it when
                   collaboration is ready, not as a placeholder purchase.
                 </dd>
               </div>
@@ -598,8 +614,8 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-1 leading-relaxed">
                   Lightning and on-chain checkout work without NWC. Connecting
-                  Nostr Wallet Connect (NWC) unlocks auto-renew and smoother
-                  wallet-powered flows for recurring plans.
+                  Nostr Wallet Connect (NWC) unlocks smoother wallet-powered
+                  flows and auto-renew for recurring plans.
                 </dd>
               </div>
             </dl>

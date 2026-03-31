@@ -1,6 +1,20 @@
 /** Match `RailSegmentedTabGroup` / composer rail segmented height. */
 export const PUBLISHING_SEGMENTED_ROW_H = "h-10";
 
+/**
+ * Unified filter control system (Scheduled / Published top toolbar).
+ * Use these tokens for dropdown triggers, date fields, and future toolbar controls.
+ */
+export const PUBLISHING_FILTER_CONTROL_H = "h-9";
+export const PUBLISHING_FILTER_CONTROL_RADIUS = "rounded-lg";
+export const PUBLISHING_FILTER_CONTROL_BASE_CLASS =
+  "border-border/60 bg-background text-foreground shadow-none focus:ring-ring focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
+
+/** Width tokens: type + queue should match; From/To should match. */
+export const PUBLISHING_FILTER_WIDTH_STANDARD =
+  "w-full min-w-[10rem] sm:w-[14rem]";
+export const PUBLISHING_FILTER_WIDTH_DATE = "w-full min-w-[9rem] sm:w-[12rem]";
+
 /** Shared with `content-helpers` post-kind badges for suite consistency. */
 export const PUBLISHING_CONTENT_KIND_BADGE_CLASS =
   "inline-flex shrink-0 rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground";
@@ -32,9 +46,11 @@ export const PUBLISHING_TABLE_ROW_CLASS =
 export const PUBLISHING_DATETIME_CELL_CLASS =
   "text-foreground min-w-[9rem] font-semibold tabular-nums";
 
-/** Shared sort / queue filter trigger (h-9, bordered). */
-export const PUBLISHING_FILTER_SELECT_TRIGGER_CLASS =
-  "border-border h-9 w-full min-w-[10rem] sm:w-[14rem]";
+/**
+ * Shared sort / queue / type filter trigger.
+ * Prefer combining the unified tokens above (height/radius/base/width) in new code.
+ */
+export const PUBLISHING_FILTER_SELECT_TRIGGER_CLASS = `border-border ${PUBLISHING_FILTER_CONTROL_H} ${PUBLISHING_FILTER_CONTROL_RADIUS} ${PUBLISHING_FILTER_CONTROL_BASE_CLASS} ${PUBLISHING_FILTER_WIDTH_STANDARD}`;
 
 /** Templates type filter: slightly wider min width (combine with PUBLISHING_FILTER_SELECT_TRIGGER_CLASS). */
 export const PUBLISHING_TEMPLATE_TYPE_SELECT_TRIGGER_CLASS =

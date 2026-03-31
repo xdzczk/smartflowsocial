@@ -5,88 +5,134 @@
 import { Check, X } from "lucide-react";
 import { Fragment } from "react";
 
+import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 
 interface FeatureComparisonTableProps {
   plans: PricingPagePlan[];
 }
 
-const GROUP_CORE_PUBLISHING = "Core publishing";
-const GROUP_PLANNING = "Planning and scheduling";
-const GROUP_ENGAGEMENT = "Engagement and campaigns";
-const GROUP_POWER = "Power and infrastructure";
+const GROUP_CORE_WORKFLOWS = "Core workflows";
+const GROUP_PLANNING = "Planning and execution";
+const GROUP_CAMPAIGNS = "Campaigns";
+const GROUP_POWER = "Power features";
 
-const COMPARISON_ROWS: Array<{
+interface ComparisonRow {
   group: string;
-  key: keyof PricingPagePlan["features"] | string;
   label: string;
-}> = [
+  getValue: (plan: PricingPagePlan) => boolean | string | number | null;
+}
+
+function formatLimit(value: number | null): string {
+  return value == null ? "Unlimited" : String(value);
+}
+
+function campaignCommissionPercent(planId: string): string | null {
+  if (planId === "free") return "10%";
+  if (planId === "basic") return "5%";
+  if (planId === "premium") return "0%";
+  return null;
+}
+
+const COMPARISON_ROWS: ComparisonRow[] = [
   {
-    group: GROUP_CORE_PUBLISHING,
-    key: "basicScheduling",
-    label: "Scheduling & composer core",
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Composer and publishing",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {
-    group: GROUP_CORE_PUBLISHING,
-    key: "repostsAndQuotes",
-    label: "Reposts, quotes, richer note types",
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Calendar",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {
-    group: GROUP_CORE_PUBLISHING,
-    key: "nativeS3BlossomStorage",
-    label: "Media uploads & storage paths",
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Engagement Feed",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
+  },
+  {
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Drafts & Templates",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
+  },
+  {
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Draft/template limits",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const ent = getPlanEntitlements(plan.id);
+      if (ent.maxDrafts == null && ent.maxTemplates == null) return "Unlimited";
+      return `${formatLimit(ent.maxDrafts)} drafts / ${formatLimit(
+        ent.maxTemplates
+      )} templates`;
+    },
   },
   {
     group: GROUP_PLANNING,
-    key: "multipleQueues",
-    label: "Queues & parallel publishing",
+    label: "Scheduled items included",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const ent = getPlanEntitlements(plan.id);
+      return ent.maxFutureScheduledItems ?? "Unlimited";
+    },
   },
   {
     group: GROUP_PLANNING,
-    key: "bulkScheduling",
-    label: "Bulk & power scheduling",
+    label: "Queue count",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const ent = getPlanEntitlements(plan.id);
+      return ent.maxQueues ?? "Unlimited";
+    },
   },
   {
-    group: GROUP_ENGAGEMENT,
-    key: "engagementFeed",
-    label: "Engagement feed & workflows",
+    group: GROUP_PLANNING,
+    label: "Broadcast workflow",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {
-    group: GROUP_ENGAGEMENT,
-    key: "giveaways",
-    label: "Giveaways & contests",
+    group: GROUP_PLANNING,
+    label: "Broadcast sending",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const ent = getPlanEntitlements(plan.id);
+      return ent.canSendBroadcast ? "Yes" : "Explore only";
+    },
   },
   {
-    group: GROUP_ENGAGEMENT,
-    key: "commissions",
-    label: "Campaign fee economics",
+    group: GROUP_PLANNING,
+    label: "Bulk workflow",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const ent = getPlanEntitlements(plan.id);
+      return ent.canExecuteBulkActions;
+    },
+  },
+  {
+    group: GROUP_CAMPAIGNS,
+    label: "Giveaways & Contests",
+    getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
+  },
+  {
+    group: GROUP_CAMPAIGNS,
+    label: "Campaign commission",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      return campaignCommissionPercent(plan.id) ?? "—";
+    },
   },
   {
     group: GROUP_POWER,
-    key: "advancedAnalytics",
-    label: "Analytics depth",
-  },
-  {
-    group: GROUP_POWER,
-    key: "multiAccountSwitching",
-    label: "Multi-account switching",
-  },
-  {
-    group: GROUP_POWER,
-    key: "relayBlast",
     label: "Relay blast & distribution",
-  },
-  {
-    group: GROUP_POWER,
-    key: "wolfFilteringAndVortex",
-    label: "WoT filtering & relay tooling",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      // Only advertise this if it's explicitly enabled for the plan.
+      return Boolean(plan.features["relayBlast"]);
+    },
   },
 ];
 
-function renderCell(
-  plan: PricingPagePlan,
-  featureKey: string
-): React.ReactNode {
+function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
   if (plan.isTeamsPlaceholder) {
     return (
       <span className="text-muted-foreground text-center text-xs">
@@ -94,8 +140,6 @@ function renderCell(
       </span>
     );
   }
-
-  const value = plan.features[featureKey];
 
   if (typeof value === "boolean") {
     return value ? (
@@ -108,6 +152,14 @@ function renderCell(
   if (typeof value === "string") {
     return (
       <span className="text-foreground px-2 text-center text-sm">{value}</span>
+    );
+  }
+
+  if (typeof value === "number") {
+    return (
+      <span className="text-foreground px-2 text-center text-sm tabular-nums">
+        {value}
+      </span>
     );
   }
 
@@ -160,7 +212,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                   </tr>
                   {rows.map((feature, index) => (
                     <tr
-                      key={`${groupTitle}-${feature.key}-${feature.label}`}
+                      key={`${groupTitle}-${feature.label}`}
                       className={`border-border border-b ${
                         index % 2 === 0 ? "bg-muted/15" : "bg-card"
                       }`}
@@ -173,7 +225,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                           key={plan.id}
                           className="p-4 text-center align-middle"
                         >
-                          {renderCell(plan, feature.key)}
+                          {renderCell(plan, feature.getValue(plan))}
                         </td>
                       ))}
                     </tr>
