@@ -1,4 +1,9 @@
-import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  Link,
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect } from "react";
 
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
@@ -63,6 +68,7 @@ import {
   type QueueTypeSettings,
   type RelayAck,
 } from "./settings-page-loader-parsers";
+import { SettingsActivePanelSkeleton } from "./SettingsActivePanelSkeleton";
 
 function renderSettingsPanel(
   tab: SettingsTabId,
@@ -401,6 +407,7 @@ export default function SettingsPage() {
   const resolvedFromDefer = useSettingsResolvedLoaderData();
   const loaderDataFromRoute = useLoaderData<unknown>();
   const loaderDataRaw = resolvedFromDefer ?? loaderDataFromRoute;
+  const navigation = useNavigation();
   const [searchParams, setSearchParams] = useSearchParams();
   const data = loaderDataRaw as {
     timezone?: unknown;
@@ -559,6 +566,23 @@ export default function SettingsPage() {
     hasAccountsAccess: hasAccountsAccessBool,
   });
 
+  const isLoadingNextTab =
+    navigation.state === "loading" &&
+    navigation.location.pathname === "/dashboard/settings";
+
+  const nextSearch = navigation.location ? navigation.location.search : "";
+  const nextTabParam = isLoadingNextTab
+    ? new URLSearchParams(nextSearch).get("tab")
+    : null;
+
+  const nextActiveTab = nextTabParam
+    ? resolveSettingsTab({
+        tabParam: nextTabParam,
+        isChild: isChildBool,
+        hasAccountsAccess: hasAccountsAccessBool,
+      })
+    : activeTab;
+
   useEffect(() => {
     const requested = searchParams.get("tab");
     const next = new URLSearchParams(searchParams);
@@ -642,56 +666,60 @@ export default function SettingsPage() {
       : null;
 
   return (
-    <SettingsShell sections={settingsSections} activeTab={activeTab}>
-      {renderSettingsPanel(activeTab, {
-        isChildBool,
-        hasAccountsAccessBool,
-        timezoneValue,
-        timeFormatRaw,
-        dateFormatRaw,
-        preferredNostrClientRaw,
-        customNostrClientBaseUrlRaw,
-        pushNotificationsEnabled,
-        pushNotifyPublishSuccess,
-        pushNotifyPublishFailure,
-        pushNotifyRunwayLow,
-        pushNotifyIncludePreview,
-        runwayNotifyBelowDays,
-        primarySignerProfile,
-        queueTypes,
-        globalScheduleIntervalHours,
-        hashTagPresets,
-        accounts,
-        relaysList,
-        publishRelaySourceValue,
-        profileRelayEntriesList,
-        managedRelaysList,
-        relayAcksMap,
-        blastrRelayEnabled,
-        canToggleBlastr,
-        blastrPolicyRaw,
-        blastrSystemRelaysRaw,
-        giveawayBlacklistList,
-        mutedList,
-        filterMutedValue,
-        hidePostsFromLowTrustUsersValue,
-        replyTemplates,
-        uploadProviderValue,
-        uploadProviderStoredValue,
-        isSubscriptionActiveForGatingValue,
-        customBlossomUrlValue,
-        enableMirrorBlossomValue,
-        mirrorUploadUrlsList,
-        subscription,
-        availablePlans,
-        paymentHistory,
-        nwcEnabledValue,
-        maskedNwcStringValue,
-        nwcLastUsedValue,
-        referral,
-        defaultZapAmountSats,
-        billingContext,
-      })}
+    <SettingsShell sections={settingsSections} activeTab={nextActiveTab}>
+      {isLoadingNextTab ? (
+        <SettingsActivePanelSkeleton />
+      ) : (
+        renderSettingsPanel(activeTab, {
+          isChildBool,
+          hasAccountsAccessBool,
+          timezoneValue,
+          timeFormatRaw,
+          dateFormatRaw,
+          preferredNostrClientRaw,
+          customNostrClientBaseUrlRaw,
+          pushNotificationsEnabled,
+          pushNotifyPublishSuccess,
+          pushNotifyPublishFailure,
+          pushNotifyRunwayLow,
+          pushNotifyIncludePreview,
+          runwayNotifyBelowDays,
+          primarySignerProfile,
+          queueTypes,
+          globalScheduleIntervalHours,
+          hashTagPresets,
+          accounts,
+          relaysList,
+          publishRelaySourceValue,
+          profileRelayEntriesList,
+          managedRelaysList,
+          relayAcksMap,
+          blastrRelayEnabled,
+          canToggleBlastr,
+          blastrPolicyRaw,
+          blastrSystemRelaysRaw,
+          giveawayBlacklistList,
+          mutedList,
+          filterMutedValue,
+          hidePostsFromLowTrustUsersValue,
+          replyTemplates,
+          uploadProviderValue,
+          uploadProviderStoredValue,
+          isSubscriptionActiveForGatingValue,
+          customBlossomUrlValue,
+          enableMirrorBlossomValue,
+          mirrorUploadUrlsList,
+          subscription,
+          availablePlans,
+          paymentHistory,
+          nwcEnabledValue,
+          maskedNwcStringValue,
+          nwcLastUsedValue,
+          referral,
+          defaultZapAmountSats,
+          billingContext,
+        })
+      )}
     </SettingsShell>
   );
 }

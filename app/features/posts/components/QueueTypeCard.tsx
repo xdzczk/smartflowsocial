@@ -1,7 +1,6 @@
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Edit, Trash2 } from "lucide-react";
 
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
@@ -15,7 +14,6 @@ import {
 
 interface QueueTypeCardProps {
   queueType: QueueType & {
-    isDefault?: boolean;
     hashTagPreset?: { id: string; name: string } | null;
   };
   globalScheduleIntervalHours: number[];
@@ -68,11 +66,6 @@ export function QueueTypeCard({
             <h4 className="text-sm font-medium tracking-tight">
               {queueType.name}
             </h4>
-            {queueType.isDefault ? (
-              <Badge variant="secondary" className="text-[10px] font-normal">
-                Default
-              </Badge>
-            ) : null}
           </div>
           <p className="text-foreground/90 text-sm leading-snug font-medium">
             {primaryLine}
@@ -107,19 +100,17 @@ export function QueueTypeCard({
         >
           <Edit className={INLINE_ICON_SIZE_CLASS} />
         </Button>
-        {!queueType.isDefault ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
-            onClick={handleDeleteClick}
-            disabled={isDeletingQueueType}
-            aria-label={`Delete ${queueType.name}`}
-          >
-            <Trash2 className={INLINE_ICON_SIZE_CLASS} />
-          </Button>
-        ) : null}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+          onClick={handleDeleteClick}
+          disabled={isDeletingQueueType}
+          aria-label={`Delete ${queueType.name}`}
+        >
+          <Trash2 className={INLINE_ICON_SIZE_CLASS} />
+        </Button>
       </div>
     </div>
   );

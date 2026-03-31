@@ -1,31 +1,75 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="13" failures="0" errors="0" time="0.003568417">
-    <testsuite name="tests/unit/auth/reconnect-dialog-derived.test.ts" timestamp="2026-03-31T05:44:55.238Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.003568417">
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when state is not idle" time="0.000687958">
+<testsuites name="vitest tests" tests="34" failures="0" errors="0" time="0.025939167">
+    <testsuite name="tests/integration/settings-action.test.ts" timestamp="2026-03-31T07:06:48.072Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.016476625">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Timezone &gt; should update user timezone" time="0.004601958">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when error does not contain retry message" time="0.000097166">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Relays &gt; should update user relays" time="0.001015042">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when getPendingReconnect returns truthy" time="0.000097208">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Relays &gt; should filter out empty relay lines" time="0.000432209">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns true when idle, retry error, valid nip46 session, no pending" time="0.000097">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Giveaway Blacklist &gt; should update giveaway blacklist with valid npubs" time="0.000431458">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Reconnecting… when state is reconnecting_existing" time="0.000099667">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Giveaway Blacklist &gt; should reject blacklist items that don&apos;t start with npub" time="0.000846917">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Waiting for signer… when state is waiting" time="0.000059291">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Engagement reply templates &gt; should update reply template" time="0.000512584">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Connect signer when tab is bunker" time="0.000057458">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Engagement reply templates &gt; should reject reply template update without id" time="0.0002565">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Try again with existing connection when canRetryExisting" time="0.000042417">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Schedule Intervals &gt; should update schedule intervals with valid numbers" time="0.000397333">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Retry when nostrConnectUri present and not canRetryExisting" time="0.000061834">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Schedule Intervals &gt; should reject invalid schedule intervals" time="0.000428291">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Generate link when no uri and not canRetryExisting" time="0.000073">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should create a hashtag preset" time="0.000441583">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes tryReconnectWithExistingConnection when canRetryExisting and not bunker" time="0.001089958">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should require name and tags" time="0.000301958">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes resumeReconnectWithPendingUri when tab is nostrconnect and has pending" time="0.000112125">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should allow description to be optional" time="0.000254167">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes connect when no retry and no pending" time="0.000122292">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Update Hashtag Preset &gt; should update a hashtag preset" time="0.000314083">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Update Hashtag Preset &gt; should require id, name and tags" time="0.000225292">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Delete Hashtag Preset &gt; should delete a hashtag preset" time="0.00023375">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Delete Hashtag Preset &gt; should require id for deletion" time="0.000325417">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should create a queue type with INTERVAL schedule" time="0.001666584">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should create a queue type with FIXED_SLOTS schedule" time="0.00035975">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should reject queue type creation for free plan users" time="0.000282208">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should reject invalid hashtag preset" time="0.00025775">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Delete Queue Type &gt; should delete a queue type" time="0.000284292">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Subscription Actions &gt; should create a Lightning invoice for top-up" time="0.000665">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Error Handling &gt; should handle database errors" time="0.000815708">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/settings/hashtag-presets-edge-cases.test.ts" timestamp="2026-03-31T07:06:48.074Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.009462542">
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; create_hashtag_preset &gt; should reject empty name" time="0.004010541">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; create_hashtag_preset &gt; should reject empty tags" time="0.000428125">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; create_hashtag_preset &gt; should handle optional description" time="0.001013834">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; create_hashtag_preset &gt; should handle missing description" time="0.000330292">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; update_hashtag_preset &gt; should reject missing ID" time="0.000731583">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; update_hashtag_preset &gt; should reject empty name" time="0.000467">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; update_hashtag_preset &gt; should reject empty tags" time="0.000361833">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; update_hashtag_preset &gt; should handle optional description" time="0.000335667">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; delete_hashtag_preset &gt; should reject missing ID" time="0.000433916">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; delete_hashtag_preset &gt; should delete preset with valid ID" time="0.000333584">
+        </testcase>
+        <testcase classname="tests/integration/settings/hashtag-presets-edge-cases.test.ts" name="Hashtag Presets Action Handler - Edge Cases &gt; Invalid actions &gt; should return null for unknown action" time="0.000078334">
         </testcase>
     </testsuite>
 </testsuites>

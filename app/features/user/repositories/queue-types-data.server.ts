@@ -74,7 +74,7 @@ export function findQueueTypesByUserId(
   return prisma.queueType.findMany({
     where: { userId },
     include: { hashTagPreset: true },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+    orderBy: [{ createdAt: "asc" }],
   });
 }
 

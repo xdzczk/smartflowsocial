@@ -212,12 +212,12 @@ export function QueueTypesSettings({
   return (
     <>
       <ManagementListSection
-        title="Queue types"
+        title="Queues"
         description="Posting queues and how each one schedules work."
         primaryAction={
           <Button onClick={handleCreateNew} size="sm" variant="outline">
             <Plus className="mr-2 h-4 w-4" />
-            Add queue type
+            Add queue
           </Button>
         }
       >
@@ -228,11 +228,11 @@ export function QueueTypesSettings({
               aria-hidden
             />
             <p className="text-foreground mb-1 text-sm font-medium">
-              No queue types yet
+              No queues yet
             </p>
             <p className="mx-auto mb-5 max-w-sm text-xs leading-relaxed">
-              Queue types define reusable publishing schedules. Create one to
-              reuse timing logic across posts and keep publishing consistent.
+              Queues define reusable publishing schedules. Create one to reuse
+              timing logic across posts and keep publishing consistent.
             </p>
             <Button
               type="button"
@@ -241,7 +241,7 @@ export function QueueTypesSettings({
               variant="outline"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create first queue type
+              Create first queue
             </Button>
           </div>
         ) : (

@@ -1,4 +1,4 @@
-import { useSearchParams } from "@remix-run/react";
+import { useNavigation, useSearchParams } from "@remix-run/react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
@@ -9,6 +9,8 @@ import {
   parseBillingSegmentParam,
   type BillingSegmentId,
 } from "~/features/settings/settings-sections";
+
+import { BillingSegmentSkeleton } from "./BillingSegmentSkeleton";
 
 interface SubscriptionShape {
   id: string;
@@ -80,6 +82,7 @@ export function BillingSettings({
   billingContext,
 }: BillingSettingsProps) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
   const segment = parseBillingSegmentParam(searchParams.get("billing"));
 
   const setSegment = (next: BillingSegmentId) => {
@@ -92,10 +95,22 @@ export function BillingSettings({
     setSearchParams(sp, { replace: true, preventScrollReset: true });
   };
 
+  const isBillingNav =
+    navigation.state === "loading" &&
+    navigation.location.pathname === "/dashboard/settings";
+
+  const nextSegment = isBillingNav
+    ? parseBillingSegmentParam(
+        new URLSearchParams(navigation.location.search).get("billing")
+      )
+    : segment;
+
+  const isLoadingBillingSegment = isBillingNav && nextSegment !== segment;
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <Tabs
-        value={segment}
+        value={nextSegment}
         onValueChange={(v) => setSegment(v as BillingSegmentId)}
         className="w-full"
       >
@@ -112,34 +127,48 @@ export function BillingSettings({
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <SubscriptionSettings
-            subscription={subscription}
-            availablePlans={availablePlans}
-            nwcEnabled={nwcEnabled}
-            billingContext={billingContext}
-          />
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <SubscriptionSettings
+              subscription={subscription}
+              availablePlans={availablePlans}
+              nwcEnabled={nwcEnabled}
+              billingContext={billingContext}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="payments" className="mt-6 space-y-6">
-          <NWCSettings
-            nwcEnabled={nwcEnabled}
-            maskedNwcString={maskedNwcString}
-            nwcLastUsed={nwcLastUsed}
-          />
-          <PaymentHistorySection paymentHistory={paymentHistory} />
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <>
+              <NWCSettings
+                nwcEnabled={nwcEnabled}
+                maskedNwcString={maskedNwcString}
+                nwcLastUsed={nwcLastUsed}
+              />
+              <PaymentHistorySection paymentHistory={paymentHistory} />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="referral" className="mt-6">
-          <ReferralSettings
-            referralLink={referral.referralLink}
-            commissionRatePercent={referral.commissionRatePercent}
-            totalEarnedSats={referral.totalEarnedSats}
-            paidSats={referral.paidSats}
-            pendingSats={referral.pendingSats}
-            failedSats={referral.failedSats}
-            payoutDestination={referral.payoutDestination}
-            payoutDestinationType={referral.payoutDestinationType}
-          />
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <ReferralSettings
+              referralLink={referral.referralLink}
+              commissionRatePercent={referral.commissionRatePercent}
+              totalEarnedSats={referral.totalEarnedSats}
+              paidSats={referral.paidSats}
+              pendingSats={referral.pendingSats}
+              failedSats={referral.failedSats}
+              payoutDestination={referral.payoutDestination}
+              payoutDestinationType={referral.payoutDestinationType}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

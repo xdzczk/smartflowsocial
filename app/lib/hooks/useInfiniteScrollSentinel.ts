@@ -4,7 +4,7 @@
  * Use on pages with infinite query lists (Drafts, Posted, Scheduled, Templates).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useIntersectionObserver } from "./useIntersectionObserver";
 
@@ -22,6 +22,8 @@ export function useInfiniteScrollSentinel({
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
+  const prefetchTriggeredRef = useRef(false);
+  const fetchTriggeredRef = useRef(false);
 
   // On desktop use the viewport (null) so the sentinel is observed when it nears
   // the viewport; on mobile use the listing's scroll container when set.
@@ -54,7 +56,10 @@ export function useInfiniteScrollSentinel({
       !isFetchingNextPage &&
       !isIntersecting
     ) {
-      fetchNextPage();
+      if (!prefetchTriggeredRef.current) {
+        prefetchTriggeredRef.current = true;
+        fetchNextPage();
+      }
     }
   }, [
     isPrefetchIntersecting,
@@ -67,9 +72,21 @@ export function useInfiniteScrollSentinel({
   // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
   useEffect(() => {
     if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      if (!fetchTriggeredRef.current) {
+        fetchTriggeredRef.current = true;
+        fetchNextPage();
+      }
     }
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Reset triggers once sentinels leave view so we can load again on further scroll.
+  useEffect(() => {
+    if (!isPrefetchIntersecting) prefetchTriggeredRef.current = false;
+  }, [isPrefetchIntersecting]);
+
+  useEffect(() => {
+    if (!isIntersecting) fetchTriggeredRef.current = false;
+  }, [isIntersecting]);
 
   return {
     sentinelRef,

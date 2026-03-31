@@ -40,7 +40,6 @@ import {
 } from "../types";
 
 interface QueueTypeDialogQueueType extends QueueType {
-  isDefault?: boolean;
   hashTagPreset?: {
     id: string;
     name: string;
@@ -116,10 +115,8 @@ export function QueueTypeDialog({
         hashTagPresetId: queueType.hashTagPresetId ?? "none",
         scheduleType: queueType.scheduleType ?? "INTERVAL",
         isEnabled: queueType.isEnabled !== false,
-        useGlobalInterval:
-          scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
-            ? scheduleConfig.useGlobalInterval
-            : false,
+        // Legacy support: queues may have been created with useGlobalInterval. We no longer expose this option.
+        useGlobalInterval: false,
         intervalHours:
           scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
             ? (scheduleConfig.intervalHours?.toString() ?? "")
@@ -188,7 +185,10 @@ export function QueueTypeDialog({
     fetcher.state === "submitting" || fetcher.state === "loading";
   const scheduleType = form.watch("scheduleType");
   const hashTagPresetId = form.watch("hashTagPresetId");
-  const useGlobalInterval = form.watch("useGlobalInterval");
+  const hasLegacyGlobalInterval =
+    queueType?.scheduleType === "INTERVAL" &&
+    isIntervalScheduleConfig(queueType.scheduleConfig) &&
+    queueType.scheduleConfig.useGlobalInterval === true;
 
   useEffect(() => {
     if (!open) {
@@ -249,9 +249,8 @@ export function QueueTypeDialog({
           : data.hashTagPresetId,
       scheduleType: data.scheduleType,
       ...(data.isEnabled !== undefined ? { isEnabled: data.isEnabled } : {}),
-      ...(data.useGlobalInterval !== undefined
-        ? { useGlobalInterval: data.useGlobalInterval }
-        : {}),
+      // Always submit false; UI no longer supports global interval mode.
+      useGlobalInterval: false,
       ...(data.intervalHours ? { intervalHours: data.intervalHours } : {}),
       ...(data.slots ? { slots: data.slots } : {}),
       ...(data.scheduleType === "WEEKLY_SLOTS" && data.weeklySlots?.length
@@ -282,9 +281,7 @@ export function QueueTypeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden sm:max-w-lg">
         <DialogHeader className="shrink-0 space-y-1 pr-6">
-          <DialogTitle>
-            {isEditing ? "Edit queue type" : "Create queue type"}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? "Edit queue" : "Create queue"}</DialogTitle>
           <DialogDescription>
             Set how this queue schedules posts, hashtag defaults, and timing.
           </DialogDescription>
@@ -478,46 +475,28 @@ export function QueueTypeDialog({
 
               {scheduleType === "INTERVAL" ? (
                 <div className="space-y-3">
-                  <div className="border-border/60 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
-                    <div className="min-w-0 space-y-0.5">
-                      <Label
-                        htmlFor="use-global-interval"
-                        className="text-sm font-medium"
-                      >
-                        Use global schedule
-                      </Label>
-                      <p className="text-muted-foreground text-xs leading-snug">
-                        Same interval options as the composer quick picks
-                        (General → Schedule).
-                      </p>
-                    </div>
-                    <Switch
-                      id="use-global-interval"
-                      checked={!!useGlobalInterval}
-                      onCheckedChange={(checked) => {
-                        form.setValue("useGlobalInterval", checked);
-                      }}
-                      className="shrink-0"
-                    />
-                  </div>
-                  {!useGlobalInterval ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="intervalHours">Hours between posts</Label>
-                      <Input
-                        id="intervalHours"
-                        type="number"
-                        min="1"
-                        max="168"
-                        step="1"
-                        {...form.register("intervalHours")}
-                      />
-                      {form.formState.errors.intervalHours ? (
-                        <p className="text-destructive text-sm">
-                          {form.formState.errors.intervalHours.message}
-                        </p>
-                      ) : null}
-                    </div>
+                  {hasLegacyGlobalInterval ? (
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      This queue previously used a global schedule setting. Set
+                      a custom interval to continue editing it.
+                    </p>
                   ) : null}
+                  <div className="space-y-2">
+                    <Label htmlFor="intervalHours">Hours between posts</Label>
+                    <Input
+                      id="intervalHours"
+                      type="number"
+                      min="1"
+                      max="168"
+                      step="1"
+                      {...form.register("intervalHours")}
+                    />
+                    {form.formState.errors.intervalHours ? (
+                      <p className="text-destructive text-sm">
+                        {form.formState.errors.intervalHours.message}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
 
@@ -671,7 +650,7 @@ export function QueueTypeDialog({
                 : "Creating…"
               : isEditing
                 ? "Save changes"
-                : "Create queue type"}
+                : "Create queue"}
           </Button>
         </DialogFooter>
       </DialogContent>
