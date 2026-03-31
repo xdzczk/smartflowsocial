@@ -153,8 +153,8 @@ export function PricingCard({
     (isLoading ? selectedPlan === plan.id : false);
 
   const cardClass = isTeams
-    ? "border-border bg-muted/20 relative rounded-lg border p-6 opacity-90 shadow-sm"
-    : `border-border bg-card relative rounded-lg border p-6 shadow-lg ${
+    ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-6 opacity-90 shadow-sm"
+    : `border-border bg-card relative flex h-full flex-col rounded-lg border p-6 shadow-lg ${
         plan.isPopular ? "dark:ring-primary/30 ring-border ring-2" : ""
       }`;
 
@@ -207,16 +207,18 @@ export function PricingCard({
         <p className="text-muted-foreground text-sm">{plan.description}</p>
       </div>
 
-      {plan.callouts.length > 0 ? (
-        <ul className="text-muted-foreground mb-6 space-y-2 text-left text-sm">
-          {plan.callouts.map((line) => (
-            <li key={line} className="flex gap-2">
-              <span className="text-primary shrink-0">·</span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="flex-1">
+        {plan.callouts.length > 0 ? (
+          <ul className="text-muted-foreground mb-6 space-y-2 text-left text-sm">
+            {plan.callouts.map((line) => (
+              <li key={line} className="flex gap-2">
+                <span className="text-primary shrink-0">·</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
 
       {isCurrentPlan && !isCurrentPlanExpired && !isTeams ? (
         <Link

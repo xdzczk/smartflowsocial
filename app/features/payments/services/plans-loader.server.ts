@@ -266,6 +266,40 @@ export async function loadPlansData(request: Request) {
     mapToPricingPagePlan(plan)
   );
 
+  // Always show the Teams card on the pricing page, even if the DB visibility
+  // configuration is out of sync in some environments.
+  const hasTeamsInGrid = mainGridPlans.some((p) => p.id === "teams");
+  if (!hasTeamsInGrid) {
+    mainGridPlans.push({
+      id: "teams",
+      name: "Teams",
+      monthlyPriceUsd: 0,
+      yearlyPriceUsd: 0,
+      yearlySavingsNote: null,
+      checkoutPricing: buildCheckoutPricing("teams", 0, 0, priceIndex),
+      description:
+        PLAN_SUBTITLES["teams"] ?? "Built for collaborative publishing",
+      features: {},
+      isPopular: false,
+      planBillingModel: "disabled",
+      purchasable: false,
+      isComingSoon: true,
+      isTeamsPlaceholder: true,
+      callouts: GRID_CALLOUTS["teams"] ?? [],
+    });
+  }
+
+  // Enforce canonical ordering in the main grid.
+  const gridOrder = ["free", "basic", "premium", "teams"] as const;
+  mainGridPlans.sort((a, b) => {
+    const ai = gridOrder.indexOf(a.id as (typeof gridOrder)[number]);
+    const bi = gridOrder.indexOf(b.id as (typeof gridOrder)[number]);
+    if (ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
   const comparisonTablePlans: PricingPagePlan[] = mainGridPlans;
 
   let founderOffering: FounderOfferingPayload | null = null;
