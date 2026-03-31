@@ -184,7 +184,7 @@ export function MediaThumbnail({
       />
       {isVideo ? (
         <div className="bg-opacity-30 group-hover:bg-opacity-50 absolute inset-0 flex items-center justify-center bg-black transition-all duration-200">
-          <div className="bg-opacity-90 group-hover:bg-opacity-100 rounded-full bg-white p-3 transition-all duration-200">
+          <div className="bg-card/90 group-hover:bg-card rounded-full p-3 transition-all duration-200">
             <Play
               className="text-foreground h-8 w-8"
               strokeWidth={INLINE_ICON_STROKE}

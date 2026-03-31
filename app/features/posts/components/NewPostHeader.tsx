@@ -16,7 +16,7 @@ interface NewPostHeaderProps {
 
 export function NewPostHeader({ title = "Create post" }: NewPostHeaderProps) {
   return (
-    <h1 className="text-foreground text-xl font-semibold tracking-tight dark:text-white">
+    <h1 className="text-foreground text-xl font-semibold tracking-tight">
       {title}
     </h1>
   );

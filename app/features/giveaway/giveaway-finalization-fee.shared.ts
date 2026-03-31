@@ -4,7 +4,7 @@
 
 import type { PlanType } from "~/features/payments/types";
 
-/** Free 10%, Basic 5%; Premium, Founder, Pro, Enterprise: 0%. */
+/** Free 10%, Creator 5%; Pro, Founder, Enterprise: 0%. */
 export function getFinalizationFeeRateBps(planType: PlanType): number {
   if (planType === "free") {
     return 1000;

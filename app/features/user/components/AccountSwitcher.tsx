@@ -84,7 +84,7 @@ export default function AccountSwitcher() {
           void handleSwitch(value);
         }}
       >
-        <SelectTrigger className="dark:bg-card h-9 w-[220px] bg-white text-sm">
+        <SelectTrigger className="bg-card h-9 w-[220px] text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

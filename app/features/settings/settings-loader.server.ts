@@ -47,6 +47,7 @@ import {
   getUserMutedList,
   getUserNWC,
   getUserPushNotificationPreferences,
+  getUserThemePreference,
   getUserPrimarySignerProfile,
   getResolvedUploadProviderSettings,
   getUserTimeFormat,
@@ -102,7 +103,7 @@ export interface SettingsLoaderData {
     { status: string; createdAt: string; receivedAt: string | null }
   >;
   giveawayBlacklist: string[];
-  queueTypes: QueueType[];
+  queueTypes: QueueTypeSettings[];
   /** User's global composer schedule intervals (hours), for queue row summaries when a queue uses global interval mode. */
   globalScheduleIntervalHours: number[];
   uploadProvider: string;
@@ -184,6 +185,8 @@ export interface SettingsLoaderData {
   customNostrClientBaseUrl: string | null;
   primarySignerProfile: PrimarySignerProfile | null;
   blastrRelayEnabled: boolean;
+  /** Account-level appearance preference; null means no account override. */
+  themePreference: "system" | "light" | "dark" | null;
   canToggleBlastr: boolean;
   blastrPolicy: {
     policy: { mode: "blacklist" | "whitelist"; enabled: boolean } | null;
@@ -204,6 +207,17 @@ export interface SettingsLoaderData {
   defaultZapAmountSats: number | null;
   billingContext: BillingContext | null;
 }
+
+type QueueTypeSettings = QueueType & {
+  isDefault: boolean;
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string;
+  } | null;
+  hashTagPresetId?: string;
+};
 
 /** Safe defaults when settings loader fails (matches dashboard.settings error fallback). */
 export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
@@ -255,6 +269,7 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
   customNostrClientBaseUrl: null,
   primarySignerProfile: null,
   blastrRelayEnabled: true,
+  themePreference: null,
   canToggleBlastr: false,
   blastrPolicy: null,
   blastrSystemRelays: [],
@@ -329,12 +344,17 @@ export async function loadSettingsData(
   // Get subscription and plan name for gating Accounts tab
   const currentSub = await getUserSubscription(userId);
   const planName = currentSub?.Plan?.name ?? null;
+  const planId = (currentSub?.planId ?? "").toLowerCase();
 
   const userRecord = await getUserBasicInfo(userId);
   const myNpub = userRecord?.npub as string;
   const isChild = !!userRecord?.isChild;
   const hasAccountsAccess =
-    isChild || planName === "Founder" || planName === "Premium";
+    isChild ||
+    planId === "premium" ||
+    planName === "Founder" ||
+    planName === "Premium" ||
+    planName === "Pro";
 
   // Load all settings data in parallel
   // Use cached versions for rarely-changing data (queue types, hashtag presets)
@@ -360,6 +380,7 @@ export async function loadSettingsData(
     customNostrClientBaseUrl,
     primarySignerProfile,
     blastrRelayEnabled,
+    themePreference,
     defaultZapAmountSats,
     scheduleIntervalStrings,
   ] = await Promise.all([
@@ -384,6 +405,7 @@ export async function loadSettingsData(
     getUserCustomNostrClientBaseUrl(userId),
     getUserPrimarySignerProfile(userId),
     getUserBlastrRelayEnabled(userId),
+    getUserThemePreference(userId),
     getUserDefaultZapAmountSatsStored(userId),
     getScheduleInterval(userId),
   ]);
@@ -410,7 +432,7 @@ export async function loadSettingsData(
       ...effectiveWriteRelays.direct,
       ...relays,
       ...profileRelays,
-      ...profileRelayEntries.map((e) => e.url),
+      ...profileRelayEntries.map((e: Nip65ProfileRelayEntry) => e.url),
       ...managedRelays.map((m) => m.relayUrl),
     ])
   );
@@ -478,7 +500,22 @@ export async function loadSettingsData(
     relayAcks,
     giveawayBlacklist,
     queueTypes: queueTypes.map((qt) => {
-      const hpRaw = qt.hashTagPreset;
+      const row = qt as {
+        id: string;
+        name: string;
+        colorToken: string | null;
+        description: string | null;
+        scheduleType: string;
+        scheduleConfig: unknown;
+        isEnabled: boolean | null;
+        isDefault: boolean | null;
+        userId: string;
+        hashTagPresetId: string | null;
+        includeHashtagsInNoteBody: boolean | null;
+        hashTagPreset?: unknown;
+      };
+
+      const hpRaw = row.hashTagPreset;
       let preset: {
         id: string;
         name: string;
@@ -506,23 +543,28 @@ export async function loadSettingsData(
         };
       }
       return {
-        id: qt.id,
-        name: qt.name,
-        color: getQueueAccentHex(qt.colorToken ?? null),
-        colorToken: qt.colorToken ?? undefined,
-        description: qt.description,
-        scheduleType: qt.scheduleType,
+        id: row.id,
+        name: row.name,
+        color: getQueueAccentHex(row.colorToken),
+        colorToken: row.colorToken ?? undefined,
+        description: row.description,
+        scheduleType:
+          row.scheduleType === "INTERVAL" ||
+          row.scheduleType === "FIXED_SLOTS" ||
+          row.scheduleType === "WEEKLY_SLOTS"
+            ? row.scheduleType
+            : "INTERVAL",
         scheduleConfig:
-          qt.scheduleConfig &&
-          typeof qt.scheduleConfig === "object" &&
-          !Array.isArray(qt.scheduleConfig)
-            ? (qt.scheduleConfig as ScheduleConfig)
+          row.scheduleConfig &&
+          typeof row.scheduleConfig === "object" &&
+          !Array.isArray(row.scheduleConfig)
+            ? (row.scheduleConfig as ScheduleConfig)
             : undefined,
-        isEnabled: qt.isEnabled,
-        isDefault: qt.isDefault,
-        userId: qt.userId,
-        hashTagPresetId: qt.hashTagPresetId ?? undefined,
-        includeHashtagsInNoteBody: qt.includeHashtagsInNoteBody !== false,
+        isEnabled: row.isEnabled ?? undefined,
+        isDefault: row.isDefault === true,
+        userId: row.userId,
+        hashTagPresetId: row.hashTagPresetId ?? undefined,
+        includeHashtagsInNoteBody: row.includeHashtagsInNoteBody !== false,
         hashTagPreset: preset,
       };
     }),
@@ -642,6 +684,7 @@ export async function loadSettingsData(
       ? primarySignerProfile
       : null,
     blastrRelayEnabled,
+    themePreference,
     canToggleBlastr,
     blastrPolicy,
     blastrSystemRelays,

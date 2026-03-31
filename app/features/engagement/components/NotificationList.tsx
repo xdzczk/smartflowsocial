@@ -66,7 +66,7 @@ export default function NotificationList({
   }
 
   return (
-    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+    <div className="border-border divide-y">
       {notifications.map((notification) => {
         if (notification.type === "reply") {
           return (
@@ -120,7 +120,7 @@ function ReplyNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="hover:bg-muted dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors">
+    <div className="bg-card hover:bg-muted p-4 transition-colors">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -147,7 +147,7 @@ function ReplyNotification({
             )}
             <span className="text-foreground font-semibold">{displayName}</span>
             {notification.authorNip05 ? (
-              <span className="text-muted-foreground dark:text-foreground text-xs">
+              <span className="text-muted-foreground text-xs">
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
@@ -156,7 +156,7 @@ function ReplyNotification({
             </span>
           </div>
 
-          <p className="dark:text-foreground text-muted-foreground mb-2 text-sm break-words whitespace-pre-wrap">
+          <p className="text-muted-foreground mb-2 text-sm break-words whitespace-pre-wrap">
             {notification.content}
           </p>
 
@@ -173,7 +173,7 @@ function ReplyNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-primary dark:text-muted-foreground hover:underline"
+              className="text-primary hover:underline"
             >
               Open on Nostr
             </Link>
@@ -201,7 +201,7 @@ function ZapNotification({
       notification.senderPubkey.slice(-4);
 
   return (
-    <div className="hover:bg-muted dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors">
+    <div className="bg-card hover:bg-muted p-4 transition-colors">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -228,14 +228,14 @@ function ZapNotification({
             )}
             <span className="text-foreground font-semibold">{displayName}</span>
             {notification.senderNip05 ? (
-              <span className="text-muted-foreground dark:text-foreground text-xs">
+              <span className="text-muted-foreground text-xs">
                 @{notification.senderNip05.split("@")[0]}
               </span>
             ) : null}
             <span className="dark:text-muted-foreground text-muted-foreground text-sm">
               zapped you
             </span>
-            <span className="dark:text-foreground rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900">
+            <span className="text-foreground rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900">
               ⚡ {notification.amountSats.toLocaleString()} sats
             </span>
           </div>
@@ -259,7 +259,7 @@ function ZapNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-primary dark:text-muted-foreground hover:underline"
+              className="text-primary hover:underline"
             >
               View original post
             </Link>
@@ -285,7 +285,7 @@ function MentionNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="hover:bg-muted dark:bg-card dark:hover:bg-muted/50 bg-white p-4 transition-colors">
+    <div className="bg-card hover:bg-muted p-4 transition-colors">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -312,7 +312,7 @@ function MentionNotification({
             )}
             <span className="text-foreground font-semibold">{displayName}</span>
             {notification.authorNip05 ? (
-              <span className="text-muted-foreground dark:text-foreground text-xs">
+              <span className="text-muted-foreground text-xs">
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
@@ -321,7 +321,7 @@ function MentionNotification({
             </span>
           </div>
 
-          <p className="dark:text-foreground text-muted-foreground mb-2 text-sm break-words whitespace-pre-wrap">
+          <p className="text-muted-foreground mb-2 text-sm break-words whitespace-pre-wrap">
             {notification.content}
           </p>
 
@@ -338,7 +338,7 @@ function MentionNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-primary dark:text-muted-foreground hover:underline"
+              className="text-primary hover:underline"
             >
               Open on Nostr
             </Link>

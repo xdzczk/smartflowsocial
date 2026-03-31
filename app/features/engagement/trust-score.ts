@@ -145,7 +145,7 @@ export function getTrustLevel(score: number): {
   } else {
     return {
       level: "Unverified",
-      color: "text-gray-600 dark:text-muted-foreground",
+      color: "text-muted-foreground",
       description: "Minimal profile information or activity",
     };
   }
@@ -164,6 +164,6 @@ export function getTrustScoreBadgeColor(score: number): string {
   } else if (score >= 20) {
     return "bg-muted dark:bg-muted text-foreground dark:text-foreground border-border dark:border-border";
   } else {
-    return "bg-gray-100 dark:bg-card text-gray-800 dark:text-foreground border-gray-200 dark:border-border";
+    return "bg-muted/40 dark:bg-card text-foreground border-border";
   }
 }

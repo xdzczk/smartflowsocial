@@ -49,7 +49,7 @@ export function ResumeModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="dark:bg-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6">
+      <div className="bg-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Resume Draft</h2>
           <button
@@ -124,7 +124,7 @@ export function ResumeModal({
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-4 py-2 text-sm font-medium"
+              className="bg-card border-border text-muted-foreground hover:bg-muted rounded-lg border px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>

@@ -113,6 +113,7 @@ export {
   defaultCheckoutPaymentMethod,
 } from "./components/SubscriptionCheckoutModal";
 export { PlansPage } from "./components/PlansPage";
+export { PlanStatusBanner } from "./components/PlanStatusBanner";
 
 // ============================================================================
 // Hooks (Public API)

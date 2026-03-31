@@ -19,7 +19,7 @@ export function LongFormEditHeader({
 }: LongFormEditHeaderProps) {
   return (
     <>
-      <h1 className="text-foreground mb-6 text-2xl font-bold dark:text-white">
+      <h1 className="text-foreground mb-6 text-2xl font-bold">
         Edit Long-form Post
       </h1>
 

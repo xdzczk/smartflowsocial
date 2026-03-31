@@ -54,6 +54,10 @@ export const updateTimezoneSchema = z.object({
   timezone: z.string().min(1, ERROR_TIMEZONE_REQUIRED),
 });
 
+export const updateThemePreferenceSchema = z.object({
+  themePreference: z.enum(["system", "light", "dark"]),
+});
+
 const publishRelaySourceSchema = z.enum(["app", "nip65_profile"]);
 
 /**

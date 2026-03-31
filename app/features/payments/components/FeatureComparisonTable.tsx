@@ -1,11 +1,18 @@
 /**
- * Feature comparison: Free, Basic, Premium, Teams (no Founder column).
+ * Feature comparison: Free, Creator, Pro (no Teams/Founder columns).
  */
 
 import { Check, X } from "lucide-react";
 import { Fragment } from "react";
 
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  formatBytesForPlanMarketing,
+  formatPlanCapForDisplay,
+  higherTierLabelFromLegacyPlanId,
+} from "~/features/payments/limit-display";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 
 interface FeatureComparisonTableProps {
@@ -15,16 +22,13 @@ interface FeatureComparisonTableProps {
 const GROUP_CORE_WORKFLOWS = "Core workflows";
 const GROUP_PLANNING = "Planning and execution";
 const GROUP_CAMPAIGNS = "Campaigns";
+const GROUP_MEDIA = "Media";
 const GROUP_POWER = "Power features";
 
 interface ComparisonRow {
   group: string;
   label: string;
   getValue: (plan: PricingPagePlan) => boolean | string | number | null;
-}
-
-function formatLimit(value: number | null): string {
-  return value == null ? "Unlimited" : String(value);
 }
 
 function campaignCommissionPercent(planId: string): string | null {
@@ -61,10 +65,10 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      if (ent.maxDrafts == null && ent.maxTemplates == null) return "Unlimited";
-      return `${formatLimit(ent.maxDrafts)} drafts / ${formatLimit(
-        ent.maxTemplates
-      )} templates`;
+      if (ent.maxDrafts == null && ent.maxTemplates == null) {
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+      }
+      return `${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxDrafts })} drafts / ${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxTemplates })} templates`;
     },
   },
   {
@@ -73,7 +77,10 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      return ent.maxFutureScheduledItems ?? "Unlimited";
+      if (ent.maxFutureScheduledItems == null) {
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+      }
+      return ent.maxFutureScheduledItems;
     },
   },
   {
@@ -82,7 +89,10 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      return ent.maxQueues ?? "Unlimited";
+      if (ent.maxQueues == null) {
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+      }
+      return ent.maxQueues;
     },
   },
   {
@@ -106,6 +116,53 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
       return ent.canExecuteBulkActions;
+    },
+  },
+  {
+    group: GROUP_MEDIA,
+    label: "SFS-hosted media",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      return getCanonicalPlanPolicy(planType).media.canUseSfsBlossomStorage
+        ? "Yes"
+        : "No";
+    },
+  },
+  {
+    group: GROUP_MEDIA,
+    label: "Monthly hosted storage",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const media = getCanonicalPlanPolicy(planType).media;
+      return media.canUseSfsBlossomStorage
+        ? formatBytesForPlanMarketing(media.monthlyStorageBytes)
+        : "—";
+    },
+  },
+  {
+    group: GROUP_MEDIA,
+    label: "Monthly hosted uploads",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const media = getCanonicalPlanPolicy(planType).media;
+      return media.canUseSfsBlossomStorage
+        ? formatBytesForPlanMarketing(media.monthlyUploadBytes)
+        : "—";
+    },
+  },
+  {
+    group: GROUP_MEDIA,
+    label: "Max hosted file size",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const media = getCanonicalPlanPolicy(planType).media;
+      return media.canUseSfsBlossomStorage
+        ? formatBytesForPlanMarketing(media.maxFileBytes)
+        : "—";
     },
   },
   {

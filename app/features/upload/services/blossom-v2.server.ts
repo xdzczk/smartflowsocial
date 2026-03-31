@@ -1,8 +1,11 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 import { getUserSubscription } from "~/features/payments/data";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { getUserById } from "~/features/user";
 import { env } from "~/lib/env.server";
+import { AuthorizationError } from "~/lib/errors";
 
 import {
   aggregateReservedSizeForPubkey,
@@ -22,48 +25,6 @@ const TOKEN_TTL_SECONDS = 180;
 const BATCH_TTL_SECONDS = 900;
 const MAX_BATCH_SIZE = 500;
 
-type PlanId = "free" | "basic" | "premium" | "pro" | "enterprise";
-
-interface PlanQuotaPolicy {
-  monthlyStorageBytes: bigint | null;
-  monthlyUploadBytes: bigint | null;
-  maxFileBytes: number;
-  maxParallelUploadsHint: number;
-}
-
-const DEFAULT_PLAN_POLICIES: Record<PlanId, PlanQuotaPolicy> = {
-  free: {
-    monthlyStorageBytes: BigInt(2 * 1024 * 1024 * 1024),
-    monthlyUploadBytes: BigInt(5 * 1024 * 1024 * 1024),
-    maxFileBytes: 100 * 1024 * 1024,
-    maxParallelUploadsHint: 4,
-  },
-  basic: {
-    monthlyStorageBytes: BigInt(20 * 1024 * 1024 * 1024),
-    monthlyUploadBytes: BigInt(100 * 1024 * 1024 * 1024),
-    maxFileBytes: 250 * 1024 * 1024,
-    maxParallelUploadsHint: 6,
-  },
-  premium: {
-    monthlyStorageBytes: BigInt(100 * 1024 * 1024 * 1024),
-    monthlyUploadBytes: BigInt(500 * 1024 * 1024 * 1024),
-    maxFileBytes: 500 * 1024 * 1024,
-    maxParallelUploadsHint: 8,
-  },
-  pro: {
-    monthlyStorageBytes: BigInt(500 * 1024 * 1024 * 1024),
-    monthlyUploadBytes: BigInt(2 * 1024 * 1024 * 1024 * 1024),
-    maxFileBytes: 1024 * 1024 * 1024,
-    maxParallelUploadsHint: 10,
-  },
-  enterprise: {
-    monthlyStorageBytes: null,
-    monthlyUploadBytes: null,
-    maxFileBytes: 1024 * 1024 * 1024,
-    maxParallelUploadsHint: 10,
-  },
-};
-
 interface UploadFileIntent {
   sha256: string;
   size: number;
@@ -77,6 +38,7 @@ interface TokenResult {
   token?: string;
   expiresIn?: number;
   error?: string;
+  message?: string;
 }
 
 export interface BulkTokenIssueResult {
@@ -164,67 +126,14 @@ function signHs256(payload: TokenPayload, secret: string): string {
   return `${content}.${encodedSignature}`;
 }
 
-function parsePlanId(rawPlanId: string | null | undefined): PlanId {
-  const planId = (rawPlanId ?? "").toLowerCase();
-  if (planId === "basic") return "basic";
-  if (planId === "premium") return "premium";
-  if (planId === "pro") return "pro";
-  if (planId === "enterprise") return "enterprise";
-  return "free";
-}
-
-function parseOptionalBigInt(value: unknown): bigint | null {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    return BigInt(Math.trunc(value));
-  }
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    return BigInt(value);
-  }
-  return null;
-}
-
-function parseOptionalInt(value: unknown, fallback: number): number {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return Math.trunc(value);
-  }
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    return parseInt(value, 10);
-  }
-  return fallback;
-}
-
-function resolveQuotaPolicy(
-  planId: PlanId,
-  features: unknown
-): PlanQuotaPolicy {
-  const defaults = DEFAULT_PLAN_POLICIES[planId];
-  if (!features || typeof features !== "object") {
-    return defaults;
-  }
-  const featureObj = features as Record<string, unknown>;
-  const monthlyStorageBytes =
-    parseOptionalBigInt(featureObj["monthly_storage_bytes"]) ??
-    parseOptionalBigInt(featureObj["monthlyStorageBytes"]) ??
-    defaults.monthlyStorageBytes;
-  const monthlyUploadBytes =
-    parseOptionalBigInt(featureObj["monthly_upload_bytes"]) ??
-    parseOptionalBigInt(featureObj["monthlyUploadBytes"]) ??
-    defaults.monthlyUploadBytes;
-  const maxFileBytes = parseOptionalInt(
-    featureObj["max_file_bytes"] ?? featureObj["maxFileBytes"],
-    defaults.maxFileBytes
-  );
-  const maxParallelUploadsHint = parseOptionalInt(
-    featureObj["max_parallel_uploads_hint"] ??
-      featureObj["maxParallelUploadsHint"],
-    defaults.maxParallelUploadsHint
-  );
-  return {
-    monthlyStorageBytes,
-    monthlyUploadBytes,
-    maxFileBytes,
-    maxParallelUploadsHint,
-  };
+function formatHostedMediaBytes(bytes: number): string {
+  const MB = 1024 * 1024;
+  const GB = 1024 * MB;
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes % GB === 0) return `${bytes / GB} GB`;
+  if (bytes % MB === 0) return `${bytes / MB} MB`;
+  const mb = Math.round((bytes / MB) * 10) / 10;
+  return `${mb} MB`;
 }
 
 function getMonthStartUtc(date = new Date()): Date {
@@ -252,8 +161,28 @@ export async function issueBlossomBulkTokens(
   }
   const pubkey = user.npub.toLowerCase();
   const subscription = await getUserSubscription(userId);
-  const planId = parsePlanId(subscription?.planId);
-  const policy = resolveQuotaPolicy(planId, subscription?.Plan?.features);
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+    subscription?.planId ?? subscription?.Plan?.id ?? subscription?.Plan?.name
+  );
+  const canonicalPolicy = getCanonicalPlanPolicy(commercialPlanType);
+  if (!canonicalPolicy.media.canUseSfsBlossomStorage) {
+    throw new AuthorizationError(
+      "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+      { commercialPlanType, planId: subscription?.planId ?? null }
+    );
+  }
+
+  const hostedMediaPolicy = canonicalPolicy.media;
+  if (
+    hostedMediaPolicy.monthlyStorageBytes == null ||
+    hostedMediaPolicy.monthlyUploadBytes == null ||
+    hostedMediaPolicy.maxFileBytes == null ||
+    hostedMediaPolicy.maxParallelUploadsHint == null
+  ) {
+    throw new Error(
+      `Hosted media policy is missing quota fields for planType=${commercialPlanType}`
+    );
+  }
   const now = Math.floor(Date.now() / 1000);
   const tokenSecret = getTokenSecret();
 
@@ -267,8 +196,16 @@ export async function issueBlossomBulkTokens(
     if (!f.type || typeof f.type !== "string") {
       return { sha256: f.sha256, size: f.size, error: "invalid_request" };
     }
-    if (f.size > policy.maxFileBytes) {
-      return { sha256: f.sha256, size: f.size, error: "payload_too_large" };
+    if (hostedMediaPolicy.maxFileBytes == null) {
+      return { sha256: f.sha256, size: f.size, error: "invalid_request" };
+    }
+    if (f.size > hostedMediaPolicy.maxFileBytes) {
+      return {
+        sha256: f.sha256,
+        size: f.size,
+        error: "payload_too_large",
+        message: `This file exceeds your plan’s hosted media size limit (${formatHostedMediaBytes(hostedMediaPolicy.maxFileBytes)}).`,
+      };
     }
     return { sha256: f.sha256, size: f.size };
   });
@@ -307,11 +244,9 @@ export async function issueBlossomBulkTokens(
   for (const entry of validCandidates) {
     const fileSize = BigInt(entry.file.size);
     const storageAllowed =
-      policy.monthlyStorageBytes == null ||
-      currentStorage + fileSize <= policy.monthlyStorageBytes;
+      currentStorage + fileSize <= hostedMediaPolicy.monthlyStorageBytes;
     const uploadAllowed =
-      policy.monthlyUploadBytes == null ||
-      currentUpload + fileSize <= policy.monthlyUploadBytes;
+      currentUpload + fileSize <= hostedMediaPolicy.monthlyUploadBytes;
 
     if (!storageAllowed || !uploadAllowed) {
       validationResults[entry.index] = {
@@ -334,7 +269,9 @@ export async function issueBlossomBulkTokens(
       exp: now + TOKEN_TTL_SECONDS,
       jti,
       batchId,
-      rateClass: planId,
+      // Used by the Blossom gateway to enforce policy independently.
+      // Keep legacy plan ids so the gateway can map: basic→creator, premium→pro, etc.
+      rateClass: subscription?.planId ?? commercialPlanType,
     };
     validationResults[entry.index] = {
       sha256: entry.file.sha256,
@@ -373,7 +310,7 @@ export async function issueBlossomBulkTokens(
     uploadUrl: `${resolveBlossomUploadBaseUrl()}/upload`,
     batchId,
     expiresIn: BATCH_TTL_SECONDS,
-    maxParallelUploadsHint: policy.maxParallelUploadsHint,
+    maxParallelUploadsHint: hostedMediaPolicy.maxParallelUploadsHint,
     results: validationResults,
   };
 }

@@ -25,7 +25,7 @@ import { trackCheckoutEvent } from "~/features/payments/checkout/checkout-analyt
 import type { CheckoutPaymentMethodId } from "~/features/payments/checkout/checkout-method-config";
 import { getAvailableCheckoutMethods } from "~/features/payments/checkout/checkout-method-config";
 import { FounderCheckoutModal } from "~/features/payments/components/checkout/FounderCheckoutModal";
-import { usePlansPageCheckoutAnalytics } from "~/features/payments/hooks/use-plans-page-checkout-analytics.client";
+import { usePlansPageCheckoutAnalytics } from "~/features/payments/hooks/use-plans-page-checkout-analytics";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 import type {
   action as plansAction,
@@ -338,8 +338,8 @@ export function PlansPage(): ReactNode {
 
           <div className="mb-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Yearly billing applies to <strong>Basic</strong> and{" "}
-              <strong>Premium</strong> only.
+              Yearly billing applies to <strong>Creator</strong> and{" "}
+              <strong>Pro</strong> only.
             </p>
           </div>
 
@@ -434,7 +434,7 @@ export function PlansPage(): ReactNode {
               <p className="text-primary mb-2 text-xs font-semibold tracking-wider uppercase">
                 LIMITED LIFETIME ACCESS
               </p>
-              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
                 <div className="max-w-xl flex-1">
                   <h2 className="text-foreground mb-2 text-3xl font-bold">
                     {founderOffering.name}
@@ -493,7 +493,7 @@ export function PlansPage(): ReactNode {
                     not include future Teams seats unless explicitly offered.
                   </p>
                 </div>
-                <div className="flex w-full shrink-0 flex-col gap-3 lg:w-64">
+                <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72 lg:pt-1">
                   {isFounderCurrent ? (
                     <Link
                       to="/dashboard"
@@ -502,22 +502,27 @@ export function PlansPage(): ReactNode {
                       You have Founder access
                     </Link>
                   ) : founderOffering.canPurchase ? (
-                    <button
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => {
-                        if (!user) {
-                          navigate("/login", { replace: true });
-                          return;
-                        }
-                        openCheckoutForPlan(founderOffering.id);
-                      }}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
-                    >
-                      {isLoading && selectedPlan === founderOffering.id
-                        ? "Processing…"
-                        : "Claim Founder access"}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => {
+                          if (!user) {
+                            navigate("/login", { replace: true });
+                            return;
+                          }
+                          openCheckoutForPlan(founderOffering.id);
+                        }}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                      >
+                        {isLoading && selectedPlan === founderOffering.id
+                          ? "Processing…"
+                          : "Claim Founder access"}
+                      </button>
+                      <p className="text-muted-foreground hidden text-xs lg:block">
+                        One-time purchase · 21 seats total
+                      </p>
+                    </>
                   ) : (
                     <button
                       type="button"
@@ -539,9 +544,9 @@ export function PlansPage(): ReactNode {
             <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
               Free includes the full product surface with strict operating
               limits: Calendar, Engagement Feed, Drafts/Templates, campaigns, up
-              to 10 scheduled items, and 1 queue. Paid plans unlock higher
-              limits, broadcast sending, bulk workflows, and better campaign
-              economics.
+              to 10 scheduled items, and 1 queue. Creator and Pro add higher
+              limits, broadcast sending, bulk workflows, hosted SmartFlowSocial
+              media, and better campaign economics.
             </p>
             <FeatureComparisonTable plans={comparisonTablePlans} />
           </div>
@@ -586,7 +591,7 @@ export function PlansPage(): ReactNode {
                   Can I upgrade later?
                 </dt>
                 <dd className="text-muted-foreground mt-1 leading-relaxed">
-                  You can move between Free, Basic, and Premium anytime. Founder
+                  You can move between Free, Creator, and Pro anytime. Founder
                   is a separate one-time path while seats remain.
                 </dd>
               </div>
@@ -604,8 +609,18 @@ export function PlansPage(): ReactNode {
                   Can I pay yearly?
                 </dt>
                 <dd className="text-muted-foreground mt-1 leading-relaxed">
-                  Yearly billing applies to Basic and Premium. Founder is
-                  one-time only.
+                  Yearly billing applies to Creator and Pro. Founder is one-time
+                  only.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-foreground font-semibold">
+                  What is SmartFlowSocial-hosted media?
+                </dt>
+                <dd className="text-muted-foreground mt-1 leading-relaxed">
+                  Creator and Pro include hosted media on SmartFlowSocial, so
+                  you can upload and manage media natively in the app instead of
+                  relying on external storage flows. Limits vary by plan.
                 </dd>
               </div>
               <div>

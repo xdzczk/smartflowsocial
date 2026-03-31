@@ -47,7 +47,7 @@ export function TemplateDetailsModal({
         aria-hidden
         onClick={onClose}
       />
-      <div className="dark:bg-card relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-lg">
+      <div className="bg-card relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg p-6 shadow-lg">
         <button
           onClick={onClose}
           className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground absolute top-4 right-4"

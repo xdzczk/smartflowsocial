@@ -33,6 +33,8 @@ import {
   findUserRunwaySettingsRow,
   updateRunwaySettingsRow,
   findUserForRunwayFallbackRow,
+  findUserThemePreferenceRow,
+  updateUserThemePreferenceRow,
 } from "~/features/user/repositories/user-settings-data.server";
 import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 
@@ -157,6 +159,59 @@ export async function getUserHidePostsFromLowTrustUsers(
 ): Promise<boolean> {
   const user = await findUserHidePostsFromLowTrustUsersRow(userId);
   return user?.hidePostsFromLowTrustUsers ?? false;
+}
+
+export type ThemePreference = "system" | "light" | "dark";
+
+/**
+ * Account-level theme preference.
+ * Returns null when unset or when DB column is not migrated yet.
+ */
+export async function getUserThemePreference(
+  userId: string
+): Promise<ThemePreference | null> {
+  try {
+    const row = await findUserThemePreferenceRow(userId);
+    const v = row?.themePreference;
+    return v === "system" || v === "light" || v === "dark" ? v : null;
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
+    ) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Upserts account-level theme preference.
+ * No-ops when DB column is not migrated yet.
+ */
+export async function updateUserThemePreference(
+  userId: string,
+  themePreference: ThemePreference
+): Promise<User> {
+  try {
+    return await updateUserThemePreferenceRow(userId, themePreference);
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? err.code : null;
+    if (
+      code === "P2022" ||
+      (err instanceof Error &&
+        err.message.includes(COLUMN_MISSING_ERROR_FRAGMENT))
+    ) {
+      const user = await findUserByIdRow(userId);
+      if (!user) throw err;
+      return user;
+    }
+    throw err;
+  }
 }
 
 /**

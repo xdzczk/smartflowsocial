@@ -166,31 +166,40 @@ export default function App() {
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const stored = localStorage.getItem('theme');
-                let theme;
-                if (stored) {
-                  // Handle both JSON stringified values and plain strings
-                  try {
-                    theme = JSON.parse(stored);
-                  } catch (e) {
-                    // If parsing fails, use the stored value directly (backward compatibility)
-                    theme = stored;
-                  }
-                } else {
-                  // Default to dark mode, but respect system preference if available
-                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-                  if (prefersLight) {
-                    theme = 'light';
-                  } else {
-                    // Default to dark if no preference or prefers dark
-                    theme = 'dark';
-                  }
+                function parseStoredTheme(raw) {
+                  if (!raw) return null;
+                  var v = raw;
+                  try { v = JSON.parse(raw); } catch (e) { /* ignore */ }
+                  return (v === 'system' || v === 'light' || v === 'dark') ? v : null;
                 }
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
+
+                function systemEffectiveTheme() {
+                  var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+                  return (mql && mql.matches) ? 'dark' : 'light';
+                }
+
+                function applyEffectiveTheme(effective) {
+                  if (effective === 'dark') document.documentElement.classList.add('dark');
+                  else document.documentElement.classList.remove('dark');
+                }
+
+                var stored = localStorage.getItem('theme');
+                var pref = parseStoredTheme(stored);
+
+                // Default for first-run: follow system.
+                if (!pref) pref = 'system';
+
+                var effective = (pref === 'system') ? systemEffectiveTheme() : pref;
+                applyEffectiveTheme(effective);
+
+                // Live updates when following system preference.
+                if (pref === 'system' && window.matchMedia) {
+                  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+                  if (mql) {
+                    var handler = function() { applyEffectiveTheme(systemEffectiveTheme()); };
+                    if (mql.addEventListener) mql.addEventListener('change', handler);
+                    else if (mql.addListener) mql.addListener(handler);
+                  }
                 }
               })();
             `,
@@ -272,7 +281,7 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body className="h-full">
-        <div className="dark:bg-background flex min-h-full flex-col bg-white">
+        <div className="bg-background flex min-h-full flex-col">
           <main className="mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-4 py-24 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <h1 className="dark:text-foreground text-foreground text-6xl font-semibold">

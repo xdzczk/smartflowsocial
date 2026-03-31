@@ -48,7 +48,7 @@ export function ReconnectNostrConnectTab({
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Connection link</h4>
           <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
-            <div className="dark:bg-card/30 flex justify-center rounded-md border bg-white p-3">
+            <div className="bg-card flex justify-center rounded-md border p-3">
               <QRCode value={nostrConnectUri} size={176} />
             </div>
             <div className="space-y-2">

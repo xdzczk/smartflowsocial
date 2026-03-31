@@ -4,6 +4,15 @@ import {
   getPlanEntitlements,
   type PlanEntitlements,
 } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  getCommercialPlanDisplayName,
+  mapLegacyPlanIdToCommercialPlanType,
+} from "~/features/payments/plan-mapping";
+import {
+  getCanonicalPlanPolicy,
+  toBroadcastLimits,
+  toGiveawayLimits,
+} from "~/features/payments/plan-policy";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 
 // Define feature permissions for each plan type (surface / route access).
@@ -161,37 +170,9 @@ export function getBroadcastPlanLimits(planType: PlanType): {
   allowSchedule: boolean;
   allowStaggered: boolean;
 } {
-  if (planType === "free" || planType === "teams") {
-    return {
-      maxRecipientsPerCampaign: 0,
-      maxConcurrentActiveCampaigns: 0,
-      maxDailyBroadcastRecipients: 0,
-      allowedAudienceTypes: ["CUSTOM"],
-      allowAdvancedDelivery: false,
-      allowSchedule: false,
-      allowStaggered: false,
-    };
-  }
-  if (planType === "basic") {
-    return {
-      maxRecipientsPerCampaign: 75,
-      maxConcurrentActiveCampaigns: 2,
-      maxDailyBroadcastRecipients: 150,
-      allowedAudienceTypes: ["CUSTOM"],
-      allowAdvancedDelivery: false,
-      allowSchedule: true,
-      allowStaggered: false,
-    };
-  }
-  return {
-    maxRecipientsPerCampaign: 500,
-    maxConcurrentActiveCampaigns: 5,
-    maxDailyBroadcastRecipients: 2000,
-    allowedAudienceTypes: ["CUSTOM", "MUTUALS"],
-    allowAdvancedDelivery: true,
-    allowSchedule: true,
-    allowStaggered: true,
-  };
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(planType);
+  const policy = getCanonicalPlanPolicy(commercialPlanType);
+  return toBroadcastLimits(policy);
 }
 
 export type PlanType = keyof typeof PLAN_FEATURES;
@@ -382,14 +363,9 @@ export function getGiveawayPlanLimits(planType: PlanType): {
   canUseQueueScope: boolean;
   canUsePresets: boolean;
 } {
-  if (planType === "free" || planType === "teams") {
-    return {
-      maxWinnerCount: 10,
-      canUseQueueScope: false,
-      canUsePresets: false,
-    };
-  }
-  return { maxWinnerCount: 50, canUseQueueScope: true, canUsePresets: true };
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(planType);
+  const policy = getCanonicalPlanPolicy(commercialPlanType);
+  return toGiveawayLimits(policy);
 }
 
 /** Display label for subscription plan (giveaway finalization UI). */
@@ -399,13 +375,13 @@ export function getPlanDisplayName(
   if (subscription?.status !== "ACTIVE") {
     return "Free";
   }
-  const name = subscription.Plan?.name.trim();
-  return (name && name.length > 0 ? name : subscription.planId) || "Free";
+  const commercial = mapLegacyPlanIdToCommercialPlanType(subscription.planId);
+  return getCommercialPlanDisplayName(commercial);
 }
 
 /**
  * Get the minimum plan required for a feature (upgrade prompts).
- * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Basic.
+ * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Creator.
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
   if (feature === "bulkScheduling" || feature === "broadcasts") {

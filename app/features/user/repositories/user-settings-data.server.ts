@@ -203,6 +203,29 @@ export function findUserEnableMirrorBlossomRow(
   });
 }
 
+// --- Theme preference ---
+export function findUserThemePreferenceRow(
+  userId: string
+): Promise<{ themePreference: string | null } | null> {
+  // `themePreference` may not exist in every DB/prisma schema yet.
+  // We intentionally cast to keep the feature forward-compatible.
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { themePreference: true } as unknown as Prisma.UserSelect,
+  }) as unknown as Promise<{ themePreference: string | null } | null>;
+}
+
+export function updateUserThemePreferenceRow(
+  userId: string,
+  themePreference: string | null
+): Promise<User> {
+  // Same forward-compat casting as above: column may not exist yet.
+  return prisma.user.update({
+    where: { id: userId },
+    data: { themePreference } as unknown as Prisma.UserUpdateInput,
+  });
+}
+
 export function updateUserEnableMirrorBlossomRow(
   userId: string,
   enableMirrorBlossom: boolean

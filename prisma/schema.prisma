@@ -58,6 +58,8 @@ model User {
   defaultZapAmountSats       Int?
   // Use SFS Blastr relay when eligible (paid + plan has enableRelayBlast); default true
   blastrRelayEnabled         Boolean        @default(true)
+  // Account-level theme preference; null = no account override (use device/local default)
+  themePreference            String?
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?

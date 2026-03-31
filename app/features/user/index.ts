@@ -61,6 +61,8 @@ export {
   updateUserBlastrRelayEnabled,
   getUserMirrorUploadUrls,
   updateUserMirrorUploadUrls,
+  getUserThemePreference,
+  updateUserThemePreference,
   updateUserMutedList,
   getUserMutedList,
   updateUserFilterMuted,

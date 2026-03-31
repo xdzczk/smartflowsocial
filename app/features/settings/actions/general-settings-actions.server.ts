@@ -9,6 +9,7 @@ import {
   applyLocaleDefaultsOnce,
   getLocaleDefaultsAppliedAt,
   getUserDateFormat,
+  updateUserThemePreference,
   getUserTimeFormat,
   invalidateRelayIntentCache,
   updateGiveawayBlacklist,
@@ -23,6 +24,7 @@ import {
 } from "~/features/user";
 import {
   updateTimezoneSchema,
+  updateThemePreferenceSchema,
   updateRelaysSchema,
   updateBlacklistSchema,
   updatePreferredNostrClientSchema,
@@ -125,6 +127,19 @@ export async function handleGeneralSettingsAction(
     if (!result.success) return result.response;
     await updateUserTimezone(userId, result.data.timezone);
     return json({ success: true });
+  }
+
+  if (action === "update_theme_preference") {
+    const result = validateFormDataOrRespond(
+      formData,
+      updateThemePreferenceSchema
+    );
+    if (!result.success) return result.response;
+    await updateUserThemePreference(userId, result.data.themePreference);
+    return json({
+      success: true,
+      themePreference: result.data.themePreference,
+    });
   }
 
   if (action === "update_relays") {

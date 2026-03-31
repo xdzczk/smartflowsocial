@@ -310,7 +310,7 @@ export function LongFormPublishingOptions({
             onScheduledForChange(v < min ? min : v);
           }}
           min={getNowForDateTimeLocal(userTimezone)}
-          className="dark:bg-card flex-1 bg-white"
+          className="bg-background flex-1"
           placeholder="Select date and time"
         />
       </div>

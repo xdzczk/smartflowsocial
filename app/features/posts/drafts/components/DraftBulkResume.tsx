@@ -60,7 +60,7 @@ export default function DraftBulkResume({
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-foreground text-3xl font-bold dark:text-white">
+          <h1 className="text-foreground text-3xl font-bold">
             Resume Draft Posts
           </h1>
           <p className="text-foreground dark:text-foreground mt-2">
@@ -320,7 +320,7 @@ export default function DraftBulkResume({
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="dark:bg-card border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted rounded-lg border bg-white px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
+            className="bg-card border-border text-muted-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
           >
             Cancel
           </button>

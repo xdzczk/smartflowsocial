@@ -684,7 +684,7 @@ export function GiveawayDetailPage({
               {(planType === "free" || planType === "basic") &&
               finalizationQuote.feeSats > 0 ? (
                 <p className="text-muted-foreground mt-2 text-xs">
-                  Running giveaways regularly? Upgrade to Premium to reduce or
+                  Running giveaways regularly? Upgrade to Pro to reduce or
                   remove finalization fees.
                 </p>
               ) : null}

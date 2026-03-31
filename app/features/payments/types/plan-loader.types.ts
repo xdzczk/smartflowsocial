@@ -10,7 +10,7 @@ export interface PricingPagePlan {
   name: string;
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;
-  /** Shown under yearly price for Basic/Premium when yearly < 12× monthly. */
+  /** Shown under yearly price for Creator/Pro when yearly < 12× monthly. */
   yearlySavingsNote: string | null;
   checkoutPricing: LoaderPlanCheckoutPricing;
   description: string;
@@ -50,10 +50,10 @@ export function yearlySavingsLabel(
   const pct = Math.round((1 - yearlyUsd / fullYear) * 100);
   const monthsFree = Math.round((fullYear - yearlyUsd) / monthlyUsd);
   if (monthsFree >= 2 && monthsFree <= 12) {
-    return `${monthsFree} months free vs monthly`;
+    return `${monthsFree} months free`;
   }
   if (pct > 0) {
-    return `Save ${pct}% yearly`;
+    return null;
   }
   return null;
 }

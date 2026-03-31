@@ -21,19 +21,17 @@ export default function UpgradePrompt({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="dark:bg-card mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <div className="bg-card mx-4 max-w-md rounded-lg p-6 shadow-xl">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
               <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h3 className="text-foreground text-lg font-semibold dark:text-white">
+              <h3 className="text-foreground text-lg font-semibold">
                 Feature Locked
               </h3>
-              <p className="text-foreground dark:text-foreground text-sm">
-                Upgrade required
-              </p>
+              <p className="text-foreground text-sm">Upgrade required</p>
             </div>
           </div>
           <button
@@ -45,14 +43,14 @@ export default function UpgradePrompt({
         </div>
 
         <div className="mb-6">
-          <p className="text-muted-foreground dark:text-foreground">
+          <p className="text-muted-foreground">
             <strong>{featureName}</strong> requires a{" "}
-            <span className="text-foreground dark:text-muted-foreground font-semibold capitalize">
+            <span className="text-foreground font-semibold capitalize">
               {minPlan}
             </span>{" "}
             plan or higher.
           </p>
-          <p className="text-foreground dark:text-foreground mt-2 text-sm">
+          <p className="text-foreground mt-2 text-sm">
             Upgrade your plan to unlock this feature and many more advanced
             tools for your social media automation.
           </p>

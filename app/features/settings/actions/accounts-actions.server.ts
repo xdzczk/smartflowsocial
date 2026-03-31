@@ -175,6 +175,7 @@ export async function handleAccountsAction(
   const me = await getUserBasicInfo(userId);
   const sub = await getUserSubscription(userId);
   const planName = sub?.Plan?.name ?? "";
+  const planId = (sub?.planId ?? "").toLowerCase();
 
   // Check access for account management actions
   const requiresPremium = [
@@ -183,11 +184,18 @@ export async function handleAccountsAction(
     "cancel_child_request",
     "unlink_child",
   ].includes(action);
-  if (requiresPremium && !(planName === "Founder" || planName === "Premium")) {
+  if (
+    requiresPremium &&
+    !(
+      planId === "premium" ||
+      planName === "Founder" ||
+      planName === "Premium" ||
+      planName === "Pro"
+    )
+  ) {
     return json(
       {
-        error:
-          "Accounts management requires Founder or Premium. Please upgrade.",
+        error: "Accounts management requires Founder or Pro. Please upgrade.",
       },
       { status: 403 }
     );

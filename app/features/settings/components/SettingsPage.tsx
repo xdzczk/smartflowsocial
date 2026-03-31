@@ -10,6 +10,7 @@ import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
 import { RegionalDisplaySettings } from "~/components/settings/RegionalDisplaySettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
+import { ThemePreferenceSettings } from "~/components/settings/ThemePreferenceSettings";
 import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
 import type { PrimarySignerProfile } from "~/features/auth/signer";
 import {
@@ -80,6 +81,7 @@ function renderSettingsPanel(
     dateFormatRaw: unknown;
     preferredNostrClientRaw: unknown;
     customNostrClientBaseUrlRaw: unknown;
+    themePreferenceRaw: unknown;
     pushNotificationsEnabled: unknown;
     pushNotifyPublishSuccess: unknown;
     pushNotifyPublishFailure: unknown;
@@ -139,6 +141,7 @@ function renderSettingsPanel(
     dateFormatRaw,
     preferredNostrClientRaw,
     customNostrClientBaseUrlRaw,
+    themePreferenceRaw,
     pushNotificationsEnabled,
     pushNotifyPublishSuccess,
     pushNotifyPublishFailure,
@@ -245,6 +248,15 @@ function renderSettingsPanel(
               dateFormatRaw === "mmddyyyy" || dateFormatRaw === "yyyymmdd"
                 ? dateFormatRaw
                 : "ddmmyyyy"
+            }
+          />
+          <ThemePreferenceSettings
+            themePreference={
+              themePreferenceRaw === "system" ||
+              themePreferenceRaw === "light" ||
+              themePreferenceRaw === "dark"
+                ? themePreferenceRaw
+                : null
             }
           />
           <NostrClientSettings
@@ -450,6 +462,7 @@ export default function SettingsPage() {
     dateFormat?: unknown;
     preferredNostrClient?: unknown;
     customNostrClientBaseUrl?: unknown;
+    themePreference?: unknown;
     primarySignerProfile?: unknown;
     blastrRelayEnabled?: unknown;
     canToggleBlastr?: unknown;
@@ -509,6 +522,7 @@ export default function SettingsPage() {
     dateFormat: dateFormatRaw,
     preferredNostrClient: preferredNostrClientRaw,
     customNostrClientBaseUrl: customNostrClientBaseUrlRaw,
+    themePreference: themePreferenceRaw,
     primarySignerProfile: primarySignerProfileRaw,
     blastrRelayEnabled,
     canToggleBlastr,
@@ -678,6 +692,7 @@ export default function SettingsPage() {
           dateFormatRaw,
           preferredNostrClientRaw,
           customNostrClientBaseUrlRaw,
+          themePreferenceRaw,
           pushNotificationsEnabled,
           pushNotifyPublishSuccess,
           pushNotifyPublishFailure,

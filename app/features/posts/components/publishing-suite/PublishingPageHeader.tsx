@@ -21,7 +21,7 @@ export function PublishingPageHeader({
       )}
     >
       <div className="min-w-0 flex-1 space-y-1">
-        <h1 className="text-foreground text-xl font-semibold tracking-tight dark:text-white">
+        <h1 className="text-foreground text-xl font-semibold tracking-tight">
           {title}
         </h1>
         {subtitle ? (

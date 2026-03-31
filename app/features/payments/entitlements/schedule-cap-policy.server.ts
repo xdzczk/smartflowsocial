@@ -1,4 +1,5 @@
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { scheduleCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import { countFutureScheduledItems } from "~/features/payments/entitlements/schedule-cap.server";
 import {
@@ -7,9 +8,7 @@ import {
 } from "~/features/payments/types";
 
 export class ScheduleCapExceededError extends Error {
-  constructor(
-    message = "You've reached the Free plan limit of 10 scheduled items. Upgrade to schedule more posts and unlock deeper workflow control."
-  ) {
+  constructor(message = scheduleCapExceededMessage()) {
     super(message);
     this.name = "ScheduleCapExceededError";
   }

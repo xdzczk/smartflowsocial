@@ -52,7 +52,7 @@ export default function ScheduledPosts() {
           </div>
         </div>
         {/* Responsive Table Container */}
-        <div className="bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
+        <div className="bg-card border-border min-w-full overflow-x-auto rounded border">
           {/* Table */}
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             {/* Table Header */}
@@ -177,7 +177,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="dark:bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border dark:border-border dark:text-foreground dark:hover:border-border dark:hover:text-foreground dark:active:border-border inline-flex items-center justify-center gap-2 rounded-lg border bg-white px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
+                          className="bg-card border-border text-foreground hover:border-border hover:text-foreground focus:ring-ring/25 active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1 text-sm leading-5 font-semibold hover:shadow-sm focus:ring active:shadow-none"
                         >
                           View
                         </button>
@@ -205,7 +205,7 @@ export default function ScheduledPosts() {
         {/* Post Details Modal */}
         {selectedPost ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="dark:bg-card max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6">
+            <div className="bg-card max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Post Details</h3>
                 <button

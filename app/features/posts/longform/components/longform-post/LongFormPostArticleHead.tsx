@@ -57,7 +57,7 @@ export function LongFormPostArticleHead({
           type="text"
           id="article-composer-title"
           placeholder="Write a title"
-          className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem] dark:text-white"
+          className="text-foreground placeholder:text-muted-foreground/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus:ring-0 sm:text-[2rem] lg:text-[2.125rem]"
           aria-label="Article title"
           name={titleFieldReg.name}
           onChange={(e) => void titleFieldReg.onChange(e)}

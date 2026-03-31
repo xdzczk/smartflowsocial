@@ -64,4 +64,30 @@ describe("User Settings", () => {
       });
     });
   });
+
+  describe("Theme preference", () => {
+    it("persists theme preference when changed (account-synced)", () => {
+      cy.visitAndCheck("/dashboard/settings?tab=general");
+
+      // Use the native select trigger input id we render for the theme select.
+      cy.get("#themePreference").should("exist");
+
+      // Select "Dark" and ensure the document is in dark mode.
+      cy.get("#themePreference").click({ force: true });
+      cy.contains("Dark").click({ force: true });
+      cy.get("html").should("have.class", "dark");
+
+      // Reload: preference should still apply (from account + local storage).
+      cy.reload();
+      cy.get("html").should("have.class", "dark");
+    });
+
+    it("supports system theme without crashing", () => {
+      cy.visitAndCheck("/dashboard/settings?tab=general");
+      cy.get("#themePreference").click({ force: true });
+      cy.contains("System").click({ force: true });
+      // We can't reliably assert OS scheme in CI, but we can assert the setting UI exists.
+      cy.get("#themePreference").should("exist");
+    });
+  });
 });

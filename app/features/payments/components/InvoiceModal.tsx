@@ -48,13 +48,13 @@ export function InvoiceModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-[60] flex items-center justify-center bg-black">
-      <div className="dark:bg-card mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl">
+      <div className="bg-card mx-4 max-w-lg rounded-lg p-6 shadow-xl">
         <div className="mb-4">
-          <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">
+          <h3 className="text-foreground mb-2 text-lg font-semibold">
             {isBtcpay ? "Pay with Bitcoin (on-chain)" : modalTitle}
           </h3>
           <div className="bg-muted dark:bg-muted/30 rounded-lg p-3">
-            <p className="text-foreground dark:text-foreground text-sm font-medium">
+            <p className="text-foreground text-sm font-medium">
               {invoiceData.contextLabel}
             </p>
           </div>
@@ -93,7 +93,7 @@ export function InvoiceModal({
         <div className="mb-4">
           <label
             htmlFor="payment-target"
-            className="dark:text-foreground text-muted-foreground mb-2 block text-sm font-medium"
+            className="text-muted-foreground mb-2 block text-sm font-medium"
           >
             {isBtcpay ? "BTCPay checkout link" : "Lightning invoice"}
           </label>
@@ -103,7 +103,7 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="dark:border-border dark:bg-card dark:text-foreground border-border bg-muted text-foreground dark:placeholder-muted-foreground focus:border-primary focus:ring-ring min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+              className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             />
             <button
               type="button"

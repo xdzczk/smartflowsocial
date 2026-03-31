@@ -122,7 +122,7 @@ async function main() {
     },
     {
       id: "basic",
-      name: "Basic",
+      name: "Creator",
       price: 28,
       description: "Run your content properly",
       sortOrder: 20,
@@ -171,8 +171,8 @@ async function main() {
     },
     {
       id: "premium",
-      name: "Premium",
-      price: 71,
+      name: "Pro",
+      price: 69,
       description: "Operate at full power",
       sortOrder: 30,
       planBillingModel: PlanBillingModel.recurring,

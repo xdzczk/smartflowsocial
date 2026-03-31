@@ -252,7 +252,7 @@ describe("createPlanInvoice", () => {
     const result = await createPlanInvoice({
       planId: TEST_PLAN_ID,
       userId: TEST_USER_ID,
-      description: "Basic plan subscription",
+      description: "Creator plan subscription",
     });
 
     expect(mockLNInstance.requestPayment).toHaveBeenCalled();
@@ -268,7 +268,7 @@ describe("createPlanInvoice", () => {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
         status: "PENDING",
-        description: "Basic plan subscription",
+        description: "Creator plan subscription",
       }),
     });
     expect(result.invoice).toBe(mockInvoice);

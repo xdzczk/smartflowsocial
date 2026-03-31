@@ -148,8 +148,8 @@ async function createNostrUserAndLogin(npub: string) {
     plan ??= await tx.plan.create({
       data: {
         id: "premium",
-        name: "Premium",
-        price: 71,
+        name: "Pro",
+        price: 69,
         isActive: true,
         features: {
           basicScheduling: true,
@@ -167,12 +167,12 @@ async function createNostrUserAndLogin(npub: string) {
       },
     });
 
-    // Ensure the plan has the correct name for feature detection
-    // The getUserPlanType function checks planId and plan name
-    if (plan.name !== "Premium" && plan.name !== "premium") {
+    // Ensure the plan has a valid label for feature detection and UI.
+    // `getUserPlanType` prefers planId but may fall back to plan name.
+    if (plan.name !== "Pro" && plan.name !== "pro") {
       plan = await tx.plan.update({
         where: { id: plan.id },
-        data: { name: "Premium" },
+        data: { name: "Pro" },
       });
     }
 

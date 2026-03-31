@@ -76,7 +76,7 @@ export function EditLongFormFormFields({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
           placeholder="Article title..."
         />
       </div>
@@ -94,7 +94,7 @@ export function EditLongFormFormFields({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
           placeholder="Article summary..."
         />
       </div>
@@ -133,7 +133,7 @@ export function EditLongFormFormFields({
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          className="dark:bg-card border-border text-foreground dark:border-border focus:border-primary focus:ring-ring w-full rounded-md border bg-white px-3 py-2 focus:ring-2 dark:text-white"
+          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
           placeholder="https://example.com/image.jpg"
         />
       </div>

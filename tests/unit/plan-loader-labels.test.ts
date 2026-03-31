@@ -13,9 +13,9 @@ describe("yearlySavingsLabel", () => {
     expect(label).toMatch(/2 months free/i);
   });
 
-  it("returns percent when discount is under two months equivalent", () => {
+  it("returns null when discount is under two months equivalent", () => {
     const label = yearlySavingsLabel(100, 1100);
-    expect(label).toMatch(/Save 8%/);
+    expect(label).toBeNull();
   });
 });
 

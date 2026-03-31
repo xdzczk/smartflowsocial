@@ -366,6 +366,22 @@ export default (async () => {
         "jsx-a11y/no-autofocus": "warn",
         "jsx-a11y/img-redundant-alt": "warn",
         "jsx-a11y/no-noninteractive-element-interactions": "warn",
+        // Theme guardrails: prefer semantic tokens over hard-coded colors.
+        // This is a warning (not error) to allow incremental cleanup.
+        "no-restricted-syntax": [
+          "warn",
+          {
+            selector:
+              "Literal[value=/\\\\b(bg-white|text-black|dark:text-white|dark:bg-gray-|bg-gray-|text-gray-)\\\\b/]",
+            message:
+              "Avoid hard-coded theme classes (bg-white/text-black/dark:text-white/gray-*). Prefer semantic tokens like bg-card/bg-background/text-foreground.",
+          },
+          {
+            selector: "Literal[value=/#(?:fff|000|ffffff|000000)\\\\b/i]",
+            message:
+              "Avoid hard-coded hex colors for UI surfaces/text. Prefer semantic tokens (CSS variables via Tailwind theme).",
+          },
+        ],
       },
     },
 

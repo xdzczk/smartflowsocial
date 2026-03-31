@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { subscribeToDocumentThemeChanges } from "~/lib/theme.client";
+
 interface LogoProps {
   className?: string;
   lightSrc: string;
@@ -12,29 +14,20 @@ export function Logo({ className, lightSrc, darkSrc, alt }: LogoProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const checkTheme = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    };
-
-    // Check initial theme
-    checkTheme();
-
-    // Watch for theme changes
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
     // Use setTimeout to defer setState, avoiding synchronous setState in effect
     const timeoutId = setTimeout(() => {
       setMounted(true);
     }, 0);
 
     return () => {
-      observer.disconnect();
       clearTimeout(timeoutId);
     };
+  }, []);
+
+  useEffect(() => {
+    return subscribeToDocumentThemeChanges((effectiveTheme) => {
+      setIsDark(effectiveTheme === "dark");
+    });
   }, []);
 
   if (!mounted) {

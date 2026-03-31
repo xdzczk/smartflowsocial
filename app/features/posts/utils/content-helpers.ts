@@ -84,12 +84,13 @@ export function getContentPreview(item: CombinedContent): string | null {
 }
 
 // Status color constants - neutral outline style for light mode
-const DRAFT_COLOR =
-  "border border-border bg-transparent text-foreground dark:bg-muted dark:text-foreground dark:border-transparent";
-const PUBLISHED_COLOR =
-  "border border-success bg-transparent text-success dark:bg-success/20 dark:text-success dark:border-transparent";
-const SCHEDULED_COLOR =
-  "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+const STATUS_OUTLINE_BASE = "border bg-transparent dark:border-transparent";
+const STATUS_BORDER_DEFAULT = "border-border";
+const STATUS_DARK_BG_MUTED = "dark:bg-muted";
+
+const DRAFT_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-foreground ${STATUS_DARK_BG_MUTED} dark:text-foreground`;
+const PUBLISHED_COLOR = `${STATUS_OUTLINE_BASE} border-success text-success dark:bg-success/20 dark:text-success`;
+const SCHEDULED_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-muted-foreground ${STATUS_DARK_BG_MUTED} dark:text-muted-foreground`;
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -131,7 +132,7 @@ export function getStatusColor(item: CombinedContent): string {
     }
   }
 
-  return "border border-gray-300 bg-transparent text-gray-700 dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+  return "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
 }
 
 const STATUS_TONE_MUTED = "text-muted-foreground";

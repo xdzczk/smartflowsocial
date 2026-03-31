@@ -37,8 +37,8 @@ export function useCoverImageUpload({
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        setUploadError("Image size must be less than 5MB");
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError("Image must be 10MB or smaller.");
         return;
       }
 

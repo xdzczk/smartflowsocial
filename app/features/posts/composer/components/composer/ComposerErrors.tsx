@@ -41,7 +41,7 @@ export function ComposerErrors({
   return (
     <>
       {isSigning ? (
-        <div className="dark:bg-card/30 dark:text-foreground text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border bg-white/50 p-3 text-sm">
+        <div className="bg-muted/30 text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
           <span>
             Waiting for signer approval…
             {signAttempt ? (

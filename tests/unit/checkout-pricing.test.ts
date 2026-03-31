@@ -8,10 +8,10 @@ import {
 
 const samplePricing: PlanCheckoutPricing = {
   nwcAutoRenewMonthlyUsd: 28,
-  nwcAutoRenewYearlyUsd: 336,
+  nwcAutoRenewYearlyUsd: 280,
   lightningOneTimeMonthlyUsd: { 1: 28, 3: 80, 6: 150 },
-  lightningOneTimeYearlyUsd: 320,
-  btcOnchainYearlyUsd: 336,
+  lightningOneTimeYearlyUsd: 280,
+  btcOnchainYearlyUsd: 280,
 };
 
 describe("computeCheckoutDueUsd", () => {
@@ -45,7 +45,7 @@ describe("computeCheckoutDueUsd", () => {
         accessDurationMonths: 12,
         pricing: samplePricing,
       })
-    ).toBe(336);
+    ).toBe(280);
   });
 });
 

@@ -54,7 +54,7 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
 
 /**
  * Load children information for a parent account
- * Only returns children if user has Premium or Founder plan
+ * Only returns children if user has Pro or Founder plan
  */
 export async function loadChildrenData(userId: string) {
   // Fetch minimal user info
@@ -69,7 +69,7 @@ export async function loadChildrenData(userId: string) {
     return json({ children: [] });
   }
 
-  // Check subscription plan is Premium or Founder
+  // Check subscription plan is Pro or Founder
   const sub = await getUserSubscription(userId);
   const planId = (sub?.planId ?? "").toLowerCase();
   const planName = (sub?.Plan?.name ?? "").toLowerCase();

@@ -60,6 +60,7 @@ interface SfsTokenResult {
   token?: string;
   expiresIn?: number;
   error?: string;
+  message?: string;
 }
 
 interface SfsBulkTokenResponse {
@@ -283,7 +284,13 @@ async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
     const tokenResponse = await requestSfsTokens([{ file, sha256 }]);
     const tokenResult = tokenResponse.results[0];
     if (!tokenResult?.token) {
-      return { success: false, error: tokenResult?.error ?? "quota_exceeded" };
+      return {
+        success: false,
+        error:
+          tokenResult?.message ??
+          tokenResult?.error ??
+          "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+      };
     }
     const uploaded = await uploadToSfsWithToken(
       tokenResponse.uploadUrl,
@@ -511,7 +518,12 @@ export async function uploadSfsBulkFiles(
       fileName: current.file.name,
       run: async () => {
         if (!current.token) {
-          return { success: false, error: current.error ?? "quota_exceeded" };
+          return {
+            success: false,
+            error:
+              current.error ??
+              "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+          };
         }
         let attempt = 0;
         let token = current.token;

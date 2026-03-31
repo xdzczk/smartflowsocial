@@ -65,10 +65,10 @@ export default function LongFormPreviewModal({
       />
 
       {/* Modal */}
-      <div className="dark:bg-card relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl">
+      <div className="bg-card relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg shadow-xl">
         {/* Header */}
         <div className="border-border dark:border-border flex items-center justify-between border-b p-6">
-          <h2 className="text-foreground text-lg font-semibold dark:text-white">
+          <h2 className="text-foreground text-lg font-semibold">
             Preview: How your post will look
           </h2>
           <Button
@@ -82,7 +82,7 @@ export default function LongFormPreviewModal({
         </div>
 
         {/* Content */}
-        <div className="dark:bg-card max-h-[calc(90vh-120px)] overflow-y-auto bg-white">
+        <div className="bg-card max-h-[calc(90vh-120px)] overflow-y-auto">
           {/* Article Card Preview - matches the Primal/Nostr style */}
           <div className="mx-auto max-w-2xl p-6">
             {/* Author Header */}
@@ -91,9 +91,7 @@ export default function LongFormPreviewModal({
                 {author.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="text-foreground font-semibold dark:text-white">
-                  {author}
-                </div>
+                <div className="text-foreground font-semibold">{author}</div>
               </div>
               <div className="ml-auto">
                 <MoreVertical
@@ -119,7 +117,7 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Title */}
-            <h1 className="text-foreground mb-4 text-2xl leading-tight font-bold dark:text-white">
+            <h1 className="text-foreground mb-4 text-2xl leading-tight font-bold">
               {title || "Untitled Post"}
             </h1>
 
@@ -145,7 +143,7 @@ export default function LongFormPreviewModal({
 
             {/* Full Content */}
             <div
-              className="text-foreground mb-6 dark:text-white"
+              className="text-foreground mb-6"
               style={{
                 fontSize: "1.1rem",
                 lineHeight: "1.7",

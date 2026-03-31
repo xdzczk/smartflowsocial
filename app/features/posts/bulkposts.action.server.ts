@@ -8,6 +8,7 @@ import { z } from "zod";
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { bulkBlockedMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
   getUserPlanType,
@@ -180,8 +181,7 @@ export async function handleSignAndSchedule(
     if (!getPlanEntitlements(getUserPlanType(userSub)).canExecuteBulkActions) {
       return json(
         {
-          error:
-            "Bulk publishing is a paid workflow designed for higher-volume operators.",
+          error: bulkBlockedMessage(),
         },
         { status: 403 }
       );

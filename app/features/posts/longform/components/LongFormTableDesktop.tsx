@@ -77,7 +77,7 @@ export function LongFormTableDesktop({
   const dateSortKey = getDefaultSortKey(type);
 
   return (
-    <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border bg-white">
+    <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>

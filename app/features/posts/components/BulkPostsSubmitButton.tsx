@@ -45,9 +45,9 @@ export function BulkPostsSubmitButton({
                 Step {preparationProgress.current} of{" "}
                 {preparationProgress.total}
               </div>
-              <div className="h-2 w-full rounded-full bg-white/20">
+              <div className="bg-background/20 h-2 w-full rounded-full">
                 <div
-                  className="h-2 rounded-full bg-white transition-all duration-300"
+                  className="bg-background h-2 rounded-full transition-all duration-300"
                   style={{
                     width: `${
                       (preparationProgress.current /

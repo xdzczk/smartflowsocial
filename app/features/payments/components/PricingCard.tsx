@@ -1,5 +1,5 @@
 /**
- * Pricing card component (main grid: Free, Basic, Premium, Teams).
+ * Pricing card component (main grid: Free, Creator, Pro, Teams).
  */
 
 import { Form, Link } from "@remix-run/react";
@@ -41,8 +41,8 @@ function planCtaLabel(
   if (isCurrentPlan && !isCurrentPlanExpired) return "Current plan";
   if (isCurrentPlan && isCurrentPlanExpired) return "Renew";
   if (isFree) return "Start free";
-  if (plan.id === "basic") return "Choose Basic";
-  if (plan.id === "premium") return "Choose Premium";
+  if (plan.id === "basic") return "Choose Creator";
+  if (plan.id === "premium") return "Choose Pro";
   return "Choose plan";
 }
 
@@ -122,6 +122,9 @@ export function PricingCard({
   const isTeams = plan.isTeamsPlaceholder;
   const isFree = plan.planBillingModel === "free";
   const isRecurring = plan.planBillingModel === "recurring";
+  const bulletTextClass = isTeams
+    ? "text-foreground/75"
+    : "text-muted-foreground";
 
   const displayPriceUsd = isRecurring
     ? billingCadence === "yearly"
@@ -153,7 +156,7 @@ export function PricingCard({
     (isLoading ? selectedPlan === plan.id : false);
 
   const cardClass = isTeams
-    ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-6 opacity-90 shadow-sm"
+    ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-6 shadow-sm"
     : `border-border bg-card relative flex h-full flex-col rounded-lg border p-6 shadow-lg ${
         plan.isPopular ? "dark:ring-primary/30 ring-border ring-2" : ""
       }`;
@@ -179,7 +182,7 @@ export function PricingCard({
         <h3 className="text-foreground mb-2 text-2xl font-bold">{plan.name}</h3>
         <div className="mb-2 min-h-[3rem]">
           {isTeams ? (
-            <span className="text-muted-foreground text-2xl font-semibold">
+            <span className="text-foreground text-2xl font-semibold">
               Coming soon
             </span>
           ) : isFree ? (
@@ -200,7 +203,7 @@ export function PricingCard({
         {isRecurring &&
         billingCadence === "yearly" &&
         plan.yearlySavingsNote ? (
-          <p className="text-primary mb-2 text-xs font-medium">
+          <p className="text-muted-foreground mb-2 text-xs font-medium">
             {plan.yearlySavingsNote}
           </p>
         ) : null}
@@ -209,7 +212,7 @@ export function PricingCard({
 
       <div className="flex-1">
         {plan.callouts.length > 0 ? (
-          <ul className="text-muted-foreground mb-6 space-y-2 text-left text-sm">
+          <ul className={`${bulletTextClass} mb-6 space-y-2 text-left text-sm`}>
             {plan.callouts.map((line) => (
               <li key={line} className="flex gap-2">
                 <span className="text-primary shrink-0">·</span>

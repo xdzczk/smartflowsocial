@@ -1,4 +1,8 @@
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import {
+  draftCapExceededMessage,
+  templateCapExceededMessage,
+} from "~/features/payments/entitlements/entitlement-messages";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
   getUserPlanType,
@@ -46,7 +50,7 @@ export async function checkDraftCapacity(
   if (maxDrafts == null) return null;
   const current = await countDraftItems(userId);
   if (current + additionalDrafts > maxDrafts) {
-    return "Free plan includes up to 5 drafts. Upgrade to save more.";
+    return draftCapExceededMessage();
   }
   return null;
 }
@@ -77,7 +81,7 @@ export async function checkTemplateCapacity(
   if (maxTemplates == null) return null;
   const current = await countTemplatesForUser(userId);
   if (current + additionalTemplates > maxTemplates) {
-    return "Free plan includes up to 5 templates. Upgrade to save more.";
+    return templateCapExceededMessage();
   }
   return null;
 }

@@ -1,66 +1,67 @@
-import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Laptop, Moon, Sun } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import {
+  applyThemePreferenceToDocument,
+  setStoredThemePreference,
+  type StoredThemePreference,
+} from "~/lib/theme.client";
 import useLocalStorage from "~/lib/useLocalStorage";
 
 export function ThemeToggle() {
-  // Default to dark mode, but will be overridden by system preference or stored value
-  const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "dark");
+  const [theme, setTheme] = useLocalStorage<StoredThemePreference>(
+    "theme",
+    "system"
+  );
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Check if theme was already set by the inline script in root.tsx
-    const currentTheme = document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light";
-    if (currentTheme !== theme) {
-      setTheme(currentTheme);
-    }
-    // Use setTimeout to defer setState, avoiding synchronous setState in effect
-    if (!mounted) {
-      const timeoutId = setTimeout(() => {
-        setMounted(true);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [setTheme, theme, mounted]);
+    const timeoutId = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
+  useEffect(() => {
+    applyThemePreferenceToDocument(theme);
+  }, [theme]);
 
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+  const cycleTheme = () => {
+    const next: StoredThemePreference =
+      theme === "system" ? "light" : theme === "light" ? "dark" : "system";
+    setTheme(next);
+    setStoredThemePreference(next);
   };
+
+  const label = useMemo(() => {
+    if (theme === "system") return "Theme: System";
+    if (theme === "light") return "Theme: Light";
+    return "Theme: Dark";
+  }, [theme]);
+
+  const Icon = theme === "system" ? Laptop : theme === "light" ? Sun : Moon;
 
   if (!mounted) {
     return (
       <button
         className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
-        aria-label="Toggle theme"
+        aria-label="Theme: System"
         type="button"
       >
-        <Sun className={INLINE_ICON_SIZE_CLASS} />
+        <Laptop className={INLINE_ICON_SIZE_CLASS} />
       </button>
     );
   }
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={cycleTheme}
       className="border-input bg-background hover:bg-muted focus:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus:ring-2 focus:outline-none"
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      aria-label={label}
       type="button"
     >
-      {theme === "light" ? (
-        <Moon className={INLINE_ICON_SIZE_CLASS} />
-      ) : (
-        <Sun className={INLINE_ICON_SIZE_CLASS} />
-      )}
+      <Icon className={INLINE_ICON_SIZE_CLASS} />
     </button>
   );
 }

@@ -23,24 +23,12 @@ async function getFileTypeFromBuffer() {
   return fileTypeFromBuffer;
 }
 
+import { CANONICAL_ALLOWED_MIME_TYPES } from "./upload-policy";
+
 /**
- * Allowed MIME types for uploads
+ * Allowed MIME types for uploads (canonical).
  */
-export const ALLOWED_MIME_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
-  "image/heif",
-  "image/heic-sequence",
-  "image/heif-sequence",
-  "video/mp4",
-  "video/webm",
-  "video/ogg",
-  "video/quicktime",
-] as const;
+export const ALLOWED_MIME_TYPES = CANONICAL_ALLOWED_MIME_TYPES;
 
 /**
  * Browsers (especially iOS Safari) often send multipart part Content-Type

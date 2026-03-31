@@ -13,6 +13,10 @@ import {
   getImageInfo,
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
+import {
+  assertUploadPolicy,
+  getUploadPolicy,
+} from "~/features/upload/upload-policy";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
@@ -21,7 +25,9 @@ const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
 const CONTENT_TYPE_APPLICATION_JSON = "application/json";
 const HTTPS_PREFIX = "https://";
 const EDITORJS_DEFAULT_NAME = "asset-image";
-const EDITORJS_MAX_PART_SIZE = 10 * 1024 * 1024; // 10MB max
+const EDITORJS_MAX_PART_SIZE = getUploadPolicy(
+  "editorjs_image_upload"
+).maxFileBytes;
 
 type AssertFunction = (
   condition: boolean,
@@ -144,12 +150,13 @@ export const action = withCSRFProtection(
           fileType: imageFile.type,
         });
 
-        // Validate file size (5MB limit)
-        assert(
-          imageFile.size <= 5 * 1024 * 1024,
-          "Image must be smaller than 5MB",
-          { fileSize: imageFile.size, maxSize: 5 * 1024 * 1024 }
-        );
+        assertUploadPolicy({
+          context: "editorjs_image_upload",
+          mimeType: imageFile.type,
+          bytes: imageFile.size,
+          hasMultipartBody: true,
+          hasRemoteUrl: false,
+        });
 
         // Convert File to Buffer for upload
         const arrayBuffer = await imageFile.arrayBuffer();

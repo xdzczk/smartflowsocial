@@ -31,13 +31,13 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "Higher scheduling and queue limits",
     "Bulk workflow access",
     "Broadcast sending",
-    "Better campaign economics",
+    "Hosted SmartFlowSocial media",
   ],
   premium: [
     "Highest limits across workflows",
     "Best campaign economics",
-    "Strongest publishing control",
-    "Built for power users",
+    "Operator-grade hosted media",
+    "Relay blast and distribution",
   ],
   teams: [
     "Shared workflows",
@@ -62,6 +62,12 @@ const PLAN_SUBTITLES: Record<string, string> = {
   premium: "Operate at full power",
   teams: "Built for collaborative publishing",
 };
+
+function pricingPageDisplayName(planId: string, dbName: string): string {
+  if (planId === "basic") return "Creator";
+  if (planId === "premium") return "Pro";
+  return dbName;
+}
 
 function toBillingModelString(
   m: PlanBillingModel
@@ -232,7 +238,7 @@ export async function loadPlansData(request: Request) {
         Number(plan.price);
       yearlyPriceUsd =
         priceIndex.get(`${plan.id}:yearly:12:nwc_auto_renew`) ??
-        monthlyPriceUsd * 12;
+        monthlyPriceUsd * 10;
       yearlySavingsNote = yearlySavingsLabel(monthlyPriceUsd, yearlyPriceUsd);
       checkoutPricing = buildCheckoutPricing(
         plan.id,
@@ -246,7 +252,7 @@ export async function loadPlansData(request: Request) {
 
     return {
       id: plan.id,
-      name: plan.name,
+      name: pricingPageDisplayName(plan.id, plan.name),
       monthlyPriceUsd,
       yearlyPriceUsd,
       yearlySavingsNote,
@@ -300,7 +306,9 @@ export async function loadPlansData(request: Request) {
     return ai - bi;
   });
 
-  const comparisonTablePlans: PricingPagePlan[] = mainGridPlans;
+  const comparisonTablePlans: PricingPagePlan[] = mainGridPlans.filter(
+    (p) => p.id !== "teams"
+  );
 
   let founderOffering: FounderOfferingPayload | null = null;
   if (founderPlan?.founderSeatCap != null) {

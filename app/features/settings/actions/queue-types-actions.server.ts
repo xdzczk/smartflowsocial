@@ -5,6 +5,7 @@
 import { json } from "@remix-run/node";
 
 import { getUserSubscription } from "~/features/payments/data";
+import { queueCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
   getUserPlanType,
@@ -115,8 +116,7 @@ async function checkQueueCreationCap(userId: string): Promise<Response | null> {
   if (count >= maxQueues) {
     return json(
       {
-        error:
-          "Free plan includes 1 queue. Upgrade to create and manage more queues.",
+        error: queueCapExceededMessage(),
       },
       { status: 403 }
     );
