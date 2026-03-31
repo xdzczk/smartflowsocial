@@ -28,10 +28,7 @@ import {
 } from "~/features/broadcast";
 import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
 import { broadcastStatusBadgeKind } from "~/features/broadcast/broadcast-status";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { cn } from "~/lib/utils";
 
@@ -45,7 +42,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const id = params["id"];
   if (!id) throw new Response("Not found", { status: 404 });
@@ -81,7 +77,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const id = params["id"];
   if (!id) return json({ error: "Not found" }, { status: 404 });

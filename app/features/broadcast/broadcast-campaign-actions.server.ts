@@ -5,6 +5,7 @@ import {
 
 import { appendBroadcastEventLog } from "~/features/broadcast/broadcast-activity-log.server";
 import { looksSpammyMessage } from "~/features/broadcast/broadcast-guardrails.server";
+import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
   cancelBroadcastRecipientJob,
   enqueueBroadcastRecipientJob,
@@ -112,7 +113,13 @@ export async function finalizeBroadcastCampaign(
   sessionPubkeyHex: string,
   input: FinalizeBroadcastInput
 ): Promise<{ enqueued: number }> {
-  const { limits } = await getPlanContext(userId);
+  const { limits, planType } = await getPlanContext(userId);
+  if (!getPlanEntitlements(planType).canSendBroadcast) {
+    throw new BroadcastActionError(
+      "Broadcast sending is available on paid plans.",
+      "PLAN"
+    );
+  }
   const campaign = await prisma.broadcastCampaign.findFirst({
     where: { id: input.campaignId, userId },
     include: { recipients: true },

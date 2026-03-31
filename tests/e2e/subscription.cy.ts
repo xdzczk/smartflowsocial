@@ -66,8 +66,7 @@ describe("Subscription and Payment Flow", () => {
 
     it("should allow setting subscription status for testing", () => {
       cy.setSubscriptionStatus("FREE");
-      // After setting subscription, user might be redirected to /plans
-      // Accept either /dashboard/settings or /plans as valid
+      // Free users browse dashboard/settings; feature gates are action-level.
       cy.visit("/dashboard/settings", { failOnStatusCode: false });
       cy.location("pathname").then((pathname) => {
         // Accept either settings page or plans page (if redirected)

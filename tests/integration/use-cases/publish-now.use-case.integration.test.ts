@@ -35,7 +35,9 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
 
     beforeEach(async () => {
       vi.clearAllMocks();
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({
+        results: [{ ok: true, relayUrl: "wss://relay.example.com" }],
+      });
 
       // Create a test user - use upsert to handle duplicates
       const npub = `test-${Date.now()}-${Math.random()}`;

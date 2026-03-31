@@ -84,6 +84,46 @@ export const updateBlacklistSchema = z.object({
  * Schedule intervals update schema
  * Validates 0.25, 0.5, and positive whole hours only (no arbitrary decimals).
  */
+export const updateScheduleIntervalsSchema = z.object({
+  scheduleIntervals: z
+    .string()
+    .transform((val) =>
+      val
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    )
+    .pipe(
+      z
+        .array(
+          z.string().superRefine((line, ctx) => {
+            const num = Number(line);
+            if (!Number.isFinite(num) || Number.isNaN(num)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Must be a number",
+              });
+              return;
+            }
+            if (num <= 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Must be positive",
+              });
+              return;
+            }
+            if (!isAllowedScheduleInterval(num)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: ERROR_SCHEDULE_INTERVAL_ALLOWED,
+              });
+            }
+          })
+        )
+        .min(1, "At least one schedule interval is required")
+    ),
+});
+
 const PREFERRED_NOSTR_CLIENT_ENUM = z.enum([
   "PRIMAL",
   "DAMUS",

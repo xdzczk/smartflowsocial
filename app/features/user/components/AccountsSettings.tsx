@@ -79,6 +79,10 @@ export function AccountsSettings({
   const fetcher = useFetcher<{ results?: SearchResult[]; error?: string }>();
   const [q, setQ] = React.useState("");
   const revalidator = useRevalidator();
+  const revalidatorRef = React.useRef(revalidator);
+  React.useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
 
   // Prevent duplicate submissions due to re-renders by remembering last query
   const lastSubmittedRef = React.useRef("");
@@ -126,9 +130,10 @@ export function AccountsSettings({
       fetcher.state === "idle" &&
       (fetcher.data as { success?: boolean } | undefined)?.success
     ) {
-      revalidator.revalidate();
+      revalidatorRef.current.revalidate();
     }
-  }, [fetcher.state, fetcher.data, submittingAction, revalidator]);
+    // Do not depend on `revalidator`: its identity changes after each revalidate and would loop forever.
+  }, [fetcher.state, fetcher.data, submittingAction]);
 
   const _renderAccountRow = (
     npub: string,

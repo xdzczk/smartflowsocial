@@ -209,6 +209,13 @@ describe("New Post Action Handler", () => {
         userRelays: ["wss://relay1.com"],
         showHashTagsinPosts: false,
       });
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: "queue-1",
+          name: "posts",
+          hashTagPreset: null,
+        },
+      ]);
 
       const formData = createActionFormData("draft-text", {
         content: "Test post",

@@ -100,6 +100,7 @@ model User {
   broadcastSettings        Json?
   productSessions          ProductSession[]
   signerReconnectEvents    SignerReconnectEvent[]
+  SubscriptionNotificationAttempt SubscriptionNotificationAttempt[]
 
   @@index([parentNpub])
 }
@@ -1140,8 +1141,15 @@ model Payment {
   btcpayInvoiceId String? @unique
 }
 
+enum PlanBillingModel {
+  free
+  recurring
+  lifetime
+  disabled
+}
+
 model Plan {
-  id                           String         @id
+  id                           String             @id
   name                         String
   price                        Decimal
   description                  String?
@@ -1150,9 +1158,22 @@ model Plan {
   maxQueueTypes                Int?
   maxTemplates                 Int?
   maxLongFormPosts             Int?
-  isActive                     Boolean        @default(true)
-  createdAt                    DateTime       @default(now())
-  updatedAt                    DateTime       @updatedAt
+  isActive                     Boolean            @default(true)
+  /** Display order on pricing page (lower first). */
+  sortOrder                    Int                @default(0)
+  /** Commercial category: free tier, recurring paid, lifetime one-time, or future/disabled. */
+  planBillingModel             PlanBillingModel   @default(recurring)
+  /** When false, checkout and select_plan must reject (e.g. free, teams). */
+  purchasable                  Boolean            @default(true)
+  /** When false, plan is omitted from public pricing surfaces. */
+  visibleOnPricingPage         Boolean            @default(true)
+  isComingSoon                 Boolean            @default(false)
+  /** Founder-style offers shown outside the main recurring grid. */
+  isSpecialOffering            Boolean            @default(false)
+  /** Max concurrent active Founder subscriptions; null when not seat-limited. */
+  founderSeatCap               Int?
+  createdAt                    DateTime           @default(now())
+  updatedAt                    DateTime           @updatedAt
   enableAdvancedAnalytics      Boolean        @default(false)
   enableBasicScheduling        Boolean        @default(false)
   enableBulkScheduling         Boolean        @default(false)
@@ -1232,6 +1253,48 @@ model Subscription {
   Payment            Payment[]
   Plan               Plan?              @relation(fields: [planId], references: [id])
   User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  NotificationAttempts SubscriptionNotificationAttempt[]
+}
+
+enum BillingNotificationCommMode {
+  AUTO_RENEW_NWC
+  MANUAL_TOP_UP
+}
+
+enum BillingNotificationChannel {
+  nostr_dm
+  in_app_state
+}
+
+enum BillingNotificationAttemptStatus {
+  pending
+  sent
+  failed
+}
+
+/// Durable log for subscription billing DMs / dedupe (SmartFlow notification system V2).
+model SubscriptionNotificationAttempt {
+  id               String                           @id @default(cuid())
+  userId           String
+  subscriptionId   String
+  planId           String?
+  eventType        String
+  commMode         BillingNotificationCommMode
+  channel          BillingNotificationChannel       @default(nostr_dm)
+  dedupeKey        String                           @unique
+  status           BillingNotificationAttemptStatus @default(pending)
+  attemptedAt      DateTime                         @default(now())
+  sentAt           DateTime?
+  failureReason    String?
+  deliveryMetaJson Json?
+  createdAt        DateTime                         @default(now())
+  updatedAt        DateTime                         @updatedAt
+
+  User         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([subscriptionId, eventType])
 }
 
 enum PostType {

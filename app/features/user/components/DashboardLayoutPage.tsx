@@ -13,9 +13,11 @@ import type { ReactNode } from "react";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import {
+  BillingAlertBanner,
   getUserPlanType,
   isSubscriptionPeriodExpired,
 } from "~/features/payments";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
 import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
@@ -57,7 +59,14 @@ export function DashboardLayoutPage(): ReactNode {
   useProductSessionTelemetry(Boolean(data.userId));
   const layoutData =
     useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
-  const { currentSubscription, pendingParentUsers, referredBy } = data;
+  const {
+    currentSubscription,
+    billingContext,
+    pendingParentUsers,
+    referredBy,
+  } = data as typeof data & {
+    billingContext?: BillingContext | null;
+  };
   /** Prefer parent layout loader so nested routes still get the flag. */
   const isOperatorAdmin = Boolean(
     layoutData?.isOperatorAdmin ??
@@ -73,6 +82,10 @@ export function DashboardLayoutPage(): ReactNode {
     currentSubscription ?? null
   );
   const isSubscriptionExpired = statusInactive ? true : periodExpired;
+  const showBillingAlert =
+    billingContext != null &&
+    billingContext.bannerVariant !== "none" &&
+    !isFreePlan;
   const navigation = useNavigation();
   const navAction =
     (navigation.formData?.get("_action") as string) || undefined;
@@ -186,7 +199,9 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : null}
 
-          {isSubscriptionExpired ? (
+          {showBillingAlert ? (
+            <BillingAlertBanner billingContext={billingContext} />
+          ) : isSubscriptionExpired ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
               <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div>

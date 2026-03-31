@@ -1,4 +1,5 @@
 import { useLoaderData, type FetcherWithComponents } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { useEffect, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -12,6 +13,7 @@ import {
 } from "~/components/ui/dialog";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
+import { usePlanEntitlements } from "~/features/payments/types";
 import { DraftPickerModal } from "~/features/posts/drafts";
 import { useBulkPostSigning } from "~/features/posts/hooks/useBulkPostSigning";
 import { useBulkPostsPageState } from "~/features/posts/hooks/useBulkPostsPageState";
@@ -59,6 +61,7 @@ export default function BulkPostsPage() {
   }: BulkPostsLoaderData = extractLoaderData(data);
 
   const { mediaUploadBlocked } = useBlossomUploadGate();
+  const { canExecuteBulkActions } = usePlanEntitlements();
 
   const { state, handlers } = useBulkPostsPageState({
     tags,
@@ -250,6 +253,16 @@ export default function BulkPostsPage() {
 
   return (
     <>
+      {!canExecuteBulkActions ? (
+        <div className="border-border bg-muted/40 text-foreground mb-4 rounded-lg border px-4 py-3 text-sm leading-relaxed">
+          Bulk publishing is a paid workflow designed for higher-volume
+          operators. You can explore this page on Free; upgrade to sign and
+          schedule in bulk.{" "}
+          <Link to="/plans" className="text-primary font-medium underline">
+            View plans
+          </Link>
+        </div>
+      ) : null}
       <BulkComposerShell
         title={getPageTitle(mode)}
         headerActions={headerActions}
@@ -491,6 +504,7 @@ export default function BulkPostsPage() {
             postsCount={posts.length}
             isSigning={signing.isSigning}
             signingProgress={signing.signingProgress}
+            bulkExecutionBlocked={!canExecuteBulkActions}
           />
         }
       />

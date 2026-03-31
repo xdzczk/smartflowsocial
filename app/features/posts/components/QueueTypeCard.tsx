@@ -3,144 +3,124 @@ import { Edit, Trash2 } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import { getQueueAccentHex } from "../queue-colors";
-import {
-  isIntervalScheduleConfig,
-  isFixedSlotsScheduleConfig,
-  isWeeklySlotsScheduleConfig,
-} from "../types";
 import type { QueueType } from "../types";
+
+import {
+  getQueueMetadataChips,
+  getQueuePrimaryScheduleLine,
+} from "./queue-type-summary";
+
 interface QueueTypeCardProps {
   queueType: QueueType & {
     isDefault?: boolean;
     hashTagPreset?: { id: string; name: string } | null;
   };
+  globalScheduleIntervalHours: number[];
   onEdit: (queueType: QueueType) => void;
   isDeletingQueueType: boolean;
   deleteFetcher: FetcherWithComponents<{ success?: boolean; error?: string }>;
+  onDeleteRequest?: (queueType: QueueType) => void;
 }
 
 export function QueueTypeCard({
   queueType,
+  globalScheduleIntervalHours,
   onEdit,
   isDeletingQueueType,
   deleteFetcher,
+  onDeleteRequest,
 }: QueueTypeCardProps) {
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
+    if (onDeleteRequest) {
+      onDeleteRequest(queueType);
+      return;
+    }
     const formData = new FormData();
     formData.set("_action", "delete_queue_type");
     formData.set("id", queueType.id);
     deleteFetcher.submit(formData, { method: "post" });
   };
 
-  const DAY_SHORT_LABELS = [
-    "Sun",
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-  ] as const;
-
-  const getScheduleDescription = () => {
-    if (!queueType.scheduleConfig) return "No schedule configured";
-    if (queueType.scheduleType === "INTERVAL") {
-      if (
-        isIntervalScheduleConfig(queueType.scheduleConfig) &&
-        queueType.scheduleConfig.useGlobalInterval
-      ) {
-        return "Uses global schedule intervals";
-      }
-      if (isIntervalScheduleConfig(queueType.scheduleConfig)) {
-        return `Every ${String(queueType.scheduleConfig.intervalHours ?? 0)} hours`;
-      }
-      return "Invalid interval configuration";
-    }
-    if (queueType.scheduleType === "WEEKLY_SLOTS") {
-      if (isWeeklySlotsScheduleConfig(queueType.scheduleConfig)) {
-        const parts = queueType.scheduleConfig.weeklySlots.map(
-          (slot) => `${DAY_SHORT_LABELS[slot.dayOfWeek] ?? "?"} ${slot.time}`
-        );
-        return `Weekly: ${parts.join(", ") || "None"}`;
-      }
-      return "Invalid weekly slots configuration";
-    }
-    if (isFixedSlotsScheduleConfig(queueType.scheduleConfig)) {
-      return `Fixed slots: ${queueType.scheduleConfig.slots.join(", ") || "None"}`;
-    }
-    return "Invalid slots configuration";
-  };
+  const primaryLine = getQueuePrimaryScheduleLine(
+    queueType,
+    globalScheduleIntervalHours
+  );
+  const chips = getQueueMetadataChips(queueType);
 
   return (
-    <Card className="hover:bg-muted transition-colors">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className="h-4 w-4 rounded-full"
-              style={{
-                backgroundColor:
-                  queueType.colorToken != null && queueType.colorToken !== ""
-                    ? getQueueAccentHex(queueType.colorToken)
-                    : (queueType.color ?? "#6B7280"),
-              }}
-            />
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-medium">{queueType.name}</h4>
-                {queueType.isDefault ? (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                ) : null}
-                {!queueType.isEnabled ? (
-                  <Badge variant="outline" className="text-xs">
-                    Disabled
-                  </Badge>
-                ) : null}
-              </div>
-              {queueType.description ? (
-                <p className="text-muted-foreground text-sm">
-                  {queueType.description}
-                </p>
-              ) : null}
-              <p className="text-muted-foreground text-xs">
-                {getScheduleDescription()}
-              </p>
-              {queueType.hashTagPreset ? (
-                <div className="flex items-center space-x-1">
-                  <Badge variant="outline" className="text-xs">
-                    #{queueType.hashTagPreset.name}
-                  </Badge>
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(queueType)}
-            >
-              <Edit className={INLINE_ICON_SIZE_CLASS} />
-            </Button>
-            {!queueType.isDefault ? (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeletingQueueType}
-              >
-                <Trash2 className={INLINE_ICON_SIZE_CLASS} />
-              </Button>
+    <div className="border-border/80 hover:bg-muted/40 flex flex-col gap-2 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div
+          className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
+          style={{
+            backgroundColor:
+              queueType.colorToken != null && queueType.colorToken !== ""
+                ? getQueueAccentHex(queueType.colorToken)
+                : (queueType.color ?? "#6B7280"),
+          }}
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h4 className="text-sm font-medium tracking-tight">
+              {queueType.name}
+            </h4>
+            {queueType.isDefault ? (
+              <Badge variant="secondary" className="text-[10px] font-normal">
+                Default
+              </Badge>
             ) : null}
           </div>
+          <p className="text-foreground/90 text-sm leading-snug font-medium">
+            {primaryLine}
+          </p>
+          {queueType.description ? (
+            <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+              {queueType.description}
+            </p>
+          ) : null}
+          {chips.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {chips.map((c) => (
+                <span
+                  key={c.key}
+                  className="bg-muted text-muted-foreground inline-flex max-w-full truncate rounded-md px-2 py-0.5 text-[11px] leading-tight"
+                >
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex shrink-0 items-center justify-end gap-1 sm:self-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => onEdit(queueType)}
+          aria-label={`Edit ${queueType.name}`}
+        >
+          <Edit className={INLINE_ICON_SIZE_CLASS} />
+        </Button>
+        {!queueType.isDefault ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+            onClick={handleDeleteClick}
+            disabled={isDeletingQueueType}
+            aria-label={`Delete ${queueType.name}`}
+          >
+            <Trash2 className={INLINE_ICON_SIZE_CLASS} />
+          </Button>
+        ) : null}
+      </div>
+    </div>
   );
 }

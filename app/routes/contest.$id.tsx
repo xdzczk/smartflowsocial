@@ -45,14 +45,20 @@ export default function PublicContestPageRoute() {
             ? `Final results · top ${data.winnerCount} winners · ${data.plannedPayoutSats.toLocaleString()} sats planned.`
             : `Reply to the source post before the deadline. Top ${data.winnerCount} winners split ${data.plannedPayoutSats.toLocaleString()} sats.`}
         </p>
-        <a
-          href={`https://njump.me/${data.sourceNoteId}`}
-          className="text-primary text-sm hover:underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open source post
-        </a>
+        {data.sourceNoteId ? (
+          <a
+            href={`https://njump.me/${data.sourceNoteId}`}
+            className="text-primary text-sm hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open source post
+          </a>
+        ) : (
+          <span className="text-muted-foreground text-sm">
+            No source post linked
+          </span>
+        )}
       </header>
 
       {isCompleted && data.publicSummaryLines ? (

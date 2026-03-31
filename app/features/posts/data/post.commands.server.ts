@@ -664,6 +664,13 @@ export async function cloneDraftPost(
     return { ok: false, error: "Draft not found" };
   }
 
+  const { checkDraftCapacity } =
+    await import("~/features/payments/entitlements/draft-template-cap.server");
+  const capErr = await checkDraftCapacity(userId, 1);
+  if (capErr) {
+    return { ok: false, error: capErr };
+  }
+
   const draftMeta = src.draftMeta ?? Prisma.JsonNull;
 
   const created = await prisma.post.create({

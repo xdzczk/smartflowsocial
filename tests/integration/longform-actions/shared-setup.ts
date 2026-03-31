@@ -110,11 +110,19 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   }),
 }));
 
-vi.mock("~/features/relays/relay-resolution.server", () => ({
-  resolveExecutionRelays: vi
-    .fn()
-    .mockResolvedValue(["wss://relay.example.com"]),
-}));
+vi.mock("~/features/relays/relay-resolution.server", async (importOriginal) => {
+  // import() type position is disallowed by consistent-type-imports; module shape is only for spread.
+  const actual = await importOriginal<
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal requires module type
+    typeof import("~/features/relays/relay-resolution.server")
+  >();
+  const relays = ["wss://relay.example.com"];
+  return {
+    ...actual,
+    resolveExecutionRelays: vi.fn().mockResolvedValue(relays),
+    resolveExecutionRelaysFromForm: vi.fn().mockResolvedValue(relays),
+  };
+});
 
 vi.mock("~/features/posts/drafts/services/draft-version.server", () => ({
   createLongformDraftVersion: vi.fn().mockResolvedValue(undefined),

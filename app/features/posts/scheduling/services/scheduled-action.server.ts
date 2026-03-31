@@ -5,6 +5,10 @@
 
 import { json } from "@remix-run/node";
 
+import {
+  assertScheduleCapacity,
+  ScheduleCapExceededError,
+} from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { MoveScheduledLongFormToDraftUseCase } from "~/features/posts/longform/index.server";
 import {
   createPostWithOutbox,
@@ -163,6 +167,14 @@ async function handleScheduleRepost(
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
   const repostConditions = buildRepostConditionsFromData(data);
+  try {
+    await assertScheduleCapacity(userId, 1);
+  } catch (e) {
+    if (e instanceof ScheduleCapExceededError) {
+      return json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
   const post = await createPostWithOutbox(
     {
       userId,
@@ -215,6 +227,14 @@ async function handleScheduleQuote(
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
   const quoteCaption = data.quoteCaption ?? "";
+  try {
+    await assertScheduleCapacity(userId, 1);
+  } catch (e) {
+    if (e instanceof ScheduleCapExceededError) {
+      return json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
   const post = await createPostWithOutbox(
     {
       userId,

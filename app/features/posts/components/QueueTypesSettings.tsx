@@ -1,8 +1,18 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { Plus } from "lucide-react";
+import { ListTree, Plus } from "lucide-react";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { ManagementListSection } from "~/features/settings/components/patterns";
 
@@ -24,6 +34,8 @@ interface QueueTypeSettings extends QueueType {
 
 interface QueueTypesSettingsProps {
   queueTypes: QueueTypeSettings[];
+  /** User's global composer interval hours (from settings loader). */
+  globalScheduleIntervalHours: number[];
   hashTagPresets: Array<{
     id: string;
     name: string;
@@ -78,6 +90,7 @@ function normalizeQueueTypeFromAction(
 
 export function QueueTypesSettings({
   queueTypes,
+  globalScheduleIntervalHours,
   hashTagPresets,
 }: QueueTypesSettingsProps) {
   const formFetcher = useFetcher<FetcherData>();
@@ -89,6 +102,8 @@ export function QueueTypesSettings({
   const [editingQueueType, setEditingQueueType] = useState<QueueType | null>(
     null
   );
+  const [queuePendingDelete, setQueuePendingDelete] =
+    useState<QueueTypeSettings | null>(null);
   const lastHandledDeleteRef = useRef<unknown>(null);
   const lastHandledFormRef = useRef<unknown>(null);
   const lastRevalidatedFormRef = useRef<unknown>(null);
@@ -185,6 +200,15 @@ export function QueueTypesSettings({
     setShowDialog(open);
   };
 
+  const confirmDeleteQueue = () => {
+    if (!queuePendingDelete) return;
+    const formData = new FormData();
+    formData.set("_action", "delete_queue_type");
+    formData.set("id", queuePendingDelete.id);
+    deleteFetcher.submit(formData, { method: "post" });
+    setQueuePendingDelete(null);
+  };
+
   return (
     <>
       <ManagementListSection
@@ -198,21 +222,73 @@ export function QueueTypesSettings({
         }
       >
         {queueTypesState.length === 0 ? (
-          <p className="text-muted-foreground py-8 text-center">
-            No queue types found. Create your first queue type to get started.
-          </p>
-        ) : (
-          queueTypesState.map((queueType) => (
-            <QueueTypeCard
-              key={queueType.id}
-              queueType={queueType}
-              onEdit={handleEdit}
-              isDeletingQueueType={isDeleting}
-              deleteFetcher={deleteFetcher}
+          <div className="text-muted-foreground py-10 text-center">
+            <ListTree
+              className="mx-auto mb-3 h-10 w-10 opacity-[0.35]"
+              aria-hidden
             />
-          ))
+            <p className="text-foreground mb-1 text-sm font-medium">
+              No queue types yet
+            </p>
+            <p className="mx-auto mb-5 max-w-sm text-xs leading-relaxed">
+              Queue types define reusable publishing schedules. Create one to
+              reuse timing logic across posts and keep publishing consistent.
+            </p>
+            <Button
+              type="button"
+              onClick={handleCreateNew}
+              size="sm"
+              variant="outline"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create first queue type
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {queueTypesState.map((queueType) => (
+              <QueueTypeCard
+                key={queueType.id}
+                queueType={queueType}
+                globalScheduleIntervalHours={globalScheduleIntervalHours}
+                onEdit={handleEdit}
+                isDeletingQueueType={isDeleting}
+                deleteFetcher={deleteFetcher}
+                onDeleteRequest={(qt) =>
+                  setQueuePendingDelete(qt as QueueTypeSettings)
+                }
+              />
+            ))}
+          </div>
         )}
       </ManagementListSection>
+
+      <AlertDialog
+        open={queuePendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setQueuePendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete queue type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {queuePendingDelete
+                ? `“${queuePendingDelete.name}” will be removed. Posts already assigned stay assigned; new posts can no longer select this queue.`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeleteQueue}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <QueueTypeDialog
         open={showDialog}

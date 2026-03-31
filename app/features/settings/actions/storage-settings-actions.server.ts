@@ -31,6 +31,16 @@ export async function handleStorageSettingsAction(
       return result.response;
     }
     const isPaidActive = await isSubscriptionActiveForGating(userId);
+    if (!isPaidActive && result.data.uploadProvider === "BLOSSOM_SFS") {
+      return json(
+        {
+          success: false,
+          error:
+            "SmartFlow Blossom requires an active paid subscription. Upgrade to select it.",
+        },
+        { status: 403 }
+      );
+    }
     const resolvedProvider = resolveUploadProviderWithTierDefaults({
       persistedProvider: result.data.uploadProvider,
       isPaidActive,

@@ -203,6 +203,7 @@ export default function DashboardIndexPage() {
     clearPrependedPastCount,
     fetchMorePast,
     fetchMoreFuture,
+    resetFlowMergeState,
   } = useFlowData();
 
   const [runwayModalOpen, setRunwayModalOpen] = useState(false);
@@ -299,6 +300,7 @@ export default function DashboardIndexPage() {
   }, [flowItems.length]);
 
   const handleModalSuccess = () => {
+    resetFlowMergeState();
     handleCloseEditModal();
     handleCloseRescheduleModal();
     setSelectedPost(null);
@@ -510,7 +512,10 @@ export default function DashboardIndexPage() {
         onOpenChange={setRunwayModalOpen}
         queueTypes={queueTypesFiltered}
         runwaySettings={runwaySettings ?? undefined}
-        onSuccess={() => revalidator.revalidate()}
+        onSuccess={() => {
+          resetFlowMergeState();
+          revalidator.revalidate();
+        }}
       />
 
       <ScheduleOverviewTargetModal
@@ -520,14 +525,20 @@ export default function DashboardIndexPage() {
         open={scheduleOverviewTargetModalOpen}
         onClose={() => setScheduleOverviewTargetModalOpen(false)}
         targetPerDay={targetPerDay}
-        onSuccess={() => revalidator.revalidate()}
+        onSuccess={() => {
+          resetFlowMergeState();
+          revalidator.revalidate();
+        }}
       />
 
       {selectedPost ? (
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
-          onDeleted={() => revalidator.revalidate()}
+          onDeleted={() => {
+            resetFlowMergeState();
+            revalidator.revalidate();
+          }}
           onEdit={(p) => {
             setSelectedPost(null);
             _handleEditPost(p as PostData);
@@ -547,7 +558,10 @@ export default function DashboardIndexPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
-          onDeleted={() => revalidator.revalidate()}
+          onDeleted={() => {
+            resetFlowMergeState();
+            revalidator.revalidate();
+          }}
           onEdit={(p) => {
             setSelectedLongFormPost(null);
             _handleEditPost(p as LongFormPostData);

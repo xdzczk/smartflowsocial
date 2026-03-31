@@ -7,6 +7,12 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  getUserPlanType,
+  type UserSubscription,
+} from "~/features/payments/types";
 import { createPostWithOutbox, updatePost } from "~/features/posts/server";
 import {
   createDraftGroupVersion,
@@ -153,6 +159,33 @@ export async function handleSignAndSchedule(
       remaining: rateLimitCheck.remaining,
       resetTime: rateLimitCheck.resetTime,
     });
+
+    const subRow = await getUserSubscription(userId);
+    const userSub: UserSubscription | null = subRow?.planId
+      ? {
+          planId: subRow.planId,
+          status: subRow.status,
+          currentPeriodEnd: subRow.currentPeriodEnd ?? undefined,
+          Plan: subRow.Plan
+            ? {
+                name: subRow.Plan.name,
+                id: subRow.Plan.id,
+                enableLifetimeAccess: subRow.Plan.enableLifetimeAccess
+                  ? true
+                  : undefined,
+              }
+            : undefined,
+        }
+      : null;
+    if (!getPlanEntitlements(getUserPlanType(userSub)).canExecuteBulkActions) {
+      return json(
+        {
+          error:
+            "Bulk publishing is a paid workflow designed for higher-volume operators.",
+        },
+        { status: 403 }
+      );
+    }
 
     const createdPosts = await Promise.all(
       signedEvents.map(async (signedEvent, index) => {

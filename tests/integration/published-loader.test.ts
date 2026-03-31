@@ -56,6 +56,13 @@ import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loader } from "~/routes/dashboard.published";
 
+const PUBLISHED_DATA_URL =
+  "http://localhost:3000/dashboard/published?_data=routes/dashboard.published";
+const PUBLISHED_QUEUE_DATA_URL =
+  "http://localhost:3000/dashboard/published/posts?_data=routes/dashboard.published.$queueType";
+const PUBLISHED_PAGINATION_URL =
+  "http://localhost:3000/dashboard/published?page=2&limit=10&_data=routes/dashboard.published";
+
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,7 +90,7 @@ describe("Posted Posts Loader Integration", () => {
 
   describe("Posted Posts Loader", () => {
     it("should load posted posts data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -142,7 +149,7 @@ describe("Posted Posts Loader Integration", () => {
 
       mockGetPublishedDashboardData.mockResolvedValue(mockData);
 
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_QUEUE_DATA_URL);
       const response = await loader({
         request,
         params: { queueType: "posts" },
@@ -197,7 +204,7 @@ describe("Posted Posts Loader Integration", () => {
         stats: {},
       });
 
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -226,9 +233,7 @@ describe("Posted Posts Loader Integration", () => {
     });
 
     it("should pass URL object to getPublishedDashboardData", async () => {
-      const request = new Request(
-        "http://localhost:3000/dashboard/published?page=2&limit=10"
-      );
+      const request = new Request(PUBLISHED_PAGINATION_URL);
 
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -255,7 +260,7 @@ describe("Posted Posts Loader Integration", () => {
         new Error("Authentication required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -298,7 +303,7 @@ describe("Posted Posts Loader Integration", () => {
         new Error("Subscription required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -341,7 +346,7 @@ describe("Posted Posts Loader Integration", () => {
         new Error("Database error")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/published");
+      const request = new Request(PUBLISHED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},

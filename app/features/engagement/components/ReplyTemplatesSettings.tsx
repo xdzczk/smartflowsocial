@@ -1,17 +1,30 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
-import { FileText, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { startTransition, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 
 interface ReplyTemplateRecord {
   id: string;
@@ -23,137 +36,275 @@ interface ReplyTemplatesSettingsProps {
   templates: ReplyTemplateRecord[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function ReplyTemplatesSettings({
   templates,
 }: ReplyTemplatesSettingsProps) {
-  const createFetcher = useFetcher<{ success?: boolean; error?: string }>();
-  const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const templateFetcher = useFetcher<FetcherData>();
+  const deleteFetcher = useFetcher<FetcherData>();
   const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [slug, setSlug] = useState("");
+  const [body, setBody] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<ReplyTemplateRecord | null>(
+    null
+  );
+
+  const lastTemplateModeRef = useRef<"create" | "edit">("create");
 
   useEffect(() => {
     if (
-      (createFetcher.state === "idle" && createFetcher.data?.success) ||
+      (templateFetcher.state === "idle" && templateFetcher.data?.success) ||
       (deleteFetcher.state === "idle" && deleteFetcher.data?.success)
     ) {
-      revalidator.revalidate();
+      revalidatorRef.current.revalidate();
     }
   }, [
-    createFetcher.state,
-    createFetcher.data,
+    templateFetcher.state,
+    templateFetcher.data?.success,
     deleteFetcher.state,
-    deleteFetcher.data,
-    revalidator,
+    deleteFetcher.data?.success,
   ]);
 
-  const isCreating = createFetcher.state === "submitting";
-  const createError = createFetcher.data?.error;
+  const wasTemplateSubmittingRef = useRef(false);
+  useEffect(() => {
+    const wasSubmitting = wasTemplateSubmittingRef.current;
+    wasTemplateSubmittingRef.current = templateFetcher.state === "submitting";
+    if (!wasSubmitting || templateFetcher.state !== "idle") return;
+    if (templateFetcher.data?.success) {
+      toast.success(
+        lastTemplateModeRef.current === "edit"
+          ? "Template saved"
+          : "Template created"
+      );
+      startTransition(() => setDialogOpen(false));
+    } else if (templateFetcher.data?.error) {
+      toast.error(templateFetcher.data.error);
+    }
+  }, [templateFetcher.state, templateFetcher.data]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" aria-hidden />
-          Reply templates
-        </CardTitle>
-        <CardDescription>
-          Short snippets you can insert when replying in the engagement feed.
-          Type <kbd className="bg-muted rounded px-1 font-mono text-xs">/</kbd>{" "}
-          in the reply box to pick a template by slug (e.g. /thanks).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <createFetcher.Form method="post" className="space-y-3">
-          <input type="hidden" name="_action" value="reply_template_create" />
-          <div className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
-            <div className="space-y-2">
-              <Label htmlFor="reply-template-slug">Slug</Label>
-              <Input
-                id="reply-template-slug"
-                name="slug"
-                placeholder="e.g. thanks"
-                className="font-mono text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reply-template-body">Body</Label>
-              <Input
-                id="reply-template-body"
-                name="body"
-                placeholder="e.g. Thanks for the reply!"
-                className="text-sm"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? "Adding…" : "Add"}
-              </Button>
-            </div>
-          </div>
-          {createError ? (
-            <p className="text-destructive text-sm">{createError}</p>
-          ) : null}
-        </createFetcher.Form>
+  const wasDeletingRef = useRef(false);
+  useEffect(() => {
+    const wasSubmitting = wasDeletingRef.current;
+    wasDeletingRef.current = deleteFetcher.state === "submitting";
+    if (!wasSubmitting || deleteFetcher.state !== "idle") return;
+    if (deleteFetcher.data?.success) toast.success("Template removed");
+    else if (deleteFetcher.data?.error) toast.error(deleteFetcher.data.error);
+  }, [deleteFetcher.state, deleteFetcher.data]);
 
-        {templates.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No reply templates yet. Add one above to use /slug in the engagement
-            reply box.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {templates.map((t) => (
-              <ReplyTemplateRow
-                key={t.id}
-                template={t}
-                deleteFetcher={deleteFetcher}
-              />
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+  const openCreate = () => {
+    lastTemplateModeRef.current = "create";
+    setEditingId(null);
+    setSlug("");
+    setBody("");
+    setDialogOpen(true);
+  };
 
-function ReplyTemplateRow({
-  template,
-  deleteFetcher,
-}: {
-  template: ReplyTemplateRecord;
-  deleteFetcher: ReturnType<
-    typeof useFetcher<{ success?: boolean; error?: string }>
-  >;
-}) {
-  const isDeleting = deleteFetcher.state === "submitting";
+  const openEdit = (t: ReplyTemplateRecord) => {
+    lastTemplateModeRef.current = "edit";
+    setEditingId(t.id);
+    setSlug(t.slug);
+    setBody(t.body);
+    setDialogOpen(true);
+  };
 
-  const handleDelete = () => {
-    const formData = new FormData();
-    formData.set("_action", "reply_template_delete");
-    formData.set("id", template.id);
-    deleteFetcher.submit(formData, { method: "post" });
+  const busy = templateFetcher.state !== "idle";
+
+  const handleSaveTemplate = () => {
+    lastTemplateModeRef.current = editingId ? "edit" : "create";
+    const fd = new FormData();
+    if (editingId) {
+      fd.set("_action", "reply_template_update");
+      fd.set("id", editingId);
+      fd.set("slug", slug);
+      fd.set("body", body);
+    } else {
+      fd.set("_action", "reply_template_create");
+      fd.set("slug", slug);
+      fd.set("body", body);
+    }
+    templateFetcher.submit(fd, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const fd = new FormData();
+    fd.set("_action", "reply_template_delete");
+    fd.set("id", deleteTarget.id);
+    deleteFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
+    setDeleteTarget(null);
   };
 
   return (
-    <li className="border-border bg-muted/30 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
-      <div className="min-w-0 flex-1">
-        <span className="font-mono text-sm font-medium">/{template.slug}</span>
-        <span className="text-muted-foreground ml-2 truncate text-sm">
-          {template.body.length > 50
-            ? template.body.slice(0, 50) + "…"
-            : template.body}
-        </span>
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="text-muted-foreground hover:text-destructive h-8 w-8"
-        disabled={isDeleting}
-        aria-label={`Delete template /${template.slug}`}
-        onClick={handleDelete}
+    <>
+      <ManagementListSection
+        title="Reply templates"
+        description="Reusable snippets for engagement replies. Type / in the reply box to insert one by slug."
+        primaryAction={
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={openCreate}
+          >
+            New template
+          </Button>
+        }
       >
-        <Trash2 className="h-4 w-4" aria-hidden />
-      </Button>
-    </li>
+        {templates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <p className="text-foreground text-sm font-medium">
+              No reply templates yet
+            </p>
+            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+              Create reusable snippets for faster replies in the engagement
+              feed.
+            </p>
+            <Button type="button" size="sm" onClick={openCreate}>
+              Create first template
+            </Button>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {templates.map((t) => (
+              <li
+                key={t.id}
+                className="border-border/60 flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-sm font-medium">/{t.slug}</div>
+                  <p className="text-muted-foreground mt-0.5 truncate text-sm">
+                    {t.body}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => openEdit(t)}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden />
+                    Edit
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive h-8 w-8"
+                    aria-label={`Delete template /${t.slug}`}
+                    onClick={() => setDeleteTarget(t)}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ManagementListSection>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Edit template" : "New template"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="space-y-2">
+              <Label htmlFor="tmpl-slug">Slug</Label>
+              <Input
+                id="tmpl-slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="e.g. thanks"
+                className="font-mono text-sm"
+                disabled={busy}
+              />
+              <p className="text-muted-foreground text-xs">
+                In the reply box, type /slug to insert this template.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tmpl-body">Body</Label>
+              <Textarea
+                id="tmpl-body"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Template text…"
+                disabled={busy}
+                rows={4}
+              />
+            </div>
+            {templateFetcher.data?.error ? (
+              <p className="text-destructive text-sm">
+                {templateFetcher.data.error}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveTemplate}
+              disabled={busy || !slug.trim() || !body.trim()}
+            >
+              {busy
+                ? "Saving…"
+                : editingId
+                  ? "Save changes"
+                  : "Create template"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `Remove /${deleteTarget.slug}? This cannot be undone.`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -22,6 +22,7 @@ export type {
   UserSubscription,
   SubscriptionData,
   BroadcastAudienceGate,
+  PlanEntitlements,
 } from "./types";
 
 // ============================================================================
@@ -32,10 +33,12 @@ export {
   PLAN_FEATURES,
   getGiveawayPlanLimits,
   getBroadcastPlanLimits,
+  getPlanEntitlements,
   getUserPlanType,
   getPlanDisplayName,
   hasFeatureAccess,
   isSubscriptionPeriodExpired,
+  usePlanEntitlements,
 } from "./types";
 
 // ============================================================================
@@ -47,6 +50,7 @@ export {
   requireFeatureAccess,
   requireAnySubscription,
   requireActiveSubscription,
+  requireDashboardSubscriptionContext,
   getSubscriptionData,
   isSubscriptionActiveForGating,
 } from "./subscriptions.server";
@@ -95,12 +99,19 @@ export { runCampaignPayoutAutorunCron } from "./services/campaign-payout-cron.se
 
 export { NWCSettings } from "./components/NWCSettings";
 export { SubscriptionSettings } from "./components/SubscriptionSettings";
+export {
+  BillingAlertBanner,
+  BillingStatusCard,
+} from "./components/billing/BillingSurfaces";
 export { ErrorMessage } from "./components/ErrorMessage";
 export { FeatureComparisonTable } from "./components/FeatureComparisonTable";
 export { InvoiceModal } from "./components/InvoiceModal";
 export { PaymentSuccessModal } from "./components/PaymentSuccessModal";
 export { PricingCard } from "./components/PricingCard";
-export { SubscriptionCheckoutModal } from "./components/SubscriptionCheckoutModal";
+export {
+  SubscriptionCheckoutModal,
+  defaultCheckoutPaymentMethod,
+} from "./components/SubscriptionCheckoutModal";
 export { PlansPage } from "./components/PlansPage";
 
 // ============================================================================

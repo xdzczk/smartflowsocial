@@ -22,7 +22,6 @@ vi.mock("~/features/auth/session.server", () => ({
 }));
 
 vi.mock("~/features/payments/subscriptions.server", () => ({
-  requireFeatureAccess: vi.fn(),
   requireAnySubscription: vi.fn(),
 }));
 
@@ -47,10 +46,7 @@ vi.mock("~/features/posts/ui", () => ({
 import { userFactory } from "../factories";
 
 import { requireUserId } from "~/features/auth/session.server";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import {
   loadFlowData,
   getContentStatistics,
@@ -68,9 +64,6 @@ describe("Dashboard Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined
-    );
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
     (loadFlowData as ReturnType<typeof vi.fn>).mockResolvedValue({

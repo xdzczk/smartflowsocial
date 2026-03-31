@@ -1,4 +1,5 @@
-export { TimezoneSettings } from "./TimezoneSettings";
+export { RegionalDisplaySettings } from "./RegionalDisplaySettings";
+export type { DateFormatKey } from "./RegionalDisplaySettings";
 export { RelaysSettings } from "./RelaysSettings";
 
 // Re-exports from features for backward compatibility

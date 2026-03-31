@@ -10,10 +10,7 @@ import {
 import { summarizeContestProofSettlement } from "~/features/contest/contest-proof-settlement.server";
 import type { Contest } from "~/features/contest/data/contest-prisma-types.server";
 import { findLatestContestSnapshot } from "~/features/contest/repositories/contest-detail-queries.server";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { ContestProofStudio } from "~/features/proof/contest/ContestProofStudio";
 import { featureFlags } from "~/lib/feature-flags.server";
 import type { ContestProofStudioDto } from "~/lib/proof/adapters/contest";
@@ -45,7 +42,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
 
   const completed = await listContestsFiltered(userId, {
     status: "COMPLETED",

@@ -10,10 +10,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import {
   TemplatesPage,
   handleTemplatesAction,
@@ -32,7 +29,6 @@ async function loadTemplatesValidated(
   userId: string
 ): Promise<TemplatesLoaderData> {
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "templates");
   const data = await loadTemplatesData(userId);
   return validateLoaderResponse(data, templatesLoaderDataSchema);
 }

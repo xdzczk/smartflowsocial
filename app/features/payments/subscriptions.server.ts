@@ -4,6 +4,7 @@ import {
   ensureUserHasFreePlan,
   getUserSubscription,
 } from "~/features/payments/data";
+import { deriveBillingContext } from "~/features/payments/services/subscription-status.server";
 import { getUserById } from "~/features/user";
 
 export { ensureUserHasFreePlan } from "~/features/payments/data";
@@ -60,14 +61,17 @@ export async function requireAnySubscription(userId: string): Promise<void> {
 }
 
 /**
- * Ensure user has at least a free subscription; return subscription data.
- * If paid plan has expired (status !== ACTIVE), we do not redirect; UI shows an expired banner.
+ * Ensure user has at least a free subscription; return subscription data for dashboard shell.
+ * Does not require a paid plan. If a paid plan has expired, UI shows an expired banner.
  */
-export async function requireActiveSubscription(
+export async function requireDashboardSubscriptionContext(
   userId: string
 ): Promise<SubscriptionData> {
   return ensureFreeAndGetSubscriptionData(userId);
 }
+
+/** @deprecated Use `requireDashboardSubscriptionContext` (name reflects behavior). */
+export const requireActiveSubscription = requireDashboardSubscriptionContext;
 
 /**
  * Get subscription data without enforcing access (for informational purposes)
@@ -79,6 +83,29 @@ export async function getSubscriptionData(
     getUserById(userId),
     getUserSubscription(userId),
   ]);
+
+  let billingContext: SubscriptionData["billingContext"];
+  if (user && currentSubscription) {
+    billingContext = deriveBillingContext({
+      user: {
+        id: user.id,
+        isEnabled: user.isEnabled,
+        npub: user.npub,
+        nwcEnabled: user.nwcEnabled,
+        encryptedNwc: user.encryptedNwc,
+      },
+      subscription: {
+        planId: currentSubscription.planId,
+        status: currentSubscription.status,
+        paymentMethod: currentSubscription.paymentMethod,
+        renewalMode: currentSubscription.renewalMode,
+        cancelAtPeriodEnd: currentSubscription.cancelAtPeriodEnd,
+        currentPeriodEnd: currentSubscription.currentPeriodEnd,
+        gracePeriodEndsAt: currentSubscription.gracePeriodEndsAt,
+        Plan: currentSubscription.Plan,
+      },
+    });
+  }
 
   return {
     user: user ? { id: userId, isEnabled: user.isEnabled } : null,
@@ -100,6 +127,7 @@ export async function getSubscriptionData(
               : undefined,
           }
         : null,
+    billingContext,
   };
 }
 

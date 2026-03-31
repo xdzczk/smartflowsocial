@@ -8,10 +8,20 @@ import {
   useLoaderData,
   useNavigation,
 } from "@remix-run/react";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -21,7 +31,6 @@ import {
 } from "~/components/ui/card";
 import { requireUserId } from "~/features/auth";
 import {
-  requireFeatureAccess,
   requireAnySubscription,
   getSubscriptionData,
 } from "~/features/payments";
@@ -39,6 +48,7 @@ import {
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+import { cn } from "~/lib/utils";
 
 const PAGE_SIZE = 50;
 interface ActionData {
@@ -48,7 +58,6 @@ interface ActionData {
 async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "settings");
 
   const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
@@ -66,15 +75,15 @@ async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
 
   const totalCount = agg._count.id;
   const totalSize = agg._sum.size ?? 0;
-  const storageLimitBytes = getBlossomStorageLimitBytes(
-    subscriptionData.currentSubscription?.planId ?? null
-  );
+  const planId = subscriptionData.currentSubscription?.planId ?? null;
+  const storageLimitBytes = getBlossomStorageLimitBytes(planId);
 
   return {
     items,
     totalCount,
     totalSize,
     storageLimitBytes: storageLimitBytes > 0 ? storageLimitBytes : null,
+    planName: subscriptionData.currentSubscription?.Plan?.name ?? null,
     page,
     totalPages: Math.ceil(totalCount / PAGE_SIZE),
   };
@@ -93,7 +102,6 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const userId = await requireUserId(request);
     await requireAnySubscription(userId);
-    await requireFeatureAccess(userId, "settings");
     const formData = await request.formData();
     const actionType = formData.get("_action");
 
@@ -114,7 +122,7 @@ export const action = withCSRFProtection(
           return json(
             {
               error:
-                "Could not delete file from Blossom storage. Record was not removed.",
+                "Could not delete file from SmartFlow Blossom. Nothing was removed.",
             },
             { status: 502 }
           );
@@ -141,82 +149,122 @@ type SettingsMediaLoaderPayload = Awaited<
 >;
 
 function SettingsMediaPageInner() {
-  const { items, totalCount, totalSize, storageLimitBytes, page, totalPages } =
-    useDeferredRouteLoaderData() as SettingsMediaLoaderPayload;
+  const {
+    items,
+    totalCount,
+    totalSize,
+    storageLimitBytes,
+    planName,
+    page,
+    totalPages,
+  } = useDeferredRouteLoaderData() as SettingsMediaLoaderPayload;
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
-  const isDeleting =
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const submittingMediaId =
     navigation.state === "submitting" &&
-    navigation.formData?.get("_action") === "delete_media";
+    navigation.formData?.get("_action") === "delete_media"
+      ? String(navigation.formData.get("mediaId") ?? "")
+      : null;
+
+  const usagePercent =
+    storageLimitBytes != null && storageLimitBytes > 0
+      ? Math.min(100, (100 * totalSize) / storageLimitBytes)
+      : 0;
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-2xl space-y-2">
           <h1 className="text-xl font-semibold sm:text-2xl">Media</h1>
-          <p className="text-muted-foreground text-sm">
-            Blossom media metadata (SmartFlow Blossom uploads). Delete here
-            removes the record; the file may still exist on the Blossom server.
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Manage media uploaded through SmartFlow Blossom. Deleting removes
+            the library entry and the stored file when the server confirms
+            removal. If deletion fails, the item stays and you will see an
+            error.
           </p>
         </div>
         <Link
           to="/dashboard/settings?tab=media"
-          className="text-primary text-sm hover:underline"
+          className="text-primary shrink-0 text-sm hover:underline"
         >
-          Back to Settings
+          Back to Media &amp; Storage
         </Link>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Usage</CardTitle>
-          <CardDescription>
-            SmartFlow Blossom (SFS) storage: files and size used from your
-            account limit
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="flex flex-wrap gap-6">
+        <CardHeader className="pb-2">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
             <div>
-              <dt className="text-muted-foreground text-sm">Files</dt>
-              <dd className="text-xl font-semibold">{totalCount}</dd>
+              <CardTitle className="text-base">Usage</CardTitle>
+              <CardDescription className="mt-1">
+                SmartFlow Blossom storage tracked for your account.
+                {planName ? (
+                  <>
+                    {" "}
+                    <span className="text-foreground/80">
+                      Included in your current plan ({planName}).
+                    </span>
+                  </>
+                ) : null}
+              </CardDescription>
             </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-muted-foreground text-sm">Storage used</dt>
-              <dd className="text-xl font-semibold">
+              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Files
+              </dt>
+              <dd className="text-lg font-semibold tabular-nums">
+                {totalCount}
+              </dd>
+            </div>
+            <div className="col-span-2 sm:col-span-2">
+              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Storage used
+              </dt>
+              <dd className="text-lg font-semibold tabular-nums">
                 {formatBytes(totalSize)}
                 {storageLimitBytes != null && storageLimitBytes > 0 ? (
-                  <span className="text-muted-foreground ml-1 font-normal">
-                    / {formatBytes(storageLimitBytes)} limit
+                  <span className="text-muted-foreground ml-1 text-base font-normal">
+                    / {formatBytes(storageLimitBytes)}
                   </span>
                 ) : null}
               </dd>
             </div>
           </dl>
           {storageLimitBytes != null && storageLimitBytes > 0 ? (
-            <div className="mt-3">
-              <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+            <div>
+              <div className="bg-muted mb-1 h-2 w-full overflow-hidden rounded-full">
                 <div
                   className="bg-primary h-full rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      (100 * totalSize) / storageLimitBytes
-                    )}%`,
-                  }}
+                  style={{ width: `${usagePercent}%` }}
                 />
               </div>
+              <p className="text-muted-foreground text-xs">
+                {usagePercent >= 95
+                  ? "You are near your SmartFlow Blossom storage limit."
+                  : "Usage is counted for SmartFlow Blossom uploads only."}
+              </p>
             </div>
-          ) : null}
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              Storage limits apply when your plan includes a SmartFlow Blossom
+              quota.
+            </p>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Media gallery</CardTitle>
+          <CardTitle className="text-base">Library</CardTitle>
           <CardDescription>
-            Recent uploads from SmartFlow Blossom. Delete removes both the app
-            record and the remote object.
+            Only SmartFlow Blossom uploads appear here. Other providers may not
+            be listed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -224,26 +272,38 @@ function SettingsMediaPageInner() {
             <p className="text-destructive mb-4 text-sm">{actionData.error}</p>
           ) : null}
           {items.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No media recorded yet. Upload with SmartFlow Blossom to see items
-              here.
-            </p>
+            <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+              <p>No media yet.</p>
+              <p>
+                Upload with SmartFlow Blossom as your media provider in Media
+                &amp; Storage settings. Items will show a preview, size, and
+                delete action once recorded.
+              </p>
+              <p>
+                <Link
+                  to="/dashboard/settings?tab=media"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Media &amp; Storage settings
+                </Link>
+              </p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="space-y-3">
+              <ul className="flex flex-col gap-3">
                 {items.map((m) => {
                   const isImage = (m.mimeType ?? "").startsWith("image/");
                   const isVideo = (m.mimeType ?? "").startsWith("video/");
                   return (
-                    <div
+                    <li
                       key={m.id}
-                      className="border-border bg-card overflow-hidden rounded-md border"
+                      className="border-border bg-card flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-stretch"
                     >
                       <a
                         href={m.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-muted block aspect-square"
+                        className="bg-muted relative h-36 w-full shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-40"
                       >
                         {isImage ? (
                           <img
@@ -261,49 +321,47 @@ function SettingsMediaPageInner() {
                             preload="metadata"
                           />
                         ) : (
-                          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-                            Open media
+                          <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+                            File
                           </div>
                         )}
                       </a>
-                      <div className="space-y-2 p-3 text-xs">
-                        <div className="text-muted-foreground">
-                          {m.size != null ? formatBytes(m.size) : "—"} •{" "}
-                          {new Date(m.createdAt).toLocaleDateString()}
+                      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+                        <div className="min-w-0 space-y-1">
+                          <p className="text-muted-foreground text-xs">
+                            {m.mimeType ?? "Unknown type"} ·{" "}
+                            {m.size != null ? formatBytes(m.size) : "—"} ·{" "}
+                            {new Date(m.createdAt).toLocaleString()}
+                          </p>
+                          <p className="text-muted-foreground truncate text-xs">
+                            SmartFlow Blossom
+                          </p>
                         </div>
-                        <div className="text-muted-foreground truncate">
-                          {m.mimeType ?? m.provider}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-3">
                           <a
                             href={m.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary truncate hover:underline"
+                            className="text-primary text-sm font-medium hover:underline"
                           >
-                            View
+                            Open
                           </a>
-                          <Form method="post">
-                            <input
-                              type="hidden"
-                              name="_action"
-                              value="delete_media"
-                            />
-                            <input type="hidden" name="mediaId" value={m.id} />
-                            <button
-                              type="submit"
-                              disabled={isDeleting}
-                              className="text-destructive hover:underline disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
-                          </Form>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive h-auto px-0"
+                            disabled={!!submittingMediaId}
+                            onClick={() => setDeleteTargetId(m.id)}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
               {totalPages > 1 ? (
                 <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <Link
@@ -335,6 +393,45 @@ function SettingsMediaPageInner() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={deleteTargetId != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this media?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the file from SmartFlow Blossom storage and deletes
+              your library record when the server confirms removal. If removal
+              fails, nothing changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <Form method="post" className="inline">
+              <input type="hidden" name="_action" value="delete_media" />
+              <input
+                type="hidden"
+                name="mediaId"
+                value={deleteTargetId ?? ""}
+              />
+              <Button
+                type="submit"
+                variant="destructive"
+                className={cn(
+                  submittingMediaId && "pointer-events-none opacity-70"
+                )}
+                disabled={!deleteTargetId || !!submittingMediaId}
+              >
+                {submittingMediaId === deleteTargetId ? "Deleting…" : "Delete"}
+              </Button>
+            </Form>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -350,7 +447,7 @@ export default function SettingsMediaPage() {
         <DeferredListPageSkeleton
           variant="mediaGallery"
           title="Media"
-          subtitle="Blossom usage and your uploads"
+          subtitle="SmartFlow Blossom usage and your uploads"
         />
       }
     >

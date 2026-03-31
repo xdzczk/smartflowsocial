@@ -7,7 +7,10 @@ import { recordReferralEarningIfAny } from "~/features/referral/record-referral-
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
-import { extendUserSubscriptionFromPayment } from "./payment-subscription.server";
+import {
+  extendUserSubscriptionFromPayment,
+  FounderSeatSoldOutError,
+} from "./payment-subscription.server";
 
 /**
  * Handles completed payments and updates user subscription.
@@ -40,7 +43,29 @@ export async function handlePaymentCompleted(
       },
     });
 
-    await extendUserSubscriptionFromPayment(userId, planId, paymentId);
+    try {
+      await extendUserSubscriptionFromPayment(userId, planId, paymentId);
+    } catch (err) {
+      if (err instanceof FounderSeatSoldOutError) {
+        await prisma.payment.update({
+          where: { id: paymentId },
+          data: {
+            status: "FAILED",
+            paidAt: null,
+            failedAt: new Date(),
+            failureReason: "founder_seat_sold_out",
+          },
+        });
+        logError(err, {
+          userId,
+          planId,
+          paymentId,
+          message: "Payment reverted: Founder sold out at grant time",
+        });
+        return;
+      }
+      throw err;
+    }
 
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },

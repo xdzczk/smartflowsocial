@@ -2,10 +2,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { GiveawayQueuePage, loadGiveawayData } from "~/features/giveaway";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { giveawayLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -15,7 +12,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Require that the user has at least a subscription record
     await requireAnySubscription(userId);
     // Check if user has access to giveaway feature
-    await requireFeatureAccess(userId, "giveaways");
+    await requireAnySubscription(userId);
 
     const url = new URL(request.url);
     const queueType = params["queueType"] ?? "all";

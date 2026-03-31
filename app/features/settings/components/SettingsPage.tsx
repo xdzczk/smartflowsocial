@@ -1,12 +1,10 @@
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useEffect } from "react";
 
-import { DateFormatSettings } from "~/components/settings/DateFormatSettings";
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";
+import { RegionalDisplaySettings } from "~/components/settings/RegionalDisplaySettings";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
-import { TimeFormatSettings } from "~/components/settings/TimeFormatSettings";
-import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { RemoteSignerSettings } from "~/features/auth/components/RemoteSignerSettings";
 import type { PrimarySignerProfile } from "~/features/auth/signer";
 import {
@@ -14,6 +12,7 @@ import {
   ReplyTemplatesSettings,
 } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import type { HashTagPreset } from "~/features/posts/server";
 import {
   HashtagPresetsSettings,
@@ -55,6 +54,7 @@ import {
   parseMutedList,
   parsePrimarySignerProfile,
   parseProfileRelayEntries,
+  parseGlobalScheduleIntervalHours,
   parseQueueTypes,
   parseRelayAcksMap,
   toIsoStringOrNull,
@@ -82,6 +82,7 @@ function renderSettingsPanel(
     runwayNotifyBelowDays: unknown;
     primarySignerProfile: PrimarySignerProfile | null;
     queueTypes: QueueTypeSettings[];
+    globalScheduleIntervalHours: number[];
     hashTagPresets: HashTagPreset[];
     accounts: ReturnType<typeof validateAccounts>;
     relaysList: string[];
@@ -99,6 +100,8 @@ function renderSettingsPanel(
     hidePostsFromLowTrustUsersValue: boolean;
     replyTemplates: Array<{ id: string; slug: string; body: string }>;
     uploadProviderValue: string;
+    uploadProviderStoredValue: string;
+    isSubscriptionActiveForGatingValue: boolean;
     customBlossomUrlValue: string | null;
     enableMirrorBlossomValue: boolean;
     mirrorUploadUrlsList: string[];
@@ -119,6 +122,7 @@ function renderSettingsPanel(
       payoutDestinationType: string | null;
     };
     defaultZapAmountSats: number | null;
+    billingContext: BillingContext | null;
   }
 ) {
   const {
@@ -137,6 +141,7 @@ function renderSettingsPanel(
     runwayNotifyBelowDays,
     primarySignerProfile,
     queueTypes,
+    globalScheduleIntervalHours,
     hashTagPresets,
     accounts,
     relaysList,
@@ -154,6 +159,8 @@ function renderSettingsPanel(
     hidePostsFromLowTrustUsersValue,
     replyTemplates,
     uploadProviderValue,
+    uploadProviderStoredValue,
+    isSubscriptionActiveForGatingValue,
     customBlossomUrlValue,
     enableMirrorBlossomValue,
     mirrorUploadUrlsList,
@@ -165,6 +172,7 @@ function renderSettingsPanel(
     nwcLastUsedValue,
     referral,
     defaultZapAmountSats,
+    billingContext,
   } = ctx;
 
   const relaysPanel = (
@@ -216,6 +224,7 @@ function renderSettingsPanel(
           ? (blastrSystemRelaysRaw as string[])
           : []
       }
+      hasActiveSubscription={subscription?.status === "ACTIVE"}
     />
   );
 
@@ -223,11 +232,9 @@ function renderSettingsPanel(
     case "general":
       return (
         <div className="flex min-w-0 flex-col gap-6">
-          <TimezoneSettings timezone={timezoneValue} />
-          <TimeFormatSettings
+          <RegionalDisplaySettings
+            timezone={timezoneValue}
             timeFormat={timeFormatRaw === "24h" ? "24h" : "12h"}
-          />
-          <DateFormatSettings
             dateFormat={
               dateFormatRaw === "mmddyyyy" || dateFormatRaw === "yyyymmdd"
                 ? dateFormatRaw
@@ -265,6 +272,7 @@ function renderSettingsPanel(
         <div className="flex min-w-0 flex-col gap-6">
           <QueueTypesSettings
             queueTypes={queueTypes}
+            globalScheduleIntervalHours={globalScheduleIntervalHours}
             hashTagPresets={hashTagPresets.map((p) => ({
               id: p.id,
               name: p.name,
@@ -273,6 +281,7 @@ function renderSettingsPanel(
             }))}
           />
           <HashtagPresetsSettings
+            queueTypes={queueTypes}
             presets={hashTagPresets.map((p) => ({
               id: p.id,
               name: p.name,
@@ -286,30 +295,31 @@ function renderSettingsPanel(
       );
     case "engagement":
       return (
-        <div className="flex min-w-0 flex-col gap-6">
-          <DefaultZapAmountSettings
-            defaultZapAmountSats={defaultZapAmountSats}
-          />
-          <ReplyTemplatesSettings templates={replyTemplates} />
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold tracking-tight">
-                Feed filtering
-              </h3>
-              <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
-                Control how muted accounts and trust signals affect what you
-                see.
-              </p>
+        <div className="flex min-w-0 flex-col gap-8">
+          <div className="flex flex-col gap-4">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              Engagement defaults
+            </p>
+            <div className="flex flex-col gap-4 sm:gap-6">
+              <DefaultZapAmountSettings
+                defaultZapAmountSats={defaultZapAmountSats}
+              />
+              <ReplyTemplatesSettings templates={replyTemplates} />
             </div>
-            <MutedListSettings
-              mutedList={mutedList}
-              filterMuted={filterMutedValue}
-              hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
+          </div>
+          <MutedListSettings
+            mutedList={mutedList}
+            filterMuted={filterMutedValue}
+            hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
+          />
+          <div className="flex flex-col gap-4">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              Participation safety
+            </p>
+            <GiveawayBlacklistSettings
+              giveawayBlacklist={giveawayBlacklistList}
             />
           </div>
-          <GiveawayBlacklistSettings
-            giveawayBlacklist={giveawayBlacklistList}
-          />
         </div>
       );
     case "relays":
@@ -318,8 +328,11 @@ function renderSettingsPanel(
       return (
         <div className="flex min-w-0 flex-col gap-6">
           <UploadProviderSettings
+            key={`${uploadProviderValue}-${customBlossomUrlValue ?? ""}`}
             uploadProvider={uploadProviderValue}
+            uploadProviderStored={uploadProviderStoredValue}
             customBlossomUrl={customBlossomUrlValue}
+            isSubscriptionActiveForGating={isSubscriptionActiveForGatingValue}
           />
           <BlossomMediaMirrorsSettings
             enableMirrorBlossom={enableMirrorBlossomValue}
@@ -327,14 +340,14 @@ function renderSettingsPanel(
           />
           <PreferenceSection
             title="Blossom media library"
-            description="List uploads, usage, and delete stored media records."
+            description="Browse SmartFlow Blossom uploads and storage usage. Media from other upload providers does not appear here. Deleting removes the library entry and the file on SmartFlow Blossom when the server confirms removal; if deletion fails, the item stays."
           >
             <p className="text-sm">
               <Link
                 to="/dashboard/settings/media"
                 className="text-primary font-medium hover:underline"
               >
-                Manage Blossom media
+                Open media library
               </Link>
             </p>
           </PreferenceSection>
@@ -357,6 +370,7 @@ function renderSettingsPanel(
           maskedNwcString={maskedNwcStringValue}
           nwcLastUsed={nwcLastUsedValue}
           referral={referral}
+          billingContext={billingContext}
         />
       );
     case "accounts":
@@ -398,7 +412,10 @@ export default function SettingsPage() {
     relayAcks?: unknown;
     giveawayBlacklist?: unknown;
     queueTypes?: unknown;
+    globalScheduleIntervalHours?: unknown;
     uploadProvider?: unknown;
+    uploadProviderStored?: unknown;
+    isSubscriptionActiveForGating?: unknown;
     customBlossomUrl?: unknown;
     enableMirrorBlossom?: unknown;
     mirrorUploadUrls?: unknown;
@@ -442,6 +459,7 @@ export default function SettingsPage() {
       payoutDestinationType: string | null;
     };
     defaultZapAmountSats?: unknown;
+    billingContext?: unknown;
   };
 
   const {
@@ -453,7 +471,10 @@ export default function SettingsPage() {
     relayAcks,
     giveawayBlacklist,
     queueTypes: queueTypesRaw,
+    globalScheduleIntervalHours: globalScheduleIntervalHoursRaw,
     uploadProvider,
+    uploadProviderStored,
+    isSubscriptionActiveForGating: isSubscriptionActiveForGatingRaw,
     customBlossomUrl,
     enableMirrorBlossom,
     mirrorUploadUrls,
@@ -488,6 +509,7 @@ export default function SettingsPage() {
     blastrSystemRelays: blastrSystemRelaysRaw,
     referral: referralRaw,
     defaultZapAmountSats: defaultZapAmountSatsRaw,
+    billingContext: billingContextRaw,
   } = data;
 
   function parseReplyTemplates(
@@ -513,12 +535,17 @@ export default function SettingsPage() {
   const replyTemplates = parseReplyTemplates(replyTemplatesRaw);
 
   const queueTypes = parseQueueTypes(queueTypesRaw);
+  const globalScheduleIntervalHours = parseGlobalScheduleIntervalHours(
+    globalScheduleIntervalHoursRaw
+  );
   const accounts = validateAccounts(accountsRaw);
   const hashTagPresets = parseHashTagPresets(hashTagPresetsRaw);
   const subscription = validateSubscription(subscriptionRaw);
   const availablePlans = validateAvailablePlans(availablePlansRaw);
   const paymentHistory = validatePaymentHistory(paymentHistoryRaw);
   const mutedList = parseMutedList(mutedListRaw);
+  const billingContext =
+    (billingContextRaw as BillingContext | null | undefined) ?? null;
 
   const isChildBool = asBoolean(isChild);
   const hasAccountsAccessBool = asBoolean(hasAccountsAccess);
@@ -589,6 +616,12 @@ export default function SettingsPage() {
   const relayAcksMap = parseRelayAcksMap(relayAcks);
   const giveawayBlacklistList = asStringArray(giveawayBlacklist);
   const uploadProviderValue = asStringOrUndefined(uploadProvider) ?? "";
+  const uploadProviderStoredValue =
+    asStringOrUndefined(uploadProviderStored) ?? uploadProviderValue;
+  const isSubscriptionActiveForGatingValue = asBoolean(
+    isSubscriptionActiveForGatingRaw,
+    false
+  );
   const customBlossomUrlValue = asStringOrNull(customBlossomUrl);
   const enableMirrorBlossomValue = asBoolean(enableMirrorBlossom);
   const mirrorUploadUrlsList = asStringArray(mirrorUploadUrls);
@@ -626,6 +659,7 @@ export default function SettingsPage() {
         runwayNotifyBelowDays,
         primarySignerProfile,
         queueTypes,
+        globalScheduleIntervalHours,
         hashTagPresets,
         accounts,
         relaysList,
@@ -643,6 +677,8 @@ export default function SettingsPage() {
         hidePostsFromLowTrustUsersValue,
         replyTemplates,
         uploadProviderValue,
+        uploadProviderStoredValue,
+        isSubscriptionActiveForGatingValue,
         customBlossomUrlValue,
         enableMirrorBlossomValue,
         mirrorUploadUrlsList,
@@ -654,6 +690,7 @@ export default function SettingsPage() {
         nwcLastUsedValue,
         referral,
         defaultZapAmountSats,
+        billingContext,
       })}
     </SettingsShell>
   );

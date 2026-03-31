@@ -23,11 +23,11 @@ vi.mock("~/features/auth/session.server", () => ({
 
 vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
-  requireFeatureAccess: vi.fn(),
 }));
 
-vi.mock("~/features/posts/scheduling/services/scheduled-loader.server", () => ({
+vi.mock("~/features/posts/server/scheduling", () => ({
   loadScheduledData: vi.fn(),
+  handleScheduledAction: vi.fn(),
 }));
 
 vi.mock("~/features/posts/ui", () => ({
@@ -38,12 +38,15 @@ import { userFactory } from "../factories";
 import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadScheduledData } from "~/features/posts/server/scheduling";
 import { loader } from "~/routes/dashboard.scheduled";
+
+/** Remix resource `fetch()` so the loader returns JSON (not deferred). */
+const SCHEDULED_DATA_URL =
+  "http://localhost:3000/dashboard/scheduled?_data=routes/dashboard.scheduled";
+const SCHEDULED_QUEUE_DATA_URL =
+  "http://localhost:3000/dashboard/scheduled/posts?_data=routes/dashboard.scheduled.$queueType";
 
 describe("Scheduled Posts Loader Integration", () => {
   beforeEach(() => {
@@ -54,9 +57,6 @@ describe("Scheduled Posts Loader Integration", () => {
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined
-    );
     (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
@@ -65,12 +65,13 @@ describe("Scheduled Posts Loader Integration", () => {
       selectedQueueType: "all",
       hashTagPresets: [],
       pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+      longformPagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
     });
   });
 
   describe("Scheduled Posts Loader", () => {
     it("should load scheduled posts data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -98,10 +99,6 @@ describe("Scheduled Posts Loader Integration", () => {
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
-      expect(requireFeatureAccess).toHaveBeenCalledWith(
-        "user-123",
-        "scheduled"
-      );
       expect(loadScheduledData).toHaveBeenCalledWith(
         "user-123",
         "all",
@@ -125,13 +122,14 @@ describe("Scheduled Posts Loader Integration", () => {
         selectedQueueType: "posts",
         hashTagPresets: [],
         pagination: { total: 1, pages: 1, currentPage: 1, limit: 20 },
+        longformPagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockData
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_QUEUE_DATA_URL);
       const response = await loader({
         request,
         params: { queueType: "posts" },
@@ -192,13 +190,14 @@ describe("Scheduled Posts Loader Integration", () => {
         selectedQueueType: "all",
         hashTagPresets: [],
         pagination: { total: 2, pages: 1, currentPage: 1, limit: 20 },
+        longformPagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockData
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -242,13 +241,14 @@ describe("Scheduled Posts Loader Integration", () => {
         selectedQueueType: "all",
         hashTagPresets: [],
         pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+        longformPagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockData
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -289,7 +289,7 @@ describe("Scheduled Posts Loader Integration", () => {
         new Error("Authentication required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -331,7 +331,7 @@ describe("Scheduled Posts Loader Integration", () => {
         new Error("Subscription required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -368,12 +368,12 @@ describe("Scheduled Posts Loader Integration", () => {
       expect(error).toContain("Subscription required");
     });
 
-    it("should handle feature access errors", async () => {
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied")
+    it("should handle subscription errors", async () => {
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Subscription required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -407,7 +407,7 @@ describe("Scheduled Posts Loader Integration", () => {
         typeof data.error.message === "string"
           ? data.error.message
           : "";
-      expect(error).toContain("Feature access denied");
+      expect(error).toContain("Subscription required");
     });
 
     it("should handle data loading errors", async () => {
@@ -415,7 +415,7 @@ describe("Scheduled Posts Loader Integration", () => {
         new Error("Database error")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/scheduled");
+      const request = new Request(SCHEDULED_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},

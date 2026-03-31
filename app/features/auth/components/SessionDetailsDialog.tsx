@@ -237,7 +237,7 @@ export function SessionDetailsDialog({
                   ) : (
                     <>
                       <span className="text-muted-foreground">
-                        {connection.metadata.signerAppName ?? "Unknown"}
+                        {connection.metadata.signerAppName ?? "Unknown signer"}
                       </span>
                       <Button
                         size="sm"

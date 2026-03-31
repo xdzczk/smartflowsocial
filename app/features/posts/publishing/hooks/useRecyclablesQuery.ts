@@ -18,6 +18,7 @@ import type { PostStats as _PostStats } from "~/features/posts/stats.server";
 import type { PostData, QueueType } from "~/features/posts/types";
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -183,17 +184,8 @@ export function useRecyclablesInfiniteQuery() {
       olderThan
     ),
     initialData: validatedLoaderData,
-    getNextPageParam: (lastPage) => {
-      const { pagination } = lastPage;
-      if (
-        typeof pagination.currentPage === "number" &&
-        typeof pagination.pages === "number" &&
-        pagination.currentPage < pagination.pages
-      ) {
-        return pagination.currentPage + 1;
-      }
-      return;
-    },
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParamFromPaginationTotals(lastPage, allPages),
     buildUrl: (pageParam) =>
       `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?${buildQueryString(pageParam)}`,
     staleTime: 30 * 1000, // 30 seconds

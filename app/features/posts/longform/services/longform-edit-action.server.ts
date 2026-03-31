@@ -10,7 +10,11 @@ import {
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
-import { updateLongFormPost } from "~/features/posts/server";
+import {
+  assertScheduleCapacity,
+  ScheduleCapExceededError,
+} from "~/features/payments/entitlements/schedule-cap-policy.server";
+import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
 import {
   createLongformDraftVersion,
   LONGFORM_SNAPSHOT_SCHEMA_VERSION,
@@ -518,6 +522,25 @@ async function handleScheduleLongform(
 
   // Use ScheduleLongFormPostUseCase if we have a scheduled time
   if (scheduledForTimestamp) {
+    const existingLf = await getLongFormPost({ id: postId, userId });
+    const now = new Date();
+    let additionalSlots = 1;
+    if (
+      existingLf?.currentState === "SCHEDULED" &&
+      existingLf.scheduledAtUtc &&
+      existingLf.scheduledAtUtc > now
+    ) {
+      additionalSlots = 0;
+    }
+    try {
+      await assertScheduleCapacity(userId, additionalSlots);
+    } catch (e) {
+      if (e instanceof ScheduleCapExceededError) {
+        return json({ error: e.message }, { status: 403 });
+      }
+      throw e;
+    }
+
     const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
     const { fromUnixTimestamp } = await import("~/lib/temporal");
     const scheduledAtUtcZoned = fromUnixTimestamp(scheduledForTimestamp, "UTC");

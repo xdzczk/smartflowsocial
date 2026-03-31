@@ -7,7 +7,6 @@ import { toast } from "react-hot-toast";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Separator } from "~/components/ui/separator";
+import { Switch } from "~/components/ui/switch";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { queueTypeClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
@@ -114,7 +115,7 @@ export function QueueTypeDialog({
         colorToken: qt.colorToken ?? "slate",
         hashTagPresetId: queueType.hashTagPresetId ?? "none",
         scheduleType: queueType.scheduleType ?? "INTERVAL",
-        isEnabled: queueType.isEnabled ?? false,
+        isEnabled: queueType.isEnabled !== false,
         useGlobalInterval:
           scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
             ? scheduleConfig.useGlobalInterval
@@ -146,7 +147,7 @@ export function QueueTypeDialog({
       colorToken: "slate" as const,
       hashTagPresetId: "none",
       scheduleType: "INTERVAL" as const,
-      isEnabled: false,
+      isEnabled: true,
       includeHashtagsInNoteBody: true,
       useGlobalInterval: false,
       intervalHours: "",
@@ -187,6 +188,7 @@ export function QueueTypeDialog({
     fetcher.state === "submitting" || fetcher.state === "loading";
   const scheduleType = form.watch("scheduleType");
   const hashTagPresetId = form.watch("hashTagPresetId");
+  const useGlobalInterval = form.watch("useGlobalInterval");
 
   useEffect(() => {
     if (!open) {
@@ -273,359 +275,405 @@ export function QueueTypeDialog({
     fetcher.submit(formData, { method: "post" });
   });
 
+  const includeInNote = form.watch("includeHashtagsInNoteBody") !== false;
+  const isEnabledValue = form.watch("isEnabled") !== false;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden sm:max-w-lg">
+        <DialogHeader className="shrink-0 space-y-1 pr-6">
           <DialogTitle>
-            {isEditing ? "Edit Queue Type" : "Create Queue Type"}
+            {isEditing ? "Edit queue type" : "Create queue type"}
           </DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Update the queue type settings below."
-              : "Create a new queue type with custom scheduling."}
+            Set how this queue schedules posts, hashtag defaults, and timing.
           </DialogDescription>
         </DialogHeader>
 
         <form
+          id="queue-type-dialog-form"
           onSubmit={(e) => {
             e.preventDefault();
             void onSubmit(e);
           }}
-          className="space-y-4"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              {...form.register("name")}
-              placeholder="e.g., Tech News"
-            />
-            {form.formState.errors.name ? (
-              <p className="text-destructive text-sm">
-                {form.formState.errors.name.message}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              {...form.register("description")}
-              placeholder="Optional description"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Queue color</Label>
-            <p className="text-muted-foreground text-xs">
-              Used to visually identify this queue across the app.
-            </p>
-            <div
-              className="grid grid-cols-6 gap-2"
-              role="group"
-              aria-label="Queue color"
-            >
-              {QUEUE_COLOR_TOKENS.map((token) => {
-                const isSelected = form.watch("colorToken") === token;
-                return (
-                  <button
-                    key={token}
-                    type="button"
-                    onClick={() => form.setValue("colorToken", token)}
-                    className="focus:ring-ring h-8 w-8 shrink-0 rounded-full border-2 transition-transform focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
-                    style={{
-                      backgroundColor: QUEUE_COLOR_ACCENTS[token],
-                      borderColor: isSelected ? "var(--ring)" : "transparent",
-                      boxShadow: isSelected
-                        ? "0 0 0 2px hsl(var(--background))"
-                        : undefined,
-                    }}
-                    title={token}
-                    aria-pressed={isSelected}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="hashTagPresetId">Hashtag Preset (optional)</Label>
-            <Select
-              value={hashTagPresetId ?? "none"}
-              onValueChange={(value) => {
-                form.setValue("hashTagPresetId", value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a hashtag preset" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No hashtag preset</SelectItem>
-                {hashTagPresets.map((preset) => (
-                  <SelectItem key={preset.id} value={preset.id}>
-                    {preset.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              Posts in this queue will automatically use the selected hashtag
-              preset
-            </p>
-          </div>
-
-          <div className="flex items-start gap-2">
-            <Checkbox
-              id="includeHashtagsInNoteBody"
-              className="mt-0.5"
-              checked={form.watch("includeHashtagsInNoteBody") === false}
-              onCheckedChange={(c) => {
-                form.setValue("includeHashtagsInNoteBody", c !== true);
-              }}
-            />
-            <div className="min-w-0 space-y-0.5">
-              <Label
-                htmlFor="includeHashtagsInNoteBody"
-                className="text-sm font-normal"
-              >
-                Hide tags
-              </Label>
-              <p className="text-muted-foreground text-xs leading-snug">
-                Off by default for new posts in this queue. Turn on to keep
-                preset hashtags out of the note text (metadata only).
-              </p>
-            </div>
-          </div>
-
-          {isEditing ? (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isEnabled"
-                checked={form.watch("isEnabled")}
-                onCheckedChange={(checked) => {
-                  form.setValue("isEnabled", checked as boolean);
-                }}
-              />
-              <Label htmlFor="isEnabled" className="text-sm font-normal">
-                Enabled
-              </Label>
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <Label htmlFor="scheduleType">Schedule Type</Label>
-            <Select
-              value={scheduleType}
-              onValueChange={(value) => {
-                const newType = value as
-                  | "INTERVAL"
-                  | "FIXED_SLOTS"
-                  | "WEEKLY_SLOTS";
-                form.setValue("scheduleType", newType);
-                if (
-                  newType === "WEEKLY_SLOTS" &&
-                  (form.getValues("weeklySlots")?.length ?? 0) === 0
-                ) {
-                  form.setValue("weeklySlots", [
-                    { dayOfWeek: 1, time: "09:00" },
-                  ]);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="INTERVAL">Interval-based</SelectItem>
-                <SelectItem value="FIXED_SLOTS">Fixed time slots</SelectItem>
-                <SelectItem value="WEEKLY_SLOTS">
-                  Weekly schedule (day + time)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {scheduleType === "INTERVAL" ? (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="useGlobalInterval"
-                  checked={form.watch("useGlobalInterval")}
-                  onCheckedChange={(checked) => {
-                    form.setValue("useGlobalInterval", checked as boolean);
-                  }}
-                />
-                <Label
-                  htmlFor="useGlobalInterval"
-                  className="text-sm font-normal"
-                >
-                  Use global schedule intervals
-                </Label>
-              </div>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 pb-2">
+            <section className="space-y-3">
+              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Basic info
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="intervalHours">Hours between posts</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
-                  id="intervalHours"
-                  type="number"
-                  min="1"
-                  max="168"
-                  {...form.register("intervalHours")}
+                  id="name"
+                  {...form.register("name")}
+                  placeholder="e.g., Morning thread"
                 />
-                {form.formState.errors.intervalHours ? (
+                {form.formState.errors.name ? (
                   <p className="text-destructive text-sm">
-                    {form.formState.errors.intervalHours.message}
+                    {form.formState.errors.name.message}
                   </p>
                 ) : null}
               </div>
-            </div>
-          ) : null}
-
-          {scheduleType === "FIXED_SLOTS" ? (
-            <div className="space-y-2">
-              <Label htmlFor="slots">
-                Time slots (HH:MM format, comma separated)
-              </Label>
-              <Input
-                id="slots"
-                {...form.register("slots")}
-                placeholder="08:00, 12:00, 18:00"
-              />
-              {form.formState.errors.slots ? (
-                <p className="text-destructive text-sm">
-                  {form.formState.errors.slots.message}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  {...form.register("description")}
+                  placeholder="Optional — when to use this queue"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Queue color</Label>
+                <p className="text-muted-foreground text-xs">
+                  Identifies this queue in calendars and pickers.
                 </p>
-              ) : null}
-              <p className="text-muted-foreground text-xs">
-                Times are in your selected timezone
-              </p>
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <Label htmlFor="scheduleRandomWindowMinutes">
-              Post at random time within ± minutes (optional)
-            </Label>
-            <Select
-              value={String(form.watch("scheduleRandomWindowMinutes"))}
-              onValueChange={(value) => {
-                form.setValue(
-                  "scheduleRandomWindowMinutes",
-                  Number(value) as 0 | 5 | 10 | 15
-                );
-              }}
-            >
-              <SelectTrigger id="scheduleRandomWindowMinutes">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Off (exact time)</SelectItem>
-                <SelectItem value="5">±5 minutes</SelectItem>
-                <SelectItem value="10">±10 minutes</SelectItem>
-                <SelectItem value="15">±15 minutes</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-muted-foreground text-xs">
-              Default when scheduling or using queue mode in the composer. Keeps
-              queue slots and intervals from drifting; you can override per post
-              in the composer.
-            </p>
-          </div>
-
-          {scheduleType === "WEEKLY_SLOTS" ? (
-            <div className="space-y-2">
-              <Label>Weekly slots (day + time)</Label>
-              <p className="text-muted-foreground text-xs">
-                Add one or more day and time combinations. Times are in your
-                selected timezone.
-              </p>
-              {fields.map((field, index) => (
                 <div
-                  key={field.id}
-                  className="flex flex-wrap items-center gap-2 sm:flex-nowrap"
+                  className="grid grid-cols-6 gap-2 sm:grid-cols-8"
+                  role="group"
+                  aria-label="Queue color"
                 >
-                  <Select
-                    value={String(
-                      form.watch(`weeklySlots.${index}.dayOfWeek`) ?? 1
-                    )}
-                    onValueChange={(val) =>
-                      form.setValue(
-                        `weeklySlots.${index}.dayOfWeek`,
-                        Number(val)
-                      )
-                    }
+                  {QUEUE_COLOR_TOKENS.map((token) => {
+                    const isSelected = form.watch("colorToken") === token;
+                    return (
+                      <button
+                        key={token}
+                        type="button"
+                        onClick={() => form.setValue("colorToken", token)}
+                        className="focus:ring-ring h-8 w-8 shrink-0 rounded-full border-2 transition-transform focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
+                        style={{
+                          backgroundColor: QUEUE_COLOR_ACCENTS[token],
+                          borderColor: isSelected
+                            ? "hsl(var(--ring))"
+                            : "transparent",
+                          boxShadow: isSelected
+                            ? "0 0 0 2px hsl(var(--background))"
+                            : undefined,
+                        }}
+                        title={token}
+                        aria-pressed={isSelected}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-3">
+              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Publishing defaults
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="hashTagPresetId">Hashtag preset</Label>
+                <Select
+                  value={hashTagPresetId ?? "none"}
+                  onValueChange={(value) => {
+                    form.setValue("hashTagPresetId", value);
+                  }}
+                >
+                  <SelectTrigger id="hashTagPresetId">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No preset</SelectItem>
+                    {hashTagPresets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  New posts in this queue can start from this preset. Queues and
+                  presets work together across SmartFlow.
+                </p>
+              </div>
+
+              <div className="border-border/60 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
+                <div className="min-w-0 space-y-0.5">
+                  <Label
+                    htmlFor="metadata-only-hashtags"
+                    className="text-sm font-medium"
                   >
-                    <SelectTrigger className="w-[140px] shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DAY_LABELS.map((label, i) => (
-                        <SelectItem key={label} value={String(i)}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    Keep preset hashtags in metadata only
+                  </Label>
+                  <p className="text-muted-foreground text-xs leading-snug">
+                    When on, preset tags are not appended to the note text by
+                    default (you can still change per post).
+                  </p>
+                </div>
+                <Switch
+                  id="metadata-only-hashtags"
+                  checked={!includeInNote}
+                  onCheckedChange={(checked) => {
+                    form.setValue("includeHashtagsInNoteBody", !checked);
+                  }}
+                  className="shrink-0"
+                />
+              </div>
+
+              <div className="border-border/60 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
+                <div className="min-w-0 space-y-0.5">
+                  <Label
+                    htmlFor="queue-enabled"
+                    className="text-sm font-medium"
+                  >
+                    Enabled
+                  </Label>
+                  <p className="text-muted-foreground text-xs leading-snug">
+                    Disabled queues stay in settings but cannot be selected for
+                    new posts.
+                  </p>
+                </div>
+                <Switch
+                  id="queue-enabled"
+                  checked={isEnabledValue}
+                  onCheckedChange={(checked) => {
+                    form.setValue("isEnabled", checked);
+                  }}
+                  className="shrink-0"
+                />
+              </div>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-3">
+              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Schedule logic
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="scheduleType">Schedule type</Label>
+                <Select
+                  value={scheduleType}
+                  onValueChange={(value) => {
+                    const newType = value as
+                      | "INTERVAL"
+                      | "FIXED_SLOTS"
+                      | "WEEKLY_SLOTS";
+                    form.setValue("scheduleType", newType);
+                    if (
+                      newType === "WEEKLY_SLOTS" &&
+                      (form.getValues("weeklySlots")?.length ?? 0) === 0
+                    ) {
+                      form.setValue("weeklySlots", [
+                        { dayOfWeek: 1, time: "09:00" },
+                      ]);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="scheduleType">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INTERVAL">Interval</SelectItem>
+                    <SelectItem value="FIXED_SLOTS">Fixed slots</SelectItem>
+                    <SelectItem value="WEEKLY_SLOTS">Weekly slots</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {scheduleType === "INTERVAL" ? (
+                <div className="space-y-3">
+                  <div className="border-border/60 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
+                    <div className="min-w-0 space-y-0.5">
+                      <Label
+                        htmlFor="use-global-interval"
+                        className="text-sm font-medium"
+                      >
+                        Use global schedule
+                      </Label>
+                      <p className="text-muted-foreground text-xs leading-snug">
+                        Same interval options as the composer quick picks
+                        (General → Schedule).
+                      </p>
+                    </div>
+                    <Switch
+                      id="use-global-interval"
+                      checked={!!useGlobalInterval}
+                      onCheckedChange={(checked) => {
+                        form.setValue("useGlobalInterval", checked);
+                      }}
+                      className="shrink-0"
+                    />
+                  </div>
+                  {!useGlobalInterval ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="intervalHours">Hours between posts</Label>
+                      <Input
+                        id="intervalHours"
+                        type="number"
+                        min="1"
+                        max="168"
+                        step="1"
+                        {...form.register("intervalHours")}
+                      />
+                      {form.formState.errors.intervalHours ? (
+                        <p className="text-destructive text-sm">
+                          {form.formState.errors.intervalHours.message}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {scheduleType === "FIXED_SLOTS" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="slots">Times (HH:MM, comma-separated)</Label>
                   <Input
-                    type="time"
-                    className="w-[120px] shrink-0"
-                    {...form.register(`weeklySlots.${index}.time`)}
+                    id="slots"
+                    {...form.register("slots")}
+                    placeholder="08:00, 12:00, 18:00"
                   />
+                  {form.formState.errors.slots ? (
+                    <p className="text-destructive text-sm">
+                      {form.formState.errors.slots.message}
+                    </p>
+                  ) : null}
+                  <p className="text-muted-foreground text-xs">
+                    In your timezone from General settings.
+                  </p>
+                </div>
+              ) : null}
+
+              {scheduleType === "WEEKLY_SLOTS" ? (
+                <div className="space-y-2">
+                  <Label>Weekly slots</Label>
+                  <p className="text-muted-foreground text-xs">
+                    Day and time pairs in your timezone.
+                  </p>
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="flex flex-wrap items-center gap-2 sm:flex-nowrap"
+                    >
+                      <Select
+                        value={String(
+                          form.watch(`weeklySlots.${index}.dayOfWeek`) ?? 1
+                        )}
+                        onValueChange={(val) =>
+                          form.setValue(
+                            `weeklySlots.${index}.dayOfWeek`,
+                            Number(val)
+                          )
+                        }
+                      >
+                        <SelectTrigger className="w-[140px] shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DAY_LABELS.map((label, i) => (
+                            <SelectItem key={label} value={String(i)}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="time"
+                        className="w-[120px] shrink-0"
+                        {...form.register(`weeklySlots.${index}.time`)}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                        aria-label="Remove slot"
+                      >
+                        <X className={INLINE_ICON_SIZE_CLASS} />
+                      </Button>
+                    </div>
+                  ))}
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={() => remove(index)}
-                    disabled={fields.length <= 1}
-                    aria-label="Remove slot"
+                    size="sm"
+                    onClick={() => append({ dayOfWeek: 1, time: "09:00" })}
                   >
-                    <X className={INLINE_ICON_SIZE_CLASS} />
+                    <Plus className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`} />
+                    Add slot
                   </Button>
+                  {form.formState.errors.weeklySlots ? (
+                    <p className="text-destructive text-sm">
+                      {form.formState.errors.weeklySlots.message}
+                    </p>
+                  ) : null}
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({ dayOfWeek: 1, time: "09:00" })}
-              >
-                <Plus className={`mr-1 ${INLINE_ICON_SIZE_CLASS}`} />
-                Add slot
-              </Button>
-              {form.formState.errors.weeklySlots ? (
-                <p className="text-destructive text-sm">
-                  {form.formState.errors.weeklySlots.message}
-                </p>
               ) : null}
-            </div>
-          ) : null}
+            </section>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <Loader2
-                  className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
-                  aria-hidden
-                />
-              ) : null}
-              {isSubmitting
-                ? isEditing
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditing
-                  ? "Update"
-                  : "Create"}
-            </Button>
-          </DialogFooter>
+            <Separator />
+
+            <section className="space-y-3">
+              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Timing behavior
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="scheduleRandomWindowMinutes">
+                  Randomize slot time (± minutes)
+                </Label>
+                <Select
+                  value={String(form.watch("scheduleRandomWindowMinutes"))}
+                  onValueChange={(value) => {
+                    form.setValue(
+                      "scheduleRandomWindowMinutes",
+                      Number(value) as 0 | 5 | 10 | 15
+                    );
+                  }}
+                >
+                  <SelectTrigger id="scheduleRandomWindowMinutes">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Off (exact time)</SelectItem>
+                    <SelectItem value="5">±5 minutes</SelectItem>
+                    <SelectItem value="10">±10 minutes</SelectItem>
+                    <SelectItem value="15">±15 minutes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  Applies when scheduling or using queue mode; optional jitter
+                  so posts do not land on identical timestamps.
+                </p>
+              </div>
+            </section>
+          </div>
         </form>
+
+        <DialogFooter className="border-border/60 mt-2 shrink-0 gap-2 border-t pt-4 sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="queue-type-dialog-form"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <Loader2
+                className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                aria-hidden
+              />
+            ) : null}
+            {isSubmitting
+              ? isEditing
+                ? "Saving…"
+                : "Creating…"
+              : isEditing
+                ? "Save changes"
+                : "Create queue type"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

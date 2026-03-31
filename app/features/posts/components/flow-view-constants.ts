@@ -1,3 +1,4 @@
+import { getFlowGoLiveAtMs } from "../flow-go-live-at";
 import type { CombinedContent } from "../types";
 
 /** Mobile breakpoint (px); below this we scroll to next scheduled on load */
@@ -51,9 +52,5 @@ export const RIGHT_EDGE_FETCH_THRESHOLD_PX = 600;
 export const RIGHT_EDGE_VIEWPORT_MULTIPLIER = 1;
 
 export function getGoLiveAt(item: CombinedContent): number {
-  const posted = item.publishedAt ? new Date(item.publishedAt).getTime() : 0;
-  const scheduled = item.scheduledAtUtc
-    ? new Date(item.scheduledAtUtc).getTime()
-    : 0;
-  return posted || scheduled || 0;
+  return getFlowGoLiveAtMs(item);
 }

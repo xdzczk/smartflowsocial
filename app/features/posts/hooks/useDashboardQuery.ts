@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -133,22 +134,8 @@ export function useDashboardInfiniteQuery() {
   return useInfiniteRemixQuery<DashboardLoaderData>({
     queryKey: dashboardKeys.list(queueType, currentTab),
     initialData: validatedLoaderData,
-    getNextPageParam: (lastPage) => {
-      const pagination =
-        "pagination" in lastPage ? lastPage.pagination : undefined;
-      if (
-        pagination &&
-        typeof pagination === "object" &&
-        "currentPage" in pagination &&
-        "pages" in pagination &&
-        typeof pagination.currentPage === "number" &&
-        typeof pagination.pages === "number" &&
-        pagination.currentPage < pagination.pages
-      ) {
-        return pagination.currentPage + 1;
-      }
-      return;
-    },
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParamFromPaginationTotals(lastPage, allPages),
     buildUrl: (pageParam) =>
       queueType !== "all"
         ? `/dashboard?tab=${currentTab}&queueType=${queueType}&page=${pageParam}`

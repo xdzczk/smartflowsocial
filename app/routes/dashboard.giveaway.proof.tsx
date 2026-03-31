@@ -15,10 +15,7 @@ import {
   normalizePayoutState,
   totalSatsPaidFromState,
 } from "~/features/giveaway/giveaway-payout.server";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { GiveawayProofStudio } from "~/features/proof/giveaway/GiveawayProofStudio";
 import type { GiveawayProofStudioDto } from "~/lib/proof/adapters/giveaway";
 
@@ -36,7 +33,6 @@ function giveawayProofTitle(
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
 
   const paid = await listGiveawaysByUser(userId, { status: "PAID_OUT" });
   const rows: GiveawayProofStudioDto[] = await Promise.all(

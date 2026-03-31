@@ -1,3 +1,5 @@
+import { differenceInCalendarDays } from "date-fns";
+
 import type { TrustScoreUser as User } from "./types";
 // Re-export the User type
 export type { TrustScoreUser as User } from "~/features/engagement/types";
@@ -103,8 +105,7 @@ export function getAccountAgeInDays(timeJoined: number): number {
 
   const joinedDate = new Date(timeJoined * 1000);
   const now = new Date();
-  const diffInMs = now.getTime() - joinedDate.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const diffInDays = differenceInCalendarDays(now, joinedDate);
 
   return Math.max(0, diffInDays);
 }

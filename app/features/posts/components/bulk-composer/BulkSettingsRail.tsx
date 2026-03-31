@@ -80,6 +80,7 @@ export interface BulkSettingsRailProps {
   /** Signing / upload progress in review */
   isSigning: boolean;
   signingProgress: { current: number; total: number } | null;
+  bulkExecutionBlocked?: boolean;
 }
 
 export function BulkSettingsRail({
@@ -120,6 +121,7 @@ export function BulkSettingsRail({
   postsCount,
   isSigning,
   signingProgress,
+  bulkExecutionBlocked = false,
 }: BulkSettingsRailProps) {
   const { dateLocale } = useFormattedDate();
   const [repostAllOpen, setRepostAllOpen] = useState(false);
@@ -242,6 +244,7 @@ export function BulkSettingsRail({
     onBackToEdit,
     onSaveDraftReview,
     onSign,
+    bulkExecutionBlocked,
   };
 
   const body = <BulkSettingsRailBody {...bodyProps} />;

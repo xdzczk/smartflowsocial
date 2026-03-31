@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.001752625">
-    <testsuite name="tests/unit/scheduled-post-capabilities.test.ts" timestamp="2026-03-30T20:16:29.169Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001752625">
-        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; longform always allows content edit" time="0.000791666">
+<testsuites name="vitest tests" tests="13" failures="0" errors="0" time="0.003568417">
+    <testsuite name="tests/unit/auth/reconnect-dialog-derived.test.ts" timestamp="2026-03-31T05:44:55.238Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.003568417">
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when state is not idle" time="0.000687958">
         </testcase>
-        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; pure repost by kind blocks content edit" time="0.000113125">
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when error does not contain retry message" time="0.000097166">
         </testcase>
-        <testcase classname="tests/unit/scheduled-post-capabilities.test.ts" name="getScheduledPostCapabilities &gt; quote post allows edit" time="0.000092083">
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when getPendingReconnect returns truthy" time="0.000097208">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns true when idle, retry error, valid nip46 session, no pending" time="0.000097">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Reconnecting… when state is reconnecting_existing" time="0.000099667">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Waiting for signer… when state is waiting" time="0.000059291">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Connect signer when tab is bunker" time="0.000057458">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Try again with existing connection when canRetryExisting" time="0.000042417">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Retry when nostrConnectUri present and not canRetryExisting" time="0.000061834">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Generate link when no uri and not canRetryExisting" time="0.000073">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes tryReconnectWithExistingConnection when canRetryExisting and not bunker" time="0.001089958">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes resumeReconnectWithPendingUri when tab is nostrconnect and has pending" time="0.000112125">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes connect when no retry and no pending" time="0.000122292">
         </testcase>
     </testsuite>
 </testsuites>

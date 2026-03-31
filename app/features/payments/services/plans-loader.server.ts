@@ -5,19 +5,157 @@
 
 import { requireUser } from "~/features/auth/session.server";
 import {
+  countActiveSubscriptionsForPlan,
   getAllPlans,
   getUserSubscription,
   listActivePlanPricesForPlans,
+  PlanBillingModel,
 } from "~/features/payments/data";
 import { isSubscriptionPeriodExpired } from "~/features/payments/types";
+import type {
+  FounderOfferingPayload,
+  PricingPagePlan,
+} from "~/features/payments/types/plan-loader.types";
+import { yearlySavingsLabel } from "~/features/payments/types/plan-loader.types";
 import { getUserNWC } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
+
+const GRID_CALLOUTS: Record<string, string[]> = {
+  free: [
+    "Core composer and publishing",
+    "Limited scheduling",
+    "Enough to validate your workflow",
+  ],
+  basic: [
+    "Scheduled publishing",
+    "Drafts and templates",
+    "Calendar planning",
+    "Stronger workflow controls",
+  ],
+  premium: [
+    "Queue publishing",
+    "Bulk workflows",
+    "Engagement operations",
+    "Recyclable content tooling",
+    "Deeper analytics and giveaways",
+  ],
+  teams: [
+    "Multi-user workflows",
+    "Shared publishing operations",
+    "Role-based collaboration",
+    "Team-grade controls",
+  ],
+};
+
+const FOUNDER_BENEFITS = [
+  "Lifetime access — non-recurring",
+  "Highest individual tier feature access",
+  "Priority support",
+  "Early access to major features",
+  "Best campaign / finalization economics",
+  "Founder recognition",
+];
+
+function toBillingModelString(
+  m: PlanBillingModel
+): PricingPagePlan["planBillingModel"] {
+  switch (m) {
+    case PlanBillingModel.free:
+      return "free";
+    case PlanBillingModel.recurring:
+      return "recurring";
+    case PlanBillingModel.lifetime:
+      return "lifetime";
+    case PlanBillingModel.disabled:
+      return "disabled";
+    default:
+      return "recurring";
+  }
+}
+
+function buildCheckoutPricing(
+  planId: string,
+  monthlyAutoRenewUsd: number,
+  yearlyAutoRenewUsd: number,
+  priceIndex: Map<string, number>
+): PricingPagePlan["checkoutPricing"] {
+  const lightning1 =
+    priceIndex.get(`${planId}:monthly:1:lightning_one_time`) ??
+    monthlyAutoRenewUsd;
+  const lightning3 =
+    priceIndex.get(`${planId}:monthly:3:lightning_one_time`) ??
+    monthlyAutoRenewUsd * 3;
+  const lightning6 =
+    priceIndex.get(`${planId}:monthly:6:lightning_one_time`) ??
+    monthlyAutoRenewUsd * 6;
+  const lightningYearly =
+    priceIndex.get(`${planId}:yearly:12:lightning_one_time`) ??
+    yearlyAutoRenewUsd;
+  const btcOnchainYearly =
+    priceIndex.get(`${planId}:yearly:12:btc_btcpay_onchain`) ?? null;
+
+  return {
+    nwcAutoRenewMonthlyUsd: monthlyAutoRenewUsd,
+    nwcAutoRenewYearlyUsd: yearlyAutoRenewUsd,
+    lightningOneTimeMonthlyUsd: {
+      1: lightning1,
+      3: lightning3,
+      6: lightning6,
+    },
+    lightningOneTimeYearlyUsd: lightningYearly,
+    btcOnchainYearlyUsd: btcOnchainYearly,
+  };
+}
+
+function mapPlanFeatures(plan: {
+  features: unknown;
+  enableBasicScheduling: boolean;
+  enableMultipleQueues: boolean;
+  enableBulkScheduling: boolean;
+  enableRepostsAndQuotes: boolean;
+  enableEngagementFeed: boolean;
+  enableGiveaways: boolean;
+  enableCommissions: boolean;
+  enableLeaderboards: boolean;
+  enableAdvancedAnalytics: boolean;
+  enableMultiAccountSwitching: boolean;
+  enableWolfFilteringAndVortex: boolean;
+  enableNativeS3BlossomStorage: boolean;
+  enableRelayBlast: boolean;
+  enableVisualPerks: boolean;
+  enableLifetimeAccess: boolean;
+}): Record<string, boolean | string> {
+  const features = plan.features as Record<string, boolean | string> | null;
+  return {
+    basicScheduling:
+      features?.["basicScheduling"] ?? plan.enableBasicScheduling,
+    multipleQueues: features?.["multipleQueues"] ?? plan.enableMultipleQueues,
+    bulkScheduling: features?.["bulkScheduling"] ?? plan.enableBulkScheduling,
+    repostsAndQuotes:
+      features?.["repostsAndQuotes"] ?? plan.enableRepostsAndQuotes,
+    engagementFeed: features?.["engagementFeed"] ?? plan.enableEngagementFeed,
+    giveaways: features?.["giveaways"] ?? plan.enableGiveaways,
+    commissions:
+      features?.["commissions"] ?? (plan.enableCommissions ? "Low" : "High"),
+    leaderboards: features?.["leaderboards"] ?? plan.enableLeaderboards,
+    advancedAnalytics:
+      features?.["advancedAnalytics"] ?? plan.enableAdvancedAnalytics,
+    multiAccountSwitching:
+      features?.["multiAccountSwitching"] ?? plan.enableMultiAccountSwitching,
+    wolfFilteringAndVortex:
+      features?.["wolfFilteringAndVortex"] ?? plan.enableWolfFilteringAndVortex,
+    nativeS3BlossomStorage:
+      features?.["nativeS3BlossomStorage"] ?? plan.enableNativeS3BlossomStorage,
+    relayBlast: features?.["relayBlast"] ?? plan.enableRelayBlast,
+    visualPerks: features?.["visualPerks"] ?? plan.enableVisualPerks,
+    lifetimeAccess: features?.["lifetimeAccess"] ?? plan.enableLifetimeAccess,
+  };
+}
 
 /**
  * Load plans data
  */
 export async function loadPlansData(request: Request) {
-  // Get user if logged in (optional for viewing plans)
   let user = null;
   let currentSubscription = null;
   let nwc: {
@@ -34,70 +172,121 @@ export async function loadPlansData(request: Request) {
     // User not logged in - that's okay for viewing plans
   }
 
-  // Fetch plans from database
   const dbPlans = await getAllPlans();
-  const planIds = dbPlans.map((p) => p.id);
-  const planPrices = await listActivePlanPricesForPlans(planIds);
+  const visiblePlans = dbPlans.filter((p) => p.visibleOnPricingPage);
 
+  const founderPlan = visiblePlans.find(
+    (p) =>
+      p.isSpecialOffering && p.planBillingModel === PlanBillingModel.lifetime
+  );
+
+  const mainGridSource = visiblePlans.filter(
+    (p) =>
+      !p.isSpecialOffering && p.planBillingModel !== PlanBillingModel.lifetime
+  );
+
+  const planIdsForPrices = [
+    ...new Set(
+      visiblePlans
+        .filter(
+          (p) =>
+            p.planBillingModel === PlanBillingModel.recurring ||
+            p.planBillingModel === PlanBillingModel.lifetime
+        )
+        .map((p) => p.id)
+    ),
+  ];
+
+  const planPrices = await listActivePlanPricesForPlans(planIdsForPrices);
   const priceIndex = new Map<string, number>();
   for (const row of planPrices) {
     const key = `${row.planId}:${row.billingCadence}:${row.accessDurationMonths}:${row.paymentMethod}`;
     priceIndex.set(key, row.priceUsd);
   }
 
-  // Transform database plans to match the frontend format
-  const plans = dbPlans.map((plan) => {
-    const features = plan.features as Record<string, boolean> | null;
-    const monthlyAutoRenewUsd =
-      priceIndex.get(`${plan.id}:monthly:1:nwc_auto_renew`) ??
-      Number(plan.price);
-    const yearlyAutoRenewUsd =
-      priceIndex.get(`${plan.id}:yearly:12:nwc_auto_renew`) ??
-      (plan.enableLifetimeAccess
-        ? Number(plan.price)
-        : monthlyAutoRenewUsd * 12);
+  let seatsClaimed = 0;
+  if (founderPlan?.founderSeatCap != null) {
+    seatsClaimed = await countActiveSubscriptionsForPlan(founderPlan.id);
+  }
+
+  const mapToPricingPagePlan = (plan: (typeof dbPlans)[0]): PricingPagePlan => {
+    const features = mapPlanFeatures(plan);
+    const isTeams = plan.id === "teams";
+    const isRecurring = plan.planBillingModel === PlanBillingModel.recurring;
+
+    let monthlyPriceUsd = 0;
+    let yearlyPriceUsd = 0;
+    let yearlySavingsNote: string | null = null;
+    let checkoutPricing = buildCheckoutPricing(plan.id, 0, 0, priceIndex);
+
+    if (isRecurring) {
+      monthlyPriceUsd =
+        priceIndex.get(`${plan.id}:monthly:1:nwc_auto_renew`) ??
+        Number(plan.price);
+      yearlyPriceUsd =
+        priceIndex.get(`${plan.id}:yearly:12:nwc_auto_renew`) ??
+        monthlyPriceUsd * 12;
+      yearlySavingsNote = yearlySavingsLabel(monthlyPriceUsd, yearlyPriceUsd);
+      checkoutPricing = buildCheckoutPricing(
+        plan.id,
+        monthlyPriceUsd,
+        yearlyPriceUsd,
+        priceIndex
+      );
+    }
 
     return {
       id: plan.id,
       name: plan.name,
-      monthlyPriceUsd: monthlyAutoRenewUsd,
-      yearlyPriceUsd: yearlyAutoRenewUsd,
+      monthlyPriceUsd,
+      yearlyPriceUsd,
+      yearlySavingsNote,
+      checkoutPricing,
       description: plan.description ?? "",
-      features: {
-        basicScheduling:
-          features?.["basicScheduling"] ?? plan.enableBasicScheduling,
-        multipleQueues:
-          features?.["multipleQueues"] ?? plan.enableMultipleQueues,
-        bulkScheduling:
-          features?.["bulkScheduling"] ?? plan.enableBulkScheduling,
-        repostsAndQuotes:
-          features?.["repostsAndQuotes"] ?? plan.enableRepostsAndQuotes,
-        engagementFeed:
-          features?.["engagementFeed"] ?? plan.enableEngagementFeed,
-        giveaways: features?.["giveaways"] ?? plan.enableGiveaways,
-        commissions:
-          features?.["commissions"] ??
-          (plan.enableCommissions ? "Low" : "High"),
-        leaderboards: features?.["leaderboards"] ?? plan.enableLeaderboards,
-        advancedAnalytics:
-          features?.["advancedAnalytics"] ?? plan.enableAdvancedAnalytics,
-        multiAccountSwitching:
-          features?.["multiAccountSwitching"] ??
-          plan.enableMultiAccountSwitching,
-        wolfFilteringAndVortex:
-          features?.["wolfFilteringAndVortex"] ??
-          plan.enableWolfFilteringAndVortex,
-        nativeS3BlossomStorage:
-          features?.["nativeS3BlossomStorage"] ??
-          plan.enableNativeS3BlossomStorage,
-        relayBlast: features?.["relayBlast"] ?? plan.enableRelayBlast,
-        visualPerks: features?.["visualPerks"] ?? plan.enableVisualPerks,
-        lifetimeAccess:
-          features?.["lifetimeAccess"] ?? plan.enableLifetimeAccess,
-      },
-      isPopular: plan.id === "basic", // You can make this dynamic based on your business logic
+      features,
+      isPopular: plan.id === "basic",
+      planBillingModel: toBillingModelString(plan.planBillingModel),
+      purchasable: plan.purchasable,
+      isComingSoon: plan.isComingSoon,
+      isTeamsPlaceholder: isTeams,
+      callouts: GRID_CALLOUTS[plan.id] ?? [],
     };
-  });
+  };
+
+  const mainGridPlans: PricingPagePlan[] = mainGridSource.map((plan) =>
+    mapToPricingPagePlan(plan)
+  );
+
+  const comparisonTablePlans: PricingPagePlan[] = mainGridPlans;
+
+  let founderOffering: FounderOfferingPayload | null = null;
+  if (founderPlan?.founderSeatCap != null) {
+    const cap = founderPlan.founderSeatCap;
+    const remaining = Math.max(0, cap - seatsClaimed);
+    const once = Number(founderPlan.price);
+    const founderMonthlyNwc =
+      priceIndex.get(`${founderPlan.id}:monthly:1:nwc_auto_renew`) ?? once;
+    const founderYearlyNwc =
+      priceIndex.get(`${founderPlan.id}:yearly:12:nwc_auto_renew`) ?? once;
+    founderOffering = {
+      id: founderPlan.id,
+      name: founderPlan.name,
+      description: founderPlan.description ?? "",
+      oneTimePriceUsd: once,
+      seatCap: cap,
+      seatsClaimed,
+      seatsRemaining: remaining,
+      canPurchase: founderPlan.purchasable && remaining > 0,
+      benefits: FOUNDER_BENEFITS,
+      features: mapPlanFeatures(founderPlan),
+      checkoutPricing: buildCheckoutPricing(
+        founderPlan.id,
+        founderMonthlyNwc,
+        founderYearlyNwc,
+        priceIndex
+      ),
+    };
+  }
 
   const isExpired =
     currentSubscription != null
@@ -117,11 +306,12 @@ export async function loadPlansData(request: Request) {
       : false;
 
   return {
-    plans,
+    mainGridPlans,
+    comparisonTablePlans,
+    founderOffering,
     user: user ? { id: user.id, isEnabled: user.isEnabled } : null,
     nwc: user ? nwc : null,
     subscriptionCheckoutV2Enabled: featureFlags.subscriptionCheckoutV2Enabled,
-    /** Yearly-checkout Bitcoin on-chain lane in v2 modal; BTCPAY_* env still required to create invoices. */
     btcpayYearlyOnChainEnabled: true,
     billingCadences: ["monthly", "yearly"] as const,
     manualDurationsByCadence: {

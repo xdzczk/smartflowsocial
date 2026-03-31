@@ -12,7 +12,6 @@ import {
 import {
   getSubscriptionData,
   requireAnySubscription,
-  requireFeatureAccess,
 } from "~/features/payments";
 import {
   getGiveawayPlanLimits,
@@ -26,7 +25,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
   const sub = await getSubscriptionData(userId);
   const limits = getGiveawayPlanLimits(
     getUserPlanType(sub.currentSubscription ?? null)
@@ -53,7 +51,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
   const sub = await getSubscriptionData(userId);
   const limits = getGiveawayPlanLimits(
     getUserPlanType(sub.currentSubscription ?? null)

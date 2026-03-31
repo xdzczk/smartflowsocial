@@ -45,7 +45,6 @@ import {
 } from "~/features/giveaway/giveaway-proof-share.server";
 import {
   getSubscriptionData,
-  requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
 import { createGiveawayFinalizationInvoice } from "~/features/payments/data/payment.commands.server";
@@ -65,7 +64,6 @@ import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
 
   const id = params["id"];
   if (!id) {
@@ -252,7 +250,6 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
 
   const id = params["id"];
   if (!id) {

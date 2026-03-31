@@ -10,7 +10,6 @@ import {
 } from "~/features/giveaway/giveaway-presets.server";
 import {
   getSubscriptionData,
-  requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
 import {
@@ -21,7 +20,6 @@ import {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
   const sub = await getSubscriptionData(userId);
   const limits = getGiveawayPlanLimits(
     getUserPlanType(sub.currentSubscription ?? null)
@@ -44,7 +42,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
   const sub = await getSubscriptionData(userId);
   const limits = getGiveawayPlanLimits(
     getUserPlanType(sub.currentSubscription ?? null)

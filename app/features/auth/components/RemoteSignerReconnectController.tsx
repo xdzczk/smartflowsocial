@@ -107,6 +107,8 @@ export function RemoteSignerReconnectDialog(props: {
     openMode = "default",
     onReconnectSuccess,
   } = props;
+  const isAddFlow = openMode === "new_session";
+
   const expectedPubkeyHex = (() => {
     if (!expectedPubkey) return null;
     return convertToHex(expectedPubkey) ?? expectedPubkey;
@@ -145,9 +147,13 @@ export function RemoteSignerReconnectDialog(props: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Reconnect remote signer</DialogTitle>
+          <DialogTitle>
+            {isAddFlow ? "Add remote signer" : "Reconnect remote signer"}
+          </DialogTitle>
           <DialogDescription>
-            If your signer app went inactive, reconnect it here (NIP-46).
+            {isAddFlow
+              ? "Add a remote signer so SmartFlow can publish and sign with your approval—your key stays in your signer app."
+              : "If your signer app went inactive or the connection dropped, restore it here. Uses Nostr Connect (NIP-46) under the hood."}
           </DialogDescription>
         </DialogHeader>
 
@@ -166,64 +172,89 @@ export function RemoteSignerReconnectDialog(props: {
           </div>
         ) : null}
 
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="session-label">Session Label (Optional)</Label>
-            <Input
-              id="session-label"
-              value={connectionLabel}
-              onChange={(e) => setConnectionLabel(e.target.value)}
-              placeholder="e.g., Primal on iPhone"
-              disabled={state === "waiting" || isReconnectingExisting}
-            />
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Session info</h3>
+            <div className="space-y-1">
+              <Label htmlFor="session-label">Session label</Label>
+              <Input
+                id="session-label"
+                value={connectionLabel}
+                onChange={(e) => setConnectionLabel(e.target.value)}
+                placeholder="e.g., Primal on iPhone"
+                disabled={state === "waiting" || isReconnectingExisting}
+              />
+              <p className="text-muted-foreground text-xs">
+                Give this signer session a label so you can identify it later.
+                Optional.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Connection method</h3>
             <p className="text-muted-foreground text-xs">
-              Give this session a name to identify it later
+              Nostr Connect (NIP-46) links your SmartFlow session to a signer
+              app—pick how you want to provide the connection.
             </p>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+              <TabsList className="w-full">
+                <TabsTrigger value="nostrconnect" className="flex-1">
+                  Generate connection link
+                </TabsTrigger>
+                <TabsTrigger value="bunker" className="flex-1">
+                  Paste signer connection
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="nostrconnect" className="space-y-4 pt-3">
+                <ReconnectNostrConnectTab
+                  relayList={relayList}
+                  onRelayListChange={setRelayList}
+                  nostrConnectUri={nostrConnectUri}
+                  onCopyUri={() => void copyUri()}
+                  copyOk={copyOk}
+                  onLoginWithPrimal={handleLoginWithPrimal}
+                  disabled={state === "waiting" || isReconnectingExisting}
+                />
+              </TabsContent>
+
+              <TabsContent value="bunker" className="space-y-3 pt-3">
+                <ReconnectBunkerTab
+                  bunkerInput={bunkerInput}
+                  onBunkerInputChange={setBunkerInput}
+                  disabled={state === "waiting" || isReconnectingExisting}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="w-full">
-            <TabsTrigger value="nostrconnect" className="flex-1">
-              Generate nostrconnect URI
-            </TabsTrigger>
-            <TabsTrigger value="bunker" className="flex-1">
-              Paste bunker input
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="nostrconnect" className="space-y-3">
-            <ReconnectNostrConnectTab
-              relayList={relayList}
-              onRelayListChange={setRelayList}
-              nostrConnectUri={nostrConnectUri}
-              onCopyUri={() => void copyUri()}
-              copyOk={copyOk}
-              onLoginWithPrimal={handleLoginWithPrimal}
-              disabled={state === "waiting" || isReconnectingExisting}
-            />
-          </TabsContent>
-
-          <TabsContent value="bunker" className="space-y-3">
-            <ReconnectBunkerTab
-              bunkerInput={bunkerInput}
-              onBunkerInputChange={setBunkerInput}
-              disabled={state === "waiting" || isReconnectingExisting}
-            />
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="border-border/60 mt-2 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {isAddFlow ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="sm:mr-auto"
+              onClick={() => onOpenChange(false)}
+              disabled={state === "waiting"}
+            >
+              Cancel
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="text-muted-foreground sm:mr-auto"
+              onClick={clearSavedSigner}
+              disabled={state === "waiting"}
+            >
+              Clear saved signer
+            </Button>
+          )}
           <Button
             type="button"
-            variant="outline"
-            onClick={clearSavedSigner}
-            disabled={state === "waiting"}
-          >
-            Clear saved signer
-          </Button>
-          <Button
-            type="button"
+            className="sm:ml-auto"
             onClick={handlePrimaryAction}
             disabled={
               state === "waiting" ||

@@ -358,6 +358,43 @@ describe("Engagement Logic Unit Tests", () => {
       expect(mentions.length).toBe(0);
     });
 
+    it("classifies reply when e-tag id differs only by hex case from parent", () => {
+      const otherSk = generateSecretKey();
+      const other = getPublicKey(otherSk);
+      const mySk = generateSecretKey();
+      const me = getPublicKey(mySk);
+
+      const parentEventIdLower = "ab".repeat(32);
+      const parentEventIdUpper = parentEventIdLower.toUpperCase();
+      const replyNoteId = "cd".repeat(32);
+
+      const thread = [
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: replyNoteId,
+            pubkey: other,
+            content: "hi",
+            tags: [["e", parentEventIdUpper, "wss://relay.example.com"]],
+            created_at: 100,
+          },
+        ],
+      ];
+
+      const notifications = parseThreadViewNotifications(
+        thread,
+        parentEventIdLower,
+        me
+      );
+      const replies = notifications.filter((n) => n.type === "reply");
+      const mentions = notifications.filter((n) => n.type === "mention");
+
+      expect(replies.length).toBe(1);
+      expect(mentions.length).toBe(0);
+    });
+
     it("classifies e-tag marker mention + nostr ref as mention (quote)", () => {
       const otherSk = generateSecretKey();
       const other = getPublicKey(otherSk);

@@ -1,24 +1,13 @@
-import { useFetcher } from "@remix-run/react";
-import { Plus, X } from "lucide-react";
-import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
+import { useFetcher, useRevalidator } from "@remix-run/react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { ManagementListSection } from "~/features/settings/components/patterns";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
-import { updateBlacklistClientSchema } from "~/lib/validation";
-import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import {
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation/utils.client-safe";
+import { formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface GiveawayBlacklistSettingsProps {
   giveawayBlacklist: string[];
@@ -33,140 +22,123 @@ export function GiveawayBlacklistSettings({
   giveawayBlacklist,
 }: GiveawayBlacklistSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
-  const form = useZodForm(updateBlacklistClientSchema, {
-    defaultValues: {
-      blacklist: giveawayBlacklist.length > 0 ? giveawayBlacklist : [""],
-    },
-  });
+  const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
 
-  const { fields, append, remove } = useZodFieldArray<
-    z.infer<typeof updateBlacklistClientSchema>,
-    "blacklist"
-  >(
-    form as unknown as UseFormReturn<
-      z.infer<typeof updateBlacklistClientSchema>
-    >,
-    "blacklist"
-  );
+  const [input, setInput] = useState("");
+  const [items, setItems] = useState<string[]>(giveawayBlacklist);
 
-  const isSubmitting = fetcher.state === "submitting";
-  const watchedBlacklist = form.watch("blacklist");
-  const hasChanged =
-    JSON.stringify(watchedBlacklist) !== JSON.stringify(giveawayBlacklist);
+  useEffect(() => {
+    setItems(giveawayBlacklist);
+  }, [giveawayBlacklist]);
 
-  const onSubmit = form.handleSubmit((data) => {
-    // Filter out empty strings and validate
-    const filteredBlacklist = data.blacklist.filter((item: string) =>
-      item.trim()
-    );
-
-    // Validate all non-empty items start with npub
-    const invalidItems = filteredBlacklist.filter(
-      (item: string) => !item.trim().startsWith("npub")
-    );
-
-    if (invalidItems.length > 0) {
-      form.setError("blacklist", {
-        type: "manual",
-        message: "All blacklist items must start with npub",
-      });
-      return;
+  const wasSubmittingRef = useRef(false);
+  useEffect(() => {
+    const wasSubmitting = wasSubmittingRef.current;
+    wasSubmittingRef.current = fetcher.state === "submitting";
+    if (!wasSubmitting || fetcher.state !== "idle") return;
+    if (fetcher.data?.success) {
+      toast.success("Blacklist updated");
+      revalidatorRef.current.revalidate();
+    } else if (fetcher.data?.error) {
+      toast.error(fetcher.data.error);
     }
+  }, [fetcher.state, fetcher.data]);
 
+  const pending = fetcher.state !== "idle";
+
+  const persist = (next: string[]) => {
     const formData = formDataToFormData(
-      { blacklist: filteredBlacklist.join("\n") },
+      { blacklist: next.join("\n") },
       "update_blacklist"
     );
+    fetcher.submit(formData, { method: "post", action: "/dashboard/settings" });
+  };
 
-    fetcher.submit(formData, { method: "post" });
-  });
+  const handleAdd = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith("npub")) {
+      toast.error("Address must start with npub");
+      return;
+    }
+    if (items.includes(trimmed)) {
+      toast.error("Already on the list");
+      return;
+    }
+    persist([...items, trimmed]);
+    setInput("");
+  };
+
+  const handleRemove = (npub: string) => {
+    persist(items.filter((x) => x !== npub));
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Giveaway Blacklist</CardTitle>
-        <CardDescription>
-          Manage blocked npub addresses for giveaways and contests
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSubmit(e);
-          }}
-          className="space-y-4"
+    <ManagementListSection
+      title="Giveaway blacklist"
+      description="Block these npubs from participating in giveaways and contests."
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1 space-y-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="npub1…"
+            disabled={pending}
+            className="font-mono text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAdd();
+              }
+            }}
+          />
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={pending || !input.trim()}
+          onClick={handleAdd}
+          className="shrink-0"
         >
-          <div className="space-y-2">
-            <p className="text-muted-foreground text-sm">
-              Add npub addresses one by one
-            </p>
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-start space-x-2">
-                <div className="flex-1">
-                  <Input
-                    {...form.register(`blacklist.${index}`)}
-                    placeholder="npub1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    disabled={isSubmitting}
-                    className={
-                      form.formState.errors.blacklist?.[index]
-                        ? "border-destructive"
-                        : ""
-                    }
-                  />
-                  {form.formState.errors.blacklist?.[index] ? (
-                    <p className="text-destructive mt-1 text-sm">
-                      {String(form.formState.errors.blacklist[index].message)}
-                    </p>
-                  ) : null}
-                </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => remove(index)}
-                  disabled={isSubmitting}
-                >
-                  <X className={INLINE_ICON_SIZE_CLASS} />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => append("")}
-              disabled={isSubmitting}
-              className="w-full"
+          Add npub
+        </Button>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          No blocked npubs. Add an address above to exclude it from giveaways.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {items.map((npub) => (
+            <li
+              key={npub}
+              className="border-border/60 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
             >
-              <Plus className={`mr-2 ${INLINE_ICON_SIZE_CLASS}`} />
-              Add npub
-            </Button>
-          </div>
-
-          {form.formState.errors.blacklist ? (
-            <p className="text-destructive text-sm">
-              {form.formState.errors.blacklist.message}
-            </p>
-          ) : null}
-
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged || !form.formState.isValid}
-            className="w-full"
-          >
-            {isSubmitting ? "Saving..." : "Save Blacklist"}
-          </Button>
-
-          {fetcher.data?.success ? (
-            <p className="text-success text-sm">
-              Blacklist updated successfully!
-            </p>
-          ) : null}
-          {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
-          ) : null}
-        </form>
-      </CardContent>
-    </Card>
+              <span className="text-muted-foreground min-w-0 truncate font-mono text-xs">
+                {npub}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
+                disabled={pending}
+                aria-label={`Remove ${npub.slice(0, 12)}…`}
+                onClick={() => handleRemove(npub)}
+              >
+                <Trash2 className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </ManagementListSection>
   );
 }

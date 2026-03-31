@@ -23,10 +23,7 @@ import {
   countPayoutCompleted,
   normalizePayoutState,
 } from "~/features/giveaway/giveaway-payout.server";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 
 const STATUS_OPTIONS = [
   "DRAFT",
@@ -42,7 +39,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userId = await requireUserId(request);
 
     await requireAnySubscription(userId);
-    await requireFeatureAccess(userId, "giveaways");
 
     const url = new URL(request.url);
     const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
@@ -203,7 +199,6 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     await requireAnySubscription(userId);
-    await requireFeatureAccess(userId, "giveaways");
 
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, { status: 405 });

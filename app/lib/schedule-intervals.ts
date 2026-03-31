@@ -31,7 +31,7 @@ export function formatIntervalLabel(
   const prefix = options?.compact ? "+" : "";
   if (hours < 1) {
     const minutes = Math.round(hours * 60);
-    return options?.compact ? `${prefix}${minutes}m` : `${minutes} min`;
+    return options?.compact ? `${prefix}${minutes} min` : `${minutes} min`;
   }
   if (options?.compact) {
     return `${prefix}${hours}h`;

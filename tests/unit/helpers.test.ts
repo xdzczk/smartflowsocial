@@ -85,6 +85,11 @@ describe("Helper Utilities", () => {
 
       expect(result).toBeNull();
     });
+
+    it("should pass through 64-char hex pubkey (same as nostr-conversion)", () => {
+      const hex = "c".repeat(64);
+      expect(convertToHex(hex)).toBe(hex);
+    });
   });
 
   describe("formatDate", () => {

@@ -4,11 +4,7 @@
  */
 
 import { getUserSubscription } from "~/features/payments/data";
-import {
-  hasFeatureAccess,
-  type FeatureName,
-  type UserSubscription,
-} from "~/features/payments/types";
+import type { FeatureName, UserSubscription } from "~/features/payments/types";
 import { extractNostrIdentifier } from "~/lib/extract-nostr-identifier";
 
 import {
@@ -549,10 +545,9 @@ async function searchFeatures(
       }
     : null;
 
-  // Filter features that match the query and user has access to
+  // Surface browse-all: show main nav features for any subscribed user (execution is gated elsewhere).
   const matchingFeatures = FEATURES.filter((feature) => {
-    // Check if user has access to this feature
-    if (!hasFeatureAccess(userSubscription, feature.feature)) {
+    if (!userSubscription) {
       return false;
     }
 

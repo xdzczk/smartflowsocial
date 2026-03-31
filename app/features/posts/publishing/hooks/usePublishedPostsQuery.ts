@@ -30,6 +30,7 @@ import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import type { User as _User } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -72,7 +73,10 @@ export const publishedPostsKeys = {
 export function usePublishedPostsQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const rawQueue =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
+  const queueType =
+    typeof rawQueue === "string" && rawQueue.trim() !== "" ? rawQueue : "all";
   const currentTab = searchParams.get("tab") ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
@@ -167,7 +171,10 @@ export function usePublishedPostsQuery() {
 export function usePublishedPostsInfiniteQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const rawQueue =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
+  const queueType =
+    typeof rawQueue === "string" && rawQueue.trim() !== "" ? rawQueue : "all";
   const currentTab = searchParams.get("tab") ?? "all";
   const dateFrom = searchParams.get("dateFrom") ?? undefined;
   const dateTo = searchParams.get("dateTo") ?? undefined;
@@ -194,10 +201,11 @@ export function usePublishedPostsInfiniteQuery() {
     throw new Error("Invalid loader data");
   }
 
-  const dateParams =
-    dateFrom || dateTo
-      ? `&dateFrom=${encodeURIComponent(dateFrom ?? "")}&dateTo=${encodeURIComponent(dateTo ?? "")}`
-      : "";
+  /** Queue in path (`/dashboard/published/:queueType`); otherwise filter uses `?queueType=` (see PublishingQueueFilter). */
+  const pathQueueSegment =
+    typeof params["queueType"] === "string" && params["queueType"].trim() !== ""
+      ? params["queueType"]
+      : null;
 
   return useInfiniteRemixQuery<PublishedPostsLoaderData>({
     queryKey: publishedPostsKeys.list(
@@ -208,23 +216,22 @@ export function usePublishedPostsInfiniteQuery() {
       dateTo
     ),
     initialData: validatedLoaderData,
-    getNextPageParam: (lastPage) => {
-      const pagination =
-        "pagination" in lastPage ? lastPage.pagination : undefined;
-      if (
-        pagination &&
-        "currentPage" in pagination &&
-        "pages" in pagination &&
-        typeof pagination.currentPage === "number" &&
-        typeof pagination.pages === "number" &&
-        pagination.currentPage < pagination.pages
-      ) {
-        return pagination.currentPage + 1;
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParamFromPaginationTotals(lastPage, allPages),
+    buildUrl: (pageParam) => {
+      const qs = new URLSearchParams();
+      qs.set("tab", currentTab);
+      qs.set("page", String(pageParam));
+      if (dateFrom) qs.set("dateFrom", dateFrom);
+      if (dateTo) qs.set("dateTo", dateTo);
+      if (pathQueueSegment) {
+        return `/dashboard/published/${encodeURIComponent(pathQueueSegment)}?${qs.toString()}`;
       }
-      return;
+      if (queueType !== "all") {
+        qs.set("queueType", queueType);
+      }
+      return `/dashboard/published?${qs.toString()}`;
     },
-    buildUrl: (pageParam) =>
-      `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${pageParam}${dateParams}`,
     staleTime: 30 * 1000, // 30 seconds
     maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
     // Do not use refetchInterval here: it triggers a full refetch which can replace
@@ -688,7 +695,10 @@ export function useBulkDeletePostsMutation() {
   const queryClient = useQueryClient();
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params["queueType"] ?? "all";
+  const rawQueue =
+    params["queueType"] ?? searchParams.get("queueType") ?? "all";
+  const queueType =
+    typeof rawQueue === "string" && rawQueue.trim() !== "" ? rawQueue : "all";
   const currentTab = searchParams.get("tab") ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 

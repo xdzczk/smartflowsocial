@@ -22,7 +22,6 @@ import {
 import {
   getBroadcastPlanLimits,
   getUserPlanType,
-  requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
@@ -79,7 +78,6 @@ function parseSnapshotSummary(
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");

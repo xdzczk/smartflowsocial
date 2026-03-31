@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import { PlanBillingModel, PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 
 const databaseUrl = process.env["DATABASE_URL"]?.trim();
@@ -28,28 +28,67 @@ async function disconnectSeedClient(): Promise<void> {
   }
 }
 
+type SeedPlan = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  sortOrder: number;
+  planBillingModel: PlanBillingModel;
+  purchasable: boolean;
+  visibleOnPricingPage: boolean;
+  isComingSoon: boolean;
+  isSpecialOffering: boolean;
+  founderSeatCap: number | null;
+  features: Record<string, boolean | string>;
+  maxPostsPerMonth: number | null;
+  maxQueueTypes: number | null;
+  maxTemplates: number | null;
+  maxLongFormPosts: number | null;
+  enableBasicScheduling: boolean;
+  enableMultipleQueues: boolean;
+  enableBulkScheduling: boolean;
+  enableRepostsAndQuotes: boolean;
+  enableEngagementFeed: boolean;
+  enableGiveaways: boolean;
+  enableCommissions: boolean;
+  enableLeaderboards: boolean;
+  enableAdvancedAnalytics: boolean;
+  enableMultiAccountSwitching: boolean;
+  enableWolfFilteringAndVortex: boolean;
+  enableNativeS3BlossomStorage: boolean;
+  enableRelayBlast: boolean;
+  enableVisualPerks: boolean;
+  enableLifetimeAccess: boolean;
+};
+
 async function main() {
   console.log("🌱 Starting seed...");
 
-  // Clear existing plans first to avoid duplicates
   console.log("🧹 Clearing existing plans...");
   await prisma.planPrice.deleteMany({});
   await prisma.plan.deleteMany({});
   console.log("✅ Existing plans cleared");
 
-  // Define plans based on the hardcoded plans in app/routes/plans.tsx
-  const plans = [
+  const plans: SeedPlan[] = [
     {
       id: "free",
       name: "Free",
       price: 0,
-      description: "Perfect for getting started",
+      description: "Learn the system",
+      sortOrder: 10,
+      planBillingModel: PlanBillingModel.free,
+      purchasable: false,
+      visibleOnPricingPage: true,
+      isComingSoon: false,
+      isSpecialOffering: false,
+      founderSeatCap: null,
       features: {
         basicScheduling: true,
         multipleQueues: false,
         bulkScheduling: false,
         repostsAndQuotes: false,
-        engagementFeed: true,
+        engagementFeed: false,
         giveaways: true,
         commissions: "High",
         leaderboards: false,
@@ -69,7 +108,7 @@ async function main() {
       enableMultipleQueues: false,
       enableBulkScheduling: false,
       enableRepostsAndQuotes: false,
-      enableEngagementFeed: true,
+      enableEngagementFeed: false,
       enableGiveaways: true,
       enableCommissions: false,
       enableLeaderboards: false,
@@ -85,7 +124,14 @@ async function main() {
       id: "basic",
       name: "Basic",
       price: 28,
-      description: "For growing creators",
+      description: "Run your content properly",
+      sortOrder: 20,
+      planBillingModel: PlanBillingModel.recurring,
+      purchasable: true,
+      visibleOnPricingPage: true,
+      isComingSoon: false,
+      isSpecialOffering: false,
+      founderSeatCap: null,
       features: {
         basicScheduling: true,
         multipleQueues: true,
@@ -127,7 +173,14 @@ async function main() {
       id: "premium",
       name: "Premium",
       price: 71,
-      description: "For serious content creators",
+      description: "Operate at full power",
+      sortOrder: 30,
+      planBillingModel: PlanBillingModel.recurring,
+      purchasable: true,
+      visibleOnPricingPage: true,
+      isComingSoon: false,
+      isSpecialOffering: false,
+      founderSeatCap: null,
       features: {
         basicScheduling: true,
         multipleQueues: true,
@@ -166,10 +219,66 @@ async function main() {
       enableLifetimeAccess: false,
     },
     {
+      id: "teams",
+      name: "Teams",
+      price: 0,
+      description: "Built for collaborative publishing",
+      sortOrder: 40,
+      planBillingModel: PlanBillingModel.disabled,
+      purchasable: false,
+      visibleOnPricingPage: true,
+      isComingSoon: true,
+      isSpecialOffering: false,
+      founderSeatCap: null,
+      features: {
+        basicScheduling: true,
+        multipleQueues: true,
+        bulkScheduling: true,
+        repostsAndQuotes: true,
+        engagementFeed: true,
+        giveaways: true,
+        commissions: "Low",
+        leaderboards: true,
+        advancedAnalytics: true,
+        multiAccountSwitching: true,
+        wolfFilteringAndVortex: true,
+        nativeS3BlossomStorage: true,
+        relayBlast: true,
+        visualPerks: false,
+        lifetimeAccess: false,
+      },
+      maxPostsPerMonth: null,
+      maxQueueTypes: null,
+      maxTemplates: null,
+      maxLongFormPosts: null,
+      enableBasicScheduling: true,
+      enableMultipleQueues: true,
+      enableBulkScheduling: true,
+      enableRepostsAndQuotes: true,
+      enableEngagementFeed: true,
+      enableGiveaways: true,
+      enableCommissions: false,
+      enableLeaderboards: true,
+      enableAdvancedAnalytics: true,
+      enableMultiAccountSwitching: true,
+      enableWolfFilteringAndVortex: true,
+      enableNativeS3BlossomStorage: true,
+      enableRelayBlast: true,
+      enableVisualPerks: false,
+      enableLifetimeAccess: false,
+    },
+    {
       id: "founder",
       name: "Founder",
       price: 2600,
-      description: "For early supporters and power users",
+      description: "Lifetime access for early believers",
+      sortOrder: 100,
+      planBillingModel: PlanBillingModel.lifetime,
+      purchasable: true,
+      visibleOnPricingPage: true,
+      isComingSoon: false,
+      isSpecialOffering: true,
+      founderSeatCap: 21,
       features: {
         basicScheduling: true,
         multipleQueues: true,
@@ -187,10 +296,10 @@ async function main() {
         visualPerks: true,
         lifetimeAccess: true,
       },
-      maxPostsPerMonth: null, // Unlimited
-      maxQueueTypes: null, // Unlimited
-      maxTemplates: null, // Unlimited
-      maxLongFormPosts: null, // Unlimited
+      maxPostsPerMonth: null,
+      maxQueueTypes: null,
+      maxTemplates: null,
+      maxLongFormPosts: null,
       enableBasicScheduling: true,
       enableMultipleQueues: true,
       enableBulkScheduling: true,
@@ -213,23 +322,33 @@ async function main() {
 
   for (const plan of plans) {
     console.log(`✨ Creating plan ${plan.id}...`);
+    const {
+      sortOrder,
+      planBillingModel,
+      purchasable,
+      visibleOnPricingPage,
+      isComingSoon,
+      isSpecialOffering,
+      founderSeatCap,
+      ...rest
+    } = plan;
     await prisma.plan.create({
       data: {
-        ...plan,
-        isActive: true, // Explicitly set to true to ensure all plans are active
+        ...rest,
+        sortOrder,
+        planBillingModel,
+        purchasable,
+        visibleOnPricingPage,
+        isComingSoon,
+        isSpecialOffering,
+        founderSeatCap,
+        isActive: true,
         updatedAt: new Date(),
       },
     });
   }
 
-  console.log("💵 Seeding plan prices (v1.5 SKUs)...");
-  // Explicit pricing matrix (USD is source of truth).
-  // Allowed combinations:
-  // - NWC auto-renew: monthly(1), yearly(12)
-  // - Manual Lightning: monthly(1/3/6), yearly(12)
-  // - BTC on-chain (BTCPay): yearly(12) only; USD matches Lightning yearly
-  //
-  // IMPORTANT: Update these numbers to match your intended discount ladder.
+  console.log("💵 Seeding plan prices...");
   const priceMatrix: Array<{
     planId: string;
     billingCadence: "monthly" | "yearly";
@@ -241,16 +360,37 @@ async function main() {
     priceUsd: number;
   }> = [];
 
+  const yearlyMultiplier = 10;
+
   for (const plan of plans) {
-    // Skip free plan SKUs (no invoicing)
-    if (plan.id === "free" || Number(plan.price) === 0) continue;
+    if (plan.id === "free" || plan.id === "teams" || Number(plan.price) === 0) {
+      continue;
+    }
 
-    // Base monthly price comes from Plan.price
+    if (plan.id === "founder") {
+      const once = Number(plan.price);
+      priceMatrix.push(
+        {
+          planId: "founder",
+          billingCadence: "yearly",
+          accessDurationMonths: 12,
+          paymentMethod: "lightning_one_time",
+          priceUsd: once,
+        },
+        {
+          planId: "founder",
+          billingCadence: "yearly",
+          accessDurationMonths: 12,
+          paymentMethod: "btc_btcpay_onchain",
+          priceUsd: once,
+        }
+      );
+      continue;
+    }
+
     const monthly = Number(plan.price);
-    // Default yearly anchor: 12 months (no discount unless adjusted below)
-    const yearly = monthly * 12;
+    const yearly = monthly * yearlyMultiplier;
 
-    // NWC recurring SKUs
     priceMatrix.push(
       {
         planId: plan.id,
@@ -265,11 +405,7 @@ async function main() {
         accessDurationMonths: 12,
         paymentMethod: "nwc_auto_renew",
         priceUsd: yearly,
-      }
-    );
-
-    // Manual monthly prepay SKUs (edit these totals as desired)
-    priceMatrix.push(
+      },
       {
         planId: plan.id,
         billingCadence: "monthly",

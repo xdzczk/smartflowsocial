@@ -85,6 +85,13 @@ const { mockPrisma } = vi.hoisted(() => {
     user: {
       findUnique: vi.fn(),
     },
+    contestLaunchOrchestration: {
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
+    contest: {
+      update: vi.fn(),
+    },
     $use: vi.fn(),
     $transaction: vi.fn((callback) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
@@ -198,6 +205,10 @@ describe("Queue Workers", () => {
     (persistPublishRelayAcks as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
+
+    (
+      prisma.contestLaunchOrchestration.findMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValue([]);
 
     // Publish-lease mocks (acquire/release use updateMany)
     (prisma.post.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({

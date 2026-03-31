@@ -10,10 +10,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { DraftsPage } from "~/features/posts/drafts";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import {
@@ -35,7 +32,6 @@ async function loadDraftsValidated(
 ): Promise<DraftsLoaderData> {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "drafts");
 
   const url = new URL(request.url);
   const queueType =

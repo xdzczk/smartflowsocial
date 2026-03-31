@@ -47,7 +47,7 @@ export function InvoiceModal({
   const isBtcpay = checkoutKind === "btcpay";
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="bg-opacity-50 fixed inset-0 z-[60] flex items-center justify-center bg-black">
       <div className="dark:bg-card mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4">
           <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-white">

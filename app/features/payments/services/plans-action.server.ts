@@ -9,9 +9,13 @@ import { requireUser } from "~/features/auth/session.server";
 import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
 import {
   checkPaymentStatus,
+  countActiveSubscriptionsForPlan,
   createPlanInvoice,
+  getPlanById,
   getPlanPriceUsd,
+  getUserSubscription,
   manuallyVerifyPayment,
+  PlanBillingModel,
 } from "~/features/payments/data";
 import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
@@ -133,6 +137,20 @@ async function attemptImmediateNwcPayment(params: {
   return { ok: true as const, paid: false as const };
 }
 
+async function assertFounderSeatsForInvoice(
+  plan: { id: string; founderSeatCap: number | null },
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (plan.founderSeatCap == null) return { ok: true };
+  const claimed = await countActiveSubscriptionsForPlan(plan.id);
+  const sub = await getUserSubscription(userId);
+  const alreadyFounder = sub?.planId === plan.id && sub.status === "ACTIVE";
+  if (!alreadyFounder && claimed >= plan.founderSeatCap) {
+    return { ok: false, error: "Founder access is sold out." };
+  }
+  return { ok: true };
+}
+
 async function handleSelectPlanIntent(
   selectData: Extract<
     (typeof plansActionSchema)["_output"],
@@ -148,14 +166,73 @@ async function handleSelectPlanIntent(
     paymentMode: selectData.paymentMode,
   });
 
-  if (selectData.paymentMode === "btc_onchain") {
-    if (selectData.planId === "free") {
+  if (selectData.planId === "free") {
+    if (selectData.paymentMode === "btc_onchain") {
       return {
         success: false,
         error: "Bitcoin on-chain checkout is not available for the free plan.",
         status: 400,
       };
     }
+    const invoice = await createInvoiceForSelection({
+      planId: "free",
+      userId: user.id,
+      billingCadence: "monthly",
+      accessDurationMonths: 1,
+      billingPaymentMethod: "lightning_one_time",
+      priceUsd: 0,
+    });
+    if (invoice.invoice === "free_plan") {
+      return {
+        redirect:
+          "/dashboard?planActivated=true&message=" +
+          encodeURIComponent("Free plan activated successfully!"),
+      };
+    }
+    return {
+      success: false,
+      error: "Could not activate the free plan.",
+      status: 500,
+    };
+  }
+
+  const plan = await getPlanById(selectData.planId);
+  if (!plan?.isActive) {
+    return {
+      success: false,
+      error: "This plan is not available.",
+      status: 404,
+    };
+  }
+  if (
+    plan.planBillingModel === PlanBillingModel.disabled ||
+    !plan.purchasable
+  ) {
+    return {
+      success: false,
+      error: "This plan is not available for purchase.",
+      status: 400,
+    };
+  }
+
+  const isLifetime = plan.planBillingModel === PlanBillingModel.lifetime;
+
+  if (isLifetime) {
+    if (selectData.paymentMode === "auto_renew") {
+      return {
+        success: false,
+        error:
+          "Lifetime access does not support wallet auto-renew. Use one-time Lightning or Bitcoin on-chain.",
+        status: 400,
+      };
+    }
+    const seatOk = await assertFounderSeatsForInvoice(plan, user.id);
+    if (!seatOk.ok) {
+      return { success: false, error: seatOk.error, status: 400 };
+    }
+  }
+
+  if (selectData.paymentMode === "btc_onchain") {
     if (!isBtcpayConfigured()) {
       return {
         success: false,
@@ -219,37 +296,19 @@ async function handleSelectPlanIntent(
     };
   }
 
-  if (selectData.planId === "free") {
-    const invoice = await createInvoiceForSelection({
-      planId: "free",
-      userId: user.id,
-      billingCadence: "monthly",
-      accessDurationMonths: 1,
-      billingPaymentMethod: "lightning_one_time",
-      priceUsd: 0,
-    });
-    if (invoice.invoice === "free_plan") {
-      return {
-        redirect:
-          "/dashboard?planActivated=true&message=" +
-          encodeURIComponent("Free plan activated successfully!"),
-      };
-    }
-    return {
-      success: false,
-      error: "Could not activate the free plan.",
-      status: 500,
-    };
-  }
-
-  const cadence = selectData.billingCadence;
-  const durationMonths = resolveDurationMonths({
+  let cadence = selectData.billingCadence;
+  let durationMonths = resolveDurationMonths({
     billingCadence: cadence,
     accessDurationMonths:
       typeof selectData.accessDurationMonths === "number"
         ? selectData.accessDurationMonths
         : undefined,
   });
+
+  if (isLifetime) {
+    cadence = "yearly";
+    durationMonths = 12;
+  }
 
   const billingPaymentMethod =
     selectData.paymentMode === "auto_renew"

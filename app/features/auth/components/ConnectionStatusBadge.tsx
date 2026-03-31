@@ -14,17 +14,17 @@ export function ConnectionStatusBadge({
     switch (status) {
       case "active":
         return {
-          label: "Active",
+          label: "Connected",
           className: "bg-success text-success-foreground",
         };
       case "disconnected":
         return {
-          label: "Disconnected",
+          label: "Inactive",
           className: "bg-muted text-muted-foreground",
         };
       case "stale":
         return {
-          label: "Stale",
+          label: "Needs reconnection",
           className:
             "bg-destructive/10 text-destructive border border-destructive/20",
         };

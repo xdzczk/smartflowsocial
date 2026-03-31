@@ -133,6 +133,16 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
       expect(getUserPlanType(subscription)).toBe("founder");
     });
+
+    it("should return teams for teams planId", () => {
+      const subscription: UserSubscription = {
+        planId: "teams",
+        status: "ACTIVE",
+        Plan: { name: "Teams", id: "teams" },
+      };
+
+      expect(getUserPlanType(subscription)).toBe("teams");
+    });
   });
 
   describe("hasFeatureAccess", () => {
@@ -153,26 +163,24 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         expect(hasFeatureAccess(freeSubscription, "dashboard")).toBe(true);
       });
 
-      it("should deny drafts for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "drafts")).toBe(false);
+      it("should allow drafts surface for free users (limits apply on create)", () => {
+        expect(hasFeatureAccess(freeSubscription, "drafts")).toBe(true);
       });
 
-      it("should deny calendar for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "calendar")).toBe(false);
+      it("should allow calendar for free users", () => {
+        expect(hasFeatureAccess(freeSubscription, "calendar")).toBe(true);
       });
 
-      it("should deny bulkScheduling for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "bulkScheduling")).toBe(
-          false
-        );
+      it("should allow bulkScheduling surface for free users", () => {
+        expect(hasFeatureAccess(freeSubscription, "bulkScheduling")).toBe(true);
       });
 
       it("should allow longformPosts for free users", () => {
         expect(hasFeatureAccess(freeSubscription, "longformPosts")).toBe(true);
       });
 
-      it("should deny templates for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "templates")).toBe(false);
+      it("should allow templates surface for free users", () => {
+        expect(hasFeatureAccess(freeSubscription, "templates")).toBe(true);
       });
     });
 
@@ -209,11 +217,11 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         Plan: { name: "Premium", id: "premium" },
       };
 
-      it("should only have free-tier access when expired", () => {
-        expect(hasFeatureAccess(expiredSubscription, "drafts")).toBe(false);
-        expect(hasFeatureAccess(expiredSubscription, "calendar")).toBe(false);
+      it("should only have free-tier browse access when expired", () => {
+        expect(hasFeatureAccess(expiredSubscription, "drafts")).toBe(true);
+        expect(hasFeatureAccess(expiredSubscription, "calendar")).toBe(true);
         expect(hasFeatureAccess(expiredSubscription, "bulkScheduling")).toBe(
-          false
+          true
         );
       });
 
@@ -243,14 +251,14 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("free");
     });
 
-    it("should return 'basic' for drafts", () => {
+    it("should return 'free' for drafts", () => {
       const result = getMinimumPlanForFeature("drafts");
-      expect(result).toBe("basic");
+      expect(result).toBe("free");
     });
 
-    it("should return 'basic' for calendar", () => {
+    it("should return 'free' for calendar", () => {
       const result = getMinimumPlanForFeature("calendar");
-      expect(result).toBe("basic");
+      expect(result).toBe("free");
     });
 
     it("should return 'basic' for bulkScheduling", () => {
@@ -263,9 +271,13 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("free");
     });
 
-    it("should return 'basic' for templates", () => {
+    it("should return 'free' for templates", () => {
       const result = getMinimumPlanForFeature("templates");
-      expect(result).toBe("basic");
+      expect(result).toBe("free");
+    });
+
+    it("should return 'basic' for broadcasts (send / scale)", () => {
+      expect(getMinimumPlanForFeature("broadcasts")).toBe("basic");
     });
   });
 
@@ -344,13 +356,12 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       });
     });
 
-    it("should have free plan with restricted features", () => {
-      expect(PLAN_FEATURES.free.drafts).toBe(false);
-      expect(PLAN_FEATURES.free.calendar).toBe(false);
-      expect(PLAN_FEATURES.free.bulkScheduling).toBe(false);
-      // longformPosts is allowed on free tier
+    it("should have free plan with browse-all surfaces (execution limits elsewhere)", () => {
+      expect(PLAN_FEATURES.free.drafts).toBe(true);
+      expect(PLAN_FEATURES.free.calendar).toBe(true);
+      expect(PLAN_FEATURES.free.bulkScheduling).toBe(true);
       expect(PLAN_FEATURES.free.longformPosts).toBe(true);
-      expect(PLAN_FEATURES.free.broadcasts).toBe(false);
+      expect(PLAN_FEATURES.free.broadcasts).toBe(true);
     });
 
     it("should have paid plans with full features", () => {

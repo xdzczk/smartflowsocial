@@ -6,7 +6,7 @@ import {
 
 import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
 import {
-  requireActiveSubscription,
+  requireDashboardSubscriptionContext,
   ensureUserHasFreePlan,
 } from "~/features/payments";
 import { getReferredByForNpub } from "~/features/referral/get-referred-by.server";
@@ -30,7 +30,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   await ensureUserHasFreePlan(user.id);
 
   // Root dashboard requires an ACTIVE subscription (including free)
-  const subscriptionData = await requireActiveSubscription(user.id);
+  const subscriptionData = await requireDashboardSubscriptionContext(user.id);
 
   // Pending parent link requests for this user (as child)
   const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
@@ -46,6 +46,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     userId: user.id,
     user,
     currentSubscription: subscriptionData.currentSubscription,
+    billingContext: subscriptionData.billingContext ?? null,
     ...dashboardData,
     referredBy: referredBy ?? undefined,
     isOperatorAdmin: isReferralAdmin(user.npub),

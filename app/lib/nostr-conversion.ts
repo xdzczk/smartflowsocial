@@ -1,9 +1,25 @@
 import { nip19 } from "nostr-tools";
-export function convertToHex(key: string): string | null {
+
+/** 64-char hex secp256k1 pubkey (how `User.npub` is stored after Nostr auth v2). */
+const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/i;
+
+/**
+ * Normalize a Nostr public key to lowercase hex.
+ * Accepts bech32 `npub1…` (NIP-19) or raw 64-char hex (stored DB format).
+ */
+export function convertToHex(key: string | null | undefined): string | null {
+  if (key == null || typeof key !== "string") {
+    return null;
+  }
+  const trimmed = key.trim();
+  if (!trimmed) return null;
+  if (HEX_PUBKEY_RE.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
   try {
-    const { data } = nip19.decode(key);
+    const { data } = nip19.decode(trimmed);
     return typeof data === "string" ? data : null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }

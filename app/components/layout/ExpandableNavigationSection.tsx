@@ -2,12 +2,7 @@ import { Link, useLocation } from "@remix-run/react";
 import { ChevronDown, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import {
-  useFeatureAccess,
-  useSubscription,
-  getMinimumPlanForFeature,
-  type FeatureName,
-} from "~/features/payments/types";
+import { useSubscription, type FeatureName } from "~/features/payments/types";
 
 const TEXT_PRIMARY = "text-primary";
 // Inactive nav icons: slightly higher contrast than inactive text; match link hover so icon and text react together
@@ -55,10 +50,9 @@ function NavigationChildItemComponent({
   /** When false, link is not focusable (tabIndex=-1) so keyboard nav doesn't land on hidden items */
   sectionExpanded?: boolean;
 }) {
-  const hasAccessByPlan = useFeatureAccess(child.feature);
   const subscription = useSubscription();
   const hasAnySubscription = !!subscription?.currentSubscription;
-  const hasAccess = hasAnySubscription && hasAccessByPlan;
+  const hasAccess = hasAnySubscription;
 
   const handleChildClick = (e: React.MouseEvent) => {
     if (!hasAccess) {
@@ -72,9 +66,7 @@ function NavigationChildItemComponent({
     }
   };
 
-  const title = !hasAccess
-    ? `Requires ${getMinimumPlanForFeature(child.feature)} plan`
-    : child.label;
+  const title = !hasAccess ? "Subscription required" : child.label;
 
   const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"

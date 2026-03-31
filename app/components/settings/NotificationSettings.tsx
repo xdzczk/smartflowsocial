@@ -20,6 +20,7 @@ import {
   PreferenceSection,
   ToggleRowSection,
 } from "~/features/settings/components/patterns";
+import { cn } from "~/lib/utils";
 
 interface NotificationSettingsProps {
   pushNotificationsEnabled: boolean;
@@ -423,11 +424,13 @@ export function NotificationSettings({
     fetcher.submit(formData, { method: "post" });
   };
 
+  const subordinateActive = isSubscribed;
+
   if (hasMounted && !isSupported) {
     return (
       <PreferenceSection
         title="Push notifications"
-        description="Browser push for publish success, failures, and queue runway."
+        description="Choose which SmartFlow events send push notifications on this device."
       >
         <p className="text-muted-foreground text-sm">
           Push notifications are not supported in this browser.
@@ -439,10 +442,13 @@ export function NotificationSettings({
   return (
     <PreferenceSection
       title="Push notifications"
-      description="Get notified when your posts are published or fail. Enable on each device (e.g. this browser and your phone) to receive notifications everywhere."
+      description="Choose which SmartFlow events send push notifications on this device. Enable notifications on each device or browser separately."
+      contentClassName="mt-4 space-y-0"
     >
-      <div className="space-y-4">
+      <div className="space-y-0">
         <ToggleRowSection
+          variant="plain"
+          className="first:pt-0"
           label="Enable push notifications"
           description={
             pushConfiguredOnServer === false
@@ -474,106 +480,114 @@ export function NotificationSettings({
           }
         />
 
-        {isSubscribed ? (
-          <>
-            <Separator className="my-4" />
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="notify-success">
-                  Notify on Publish Success
-                </Label>
-                <p className="text-muted-foreground text-xs">
-                  Get notified when posts are published successfully
-                </p>
-              </div>
+        <Separator className="my-4" />
+
+        {!isSubscribed ? (
+          <p className="text-muted-foreground mb-4 text-xs leading-snug">
+            Enable push notifications to manage notification types on this
+            device.
+          </p>
+        ) : null}
+
+        <div
+          className={cn(
+            "transition-opacity duration-200",
+            !subordinateActive && "opacity-60"
+          )}
+        >
+          <ToggleRowSection
+            variant="plain"
+            label="Notify on publish success"
+            description="Get notified when posts are published successfully."
+            control={
               <Switch
                 id="notify-success"
                 checked={pushNotifyPublishSuccess}
                 onCheckedChange={handleToggleSuccess}
+                disabled={!subordinateActive}
               />
-            </div>
+            }
+          />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="notify-failure">
-                  Notify on Publish Failure
-                </Label>
-                <p className="text-muted-foreground text-xs">
-                  Get notified when posts fail to publish (always actionable)
-                </p>
-              </div>
+          <ToggleRowSection
+            variant="plain"
+            label="Notify on publish failure"
+            description="Get notified when a post fails to publish. Recommended."
+            control={
               <Switch
                 id="notify-failure"
                 checked={pushNotifyPublishFailure}
                 onCheckedChange={handleToggleFailure}
+                disabled={!subordinateActive}
               />
-            </div>
+            }
+          />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="notify-include-preview">
-                  Include post preview in notifications
-                </Label>
-                <p className="text-muted-foreground text-xs">
-                  Show a short snippet of the post or article in publish success
-                  notifications
-                </p>
-              </div>
-              <Switch
-                id="notify-include-preview"
-                checked={pushNotifyIncludePreview}
-                onCheckedChange={handleToggleIncludePreview}
-              />
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="notify-runway-low">
-                  Notify when Queue Runway is Low
-                </Label>
-                <p className="text-muted-foreground text-xs">
-                  Get notified when your scheduled queue has few days left
-                </p>
-              </div>
+          <ToggleRowSection
+            variant="plain"
+            label="Notify when queue runway is low"
+            description="Get notified when your scheduled queue is running low."
+            control={
               <Switch
                 id="notify-runway-low"
                 checked={pushNotifyRunwayLow}
                 onCheckedChange={handleToggleRunwayLow}
+                disabled={!subordinateActive}
+              />
+            }
+          />
+
+          {pushNotifyRunwayLow ? (
+            <div className="border-border/60 mt-3 flex flex-col gap-3 border-l-2 pl-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="min-w-0 space-y-0.5">
+                <Label
+                  htmlFor="runway-notify-below-days"
+                  className="text-sm font-medium"
+                >
+                  Notify when runway is below (days)
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Use dashboard red threshold if left empty
+                </p>
+              </div>
+              <input
+                id="runway-notify-below-days"
+                type="number"
+                min={0}
+                max={365}
+                disabled={!subordinateActive}
+                value={runwayNotifyBelowDays ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const n = v === "" ? null : parseInt(v, 10);
+                  if (
+                    v === "" ||
+                    (Number.isInteger(n) && n !== null && n >= 0 && n <= 365)
+                  ) {
+                    handleRunwayNotifyBelowDaysChange(v === "" ? null : n);
+                  }
+                }}
+                className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
+          ) : null}
 
-            {pushNotifyRunwayLow ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <div className="min-w-0 space-y-0.5">
-                  <Label htmlFor="runway-notify-below-days">
-                    Notify when runway is below (days)
-                  </Label>
-                  <p className="text-muted-foreground text-xs">
-                    Use dashboard red threshold if left empty
-                  </p>
-                </div>
-                <input
-                  id="runway-notify-below-days"
-                  type="number"
-                  min={0}
-                  max={365}
-                  value={runwayNotifyBelowDays ?? ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const n = v === "" ? null : parseInt(v, 10);
-                    if (
-                      v === "" ||
-                      (Number.isInteger(n) && n !== null && n >= 0 && n <= 365)
-                    ) {
-                      handleRunwayNotifyBelowDaysChange(v === "" ? null : n);
-                    }
-                  }}
-                  className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm"
-                />
-              </div>
-            ) : null}
-          </>
-        ) : null}
+          <Separator className="my-4" />
+
+          <ToggleRowSection
+            variant="plain"
+            label="Include post preview in notifications"
+            description="Show a short preview in publish success notifications."
+            control={
+              <Switch
+                id="notify-include-preview"
+                checked={pushNotifyIncludePreview}
+                onCheckedChange={handleToggleIncludePreview}
+                disabled={!subordinateActive}
+              />
+            }
+          />
+        </div>
       </div>
     </PreferenceSection>
   );

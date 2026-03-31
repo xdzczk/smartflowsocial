@@ -29,6 +29,8 @@ import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 interface SessionCardProps {
   connection: RemoteSignerConnection;
   isActive: boolean;
+  /** Matches server-stored primary fallback signer profile (same pubkey). */
+  isPrimaryFallback?: boolean;
   onReconnect: (connectionId: string) => void;
   onSetActive: (connectionId: string) => void;
   onViewDetails: (connectionId: string) => void;
@@ -38,6 +40,7 @@ interface SessionCardProps {
 export function SessionCard({
   connection,
   isActive,
+  isPrimaryFallback = false,
   onReconnect,
   onSetActive,
   onViewDetails,
@@ -57,6 +60,14 @@ export function SessionCard({
     if (!timestamp) return "Never";
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
   };
+
+  const relayCount = connection.metadata.relays.length;
+  const relaySummary =
+    relayCount === 0
+      ? "No relays on file"
+      : relayCount === 1
+        ? "1 relay"
+        : `${relayCount} relays`;
 
   const handleRemove = () => {
     setIsRemoving(true);
@@ -79,28 +90,33 @@ export function SessionCard({
               <CardTitle className="text-base">{connection.label}</CardTitle>
               {isActive ? (
                 <Badge className="bg-primary text-primary-foreground text-xs">
-                  Active
+                  Active signer
+                </Badge>
+              ) : null}
+              {isPrimaryFallback ? (
+                <Badge variant="secondary" className="text-xs">
+                  Primary fallback signer
                 </Badge>
               ) : null}
             </div>
             <CardDescription className="mt-1">
-              {connection.metadata.signerAppName ?? "Unknown Signer"}
+              {connection.metadata.signerAppName ?? "Unknown signer"}
             </CardDescription>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-shrink-0 flex-wrap justify-end gap-1.5">
             {!isActive ? (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => onSetActive(connection.id)}
                 className="h-8"
               >
                 <Check className="mr-1 h-3 w-3" />
-                Set Active
+                Set active
               </Button>
             ) : null}
             <Button
-              variant="ghost"
+              variant={isActive ? "outline" : "default"}
               size="sm"
               onClick={() => onReconnect(connection.id)}
               className="h-8"
@@ -122,6 +138,7 @@ export function SessionCard({
               size="sm"
               onClick={() => setShowRemoveConfirm(true)}
               className="text-destructive hover:text-destructive h-8"
+              aria-label="Remove connection"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -157,6 +174,11 @@ export function SessionCard({
         </div>
 
         <div className="space-y-2">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-muted-foreground text-sm">Relays</span>
+            <span className="text-sm">{relaySummary}</span>
+          </div>
+
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground text-sm">Pubkey</span>
             <span className="min-w-0 font-mono text-sm break-all">

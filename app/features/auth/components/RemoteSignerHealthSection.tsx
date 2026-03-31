@@ -28,14 +28,19 @@ export function RemoteSignerHealthSection({
 
   return (
     <div>
-      <div className="mb-4">
-        <h3 className="mb-2 text-lg font-semibold">Active Connection</h3>
+      <div className="mb-1">
+        <h3 className="text-foreground mb-1 text-base font-semibold">
+          Active signer session
+        </h3>
+        <p className="text-muted-foreground mb-3 text-xs">
+          Runtime health and recent events for the signer you&apos;re using now.
+        </p>
         <div className="bg-muted/30 rounded-md border p-4">
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="font-medium">{activeConnection.label}</div>
               <div className="text-muted-foreground text-sm break-words">
-                {activeConnection.metadata.signerAppName ?? "Unknown Signer"}
+                {activeConnection.metadata.signerAppName ?? "Unknown signer"}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -48,7 +53,7 @@ export function RemoteSignerHealthSection({
                 <RefreshCw
                   className={`mr-2 h-4 w-4 ${isTestingConnection ? "animate-spin" : ""}`}
                 />
-                Test Connection
+                Test connection
               </Button>
               <Button size="sm" variant="outline" onClick={onDisconnect}>
                 Disconnect
@@ -58,7 +63,7 @@ export function RemoteSignerHealthSection({
 
           <Separator className="my-3" />
           <div>
-            <h4 className="mb-2 text-sm font-medium">Recent Runtime Events</h4>
+            <h4 className="mb-2 text-sm font-medium">Recent events</h4>
             <ConnectionHistory entries={entries} />
           </div>
         </div>

@@ -14,6 +14,11 @@ import {
   getUserPaymentHistory,
   getUserSubscription,
 } from "~/features/payments/data";
+import {
+  getSubscriptionData,
+  isSubscriptionActiveForGating,
+} from "~/features/payments/subscriptions.server";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type {
   HashTagPreset,
@@ -51,6 +56,7 @@ import {
   getUserTimezone,
   getQueueTypes,
   getUserDefaultZapAmountSatsStored,
+  getScheduleInterval,
 } from "~/features/user";
 import { getHashTagPresetsCached } from "~/features/user/services/user-cache.server";
 import {
@@ -97,7 +103,13 @@ export interface SettingsLoaderData {
   >;
   giveawayBlacklist: string[];
   queueTypes: QueueType[];
+  /** User's global composer schedule intervals (hours), for queue row summaries when a queue uses global interval mode. */
+  globalScheduleIntervalHours: number[];
   uploadProvider: string;
+  /** DB preference after tier mapping; may differ from `uploadProvider` when SFS is stored but subscription inactive. */
+  uploadProviderStored: string;
+  /** True when paid subscription is active for gating (SFS, etc.). */
+  isSubscriptionActiveForGating: boolean;
   customBlossomUrl: string | null;
   enableMirrorBlossom: boolean;
   mirrorUploadUrls: string[];
@@ -190,6 +202,7 @@ export interface SettingsLoaderData {
   };
   /** Persisted default zap (sats); null until user saves (UI uses fallback 21). */
   defaultZapAmountSats: number | null;
+  billingContext: BillingContext | null;
 }
 
 /** Safe defaults when settings loader fails (matches dashboard.settings error fallback). */
@@ -203,7 +216,10 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
   relayAcks: {},
   giveawayBlacklist: [],
   queueTypes: [],
+  globalScheduleIntervalHours: [],
   uploadProvider: "",
+  uploadProviderStored: "",
+  isSubscriptionActiveForGating: false,
   customBlossomUrl: null,
   enableMirrorBlossom: false,
   mirrorUploadUrls: [],
@@ -253,6 +269,7 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
     payoutDestinationType: null,
   },
   defaultZapAmountSats: null,
+  billingContext: null,
 };
 
 async function buildAccountsData(params: {
@@ -295,6 +312,14 @@ async function buildAccountsData(params: {
   };
 }
 
+/** Dedupe and sort global composer interval hours from persisted string[] (e.g. "8", "0.25"). */
+function normalizeGlobalScheduleIntervalHours(raw: string[]): number[] {
+  const nums = raw
+    .map((s) => Number.parseFloat(String(s).trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return [...new Set(nums)].sort((a, b) => a - b);
+}
+
 /**
  * Load all settings data
  */
@@ -319,6 +344,7 @@ export async function loadSettingsData(
     giveawayBlacklist,
     queueTypes,
     uploadProviderSettings,
+    isSubscriptionActiveForGatingValue,
     enableMirrorBlossom,
     mirrorUploadUrls,
     hashTagPresets,
@@ -335,12 +361,14 @@ export async function loadSettingsData(
     primarySignerProfile,
     blastrRelayEnabled,
     defaultZapAmountSats,
+    scheduleIntervalStrings,
   ] = await Promise.all([
     getUserTimezone(userId),
     loadRelaySettingsLoaderSlice(userId),
     getGiveawayBlacklist(userId),
     getQueueTypes(userId),
     getResolvedUploadProviderSettings(userId),
+    isSubscriptionActiveForGating(userId),
     getUserEnableMirrorBlossom(userId),
     getUserMirrorUploadUrls(userId),
     getHashTagPresetsCached(userId),
@@ -357,7 +385,12 @@ export async function loadSettingsData(
     getUserPrimarySignerProfile(userId),
     getUserBlastrRelayEnabled(userId),
     getUserDefaultZapAmountSatsStored(userId),
+    getScheduleInterval(userId),
   ]);
+
+  const globalScheduleIntervalHours = normalizeGlobalScheduleIntervalHours(
+    scheduleIntervalStrings
+  );
 
   const effectiveWriteRelays = await getEffectiveWriteRelays(userId, {
     intent: relaySlice.relayIntent,
@@ -368,6 +401,7 @@ export async function loadSettingsData(
   const profileRelayEntries = relaySlice.profileRelayEntries;
   const managedRelays = effectiveWriteRelays.managed;
   const uploadProvider = uploadProviderSettings.provider;
+  const uploadProviderStored = uploadProviderSettings.storedUploadProvider;
   const customBlossomUrl = uploadProviderSettings.customBlossomUrl;
 
   // Latest ACK per relay (best-effort). Include managed relay URL even if disabled.
@@ -402,11 +436,18 @@ export async function loadSettingsData(
   });
 
   // Get subscription and referral information
-  const [subscription, allPlans, paymentHistory, referral] = await Promise.all([
+  const [
+    subscription,
+    allPlans,
+    paymentHistory,
+    referral,
+    subscriptionSnapshot,
+  ] = await Promise.all([
     getUserSubscription(userId),
     getAllPlans(),
     getUserPaymentHistory(userId),
     getReferralSettingsData(myNpub),
+    getSubscriptionData(userId),
   ]);
 
   const canToggleBlastr = !!(
@@ -436,24 +477,59 @@ export async function loadSettingsData(
     managedRelays,
     relayAcks,
     giveawayBlacklist,
-    queueTypes: queueTypes.map((qt) => ({
-      id: qt.id,
-      name: qt.name,
-      color: getQueueAccentHex(qt.colorToken ?? null),
-      colorToken: qt.colorToken ?? undefined,
-      description: qt.description,
-      scheduleType: qt.scheduleType,
-      scheduleConfig:
-        qt.scheduleConfig &&
-        typeof qt.scheduleConfig === "object" &&
-        !Array.isArray(qt.scheduleConfig)
-          ? (qt.scheduleConfig as ScheduleConfig)
-          : undefined,
-      isEnabled: qt.isEnabled,
-      userId: qt.userId,
-      includeHashtagsInNoteBody: qt.includeHashtagsInNoteBody !== false,
-    })),
+    queueTypes: queueTypes.map((qt) => {
+      const hpRaw = qt.hashTagPreset;
+      let preset: {
+        id: string;
+        name: string;
+        tags: string;
+        description?: string;
+      } | null = null;
+      if (
+        hpRaw &&
+        typeof hpRaw === "object" &&
+        typeof (hpRaw as { id?: unknown }).id === "string" &&
+        typeof (hpRaw as { name?: unknown }).name === "string" &&
+        typeof (hpRaw as { tags?: unknown }).tags === "string"
+      ) {
+        const hp = hpRaw as {
+          id: string;
+          name: string;
+          tags: string;
+          description?: string | null;
+        };
+        preset = {
+          id: hp.id,
+          name: hp.name,
+          tags: hp.tags,
+          description: hp.description ?? undefined,
+        };
+      }
+      return {
+        id: qt.id,
+        name: qt.name,
+        color: getQueueAccentHex(qt.colorToken ?? null),
+        colorToken: qt.colorToken ?? undefined,
+        description: qt.description,
+        scheduleType: qt.scheduleType,
+        scheduleConfig:
+          qt.scheduleConfig &&
+          typeof qt.scheduleConfig === "object" &&
+          !Array.isArray(qt.scheduleConfig)
+            ? (qt.scheduleConfig as ScheduleConfig)
+            : undefined,
+        isEnabled: qt.isEnabled,
+        isDefault: qt.isDefault,
+        userId: qt.userId,
+        hashTagPresetId: qt.hashTagPresetId ?? undefined,
+        includeHashtagsInNoteBody: qt.includeHashtagsInNoteBody !== false,
+        hashTagPreset: preset,
+      };
+    }),
+    globalScheduleIntervalHours,
     uploadProvider,
+    uploadProviderStored,
+    isSubscriptionActiveForGating: isSubscriptionActiveForGatingValue,
     customBlossomUrl,
     enableMirrorBlossom,
     mirrorUploadUrls,
@@ -520,12 +596,14 @@ export async function loadSettingsData(
             : null,
         }
       : null,
-    availablePlans: allPlans.map((plan) => ({
-      id: plan.id,
-      name: plan.name,
-      price: Number(plan.price),
-      enableLifetimeAccess: plan.enableLifetimeAccess,
-    })),
+    availablePlans: allPlans
+      .filter((plan) => plan.purchasable)
+      .map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        price: Number(plan.price),
+        enableLifetimeAccess: plan.enableLifetimeAccess,
+      })),
     paymentHistory: paymentHistory.map((payment) => ({
       id: payment.id,
       amount: payment.amount,
@@ -569,5 +647,6 @@ export async function loadSettingsData(
     blastrSystemRelays,
     referral,
     defaultZapAmountSats,
+    billingContext: subscriptionSnapshot.billingContext ?? null,
   };
 }

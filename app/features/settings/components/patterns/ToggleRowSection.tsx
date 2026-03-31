@@ -7,6 +7,8 @@ export interface ToggleRowSectionProps {
   control: React.ReactNode;
   /** Optional content below the row when expanded (e.g. sub-options). */
   children?: React.ReactNode;
+  /** `bordered` — default card-like row; `plain` — no border, for stacked rows with separators. */
+  variant?: "bordered" | "plain";
   className?: string;
 }
 
@@ -18,12 +20,15 @@ export function ToggleRowSection({
   description,
   control,
   children,
+  variant = "bordered",
   className,
 }: ToggleRowSectionProps) {
   return (
     <div
       className={cn(
-        "border-border/60 space-y-3 rounded-lg border px-3 py-3 sm:px-4",
+        variant === "bordered" &&
+          "border-border/60 space-y-3 rounded-lg border px-3 py-3 sm:px-4",
+        variant === "plain" && "space-y-3 py-3 first:pt-0 last:pb-0 sm:py-3.5",
         className
       )}
     >

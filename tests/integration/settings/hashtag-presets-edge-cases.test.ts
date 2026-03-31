@@ -14,6 +14,7 @@ vi.mock("~/features/user", () => ({
 
 vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateHashTagPresetsCache: vi.fn().mockResolvedValue(undefined),
+  invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";

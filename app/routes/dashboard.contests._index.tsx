@@ -27,10 +27,7 @@ import {
   getContestSourcePostThumbnails,
   listContestsFiltered,
 } from "~/features/contest";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { featureFlags } from "~/lib/feature-flags.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -39,7 +36,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status") ?? "all";
@@ -110,7 +106,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
 
   const formData = await request.formData();
   const intent = formData.get("intent");

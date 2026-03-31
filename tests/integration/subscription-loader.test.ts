@@ -23,7 +23,6 @@ vi.mock("~/features/auth/session.server", () => ({
 
 vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
-  requireFeatureAccess: vi.fn(),
 }));
 
 vi.mock(
@@ -47,10 +46,7 @@ vi.mock("~/features/settings", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import type * as SettingsLoaderServer from "~/features/settings/settings-loader.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import { loader } from "~/routes/dashboard.settings";
@@ -71,9 +67,6 @@ describe("Subscription/Billing Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined
-    );
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
     (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -119,7 +112,6 @@ describe("Subscription/Billing Loader Integration", () => {
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
-      expect(requireFeatureAccess).toHaveBeenCalledWith("user-123", "settings");
       expect(loadSettingsData).toHaveBeenCalledWith("user-123");
       expect(data).toHaveProperty("subscription");
       expect(data).toHaveProperty("availablePlans");
@@ -407,13 +399,12 @@ describe("Subscription/Billing Loader Integration", () => {
       expect(response.status).toBe(403);
     });
 
-    it("should handle feature access errors", async () => {
-      // requireFeatureAccess throws a Response (redirect), not an Error
+    it("should handle subscription gate errors", async () => {
       const redirectResponse = new Response(null, {
         status: 403,
         headers: { "Content-Type": "application/json" },
       });
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockImplementation(
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockImplementation(
         () => {
           throw redirectResponse;
         }

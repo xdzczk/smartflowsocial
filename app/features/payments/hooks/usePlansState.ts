@@ -183,7 +183,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     }
   }, [actionData, navigate]);
 
-  // Start polling when invoiceData is set (only once per paymentId)
+  /** Cleared when invoice UI closes or expires so a new payment can poll. */
   const lastPolledPaymentIdRef = useRef<string | null>(null);
   useEffect(() => {
     // Start polling when we have invoice data and haven't polled this payment yet
@@ -207,6 +207,9 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
         if (remaining <= 0) {
           clearInterval(timer);
           setShowInvoice(false);
+          setInvoiceData(null);
+          processedPaymentIdRef.current = null;
+          lastPolledPaymentIdRef.current = null;
         }
       }, 1000);
 
@@ -250,7 +253,13 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     setShowInvoice(false);
     setInvoiceData(null);
     processedPaymentIdRef.current = null;
+    lastPolledPaymentIdRef.current = null;
   }, [btcpayAwaitingConfirmations]);
+
+  /** Call when checkout selections change so a new submit can be processed if actionData is reused. */
+  const resetPaymentActionGuard = useCallback(() => {
+    processedPaymentIdRef.current = null;
+  }, []);
 
   const handleOpenCheckout = useCallback(
     (planId: string) => {
@@ -284,5 +293,6 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     copyToClipboard,
     checkPaymentStatusNow,
     handleCloseModal,
+    resetPaymentActionGuard,
   };
 }

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import { requireFeatureAccess } from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPage } from "~/features/posts/ui";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
@@ -15,7 +15,7 @@ export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.ser
 
 async function loadBulkPostsData(request: Request) {
   const userId = await requireUserId(request);
-  await requireFeatureAccess(userId, "bulkScheduling");
+  await requireAnySubscription(userId);
   const url = new URL(request.url);
   const groupId = url.searchParams.get("groupId");
   return getBulkPostsDashboardData(

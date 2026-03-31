@@ -3,7 +3,7 @@
  * Centralized data fetching for new longform post page
  */
 
-import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
@@ -24,7 +24,7 @@ export async function loadNewLongFormData(
   userId: string,
   templateId: string | null = null
 ) {
-  await requireFeatureAccess(userId, "longformPosts");
+  await requireAnySubscription(userId);
 
   const [
     scheduleIntervals,

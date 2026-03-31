@@ -14,10 +14,7 @@ import {
   removeBroadcastSuppression,
 } from "~/features/broadcast";
 import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 
 const REASON_LABELS: Record<BroadcastSuppressionReasonCode, string> = {
@@ -33,7 +30,6 @@ const REASON_LABELS: Record<BroadcastSuppressionReasonCode, string> = {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const url = new URL(request.url);
   const notice = url.searchParams.get("notice");
@@ -53,7 +49,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const form = await request.formData();
   const intent = form.get("intent");

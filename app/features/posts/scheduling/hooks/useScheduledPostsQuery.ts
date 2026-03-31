@@ -30,6 +30,7 @@ import type {
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -185,22 +186,8 @@ export function useScheduledPostsInfiniteQuery() {
   return useInfiniteRemixQuery<ScheduledPostsLoaderData>({
     queryKey: scheduledPostsKeys.list(queueType, currentTab, dateFrom, dateTo),
     initialData: validatedLoaderData,
-    getNextPageParam: (lastPage) => {
-      const pagination =
-        "pagination" in lastPage ? lastPage.pagination : undefined;
-      if (
-        pagination &&
-        typeof pagination === "object" &&
-        "currentPage" in pagination &&
-        "pages" in pagination &&
-        typeof pagination.currentPage === "number" &&
-        typeof pagination.pages === "number" &&
-        pagination.currentPage < pagination.pages
-      ) {
-        return pagination.currentPage + 1;
-      }
-      return;
-    },
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParamFromPaginationTotals(lastPage, allPages),
     buildUrl: (pageParam) => {
       const base =
         queueType !== "all"

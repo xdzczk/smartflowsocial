@@ -1,17 +1,15 @@
 import { useFetcher } from "@remix-run/react";
 import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
+import {
+  PreferenceSection,
+  ToggleRowSection,
+} from "~/features/settings/components/patterns";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 interface MutedListSettingsProps {
@@ -52,9 +50,23 @@ function LastSyncedDateDisplay({ lastSyncedDate }: { lastSyncedDate: Date }) {
 
   return (
     <p className="text-muted-foreground text-xs">
-      Last synced: {formattedDate} {formattedTime}
+      Last synced {formattedDate} {formattedTime}
     </p>
   );
+}
+
+function useFetcherSuccessToast(
+  fetcher: ReturnType<typeof useFetcher<FetcherData>>,
+  ok: string
+) {
+  const wasSubmittingRef = useRef(false);
+  useEffect(() => {
+    const wasSubmitting = wasSubmittingRef.current;
+    wasSubmittingRef.current = fetcher.state === "submitting";
+    if (!wasSubmitting || fetcher.state !== "idle") return;
+    if (fetcher.data?.success) toast.success(ok);
+    else if (fetcher.data?.error) toast.error(fetcher.data.error);
+  }, [fetcher.state, fetcher.data, ok]);
 }
 
 export function MutedListSettings({
@@ -75,7 +87,6 @@ export function MutedListSettings({
   const isToggling = toggleFetcher.state === "submitting";
   const isTogglingLowTrust = toggleLowTrustFetcher.state === "submitting";
 
-  // Update local state when fetcher data changes
   const actualFilterState = toggleFetcher.data?.filterMuted ?? isFilterEnabled;
 
   const actualLowTrustState =
@@ -113,107 +124,74 @@ export function MutedListSettings({
     toggleLowTrustFetcher.submit(formData, { method: "post" });
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Muted List</CardTitle>
-        <CardDescription>
-          Sync your Nostr muted list and enable filtering
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Muted List Info */}
-        <div className="space-y-2 rounded-lg border p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium">Muted Users</p>
-              <p className="text-2xl font-bold">{mutedCount}</p>
-            </div>
-            <Button
-              onClick={handleSync}
-              disabled={isSyncing}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-              />
-              {isSyncing ? "Syncing..." : "Sync Now"}
-            </Button>
-          </div>
+  useFetcherSuccessToast(syncFetcher, "Muted list synced");
+  useFetcherSuccessToast(toggleFetcher, "Muted filtering updated");
+  useFetcherSuccessToast(toggleLowTrustFetcher, "Trust filter updated");
 
+  return (
+    <PreferenceSection
+      title="Feed filtering"
+      description="Control how muted accounts and trust signals affect what you see."
+      contentClassName="space-y-0"
+    >
+      <div className="bg-muted/25 border-border/50 flex flex-col gap-3 rounded-md border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-muted-foreground text-xs font-medium">
+            Muted accounts
+          </p>
+          <p className="text-2xl font-semibold tabular-nums">{mutedCount}</p>
           {lastSyncedDate ? (
             <LastSyncedDateDisplay lastSyncedDate={lastSyncedDate} />
-          ) : null}
+          ) : (
+            <p className="text-muted-foreground text-xs">Not synced yet</p>
+          )}
         </div>
+        <Button
+          type="button"
+          onClick={handleSync}
+          disabled={isSyncing}
+          variant="outline"
+          size="sm"
+          className="shrink-0 self-start sm:self-center"
+        >
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          {isSyncing ? "Syncing…" : "Sync now"}
+        </Button>
+      </div>
 
-        {/* Success/Error Messages */}
-        {syncFetcher.data?.success ? (
-          <p className="text-success text-sm">
-            Muted list synced successfully! Found {mutedCount} muted users.
-          </p>
-        ) : null}
-        {syncFetcher.data?.error ? (
-          <p className="text-destructive text-sm">{syncFetcher.data.error}</p>
-        ) : null}
+      <Separator className="my-1" />
 
-        {/* Filter Toggle */}
-        <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <Label htmlFor="filter-muted" className="text-base">
-              Enable Muted Filtering
-            </Label>
-            <p className="text-muted-foreground text-sm">
-              Hide content from muted users in your engagement feed
-            </p>
-          </div>
+      <ToggleRowSection
+        variant="plain"
+        label="Enable muted filtering"
+        description="Hide content from muted users in your engagement feed."
+        control={
           <Switch
             id="filter-muted"
             checked={actualFilterState}
             onCheckedChange={handleToggleFilter}
             disabled={isToggling}
           />
-        </div>
+        }
+      />
 
-        {toggleFetcher.data?.success ? (
-          <p className="text-success text-sm">
-            Filter setting updated successfully!
-          </p>
-        ) : null}
-        {toggleFetcher.data?.error ? (
-          <p className="text-destructive text-sm">{toggleFetcher.data.error}</p>
-        ) : null}
+      <Separator />
 
-        {/* Hide Low Trust Users Toggle */}
-        <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <Label htmlFor="hide-low-trust" className="text-base">
-              Hide Posts from Low Trust Users
-            </Label>
-            <p className="text-muted-foreground text-sm">
-              Filter out content from users with low trust scores in your
-              engagement feed
-            </p>
-          </div>
+      <ToggleRowSection
+        variant="plain"
+        label="Hide posts from low-trust users"
+        description="Filter out content from users with low trust scores in your engagement feed."
+        control={
           <Switch
             id="hide-low-trust"
             checked={actualLowTrustState}
             onCheckedChange={handleToggleLowTrust}
             disabled={isTogglingLowTrust}
           />
-        </div>
-
-        {toggleLowTrustFetcher.data?.success ? (
-          <p className="text-success text-sm">
-            Low trust filter setting updated successfully!
-          </p>
-        ) : null}
-        {toggleLowTrustFetcher.data?.error ? (
-          <p className="text-destructive text-sm">
-            {toggleLowTrustFetcher.data.error}
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
+        }
+      />
+    </PreferenceSection>
   );
 }

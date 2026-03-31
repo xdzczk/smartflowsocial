@@ -6,6 +6,7 @@
  */
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import {
   createPostWithOutbox,
   updatePost,
@@ -132,6 +133,10 @@ export class RecyclePostUseCase {
       input.queueTypeId ?? originalPost.queueTypeId,
       input.queueType
     );
+
+    if (input.scheduledFor) {
+      await assertScheduleCapacity(input.userId, 1);
+    }
 
     // Create new post from original (recycled copy)
     const newPost = await createPostWithOutbox(

@@ -54,6 +54,18 @@ describe("Nostr Conversion Utilities", () => {
 
       expect(result).toBeNull();
     });
+
+    it("should pass through valid 64-char hex pubkey (DB format)", () => {
+      const hex = "a".repeat(64);
+      const result = convertToHex(hex);
+
+      expect(result).toBe(hex.toLowerCase());
+    });
+
+    it("should normalize uppercase hex pubkey to lowercase", () => {
+      const hex = `${"A".repeat(32)}${"b".repeat(32)}`;
+      expect(convertToHex(hex)).toBe(hex.toLowerCase());
+    });
   });
 
   describe("convertHexToNpub", () => {

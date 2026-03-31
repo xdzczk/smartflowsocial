@@ -10,10 +10,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireSession, requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { CalendarPage } from "~/features/posts/calendar";
 import {
   handleCalendarAction,
@@ -34,7 +31,6 @@ async function loadCalendarValidated(
 ): Promise<CalendarLoaderData> {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "calendar");
 
   const url = new URL(request.url);
   const queueType =

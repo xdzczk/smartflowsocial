@@ -3,6 +3,7 @@
  * Centralized action processing for drafts page
  */
 
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import {
   cloneDraftPost,
   deleteLongFormPost,
@@ -136,6 +137,8 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
   // TypeScript guarantees this is "bulkSignAndResume" after previous checks
   const bulkData = result.data;
   const stateMachine = new PostStateMachine();
+
+  await assertScheduleCapacity(userId, bulkData.postIds.length);
 
   await Promise.all(
     bulkData.postIds.map(async (id, index) => {

@@ -96,3 +96,7 @@ export function findQueueTypeIdByNameAndUserId(
     select: { id: true },
   });
 }
+
+export function countQueueTypesForUser(userId: string): Promise<number> {
+  return prisma.queueType.count({ where: { userId } });
+}

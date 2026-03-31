@@ -1,42 +1,101 @@
 /**
- * Feature comparison table component
+ * Feature comparison: Free, Basic, Premium, Teams (no Founder column).
  */
 
 import { Check, X } from "lucide-react";
-interface Plan {
-  id: string;
-  name: string;
-  features: Record<string, boolean | string>;
-}
+import { Fragment } from "react";
+
+import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 
 interface FeatureComparisonTableProps {
-  plans: Plan[];
+  plans: PricingPagePlan[];
 }
 
-const featureLabels = [
-  { key: "basicScheduling", label: "Basic scheduling" },
-  { key: "multipleQueues", label: "Multiple queues" },
-  { key: "bulkScheduling", label: "Bulk scheduling" },
-  { key: "repostsAndQuotes", label: "Reposts & quotes" },
-  { key: "engagementFeed", label: "Engagement Feed" },
-  { key: "giveaways", label: "Giveaways" },
-  { key: "contests", label: "Contests" },
-  { key: "commissions", label: "Commissions" },
-  { key: "leaderboards", label: "Leaderboards" },
-  { key: "advancedAnalytics", label: "Advanced analytics" },
-  { key: "multiAccountSwitching", label: "Multi-account switching" },
-  { key: "wolfFilteringAndVortex", label: "WoT filtering & Vertex relay" },
-  { key: "nativeS3BlossomStorage", label: "Native SFS Blosstr storage" },
-  { key: "relayBlast", label: "Relay blast" },
-  { key: "visualPerks", label: "Visual Perks" },
-  { key: "lifetimeAccess", label: "Lifetime Access" },
+const GROUP_CORE_PUBLISHING = "Core publishing";
+const GROUP_PLANNING = "Planning and scheduling";
+const GROUP_ENGAGEMENT = "Engagement and campaigns";
+const GROUP_POWER = "Power and infrastructure";
+
+const COMPARISON_ROWS: Array<{
+  group: string;
+  key: keyof PricingPagePlan["features"] | string;
+  label: string;
+}> = [
+  {
+    group: GROUP_CORE_PUBLISHING,
+    key: "basicScheduling",
+    label: "Scheduling & composer core",
+  },
+  {
+    group: GROUP_CORE_PUBLISHING,
+    key: "repostsAndQuotes",
+    label: "Reposts, quotes, richer note types",
+  },
+  {
+    group: GROUP_CORE_PUBLISHING,
+    key: "nativeS3BlossomStorage",
+    label: "Media uploads & storage paths",
+  },
+  {
+    group: GROUP_PLANNING,
+    key: "multipleQueues",
+    label: "Queues & parallel publishing",
+  },
+  {
+    group: GROUP_PLANNING,
+    key: "bulkScheduling",
+    label: "Bulk & power scheduling",
+  },
+  {
+    group: GROUP_ENGAGEMENT,
+    key: "engagementFeed",
+    label: "Engagement feed & workflows",
+  },
+  {
+    group: GROUP_ENGAGEMENT,
+    key: "giveaways",
+    label: "Giveaways & contests",
+  },
+  {
+    group: GROUP_ENGAGEMENT,
+    key: "commissions",
+    label: "Campaign fee economics",
+  },
+  {
+    group: GROUP_POWER,
+    key: "advancedAnalytics",
+    label: "Analytics depth",
+  },
+  {
+    group: GROUP_POWER,
+    key: "multiAccountSwitching",
+    label: "Multi-account switching",
+  },
+  {
+    group: GROUP_POWER,
+    key: "relayBlast",
+    label: "Relay blast & distribution",
+  },
+  {
+    group: GROUP_POWER,
+    key: "wolfFilteringAndVortex",
+    label: "WoT filtering & relay tooling",
+  },
 ];
 
-function renderFeatureValue(
-  feature: { key: string; label: string },
-  plan: Plan
-) {
-  const value = plan.features[feature.key];
+function renderCell(
+  plan: PricingPagePlan,
+  featureKey: string
+): React.ReactNode {
+  if (plan.isTeamsPlaceholder) {
+    return (
+      <span className="text-muted-foreground text-center text-xs">
+        Coming soon
+      </span>
+    );
+  }
+
+  const value = plan.features[featureKey];
 
   if (typeof value === "boolean") {
     return value ? (
@@ -52,17 +111,21 @@ function renderFeatureValue(
     );
   }
 
-  return <span className="text-muted-foreground">-</span>;
+  return <span className="text-muted-foreground">—</span>;
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
+  const groupOrder = [
+    ...new Set(COMPARISON_ROWS.map((r) => r.group)),
+  ] as string[];
+
   return (
     <div className="border-border bg-card overflow-hidden rounded-lg border shadow-lg">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-border border-b">
-              <th className="text-foreground p-4 text-left font-medium">
+              <th className="text-foreground w-[30%] p-4 text-left font-medium">
                 Features
               </th>
               {plans.map((plan) => (
@@ -71,28 +134,53 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                   className="text-foreground p-4 text-center font-medium"
                 >
                   {plan.name}
+                  {plan.isComingSoon ? (
+                    <span className="text-muted-foreground ml-1 block text-xs font-normal">
+                      Coming soon
+                    </span>
+                  ) : null}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {featureLabels.map((feature, index) => (
-              <tr
-                key={feature.key}
-                className={`border-border border-b ${
-                  index % 2 === 0 ? "bg-muted" : "bg-card"
-                }`}
-              >
-                <td className="text-foreground p-4 font-medium">
-                  {feature.label}
-                </td>
-                {plans.map((plan) => (
-                  <td key={plan.id} className="p-4 text-center">
-                    {renderFeatureValue(feature, plan)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {groupOrder.map((groupTitle) => {
+              const rows = COMPARISON_ROWS.filter(
+                (r) => r.group === groupTitle
+              );
+              return (
+                <Fragment key={groupTitle}>
+                  <tr className="border-border bg-muted/40 border-b">
+                    <td
+                      colSpan={plans.length + 1}
+                      className="text-foreground p-3 pl-4 text-xs font-semibold tracking-wide uppercase"
+                    >
+                      {groupTitle}
+                    </td>
+                  </tr>
+                  {rows.map((feature, index) => (
+                    <tr
+                      key={`${groupTitle}-${feature.key}-${feature.label}`}
+                      className={`border-border border-b ${
+                        index % 2 === 0 ? "bg-muted/15" : "bg-card"
+                      }`}
+                    >
+                      <td className="text-foreground p-4 text-sm font-medium">
+                        {feature.label}
+                      </td>
+                      {plans.map((plan) => (
+                        <td
+                          key={plan.id}
+                          className="p-4 text-center align-middle"
+                        >
+                          {renderCell(plan, feature.key)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

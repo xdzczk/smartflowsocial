@@ -1,5 +1,6 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -18,6 +19,10 @@ export function DefaultZapAmountSettings({
 }: DefaultZapAmountSettingsProps) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
   const resolvedInitial =
     initialStored != null && initialStored >= 1
       ? initialStored
@@ -25,6 +30,8 @@ export function DefaultZapAmountSettings({
   const [value, setValue] = useState(String(resolvedInitial));
   const lastSaved = useRef(resolvedInitial);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastToastAt = useRef(0);
+  const wasSubmittingRef = useRef(false);
 
   useEffect(() => {
     const next =
@@ -38,10 +45,25 @@ export function DefaultZapAmountSettings({
   }, [initialStored]);
 
   useEffect(() => {
+    const wasSubmitting = wasSubmittingRef.current;
+    wasSubmittingRef.current = fetcher.state === "submitting";
+    if (!wasSubmitting || fetcher.state !== "idle") return;
     if (fetcher.data?.success) {
-      revalidator.revalidate();
+      const now = Date.now();
+      if (now - lastToastAt.current >= 1500) {
+        toast.success("Zap default saved");
+        lastToastAt.current = now;
+      }
+      revalidatorRef.current.revalidate();
+    } else if (
+      fetcher.data &&
+      "error" in fetcher.data &&
+      typeof fetcher.data.error === "string"
+    ) {
+      toast.error(fetcher.data.error);
     }
-  }, [fetcher.data?.success, revalidator]);
+    // Do not depend on `revalidator`: its identity changes after each revalidate and would loop forever.
+  }, [fetcher.state, fetcher.data]);
 
   const submitSats = (sats: number) => {
     if (!Number.isInteger(sats) || sats < 1 || sats > 1_000_000) return;

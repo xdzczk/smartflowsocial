@@ -117,6 +117,13 @@ export async function persistShortDraft(
     queueType
   );
 
+  const { checkDraftCapacity } =
+    await import("~/features/payments/entitlements/draft-template-cap.server");
+  const capErr = await checkDraftCapacity(userId, 1);
+  if (capErr) {
+    throw new Error(capErr);
+  }
+
   const createPostUseCase = new CreatePostUseCase();
   const result = await createPostUseCase.execute({
     userId,

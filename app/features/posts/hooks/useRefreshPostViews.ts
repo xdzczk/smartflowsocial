@@ -1,7 +1,7 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import { calendarKeys } from "~/features/posts/calendar";
+import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
 import { publishedPostsKeys } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
 

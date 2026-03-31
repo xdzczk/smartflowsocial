@@ -21,6 +21,7 @@ import {
   testPrimarySignerProfileConnection,
   type PrimarySignerProfile,
   type RemoteSignerConnection,
+  type ReconnectDialogOpenMode,
 } from "~/features/auth/signer";
 import { ManagementListSection } from "~/features/settings/components/patterns";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -51,6 +52,8 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     string | null
   >(null);
   const [reconnectDialogOpen, setReconnectDialogOpen] = useState(false);
+  const [reconnectDialogOpenMode, setReconnectDialogOpenMode] =
+    useState<ReconnectDialogOpenMode>("default");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isTestingPrimarySigner, setIsTestingPrimarySigner] = useState(false);
   const [primarySignerProfile, setPrimarySignerProfile] =
@@ -81,8 +84,8 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     setPrimarySignerProfile(profile);
     toast.success(
       profile
-        ? "Primary signer profile saved."
-        : "Primary signer profile cleared."
+        ? "Primary fallback signer saved."
+        : "Primary fallback signer cleared."
     );
   }, [primarySignerFetcher.data, primarySignerFetcher.state]);
 
@@ -176,11 +179,17 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     };
   }, [loadConnections]);
 
+  const openAddSignerDialog = useCallback(() => {
+    setReconnectDialogOpenMode("new_session");
+    setReconnectDialogOpen(true);
+  }, []);
+
   const handleReconnect = useCallback(
     (connectionId: string) => {
       const conn = connections.find((c) => c.id === connectionId);
       if (!conn) return;
       setActiveConnection(connectionId);
+      setReconnectDialogOpenMode("default");
       setReconnectDialogOpen(true);
     },
     [connections]
@@ -307,7 +316,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         toast.error(result.error);
         return;
       }
-      toast.success("Primary signer profile is reachable and ready.");
+      toast.success("Primary fallback signer is reachable and ready.");
     } finally {
       setIsTestingPrimarySigner(false);
     }
@@ -315,15 +324,31 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
 
   return (
     <>
+      <div className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+        <p>
+          Remote signers let SmartFlow publish and act on your behalf without
+          storing your secret key. Connect a signer app to approve signing when
+          needed.
+        </p>
+        <p className="mt-2">
+          Adding a{" "}
+          <span className="text-foreground font-medium">
+            primary fallback signer
+          </span>{" "}
+          below is optional but recommended if you use SmartFlow on more than
+          one device, so you can recover if a local session goes stale.
+        </p>
+      </div>
+
       <ManagementListSection
         title="Remote signer connections"
-        description="Manage NIP-46 remote signer connections. You can have multiple connections and switch between them."
+        description="Manage connected remote signers for publishing and account access. You can add multiple connections and switch between them."
         primaryAction={
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setReconnectDialogOpen(true)}
+            onClick={openAddSignerDialog}
           >
             <Plus className="mr-1.5 h-4 w-4" />
             Add connection
@@ -333,13 +358,14 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         <RemoteSignerConnectionList
           connections={connections}
           activeConnection={activeConnection}
+          primarySignerProfile={primarySignerProfile}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onReconnect={handleReconnect}
           onSetActive={handleSetActive}
           onViewDetails={handleViewDetails}
           onRemove={handleRemove}
-          onAddClick={() => setReconnectDialogOpen(true)}
+          onAddClick={openAddSignerDialog}
           showAddButton={false}
         />
 
@@ -358,72 +384,101 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
       </ManagementListSection>
 
       <ManagementListSection
-        title="Primary home signer"
-        description="Save one account-level NIP-46 signer profile as fallback so any device can recover from stale local sessions."
+        title="Primary fallback signer"
+        description="Set an account-level fallback signer so SmartFlow can recover from stale local sessions across devices."
+        footer={
+          <div className="border-border/60 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <Button
+              onClick={handleSaveActiveConnectionAsPrimary}
+              disabled={
+                !activeConnectionSupportsPrimarySave ||
+                primarySignerFetcher.state !== "idle"
+              }
+            >
+              Use active signer as primary
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                void handleTestPrimaryProfile();
+              }}
+              disabled={
+                !primarySignerProfile ||
+                isTestingPrimarySigner ||
+                primarySignerFetcher.state !== "idle"
+              }
+            >
+              {isTestingPrimarySigner ? "Testing…" : "Test signer"}
+            </Button>
+            <Button
+              variant="outline"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleClearPrimaryProfile}
+              disabled={
+                !primarySignerProfile || primarySignerFetcher.state !== "idle"
+              }
+            >
+              Clear primary signer
+            </Button>
+          </div>
+        }
       >
-        <div className="bg-muted/30 rounded-md border p-4">
-          {primarySignerProfile ? (
-            <div className="space-y-2">
-              <div className="font-medium">
-                {primarySignerProfile.label ?? "Primary signer configured"}
+        {primarySignerProfile ? (
+          <div className="border-border/80 bg-muted/25 rounded-lg border p-5">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="text-foreground text-base font-semibold">
+                  {primarySignerProfile.label ?? "Saved fallback signer"}
+                </h3>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Saved on your account for recovery when a device session goes
+                  stale.
+                </p>
               </div>
-              <div className="text-muted-foreground text-sm">
-                Method:{" "}
-                {primarySignerProfile.method === "bunker_input"
-                  ? "Bunker input"
-                  : "nostrconnect URI"}
-              </div>
-              {primarySignerProfile.method === "nostrconnect_uri" ? (
-                <div className="text-muted-foreground text-sm">
-                  Relays: {primarySignerProfile.relays.length}
-                </div>
-              ) : null}
-              <div className="text-muted-foreground text-xs">
-                Last updated:{" "}
+              <span className="text-muted-foreground shrink-0 text-xs">
+                Last updated{" "}
                 {new Date(primarySignerProfile.updatedAt).toLocaleString()}
-              </div>
+              </span>
             </div>
-          ) : (
-            <div className="text-muted-foreground text-sm">
-              No account-level primary signer is configured yet.
+            <div className="text-muted-foreground mt-4 space-y-1 text-sm">
+              <p>
+                <span className="text-foreground font-medium">
+                  Connection type:{" "}
+                </span>
+                {primarySignerProfile.method === "bunker_input"
+                  ? "Signer connection string"
+                  : "Connection link"}{" "}
+                <span className="text-xs">
+                  (
+                  {primarySignerProfile.method === "bunker_input"
+                    ? "NIP-46 bunker"
+                    : "Nostr Connect"}
+                  )
+                </span>
+              </p>
+              {primarySignerProfile.method === "nostrconnect_uri" ? (
+                <p>
+                  <span className="text-foreground font-medium">Relays: </span>
+                  {primarySignerProfile.relays.length} configured for this
+                  fallback
+                </p>
+              ) : null}
             </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSaveActiveConnectionAsPrimary}
-            disabled={
-              !activeConnectionSupportsPrimarySave ||
-              primarySignerFetcher.state !== "idle"
-            }
-          >
-            Use active connection as primary
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void handleTestPrimaryProfile();
-            }}
-            disabled={
-              !primarySignerProfile ||
-              isTestingPrimarySigner ||
-              primarySignerFetcher.state !== "idle"
-            }
-          >
-            {isTestingPrimarySigner ? "Testing..." : "Test primary signer"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleClearPrimaryProfile}
-            disabled={
-              !primarySignerProfile || primarySignerFetcher.state !== "idle"
-            }
-          >
-            Clear primary signer
-          </Button>
-        </div>
+          </div>
+        ) : (
+          <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed p-6">
+            <h3 className="text-foreground text-base font-semibold">
+              No primary fallback signer configured
+            </h3>
+            <p className="text-muted-foreground mt-2 max-w-lg text-sm leading-relaxed">
+              Set one to recover publishing access across devices if a local
+              signer session becomes stale.
+            </p>
+            <p className="text-muted-foreground mt-3 text-xs">
+              Recommended if you use SmartFlow on more than one device.
+            </p>
+          </div>
+        )}
       </ManagementListSection>
 
       {reconnectDialogOpen ? (
@@ -431,6 +486,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           open={reconnectDialogOpen}
           onOpenChange={setReconnectDialogOpen}
           expectedPubkey={expectedPubkey}
+          openMode={reconnectDialogOpenMode}
           onReconnectSuccess={(_connectionId) => {
             setReconnectDialogOpen(false);
             loadConnections();

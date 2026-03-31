@@ -5,12 +5,18 @@
 import { json } from "@remix-run/node";
 
 import { getUserSubscription } from "~/features/payments/data";
+import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  getUserPlanType,
+  type UserSubscription,
+} from "~/features/payments/types";
 import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import {
   deleteQueueType,
   hashTagPresetExistsForUser,
   updateQueueType,
 } from "~/features/user";
+import { countQueueTypesForUser } from "~/features/user/repositories/queue-types-data.server";
 import { invalidateQueueTypesCache } from "~/features/user/services/user-cache.server";
 import {
   createQueueTypeSchema,
@@ -80,15 +86,37 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
   };
 }
 
-async function checkFreePlanRestriction(
-  userId: string
-): Promise<Response | null> {
-  const subscription = await getUserSubscription(userId);
-  if (subscription?.Plan && Number(subscription.Plan.price) === 0) {
+function rowToUserSubscription(
+  sub: Awaited<ReturnType<typeof getUserSubscription>>
+): UserSubscription | null {
+  if (!sub?.planId) return null;
+  return {
+    planId: sub.planId,
+    status: sub.status,
+    currentPeriodEnd: sub.currentPeriodEnd ?? undefined,
+    Plan: sub.Plan
+      ? {
+          name: sub.Plan.name,
+          id: sub.Plan.id,
+          enableLifetimeAccess: sub.Plan.enableLifetimeAccess
+            ? true
+            : undefined,
+        }
+      : undefined,
+  };
+}
+
+async function checkQueueCreationCap(userId: string): Promise<Response | null> {
+  const row = await getUserSubscription(userId);
+  const planType = getUserPlanType(rowToUserSubscription(row));
+  const { maxQueues } = getPlanEntitlements(planType);
+  if (maxQueues == null) return null;
+  const count = await countQueueTypesForUser(userId);
+  if (count >= maxQueues) {
     return json(
       {
         error:
-          "Creating queue types is not available on the free plan. Please upgrade your subscription.",
+          "Free plan includes 1 queue. Upgrade to create and manage more queues.",
       },
       { status: 403 }
     );
@@ -204,9 +232,9 @@ async function handleCreateQueueType(
   userId: string,
   formData: FormData
 ): Promise<Response> {
-  const freePlanCheck = await checkFreePlanRestriction(userId);
-  if (freePlanCheck) {
-    return freePlanCheck;
+  const queueCapCheck = await checkQueueCreationCap(userId);
+  if (queueCapCheck) {
+    return queueCapCheck;
   }
 
   const result = validateFormDataOrRespond(formData, createQueueTypeSchema);

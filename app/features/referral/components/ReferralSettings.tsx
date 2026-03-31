@@ -21,6 +21,12 @@ export interface ReferralSettingsProps {
   payoutDestinationType: string | null;
 }
 
+function truncateMiddle(url: string, max = 42) {
+  if (url.length <= max) return url;
+  const half = Math.floor((max - 3) / 2);
+  return `${url.slice(0, half)}…${url.slice(-half)}`;
+}
+
 export function ReferralSettings({
   referralLink,
   commissionRatePercent,
@@ -40,57 +46,68 @@ export function ReferralSettings({
     setTimeout(() => setCopied(false), 2000);
   }, [referralLink]);
 
+  const zeroEarnings =
+    totalEarnedSats === 0 && paidSats === 0 && pendingSats === 0;
+
   return (
     <div className="space-y-6">
       <AccountSummarySection
         title="Referral earnings"
-        description={`${commissionRatePercent}% lifetime commission on referred subscriptions.`}
+        description={`${commissionRatePercent}% lifetime commission when someone you refer subscribes to a paid plan.`}
         summary={
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div>
-              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                Total earned
-              </dt>
-              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
-                {totalEarnedSats.toLocaleString()}{" "}
-                <span className="text-muted-foreground text-sm font-normal">
-                  sats
-                </span>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                Paid out
-              </dt>
-              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
-                {paidSats.toLocaleString()}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                Pending
-              </dt>
-              <dd className="text-foreground mt-1 text-lg font-semibold tabular-nums">
-                {pendingSats.toLocaleString()}
-              </dd>
+          <div className="space-y-4">
+            {zeroEarnings ? (
+              <p className="text-muted-foreground text-sm">
+                No referral earnings yet. Share your referral link below—when
+                referred users upgrade to a paid plan, you earn sats.
+              </p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="bg-muted/40 rounded-lg border p-4">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  Total earned
+                </p>
+                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                  {totalEarnedSats.toLocaleString()}{" "}
+                  <span className="text-muted-foreground text-base font-normal">
+                    sats
+                  </span>
+                </p>
+              </div>
+              <div className="bg-muted/40 rounded-lg border p-4">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  Paid out
+                </p>
+                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                  {paidSats.toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-muted/40 rounded-lg border p-4">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  Pending
+                </p>
+                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                  {pendingSats.toLocaleString()}
+                </p>
+              </div>
             </div>
             {failedSats > 0 ? (
-              <div>
-                <dt className="text-destructive text-xs font-medium tracking-wide uppercase">
-                  Failed
-                </dt>
-                <dd className="text-destructive mt-1 text-lg font-semibold tabular-nums">
-                  {failedSats.toLocaleString()}
-                </dd>
+              <div className="border-destructive/30 bg-destructive/5 rounded-lg border p-3">
+                <p className="text-destructive text-xs font-medium uppercase">
+                  Failed payout
+                </p>
+                <p className="text-destructive mt-1 text-lg font-semibold tabular-nums">
+                  {failedSats.toLocaleString()} sats
+                </p>
               </div>
             ) : null}
-          </dl>
+          </div>
         }
       />
 
       <PreferenceSection
-        title="Your referral link"
-        description="Share this link to earn when people subscribe through SmartFlow."
+        title="Referral link"
+        description="Share this link to sign people up with your referral. Earnings apply when they subscribe to a paid SmartFlow plan."
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <Input
@@ -114,8 +131,26 @@ export function ReferralSettings({
 
       <PreferenceSection
         title="Payout destination"
-        description="Earnings stay pending until you set a Lightning payout URL (LNURL pay or similar)."
+        description="Lightning payout URL (LNURL-pay, Lightning address, or compatible HTTPS endpoint). Pending earnings are held until you save a valid destination."
       >
+        {!payoutDestination ? (
+          <p className="text-muted-foreground mb-3 text-sm">
+            Pending earnings cannot be paid out until you add a payout
+            destination.
+          </p>
+        ) : (
+          <div className="bg-muted/30 mb-3 rounded-md border border-dashed px-3 py-2">
+            <p className="text-muted-foreground text-xs font-medium uppercase">
+              Saved
+            </p>
+            <p
+              className="text-foreground mt-0.5 font-mono text-sm break-all"
+              title={payoutDestination}
+            >
+              {truncateMiddle(payoutDestination)}
+            </p>
+          </div>
+        )}
         <Form method="post">
           <input type="hidden" name="_action" value="referral_save_payout" />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -130,7 +165,7 @@ export function ReferralSettings({
                 id="payout_destination"
                 name="payout_destination"
                 type="url"
-                placeholder="https://..."
+                placeholder="https://… or Lightning address"
                 defaultValue={payoutDestination ?? ""}
                 className="font-mono text-sm"
               />
@@ -142,6 +177,7 @@ export function ReferralSettings({
             />
             <Button
               type="submit"
+              variant={payoutDestination ? "outline" : "default"}
               disabled={fetcher.state !== "idle"}
               size="sm"
               className="shrink-0"
@@ -149,7 +185,7 @@ export function ReferralSettings({
               {fetcher.state !== "idle" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Save payout"
+                "Save payout destination"
               )}
             </Button>
           </div>

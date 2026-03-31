@@ -29,7 +29,6 @@ import { createBroadcastDraftSchema } from "~/features/broadcast/broadcast-types
 import {
   getBroadcastPlanLimits,
   getUserPlanType,
-  requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
@@ -37,7 +36,6 @@ import { getUserById } from "~/features/user";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");
@@ -284,7 +282,6 @@ async function handleBroadcastResolveIntent(userId: string, form: FormData) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const form = await request.formData();
   const intent = form.get("intent");

@@ -19,7 +19,14 @@ export async function getPlanById(planId: string) {
 export async function getAllPlans() {
   return await prisma.plan.findMany({
     where: { isActive: true },
-    orderBy: { price: "asc" },
+    orderBy: { sortOrder: "asc" },
+  });
+}
+
+/** Active subscriptions consuming a Founder (or other seat-capped) plan. */
+export async function countActiveSubscriptionsForPlan(planId: string) {
+  return prisma.subscription.count({
+    where: { planId, status: "ACTIVE" },
   });
 }
 

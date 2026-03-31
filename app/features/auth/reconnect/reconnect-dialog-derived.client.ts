@@ -37,9 +37,9 @@ export function getReconnectStartLabel(
 ): string {
   if (state === "reconnecting_existing") return "Reconnecting…";
   if (state === "waiting") return "Waiting for signer…";
-  if (tab === "bunker") return "Connect";
+  if (tab === "bunker") return "Connect signer";
   if (canRetryExisting) return "Try again with existing connection";
-  return nostrConnectUri ? "Retry" : "Generate & wait";
+  return nostrConnectUri ? "Retry" : "Generate link";
 }
 
 export function getHandlePrimaryAction(

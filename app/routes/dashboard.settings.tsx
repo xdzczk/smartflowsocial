@@ -4,10 +4,7 @@ import { Suspense } from "react";
 
 import { requireUserId } from "~/features/auth";
 import type { ProfileData as _ProfileData } from "~/features/nostr/types";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import {
   SettingsAwaitError,
   SettingsPage,
@@ -32,7 +29,6 @@ async function loadSettingsOrThrow(
 async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "settings");
 
   const url = new URL(request.url);
   const isDataRequest = url.searchParams.has("_data");

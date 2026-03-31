@@ -18,8 +18,8 @@ import {
 import {
   getGiveawayPlanLimits,
   getPlanDisplayName,
+  getSubscriptionData,
   getUserPlanType,
-  requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
 import { loadNewPostData } from "~/features/posts/server/composer";
@@ -257,7 +257,7 @@ function parseFilters(formData: FormData): Record<string, unknown> | undefined {
 async function loadGiveawayNewData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  const subscriptionData = await requireFeatureAccess(userId, "giveaways");
+  const subscriptionData = await getSubscriptionData(userId);
   const planType = getUserPlanType(subscriptionData.currentSubscription);
   const planLimits = getGiveawayPlanLimits(planType);
   const planDisplayName = getPlanDisplayName(
@@ -306,7 +306,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "giveaways");
 
   if (request.method !== "POST") {
     return redirect("/dashboard/giveaway");

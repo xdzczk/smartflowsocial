@@ -11,10 +11,7 @@ import {
 import { Link, useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { UnifiedComposer } from "~/features/posts/composer";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import {
@@ -67,7 +64,6 @@ function parseHashTagPreset(preset: unknown): HashTagPreset | null {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "templates");
 
   const data = await loadNewPostData(userId, null);
   return json(data);
@@ -77,7 +73,6 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const userId = await requireUserId(request);
     await requireAnySubscription(userId);
-    await requireFeatureAccess(userId, "templates");
 
     const formData = await request.formData();
     return await handleCreateTemplateFromScratchPost(userId, formData);

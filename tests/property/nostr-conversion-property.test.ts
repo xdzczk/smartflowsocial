@@ -25,8 +25,10 @@ describe("Property-Based Tests: Nostr Conversion", () => {
         fc.property(
           fc
             .string({ minLength: 1, maxLength: 100 })
-
-            .filter((s: string): s is string => !s.startsWith("npub")),
+            .filter(
+              (s: string): s is string =>
+                !s.startsWith("npub") && !/^[0-9a-f]{64}$/i.test(s.trim())
+            ),
           (invalidInput: string) => {
             const result = convertToHex(invalidInput);
             return result === null;

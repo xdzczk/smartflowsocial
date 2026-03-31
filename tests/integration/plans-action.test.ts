@@ -5,17 +5,38 @@
  * For UI interaction tests, see tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-// Mock dependencies
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
+
+import { requireUser } from "~/features/auth/session.server";
+import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
+import {
+  createPlanInvoice,
+  checkPaymentStatus,
+  manuallyVerifyPayment,
+  getPlanPriceUsd,
+  getPlanById,
+  countActiveSubscriptionsForPlan,
+  getUserSubscription,
+} from "~/features/payments/data";
+import { PlanBillingModel } from "~/features/payments/data/billing-models.server";
+import { handlePlansAction } from "~/features/payments/services/plans-action.server";
+import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
+
 vi.mock("~/features/auth/session.server", () => ({
   requireUser: vi.fn(),
 }));
 
 vi.mock("~/features/payments/data", () => ({
+  PlanBillingModel,
   createPlanInvoice: vi.fn(),
   checkPaymentStatus: vi.fn(),
   manuallyVerifyPayment: vi.fn(),
   getPlanPriceUsd: vi.fn(),
+  getPlanById: vi.fn(),
+  countActiveSubscriptionsForPlan: vi.fn(),
+  getUserSubscription: vi.fn(),
 }));
 
 vi.mock("~/features/payments/btcpay.server", () => ({
@@ -35,20 +56,8 @@ vi.mock("@getalby/sdk", () => ({
   },
 }));
 
-import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
-
-import { requireUser } from "~/features/auth/session.server";
-import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
-import {
-  createPlanInvoice,
-  checkPaymentStatus,
-  manuallyVerifyPayment,
-  getPlanPriceUsd,
-} from "~/features/payments/data";
-import { handlePlansAction } from "~/features/payments/services/plans-action.server";
-import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
-
 describe("Plans Action Handler", () => {
+  /* eslint-disable @typescript-eslint/no-misused-promises -- mockImplementation returns Promise for async getPlanById; beforeEach expects void */
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -58,7 +67,42 @@ describe("Plans Action Handler", () => {
       npub: "test-npub",
     });
     (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+    (getPlanById as ReturnType<typeof vi.fn>).mockImplementation(
+      (planId: string) => {
+        if (planId === "teams") {
+          return Promise.resolve({
+            id: "teams",
+            isActive: true,
+            planBillingModel: PlanBillingModel.disabled,
+            purchasable: false,
+            founderSeatCap: null,
+          });
+        }
+        if (planId === "founder") {
+          return Promise.resolve({
+            id: "founder",
+            isActive: true,
+            planBillingModel: PlanBillingModel.lifetime,
+            purchasable: true,
+            founderSeatCap: 21,
+          });
+        }
+        return Promise.resolve({
+          id: planId,
+          isActive: true,
+          planBillingModel: PlanBillingModel.recurring,
+          purchasable: true,
+          founderSeatCap: null,
+        });
+      }
+    );
+    (
+      countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
+    (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(null);
   });
+  /* eslint-enable @typescript-eslint/no-misused-promises */
 
   describe("Check Payment Status", () => {
     it("should check payment status without authentication", async () => {
@@ -462,13 +506,13 @@ describe("Plans Action Handler", () => {
 
     it("should create BTCPay checkout for founder yearly when BTCPay is configured", async () => {
       (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(31_200);
+      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(2600);
       const exp = new Date("2030-01-01T00:00:00.000Z");
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
         invoice: "https://pay.example/checkout/abc",
         paymentHash: "btcpay:abc",
         amount: 50_000,
-        amountUsd: 31_200,
+        amountUsd: 2600,
         expiresAt: exp,
         paymentId: "founder_1_u",
         planName: "Founder",
@@ -494,7 +538,7 @@ describe("Plans Action Handler", () => {
           billingPaymentMethod: "btc_btcpay_onchain",
           billingCadence: "yearly",
           accessDurationMonths: 12,
-          amountUsdOverride: 31_200,
+          amountUsdOverride: 2600,
         })
       );
       expect(result).toEqual({
@@ -503,7 +547,7 @@ describe("Plans Action Handler", () => {
         invoice: "https://pay.example/checkout/abc",
         paymentHash: "btcpay:abc",
         amount: 50_000,
-        amountUsd: 31_200,
+        amountUsd: 2600,
         paymentId: "founder_1_u",
         expiresAt: exp.toISOString(),
         planName: "Founder",
@@ -554,6 +598,71 @@ describe("Plans Action Handler", () => {
         planId: "basic",
         checkoutKind: "btcpay",
       });
+    });
+
+    it("should reject checkout for Teams (disabled / not purchasable)", async () => {
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "teams",
+        paymentMode: "manual",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(result).toMatchObject({
+        success: false,
+        status: 400,
+      });
+      expect(createPlanInvoice).not.toHaveBeenCalled();
+    });
+
+    it("should reject auto_renew for Founder lifetime plan", async () => {
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "founder",
+        paymentMode: "auto_renew",
+        billingCadence: "yearly",
+        accessDurationMonths: "12",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(result).toMatchObject({
+        success: false,
+        status: 400,
+      });
+      expect(String((result as { error?: string }).error)).toMatch(
+        /auto-renew/i
+      );
+      expect(createPlanInvoice).not.toHaveBeenCalled();
+    });
+
+    it("should reject Founder checkout when sold out", async () => {
+      (
+        countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(21);
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "founder",
+        paymentMode: "manual",
+        billingCadence: "yearly",
+        accessDurationMonths: "12",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(result).toMatchObject({
+        success: false,
+        status: 400,
+      });
+      expect((result as { error?: string }).error).toMatch(/sold out/i);
+      expect(createPlanInvoice).not.toHaveBeenCalled();
     });
   });
 

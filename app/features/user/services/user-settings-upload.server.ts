@@ -112,24 +112,35 @@ export async function updateUserUploadProviderSettings(
 export async function getResolvedUploadProviderSettings(
   userId: string
 ): Promise<{
+  /** Effective provider for uploads and `/api/user-upload-provider`. */
   provider: UploadProvider;
   customBlossomUrl: string | null;
+  /**
+   * Persisted preference from DB after tier defaults (S3 → plan default).
+   * May be `BLOSSOM_SFS` while `provider` is `BLOSSOM_PRIMAL` when subscription is inactive.
+   */
+  storedUploadProvider: UploadProvider;
 }> {
   const user = await findUserUploadProviderSettingsRow(userId);
   const isPaidActive = await isSubscriptionActiveForGating(userId);
-  const resolvedProvider = resolveUploadProviderWithTierDefaults({
+  const storedUploadProvider = resolveUploadProviderWithTierDefaults({
     persistedProvider: user?.uploadProvider ?? null,
     isPaidActive,
   });
   const customBlossomUrl = user?.customBlossomUrl ?? null;
-  const provider =
-    resolvedProvider === "BLOSSOM_CUSTOM" && !customBlossomUrl
+  let provider =
+    storedUploadProvider === "BLOSSOM_CUSTOM" && !customBlossomUrl
       ? resolveFallbackBlossomProvider(isPaidActive)
-      : resolvedProvider;
+      : storedUploadProvider;
+
+  if (provider === "BLOSSOM_SFS" && !isPaidActive) {
+    provider = "BLOSSOM_PRIMAL";
+  }
 
   return {
     provider,
     customBlossomUrl,
+    storedUploadProvider,
   };
 }
 

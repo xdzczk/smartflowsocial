@@ -25,9 +25,11 @@ const inFlightRefs = vi.hoisted(() => ({
 }));
 const requestIdRef = vi.hoisted(() => ({ current: 0 }));
 
+/** 64-char hex pubkey — required when post-connect steps call getPublicKey → convertToHex */
+const MOCK_SIGNER_HEX_PUBKEY = "a".repeat(64);
 const mockCachedSigner: NostrSigner = {
   type: "nip46",
-  getPublicKey: vi.fn(),
+  getPublicKey: vi.fn().mockResolvedValue(MOCK_SIGNER_HEX_PUBKEY),
 } as unknown as NostrSigner;
 const mockGetCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
 const mockGetConnectionEstablishedAt = vi.fn<() => number | null>(() => null);
@@ -128,6 +130,9 @@ vi.mock("~/features/auth/signer/nostr-signer-keys.client", () => ({
 describe("nostr-signer-connection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (
+      mockCachedSigner.getPublicKey as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(MOCK_SIGNER_HEX_PUBKEY);
     inFlightRefs.promise = null;
     inFlightRefs.configJson = null;
     requestIdRef.current = 0;

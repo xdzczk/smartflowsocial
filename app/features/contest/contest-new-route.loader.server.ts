@@ -2,10 +2,7 @@ import type { LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { getUserSubscription } from "~/features/payments/data";
 import {
   getGiveawayPlanLimits,
@@ -31,7 +28,6 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
 
   const [composerLoader, rawPosts, subscription, userRow, savedContestDraft] =
     await Promise.all([

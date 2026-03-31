@@ -12,6 +12,12 @@ import {
   getPlanPriceUsd,
   updateUserSubscription,
 } from "~/features/payments/data";
+import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { buildSubscriptionDedupeKey } from "~/features/payments/repositories/subscription-notification.repository.server";
+import { deliverSubscriptionNotificationDm } from "~/features/payments/services/subscription-notification-delivery.server";
+import { runSubscriptionNotifications } from "~/features/payments/services/subscription-notification-runner.server";
+import { deriveBillingCommMode } from "~/features/payments/services/subscription-status.server";
+import type { SubscriptionBillingPaymentMethod } from "~/features/payments/types/subscription-billing.types";
 import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import {
   disableUserAccount,
@@ -23,7 +29,6 @@ import { env } from "~/lib/env.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
-import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import { trackProductEvent } from "~/lib/product-events.server";
 
 import { getBitcoinRate } from "../btc.rate";
@@ -47,7 +52,7 @@ interface InvoiceDetails {
 async function handleFreePlanRenewal(
   user: { id: string; npub: string },
   planId: string,
-  planName: string
+  _planName: string
 ): Promise<void> {
   const paymentId = `free_renewal_${Date.now()}_${user.id}`;
   await createRenewalPayment({
@@ -60,12 +65,24 @@ async function handleFreePlanRenewal(
     description: `Free plan renewal`,
   });
   await updateUserSubscription(user.id, planId, paymentId);
-  await sendRenewalNotification(
-    user.npub,
-    true,
-    planName,
-    "Free plan renewed successfully"
-  );
+  const subAfter = await getUserSubscription(user.id);
+  if (subAfter) {
+    await deliverSubscriptionNotificationDm({
+      userId: user.id,
+      npub: user.npub,
+      subscriptionId: subAfter.id,
+      planId: subAfter.planId,
+      eventType: "renewal_success",
+      commMode: "MANUAL_TOP_UP",
+      dedupeKey: buildSubscriptionDedupeKey(
+        "renewal_success",
+        subAfter.id,
+        subAfter.currentPeriodEnd ?? new Date()
+      ),
+      currentPeriodEnd: subAfter.currentPeriodEnd,
+      gracePeriodEndsAt: subAfter.gracePeriodEndsAt,
+    });
+  }
 }
 
 function extractInvoiceString(invoiceRequest: unknown): string {
@@ -252,7 +269,7 @@ async function payInvoice(
 }
 
 async function completePaidRenewal(
-  user: { id: string; npub: string },
+  user: { id: string; npub: string; encryptedNwc: string | null },
   planId: string,
   planName: string,
   invoiceDetails: InvoiceDetails,
@@ -279,12 +296,31 @@ async function completePaidRenewal(
     );
   }
 
-  await sendRenewalNotification(
-    user.npub,
-    true,
-    planName,
-    `Your ${planName} subscription has been renewed successfully. Thank you!`
-  );
+  const subAfter = await getUserSubscription(user.id);
+  if (subAfter) {
+    const commMode = deriveBillingCommMode(
+      {
+        nwcEnabled: Boolean(user.encryptedNwc),
+        encryptedNwc: user.encryptedNwc,
+      },
+      subAfter
+    );
+    await deliverSubscriptionNotificationDm({
+      userId: user.id,
+      npub: user.npub,
+      subscriptionId: subAfter.id,
+      planId: subAfter.planId,
+      eventType: "renewal_success",
+      commMode,
+      dedupeKey: buildSubscriptionDedupeKey(
+        "renewal_success",
+        subAfter.id,
+        subAfter.currentPeriodEnd ?? new Date()
+      ),
+      currentPeriodEnd: subAfter.currentPeriodEnd,
+      gracePeriodEndsAt: subAfter.gracePeriodEndsAt,
+    });
+  }
 }
 
 interface RenewalResults {
@@ -295,6 +331,51 @@ interface RenewalResults {
   renewalSuccess: number;
   renewalFailed: number;
   errors: string[];
+  notificationSent?: number;
+  notificationFailed?: number;
+  notificationSkipped?: number;
+  notificationIntents?: number;
+}
+
+async function notifySubscriptionDowngradedToFree(params: {
+  user: {
+    id: string;
+    npub: string;
+    nwcEnabled: boolean;
+    encryptedNwc: string | null;
+  };
+  subscription: {
+    id: string;
+    planId: string | null;
+    currentPeriodEnd: Date | null;
+    gracePeriodEndsAt: Date | null;
+    paymentMethod: SubscriptionBillingPaymentMethod;
+    renewalMode: string;
+    cancelAtPeriodEnd: boolean;
+    Plan: { enableLifetimeAccess?: boolean } | null;
+  };
+}): Promise<void> {
+  const { user, subscription } = params;
+  const commMode = deriveBillingCommMode(user, subscription);
+  const anchor =
+    subscription.gracePeriodEndsAt ??
+    subscription.currentPeriodEnd ??
+    new Date();
+  await deliverSubscriptionNotificationDm({
+    userId: user.id,
+    npub: user.npub,
+    subscriptionId: subscription.id,
+    planId: subscription.planId,
+    eventType: "subscription_downgraded_to_free",
+    commMode,
+    dedupeKey: buildSubscriptionDedupeKey(
+      "subscription_downgraded_to_free",
+      subscription.id,
+      anchor
+    ),
+    currentPeriodEnd: subscription.currentPeriodEnd,
+    gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+  });
 }
 
 const GRACE_PERIOD_DAYS = 7;
@@ -314,13 +395,15 @@ function isSubscriptionExpired(subscription: {
   return new Date(subscription.currentPeriodEnd) < now;
 }
 
-function getPlanName(subscription: { Plan?: { name: string } | null }): string {
-  return subscription.Plan?.name ?? "subscription";
-}
-
 async function handleRenewalWithNWC(
-  user: { id: string; npub: string; encryptedNwc: string | null },
+  user: {
+    id: string;
+    npub: string;
+    nwcEnabled: boolean;
+    encryptedNwc: string | null;
+  },
   subscription: {
+    id: string;
     planId: string | null;
     plan: string | null;
     currentPeriodEnd: Date | null;
@@ -328,6 +411,9 @@ async function handleRenewalWithNWC(
     gracePeriodEndsAt?: Date | null;
     nextRenewalAttemptAt?: Date | null;
     billingCadence?: "monthly" | "yearly" | null;
+    paymentMethod: SubscriptionBillingPaymentMethod;
+    renewalMode: string;
+    cancelAtPeriodEnd: boolean;
     Plan?: {
       name: string;
       price: string;
@@ -426,22 +512,55 @@ async function handleRenewalWithNWC(
       await disableUserAccount(user.id);
       await afterSubscriptionUpdated(user.id);
       results.disabled++;
+      await notifySubscriptionDowngradedToFree({
+        user,
+        subscription: {
+          id: subscription.id,
+          planId: subscription.planId,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          gracePeriodEndsAt: graceEndsAt,
+          paymentMethod: subscription.paymentMethod,
+          renewalMode: subscription.renewalMode,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+          Plan: subscription.Plan ?? null,
+        },
+      });
     }
 
-    const planName = getPlanName(subscription);
-    await sendRenewalNotification(
-      user.npub,
-      false,
-      planName,
-      `Your ${planName} subscription renewal failed. Please update your wallet or pay manually to continue.`
-    );
+    const periodAnchor = subscription.currentPeriodEnd ?? now;
+    await deliverSubscriptionNotificationDm({
+      userId: user.id,
+      npub: user.npub,
+      subscriptionId: subscription.id,
+      planId: subscription.planId,
+      eventType: "renewal_failed",
+      commMode: "AUTO_RENEW_NWC",
+      dedupeKey: buildSubscriptionDedupeKey(
+        "renewal_failed",
+        subscription.id,
+        periodAnchor
+      ),
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      gracePeriodEndsAt: graceEndsAt,
+    });
   }
 }
 
 async function handleRenewalWithoutNWC(
-  user: { id: string; npub: string },
+  user: {
+    id: string;
+    npub: string;
+    nwcEnabled: boolean;
+    encryptedNwc: string | null;
+  },
   subscription: {
-    Plan?: { name: string } | null;
+    id: string;
+    planId: string | null;
+    currentPeriodEnd: Date | null;
+    paymentMethod: SubscriptionBillingPaymentMethod;
+    renewalMode: string;
+    cancelAtPeriodEnd: boolean;
+    Plan?: { name: string; enableLifetimeAccess?: boolean } | null;
     gracePeriodEndsAt?: Date | null;
   },
   results: RenewalResults
@@ -463,15 +582,20 @@ async function handleRenewalWithoutNWC(
     await disableUserAccount(user.id);
     await afterSubscriptionUpdated(user.id);
     results.disabled++;
+    await notifySubscriptionDowngradedToFree({
+      user,
+      subscription: {
+        id: subscription.id,
+        planId: subscription.planId,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        gracePeriodEndsAt: graceEndsAt,
+        paymentMethod: subscription.paymentMethod,
+        renewalMode: subscription.renewalMode,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        Plan: subscription.Plan ?? null,
+      },
+    });
   }
-
-  const planName = getPlanName(subscription);
-  await sendRenewalNotification(
-    user.npub,
-    false,
-    planName,
-    `Your ${planName} subscription has expired. Please renew to continue using the service.`
-  );
 }
 
 function getScheduledPlanId(metadata: unknown): string | null {
@@ -491,6 +615,7 @@ async function processUserSubscription(
     nwcEnabled: boolean;
     encryptedNwc: string | null;
     Subscription: {
+      id: string;
       planId: string | null;
       plan: string | null;
       currentPeriodEnd: Date | null;
@@ -500,6 +625,8 @@ async function processUserSubscription(
       gracePeriodEndsAt?: Date | null;
       nextRenewalAttemptAt?: Date | null;
       billingCadence?: "monthly" | "yearly" | null;
+      paymentMethod: SubscriptionBillingPaymentMethod;
+      renewalMode: string;
       Plan?: {
         name: string;
         price: string;
@@ -549,13 +676,31 @@ async function processUserSubscription(
     await disableUserAccount(user.id);
     await afterSubscriptionUpdated(user.id);
     results.disabled++;
+    await notifySubscriptionDowngradedToFree({
+      user,
+      subscription: {
+        id: subscription.id,
+        planId: subscription.planId,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        gracePeriodEndsAt: subscription.gracePeriodEndsAt ?? null,
+        paymentMethod: subscription.paymentMethod,
+        renewalMode: subscription.renewalMode,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+        Plan: subscription.Plan ?? null,
+      },
+    });
     return;
   }
 
+  const renewalSubscription = {
+    ...subscription,
+    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+  };
+
   if (user.nwcEnabled && user.encryptedNwc) {
-    await handleRenewalWithNWC(user, subscription, results);
+    await handleRenewalWithNWC(user, renewalSubscription, results);
   } else {
-    await handleRenewalWithoutNWC(user, subscription, results);
+    await handleRenewalWithoutNWC(user, renewalSubscription, results);
   }
 }
 
@@ -579,6 +724,13 @@ export async function checkAndRenewSubscriptions(): Promise<
   };
 
   try {
+    const notif = await runSubscriptionNotifications();
+    results.notificationSent = notif.sent;
+    results.notificationFailed = notif.failed;
+    results.notificationSkipped = notif.skipped;
+    results.notificationIntents = notif.intentsProcessed;
+    results.errors.push(...notif.errors);
+
     const users = await getEnabledUsersWithSubscriptions();
     results.checked = users.length;
 
@@ -591,9 +743,17 @@ export async function checkAndRenewSubscriptions(): Promise<
             nwcEnabled: boolean;
             encryptedNwc: string | null;
             Subscription: {
+              id: string;
               planId: string | null;
               plan: string | null;
               currentPeriodEnd: Date | null;
+              cancelAtPeriodEnd?: boolean;
+              metadata?: unknown;
+              paymentMethod: SubscriptionBillingPaymentMethod;
+              renewalMode: string;
+              gracePeriodEndsAt?: Date | null;
+              nextRenewalAttemptAt?: Date | null;
+              billingCadence?: "monthly" | "yearly" | null;
               Plan?: {
                 name: string;
                 price: string;
@@ -744,24 +904,4 @@ async function attemptRenewal(
     },
     amountUsd
   );
-}
-
-/**
- * Send renewal notification via Nostr DM
- */
-async function sendRenewalNotification(
-  pubkeyHex: string,
-  _success: boolean,
-  _planName: string,
-  message: string
-): Promise<void> {
-  try {
-    await sendNostrDirectMessage(pubkeyHex, message);
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "[CRON] Failed to send renewal notification",
-      pubkeyHex,
-    });
-    // Don't throw - notification failure shouldn't break the cron job
-  }
 }

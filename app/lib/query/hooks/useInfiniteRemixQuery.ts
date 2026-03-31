@@ -5,6 +5,8 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 
+import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
+
 // PageData is a flexible type that allows any data structure
 // Some loaders have pagination, others don't - we make it optional
 interface PageData {
@@ -23,17 +25,13 @@ interface PageData {
  *
  * @example
  * ```tsx
+ * import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
  * const loaderData = useLoaderData();
  * const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteRemixQuery({
- *   queryKey: ['recyclables'],
+ *   queryKey: ["recyclables"],
  *   initialData: loaderData,
- *   getNextPageParam: (lastPage) => {
- *     const { pagination } = lastPage;
- *     if (pagination && pagination.currentPage < pagination.totalPages) {
- *       return pagination.currentPage + 1;
- *     }
- *     return undefined;
- *   },
+ *   getNextPageParam: (lastPage, allPages) =>
+ *     getNextPageParamFromPaginationTotals(lastPage, allPages),
  * });
  * ```
  */
@@ -117,23 +115,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
 
           // Only add _data if not already present
           if (!urlObj.searchParams.has("_data")) {
-            const pathname = urlObj.pathname;
-
-            // Convert pathname to Remix route ID format
-            // Remove leading slash and replace remaining slashes with dots
-            let routeId = pathname
-              .replace(/^\//, "") // Remove leading slash
-              .replace(/\//g, "."); // Replace slashes with dots
-
-            // Handle special case: /dashboard -> routes/dashboard._index
-            // (Remix uses dashboard._index.tsx for the /dashboard route)
-            if (routeId === "dashboard" || routeId === "") {
-              routeId = "routes/dashboard._index";
-            } else {
-              // Prepend "routes/" to match Remix route ID format
-              routeId = `routes/${routeId}`;
-            }
-
+            const routeId = pathnameToRemixDataRouteId(urlObj.pathname);
             urlObj.searchParams.set("_data", routeId);
             // Return relative URL (pathname + search)
             url = urlObj.pathname + urlObj.search;
@@ -149,6 +131,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
       // doesn't update properly when called from within a queryFn Promise
       const response = await fetch(url, {
         method: "GET",
+        credentials: "same-origin",
         headers: {
           Accept: "application/json",
         },

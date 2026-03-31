@@ -33,6 +33,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
+import { getFlowGoLiveAtMs } from "../flow-go-live-at";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 import type {
   CombinedContent,
@@ -61,11 +62,7 @@ const DEFAULT_PAST_LIMIT = 20;
 const DEFAULT_FUTURE_LIMIT = 30;
 
 function getGoLiveAt(item: CombinedContent): number {
-  const posted = item.publishedAt ? new Date(item.publishedAt).getTime() : 0;
-  const scheduled = item.scheduledAtUtc
-    ? new Date(item.scheduledAtUtc).getTime()
-    : 0;
-  return posted || scheduled || 0;
+  return getFlowGoLiveAtMs(item);
 }
 
 /** Latest scheduled date (ms) across posts and longform for runway KPI. */

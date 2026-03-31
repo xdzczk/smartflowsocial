@@ -107,9 +107,9 @@ describe("reconnect-dialog-derived", () => {
       ).toBe("Waiting for signer…");
     });
 
-    it("returns Connect when tab is bunker", () => {
+    it("returns Connect signer when tab is bunker", () => {
       expect(getReconnectStartLabel("idle", "bunker", false, null)).toBe(
-        "Connect"
+        "Connect signer"
       );
     });
 
@@ -130,9 +130,9 @@ describe("reconnect-dialog-derived", () => {
       ).toBe("Retry");
     });
 
-    it("returns Generate & wait when no uri and not canRetryExisting", () => {
+    it("returns Generate link when no uri and not canRetryExisting", () => {
       expect(getReconnectStartLabel("idle", "nostrconnect", false, null)).toBe(
-        "Generate & wait"
+        "Generate link"
       );
     });
   });

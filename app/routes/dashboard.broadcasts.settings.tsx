@@ -8,10 +8,7 @@ import {
   findUserBroadcastSettings,
   updateUserBroadcastSettings,
 } from "~/features/broadcast/repositories/broadcast-settings-data.server";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 
 const settingsSchema = z.object({
   defaultDeliveryMode: z.string().optional(),
@@ -23,7 +20,6 @@ const settingsSchema = z.object({
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const raw = await findUserBroadcastSettings(userId);
   const settings =
@@ -36,7 +32,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const form = await request.formData();
   const parsed = settingsSchema.safeParse({

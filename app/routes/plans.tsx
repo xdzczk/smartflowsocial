@@ -10,11 +10,11 @@ import { withCSRFProtection } from "~/lib/csrf";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Pricing Plans - SmartFlow Social" },
+    { title: "Pricing — SmartFlow Social" },
     {
       name: "description",
       content:
-        "Choose the perfect plan for your social media automation needs.",
+        "Nostr-native pricing for scheduling, engagement, giveaways, and wallet-powered automation.",
     },
   ];
 };

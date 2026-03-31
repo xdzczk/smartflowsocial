@@ -45,3 +45,16 @@ export async function deleteReplyTemplateByIdAndUserId(
   await db.engagementReplyTemplate.delete({ where: { id } });
   return true;
 }
+
+export async function updateReplyTemplateByIdAndUserId(
+  id: string,
+  userId: string,
+  slug: string,
+  body: string
+): Promise<boolean> {
+  const result = await db.engagementReplyTemplate.updateMany({
+    where: { id, userId },
+    data: { slug, body },
+  });
+  return result.count > 0;
+}

@@ -10,10 +10,7 @@ import {
   upsertContestLaunchOrchestration,
 } from "~/features/contest";
 import type { ContestRankingMetric } from "~/features/contest/types";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { getPostById } from "~/features/posts/server";
 import { featureFlags } from "~/lib/feature-flags.server";
 
@@ -38,7 +35,6 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
 
   const formData = await request.formData();
   const intent = String(formData.get("intent") ?? "launch");

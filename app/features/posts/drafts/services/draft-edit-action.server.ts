@@ -5,6 +5,10 @@
 
 import type { SignedEvent } from "~/features/nostr/types";
 import {
+  assertScheduleCapacity,
+  ScheduleCapExceededError,
+} from "~/features/payments/entitlements/schedule-cap-policy.server";
+import {
   createPostWithOutbox,
   updatePost,
   getPostById,
@@ -142,6 +146,18 @@ export async function handleDraftEditAction(
     Number.isNaN(scheduledAtUtcFromResume)
   ) {
     throw new Error("Invalid scheduledFor in resume data");
+  }
+
+  const repostList = parseRepostListFromResume(resumeData);
+  const quoteList = parseQuoteListFromResume(resumeData);
+  const scheduleSlotCount = 1 + repostList.length + quoteList.length;
+  try {
+    await assertScheduleCapacity(userId, scheduleSlotCount);
+  } catch (e) {
+    if (e instanceof ScheduleCapExceededError) {
+      return { error: e.message };
+    }
+    throw e;
   }
 
   // Update post data (flags will be set by state machine transition)

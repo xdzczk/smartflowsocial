@@ -12,14 +12,18 @@ export function ReconnectBunkerTab({
   disabled,
 }: ReconnectBunkerTabProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">
+        Paste a bunker or NIP-46 connection string from your signer app.
+      </p>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Bunker input</div>
+        <div className="text-sm font-medium">Signer connection</div>
         <Input
           value={bunkerInput}
           onChange={(e) => onBunkerInputChange(e.target.value)}
           placeholder="bunker://..."
           disabled={disabled}
+          autoComplete="off"
         />
       </div>
     </div>

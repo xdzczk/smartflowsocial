@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
+import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -128,22 +129,8 @@ export function useDraftsInfiniteQuery() {
   return useInfiniteRemixQuery<DraftsLoaderData>({
     queryKey: draftsKeys.list(queueType),
     initialData: validatedLoaderData,
-    getNextPageParam: (lastPage) => {
-      const pagination =
-        "pagination" in lastPage ? lastPage.pagination : undefined;
-      if (
-        pagination &&
-        typeof pagination === "object" &&
-        "currentPage" in pagination &&
-        "pages" in pagination &&
-        typeof pagination.currentPage === "number" &&
-        typeof pagination.pages === "number" &&
-        pagination.currentPage < pagination.pages
-      ) {
-        return pagination.currentPage + 1;
-      }
-      return;
-    },
+    getNextPageParam: (lastPage, allPages) =>
+      getNextPageParamFromPaginationTotals(lastPage, allPages),
     buildUrl: (pageParam) =>
       `/dashboard/drafts${queueType !== "all" ? `/${queueType}` : ""}?page=${pageParam}`,
     staleTime: 30 * 1000, // 30 seconds

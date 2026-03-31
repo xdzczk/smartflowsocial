@@ -1,3 +1,5 @@
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
+
 export interface Plan {
   id: string;
   name: string;
@@ -39,6 +41,6 @@ export interface PaymentHistory {
 export interface SubscriptionSettingsProps {
   subscription: Subscription | null;
   availablePlans: Plan[];
-  paymentHistory: PaymentHistory[];
   nwcEnabled: boolean;
+  billingContext: BillingContext | null;
 }

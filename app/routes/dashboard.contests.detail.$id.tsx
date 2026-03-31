@@ -24,10 +24,7 @@ import {
   retryContestLaunchOrchestration,
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { featureFlags } from "~/lib/feature-flags.server";
 import {
   DeferredRouteLoaderProvider,
@@ -242,7 +239,6 @@ async function loadContestDetailData({ request, params }: LoaderFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
   const id = params["id"];
   if (!id) throw new Response("Not found", { status: 404 });
 
@@ -266,7 +262,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "contests");
   const id = params["id"];
   if (!id) return json({ error: "Not found" }, { status: 404 });
   const formData = await request.formData();

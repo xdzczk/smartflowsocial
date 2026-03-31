@@ -24,6 +24,20 @@ vi.mock("~/lib/csrf", () => ({
     fn,
 }));
 
+vi.mock(
+  "~/features/admin/repositories/admin-monetization-bundle.server",
+  () => ({
+    getMonetizationBundle: vi.fn().mockResolvedValue({
+      plans: [],
+      subscriptions: [],
+    }),
+  })
+);
+
+vi.mock("~/features/referral/repositories/referral-data.server", () => ({
+  countReferralEarningsPaidInRange: vi.fn().mockResolvedValue(0),
+}));
+
 const mockRequireUser = vi.fn();
 const mockIsReferralAdmin = vi.fn();
 const mockRunReferralPayoutBatch = vi.fn();

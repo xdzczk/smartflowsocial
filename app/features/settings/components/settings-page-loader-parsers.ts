@@ -45,6 +45,14 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
       description?: string;
     } | null;
   };
+  const descriptionRaw = (q as { description?: unknown }).description;
+  const description =
+    descriptionRaw === null || descriptionRaw === undefined
+      ? undefined
+      : typeof descriptionRaw === "string"
+        ? descriptionRaw
+        : undefined;
+
   return {
     id: q.id,
     name: q.name,
@@ -52,7 +60,7 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
       (q as { colorToken?: string | null }).colorToken ?? null
     ),
     colorToken: (q as { colorToken?: string | null }).colorToken ?? undefined,
-    description: undefined,
+    description,
     scheduleType: q.scheduleType as
       | "INTERVAL"
       | "FIXED_SLOTS"
@@ -64,6 +72,15 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
     hashTagPresetId: q.hashTagPresetId,
     hashTagPreset: q.hashTagPreset,
   };
+}
+
+/** Normalize global schedule interval hours from loader JSON (numbers or numeric strings). */
+export function parseGlobalScheduleIntervalHours(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [];
+  const nums = raw
+    .map((v) => (typeof v === "number" ? v : Number.parseFloat(String(v))))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return [...new Set(nums)].sort((a, b) => a - b);
 }
 
 export function parseQueueTypes(queueTypesRaw: unknown): QueueTypeSettings[] {

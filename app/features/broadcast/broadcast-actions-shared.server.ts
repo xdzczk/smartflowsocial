@@ -70,7 +70,7 @@ export async function getPlanContext(userId: string) {
   const { currentSubscription } = await getSubscriptionData(userId);
   const planType = getUserPlanType(currentSubscription);
   const limits = getBroadcastPlanLimits(planType);
-  return { planType, limits };
+  return { planType, limits, currentSubscription };
 }
 
 export function toSignedEventShape(raw: unknown): raw is {

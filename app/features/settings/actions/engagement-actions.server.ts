@@ -2,139 +2,37 @@
  * Engagement/muted list and reply templates action handlers
  */
 
-import { json } from "@remix-run/node";
-
 import {
-  createReplyTemplate,
-  deleteReplyTemplate,
-} from "~/features/engagement/engagement-reply-templates.server";
-import { fetchMutedList } from "~/features/engagement/mutedList.server";
-import {
-  getUserBasicInfo,
-  updateUserDefaultZapAmountSats,
-  updateUserFilterMuted,
-  updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
-  updateUserMutedList,
-} from "~/features/user";
-import {
-  toggleFilterMutedSchema,
-  toggleHideLowTrustSchema,
-  updateDefaultZapAmountSchema,
-  validateFormDataOrRespond,
-} from "~/lib/validation";
+  replyTemplateCreateAction,
+  replyTemplateDeleteAction,
+  replyTemplateUpdateAction,
+  syncMutedListAction,
+  toggleFilterMutedAction,
+  toggleHideLowTrustAction,
+  updateDefaultZapAmountAction,
+} from "./engagement-actions-handlers.server";
 
 export async function handleEngagementAction(
   userId: string,
   action: string,
   formData: FormData
 ) {
-  if (action === "sync_muted_list") {
-    // Get user's npub/pubkey
-    const userInfo = await getUserBasicInfo(userId);
-
-    if (!userInfo?.npub) {
-      return json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Fetch muted list from Primal cache
-    const mutedListData = await fetchMutedList(userInfo.npub);
-
-    if (!mutedListData) {
-      return json(
-        { error: "Failed to fetch muted list from Nostr" },
-        { status: 500 }
-      );
-    }
-
-    // Update user's muted list in database
-    await updateUserMutedList(userId, mutedListData);
-
-    return json({
-      success: true,
-      mutedList: mutedListData,
-    });
+  switch (action) {
+    case "sync_muted_list":
+      return syncMutedListAction(userId);
+    case "toggle_filter_muted":
+      return toggleFilterMutedAction(userId, formData);
+    case "toggle_hide_low_trust":
+      return toggleHideLowTrustAction(userId, formData);
+    case "reply_template_create":
+      return replyTemplateCreateAction(userId, formData);
+    case "reply_template_delete":
+      return replyTemplateDeleteAction(userId, formData);
+    case "reply_template_update":
+      return replyTemplateUpdateAction(userId, formData);
+    case "update_default_zap_amount":
+      return updateDefaultZapAmountAction(userId, formData);
+    default:
+      return null;
   }
-
-  if (action === "toggle_filter_muted") {
-    const result = validateFormDataOrRespond(formData, toggleFilterMutedSchema);
-    if (!result.success) {
-      return result.response;
-    }
-    await updateUserFilterMuted(userId, result.data.filterMuted);
-
-    return json({ success: true, filterMuted: result.data.filterMuted });
-  }
-
-  if (action === "toggle_hide_low_trust") {
-    const result = validateFormDataOrRespond(
-      formData,
-      toggleHideLowTrustSchema
-    );
-    if (!result.success) {
-      return result.response;
-    }
-    await updateUserHideLowTrust(
-      userId,
-      result.data.hidePostsFromLowTrustUsers
-    );
-
-    return json({
-      success: true,
-      hidePostsFromLowTrustUsers: result.data.hidePostsFromLowTrustUsers,
-    });
-  }
-
-  if (action === "reply_template_create") {
-    const slug = formData.get("slug");
-    const body = formData.get("body");
-    if (typeof slug !== "string" || !slug.trim()) {
-      return json({ error: "Slug is required" }, { status: 400 });
-    }
-    if (typeof body !== "string") {
-      return json({ error: "Body is required" }, { status: 400 });
-    }
-    const result = await createReplyTemplate(userId, slug.trim(), body);
-    if (!result.success) {
-      return json(
-        { error: result.error ?? "Failed to create" },
-        { status: 400 }
-      );
-    }
-    return json({ success: true });
-  }
-
-  if (action === "reply_template_delete") {
-    const id = formData.get("id");
-    if (typeof id !== "string" || !id) {
-      return json({ error: "Template id is required" }, { status: 400 });
-    }
-    const result = await deleteReplyTemplate(userId, id);
-    if (!result.success) {
-      return json(
-        { error: result.error ?? "Failed to delete" },
-        { status: 400 }
-      );
-    }
-    return json({ success: true });
-  }
-
-  if (action === "update_default_zap_amount") {
-    const result = validateFormDataOrRespond(
-      formData,
-      updateDefaultZapAmountSchema
-    );
-    if (!result.success) {
-      return result.response;
-    }
-    await updateUserDefaultZapAmountSats(
-      userId,
-      result.data.defaultZapAmountSats
-    );
-    return json({
-      success: true,
-      defaultZapAmountSats: result.data.defaultZapAmountSats,
-    });
-  }
-
-  return null;
 }

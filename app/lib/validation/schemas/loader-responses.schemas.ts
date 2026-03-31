@@ -368,6 +368,7 @@ const parentPostSchema = z.object({
   isLongform: z.boolean(),
   stats: eventStatsSchema.optional(),
   contextLabel: z.string().nullable().optional(),
+  authorPicture: z.string().nullable().optional(),
 });
 
 /**

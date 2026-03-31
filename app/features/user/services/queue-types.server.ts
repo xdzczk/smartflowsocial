@@ -7,6 +7,10 @@ import {
   updateQueueType as updateQueueTypeRow,
 } from "../repositories/queue-types-data.server";
 
+export type QueueTypeWithPresetRelation = Awaited<
+  ReturnType<typeof findQueueTypesByUserId>
+>[number];
+
 /**
  * Creates default queue types for a new user.
  * We no longer create an "Unassigned" queue—unassigned is represented by null queueTypeId.
@@ -50,7 +54,9 @@ export function deleteQueueType(
  * Gets all queue types for a user
  * Ensures default queue types exist before returning
  */
-export async function getQueueTypes(userId: string): Promise<QueueType[]> {
+export async function getQueueTypes(
+  userId: string
+): Promise<QueueTypeWithPresetRelation[]> {
   await createDefaultQueueTypes(userId);
   return findQueueTypesByUserId(userId);
 }

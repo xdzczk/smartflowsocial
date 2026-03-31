@@ -1,12 +1,43 @@
 /**
- * Subscription checkout modal (NWC, Lightning, optional yearly BTC on-chain)
+ * Subscription checkout: single-surface guided flow (method selector + detail panel + summary).
  */
 
-import { Bitcoin, Loader2, Wallet, Zap } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { trackCheckoutEvent } from "~/features/payments/checkout/checkout-analytics.client";
+import type { CheckoutPaymentMethodId } from "~/features/payments/checkout/checkout-method-config";
+import {
+  defaultCheckoutPaymentMethod,
+  getAvailableCheckoutMethods,
+} from "~/features/payments/checkout/checkout-method-config";
+import type { PlanCheckoutPricing } from "~/features/payments/checkout/checkout-pricing";
+import {
+  canSubmitAutoRenewCheckout,
+  isLikelyNwcConnectionString,
+} from "~/features/payments/checkout/nwc-string-guard";
+import { CheckoutSummary } from "~/features/payments/components/checkout/CheckoutSummary";
+import { PaymentMethodSelector } from "~/features/payments/components/checkout/PaymentMethodSelector";
+import { TrustStrip } from "~/features/payments/components/checkout/TrustStrip";
+
+export interface SubscriptionCheckoutPlan {
+  id: string;
+  name: string;
+  price: number;
+  period: string;
+  checkoutPricing: PlanCheckoutPricing;
+}
 
 interface SubscriptionCheckoutModalProps {
   isOpen: boolean;
-  plan: { id: string; name: string; price: number; period: string } | null;
+  plan: SubscriptionCheckoutPlan | null;
   isSubmitting: boolean;
   billingCadence: "monthly" | "yearly";
   manualDurations: number[];
@@ -18,11 +49,14 @@ interface SubscriptionCheckoutModalProps {
   onNwcStringChange: (value: string) => void;
   onSelectManual: () => void;
   onSelectAutoRenew: () => void;
-  /** When set and billing is yearly, shows Bitcoin on-chain lane (requires env BTCPAY_*). */
   btcpayYearlyOnChainEnabled?: boolean;
   onSelectBtcOnchain?: () => void;
   onClose: () => void;
+  paymentMethod: CheckoutPaymentMethodId;
+  onPaymentMethodChange: (method: CheckoutPaymentMethodId) => void;
 }
+
+export { defaultCheckoutPaymentMethod };
 
 export function SubscriptionCheckoutModal({
   isOpen,
@@ -41,200 +75,321 @@ export function SubscriptionCheckoutModal({
   btcpayYearlyOnChainEnabled,
   onSelectBtcOnchain,
   onClose,
+  paymentMethod,
+  onPaymentMethodChange,
 }: SubscriptionCheckoutModalProps) {
+  const [nwcTouched, setNwcTouched] = useState(false);
+  const nwcStartedRef = useRef(false);
+  const nwcValidEmittedRef = useRef(false);
+
   if (!isOpen || !plan) return null;
 
+  const available = getAvailableCheckoutMethods({
+    planId: plan.id,
+    billingCadence,
+    btcpayYearlyOnChainEnabled: Boolean(btcpayYearlyOnChainEnabled),
+  });
+
+  const effectiveMethod = available.includes(paymentMethod)
+    ? paymentMethod
+    : (available[0] ?? defaultCheckoutPaymentMethod());
+
   const showManualDurationPicker = billingCadence === "monthly";
-  const showBtcpayLane =
-    billingCadence === "yearly" &&
-    plan.id !== "free" &&
-    plan.price > 0 &&
-    Boolean(btcpayYearlyOnChainEnabled) &&
-    typeof onSelectBtcOnchain === "function";
+  const accessMonths =
+    billingCadence === "yearly" ? 12 : selectedManualDurationMonths;
+
+  const autoRenewOk = canSubmitAutoRenewCheckout({ nwcEnabled, nwcString });
+  const showNwcError =
+    nwcTouched &&
+    !nwcEnabled &&
+    nwcString.trim().length > 0 &&
+    !isLikelyNwcConnectionString(nwcString);
+
+  const handleNwcChange = (v: string) => {
+    if (!nwcStartedRef.current && v.trim().length > 0) {
+      nwcStartedRef.current = true;
+      trackCheckoutEvent("nwc_input_started", {
+        source: "plans_page",
+        plan: plan.id,
+      });
+    }
+    const valid = isLikelyNwcConnectionString(v);
+    if (valid && !nwcValidEmittedRef.current) {
+      nwcValidEmittedRef.current = true;
+      trackCheckoutEvent("nwc_input_valid", {
+        source: "plans_page",
+        plan: plan.id,
+      });
+    }
+    if (!valid) {
+      nwcValidEmittedRef.current = false;
+    }
+    onNwcStringChange(v);
+  };
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="dark:bg-card mx-4 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-foreground text-xl font-semibold">Checkout</h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {plan.name} · {plan.price === 0 ? "Free" : `$${plan.price}`}{" "}
-              {plan.period ? plan.period : ""}
-            </p>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          setNwcTouched(false);
+          nwcStartedRef.current = false;
+          nwcValidEmittedRef.current = false;
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        hideCloseButton
+        className="bg-background max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="p-6 pb-0">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <DialogHeader className="space-y-1 text-left">
+              <DialogTitle className="text-xl font-semibold">
+                Checkout
+              </DialogTitle>
+              <p className="text-foreground text-base font-medium">
+                {plan.name} · {plan.price === 0 ? "Free" : `$${plan.price}`}{" "}
+                {plan.period ? plan.period : ""}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Choose how you want to pay
+              </p>
+            </DialogHeader>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring shrink-0 rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+              >
+                Close
+              </button>
+            </DialogClose>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring rounded-lg border px-3 py-2 text-sm font-medium focus:ring-1 focus:outline-none"
-          >
-            Close
-          </button>
+
+          <TrustStrip />
         </div>
 
-        <div
-          className={`grid grid-cols-1 gap-4 ${showBtcpayLane ? "lg:grid-cols-3" : "md:grid-cols-2"}`}
-        >
-          <div className="border-border bg-card relative rounded-lg border p-4">
-            <div className="bg-primary/10 text-primary absolute top-3 right-3 rounded-full px-2 py-1 text-xs font-medium">
-              Recommended
-            </div>
-            <div className="flex items-center gap-2">
-              <Wallet className="text-primary h-5 w-5" />
-              <span className="text-foreground font-semibold">
-                Auto-renew with wallet
-              </span>
-            </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Connect via Nostr Wallet Connect. First payment now, then renews
-              automatically. Cancel anytime.
-            </p>
+        <div className="space-y-4 px-6 py-4">
+          <PaymentMethodSelector
+            methods={available}
+            value={effectiveMethod}
+            disabled={isSubmitting}
+            onChange={onPaymentMethodChange}
+          />
 
-            <div className="mt-3">
-              <label
-                htmlFor="nwcString"
-                className="text-muted-foreground mb-1 block text-xs font-medium"
-              >
-                NWC connection string
-              </label>
-              <textarea
-                id="nwcString"
-                value={nwcString}
-                onChange={(e) => onNwcStringChange(e.target.value)}
-                placeholder={
-                  nwcEnabled
-                    ? `Leave blank to use saved wallet (${maskedNwcString ?? "connected"})`
-                    : "Paste nostr+walletconnect://…"
-                }
-                className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus:ring-1 focus:outline-none"
-              />
-              {nwcEnabled && maskedNwcString ? (
-                <div className="text-muted-foreground mt-1 text-xs">
-                  Using saved wallet: {maskedNwcString}
+          <div className="border-border space-y-4 border-t pt-4">
+            {effectiveMethod === "auto_renew" ? (
+              <section aria-labelledby="panel-auto-renew">
+                <h4
+                  id="panel-auto-renew"
+                  className="text-foreground mb-1 text-base font-semibold"
+                >
+                  Auto-renew with wallet
+                  <span className="bg-primary/15 text-primary ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                    Recommended
+                  </span>
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Connect Nostr Wallet Connect once. Pay now, then renew
+                  automatically until canceled.
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Best for active users who want uninterrupted access.
+                </p>
+                <div className="mt-4">
+                  <label
+                    htmlFor="checkout-nwc-string"
+                    className="text-muted-foreground mb-1 block text-xs font-medium"
+                  >
+                    NWC connection string
+                  </label>
+                  <textarea
+                    id="checkout-nwc-string"
+                    value={nwcString}
+                    onChange={(e) => handleNwcChange(e.target.value)}
+                    onBlur={() => setNwcTouched(true)}
+                    placeholder="Paste nostr+walletconnect://…"
+                    autoComplete="off"
+                    className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus:ring-1 focus:outline-none"
+                  />
+                  {nwcEnabled && maskedNwcString ? (
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Leave blank to use saved wallet ({maskedNwcString})
+                    </p>
+                  ) : null}
+                  {showNwcError ? (
+                    <p className="text-destructive mt-1 text-xs" role="alert">
+                      Enter a valid Nostr Wallet Connect URL
+                      (nostr+walletconnect://…).
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      SmartFlow requests payments through your connected wallet.
+                      You remain in control. SmartFlow never holds your funds.
+                    </p>
+                  )}
                 </div>
+              </section>
+            ) : null}
+
+            {effectiveMethod === "lightning_one_time" ? (
+              <section aria-labelledby="panel-ln">
+                <h4
+                  id="panel-ln"
+                  className="text-foreground mb-1 text-base font-semibold"
+                >
+                  One-time Lightning payment
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Pay manually with a Lightning invoice. Access lasts for the
+                  selected period and does not renew automatically.
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  No wallet connection required.
+                </p>
+                {showManualDurationPicker ? (
+                  <div className="mt-4">
+                    <label
+                      htmlFor="checkout-manual-duration"
+                      className="text-muted-foreground mb-1 block text-xs font-medium"
+                    >
+                      Access period
+                    </label>
+                    <select
+                      id="checkout-manual-duration"
+                      value={selectedManualDurationMonths}
+                      onChange={(e) =>
+                        onSelectedManualDurationMonthsChange(
+                          Number(e.target.value)
+                        )
+                      }
+                      disabled={isSubmitting}
+                      className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring w-full max-w-md rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+                    >
+                      {manualDurations.map((months) => (
+                        <option key={months} value={months}>
+                          {months === 1
+                            ? "1 month"
+                            : months === 3
+                              ? "3 months"
+                              : months === 6
+                                ? "6 months"
+                                : `${months} months`}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      New to NWC? Start with a one-time payment and switch to
+                      auto-renew later in Settings.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground mt-4 text-sm">
+                    One-time Lightning for yearly billing covers a full year
+                    upfront.
+                  </p>
+                )}
+              </section>
+            ) : null}
+
+            {effectiveMethod === "btc_onchain" &&
+            billingCadence === "yearly" &&
+            typeof onSelectBtcOnchain === "function" ? (
+              <section aria-labelledby="panel-btc">
+                <h4
+                  id="panel-btc"
+                  className="text-foreground mb-1 text-base font-semibold"
+                >
+                  Bitcoin on-chain
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Pay from any BTC wallet via secure BTCPay checkout. Access is
+                  granted after required confirmations.
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Best for annual or high-value payments. Available for yearly
+                  access only.
+                </p>
+              </section>
+            ) : null}
+          </div>
+
+          <CheckoutSummary
+            planLabel={plan.name}
+            billingCadence={billingCadence}
+            method={effectiveMethod}
+            accessDurationMonths={accessMonths}
+            pricing={plan.checkoutPricing}
+          />
+
+          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="border-border bg-background text-muted-foreground hover:bg-muted/60 focus:ring-ring order-2 rounded-lg border px-4 py-2.5 text-sm font-medium focus:ring-2 focus:outline-none sm:order-1"
+              >
+                Cancel
+              </button>
+            </DialogClose>
+            <div className="order-1 flex w-full flex-col gap-2 sm:order-2 sm:max-w-md sm:flex-1">
+              {effectiveMethod === "auto_renew" ? (
+                <button
+                  type="button"
+                  onClick={onSelectAutoRenew}
+                  disabled={isSubmitting || !autoRenewOk}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Starting…
+                    </span>
+                  ) : (
+                    "Start auto-renewing plan"
+                  )}
+                </button>
+              ) : null}
+              {effectiveMethod === "lightning_one_time" ? (
+                <button
+                  type="button"
+                  onClick={onSelectManual}
+                  disabled={isSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating invoice…
+                    </span>
+                  ) : (
+                    "Generate Lightning invoice"
+                  )}
+                </button>
+              ) : null}
+              {effectiveMethod === "btc_onchain" &&
+              typeof onSelectBtcOnchain === "function" ? (
+                <button
+                  type="button"
+                  onClick={onSelectBtcOnchain}
+                  disabled={isSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Preparing…
+                    </span>
+                  ) : (
+                    "Continue to BTCPay"
+                  )}
+                </button>
               ) : null}
             </div>
-
-            <button
-              type="button"
-              onClick={onSelectAutoRenew}
-              disabled={isSubmitting}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring mt-3 w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-1 focus:outline-none disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Starting subscription…
-                </span>
-              ) : (
-                "Connect wallet and start subscription"
-              )}
-            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={onSelectManual}
-            disabled={isSubmitting}
-            className="border-border bg-card hover:bg-muted/40 focus:ring-ring rounded-lg border p-4 text-left transition-colors focus:ring-1 focus:outline-none disabled:opacity-50"
-          >
-            <div className="flex items-center gap-2">
-              <Zap className="text-muted-foreground h-5 w-5" />
-              <span className="text-foreground font-semibold">
-                One-time payment
-              </span>
-            </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Pay a Lightning invoice manually. Access lasts for the selected
-              period and does not renew automatically.
-            </p>
-
-            {showManualDurationPicker ? (
-              <div className="mt-3">
-                <label
-                  htmlFor="manualDuration"
-                  className="text-muted-foreground mb-1 block text-xs font-medium"
-                >
-                  Choose access period
-                </label>
-                <select
-                  id="manualDuration"
-                  value={selectedManualDurationMonths}
-                  onChange={(e) =>
-                    onSelectedManualDurationMonthsChange(Number(e.target.value))
-                  }
-                  disabled={isSubmitting}
-                  className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
-                >
-                  {manualDurations.map((months) => (
-                    <option key={months} value={months}>
-                      {months === 1
-                        ? "1 month"
-                        : months === 3
-                          ? "3 months upfront"
-                          : months === 6
-                            ? "6 months upfront"
-                            : `${months} months`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="text-muted-foreground mt-3 text-xs">
-                Access period: 1 year upfront
-              </div>
-            )}
-
-            <div className="mt-3 flex items-center gap-2 text-sm font-medium">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Preparing invoice…</span>
-                </>
-              ) : (
-                <span className="text-foreground">Pay with invoice</span>
-              )}
-            </div>
-          </button>
-
-          {showBtcpayLane ? (
-            <button
-              type="button"
-              onClick={onSelectBtcOnchain}
-              disabled={isSubmitting}
-              className="border-border bg-card hover:bg-muted/40 focus:ring-ring rounded-lg border p-4 text-left transition-colors focus:ring-1 focus:outline-none disabled:opacity-50"
-            >
-              <div className="flex items-center gap-2">
-                <Bitcoin className="text-muted-foreground h-5 w-5" />
-                <span className="text-foreground font-semibold">
-                  Bitcoin on-chain
-                </span>
-              </div>
-              <p className="text-muted-foreground mt-2 text-sm">
-                Pay yearly with BTC on-chain via BTCPay. You will open our
-                secure checkout page; we grant access after the required
-                on-chain confirmations.
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-sm font-medium">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Preparing checkout…</span>
-                  </>
-                ) : (
-                  <span className="text-foreground">Continue to BTCPay</span>
-                )}
-              </div>
-            </button>
-          ) : null}
         </div>
-
-        <div className="text-muted-foreground mt-4 text-xs">
-          SmartFlow never holds your funds. Lightning payments are requested
-          from your wallet; on-chain payments go through BTCPay to our store
-          wallet.
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,0 +1,200 @@
+/**
+ * One-time lifetime (Founder) checkout — no cadence toggle, no auto-renew.
+ */
+
+import { Loader2 } from "lucide-react";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import type { CheckoutPaymentMethodId } from "~/features/payments/checkout/checkout-method-config";
+import {
+  defaultCheckoutPaymentMethod,
+  getAvailableCheckoutMethods,
+} from "~/features/payments/checkout/checkout-method-config";
+import type { PlanCheckoutPricing } from "~/features/payments/checkout/checkout-pricing";
+import { CheckoutSummary } from "~/features/payments/components/checkout/CheckoutSummary";
+import { PaymentMethodSelector } from "~/features/payments/components/checkout/PaymentMethodSelector";
+import { TrustStrip } from "~/features/payments/components/checkout/TrustStrip";
+
+export interface FounderCheckoutPlan {
+  id: string;
+  name: string;
+  oneTimePriceUsd: number;
+  checkoutPricing: PlanCheckoutPricing;
+}
+
+interface FounderCheckoutModalProps {
+  isOpen: boolean;
+  plan: FounderCheckoutPlan | null;
+  isSubmitting: boolean;
+  btcpayYearlyOnChainEnabled?: boolean;
+  onSelectManual: () => void;
+  onSelectBtcOnchain?: () => void;
+  onClose: () => void;
+  paymentMethod: CheckoutPaymentMethodId;
+  onPaymentMethodChange: (method: CheckoutPaymentMethodId) => void;
+}
+
+export function FounderCheckoutModal({
+  isOpen,
+  plan,
+  isSubmitting,
+  btcpayYearlyOnChainEnabled,
+  onSelectManual,
+  onSelectBtcOnchain,
+  onClose,
+  paymentMethod,
+  onPaymentMethodChange,
+}: FounderCheckoutModalProps) {
+  if (!isOpen || !plan) return null;
+
+  const available = getAvailableCheckoutMethods({
+    planId: plan.id,
+    billingCadence: "yearly",
+    btcpayYearlyOnChainEnabled: Boolean(btcpayYearlyOnChainEnabled),
+    isLifetimePlan: true,
+  });
+
+  const effectiveMethod = available.includes(paymentMethod)
+    ? paymentMethod
+    : (available[0] ?? defaultCheckoutPaymentMethod());
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        hideCloseButton
+        className="bg-background max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="p-6 pb-0">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <DialogHeader className="space-y-1 text-left">
+              <DialogTitle className="text-xl font-semibold">
+                Founder checkout
+              </DialogTitle>
+              <p className="text-foreground text-base font-medium">
+                {plan.name} · ${plan.oneTimePriceUsd} one-time
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Lifetime access for one account. Non-recurring.
+              </p>
+            </DialogHeader>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring shrink-0 rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+              >
+                Close
+              </button>
+            </DialogClose>
+          </div>
+          <TrustStrip />
+        </div>
+
+        <div className="space-y-4 px-6 py-4">
+          <PaymentMethodSelector
+            methods={available}
+            value={effectiveMethod}
+            disabled={isSubmitting}
+            onChange={onPaymentMethodChange}
+          />
+
+          <div className="border-border space-y-4 border-t pt-4">
+            {effectiveMethod === "lightning_one_time" ? (
+              <section aria-labelledby="founder-panel-ln">
+                <h4
+                  id="founder-panel-ln"
+                  className="text-foreground mb-1 text-base font-semibold"
+                >
+                  One-time Lightning payment
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Pay once with Lightning. When payment confirms, your account
+                  receives permanent Founder-tier access.
+                </p>
+              </section>
+            ) : null}
+
+            {effectiveMethod === "btc_onchain" &&
+            typeof onSelectBtcOnchain === "function" ? (
+              <section aria-labelledby="founder-panel-btc">
+                <h4
+                  id="founder-panel-btc"
+                  className="text-foreground mb-1 text-base font-semibold"
+                >
+                  Bitcoin on-chain
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Pay via BTCPay. Lifetime access is granted after required
+                  confirmations.
+                </p>
+              </section>
+            ) : null}
+          </div>
+
+          <CheckoutSummary
+            planLabel={plan.name}
+            billingCadence="yearly"
+            method={effectiveMethod}
+            accessDurationMonths={12}
+            pricing={plan.checkoutPricing}
+            lifetimeOneTime
+          />
+
+          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="border-border bg-background text-muted-foreground hover:bg-muted/60 focus:ring-ring order-2 rounded-lg border px-4 py-2.5 text-sm font-medium focus:ring-2 focus:outline-none sm:order-1"
+              >
+                Cancel
+              </button>
+            </DialogClose>
+            <div className="order-1 flex w-full flex-col gap-2 sm:order-2 sm:max-w-md sm:flex-1">
+              {effectiveMethod === "lightning_one_time" ? (
+                <button
+                  type="button"
+                  onClick={onSelectManual}
+                  disabled={isSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating invoice…
+                    </span>
+                  ) : (
+                    "Generate Lightning invoice"
+                  )}
+                </button>
+              ) : null}
+              {effectiveMethod === "btc_onchain" &&
+              typeof onSelectBtcOnchain === "function" ? (
+                <button
+                  type="button"
+                  onClick={onSelectBtcOnchain}
+                  disabled={isSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Preparing…
+                    </span>
+                  ) : (
+                    "Continue to BTCPay"
+                  )}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

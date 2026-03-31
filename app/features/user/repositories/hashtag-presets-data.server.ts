@@ -41,8 +41,22 @@ export async function deleteHashTagPreset(
   userId: string,
   id: string
 ): Promise<void> {
-  await prisma.hashTagPreset.delete({
-    where: { id, userId },
+  await prisma.$transaction(async (tx) => {
+    await tx.queueType.updateMany({
+      where: { userId, hashTagPresetId: id },
+      data: { hashTagPresetId: null },
+    });
+    await tx.post.updateMany({
+      where: { userId, hashTagPresetId: id },
+      data: { hashTagPresetId: null },
+    });
+    await tx.longFormPost.updateMany({
+      where: { userId, hashTagPresetId: id },
+      data: { hashTagPresetId: null },
+    });
+    await tx.hashTagPreset.delete({
+      where: { id, userId },
+    });
   });
 }
 

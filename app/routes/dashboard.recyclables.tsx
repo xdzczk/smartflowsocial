@@ -10,10 +10,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { RecyclablesPage } from "~/features/posts/publishing";
 import {
   getRecyclableDashboardData,
@@ -34,7 +31,6 @@ async function loadRecyclablesValidated(
 ): Promise<RecyclablesLoaderData> {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "recyclables");
 
   const url = new URL(request.url);
   const data = await getRecyclableDashboardData({ userId, params, url });

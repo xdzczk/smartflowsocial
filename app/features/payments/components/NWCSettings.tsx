@@ -1,4 +1,5 @@
 import { useFetcher } from "@remix-run/react";
+import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -41,18 +42,17 @@ export function NWCSettings({
   const isSubmitting = fetcher.state === "submitting";
   const watchedEnabled = form.watch("nwcEnabled");
   const watchedNwcString = form.watch("nwcString");
-  const hasChanged =
-    watchedEnabled !== nwcEnabled || (watchedNwcString?.trim() ?? "") !== "";
+  const trimmedNew = watchedNwcString?.trim() ?? "";
+  const hasPendingConnectionString = trimmedNew.length > 0;
 
-  const onSubmit = form.handleSubmit((data) => {
+  const onSubmitConnection = form.handleSubmit((data) => {
     const formData = formDataToFormData(
       {
-        nwcEnabled: data.nwcEnabled,
+        nwcEnabled: true,
         ...(data.nwcString?.trim() ? { nwcString: data.nwcString.trim() } : {}),
       },
       "update_nwc"
     );
-
     fetcher.submit(formData, { method: "post" });
   });
 
@@ -62,10 +62,16 @@ export function NWCSettings({
     fetcher.submit(formData, { method: "post" });
   };
 
-  // Reset form state when fetcher completes successfully
+  const submitToggleOnly = (nextEnabled: boolean) => {
+    const formData = formDataToFormData(
+      { nwcEnabled: nextEnabled, nwcString: "" },
+      "update_nwc"
+    );
+    fetcher.submit(formData, { method: "post" });
+  };
+
   useEffect(() => {
     if (fetcher.data?.success) {
-      // Defer to avoid cascading renders
       setTimeout(() => {
         form.setValue("nwcString", "");
         setShowInput(false);
@@ -73,24 +79,24 @@ export function NWCSettings({
     }
   }, [fetcher.data?.success, form]);
 
+  useEffect(() => {
+    form.setValue("nwcEnabled", nwcEnabled);
+  }, [nwcEnabled, form]);
+
+  const connected = Boolean(maskedNwcString);
+
   return (
     <PreferenceSection
       title="Auto-renew wallet"
-      description="Connect a Lightning wallet (NWC) for automatic subscription renewals."
+      description="Connect a Lightning wallet (NWC) so subscription renewals can be paid automatically. SmartFlow never holds your funds—you can disconnect or revoke access at any time."
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void onSubmit(e);
-        }}
-        className="space-y-4"
-      >
+      <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 space-y-0.5">
             <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
             <p className="text-muted-foreground text-sm">
-              SmartFlow never holds your funds. You can revoke wallet access at
-              any time.
+              When on, renewals can be charged via your connected wallet.
+              SmartFlow never holds your funds.
             </p>
           </div>
           <Switch
@@ -98,123 +104,132 @@ export function NWCSettings({
             checked={watchedEnabled}
             onCheckedChange={(checked) => {
               form.setValue("nwcEnabled", checked);
+              if (hasPendingConnectionString) {
+                return;
+              }
+              submitToggleOnly(checked);
             }}
             disabled={isSubmitting}
           />
         </div>
 
-        {watchedEnabled ? (
-          <div className="space-y-4">
-            {maskedNwcString && !showInput ? (
-              <div className="space-y-2">
-                <Label>Connected wallet</Label>
-                <div className="bg-muted space-y-2 rounded-md p-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="min-w-0 font-mono text-sm break-all">
-                      {maskedNwcString}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(maskedNwcString);
-                      }}
-                      className="ml-2 h-6 px-2 text-xs"
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                  {nwcLastUsed ? (
-                    <p className="text-muted-foreground text-xs">
-                      Last used: {new Date(nwcLastUsed).toLocaleString()}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowInput(true)}
-                    disabled={isSubmitting}
-                  >
-                    Update wallet
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClear}
-                    disabled={isSubmitting}
-                  >
-                    Disconnect
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-
-            {showInput ? (
-              <div className="space-y-2">
-                <Label htmlFor="nwc-string">NWC connection string</Label>
-                <Input
-                  id="nwc-string"
-                  type="text"
-                  placeholder="nostr+walletconnect://..."
-                  {...form.register("nwcString")}
-                  disabled={isSubmitting}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                />
-                <p className="text-muted-foreground text-xs">
-                  This will be encrypted and stored securely.
+        {!connected && !watchedEnabled && !showInput ? (
+          <div className="border-border/60 bg-muted/20 rounded-lg border border-dashed p-5">
+            <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
+              <Wallet className="text-muted-foreground mb-3 h-10 w-10 shrink-0 sm:mr-4 sm:mb-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-foreground mb-1 text-sm font-medium">
+                  No wallet connected
                 </p>
-              </div>
-            ) : null}
-
-            {!maskedNwcString && !showInput ? (
-              <div className="space-y-2">
-                <Label htmlFor="nwc-string">NWC connection string</Label>
-                <Input
-                  id="nwc-string"
-                  type="text"
-                  placeholder="nostr+walletconnect://..."
-                  {...form.register("nwcString")}
-                  disabled={isSubmitting}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                />
-                <p className="text-muted-foreground text-xs">
-                  This will be encrypted and stored securely.
+                <p className="text-muted-foreground text-sm">
+                  Turn on auto-renew above, or use Connect wallet to paste your
+                  NWC string.
                 </p>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => setShowInput(true)}
+                >
+                  Connect wallet
+                </Button>
               </div>
-            ) : null}
+            </div>
           </div>
         ) : null}
 
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={isSubmitting || !hasChanged}
-            size="sm"
+        {connected && maskedNwcString && !showInput ? (
+          <div className="space-y-2">
+            <Label>Connected wallet</Label>
+            <div className="bg-muted space-y-2 rounded-md p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="min-w-0 font-mono text-sm break-all">
+                  {maskedNwcString}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(maskedNwcString);
+                  }}
+                  className="ml-2 h-6 shrink-0 px-2 text-xs"
+                >
+                  Copy
+                </Button>
+              </div>
+              {nwcLastUsed ? (
+                <p className="text-muted-foreground text-xs">
+                  Last used: {new Date(nwcLastUsed).toLocaleString()}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInput(true)}
+                disabled={isSubmitting}
+              >
+                Update wallet
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={handleClear}
+                disabled={isSubmitting}
+              >
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {showInput || (!connected && watchedEnabled) ? (
+          <form
+            className="space-y-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void onSubmitConnection(e);
+            }}
           >
-            {isSubmitting ? "Saving…" : "Save wallet settings"}
-          </Button>
-        </div>
+            <Label htmlFor="nwc-string">NWC connection string</Label>
+            <Input
+              id="nwc-string"
+              type="text"
+              placeholder="nostr+walletconnect://..."
+              {...form.register("nwcString")}
+              disabled={isSubmitting}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+            <p className="text-muted-foreground text-xs">
+              Encrypted and stored securely. Used for renewal payments when
+              auto-renew is on.
+            </p>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmitting || !trimmedNew}
+            >
+              {isSubmitting ? "Saving…" : "Save connection"}
+            </Button>
+          </form>
+        ) : null}
 
         {fetcher.data?.success ? (
-          <p className="text-success text-sm">
-            NWC settings updated successfully!
-          </p>
+          <p className="text-success text-sm">Wallet settings updated.</p>
         ) : null}
         {fetcher.data?.error ? (
           <p className="text-destructive text-sm">{fetcher.data.error}</p>
         ) : null}
-      </form>
+      </div>
     </PreferenceSection>
   );
 }

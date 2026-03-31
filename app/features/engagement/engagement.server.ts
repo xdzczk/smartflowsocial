@@ -25,6 +25,12 @@ interface ParsedEvent {
   created_at?: number;
 }
 
+/** Nostr event ids are hex; relays/clients may differ in casing — compare case-insensitively. */
+function eventIdsEqual(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  return a.toLowerCase() === b.toLowerCase();
+}
+
 function extractEventFromItem(item: unknown): ParsedEvent | null {
   if (!Array.isArray(item) || item[0] !== "EVENT") {
     return null;
@@ -221,7 +227,7 @@ export function isReplyToUserPublishedEvent(
   const eTags = (tags ?? []).filter((t) => t[0] === "e");
   for (const t of eTags) {
     const id = t[1];
-    if (!id || !userPublishedEventIds.has(id)) continue;
+    if (!id || !userPublishedEventIds.has(id.toLowerCase())) continue;
     const marker = (t[3] ?? "").toLowerCase();
     if (marker === "mention") continue;
     return true;
@@ -374,13 +380,19 @@ function processKind1Notifications(
 ): Notification[] {
   const notifications: Notification[] = [];
 
-  if (event.kind !== 1 || !event.id || event.id === originalEventId) {
+  if (
+    event.kind !== 1 ||
+    !event.id ||
+    eventIdsEqual(event.id, originalEventId)
+  ) {
     return notifications;
   }
 
   const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
 
-  const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
+  const targetETag = eTags.find((tag: string[]) =>
+    eventIdsEqual(tag[1], originalEventId)
+  );
   const referencesOriginal = !!targetETag;
   const userPubkeyLower = userPubkey.toLowerCase();
   const mentionsUser = doesEventMentionUser(
@@ -475,8 +487,8 @@ function processKind9735Notifications(
     };
     const eTags = (event.tags ?? []).filter((tag: string[]) => tag[0] === "e");
 
-    const zapForOriginal = eTags.some(
-      (tag: string[]) => tag[1] === originalEventId
+    const zapForOriginal = eTags.some((tag: string[]) =>
+      eventIdsEqual(tag[1], originalEventId)
     );
 
     if (zapForOriginal) {

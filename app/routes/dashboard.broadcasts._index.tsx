@@ -32,10 +32,7 @@ import {
   listBroadcastCampaignsForIndex,
   unarchiveBroadcastCampaign,
 } from "~/features/broadcast";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
@@ -120,7 +117,6 @@ const BROADCASTS_INDEX_HREF = "/dashboard/broadcasts";
 async function loadBroadcastsIndexData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const url = new URL(request.url);
   const filters = parseIndexFilters(url);
@@ -144,7 +140,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "broadcasts");
 
   const form = await request.formData();
   const intent = form.get("intent");

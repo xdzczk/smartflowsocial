@@ -2,6 +2,8 @@ import { useSearchParams } from "@remix-run/react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";
+import { PaymentHistorySection } from "~/features/payments/components/subscription/payment-history-section";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
 import {
   parseBillingSegmentParam,
@@ -64,6 +66,7 @@ interface BillingSettingsProps {
     payoutDestination: string | null;
     payoutDestinationType: string | null;
   };
+  billingContext: BillingContext | null;
 }
 
 export function BillingSettings({
@@ -74,6 +77,7 @@ export function BillingSettings({
   maskedNwcString,
   nwcLastUsed,
   referral,
+  billingContext,
 }: BillingSettingsProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const segment = parseBillingSegmentParam(searchParams.get("billing"));
@@ -111,17 +115,18 @@ export function BillingSettings({
           <SubscriptionSettings
             subscription={subscription}
             availablePlans={availablePlans}
-            paymentHistory={paymentHistory}
             nwcEnabled={nwcEnabled}
+            billingContext={billingContext}
           />
         </TabsContent>
 
-        <TabsContent value="payments" className="mt-6">
+        <TabsContent value="payments" className="mt-6 space-y-6">
           <NWCSettings
             nwcEnabled={nwcEnabled}
             maskedNwcString={maskedNwcString}
             nwcLastUsed={nwcLastUsed}
           />
+          <PaymentHistorySection paymentHistory={paymentHistory} />
         </TabsContent>
 
         <TabsContent value="referral" className="mt-6">

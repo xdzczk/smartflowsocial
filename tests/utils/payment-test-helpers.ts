@@ -86,6 +86,13 @@ export function createMockPlan(options: MockPlanOptions = {}) {
     name: options.name ?? "Test Plan",
     price: options.price ?? 1000,
     isActive: options.isActive ?? true,
+    sortOrder: 0,
+    planBillingModel: "recurring",
+    purchasable: true,
+    visibleOnPricingPage: true,
+    isComingSoon: false,
+    isSpecialOffering: false,
+    founderSeatCap: null,
   };
 }
 

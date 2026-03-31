@@ -22,14 +22,65 @@ vi.mock("~/features/payments/data", () => ({
     relays: [],
   })),
   updateUserSubscription: vi.fn(),
+  getPlanPriceUsd: vi.fn().mockResolvedValue(10),
 }));
+
+vi.mock(
+  "~/features/payments/repositories/subscription-renewal-data.server",
+  () => ({
+    findPlanById: vi.fn().mockResolvedValue(null),
+    updateSubscriptionCancelAtPeriodEndAndMetadata: vi
+      .fn()
+      .mockResolvedValue(undefined),
+    updateSubscriptionDunningState: vi.fn().mockResolvedValue(undefined),
+    updateSubscriptionToCanceled: vi.fn().mockResolvedValue(undefined),
+  })
+);
 
 vi.mock("~/lib/encryption.server", () => ({
   decrypt: vi.fn(),
 }));
 
 vi.mock("~/lib/nostr.messenger.server", () => ({
-  sendNostrDirectMessage: vi.fn(),
+  sendNostrDirectMessage: vi.fn().mockResolvedValue({
+    success: true,
+    nip04: { success: true },
+    nip17: { attempted: false, recipientPublished: false },
+  }),
+}));
+
+vi.mock(
+  "~/features/payments/services/subscription-notification-runner.server",
+  () => ({
+    runSubscriptionNotifications: vi.fn().mockResolvedValue({
+      usersScanned: 0,
+      intentsProcessed: 0,
+      sent: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [],
+    }),
+  })
+);
+
+vi.mock(
+  "~/features/payments/services/subscription-notification-delivery.server",
+  () => ({
+    deliverSubscriptionNotificationDm: vi.fn().mockResolvedValue({ ok: true }),
+  })
+);
+
+vi.mock("~/features/payments/data/payment.queries.server", () => ({
+  getUserSubscription: vi.fn().mockResolvedValue({
+    id: "sub-123",
+    planId: "plan-123",
+    currentPeriodEnd: new Date(Date.now() + 86400000),
+    gracePeriodEndsAt: null,
+    paymentMethod: "nwc_auto_renew",
+    renewalMode: "auto_renew",
+    cancelAtPeriodEnd: false,
+    Plan: { enableLifetimeAccess: false, name: "Test", id: "plan-123" },
+  }),
 }));
 
 // Mock LN as a constructor class - use vi.hoisted to allow per-test configuration
@@ -98,7 +149,7 @@ describe("Cron Subscription Checker", () => {
   });
 
   describe("Subscription Expiration Handling", () => {
-    it("should disable accounts with expired subscriptions (no NWC)", async () => {
+    it("should process expired subscriptions without NWC (grace, no immediate disable)", async () => {
       const expiredDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
       const users = [
         {
@@ -144,8 +195,8 @@ describe("Cron Subscription Checker", () => {
           : {};
 
       expect(data.expired).toBe(1);
-      expect(data.disabled).toBe(1);
-      expect(disableUserAccount).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(data.disabled).toBe(0);
+      expect(disableUserAccount).not.toHaveBeenCalled();
     });
 
     it("should skip users without subscriptions", async () => {
@@ -498,8 +549,8 @@ describe("Cron Subscription Checker", () => {
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
       expect(data.renewalSuccess).toBe(0);
-      // Should still disable account after failed renewal
-      expect(disableUserAccount).toHaveBeenCalledWith(TEST_USER_ID);
+      // Grace period: account stays enabled until grace ends
+      expect(disableUserAccount).not.toHaveBeenCalled();
     });
 
     it("should handle missing OWNER_NWC gracefully", async () => {
@@ -606,7 +657,7 @@ describe("Cron Subscription Checker", () => {
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
-      expect(disableUserAccount).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(disableUserAccount).not.toHaveBeenCalled();
     });
   });
 
@@ -678,8 +729,8 @@ describe("Cron Subscription Checker", () => {
 
       expect(data.checked).toBe(2);
       expect(data.expired).toBe(2);
-      // Should continue processing even after error
-      expect(disableUserAccount).toHaveBeenCalledTimes(2);
+      // Manual expiry enters grace; no immediate disable
+      expect(disableUserAccount).not.toHaveBeenCalled();
     });
 
     it("should return results even if getEnabledUsersWithSubscriptions fails", async () => {

@@ -9,6 +9,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const { queueTypeCountMock } = vi.hoisted(() => ({
+  queueTypeCountMock: vi.fn(),
+}));
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    queueType: {
+      count: () => queueTypeCountMock(),
+    },
+  },
+}));
+
 // Mock all dependencies
 vi.mock("~/features/user", () => ({
   updateUserTimezone: vi.fn(),
@@ -43,8 +56,15 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("~/features/engagement/engagement-reply-templates.server", () => ({
+  createReplyTemplate: vi.fn(),
+  deleteReplyTemplate: vi.fn(),
+  updateReplyTemplate: vi.fn(),
+}));
+
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
+import { updateReplyTemplate } from "~/features/engagement/engagement-reply-templates.server";
 import {
   createPlanInvoice,
   getPlanById,
@@ -68,6 +88,7 @@ import {
 describe("Settings Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queueTypeCountMock.mockResolvedValue(0);
 
     // Default mocks
     (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -214,6 +235,55 @@ describe("Settings Action Handler", () => {
         expect(data).toHaveProperty("error");
         // Zod validation error message format may differ
         expect(String(data.error)).toBeTruthy();
+      });
+    });
+
+    describe("Engagement reply templates", () => {
+      it("should update reply template", async () => {
+        (updateReplyTemplate as ReturnType<typeof vi.fn>).mockResolvedValue({
+          success: true,
+        });
+
+        const formData = createFormData({
+          _action: "reply_template_update",
+          id: "cuid123",
+          slug: "thanks",
+          body: "Thanks for connecting!",
+        });
+
+        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const dataRaw: unknown = await result.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
+
+        expect(updateReplyTemplate).toHaveBeenCalledWith(
+          TEST_USER_ID,
+          "cuid123",
+          "thanks",
+          "Thanks for connecting!"
+        );
+        expect(data).toEqual({ success: true });
+      });
+
+      it("should reject reply template update without id", async () => {
+        const formData = createFormData({
+          _action: "reply_template_update",
+          slug: "thanks",
+          body: "Hi",
+        });
+
+        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const dataRaw: unknown = await result.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
+
+        expect(updateReplyTemplate).not.toHaveBeenCalled();
+        expect(result.status).toBe(400);
+        expect(data.error).toBeDefined();
       });
     });
 
@@ -492,10 +562,10 @@ describe("Settings Action Handler", () => {
           name: "Marketing Queue",
           scheduleType: "INTERVAL",
           scheduleConfig: { intervalHours: 4 },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
-          colorToken: expect.any(String),
+          colorToken: "slate",
           description: "Marketing posts",
           hashTagPresetId: "preset-123",
+          includeHashtagsInNoteBody: true,
         });
 
         /* eslint-disable @typescript-eslint/no-unsafe-assignment -- data from result.json() */
@@ -549,10 +619,10 @@ describe("Settings Action Handler", () => {
           scheduleConfig: {
             slots: ["09:00", "12:00", "15:00", "18:00"],
           },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest expect.any
-          colorToken: expect.any(String),
+          colorToken: "slate",
           description: "Daily posting schedule",
           hashTagPresetId: null,
+          includeHashtagsInNoteBody: true,
         });
 
         /* eslint-disable @typescript-eslint/no-unsafe-assignment -- data from result.json() */
@@ -567,6 +637,7 @@ describe("Settings Action Handler", () => {
         (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
           Plan: { price: 0 }, // Free plan
         });
+        queueTypeCountMock.mockResolvedValue(1);
 
         const formData = createFormData({
           _action: "create_queue_type",
@@ -587,7 +658,7 @@ describe("Settings Action Handler", () => {
         expect(result.status).toBe(403);
         expect(data).toEqual({
           error:
-            "Creating queue types is not available on the free plan. Please upgrade your subscription.",
+            "Free plan includes 1 queue. Upgrade to create and manage more queues.",
         });
       });
 

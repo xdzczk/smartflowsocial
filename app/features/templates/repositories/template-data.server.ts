@@ -19,6 +19,13 @@ export async function createTemplate({
   postId?: string | null;
   longFormPostId?: string | null;
 }) {
+  const { checkTemplateCapacity } =
+    await import("~/features/payments/entitlements/draft-template-cap.server");
+  const capErr = await checkTemplateCapacity(userId, 1);
+  if (capErr) {
+    throw new Error(capErr);
+  }
+
   const data: Prisma.TemplateCreateInput = {
     user: { connect: { id: userId } },
     name,

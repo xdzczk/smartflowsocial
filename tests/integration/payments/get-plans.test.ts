@@ -79,7 +79,7 @@ describe("getAllPlans", () => {
       mockPrisma.plan.findMany as ReturnType<typeof vi.fn>
     ).toHaveBeenCalledWith({
       where: { isActive: true },
-      orderBy: { price: "asc" },
+      orderBy: { sortOrder: "asc" },
     });
     expect(result).toEqual(mockPlans);
   });

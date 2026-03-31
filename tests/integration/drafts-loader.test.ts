@@ -23,7 +23,6 @@ vi.mock("~/features/auth/session.server", () => ({
 
 vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
-  requireFeatureAccess: vi.fn(),
 }));
 
 const { mockLoadDraftsData } = vi.hoisted(() => ({
@@ -43,11 +42,13 @@ import { userFactory } from "../factories";
 import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
-import {
-  requireAnySubscription,
-  requireFeatureAccess,
-} from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loader } from "~/routes/dashboard.drafts";
+
+const DRAFTS_DATA_URL =
+  "http://localhost:3000/dashboard/drafts?_data=routes/dashboard.drafts";
+const DRAFTS_QUEUE_DATA_URL =
+  "http://localhost:3000/dashboard/drafts/posts?_data=routes/dashboard.drafts.$queueType";
 
 describe("Drafts Loader Integration", () => {
   beforeEach(() => {
@@ -56,9 +57,6 @@ describe("Drafts Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined
-    );
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
     mockLoadDraftsData.mockResolvedValue({
@@ -73,7 +71,7 @@ describe("Drafts Loader Integration", () => {
 
   describe("Drafts Loader", () => {
     it("should load drafts data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/drafts");
+      const request = new Request(DRAFTS_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -101,7 +99,6 @@ describe("Drafts Loader Integration", () => {
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
-      expect(requireFeatureAccess).toHaveBeenCalledWith("user-123", "drafts");
       expect(mockLoadDraftsData).toHaveBeenCalledWith("user-123", "all", 1, 20);
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
@@ -127,7 +124,7 @@ describe("Drafts Loader Integration", () => {
 
       mockLoadDraftsData.mockResolvedValue(mockData);
 
-      const request = new Request("http://localhost:3000/dashboard/drafts");
+      const request = new Request(DRAFTS_QUEUE_DATA_URL);
       const response = await loader({
         request,
         params: { queueType: "posts" },
@@ -176,7 +173,7 @@ describe("Drafts Loader Integration", () => {
         pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
       });
 
-      const request = new Request("http://localhost:3000/dashboard/drafts");
+      const request = new Request(DRAFTS_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -216,7 +213,7 @@ describe("Drafts Loader Integration", () => {
         new Error("Authentication required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/drafts");
+      const request = new Request(DRAFTS_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -259,7 +256,7 @@ describe("Drafts Loader Integration", () => {
         new Error("Subscription required")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/drafts");
+      const request = new Request(DRAFTS_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -297,12 +294,12 @@ describe("Drafts Loader Integration", () => {
       expect(errorMessage).toContain("Subscription required");
     });
 
-    it("should handle feature access errors", async () => {
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied")
+    it("should handle subscription errors", async () => {
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Subscription required")
       );
 
-      const _request = new Request("http://localhost:3000/dashboard/drafts");
+      const _request = new Request(DRAFTS_DATA_URL);
       const loaderArgs: LoaderFunctionArgs = {
         request: _request,
         params: {},
@@ -337,7 +334,7 @@ describe("Drafts Loader Integration", () => {
           : {};
       const errorMessage =
         typeof error.message === "string" ? error.message : "";
-      expect(errorMessage).toContain("Feature access denied");
+      expect(errorMessage).toContain("Subscription required");
     });
   });
 });

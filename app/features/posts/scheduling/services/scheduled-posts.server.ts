@@ -7,6 +7,7 @@
 import { json } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { combineContent } from "~/features/posts/combined.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/index.server";
 import {
@@ -428,10 +429,28 @@ async function handleEditPost(formData: FormData, userId: string) {
     return json({ error: "Missing postId" }, { status: 400 });
   }
 
+  const originalPost = await getPostById({ id: postId, userId });
+  if (!originalPost) {
+    return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+  }
+
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
     parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
 
   const parsedFileUrl = parseFileUrl(fileUrl, userId, postId);
+
+  if (scheduledFor && parsedSignedEvent) {
+    const now = new Date();
+    let additionalSlots = 1;
+    if (
+      originalPost.currentState === "SCHEDULED" &&
+      originalPost.scheduledAtUtc &&
+      originalPost.scheduledAtUtc > now
+    ) {
+      additionalSlots = 0;
+    }
+    await assertScheduleCapacity(userId, additionalSlots);
+  }
 
   const updated = await updatePost({
     id: postId,
@@ -489,8 +508,26 @@ async function handleEditLongform(formData: FormData, userId: string) {
     return json({ error: "Missing postId" }, { status: 400 });
   }
 
+  const originalLongform = await getLongFormPostModel({ id: postId, userId });
+  if (!originalLongform) {
+    return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+  }
+
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
     parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
+
+  if (scheduledFor) {
+    const now = new Date();
+    let additionalSlots = 1;
+    if (
+      originalLongform.currentState === "SCHEDULED" &&
+      originalLongform.scheduledAtUtc &&
+      originalLongform.scheduledAtUtc > now
+    ) {
+      additionalSlots = 0;
+    }
+    await assertScheduleCapacity(userId, additionalSlots);
+  }
 
   const updated = await updateLongFormPost({
     id: postId,

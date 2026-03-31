@@ -43,11 +43,11 @@ function publishedNostrEventIdsFromPosts(posts: PostData[]): Set<string> {
   for (const p of posts) {
     const fromSigned = p.signedEvent?.id;
     if (typeof fromSigned === "string" && fromSigned.length > 0) {
-      s.add(fromSigned);
+      s.add(fromSigned.toLowerCase());
     }
     const stored = (p as { nostrEventId?: string | null }).nostrEventId;
     if (typeof stored === "string" && stored.length > 0) {
-      s.add(stored);
+      s.add(stored.toLowerCase());
     }
   }
   return s;

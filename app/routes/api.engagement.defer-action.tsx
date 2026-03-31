@@ -4,6 +4,7 @@ import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { createDeferredEngagementAction } from "~/features/engagement";
 import type { SignedEvent } from "~/features/nostr/types";
+import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
 
 function parseBody(value: unknown): {
   eventId: string;
@@ -96,6 +97,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ success: true, ...result });
   } catch (error) {
     if (error instanceof Response) return error;
+    if (error instanceof ScheduleCapExceededError) {
+      return json({ success: false, error: error.message }, { status: 403 });
+    }
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }

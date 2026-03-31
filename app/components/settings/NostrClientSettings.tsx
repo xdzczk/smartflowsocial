@@ -43,6 +43,10 @@ export function NostrClientSettings({
 }: NostrClientSettingsProps) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  useEffect(() => {
+    revalidatorRef.current = revalidator;
+  }, [revalidator]);
   const [preferredNostrClient, setPreferredNostrClient] = useState<string>(
     initialClient || "PRIMAL"
   );
@@ -68,9 +72,10 @@ export function NostrClientSettings({
 
   useEffect(() => {
     if (fetcher.data?.success) {
-      revalidator.revalidate();
+      revalidatorRef.current.revalidate();
     }
-  }, [fetcher.data?.success, revalidator]);
+    // Do not depend on `revalidator`: its identity changes after each revalidate and would loop forever.
+  }, [fetcher.data?.success]);
 
   const submitIfNeeded = (
     client: string,
@@ -120,7 +125,7 @@ export function NostrClientSettings({
   return (
     <PreferenceSection
       title="Preferred Nostr client"
-      description='Where "View note" and "View article" links open (e.g. Primal, Damus, Iris). Changes save automatically.'
+      description='Choose where "View note" and "View article" links open. Changes save automatically.'
     >
       <div className="space-y-4">
         <div className="space-y-2">

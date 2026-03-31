@@ -21,6 +21,10 @@ vi.mock("~/features/posts/server", () => ({
   updateLongFormPost: vi.fn(),
 }));
 
+vi.mock("~/features/payments/entitlements/schedule-cap-policy.server", () => ({
+  assertScheduleCapacity: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockCancelLongFormExecute = vi.fn();
 const mockScheduleLongFormExecute = vi.fn();
 
@@ -53,6 +57,7 @@ import {
   TEST_LONGFORM_ID,
 } from "../../utils/test-helpers";
 
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { handleScheduledPostAction } from "~/features/posts/scheduling/index.server";
 import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
 import { reschedulePost, updatePost } from "~/features/posts/server";
@@ -214,6 +219,13 @@ describe("Scheduled Posts Service Action Handlers", () => {
         content: "Updated content",
       };
 
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        currentState: "SCHEDULED",
+        scheduledAtUtc: new Date(Date.now() + 86_400_000),
+      });
+
       (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockUpdatedPost
       );
@@ -252,6 +264,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       expect(updatePost).toHaveBeenCalled();
       expect(mockScheduleExecute).toHaveBeenCalled();
+      expect(assertScheduleCapacity).toHaveBeenCalledWith(TEST_USER_ID, 0);
 
       const responseObj =
         result instanceof Response
@@ -270,6 +283,13 @@ describe("Scheduled Posts Service Action Handlers", () => {
         content: "Updated content",
       };
 
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        currentState: "DRAFT",
+        scheduledAtUtc: null,
+      });
+
       (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockUpdatedPost
       );
@@ -284,6 +304,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       expect(updatePost).toHaveBeenCalled();
       expect(mockScheduleExecute).not.toHaveBeenCalled();
+      expect(assertScheduleCapacity).not.toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response

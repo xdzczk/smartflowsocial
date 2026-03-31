@@ -5,6 +5,10 @@
 import { json, redirect } from "@remix-run/node";
 
 import {
+  assertScheduleCapacity,
+  ScheduleCapExceededError,
+} from "~/features/payments/entitlements/schedule-cap-policy.server";
+import {
   resolveQueueTypeId,
   createPostWithOutbox,
   getLongFormPost,
@@ -338,6 +342,22 @@ export async function handlePublish(
 
   const quoteSchedules = parseQuoteSchedulesFromForm(formData);
 
+  if (quoteSchedules.length > 0 && queueTypeId) {
+    let quoteSlots = 0;
+    for (const item of quoteSchedules) {
+      const d = toPrismaDate(fromUnixTimestamp(item.scheduledFor, "UTC"));
+      if (d) quoteSlots++;
+    }
+    try {
+      await assertScheduleCapacity(userId, quoteSlots);
+    } catch (e) {
+      if (e instanceof ScheduleCapExceededError) {
+        return json({ error: e.message }, { status: 403 });
+      }
+      throw e;
+    }
+  }
+
   // Use CreateLongFormPostUseCase for post creation
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();
   const result = await createLongFormPostUseCase.execute({
@@ -520,6 +540,15 @@ export async function handleScheduleLongform(
   }
 
   const quoteSchedules = parseQuoteSchedulesFromForm(formData);
+
+  try {
+    await assertScheduleCapacity(userId, 1 + quoteSchedules.length);
+  } catch (e) {
+    if (e instanceof ScheduleCapExceededError) {
+      return json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
 
   // Use CreateLongFormPostUseCase for post creation with scheduling
   const createLongFormPostUseCase = new CreateLongFormPostUseCase();

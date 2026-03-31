@@ -10,10 +10,7 @@ import { Suspense } from "react";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { SCHEDULED_DATE_RANGE_QUERY_LIMIT } from "~/features/posts/deferred-loader-limits";
 import { ScheduledPostsPage } from "~/features/posts/scheduling";
 import type {
@@ -39,7 +36,6 @@ async function loadScheduledValidated(
 ): Promise<ScheduledPostsLoaderData> {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "scheduled");
 
   const url = new URL(request.url);
   const queueType =

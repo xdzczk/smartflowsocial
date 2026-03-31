@@ -10,6 +10,7 @@ import {
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
+import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
@@ -39,6 +40,20 @@ import { handleUploadPreview } from "./newpost-action/upload-preview-handler.ser
  * Main action handler for new post page
  */
 export async function handleNewPostAction(
+  userId: string,
+  request: Request
+): Promise<Response> {
+  try {
+    return await handleNewPostActionImpl(userId, request);
+  } catch (e) {
+    if (e instanceof ScheduleCapExceededError) {
+      return json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
+}
+
+async function handleNewPostActionImpl(
   userId: string,
   request: Request
 ): Promise<Response> {

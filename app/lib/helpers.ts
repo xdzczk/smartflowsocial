@@ -1,4 +1,5 @@
-import { nip19 } from "nostr-tools";
+export { convertToHex } from "~/lib/nostr-conversion";
+
 export const getTimeRemaining = (
   scheduledDate: string | Date,
   currentTime: Date = new Date()
@@ -17,15 +18,6 @@ export const getTimeRemaining = (
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
 };
-
-export function convertToHex(key: string): string | null {
-  try {
-    const { data } = nip19.decode(key);
-    return typeof data === "string" ? data : null;
-  } catch (_error) {
-    return null;
-  }
-}
 
 /**
  * @deprecated Kept for legacy tests and property tests only; do not use in new code.

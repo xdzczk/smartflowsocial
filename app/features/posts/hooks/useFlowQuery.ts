@@ -82,6 +82,8 @@ export interface UseFlowDataResult {
   flowPostsCount: number | undefined;
   flowRepostsCount: number | undefined;
   flowLongformCount: number | undefined;
+  /** Reset load-more merge gate so the next loader sync replaces Flow items (e.g. after reschedule). */
+  resetFlowMergeState: () => void;
 }
 
 export function useFlowData(): UseFlowDataResult {
@@ -133,8 +135,17 @@ export function useFlowData(): UseFlowDataResult {
   const flowItemsLengthRef = useRef(0);
   const lastSyncedQueueTypeRef = useRef(queueType);
   const lastSyncedContentTabRef = useRef(contentTab);
-  /** True after we've merged any load-more response; prevents revalidation from overwriting cursors (refs update sync, state in startTransition is deferred). */
+  /**
+   * True after we've merged any load-more response; prevents periodic revalidation
+   * from overwriting extended flow state and repeating cursor fetches.
+   * Reset via {@link resetFlowMergeState} after user mutations (reschedule, edit, delete)
+   * so the next revalidation applies a fresh loader window.
+   */
   const hasMergedLoadMoreRef = useRef(false);
+
+  const resetFlowMergeState = useCallback(() => {
+    hasMergedLoadMoreRef.current = false;
+  }, []);
 
   useEffect(() => {
     flowItemsLengthRef.current = flowItems.length;
@@ -322,6 +333,8 @@ export function useFlowData(): UseFlowDataResult {
     clearPrependedPastCount: () => setLastPrependedPastCount(0),
     fetchMorePast,
     fetchMoreFuture,
+    /** Call before revalidate() after schedule/post changes so Flow reapplies loader data. */
+    resetFlowMergeState,
     flowTotalCount,
     flowPostsCount,
     flowRepostsCount,

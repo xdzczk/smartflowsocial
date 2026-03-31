@@ -1,4 +1,5 @@
 import type { SignedEvent } from "~/features/nostr/types";
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 
 import {
   createDeferredActionPost,
@@ -59,6 +60,7 @@ export async function createDeferredEngagementAction(params: {
         "scheduledFor is required for scheduled engagement actions"
       );
     }
+    await assertScheduleCapacity(userId, 1);
     const post = await createScheduledEngagementPostWithOutbox({
       userId,
       eventId,

@@ -4,7 +4,7 @@
  * Handles post creation with idempotency and optional scheduling.
  */
 
-import type { SignedEvent } from "~/features/nostr/types";
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { createPostWithOutbox } from "~/features/posts/server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
@@ -45,6 +45,38 @@ async function findExistingByIdempotency(
   return findPostByCreationIdempotencyKey(creationIdempotencyKey);
 }
 
+function buildRepostList(input: CreatePostInput) {
+  return Array.isArray(input.repostSchedules) &&
+    input.repostSchedules.length > 0
+    ? input.repostSchedules
+    : input.alsoScheduleRepost &&
+        input.repostScheduledFor != null &&
+        input.repostSignedEvent
+      ? [
+          {
+            scheduledFor: input.repostScheduledFor,
+            signedEvent: input.repostSignedEvent,
+          },
+        ]
+      : [];
+}
+
+function buildQuoteList(input: CreatePostInput) {
+  return Array.isArray(input.quoteSchedules) && input.quoteSchedules.length > 0
+    ? input.quoteSchedules
+    : input.alsoScheduleQuote &&
+        input.quoteScheduledFor != null &&
+        input.quoteSignedEvent
+      ? [
+          {
+            scheduledFor: input.quoteScheduledFor,
+            signedEvent: input.quoteSignedEvent,
+            caption: input.quoteCaption ?? "",
+          },
+        ]
+      : [];
+}
+
 export class CreatePostUseCase {
   private readonly stateMachine = new PostStateMachine();
 
@@ -58,6 +90,14 @@ export class CreatePostUseCase {
       scheduledFor: input.scheduledFor,
       correlationId,
     });
+
+    const repostListEarly = buildRepostList(input);
+    const quoteListEarly = buildQuoteList(input);
+    const scheduleSlotCount =
+      (input.scheduledFor ? 1 : 0) +
+      repostListEarly.length +
+      quoteListEarly.length;
+    await assertScheduleCapacity(input.userId, scheduleSlotCount);
 
     // Resolve queue type
     const queueTypeId = await resolveQueueTypeId(
@@ -165,48 +205,8 @@ export class CreatePostUseCase {
       recordPostCreated(input.postType, false);
     }
 
-    // Normalize to arrays: support both single (legacy) and multiple repost/quote
-    const repostList: Array<{
-      scheduledFor: number;
-      signedEvent: SignedEvent;
-      repostConditions?: {
-        minReactions?: number;
-        minZaps?: number;
-        minComments?: number;
-        minReposts?: number;
-        minSats?: number;
-      } | null;
-    }> =
-      Array.isArray(input.repostSchedules) && input.repostSchedules.length > 0
-        ? input.repostSchedules
-        : input.alsoScheduleRepost &&
-            input.repostScheduledFor != null &&
-            input.repostSignedEvent
-          ? [
-              {
-                scheduledFor: input.repostScheduledFor,
-                signedEvent: input.repostSignedEvent,
-              },
-            ]
-          : [];
-    const quoteList: Array<{
-      scheduledFor: number;
-      signedEvent: SignedEvent;
-      caption?: string;
-    }> =
-      Array.isArray(input.quoteSchedules) && input.quoteSchedules.length > 0
-        ? input.quoteSchedules
-        : input.alsoScheduleQuote &&
-            input.quoteScheduledFor != null &&
-            input.quoteSignedEvent
-          ? [
-              {
-                scheduledFor: input.quoteScheduledFor,
-                signedEvent: input.quoteSignedEvent,
-                caption: input.quoteCaption ?? "",
-              },
-            ]
-          : [];
+    const repostList = repostListEarly;
+    const quoteList = quoteListEarly;
 
     for (const item of repostList) {
       const repostScheduledForDate = toPrismaDate(

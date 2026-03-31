@@ -238,6 +238,8 @@ export interface BulkSettingsRailFooterProps {
   preparationProgress: { current: number; total: number; stage: string };
   isSigning: boolean;
   signingProgress: { current: number; total: number } | null;
+  /** Free / teams: bulk execute is server-blocked; keep button disabled with clear affordance */
+  bulkExecutionBlocked?: boolean;
   onSaveDraft: () => void;
   onReview: () => void;
   onBackToEdit: () => void;
@@ -255,6 +257,7 @@ export function BulkSettingsRailFooter({
   preparationProgress,
   isSigning,
   signingProgress,
+  bulkExecutionBlocked = false,
   onSaveDraft,
   onReview,
   onBackToEdit,
@@ -292,7 +295,11 @@ export function BulkSettingsRailFooter({
   }
 
   const signBlocked =
-    isSubmitting || isSigning || !validationResult.isValid || postsCount === 0;
+    bulkExecutionBlocked ||
+    isSubmitting ||
+    isSigning ||
+    !validationResult.isValid ||
+    postsCount === 0;
 
   return (
     <ActionRailActions
@@ -333,6 +340,8 @@ export function BulkSettingsRailFooter({
             </span>
           ) : postsCount === 0 ? (
             "Add posts to sign"
+          ) : bulkExecutionBlocked ? (
+            "Upgrade to sign and schedule"
           ) : (
             `Sign and schedule ${postsCount} post${postsCount !== 1 ? "s" : ""}`
           )}

@@ -190,6 +190,9 @@ describe("Payment Handlers", () => {
           update: vi.fn().mockResolvedValue({}),
         },
         user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ nwcEnabled: false, encryptedNwc: null }),
           update: vi.fn().mockResolvedValue({ id: TEST_USER_ID }),
         },
       };
@@ -238,6 +241,9 @@ describe("Payment Handlers", () => {
           update: vi.fn().mockResolvedValue({}),
         },
         user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ nwcEnabled: false, encryptedNwc: null }),
           update: vi.fn().mockResolvedValue({ id: TEST_USER_ID }),
         },
       };
@@ -283,6 +289,9 @@ describe("Payment Handlers", () => {
           update: vi.fn().mockResolvedValue({}),
         },
         user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ nwcEnabled: false, encryptedNwc: null }),
           update: vi.fn().mockResolvedValue({ id: TEST_USER_ID }),
         },
       };
@@ -329,7 +338,7 @@ describe("Payment Handlers", () => {
         mockPrisma.plan.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: { isActive: true },
-        orderBy: { price: "asc" },
+        orderBy: { sortOrder: "asc" },
       });
       expect(result).toEqual(mockPlans);
     });

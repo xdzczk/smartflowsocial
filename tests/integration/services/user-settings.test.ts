@@ -286,6 +286,7 @@ describe("User Settings", () => {
       expect(result).toEqual({
         provider: "BLOSSOM_CUSTOM",
         customBlossomUrl: "https://custom-blossom.example.com",
+        storedUploadProvider: "BLOSSOM_CUSTOM",
       });
     });
 
@@ -303,6 +304,25 @@ describe("User Settings", () => {
       expect(result).toEqual({
         provider: "BLOSSOM_PRIMAL",
         customBlossomUrl: null,
+        storedUploadProvider: "BLOSSOM_CUSTOM",
+      });
+    });
+
+    it("should downgrade effective provider from SFS to Primal when subscription inactive", async () => {
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        uploadProvider: "BLOSSOM_SFS",
+        customBlossomUrl: null,
+      });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
+
+      const result = await getResolvedUploadProviderSettings(TEST_USER_ID);
+
+      expect(result).toEqual({
+        provider: "BLOSSOM_PRIMAL",
+        customBlossomUrl: null,
+        storedUploadProvider: "BLOSSOM_SFS",
       });
     });
 

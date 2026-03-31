@@ -31,12 +31,7 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
-import {
-  useFeatureAccess,
-  useSubscription,
-  getMinimumPlanForFeature,
-  type FeatureName,
-} from "~/features/payments/types";
+import { useSubscription, type FeatureName } from "~/features/payments/types";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
@@ -148,16 +143,12 @@ function NavigationItem({
   onActiveClick,
   collapsed = false,
 }: NavigationItemProps) {
-  const hasAccessByPlan = useFeatureAccess(feature);
   const subscription = useSubscription();
   const hasAnySubscription = !!subscription?.currentSubscription;
 
   const isDashboardRoot = to === "/dashboard";
-  // Effective access: dashboard root is always accessible; all other dashboard child
-  // routes require the user to have any subscription AND the plan to include the feature
-  const hasAccess = isDashboardRoot
-    ? true
-    : hasAnySubscription && hasAccessByPlan;
+  // Browse-all: any child route is navigable once the user has a subscription (limits are action-level).
+  const hasAccess = isDashboardRoot ? true : hasAnySubscription;
 
   const handleClick = (e: React.MouseEvent) => {
     if (!hasAccess) {
@@ -182,9 +173,7 @@ function NavigationItem({
         : "text-muted-foreground/50 cursor-not-allowed opacity-60"
   }`;
 
-  const title = !hasAccess
-    ? `Requires ${getMinimumPlanForFeature(feature)} plan`
-    : (children as string);
+  const title = !hasAccess ? "Subscription required" : (children as string);
 
   // Inactive icons use slightly higher contrast than inactive text; match link hover so icon and text react together
   const iconSpanClass = isActive

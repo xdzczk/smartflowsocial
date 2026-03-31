@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/payments/subscriptions.server", () => ({
-  requireFeatureAccess: vi.fn(),
+  requireAnySubscription: vi.fn(),
 }));
 
 vi.mock("~/features/user", () => ({
@@ -29,7 +29,7 @@ vi.mock("~/features/relays/relay-resolution.server", () => ({
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
-import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadNewLongFormData } from "~/features/posts/server/longform";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
@@ -60,7 +60,7 @@ describe("New Longform Loader", () => {
       app: mockRelays,
       nip65Profile: ["wss://nip65.example.com"],
     });
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -80,10 +80,7 @@ describe("New Longform Loader", () => {
 
     const result = await loadNewLongFormData(TEST_USER_ID);
 
-    expect(requireFeatureAccess).toHaveBeenCalledWith(
-      TEST_USER_ID,
-      "longformPosts"
-    );
+    expect(requireAnySubscription).toHaveBeenCalledWith(TEST_USER_ID);
     expect(result.userId).toBe(TEST_USER_ID);
     expect(result.tags).toBe(mockTags);
     expect(result.scheduleIntervals).toEqual(mockScheduleIntervals);
@@ -100,7 +97,7 @@ describe("New Longform Loader", () => {
   it("should use default timezone if user timezone is missing", async () => {
     const mockUser = { id: TEST_USER_ID };
 
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([

@@ -4,6 +4,7 @@
 
 import { json } from "@remix-run/node";
 
+import { getUserSubscription } from "~/features/payments/data";
 import {
   applyLocaleDefaultsOnce,
   getLocaleDefaultsAppliedAt,
@@ -11,6 +12,7 @@ import {
   getUserTimeFormat,
   invalidateRelayIntentCache,
   updateGiveawayBlacklist,
+  updateScheduleInterval,
   updateUserBlastrRelayEnabled,
   updateUserDateFormat,
   updateUserPreferredNostrClient,
@@ -24,6 +26,7 @@ import {
   updateRelaysSchema,
   updateBlacklistSchema,
   updatePreferredNostrClientSchema,
+  updateScheduleIntervalsSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
@@ -136,6 +139,16 @@ export async function handleGeneralSettingsAction(
   }
 
   if (action === "update_blastr_relay_enabled") {
+    const subscription = await getUserSubscription(userId);
+    const canToggleBlastr = !!(
+      subscription?.status === "ACTIVE" && subscription.Plan?.enableRelayBlast
+    );
+    if (!canToggleBlastr) {
+      return json(
+        { error: "SFS Blastr is not available on your current plan." },
+        { status: 403 }
+      );
+    }
     const value = formData.get("blastrRelayEnabled");
     const enabled = String(value ?? "") === "true";
     await updateUserBlastrRelayEnabled(userId, enabled);
@@ -146,6 +159,16 @@ export async function handleGeneralSettingsAction(
     const result = validateFormDataOrRespond(formData, updateBlacklistSchema);
     if (!result.success) return result.response;
     await updateGiveawayBlacklist(userId, result.data.blacklist);
+    return json({ success: true });
+  }
+
+  if (action === "update_schedule_intervals") {
+    const result = validateFormDataOrRespond(
+      formData,
+      updateScheduleIntervalsSchema
+    );
+    if (!result.success) return result.response;
+    await updateScheduleInterval(userId, result.data.scheduleIntervals);
     return json({ success: true });
   }
 

@@ -6,6 +6,40 @@
 import { afterSubscriptionUpdated } from "~/infra/blastr/entitlement-sync.server";
 import { prisma } from "~/lib/prisma.server";
 
+/** Thrown when Founder seat cap is reached at subscription grant time (race-safe inside transactions). */
+export class FounderSeatSoldOutError extends Error {
+  override name = "FounderSeatSoldOutError";
+  constructor() {
+    super("Founder access is sold out.");
+  }
+}
+
+interface SubscriptionCountTx {
+  subscription: {
+    count: (args: {
+      where: { planId: string; status: "ACTIVE"; userId: { not: string } };
+    }) => Promise<number>;
+  };
+}
+
+async function assertFounderSeatAvailableInTx(
+  tx: SubscriptionCountTx,
+  plan: { id: string; founderSeatCap: number | null },
+  userId: string
+): Promise<void> {
+  if (plan.founderSeatCap == null) return;
+  const others = await tx.subscription.count({
+    where: {
+      planId: plan.id,
+      status: "ACTIVE",
+      userId: { not: userId },
+    },
+  });
+  if (others >= plan.founderSeatCap) {
+    throw new FounderSeatSoldOutError();
+  }
+}
+
 function coerceUsdAmount(value: unknown): number | null {
   if (value == null) return null;
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
@@ -80,6 +114,8 @@ export async function updateUserSubscription(
   }
 
   await prisma.$transaction(async (tx) => {
+    await assertFounderSeatAvailableInTx(tx, plan, userId);
+
     const subscriptionId = `sub_${userId}_${planId}_${Date.now()}`;
     const userRow = await tx.user.findUnique({
       where: { id: userId },
@@ -210,6 +246,8 @@ export async function extendUserSubscriptionFromPayment(
   const paymentMethod = payment?.billingPaymentMethod ?? "lightning_one_time";
 
   await prisma.$transaction(async (tx) => {
+    await assertFounderSeatAvailableInTx(tx, plan, userId);
+
     const subscriptionId = `sub_${userId}_${planId}_${Date.now()}`;
 
     const [userRow, existingSub] = await Promise.all([

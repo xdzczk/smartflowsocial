@@ -1,24 +1,32 @@
 import { useMatches } from "@remix-run/react";
-// Define feature permissions for each plan type
+
+import {
+  getPlanEntitlements,
+  type PlanEntitlements,
+} from "~/features/payments/entitlements/plan-entitlements";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
+
+// Define feature permissions for each plan type (surface / route access).
+// Execution limits (schedule cap, bulk send, broadcast send) use getPlanEntitlements.
 export const PLAN_FEATURES = {
   free: {
     basicScheduling: true,
     newPost: true,
-    dashboard: true, // Free users can access main dashboard
-    drafts: false,
-    calendar: false,
-    bulkScheduling: false,
-    longformPosts: true, // Free users can create long-form posts
-    templates: false,
-    recyclables: false,
-    scheduled: true, // Free users can access scheduled posts
-    posted: true, // Free users can access posted content (legacy key)
-    published: true, // Free users can access published content
-    giveaways: true, // Free users can access giveaways
+    dashboard: true,
+    drafts: true,
+    calendar: true,
+    bulkScheduling: true,
+    longformPosts: true,
+    templates: true,
+    recyclables: true,
+    scheduled: true,
+    posted: true,
+    published: true,
+    giveaways: true,
     contests: true,
-    settings: true, // Free users can access settings
-    engagement_feed: false, // Free users cannot access engagement feed
-    broadcasts: false,
+    settings: true,
+    engagement_feed: true,
+    broadcasts: true,
   },
   basic: {
     basicScheduling: true,
@@ -96,6 +104,26 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
+  /** Future tier; not sold yet — browse-all + same execution caps as free. */
+  teams: {
+    basicScheduling: true,
+    newPost: true,
+    dashboard: true,
+    drafts: true,
+    calendar: true,
+    bulkScheduling: true,
+    longformPosts: true,
+    templates: true,
+    recyclables: true,
+    scheduled: true,
+    posted: true,
+    published: true,
+    giveaways: true,
+    contests: true,
+    settings: true,
+    engagement_feed: true,
+    broadcasts: true,
+  },
   /** Lifetime / early-supporter tier: same entitlements as premium for product gates */
   founder: {
     basicScheduling: true,
@@ -122,7 +150,7 @@ export const PLAN_FEATURES = {
 export type BroadcastAudienceGate = "CUSTOM" | "MUTUALS";
 
 /**
- * Tier limits for Broadcasts (paid-only feature; free has broadcasts: false).
+ * Tier limits for Broadcasts. Free/teams: no send; paid: tiered caps.
  */
 export function getBroadcastPlanLimits(planType: PlanType): {
   maxRecipientsPerCampaign: number;
@@ -133,12 +161,12 @@ export function getBroadcastPlanLimits(planType: PlanType): {
   allowSchedule: boolean;
   allowStaggered: boolean;
 } {
-  if (planType === "free") {
+  if (planType === "free" || planType === "teams") {
     return {
       maxRecipientsPerCampaign: 0,
       maxConcurrentActiveCampaigns: 0,
       maxDailyBroadcastRecipients: 0,
-      allowedAudienceTypes: [],
+      allowedAudienceTypes: ["CUSTOM"],
       allowAdvancedDelivery: false,
       allowSchedule: false,
       allowStaggered: false,
@@ -187,6 +215,8 @@ export interface SubscriptionData {
     isEnabled: boolean;
   } | null;
   currentSubscription: UserSubscription | null;
+  /** Derived billing UX (NWC vs manual, grace, banners). Server-only from loaders. */
+  billingContext?: BillingContext | null;
 }
 
 /**
@@ -246,6 +276,7 @@ export function getUserPlanType(
   if (planId === "pro" || planName.includes("pro")) return "pro";
   if (planId === "enterprise" || planName.includes("enterprise"))
     return "enterprise";
+  if (planId === "teams" || planName.includes("teams")) return "teams";
 
   return "free";
 }
@@ -330,6 +361,17 @@ export function usePlanType(): PlanType {
   return getUserPlanType(subscriptionData?.currentSubscription ?? null);
 }
 
+export type { PlanEntitlements };
+
+/**
+ * Hook: execution limits and capabilities for the current user (from plan tier).
+ */
+export function usePlanEntitlements(): PlanEntitlements {
+  return getPlanEntitlements(usePlanType());
+}
+
+export { getPlanEntitlements };
+
 /**
  * Giveaway plan limits (Option A: single giveaways flag, tier gates advanced).
  * Free: basic scope (PERIOD/SINGLE_POST), low winner cap, no presets.
@@ -340,7 +382,7 @@ export function getGiveawayPlanLimits(planType: PlanType): {
   canUseQueueScope: boolean;
   canUsePresets: boolean;
 } {
-  if (planType === "free") {
+  if (planType === "free" || planType === "teams") {
     return {
       maxWinnerCount: 10,
       canUseQueueScope: false,
@@ -362,25 +404,15 @@ export function getPlanDisplayName(
 }
 
 /**
- * Get the minimum plan required for a feature
+ * Get the minimum plan required for a feature (upgrade prompts).
+ * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Basic.
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
-  const plans: PlanType[] = [
-    "free",
-    "basic",
-    "premium",
-    "pro",
-    "enterprise",
-    "founder",
-  ];
-
-  for (const plan of plans) {
-    if (PLAN_FEATURES[plan][feature]) {
-      return plan;
-    }
+  if (feature === "bulkScheduling" || feature === "broadcasts") {
+    return "basic";
   }
-
-  return "enterprise"; // Fallback to highest plan
+  // PLAN_FEATURES currently marks all surface features true on every tier; paid execution uses getPlanEntitlements.
+  return "free";
 }
 
 /**

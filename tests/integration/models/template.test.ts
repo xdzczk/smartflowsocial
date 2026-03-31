@@ -144,7 +144,7 @@ describe("Template Model", () => {
           longFormPost: true,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
       });
       expect(result).toEqual(mockTemplates);

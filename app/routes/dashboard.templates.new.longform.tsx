@@ -11,10 +11,7 @@ import {
 import { Link, useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
-import {
-  requireFeatureAccess,
-  requireAnySubscription,
-} from "~/features/payments";
+import { requireAnySubscription } from "~/features/payments";
 import { LongFormPost } from "~/features/posts/longform";
 import {
   convertJsonValueToScheduleConfig,
@@ -29,7 +26,6 @@ import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  await requireFeatureAccess(userId, "templates");
 
   const data = await loadNewLongFormData(userId);
   return json(data);
@@ -39,7 +35,6 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const userId = await requireUserId(request);
     await requireAnySubscription(userId);
-    await requireFeatureAccess(userId, "templates");
 
     const formData = await request.formData();
     const actionType = formData.get("_action");
