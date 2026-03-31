@@ -9,6 +9,7 @@ import { requireUserId } from "~/features/auth";
 import {
   SearchPostsPage,
   handleSearchAction,
+  loadScheduleSourcePostForUserEvent,
   loadSearchData,
   serializeLookupLoaderError,
 } from "~/features/search";
@@ -30,10 +31,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchResultPromise = (async () => {
     try {
       const searchResult = await handleSearchAction(q);
+      const scheduleSourcePost = await loadScheduleSourcePostForUserEvent(
+        userId,
+        searchResult.event.id
+      );
       return {
         event: searchResult.event,
         stats: searchResult.stats,
         replies: searchResult.replies,
+        resolution: searchResult.resolution,
+        scheduleSourcePost,
       };
     } catch (error: unknown) {
       return {
@@ -51,6 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
+      const userId = await requireUserId(request);
       const formData = await request.formData();
 
       const result = validateFormDataOrRespond(formData, searchActionSchema);
@@ -62,7 +70,11 @@ export const action = withCSRFProtection(
 
       // TypeScript guarantees this is "searchEvent" (only option in discriminated union)
       const searchResult = await handleSearchAction(validatedData.eventInput);
-      return json(searchResult);
+      const scheduleSourcePost = await loadScheduleSourcePostForUserEvent(
+        userId,
+        searchResult.event.id
+      );
+      return json({ ...searchResult, scheduleSourcePost });
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

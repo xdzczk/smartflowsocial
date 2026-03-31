@@ -146,16 +146,17 @@ export function SubscriptionCheckoutModal({
       >
         <div className="p-6 pb-0">
           <div className="mb-4 flex items-start justify-between gap-4">
-            <DialogHeader className="space-y-1 text-left">
+            <DialogHeader className="space-y-1.5 text-left">
               <DialogTitle className="text-xl font-semibold">
-                Checkout
+                Complete checkout
               </DialogTitle>
-              <p className="text-foreground text-base font-medium">
+              <p className="text-foreground text-base font-semibold">
                 {plan.name} · {plan.price === 0 ? "Free" : `$${plan.price}`}{" "}
                 {plan.period ? plan.period : ""}
               </p>
-              <p className="text-muted-foreground text-sm">
-                Choose how you want to pay
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Pick a payment path. Access activates after your payment
+                confirms.
               </p>
             </DialogHeader>
             <DialogClose asChild>
@@ -192,11 +193,11 @@ export function SubscriptionCheckoutModal({
                   </span>
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Connect Nostr Wallet Connect once. Pay now, then renew
-                  automatically until canceled.
+                  Connect Nostr Wallet Connect once, pay the first invoice, then
+                  renew on cadence until you cancel.
                 </p>
                 <p className="text-muted-foreground mt-2 text-xs">
-                  Best for active users who want uninterrupted access.
+                  Best for uninterrupted access without manual renewals.
                 </p>
                 <div className="mt-4">
                   <label
@@ -210,13 +211,13 @@ export function SubscriptionCheckoutModal({
                     value={nwcString}
                     onChange={(e) => handleNwcChange(e.target.value)}
                     onBlur={() => setNwcTouched(true)}
-                    placeholder="Paste nostr+walletconnect://…"
+                    placeholder="nostr+walletconnect://…"
                     autoComplete="off"
                     className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus:ring-1 focus:outline-none"
                   />
                   {nwcEnabled && maskedNwcString ? (
                     <p className="text-muted-foreground mt-1 text-xs">
-                      Leave blank to use saved wallet ({maskedNwcString})
+                      Leave empty to bill the saved wallet ({maskedNwcString})
                     </p>
                   ) : null}
                   {showNwcError ? (
@@ -226,8 +227,8 @@ export function SubscriptionCheckoutModal({
                     </p>
                   ) : (
                     <p className="text-muted-foreground mt-1 text-xs">
-                      SmartFlow requests payments through your connected wallet.
-                      You remain in control. SmartFlow never holds your funds.
+                      We request payments through your wallet—you approve each
+                      charge. We never custody funds.
                     </p>
                   )}
                 </div>
@@ -243,11 +244,11 @@ export function SubscriptionCheckoutModal({
                   One-time Lightning payment
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Pay manually with a Lightning invoice. Access lasts for the
-                  selected period and does not renew automatically.
+                  Pay each invoice manually. Access runs for the term you pay
+                  for; nothing renews unless you come back and pay again.
                 </p>
                 <p className="text-muted-foreground mt-2 text-xs">
-                  No wallet connection required.
+                  No NWC required—scan and pay.
                 </p>
                 {showManualDurationPicker ? (
                   <div className="mt-4">
@@ -281,14 +282,13 @@ export function SubscriptionCheckoutModal({
                       ))}
                     </select>
                     <p className="text-muted-foreground mt-2 text-xs">
-                      New to NWC? Start with a one-time payment and switch to
-                      auto-renew later in Settings.
+                      Prefer auto-renew later? Pay once now, connect NWC in
+                      Settings when you are ready.
                     </p>
                   </div>
                 ) : (
                   <p className="text-muted-foreground mt-4 text-sm">
-                    One-time Lightning for yearly billing covers a full year
-                    upfront.
+                    Yearly Lightning is one invoice for 12 months upfront.
                   </p>
                 )}
               </section>
@@ -305,12 +305,11 @@ export function SubscriptionCheckoutModal({
                   Bitcoin on-chain
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Pay from any BTC wallet via secure BTCPay checkout. Access is
-                  granted after required confirmations.
+                  Pay from any BTC wallet through BTCPay. Access turns on after
+                  the required confirmations land.
                 </p>
                 <p className="text-muted-foreground mt-2 text-xs">
-                  Best for annual or high-value payments. Available for yearly
-                  access only.
+                  Suited to yearly or larger amounts. Yearly billing only.
                 </p>
               </section>
             ) : null}

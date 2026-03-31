@@ -76,6 +76,25 @@ export function getNowForDateTimeLocal(timezone: string): string {
   return formatForDateTimeLocal(nowInTimezone(timezone), timezone);
 }
 
+/** Full HTML `datetime-local` value shape (`YYYY-MM-DDTHH:mm`). */
+const DATETIME_LOCAL_FULL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
+export function isCompleteDateTimeLocalString(value: string): boolean {
+  return DATETIME_LOCAL_FULL_RE.test(value);
+}
+
+/**
+ * Clamp a datetime-local string to `min` only when `value` is complete
+ * (`YYYY-MM-DDTHH:mm`). Incomplete values — common while typing in
+ * `datetime-local` — are returned unchanged; naive `value < min` would treat
+ * prefixes like `2026-03-31T` as before `min` and reset the input.
+ */
+export function clampDateTimeLocalToMin(value: string, min: string): string {
+  if (!value) return value;
+  if (!isCompleteDateTimeLocalString(value)) return value;
+  return value < min ? min : value;
+}
+
 /**
  * Minimum datetime for a schedule picker: current time, or a later time (e.g. original post's scheduled time).
  * Use when scheduling repost/quote from a scheduled post so the new time is not before the original.

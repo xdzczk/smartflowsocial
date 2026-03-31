@@ -157,16 +157,18 @@ export function PricingCard({
 
   const cardClass = isTeams
     ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-6 shadow-sm"
-    : `border-border bg-card relative flex h-full flex-col rounded-lg border p-6 shadow-lg ${
-        plan.isPopular ? "dark:ring-primary/30 ring-border ring-2" : ""
+    : `border-border relative flex h-full flex-col rounded-lg border p-6 shadow-lg ${
+        plan.isPopular
+          ? "bg-muted/10 ring-primary/35 dark:ring-primary/40 border-primary/25 ring-2"
+          : "bg-card"
       }`;
 
   return (
     <div className={cardClass}>
       {plan.isPopular && !isTeams ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="dark:bg-muted dark:text-muted-foreground border-border text-muted-foreground rounded-full border bg-transparent px-3 py-1 text-sm font-medium dark:border-transparent">
-            Most Popular
+          <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-sm font-medium">
+            Default paid tier
           </span>
         </div>
       ) : null}

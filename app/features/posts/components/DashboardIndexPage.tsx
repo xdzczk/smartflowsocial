@@ -8,6 +8,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
+import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
   EditScheduledPostModal,
@@ -286,6 +288,62 @@ export default function DashboardIndexPage() {
     flowViewRef.current?.scrollToNextWhenReady();
   }, [navigation.state]);
 
+  const flowPostsForStats = useMemo(() => {
+    const postDataList: PostData[] = [];
+    const longFormList: LongFormPostData[] = [];
+    for (const item of flowItems) {
+      if (item.type === "post") {
+        const p = extractPostData(item);
+        if (p) postDataList.push(p);
+      } else {
+        const lf = extractLongFormPostData(item);
+        if (lf) longFormList.push(lf);
+      }
+    }
+    return { postDataList, longFormList };
+  }, [flowItems]);
+
+  const { stats: flowStatsMerged } = usePostStatsQuery(
+    flowPostsForStats.postDataList,
+    { longFormPosts: flowPostsForStats.longFormList }
+  );
+
+  const selectedPostModalStats = useMemo(() => {
+    if (!selectedPost) return;
+    if (getFlowItemModalType(selectedPost) !== "published") return;
+    const se = selectedPost.signedEvent;
+    if (!se || typeof se !== "object" || !("id" in se)) return;
+    const id = (se as { id?: unknown }).id;
+    if (typeof id !== "string") return;
+    const entry = flowStatsMerged[id];
+    if (!entry) return;
+    return {
+      likes: entry.likes,
+      replies: entry.replies,
+      mentions: entry.mentions,
+      reposts: entry.reposts,
+      zaps: entry.zaps,
+      satszapped: entry.satszapped,
+    };
+  }, [selectedPost, flowStatsMerged]);
+
+  const selectedLongFormModalStats = useMemo(() => {
+    if (!selectedLongFormPost) return;
+    if (getFlowItemModalType(selectedLongFormPost) !== "published") return;
+    const eventId = getLongFormPublishedEventId(selectedLongFormPost);
+    if (!eventId) return;
+    const entry = flowStatsMerged[eventId];
+    if (!entry) return;
+    return {
+      likes: entry.likes,
+      replies: entry.replies,
+      mentions: entry.mentions,
+      reposts: entry.reposts,
+      zaps: entry.zaps,
+      satszapped: entry.satszapped,
+    };
+  }, [selectedLongFormPost, flowStatsMerged]);
+
   return (
     <>
       {showSuccessMessage && successMessage ? (
@@ -444,6 +502,7 @@ export default function DashboardIndexPage() {
       {selectedPost ? (
         <PostDetailsModal
           post={selectedPost}
+          stats={selectedPostModalStats}
           onClose={() => setSelectedPost(null)}
           onDeleted={() => {
             resetFlowMergeState();
@@ -457,6 +516,7 @@ export default function DashboardIndexPage() {
             setSelectedPost(null);
             _handleReschedulePost(p as PostData);
           }}
+          showStats={getFlowItemModalType(selectedPost) === "published"}
           showSignedEvent={true}
           type={getFlowItemModalType(selectedPost)}
           userTimezone={getUserTimezone(user)}
@@ -467,6 +527,7 @@ export default function DashboardIndexPage() {
       {selectedLongFormPost ? (
         <LongFormDetailsModal
           post={selectedLongFormPost}
+          stats={selectedLongFormModalStats}
           onClose={() => setSelectedLongFormPost(null)}
           onDeleted={() => {
             resetFlowMergeState();
@@ -481,6 +542,7 @@ export default function DashboardIndexPage() {
             _handleReschedulePost(p as LongFormPostData);
           }}
           type={getFlowItemModalType(selectedLongFormPost)}
+          showStats={getFlowItemModalType(selectedLongFormPost) === "published"}
           showSignedEvent={true}
           userTimezone={getUserTimezone(user)}
           userTimeFormat={userTimeFormat}

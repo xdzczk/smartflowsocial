@@ -43,6 +43,7 @@ import {
   formatDate,
   getPostRowThumbnailBadge,
 } from "~/features/posts/utils/content-helpers";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { getImageUrls } from "~/lib/helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -277,6 +278,7 @@ export default function PublishedPostsTable({
             <tbody>
               {filteredPosts.map((post) => {
                 const postStats = getPostStats(post, stats);
+                const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
                   contentKind: "post",
                   postType: post.postType,
@@ -431,99 +433,103 @@ export default function PublishedPostsTable({
                               Open on Nostr
                             </Link>
                           </DropdownMenuItem>
-                          {(() => {
-                            const fetcher = individualRepostFetcher;
-                            const formData = getFetcherFormData(fetcher);
-                            return (
-                              <fetcher.Form method="post">
-                                <input
-                                  type="hidden"
-                                  name="postId"
-                                  value={post.id}
-                                />
-                                <input
-                                  type="hidden"
-                                  name="_action"
-                                  value="repost"
-                                />
-                                <DropdownMenuItem asChild>
-                                  <button
-                                    type="submit"
-                                    disabled={
-                                      fetcher.state !== "idle" ||
-                                      (formData
-                                        ? (formData.get("postId") as
-                                            | string
-                                            | null) === post.id
-                                        : false)
-                                    }
-                                  >
-                                    {fetcher.state !== "idle" &&
-                                    (formData
-                                      ? (formData.get("postId") as
-                                          | string
-                                          | null) === post.id
-                                      : false)
-                                      ? "Reposting..."
-                                      : "Repost"}
-                                  </button>
+                          {!blockRepostQuoteChain ? (
+                            <>
+                              {(() => {
+                                const fetcher = individualRepostFetcher;
+                                const formData = getFetcherFormData(fetcher);
+                                return (
+                                  <fetcher.Form method="post">
+                                    <input
+                                      type="hidden"
+                                      name="postId"
+                                      value={post.id}
+                                    />
+                                    <input
+                                      type="hidden"
+                                      name="_action"
+                                      value="repost"
+                                    />
+                                    <DropdownMenuItem asChild>
+                                      <button
+                                        type="submit"
+                                        disabled={
+                                          fetcher.state !== "idle" ||
+                                          (formData
+                                            ? (formData.get("postId") as
+                                                | string
+                                                | null) === post.id
+                                            : false)
+                                        }
+                                      >
+                                        {fetcher.state !== "idle" &&
+                                        (formData
+                                          ? (formData.get("postId") as
+                                              | string
+                                              | null) === post.id
+                                          : false)
+                                          ? "Reposting..."
+                                          : "Repost"}
+                                      </button>
+                                    </DropdownMenuItem>
+                                  </fetcher.Form>
+                                );
+                              })()}
+                              {(() => {
+                                const fetcher = individualRepostFetcher;
+                                const formData = getFetcherFormData(fetcher);
+                                return (
+                                  <fetcher.Form method="post">
+                                    <input
+                                      type="hidden"
+                                      name="postId"
+                                      value={post.id}
+                                    />
+                                    <input
+                                      type="hidden"
+                                      name="_action"
+                                      value="quote"
+                                    />
+                                    <DropdownMenuItem asChild>
+                                      <button
+                                        type="submit"
+                                        disabled={
+                                          fetcher.state !== "idle" ||
+                                          (formData
+                                            ? (formData.get("postId") as
+                                                | string
+                                                | null) === post.id
+                                            : false)
+                                        }
+                                      >
+                                        {fetcher.state !== "idle" &&
+                                        (formData
+                                          ? (formData.get("postId") as
+                                              | string
+                                              | null) === post.id
+                                          : false)
+                                          ? "Quoting..."
+                                          : "Quote Post"}
+                                      </button>
+                                    </DropdownMenuItem>
+                                  </fetcher.Form>
+                                );
+                              })()}
+                              {onScheduleRepost ? (
+                                <DropdownMenuItem
+                                  onSelect={() => onScheduleRepost(post)}
+                                >
+                                  Schedule repost
                                 </DropdownMenuItem>
-                              </fetcher.Form>
-                            );
-                          })()}
-                          {(() => {
-                            const fetcher = individualRepostFetcher;
-                            const formData = getFetcherFormData(fetcher);
-                            return (
-                              <fetcher.Form method="post">
-                                <input
-                                  type="hidden"
-                                  name="postId"
-                                  value={post.id}
-                                />
-                                <input
-                                  type="hidden"
-                                  name="_action"
-                                  value="quote"
-                                />
-                                <DropdownMenuItem asChild>
-                                  <button
-                                    type="submit"
-                                    disabled={
-                                      fetcher.state !== "idle" ||
-                                      (formData
-                                        ? (formData.get("postId") as
-                                            | string
-                                            | null) === post.id
-                                        : false)
-                                    }
-                                  >
-                                    {fetcher.state !== "idle" &&
-                                    (formData
-                                      ? (formData.get("postId") as
-                                          | string
-                                          | null) === post.id
-                                      : false)
-                                      ? "Quoting..."
-                                      : "Quote Post"}
-                                  </button>
+                              ) : null}
+                              {onScheduleQuote ? (
+                                <DropdownMenuItem
+                                  onSelect={() => onScheduleQuote(post)}
+                                >
+                                  Schedule quote
                                 </DropdownMenuItem>
-                              </fetcher.Form>
-                            );
-                          })()}
-                          {onScheduleRepost ? (
-                            <DropdownMenuItem
-                              onSelect={() => onScheduleRepost(post)}
-                            >
-                              Schedule repost
-                            </DropdownMenuItem>
-                          ) : null}
-                          {onScheduleQuote ? (
-                            <DropdownMenuItem
-                              onSelect={() => onScheduleQuote(post)}
-                            >
-                              Schedule quote
-                            </DropdownMenuItem>
+                              ) : null}
+                            </>
                           ) : null}
                           <DropdownMenuSeparator />
                           <deleteFetcher.Form method="post">

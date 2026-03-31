@@ -13,6 +13,7 @@ import {
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
+  clampDateTimeLocalToMin,
   formatForDateTimeLocal,
   getNowForDateTimeLocal,
   nowInTimezone,
@@ -130,7 +131,7 @@ export default function SchedulingControls({
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     const min = getNowForDateTimeLocal(userTimezone);
-    const clamped = v && v < min ? min : v;
+    const clamped = clampDateTimeLocalToMin(v, min);
     setLocalScheduledFor(clamped);
     onScheduleChange(clamped);
   };

@@ -435,7 +435,7 @@ describe("Bulk Posts Handlers", () => {
       expect(secondPost.scheduledFor).toMatch(/2024-01-15T11:00/);
     });
 
-    it("should use current time when first post has no scheduledFor", () => {
+    it("should use now + 15 minutes when first post has no scheduledFor", () => {
       const posts: BulkPost[] = [
         createBulkPost({ caption: "Post 1", scheduledFor: "" }),
         createBulkPost({ caption: "Post 2", scheduledFor: "2024-01-15T11:00" }),

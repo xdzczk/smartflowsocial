@@ -4,7 +4,7 @@ import {
   useSearchParams,
   useNavigate,
 } from "@remix-run/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -43,11 +43,13 @@ import {
   convertScheduledPostsToBulkPosts,
   loadScheduledRepostDataAsBulkPosts,
 } from "~/features/posts/utils/bulk-composer-data";
+import { isPureRepostSourceContent } from "~/features/posts/utils/content-helpers";
 import { getTodayInTimezone } from "~/features/posts/utils/date-range-filter";
 import {
   getPostTypeFromPost,
   getNewPostUrl,
 } from "~/features/posts/utils/publish-result.utils";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -353,6 +355,20 @@ export default function ScheduledPostsPage() {
     setSearchParams(next);
   }, [searchParams, setSearchParams, setSearchTerm, setDateRange]);
 
+  const selectionBlocksRepostQuoteChain = useMemo(() => {
+    if (currentTab === "all") {
+      return allContent
+        .filter((item) => selectedPosts.has(item.id))
+        .some((item) => isPureRepostSourceContent(item));
+    }
+    if (currentTab === "posts" || currentTab === "reposts") {
+      return filteredPosts
+        .filter((p) => selectedPosts.has(p.id))
+        .some((p) => isPureRepostSourcePost(p));
+    }
+    return false;
+  }, [currentTab, allContent, selectedPosts, filteredPosts]);
+
   const showQueueOnScheduled =
     currentTab === "all" ||
     currentTab === "posts" ||
@@ -487,8 +503,14 @@ export default function ScheduledPostsPage() {
             onBulkDelete={handleBulkDelete}
             bulkDeleteState={bulkDeleteFetcher.state}
             onBulkEditReschedule={handleBulkEditReschedule}
-            onBulkScheduledRepost={handleBulkScheduledRepost}
-            onBulkQuote={handleBulkQuote}
+            onBulkScheduledRepost={
+              selectionBlocksRepostQuoteChain
+                ? undefined
+                : handleBulkScheduledRepost
+            }
+            onBulkQuote={
+              selectionBlocksRepostQuoteChain ? undefined : handleBulkQuote
+            }
             repostFetcher={repostFetcher as PostFetcher}
             onEditPost={handleEditPost}
             onReschedulePost={handleReschedulePost}
@@ -519,8 +541,14 @@ export default function ScheduledPostsPage() {
               onBulkDelete={handleBulkDelete}
               bulkDeleteState={bulkDeleteFetcher.state}
               onBulkEditReschedule={handleBulkEditReschedule}
-              onBulkScheduledRepost={handleBulkScheduledRepost}
-              onBulkQuote={handleBulkQuote}
+              onBulkScheduledRepost={
+                selectionBlocksRepostQuoteChain
+                  ? undefined
+                  : handleBulkScheduledRepost
+              }
+              onBulkQuote={
+                selectionBlocksRepostQuoteChain ? undefined : handleBulkQuote
+              }
               repostFetcher={repostFetcher as PostFetcher}
             />
 

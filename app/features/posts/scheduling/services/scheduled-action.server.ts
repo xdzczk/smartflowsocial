@@ -16,13 +16,17 @@ import {
   deletePost,
   getPostById,
 } from "~/features/posts/server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import {
   scheduledActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
 import { MoveScheduledToDraftUseCase } from "../use-cases/move-scheduled-to-draft.use-case.server";
+
+const REPOST_CHAIN_BLOCKED_ERROR = "Cannot repost or quote a repost.";
 
 export async function handleScheduledAction(
   formData: FormData,
@@ -142,7 +146,8 @@ function buildRepostConditionsFromData(data: {
 
 async function handleScheduleRepost(
   data: {
-    postId: string;
+    postId?: string;
+    sourceSignedEvent?: string;
     scheduledFor: string;
     signedEvent: string;
     minReactions?: number;
@@ -153,10 +158,6 @@ async function handleScheduleRepost(
   },
   userId: string
 ) {
-  const sourcePost = await getPostById({ id: data.postId, userId });
-  if (!sourcePost) {
-    return json({ error: "Post not found" }, { status: 404 });
-  }
   const signedEvent = parseSignedEvent(data.signedEvent);
   if (!signedEvent) {
     return json({ error: "Invalid signed event" }, { status: 400 });
@@ -175,19 +176,65 @@ async function handleScheduleRepost(
     }
     throw e;
   }
+
+  const postId = data.postId?.trim();
+  if (postId) {
+    const sourcePost = await getPostById({ id: postId, userId });
+    if (!sourcePost) {
+      return json({ error: "Post not found" }, { status: 404 });
+    }
+    if (isPureRepostSourcePost(sourcePost)) {
+      return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+    }
+    const post = await createPostWithOutbox(
+      {
+        userId,
+        content: "",
+        caption: "",
+        fileUrl: [],
+        postType: sourcePost.postType,
+        queueTypeId: sourcePost.queueTypeId,
+        scheduledAtUtc,
+        tags: [],
+        repost: true,
+        isQuotedPost: false,
+        repostOfPostId: sourcePost.id,
+        postKind: "REPOST",
+        signedEvent,
+        ...(repostConditions && { repostConditions }),
+      },
+      scheduledForUnix
+    );
+    const stateMachine = new PostStateMachine();
+    await stateMachine.transition(
+      post.id,
+      userId,
+      "SCHEDULED",
+      "Repost created with schedule"
+    );
+    return { success: true, postId: post.id };
+  }
+
+  const sourceEv = parseSourceSignedEvent(data.sourceSignedEvent);
+  if (!sourceEv) {
+    return json({ error: "Invalid source event" }, { status: 400 });
+  }
+  if (sourceEv.kind === 6) {
+    return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+  }
+  const queueTypeId = await resolveQueueTypeId(userId, null, null);
   const post = await createPostWithOutbox(
     {
       userId,
       content: "",
       caption: "",
       fileUrl: [],
-      postType: sourcePost.postType,
-      queueTypeId: sourcePost.queueTypeId,
+      postType: "TEXT",
+      queueTypeId,
       scheduledAtUtc,
       tags: [],
       repost: true,
       isQuotedPost: false,
-      repostOfPostId: sourcePost.id,
       postKind: "REPOST",
       signedEvent,
       ...(repostConditions && { repostConditions }),
@@ -206,17 +253,14 @@ async function handleScheduleRepost(
 
 async function handleScheduleQuote(
   data: {
-    postId: string;
+    postId?: string;
+    sourceSignedEvent?: string;
     scheduledFor: string;
     signedEvent: string;
     quoteCaption?: string;
   },
   userId: string
 ) {
-  const sourcePost = await getPostById({ id: data.postId, userId });
-  if (!sourcePost) {
-    return json({ error: "Post not found" }, { status: 404 });
-  }
   const signedEvent = parseSignedEvent(data.signedEvent);
   if (!signedEvent) {
     return json({ error: "Invalid signed event" }, { status: 400 });
@@ -235,19 +279,64 @@ async function handleScheduleQuote(
     }
     throw e;
   }
+
+  const postId = data.postId?.trim();
+  if (postId) {
+    const sourcePost = await getPostById({ id: postId, userId });
+    if (!sourcePost) {
+      return json({ error: "Post not found" }, { status: 404 });
+    }
+    if (isPureRepostSourcePost(sourcePost)) {
+      return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+    }
+    const post = await createPostWithOutbox(
+      {
+        userId,
+        content: quoteCaption,
+        caption: quoteCaption,
+        fileUrl: [],
+        postType: sourcePost.postType,
+        queueTypeId: sourcePost.queueTypeId,
+        scheduledAtUtc,
+        tags: [],
+        repost: false,
+        isQuotedPost: true,
+        quoteOfPostId: sourcePost.id,
+        postKind: "QUOTE",
+        signedEvent,
+      },
+      scheduledForUnix
+    );
+    const stateMachine = new PostStateMachine();
+    await stateMachine.transition(
+      post.id,
+      userId,
+      "SCHEDULED",
+      "Quote post created with schedule"
+    );
+    return { success: true, postId: post.id };
+  }
+
+  const sourceEv = parseSourceSignedEvent(data.sourceSignedEvent);
+  if (!sourceEv) {
+    return json({ error: "Invalid source event" }, { status: 400 });
+  }
+  if (sourceEv.kind === 6) {
+    return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+  }
+  const queueTypeId = await resolveQueueTypeId(userId, null, null);
   const post = await createPostWithOutbox(
     {
       userId,
       content: quoteCaption,
       caption: quoteCaption,
       fileUrl: [],
-      postType: sourcePost.postType,
-      queueTypeId: sourcePost.queueTypeId,
+      postType: "TEXT",
+      queueTypeId,
       scheduledAtUtc,
       tags: [],
       repost: false,
       isQuotedPost: true,
-      quoteOfPostId: sourcePost.id,
       postKind: "QUOTE",
       signedEvent,
     },
@@ -261,6 +350,24 @@ async function handleScheduleQuote(
     "Quote post created with schedule"
   );
   return { success: true, postId: post.id };
+}
+
+/** Source note from lookup (may omit sig); used only for validation. */
+function parseSourceSignedEvent(raw: string | undefined): {
+  kind: number;
+} | null {
+  if (!raw?.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed !== "object" || parsed === null || !("kind" in parsed)) {
+      return null;
+    }
+    const kind = Number((parsed as { kind?: unknown }).kind);
+    if (Number.isNaN(kind)) return null;
+    return { kind };
+  } catch {
+    return null;
+  }
 }
 
 function parseSignedEvent(raw: string): {

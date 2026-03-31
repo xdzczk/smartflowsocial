@@ -13,6 +13,12 @@ export function hasMedia(post: BulkPost): boolean {
   );
 }
 
+/** Kind 6 (NIP-18) repost rows have empty note body; caption/media rules for normal posts do not apply. */
+export function bulkPostMissingRequiredCaption(post: BulkPost): boolean {
+  if (post.isKind6Repost) return false;
+  return !hasMedia(post) && !post.caption.trim();
+}
+
 export function buildBulkPostStatusLabel(
   post: BulkPost,
   rowErrors: string[] | undefined
@@ -20,7 +26,7 @@ export function buildBulkPostStatusLabel(
   if (rowErrors?.length) {
     return { label: "Needs attention", variant: "amber" };
   }
-  if (!hasMedia(post) && !post.caption.trim()) {
+  if (bulkPostMissingRequiredCaption(post)) {
     return { label: "Needs caption", variant: "amber" };
   }
   if (!post.scheduledFor.trim()) {

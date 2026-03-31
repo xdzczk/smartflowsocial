@@ -284,31 +284,57 @@ export const repostConditionsSchema = z.object({
 });
 export type RepostConditionsInput = z.infer<typeof repostConditionsSchema>;
 
-/**
- * Schedule repost: create one scheduled repost post from an existing post
- */
-export const scheduleRepostSchema = z.object({
-  _action: z.literal("scheduleRepost"),
-  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
-  scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
-  signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
-  minReactions: repostConditionField,
-  minZaps: repostConditionField,
-  minComments: repostConditionField,
-  minReposts: repostConditionField,
-  minSats: repostConditionField,
-});
+const scheduleRepostQuoteSourceRefine = (
+  data: {
+    postId?: string;
+    sourceSignedEvent?: string;
+  },
+  ctx: z.RefinementCtx
+) => {
+  const hasPostId = Boolean(data.postId?.trim());
+  const hasSource = Boolean(data.sourceSignedEvent?.trim());
+  if (hasPostId === hasSource) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide exactly one of postId or sourceSignedEvent",
+      path: hasPostId ? ["sourceSignedEvent"] : ["postId"],
+    });
+  }
+};
 
 /**
- * Schedule quote: create one scheduled quote post from an existing post
+ * Schedule repost: create one scheduled repost post from an existing post,
+ * or from an arbitrary Nostr note (lookup) via sourceSignedEvent.
  */
-export const scheduleQuoteSchema = z.object({
-  _action: z.literal("scheduleQuote"),
-  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
-  scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
-  signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
-  quoteCaption: z.string().optional(),
-});
+export const scheduleRepostSchema = z
+  .object({
+    _action: z.literal("scheduleRepost"),
+    postId: z.string().optional(),
+    sourceSignedEvent: z.string().optional(),
+    scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
+    signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
+    minReactions: repostConditionField,
+    minZaps: repostConditionField,
+    minComments: repostConditionField,
+    minReposts: repostConditionField,
+    minSats: repostConditionField,
+  })
+  .superRefine(scheduleRepostQuoteSourceRefine);
+
+/**
+ * Schedule quote: create one scheduled quote post from an existing post,
+ * or from an arbitrary Nostr note (lookup) via sourceSignedEvent.
+ */
+export const scheduleQuoteSchema = z
+  .object({
+    _action: z.literal("scheduleQuote"),
+    postId: z.string().optional(),
+    sourceSignedEvent: z.string().optional(),
+    scheduledFor: z.string().min(1, ERROR_SCHEDULED_TIME_REQUIRED),
+    signedEvent: z.string().min(1, ERROR_SIGNED_EVENT_REQUIRED),
+    quoteCaption: z.string().optional(),
+  })
+  .superRefine(scheduleRepostQuoteSourceRefine);
 
 /**
  * Move scheduled post back to drafts (short or longform)

@@ -20,6 +20,8 @@ import { ComposerScheduleRandomWindowField } from "~/features/posts/composer/com
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
+  addMinutes,
+  clampDateTimeLocalToMin,
   formatForDateTimeLocal,
   getNowForDateTimeLocal,
   nowInTimezone,
@@ -53,7 +55,7 @@ export default function BulkPostsSchedulingPanel({
   onScheduleIntervalChipClick,
 }: BulkPostsSchedulingPanelProps) {
   const defaultStart = formatForDateTimeLocal(
-    addHours(nowInTimezone(userTimezone), 1),
+    addMinutes(nowInTimezone(userTimezone), 15),
     userTimezone
   );
   const firstScheduled =
@@ -117,8 +119,7 @@ export default function BulkPostsSchedulingPanel({
             value={displayStart}
             onChange={(e) => {
               const v = e.target.value;
-              const clamped = v && v < minDatetime ? minDatetime : v;
-              setStartTime(clamped);
+              setStartTime(clampDateTimeLocalToMin(v, minDatetime));
             }}
             min={minDatetime}
             disabled={disabled}

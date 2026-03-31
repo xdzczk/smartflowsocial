@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Toast from "~/components/ui/Toast";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
+import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
 import { BulkComposerModal } from "~/features/posts/composer";
 import { usePostResultFromUrl } from "~/features/posts/hooks/usePostResultFromUrl";
@@ -35,13 +36,17 @@ import {
   PublishingQueueFilter,
 } from "~/features/posts/ui";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
-import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import {
+  isPureRepostSourceContent,
+  isRepostPost,
+} from "~/features/posts/utils/content-helpers";
 import { getTodayInTimezone } from "~/features/posts/utils/date-range-filter";
 import {
   determineModalAction,
   getNewPostUrl,
   getPostTypeFromPost,
 } from "~/features/posts/utils/publish-result.utils";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -148,7 +153,9 @@ export default function PublishedPostsPage() {
     });
 
   // Fetch stats client-side after page load (non-blocking)
-  const { stats: fetchedStats } = usePostStatsQuery(posts);
+  const { stats: fetchedStats } = usePostStatsQuery(posts, {
+    longFormPosts: longformPosts,
+  });
 
   // Merge initial stats (empty) with fetched stats
   const stats = useMemo<Record<string, PostStats>>(() => {
@@ -267,6 +274,56 @@ export default function PublishedPostsPage() {
       post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [sortedPosts, searchTerm, currentTab]);
+
+  const selectionBlocksRepostQuoteChain = useMemo(() => {
+    const selected = allContent.filter((item) => selectedPosts.has(item.id));
+    return selected.some((item) => isPureRepostSourceContent(item));
+  }, [allContent, selectedPosts]);
+
+  const selectionBlocksRepostQuoteChainTab = useMemo(() => {
+    const selected = filteredPosts.filter((p) => selectedPosts.has(p.id));
+    return selected.some((p) => isPureRepostSourcePost(p));
+  }, [filteredPosts, selectedPosts]);
+
+  const selectedPostModalStats = useMemo(() => {
+    if (!selectedPost || typeof selectedPost !== "object") return;
+    if (!("signedEvent" in selectedPost)) return;
+    const se = selectedPost.signedEvent;
+    if (
+      !se ||
+      typeof se !== "object" ||
+      !("id" in se) ||
+      typeof (se as { id: unknown }).id !== "string"
+    ) {
+      return;
+    }
+    const entry = stats[se.id];
+    if (!entry) return;
+    return {
+      likes: entry.likes,
+      replies: entry.replies,
+      mentions: entry.mentions,
+      reposts: entry.reposts,
+      zaps: entry.zaps,
+      satszapped: entry.satszapped,
+    };
+  }, [selectedPost, stats]);
+
+  const selectedLongFormModalStats = useMemo(() => {
+    if (!selectedLongFormPost) return;
+    const eventId = getLongFormPublishedEventId(selectedLongFormPost);
+    if (!eventId) return;
+    const entry = stats[eventId];
+    if (!entry) return;
+    return {
+      likes: entry.likes,
+      replies: entry.replies,
+      mentions: entry.mentions,
+      reposts: entry.reposts,
+      zaps: entry.zaps,
+      satszapped: entry.satszapped,
+    };
+  }, [selectedLongFormPost, stats]);
 
   // Call hook before any conditional returns
   const { userTimezone, userTimeFormat } = useFormattedDate();
@@ -406,9 +463,17 @@ export default function PublishedPostsPage() {
             individualRepostFetcher={individualRepostFetcher}
             longformRepostFetcher={longformRepostFetcher}
             longformQuoteFetcher={longformQuoteFetcher}
-            onBulkRepost={handleBulkRepost}
-            onBulkScheduledRepost={handleBulkScheduledRepost}
-            onBulkQuote={handleBulkQuote}
+            onBulkRepost={
+              selectionBlocksRepostQuoteChain ? undefined : handleBulkRepost
+            }
+            onBulkScheduledRepost={
+              selectionBlocksRepostQuoteChain
+                ? undefined
+                : handleBulkScheduledRepost
+            }
+            onBulkQuote={
+              selectionBlocksRepostQuoteChain ? undefined : handleBulkQuote
+            }
             repostFetcher={repostFetcher as PostFetcher}
             onScheduleRepost={(post) =>
               setScheduleRepostQuote({ post, mode: "repost" })
@@ -434,9 +499,19 @@ export default function PublishedPostsPage() {
                   ? "submitting"
                   : bulkDeleteFetcher.state
               }
-              onBulkRepost={handleBulkRepost}
-              onBulkScheduledRepost={handleBulkScheduledRepost}
-              onBulkQuote={handleBulkQuote}
+              onBulkRepost={
+                selectionBlocksRepostQuoteChainTab
+                  ? undefined
+                  : handleBulkRepost
+              }
+              onBulkScheduledRepost={
+                selectionBlocksRepostQuoteChainTab
+                  ? undefined
+                  : handleBulkScheduledRepost
+              }
+              onBulkQuote={
+                selectionBlocksRepostQuoteChainTab ? undefined : handleBulkQuote
+              }
               repostFetcher={repostFetcher as PostFetcher}
             />
             <PublishedPostsTable
@@ -506,12 +581,14 @@ export default function PublishedPostsPage() {
       {selectedPost ? (
         <PostDetailsModal
           post={selectedPost}
+          stats={selectedPostModalStats}
           onClose={() => setSelectedPost(null)}
           onDeleted={(postId) => {
             optimisticallyRemovePublishedItems([postId]);
             refreshPostViews();
           }}
           type="published"
+          showStats={true}
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}
@@ -521,12 +598,14 @@ export default function PublishedPostsPage() {
       {selectedLongFormPost ? (
         <LongFormDetailsModal
           post={selectedLongFormPost}
+          stats={selectedLongFormModalStats}
           onClose={() => setSelectedLongFormPost(null)}
           onDeleted={(postId) => {
             optimisticallyRemovePublishedItems([postId]);
             refreshPostViews();
           }}
           type="published"
+          showStats={true}
           showSignedEvent={true}
           userTimezone={user.timezone ?? undefined}
           userTimeFormat={userTimeFormat}

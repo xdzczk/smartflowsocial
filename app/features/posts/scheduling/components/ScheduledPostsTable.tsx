@@ -41,6 +41,7 @@ import {
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -293,6 +294,7 @@ export function ScheduledPostsTable({
             </thead>
             <tbody>
               {posts.map((post) => {
+                const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
                   contentKind: "post",
                   postType: post.postType,
@@ -430,14 +432,14 @@ export function ScheduledPostsTable({
                           >
                             Reschedule
                           </DropdownMenuItem>
-                          {onScheduleRepost ? (
+                          {onScheduleRepost && !blockRepostQuoteChain ? (
                             <DropdownMenuItem
                               onSelect={() => onScheduleRepost(post)}
                             >
                               Schedule repost
                             </DropdownMenuItem>
                           ) : null}
-                          {onScheduleQuote ? (
+                          {onScheduleQuote && !blockRepostQuoteChain ? (
                             <DropdownMenuItem
                               onSelect={() => onScheduleQuote(post)}
                             >

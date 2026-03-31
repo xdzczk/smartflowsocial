@@ -74,6 +74,8 @@ export const searchResultDataSchema = z.object({
   replies: z.array(searchReplyItemSchema).optional(),
   resolution: searchLookupResolutionSchema.optional(),
   error: z.union([z.string(), lookupLoaderErrorSchema]).optional(),
+  /** When the resolved event id matches the user's post (nostrEventId), full PostData for schedule modal. */
+  scheduleSourcePost: z.unknown().optional(),
 });
 
 /**

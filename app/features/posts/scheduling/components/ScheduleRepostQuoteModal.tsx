@@ -14,8 +14,10 @@ import {
   requestNewSignerSession,
   tryBackgroundReconnect,
 } from "~/features/auth/signer";
+import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import {
   buildKind6RepostEvent,
   buildQuoteEvent,
@@ -28,6 +30,7 @@ import {
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
+  clampDateTimeLocalToMin,
   getMinDatetimeLocalForSchedule,
   getMinScheduleTimestampMs,
   parseDateTimeLocal,
@@ -47,14 +50,21 @@ interface SignedEventShape {
 
 function validateScheduleInput(
   post: PostData | null,
+  lookupSourceSignedEvent: SignedEvent | null,
   mode: "repost" | "quote" | null,
   scheduledFor: string,
   userTimezone: string
 ): { scheduledForUnix: number; signed: SignedEventShape } | string {
-  if (!post || !mode || !scheduledFor.trim()) {
+  if (!mode || !scheduledFor.trim()) {
     return "Please select a date and time.";
   }
-  const originalSignedEvent = post.signedEvent;
+  const originalSignedEvent = post?.signedEvent ?? lookupSourceSignedEvent;
+  if (post && isPureRepostSourcePost(post)) {
+    return "You cannot schedule a repost or quote of a repost.";
+  }
+  if (!post && lookupSourceSignedEvent?.kind === 6) {
+    return "You cannot schedule a repost or quote of a repost.";
+  }
   if (
     !originalSignedEvent ||
     typeof originalSignedEvent !== "object" ||
@@ -66,12 +76,15 @@ function validateScheduleInput(
   const zoned = parseDateTimeLocal(scheduledFor, userTimezone);
   const utcZoned = zoned.withTimeZone("UTC");
   const scheduledForUnix = toUnixTimestamp(utcZoned);
-  const minMs = getMinScheduleTimestampMs(
-    userTimezone,
-    post.scheduledAtUtc ?? undefined
-  );
+  const notBeforeUtc =
+    post?.scheduledAtUtc != null
+      ? post.scheduledAtUtc instanceof Date
+        ? post.scheduledAtUtc
+        : new Date(post.scheduledAtUtc)
+      : undefined;
+  const minMs = getMinScheduleTimestampMs(userTimezone, notBeforeUtc);
   if (utcZoned.epochMilliseconds < minMs) {
-    return post.scheduledAtUtc
+    return notBeforeUtc
       ? "Repost/quote must be scheduled at or after the original post's scheduled time."
       : "Please select a date and time in the future.";
   }
@@ -80,7 +93,8 @@ function validateScheduleInput(
 }
 
 async function signAndSubmitRepost(
-  post: PostData,
+  post: PostData | null,
+  lookupSourceSignedEvent: SignedEvent | null,
   signed: SignedEventShape,
   scheduledForUnix: number,
   fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>,
@@ -102,7 +116,11 @@ async function signAndSubmitRepost(
     });
   const formData = new FormData();
   formData.set("_action", "scheduleRepost");
-  formData.set("postId", post.id);
+  if (post?.id) {
+    formData.set("postId", post.id);
+  } else if (lookupSourceSignedEvent) {
+    formData.set("sourceSignedEvent", JSON.stringify(lookupSourceSignedEvent));
+  }
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(repostSignedEvent));
   if (repostConditions) {
@@ -121,7 +139,8 @@ async function signAndSubmitRepost(
 }
 
 async function signAndSubmitQuote(
-  post: PostData,
+  post: PostData | null,
+  lookupSourceSignedEvent: SignedEvent | null,
   signed: SignedEventShape,
   scheduledForUnix: number,
   quoteCaption: string,
@@ -143,7 +162,11 @@ async function signAndSubmitQuote(
     });
   const formData = new FormData();
   formData.set("_action", "scheduleQuote");
-  formData.set("postId", post.id);
+  if (post?.id) {
+    formData.set("postId", post.id);
+  } else if (lookupSourceSignedEvent) {
+    formData.set("sourceSignedEvent", JSON.stringify(lookupSourceSignedEvent));
+  }
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
   if (quoteCaption) {
@@ -174,16 +197,24 @@ function getConfirmButtonLabel(
 
 interface ScheduleRepostQuoteModalProps {
   open: boolean;
+  /** Your published/scheduled post (e.g. Published page). */
   post: PostData | null;
+  /**
+   * When scheduling from lookup of an arbitrary note (no app `post` row),
+   * pass the source note; omit when `post` is set.
+   */
+  lookupSourceSignedEvent?: SignedEvent | null;
   mode: "repost" | "quote" | null;
   onClose: () => void;
   onSuccess?: () => void;
   user?: UserData | null;
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- schedule repost/quote modal: validation, signing, conditions
 export function ScheduleRepostQuoteModal({
   open,
   post,
+  lookupSourceSignedEvent = null,
   mode,
   onClose,
   onSuccess,
@@ -241,6 +272,7 @@ export function ScheduleRepostQuoteModal({
   const handleConfirm = async () => {
     const validation = validateScheduleInput(
       post,
+      lookupSourceSignedEvent,
       mode,
       scheduledFor,
       userTimezone
@@ -250,7 +282,7 @@ export function ScheduleRepostQuoteModal({
       return;
     }
     const { scheduledForUnix, signed } = validation;
-    if (!post || !mode) return;
+    if ((!post && !lookupSourceSignedEvent) || !mode) return;
     try {
       setSigningError(null);
       setIsSigning(true);
@@ -258,6 +290,7 @@ export function ScheduleRepostQuoteModal({
       if (mode === "repost") {
         await signAndSubmitRepost(
           post,
+          lookupSourceSignedEvent,
           signed,
           scheduledForUnix,
           fetcher,
@@ -266,6 +299,7 @@ export function ScheduleRepostQuoteModal({
       } else {
         await signAndSubmitQuote(
           post,
+          lookupSourceSignedEvent,
           signed,
           scheduledForUnix,
           quoteCaption,
@@ -291,11 +325,23 @@ export function ScheduleRepostQuoteModal({
 
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
-  const hasSignedEvent =
-    post?.signedEvent &&
-    typeof post.signedEvent === "object" &&
-    "id" in post.signedEvent &&
-    "pubkey" in post.signedEvent;
+  const hasSignedEvent = [
+    Boolean(
+      post?.signedEvent &&
+      typeof post.signedEvent === "object" &&
+      "id" in post.signedEvent &&
+      "pubkey" in post.signedEvent
+    ),
+    Boolean(
+      lookupSourceSignedEvent &&
+      "id" in lookupSourceSignedEvent &&
+      "pubkey" in lookupSourceSignedEvent
+    ),
+  ].some(Boolean);
+
+  const isRepostChainBlocked = post
+    ? isPureRepostSourcePost(post)
+    : Boolean(lookupSourceSignedEvent?.kind === 6);
 
   const modalContent =
     !open || typeof document === "undefined" ? null : (
@@ -328,9 +374,13 @@ export function ScheduleRepostQuoteModal({
               </button>
             </div>
 
-            {!post || !hasSignedEvent ? (
+            {!hasSignedEvent ? (
               <p className="text-muted-foreground text-sm">
                 This post cannot be used to schedule a repost or quote.
+              </p>
+            ) : isRepostChainBlocked ? (
+              <p className="text-muted-foreground text-sm">
+                You cannot schedule a repost or quote of a repost.
               </p>
             ) : (
               <div className="space-y-4">
@@ -352,15 +402,25 @@ export function ScheduleRepostQuoteModal({
                     value={scheduledFor}
                     onChange={(e) => {
                       const v = e.target.value;
+                      const notBefore =
+                        post?.scheduledAtUtc != null
+                          ? post.scheduledAtUtc instanceof Date
+                            ? post.scheduledAtUtc
+                            : new Date(post.scheduledAtUtc)
+                          : undefined;
                       const min = getMinDatetimeLocalForSchedule(
                         userTimezone,
-                        post.scheduledAtUtc ?? undefined
+                        notBefore
                       );
-                      setScheduledFor(v && v < min ? min : v);
+                      setScheduledFor(clampDateTimeLocalToMin(v, min));
                     }}
                     min={getMinDatetimeLocalForSchedule(
                       userTimezone,
-                      post.scheduledAtUtc ?? undefined
+                      post?.scheduledAtUtc != null
+                        ? post.scheduledAtUtc instanceof Date
+                          ? post.scheduledAtUtc
+                          : new Date(post.scheduledAtUtc)
+                        : undefined
                     )}
                     className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
                   />
@@ -495,7 +555,7 @@ export function ScheduleRepostQuoteModal({
               >
                 Cancel
               </button>
-              {post && hasSignedEvent ? (
+              {hasSignedEvent && !isRepostChainBlocked ? (
                 <button
                   type="button"
                   onClick={() => void handleConfirm()}

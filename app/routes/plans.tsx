@@ -14,7 +14,7 @@ export const meta: MetaFunction = () => {
     {
       name: "description",
       content:
-        "Nostr-native pricing for scheduling, engagement, giveaways, and wallet-powered automation.",
+        "Operator-grade Nostr publishing: clear plan economics, Bitcoin/Lightning checkout, and infrastructure for serious workflows.",
     },
   ];
 };

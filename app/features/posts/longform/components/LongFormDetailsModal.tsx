@@ -7,7 +7,10 @@ import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
-import { getDeleteButtonLabel } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
+import {
+  getDeleteButtonLabel,
+  getLongFormPublishedEventId,
+} from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import { PostDetailHeader } from "~/features/posts/components/post-detail-modal/PostDetailHeader";
 import { DetailModalReplySnippet } from "~/features/posts/components/post-detail-modal/rail/DetailModalReplySnippet";
 import {
@@ -140,6 +143,7 @@ function QueueTypeCalm({
   );
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- long-form rail: overview, tags, queue, engagement, technical
 function LongFormDetailRail({
   type,
   post,
@@ -155,6 +159,8 @@ function LongFormDetailRail({
   onToggleEventData,
   openOnNostrUrl,
   viewThreadUrl,
+  showStats,
+  stats,
 }: {
   type: "draft" | "scheduled" | "published";
   post: LongFormPostType | LongFormPostData;
@@ -170,6 +176,15 @@ function LongFormDetailRail({
   onToggleEventData: () => void;
   openOnNostrUrl: string | null;
   viewThreadUrl: string;
+  showStats: boolean;
+  stats?: {
+    likes: number;
+    replies: number;
+    mentions: number;
+    reposts: number;
+    zaps: number;
+    satszapped: number;
+  };
 }) {
   const pad = cn(RAIL_PAD_X, RAIL_ZONE_PY, "flex flex-col gap-0");
   const divide = cn(RAIL_MAJOR_DIVIDE, "my-3");
@@ -203,6 +218,8 @@ function LongFormDetailRail({
   const previewReplies = directReplies.slice(0, 2);
   const readingTime = getLongFormReadingTime(post.content ?? undefined);
   const hasCover = Boolean(post.image?.trim());
+  const engagementStats =
+    type === "published" && showStats && stats && eventId ? stats : null;
 
   return (
     <aside
@@ -254,7 +271,10 @@ function LongFormDetailRail({
               </div>
             </div>
           ) : null}
-          {type === "published" && eventId && openOnNostrUrl ? (
+          {type === "published" &&
+          eventId &&
+          openOnNostrUrl &&
+          !engagementStats ? (
             <div className="flex flex-col gap-2 pt-1">
               <Link
                 to={openOnNostrUrl}
@@ -330,6 +350,62 @@ function LongFormDetailRail({
           </>
         ) : null}
 
+        {engagementStats ? (
+          <>
+            <div className={divide} />
+            <RailSectionHeader>Engagement</RailSectionHeader>
+            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.likes}
+                </p>
+                <p className="text-muted-foreground">Likes</p>
+              </div>
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.reposts}
+                </p>
+                <p className="text-muted-foreground">Reposts</p>
+              </div>
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.replies}
+                </p>
+                <p className="text-muted-foreground">Replies</p>
+              </div>
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.zaps}
+                </p>
+                <p className="text-muted-foreground">Zaps</p>
+              </div>
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.mentions}
+                </p>
+                <p className="text-muted-foreground">Mentions</p>
+              </div>
+              <div>
+                <p className="text-foreground font-semibold tabular-nums">
+                  {engagementStats.satszapped}
+                </p>
+                <p className="text-muted-foreground">Sats</p>
+              </div>
+            </div>
+            {openOnNostrUrl ? (
+              <Link
+                to={openOnNostrUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary mt-2 inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+              >
+                Open on Nostr
+                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+              </Link>
+            ) : null}
+          </>
+        ) : null}
+
         {showSignedEvent && post.signedEvent ? (
           <>
             <div className={divide} />
@@ -372,19 +448,15 @@ interface LongFormDetailsModalProps {
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
   onDeleted?: (postId: string) => void;
-}
-
-function getLongFormNostrArticleId(
-  post: LongFormPostType | LongFormPostData
-): string {
-  const nostrId = post.nostrEventId;
-  if (typeof nostrId === "string" && nostrId.length > 0) return nostrId;
-  const se = post.signedEvent;
-  if (se && typeof se === "object" && "id" in se) {
-    const id = (se as { id?: unknown }).id;
-    if (typeof id === "string" && id.length > 0) return id;
-  }
-  return "";
+  stats?: {
+    likes: number;
+    replies: number;
+    mentions: number;
+    reposts: number;
+    zaps: number;
+    satszapped: number;
+  };
+  showStats?: boolean;
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- article detail: delete, nostr, media, actions
@@ -398,6 +470,8 @@ export default function LongFormDetailsModal({
   userTimezone = "UTC",
   userTimeFormat = "12h",
   onDeleted,
+  stats,
+  showStats = false,
 }: LongFormDetailsModalProps) {
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
@@ -439,7 +513,7 @@ export default function LongFormDetailsModal({
   ]);
 
   const eventId =
-    type === "published" ? getLongFormNostrArticleId(post) || null : null;
+    type === "published" ? getLongFormPublishedEventId(post) : null;
   const eventIdForThread = eventId;
 
   const { data: threadData, isPending: isThreadLoading } =
@@ -477,7 +551,7 @@ export default function LongFormDetailsModal({
   const threadMetadata = threadData?.metadata ?? {};
   const tz = userTimezone;
 
-  const articleIdStr = getLongFormNostrArticleId(post);
+  const articleIdStr = getLongFormPublishedEventId(post) ?? "";
   const openOnNostrUrl =
     type === "published" && articleIdStr
       ? nostrUrls.articleUrl(articleIdStr)
@@ -605,6 +679,8 @@ export default function LongFormDetailsModal({
             onToggleEventData={() => setShowEventData((v) => !v)}
             openOnNostrUrl={openOnNostrUrl}
             viewThreadUrl={viewThreadUrl}
+            showStats={Boolean(showStats && type === "published")}
+            stats={stats}
           />
         </div>
 

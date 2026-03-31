@@ -395,6 +395,53 @@ describe("Engagement Logic Unit Tests", () => {
       expect(mentions.length).toBe(0);
     });
 
+    it("classifies nested thread replies that only e-tag the parent as replies", () => {
+      const otherSk = generateSecretKey();
+      const other = getPublicKey(otherSk);
+      const mySk = generateSecretKey();
+      const me = getPublicKey(mySk);
+
+      const rootId = "aa".repeat(32);
+      const midId = "bb".repeat(32);
+      const nestedId = "cc".repeat(32);
+      const relay = "wss://relay.example.com";
+
+      const thread = [
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: midId,
+            pubkey: other,
+            content: "mid",
+            tags: [["e", rootId, relay, "reply"]],
+            created_at: 100,
+          },
+        ],
+        [
+          "EVENT",
+          "",
+          {
+            kind: 1,
+            id: nestedId,
+            pubkey: other,
+            content: "nested without tagging root",
+            tags: [["e", midId, relay, "reply"]],
+            created_at: 101,
+          },
+        ],
+      ];
+
+      const notifications = parseThreadViewNotifications(thread, rootId, me);
+      const replies = notifications.filter((n) => n.type === "reply");
+
+      expect(replies.length).toBe(2);
+      expect(new Set(replies.map((r) => r.eventId))).toEqual(
+        new Set([midId, nestedId])
+      );
+    });
+
     it("classifies e-tag marker mention + nostr ref as mention (quote)", () => {
       const otherSk = generateSecretKey();
       const other = getPublicKey(otherSk);

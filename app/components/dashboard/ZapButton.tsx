@@ -43,7 +43,7 @@ export default function ZapButton({
         toast.error("Recipient has no Lightning address");
       } else if (message === ZAP_FLOW_ERROR_NO_WEBLN) {
         toast.error(
-          "Install a Lightning wallet with WebLN support to zap from this page"
+          "Connect NWC in billing settings, or use a browser wallet with WebLN to zap"
         );
       } else {
         toast.error(message);

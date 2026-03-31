@@ -35,6 +35,7 @@ import {
   getContentTitle,
   getMediaPreviewUrls,
   getPostRowThumbnailBadge,
+  isPureRepostSourceContent,
   isRepostContent,
 } from "../utils/content-helpers";
 
@@ -115,6 +116,7 @@ export function ContentListCard({
   );
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
+  const blockRepostQuoteChain = isPureRepostSourceContent(item);
   const thumbnailBadge =
     item.type === "longform"
       ? ("ART" as const)
@@ -284,7 +286,9 @@ export function ContentListCard({
                   </Link>
                 </DropdownMenuItem>
               ) : null}
-              {item.type === "post" && individualRepostFetcher ? (
+              {item.type === "post" &&
+              individualRepostFetcher &&
+              !blockRepostQuoteChain ? (
                 <>
                   <individualRepostFetcher.Form method="post">
                     <input type="hidden" name="postId" value={item.id} />
@@ -400,7 +404,9 @@ export function ContentListCard({
                   </DropdownMenuItem>
                 </longformQuoteFetcher.Form>
               ) : null}
-              {onScheduleRepost && item.type === "post" ? (
+              {onScheduleRepost &&
+              item.type === "post" &&
+              !blockRepostQuoteChain ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     onScheduleRepost(item.originalData as PostData)
@@ -409,7 +415,9 @@ export function ContentListCard({
                   Schedule repost
                 </DropdownMenuItem>
               ) : null}
-              {onScheduleQuote && item.type === "post" ? (
+              {onScheduleQuote &&
+              item.type === "post" &&
+              !blockRepostQuoteChain ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     onScheduleQuote(item.originalData as PostData)
@@ -432,7 +440,9 @@ export function ContentListCard({
               >
                 Reschedule
               </DropdownMenuItem>
-              {item.type === "post" && onScheduleRepost ? (
+              {item.type === "post" &&
+              onScheduleRepost &&
+              !blockRepostQuoteChain ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     onScheduleRepost(item.originalData as PostData)
@@ -441,7 +451,9 @@ export function ContentListCard({
                   Schedule repost
                 </DropdownMenuItem>
               ) : null}
-              {item.type === "post" && onScheduleQuote ? (
+              {item.type === "post" &&
+              onScheduleQuote &&
+              !blockRepostQuoteChain ? (
                 <DropdownMenuItem
                   onSelect={() =>
                     onScheduleQuote(item.originalData as PostData)

@@ -57,3 +57,11 @@ export async function findUserEncryptedNwc(
     select: { encryptedNwc: true, nwcEnabled: true },
   });
 }
+
+/** Bump last-used timestamp after a successful NWC payment (e.g. zap). */
+export function touchUserNwcLastUsed(userId: string): Promise<User> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { nwcLastUsed: new Date() },
+  });
+}

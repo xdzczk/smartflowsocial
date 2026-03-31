@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback, type FormEvent } from "react";
 
 import { type ToastMessage } from "~/components/types";
 import type { BulkComposerStage } from "~/features/posts/bulk-composer/types";
+import { bulkPostMissingRequiredCaption } from "~/features/posts/components/bulk-composer/bulk-composer-post-card-utils";
 import type { User } from "~/features/user";
 import { safeConsoleInfo } from "~/lib/safe-console.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
@@ -97,22 +98,13 @@ export function useBulkPostEvents({
     const errors: string[] = [];
     const byPost: Record<number, string[]> = {};
 
-    const hasMedia = (post: BulkPost) =>
-      post.files.length > 0 ||
-      (Array.isArray(post.fileUrl) && post.fileUrl.length > 0) ||
-      (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "");
-
     posts.forEach((post, index) => {
       const rowErrors: string[] = [];
 
-      // For rows without media, caption is required
-      if (!hasMedia(post)) {
-        const caption = post.caption.trim();
-        if (!caption) {
-          const msg = "Caption is required when there is no media";
-          rowErrors.push(msg);
-          errors.push(`Post ${index + 1}: ${msg}`);
-        }
+      if (bulkPostMissingRequiredCaption(post)) {
+        const msg = "Caption is required when there is no media";
+        rowErrors.push(msg);
+        errors.push(`Post ${index + 1}: ${msg}`);
       }
 
       // Schedule time is set

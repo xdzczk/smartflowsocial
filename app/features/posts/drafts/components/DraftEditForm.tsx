@@ -21,7 +21,10 @@ import type {
   RepostConditions,
 } from "~/features/posts/types";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 
 interface DraftEditFormProps {
   post: PostData;
@@ -257,7 +260,7 @@ export function DraftEditForm({
             onChange={(e) => {
               const v = e.target.value;
               const min = getNowForDateTimeLocal(userTimezone);
-              onScheduledForChange(v && v < min ? min : v);
+              onScheduledForChange(clampDateTimeLocalToMin(v, min));
             }}
             min={getNowForDateTimeLocal(userTimezone)}
             className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2"

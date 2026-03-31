@@ -10,7 +10,10 @@ import { railFieldClassNames } from "~/features/posts/components/publishing-rail
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import type { QueueType } from "~/features/posts/types";
 import type { DelayAfterMain } from "~/features/posts/utils/delay-after-main";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 
 import { ComposerScheduleRandomWindowField } from "./ComposerScheduleRandomWindowField";
 
@@ -88,8 +91,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
             value={value}
             onChange={(e) => {
               const v = e.target.value;
-              const clamped = v && v < minDatetime ? minDatetime : v;
-              onValueChange(clamped);
+              onValueChange(clampDateTimeLocalToMin(v, minDatetime));
             }}
             min={minDatetime}
             disabled={disabled}
@@ -111,8 +113,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
             value={value}
             onChange={(e) => {
               const v = e.target.value;
-              const clamped = v && v < minDatetime ? minDatetime : v;
-              onValueChange(clamped);
+              onValueChange(clampDateTimeLocalToMin(v, minDatetime));
             }}
             min={minDatetime}
             disabled={disabled}

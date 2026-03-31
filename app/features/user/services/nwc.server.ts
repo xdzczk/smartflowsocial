@@ -10,6 +10,7 @@ import {
   clearUserNwc as clearUserNwcRow,
   findUserEncryptedNwc,
   findUserNwcFields,
+  touchUserNwcLastUsed as touchUserNwcLastUsedRow,
   updateUserNwc as updateUserNwcRow,
   updateUserNwcEnabled as updateUserNwcEnabledRow,
 } from "../repositories/nwc-data.server";
@@ -107,4 +108,9 @@ export async function getDecryptedUserNWC(
     safeConsoleError("Failed to decrypt NWC string for user", userId);
     return null;
   }
+}
+
+/** Record that the user's NWC wallet was used (e.g. after a successful zap). */
+export async function touchUserNwcLastUsed(userId: string): Promise<void> {
+  await touchUserNwcLastUsedRow(userId);
 }

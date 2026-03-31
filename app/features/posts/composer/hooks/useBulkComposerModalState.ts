@@ -11,6 +11,7 @@ import type {
   BulkBatchMode,
   BulkComposerStage,
 } from "~/features/posts/bulk-composer/types";
+import { bulkPostMissingRequiredCaption } from "~/features/posts/components/bulk-composer/bulk-composer-post-card-utils";
 import {
   type BulkPost,
   type PreparedEvent,
@@ -198,15 +199,10 @@ export function useBulkComposerModalState({
   const validationResult = useMemo(() => {
     const errors: string[] = [];
     const byPost: Record<number, string[]> = {};
-    const hasMedia = (post: BulkPost) =>
-      post.files.length > 0 ||
-      (Array.isArray(post.fileUrl) && post.fileUrl.length > 0) ||
-      (typeof post.fileUrl === "string" && post.fileUrl.trim() !== "");
     posts.forEach((post, index) => {
       const rowErrors: string[] = [];
-      const caption = post.caption || "";
       const scheduledFor = post.scheduledFor || "";
-      if (!hasMedia(post) && !caption.trim()) {
+      if (bulkPostMissingRequiredCaption(post)) {
         rowErrors.push("Caption is required when there is no media");
         errors.push(
           `Post ${index + 1}: Caption is required when there is no media`

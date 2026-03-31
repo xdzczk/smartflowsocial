@@ -10,15 +10,15 @@ const COPY: Record<
 > = {
   auto_renew: {
     label: "Auto-renew with wallet",
-    supporting: "Best for uninterrupted access",
+    supporting: "Connect once, renew until you cancel",
   },
   lightning_one_time: {
     label: "One-time Lightning",
-    supporting: "Best for manual payments",
+    supporting: "Pay manually each term",
   },
   btc_onchain: {
     label: "Bitcoin on-chain",
-    supporting: "Best for annual BTC payments",
+    supporting: "Annual on-chain via BTCPay",
   },
 };
 
@@ -62,7 +62,7 @@ export function PaymentMethodSelector({
             className={cn(
               "border-border focus:ring-ring relative flex flex-1 flex-col items-start rounded-lg border px-4 py-3 text-left text-sm transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:opacity-50",
               selected
-                ? "border-primary bg-primary/5 ring-primary/20 ring-2"
+                ? "border-primary bg-primary/10 ring-primary/35 ring-2 shadow-sm"
                 : "bg-card hover:bg-muted/40"
             )}
           >

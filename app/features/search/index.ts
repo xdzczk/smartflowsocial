@@ -50,6 +50,7 @@ export { useSearchState } from "./hooks/useSearchState";
 // ============================================================================
 
 export { loadSearchData } from "./services/search-loader.server";
+export { loadScheduleSourcePostForUserEvent } from "./services/search-schedule-source.server";
 export { loadSearchThreadChildReplies } from "./services/search-thread-children.server";
 
 // ============================================================================

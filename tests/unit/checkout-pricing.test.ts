@@ -67,6 +67,6 @@ describe("renewalSummaryLine", () => {
         billingCadence: "monthly",
         accessDurationMonths: 3,
       })
-    ).toContain("not renew");
+    ).toContain("auto-renew");
   });
 });

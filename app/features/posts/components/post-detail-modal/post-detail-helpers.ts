@@ -21,6 +21,21 @@ export function getPostEventId(
   return typeof id === "string" ? id : null;
 }
 
+/** Nostr note id for published long-form (stored id or signed event id). */
+export function getLongFormPublishedEventId(post: {
+  nostrEventId?: string | null;
+  signedEvent?: unknown;
+}): string | null {
+  const nostrId = post.nostrEventId;
+  if (typeof nostrId === "string" && nostrId.length > 0) return nostrId;
+  const se = post.signedEvent;
+  if (se && typeof se === "object" && "id" in se) {
+    const id = (se as { id?: unknown }).id;
+    if (typeof id === "string" && id.length > 0) return id;
+  }
+  return null;
+}
+
 export function formatScheduledDate(
   scheduledAtUtc: Date | null | undefined,
   userTimezone: string | undefined,

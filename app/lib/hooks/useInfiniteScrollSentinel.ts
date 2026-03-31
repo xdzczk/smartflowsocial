@@ -48,6 +48,16 @@ export function useInfiniteScrollSentinel({
       rootMargin,
     });
 
+  // After a page finishes loading, allow another fetch while the sentinel still
+  // intersects (otherwise refs only reset when the sentinel leaves the viewport,
+  // which never happens if the list stays short).
+  useEffect(() => {
+    if (!isFetchingNextPage) {
+      prefetchTriggeredRef.current = false;
+      fetchTriggeredRef.current = false;
+    }
+  }, [isFetchingNextPage]);
+
   // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
   useEffect(() => {
     if (

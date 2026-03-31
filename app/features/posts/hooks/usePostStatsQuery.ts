@@ -6,8 +6,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
+import { getLongFormPublishedEventId } from "../components/post-detail-modal/post-detail-helpers";
 import type { PostStats } from "../stats.server";
-import type { PostData } from "../types";
+import type { LongFormPostData, PostData } from "../types";
 
 /**
  * Query key factory for post stats
@@ -60,13 +61,28 @@ function extractEventIds(posts: PostData[]): string[] {
     .filter((id): id is string => id !== null);
 }
 
+function extractLongFormEventIds(posts: LongFormPostData[]): string[] {
+  return posts
+    .map((post) => getLongFormPublishedEventId(post))
+    .filter((id): id is string => id !== null);
+}
+
 /**
  * Hook to fetch post stats client-side
  * Merges fetched stats with initial empty stats
  */
-export function usePostStatsQuery(posts: PostData[]) {
-  // Extract event IDs from posts
-  const eventIds = useMemo(() => extractEventIds(posts), [posts]);
+export function usePostStatsQuery(
+  posts: PostData[],
+  options?: { longFormPosts?: LongFormPostData[] }
+) {
+  const eventIds = useMemo(() => {
+    const fromPosts = extractEventIds(posts);
+    const fromLongForm = options?.longFormPosts?.length
+      ? extractLongFormEventIds(options.longFormPosts)
+      : [];
+    const merged = [...fromPosts, ...fromLongForm];
+    return [...new Set(merged)];
+  }, [posts, options]);
 
   // Only fetch if we have event IDs
   const enabled = eventIds.length > 0;

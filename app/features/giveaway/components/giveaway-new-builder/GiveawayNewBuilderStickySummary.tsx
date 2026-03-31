@@ -16,7 +16,10 @@ import {
   CampaignActionRail,
 } from "~/features/campaign-ui";
 import { RailSegmentedTabGroup } from "~/features/posts/components/publishing-rail/RailSegmentedTabGroup";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 
 import type { BuilderScopeType } from "./giveaway-new-builder-constants";
 import { asideScopeLine } from "./giveaway-new-builder-constants";
@@ -187,7 +190,9 @@ export function GiveawayNewBuilderStickySummary({
             min={minSchedule}
             onChange={(e) => {
               const v = e.target.value || "";
-              onScheduledSourcePostForChange(v < minSchedule ? minSchedule : v);
+              onScheduledSourcePostForChange(
+                clampDateTimeLocalToMin(v, minSchedule)
+              );
             }}
           />
           <p className="text-muted-foreground text-[11px] leading-snug">

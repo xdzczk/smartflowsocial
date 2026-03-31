@@ -44,12 +44,12 @@ export function renewalSummaryLine(params: {
   switch (params.method) {
     case "auto_renew":
       return params.billingCadence === "yearly"
-        ? "Every year until canceled"
-        : "Every month until canceled";
+        ? "Renews yearly until you cancel"
+        : "Renews monthly until you cancel";
     case "lightning_one_time":
-      return "Does not renew automatically";
+      return "No auto-renew — pay again to extend";
     case "btc_onchain":
-      return "1 year upfront";
+      return "One year prepaid (no auto-renew)";
     default:
       return "";
   }

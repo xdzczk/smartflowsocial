@@ -35,6 +35,8 @@ import {
 } from "../state-machine/post-state";
 import type { PostData } from "../types";
 
+import { isPureRepostSourcePost } from "./repost-chain-policy";
+
 export function getImageUrls(fileUrl: string[] | undefined): string[] {
   if (!fileUrl || fileUrl.length === 0) return [];
 
@@ -320,6 +322,19 @@ export function isRepostPost(post: PostData): boolean {
       ? post.postKind
       : (post as { postKind?: string }).postKind;
   return kind === "REPOST";
+}
+
+/**
+ * True when the row is a pure Nostr repost (not a quote). Repost/quote actions must not target these.
+ */
+export function isPureRepostSourceContent(item: CombinedContent): boolean {
+  if (item.type !== "post") return false;
+  const od = item.originalData as PostData;
+  return isPureRepostSourcePost({
+    postKind: item.postKind ?? od.postKind,
+    repost: item.repost ?? od.repost,
+    isQuotedPost: item.isQuotedPost ?? od.isQuotedPost,
+  });
 }
 
 /**

@@ -43,6 +43,7 @@ import {
   getContentTypeBadge,
   getImageUrls,
   getPostRowThumbnailBadge,
+  isPureRepostSourceContent,
   isRepostContent,
 } from "../utils/content-helpers";
 
@@ -334,6 +335,7 @@ export function ContentRowActions({
     () => getNostrClientUrlsFromUser(rootData?.user),
     [rootData?.user]
   );
+  const blockRepostQuoteChain = isPureRepostSourceContent(item);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -378,7 +380,9 @@ export function ContentRowActions({
               </DropdownMenuItem>
             ) : null}
 
-            {item.type === "post" && individualRepostFetcher
+            {item.type === "post" &&
+            individualRepostFetcher &&
+            !blockRepostQuoteChain
               ? (() => {
                   const fetcher = individualRepostFetcher;
                   const formData = getFetcherFormData(fetcher);
@@ -539,14 +543,18 @@ export function ContentRowActions({
             >
               Reschedule
             </DropdownMenuItem>
-            {item.type === "post" && onScheduleRepost ? (
+            {item.type === "post" &&
+            onScheduleRepost &&
+            !blockRepostQuoteChain ? (
               <DropdownMenuItem
                 onSelect={() => onScheduleRepost(item.originalData as PostData)}
               >
                 Schedule repost
               </DropdownMenuItem>
             ) : null}
-            {item.type === "post" && onScheduleQuote ? (
+            {item.type === "post" &&
+            onScheduleQuote &&
+            !blockRepostQuoteChain ? (
               <DropdownMenuItem
                 onSelect={() => onScheduleQuote(item.originalData as PostData)}
               >

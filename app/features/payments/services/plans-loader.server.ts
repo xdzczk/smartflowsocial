@@ -22,45 +22,45 @@ import { featureFlags } from "~/lib/feature-flags.server";
 
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
-    "Calendar, engagement, drafts, and templates",
+    "Full product surface with strict operating limits",
     "Up to 10 scheduled items",
     "1 queue included",
-    "Explore broadcasts and run campaigns",
+    "Browse broadcast workflows; paid tiers unlock full send volume",
   ],
   basic: [
-    "Higher scheduling and queue limits",
-    "Bulk workflow access",
-    "Broadcast sending",
-    "Hosted SmartFlowSocial media",
+    "Built for consistent solo publishing",
+    "Expanded scheduling and queue headroom",
+    "Bulk workflows and broadcast sending",
+    "Native SmartFlowSocial-hosted media included",
   ],
   premium: [
-    "Highest limits across workflows",
-    "Best campaign economics",
-    "Operator-grade hosted media",
-    "Relay blast and distribution",
+    "Operator-grade workflow and broadcast ceilings",
+    "Best campaign economics on paid tiers",
+    "Largest hosted media footprint",
+    "Relay blast and distribution included",
   ],
   teams: [
-    "Shared workflows",
-    "Multi-user publishing",
-    "Role-based operations",
-    "Team-grade controls",
+    "Shared workflows and roles",
+    "Collaborative publishing controls",
+    "Not yet open for self-serve purchase",
+    "We will open enrollment when the product is ready",
   ],
 };
 
 const FOUNDER_BENEFITS = [
-  "Lifetime access — non-recurring",
-  "Top individual-tier economics",
+  "One-time lifetime access — non-recurring, one account",
+  "Strongest self-serve individual economics",
   "Priority support",
   "Early access to major features",
-  "Best campaign / finalization economics",
-  "Founder recognition",
+  "Lowest campaign commission tier among paid options",
+  "Founder recognition in-product",
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Full surface, tight limits",
-  basic: "Serious solo workflow",
-  premium: "Operate at full power",
-  teams: "Built for collaborative publishing",
+  free: "Full surface, strict limits",
+  basic: "The default paid tier for solo operators",
+  premium: "Heavier campaigns, storage, and distribution",
+  teams: "Collaborative publishing — not open for self-serve yet",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
@@ -284,7 +284,8 @@ export async function loadPlansData(request: Request) {
       yearlySavingsNote: null,
       checkoutPricing: buildCheckoutPricing("teams", 0, 0, priceIndex),
       description:
-        PLAN_SUBTITLES["teams"] ?? "Built for collaborative publishing",
+        PLAN_SUBTITLES["teams"] ??
+        "Collaborative publishing — not open for self-serve yet",
       features: {},
       isPopular: false,
       planBillingModel: "disabled",

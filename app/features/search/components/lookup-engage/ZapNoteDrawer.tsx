@@ -102,7 +102,7 @@ export function ZapNoteDrawer({
         setError("Author has no Lightning address on profile.");
       } else if (message === ZAP_FLOW_ERROR_NO_WEBLN) {
         setError(
-          "Zap requires a connected wallet with WebLN. Install a Lightning wallet or complete payment externally."
+          "Connect NWC in billing settings, or use a browser wallet with WebLN (or complete payment externally)."
         );
       } else {
         setError(message);

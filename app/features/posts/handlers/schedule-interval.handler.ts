@@ -6,6 +6,7 @@
 
 import {
   addHours,
+  addMinutes,
   formatForDateTimeLocal,
   nowUTC,
   parseDateTimeLocal,
@@ -36,11 +37,11 @@ export function handleScheduleIntervalClick(
     // Original behavior - use first post's scheduled time or current time
     const firstPost = updatedPosts[0];
     if (!firstPost) {
-      baseZonedDateTime = nowUTC();
+      baseZonedDateTime = addMinutes(nowUTC(), 15);
     } else {
       baseZonedDateTime = firstPost.scheduledFor
         ? parseDateTimeLocal(firstPost.scheduledFor, "UTC")
-        : nowUTC();
+        : addMinutes(nowUTC(), 15);
     }
   }
 

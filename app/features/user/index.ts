@@ -117,6 +117,7 @@ export {
   clearUserNWC,
   getUserNWC,
   getDecryptedUserNWC,
+  touchUserNwcLastUsed,
 } from "./services/nwc.server";
 
 // Parent/Child Accounts

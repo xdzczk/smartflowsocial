@@ -39,6 +39,69 @@ function extractEventFromItem(item: unknown): ParsedEvent | null {
   return event ?? null;
 }
 
+/** Kind-1 events in this thread_view payload, keyed by lowercase hex id (for parent-chain walks). */
+function buildThreadKind1EventMap(
+  threadViewResponse: unknown[]
+): Map<string, ParsedEvent> {
+  const map = new Map<string, ParsedEvent>();
+  for (const item of threadViewResponse) {
+    const event = extractEventFromItem(item);
+    if (!event?.id || event.kind !== 1) continue;
+    map.set(event.id.toLowerCase(), event);
+  }
+  return map;
+}
+
+/** NIP-10 immediate parent id(s) from `e` tags (reply marker preferred). */
+function getImmediateParentEventIds(event: ParsedEvent): string[] {
+  const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
+  const replyTag = eTags.find((t) => (t[3] ?? "").toLowerCase() === "reply");
+  if (replyTag?.[1]) return [replyTag[1]];
+  const rootTag = eTags.find((t) => (t[3] ?? "").toLowerCase() === "root");
+  if (rootTag?.[1]) return [rootTag[1]];
+  if (eTags[0]?.[1]) return [eTags[0][1]];
+  return [];
+}
+
+/**
+ * True when this note is under `rootId` in the same thread (walks parents that appear in `eventById`).
+ * Catches nested replies that only e-tag the immediate parent, not the root note.
+ */
+function isDescendantOfRootInThread(
+  event: ParsedEvent,
+  rootId: string,
+  eventById: Map<string, ParsedEvent>,
+  visited: Set<string> = new Set()
+): boolean {
+  if (!event.id) return false;
+  const idLower = event.id.toLowerCase();
+  if (visited.has(idLower)) return false;
+  visited.add(idLower);
+
+  const parents = getImmediateParentEventIds(event);
+  for (const pid of parents) {
+    if (eventIdsEqual(pid, rootId)) return true;
+    const parentEv = eventById.get(pid.toLowerCase());
+    if (
+      parentEv &&
+      isDescendantOfRootInThread(parentEv, rootId, eventById, visited)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** E-tag used for quote vs reply heuristics on this note (immediate parent in the thread). */
+function getReplyTargetETagForThreading(
+  event: ParsedEvent
+): string[] | undefined {
+  const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
+  const replyTag = eTags.find((t) => (t[3] ?? "").toLowerCase() === "reply");
+  if (replyTag) return replyTag;
+  return eTags[0];
+}
+
 function parseUserProfile(
   event: ParsedEvent,
   userProfiles: Map<string, UserProfile>
@@ -327,6 +390,25 @@ function createMentionNotification(
   };
 }
 
+/** Shared quote vs thread-reply classification for direct or nested replies. */
+function replyOrMentionFromQuoteHeuristic(
+  event: ParsedEvent,
+  profile: UserProfile | undefined,
+  stats: EventStats | undefined,
+  originalEventId: string,
+  targetETag: string[] | undefined
+): Notification | null {
+  if (!targetETag) {
+    return createReplyNotification(event, profile, stats, originalEventId);
+  }
+  const isQuote = isQuotePost(event, targetETag);
+  const isReplyEvent = isReply(targetETag);
+  if (isQuote && !isReplyEvent) {
+    return createMentionNotification(event, profile, stats, originalEventId);
+  }
+  return createReplyNotification(event, profile, stats, originalEventId);
+}
+
 function createZapNotification(
   event: ParsedEvent,
   zapRequest: {
@@ -376,7 +458,8 @@ function processKind1Notifications(
   originalEventId: string,
   userPubkey: string,
   userProfiles: Map<string, UserProfile>,
-  eventStats: Map<string, EventStats>
+  eventStats: Map<string, EventStats>,
+  eventById: Map<string, ParsedEvent> | undefined
 ): Notification[] {
   const notifications: Notification[] = [];
 
@@ -394,6 +477,14 @@ function processKind1Notifications(
     eventIdsEqual(tag[1], originalEventId)
   );
   const referencesOriginal = !!targetETag;
+  let descendantOfRoot = false;
+  if (eventById && eventById.size > 0 && !referencesOriginal) {
+    descendantOfRoot = isDescendantOfRootInThread(
+      event,
+      originalEventId,
+      eventById
+    );
+  }
   const userPubkeyLower = userPubkey.toLowerCase();
   const mentionsUser = doesEventMentionUser(
     event.content,
@@ -401,44 +492,43 @@ function processKind1Notifications(
     userPubkey
   );
 
-  if (
-    referencesOriginal &&
-    event.pubkey &&
-    (event.pubkey ?? "").toLowerCase() !== userPubkeyLower
-  ) {
-    const profile = userProfiles.get(event.pubkey);
-    const stats = eventStats.get(event.id);
-    const isQuote = isQuotePost(event, targetETag);
-    const isReplyEvent = isReply(targetETag);
+  const isOtherUser =
+    event.pubkey && (event.pubkey ?? "").toLowerCase() !== userPubkeyLower;
 
-    if (isQuote && !isReplyEvent) {
-      const notification = createMentionNotification(
-        event,
-        profile,
-        stats,
-        originalEventId
-      );
-      if (notification) {
-        notifications.push(notification);
-      }
-    } else {
-      const notification = createReplyNotification(
-        event,
-        profile,
-        stats,
-        originalEventId
-      );
-      if (notification) {
-        notifications.push(notification);
-      }
+  if (referencesOriginal && isOtherUser) {
+    const profile = userProfiles.get(event.pubkey!);
+    const stats = eventStats.get(event.id);
+    const notification = replyOrMentionFromQuoteHeuristic(
+      event,
+      profile,
+      stats,
+      originalEventId,
+      targetETag
+    );
+    if (notification) {
+      notifications.push(notification);
+    }
+  } else if (descendantOfRoot && isOtherUser) {
+    const profile = userProfiles.get(event.pubkey!);
+    const stats = eventStats.get(event.id);
+    const replyTarget = getReplyTargetETagForThreading(event);
+    const notification = replyOrMentionFromQuoteHeuristic(
+      event,
+      profile,
+      stats,
+      originalEventId,
+      replyTarget
+    );
+    if (notification) {
+      notifications.push(notification);
     }
   } else if (
     mentionsUser &&
     !referencesOriginal &&
-    event.pubkey &&
-    (event.pubkey ?? "").toLowerCase() !== userPubkeyLower
+    !descendantOfRoot &&
+    isOtherUser
   ) {
-    const profile = userProfiles.get(event.pubkey);
+    const profile = userProfiles.get(event.pubkey!);
     const stats = eventStats.get(event.id);
     const notification = createMentionNotification(
       event,
@@ -528,6 +618,8 @@ export function parseThreadViewNotifications(
   const { userProfiles, eventStats } =
     collectProfilesAndStats(threadViewResponse);
 
+  const kind1ById = buildThreadKind1EventMap(threadViewResponse);
+
   // Second pass: collect notifications
   for (const item of threadViewResponse) {
     const event = extractEventFromItem(item);
@@ -539,7 +631,8 @@ export function parseThreadViewNotifications(
       originalEventId,
       userPubkey,
       userProfiles,
-      eventStats
+      eventStats,
+      kind1ById
     );
     notifications.push(...kind1Notifications);
 

@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  clampDateTimeLocalToMin,
   dateFormatToLocale,
   formatForDisplay,
   fromDate,
@@ -30,6 +31,7 @@ import {
   isAfter,
   difference,
   convertTimezone,
+  isCompleteDateTimeLocalString,
 } from "~/lib/temporal";
 
 describe("dateFormatToLocale", () => {
@@ -241,5 +243,38 @@ describe("convertTimezone", () => {
       "UTC"
     );
     expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+  });
+});
+
+describe("clampDateTimeLocalToMin", () => {
+  const min = "2026-03-31T14:00";
+
+  it("returns empty string unchanged", () => {
+    expect(clampDateTimeLocalToMin("", min)).toBe("");
+  });
+
+  it("does not clamp incomplete datetime-local prefixes (keyboard editing)", () => {
+    expect(clampDateTimeLocalToMin("2026-03-31T", min)).toBe("2026-03-31T");
+  });
+
+  it("clamps complete values before min", () => {
+    expect(clampDateTimeLocalToMin("2026-03-30T12:00", min)).toBe(min);
+  });
+
+  it("leaves complete values at or after min unchanged", () => {
+    expect(clampDateTimeLocalToMin("2026-04-01T09:00", min)).toBe(
+      "2026-04-01T09:00"
+    );
+  });
+});
+
+describe("isCompleteDateTimeLocalString", () => {
+  it("accepts full YYYY-MM-DDTHH:mm", () => {
+    expect(isCompleteDateTimeLocalString("2026-03-31T14:00")).toBe(true);
+  });
+
+  it("rejects incomplete strings", () => {
+    expect(isCompleteDateTimeLocalString("2026-03-31T")).toBe(false);
+    expect(isCompleteDateTimeLocalString("2026-03-31")).toBe(false);
   });
 });

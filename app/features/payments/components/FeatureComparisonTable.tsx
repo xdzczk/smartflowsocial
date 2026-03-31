@@ -20,10 +20,10 @@ interface FeatureComparisonTableProps {
 }
 
 const GROUP_CORE_WORKFLOWS = "Core workflows";
-const GROUP_PLANNING = "Planning and execution";
+const GROUP_PLANNING = "Scheduling and execution";
 const GROUP_CAMPAIGNS = "Campaigns";
-const GROUP_MEDIA = "Media";
-const GROUP_POWER = "Power features";
+const GROUP_MEDIA = "Hosted media";
+const GROUP_POWER = "Distribution";
 
 interface ComparisonRow {
   group: string;
@@ -51,12 +51,12 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     group: GROUP_CORE_WORKFLOWS,
-    label: "Engagement Feed",
+    label: "Engagement feed",
     getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {
     group: GROUP_CORE_WORKFLOWS,
-    label: "Drafts & Templates",
+    label: "Drafts and templates",
     getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {
@@ -106,7 +106,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      return ent.canSendBroadcast ? "Yes" : "Explore only";
+      return ent.canSendBroadcast ? "Included" : "Browse only (no send)";
     },
   },
   {
@@ -120,7 +120,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     group: GROUP_MEDIA,
-    label: "SFS-hosted media",
+    label: "SmartFlowSocial-hosted media",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
@@ -167,7 +167,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     group: GROUP_CAMPAIGNS,
-    label: "Giveaways & Contests",
+    label: "Giveaways and contests",
     getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
   },
   {

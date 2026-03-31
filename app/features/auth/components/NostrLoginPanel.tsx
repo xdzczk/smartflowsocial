@@ -182,6 +182,14 @@ export default function NostrLoginPanel() {
     }
   }, [nip46.nostrConnectUri, setCopyOk]);
 
+  const copyNostrConnectUriForAwaitingPanel = useCallback(() => {
+    void copyNostrConnectUri();
+  }, [copyNostrConnectUri]);
+
+  const cancelAwaitingProfileSelection = useCallback(() => {
+    void resetToSelection();
+  }, [resetToSelection]);
+
   useEffect(() => {
     return () => {
       void cleanup();
@@ -690,10 +698,10 @@ export default function NostrLoginPanel() {
           relayUrls={relayUrls}
           relayStatuses={relayStatuses}
           nostrConnectUri={nip46.nostrConnectUri}
-          onCopyUri={() => void copyNostrConnectUri()}
+          onCopyUri={copyNostrConnectUriForAwaitingPanel}
           copyOk={copyOk}
           onLoginWithPrimal={handleLoginWithPrimal}
-          onCancel={() => void resetToSelection()}
+          onCancel={cancelAwaitingProfileSelection}
         />
       ) : null}
 

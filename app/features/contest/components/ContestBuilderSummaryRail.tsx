@@ -16,7 +16,10 @@ import {
 } from "~/features/campaign-ui";
 import type { PlanType } from "~/features/payments/types";
 import { RailSegmentedTabGroup } from "~/features/posts/components/publishing-rail/RailSegmentedTabGroup";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 
 import { contestCopy } from "../contest-copy";
 import {
@@ -292,7 +295,9 @@ export function ContestBuilderSummaryRail({
             min={minSchedule}
             onChange={(e) => {
               const v = e.target.value || "";
-              onScheduledActivationForChange(v < minSchedule ? minSchedule : v);
+              onScheduledActivationForChange(
+                clampDateTimeLocalToMin(v, minSchedule)
+              );
             }}
           />
           <p className="text-muted-foreground text-[11px] leading-snug">

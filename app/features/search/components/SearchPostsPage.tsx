@@ -10,12 +10,14 @@ import { Search } from "lucide-react";
 import { Suspense } from "react";
 
 import { Badge } from "~/components/ui/badge";
+import { ScheduleRepostQuoteModal } from "~/features/posts/scheduling/components/ScheduleRepostQuoteModal";
 import {
   validateSearchReplies,
   validateSearchResultData,
   validateSearchResultDisplay,
   validateSearchStats,
 } from "~/lib/validation/search-result";
+import { validateUserData } from "~/lib/validation/user-data";
 
 import { useSearchState } from "../hooks/useSearchState";
 
@@ -29,6 +31,7 @@ interface DeferredSearchResult {
   stats?: unknown;
   replies?: unknown;
   resolution?: unknown;
+  scheduleSourcePost?: unknown;
   error?: unknown;
 }
 
@@ -98,6 +101,7 @@ interface SearchPostsPageContentProps {
     stats?: unknown;
     replies?: unknown;
     resolution?: unknown;
+    scheduleSourcePost?: unknown;
     error?: unknown;
   } | null;
   forceShowSkeleton: boolean;
@@ -127,6 +131,8 @@ function SearchPostsPageContent({
     handleScheduleQuote,
     handleScheduleRepost,
     clearSearch,
+    scheduleRepostQuote,
+    dismissScheduleRepostQuote,
   } = useSearchState({
     user,
     fetcherData: validateSearchResultData(fetcherData),
@@ -228,6 +234,19 @@ function SearchPostsPageContent({
       {isSearching && !hasResult ? <SearchPostSkeleton /> : null}
 
       <SearchToast toast={toast} onClose={() => setToast(null)} />
+
+      {scheduleRepostQuote ? (
+        <ScheduleRepostQuoteModal
+          key={`lookup-schedule-${scheduleRepostQuote.mode}-${searchResult?.id ?? "x"}`}
+          open={true}
+          post={scheduleRepostQuote.post}
+          lookupSourceSignedEvent={scheduleRepostQuote.lookupSourceSignedEvent}
+          mode={scheduleRepostQuote.mode}
+          onClose={dismissScheduleRepostQuote}
+          onSuccess={dismissScheduleRepostQuote}
+          user={validateUserData(user) ?? undefined}
+        />
+      ) : null}
     </div>
   );
 }

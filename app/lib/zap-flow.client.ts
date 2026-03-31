@@ -1,5 +1,6 @@
 /**
- * Client-side NIP-57 zap flow: fetch lud16, get invoice from LNURL callback with signed zap request, pay via WebLN.
+ * Client-side NIP-57 zap flow: fetch lud16, get invoice from LNURL callback with signed zap request,
+ * then pay via NWC (when the user has NWC saved) or WebLN.
  * Used by ZapButton; do not import from server modules.
  */
 
@@ -99,8 +100,41 @@ function npubToHex(npub: string): string {
 }
 
 export interface ZapRecipientResult {
-  /** True if payment was completed via WebLN; false if fallback (e.g. opened in new tab). */
+  /** True if payment completed (NWC or WebLN); false if fallback (e.g. opened in new tab). */
   paid: boolean;
+}
+
+/**
+ * Pay zap invoice with server-side NWC when the user is signed in and has NWC enabled.
+ * Returns true if paid; false if unauthenticated or no NWC (caller should try WebLN).
+ */
+async function payZapInvoiceWithNwcIfAvailable(
+  bolt11: string
+): Promise<boolean> {
+  const res = await fetch("/api/zap-pay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ invoice: bolt11 }),
+    signal: AbortSignal.timeout(120_000),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as {
+    code?: string;
+    error?: string;
+    ok?: boolean;
+  };
+
+  if (res.status === 401) {
+    return false;
+  }
+  if (res.status === 400 && data.code === "NO_NWC") {
+    return false;
+  }
+  if (!res.ok) {
+    throw new Error(data.error ?? ZAP_FLOW_ERROR_PAYMENT);
+  }
+  return data.ok === true;
 }
 
 /** Build kind 9734 tags for LNURL zap request (NIP-57). */
@@ -122,7 +156,8 @@ export function buildZapRequestKind9734Tags(params: {
 }
 
 /**
- * Run the full NIP-57 zap flow: get lud16 -> LNURL metadata -> build and sign zap request -> callback -> invoice -> webln.sendPayment.
+ * Run the full NIP-57 zap flow: get lud16 -> LNURL metadata -> build and sign zap request -> callback -> invoice ->
+ * pay via NWC (if configured) or WebLN.
  * Resolves with { paid: true } when payment succeeds; { paid: false } when fallback (e.g. opened in new tab); rejects on failure.
  */
 export async function zapRecipient(
@@ -193,6 +228,12 @@ export async function zapRecipient(
   if (typeof window === "undefined") {
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }
+
+  const paidViaNwc = await payZapInvoiceWithNwcIfAvailable(pr);
+  if (paidViaNwc) {
+    return { paid: true };
+  }
+
   if (!window.webln?.sendPayment) {
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }

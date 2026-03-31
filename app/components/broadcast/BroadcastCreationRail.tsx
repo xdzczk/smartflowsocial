@@ -27,6 +27,7 @@ import {
 } from "~/features/posts/components/publishing-rail";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
+import { clampDateTimeLocalToMin } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
 import {
@@ -290,8 +291,9 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
                         min={minDatetime}
                         onChange={(e) => {
                           const v = e.target.value;
-                          const min = minDatetime;
-                          onScheduledForChange(v && v < min ? min : v);
+                          onScheduledForChange(
+                            clampDateTimeLocalToMin(v, minDatetime)
+                          );
                         }}
                         className={railFieldClassNames}
                       />

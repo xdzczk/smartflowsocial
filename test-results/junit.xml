@@ -1,575 +1,85 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="257" failures="0" errors="0" time="0.387513044">
-    <testsuite name="tests/unit/auth/connection-relay-utils.test.ts" timestamp="2026-03-31T12:19:23.676Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.007575084">
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; normalizeRelayList &gt; trims and deduplicates wss relays" time="0.002759417">
+<testsuites name="vitest tests" tests="36" failures="1" errors="0" time="0.032406542">
+    <testsuite name="tests/unit/engagement-logic.test.ts" timestamp="2026-03-31T20:35:03.319Z" hostname="Ivans-MacBook-Pro.local" tests="36" failures="1" errors="0" skipped="0" time="0.032406542">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; groupNotificationsByType &gt; should correctly categorize reply notifications" time="0.000875375">
         </testcase>
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; normalizeRelayList &gt; filters out non-wss URLs" time="0.000350042">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; groupNotificationsByType &gt; should correctly categorize mention notifications" time="0.00015025">
         </testcase>
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; relayListsEqual &gt; returns true for same relays in different order" time="0.000251">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; groupNotificationsByType &gt; should correctly categorize zap notifications" time="0.000113666">
         </testcase>
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; relayListsEqual &gt; returns false for different length or content" time="0.000205708">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; groupNotificationsByType &gt; should correctly categorize quote reposts" time="0.000085084">
         </testcase>
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; buildRelayUnion &gt; merges stored and defaults up to cap" time="0.001237417">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; groupNotificationsByType &gt; should handle empty notifications array" time="0.000141417">
         </testcase>
-        <testcase classname="tests/unit/auth/connection-relay-utils.test.ts" name="connection-relay-utils &gt; buildRelayUnion &gt; respects cap" time="0.000194917">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; inferThreadRootEventIdFromTags &gt; prefers e-tag with root marker" time="0.000114667">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/nip46-connect.test.ts" timestamp="2026-03-31T12:19:23.677Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.008907167">
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; returns config with method bunker_input and trimmed bunkerInput" time="0.00190625">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; inferThreadRootEventIdFromTags &gt; falls back to first e-tag" time="0.000058541">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; passes retryCount to connectNip46WithBunkerInput when provided" time="0.002492166">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; inferThreadRootEventIdFromTags &gt; prefers first e-tag over reply when root marker is absent (NIP-10 order)" time="0.000059334">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; returns config with method nostrconnect_uri, uri, and relays" time="0.001014875">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; inferThreadRootEventIdFromTags &gt; uses second e-tag as root when both tags are unmarked (NIP-10 reply-then-root)" time="0.000066041">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; calls onUriCreated with uri, pool, relays, clientSecretKey when provided" time="0.000574">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; inferThreadRootEventIdFromTags &gt; falls back to note id when no e-tags" time="0.000070375">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls connectNip46WithNostrConnectUri and returns signer, pubkey, config with optional bunkerPointer" time="0.000910959">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; global mention inbox exclusion (thread replies vs real mentions) &gt; treats NIP-10 reply as structured thread reply" time="0.000083167">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls onPoolCreated when provided" time="0.000377417">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; global mention inbox exclusion (thread replies vs real mentions) &gt; does not treat quote (mention marker) as structured thread reply" time="0.000043875">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/nip46-persist.test.ts" timestamp="2026-03-31T12:19:23.678Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.007352083">
-        <testcase classname="tests/unit/auth/nip46-persist.test.ts" name="nip46-persist &gt; calls signer APIs in order and returns connectionView from matchOrCreateSession" time="0.00526725">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; global mention inbox exclusion (thread replies vs real mentions) &gt; excludes thread reply even when #p matches the parent author" time="0.000059542">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/reconnect-dialog-derived.test.ts" timestamp="2026-03-31T12:19:23.678Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.008670625">
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when state is not idle" time="0.001548584">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; global mention inbox exclusion (thread replies vs real mentions) &gt; keeps standalone @mention with no thread e-tags" time="0.00006775">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when error does not contain retry message" time="0.00022525">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; doesEventMentionUser &gt; detects p tag hex match" time="0.000068541">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns false when getPendingReconnect returns truthy" time="0.000178708">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; doesEventMentionUser &gt; returns false when no p tag or nip-27 ref" time="0.000223125">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getCanRetryExisting &gt; returns true when idle, retry error, valid nip46 session, no pending" time="0.000163042">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; parseThreadViewNotifications (NIP-27 mentions) &gt; detects nostr:npub in content without p tag as mention" time="0.019691209">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Reconnecting… when state is reconnecting_existing" time="0.000204833">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; parseThreadViewNotifications (NIP-27 mentions) &gt; classifies reply with embedded parent note and empty e-tag marker as reply, not mention" time="0.001006375">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Waiting for signer… when state is waiting" time="0.000131416">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; parseThreadViewNotifications (NIP-27 mentions) &gt; classifies reply when e-tag id differs only by hex case from parent" time="0.000853333">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Connect signer when tab is bunker" time="0.000087041">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; parseThreadViewNotifications (NIP-27 mentions) &gt; classifies nested thread replies that only e-tag the parent as replies" time="0.001065583">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Try again with existing connection when canRetryExisting" time="0.000071375">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; parseThreadViewNotifications (NIP-27 mentions) &gt; classifies e-tag marker mention + nostr ref as mention (quote)" time="0.000904625">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Retry when nostrConnectUri present and not canRetryExisting" time="0.000109">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; calculateTrustScore &gt; should return 0 for minimal user profile" time="0.000144542">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getReconnectStartLabel &gt; returns Generate link when no uri and not canRetryExisting" time="0.000528917">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; calculateTrustScore &gt; should increase score with profile completeness" time="0.00009725">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes tryReconnectWithExistingConnection when canRetryExisting and not bunker" time="0.002308125">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; calculateTrustScore &gt; should give higher score for older accounts" time="0.000250167">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes resumeReconnectWithPendingUri when tab is nostrconnect and has pending" time="0.00024575">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; calculateTrustScore &gt; should calculate account age in days correctly" time="0.00011225">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-derived.test.ts" name="reconnect-dialog-derived &gt; getHandlePrimaryAction &gt; invokes connect when no retry and no pending" time="0.000214042">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; calculateTrustScore &gt; should return 0 for timeJoined of 0" time="0.000047833">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/reconnect-dialog-utils.test.ts" timestamp="2026-03-31T12:19:23.679Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.007924875">
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; buildRelayUnion &gt; returns empty array when stored and defaults are empty" time="0.002263125">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustLevel &gt; should return &apos;Highly Trusted&apos; for scores &gt;= 80" time="0.000131">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; buildRelayUnion &gt; merges stored and defaults and deduplicates by normalized url" time="0.00135175">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustLevel &gt; should return &apos;Trusted&apos; for scores 60-79" time="0.0000785">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; buildRelayUnion &gt; respects cap" time="0.000838291">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustLevel &gt; should return &apos;Developing&apos; for scores 40-59" time="0.000076">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; buildRelayUnion &gt; filters out non-wss URLs" time="0.0002445">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustLevel &gt; should return &apos;New&apos; for scores 20-39" time="0.000076625">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; buildRelayUnion &gt; uses RELAY_UNION_CAP when cap not provided" time="0.000218625">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustLevel &gt; should return &apos;Unverified&apos; for scores &lt; 20" time="0.000070542">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; debugReconnectTrace &gt; calls console.info with message only when no details" time="0.000661834">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustScoreBadgeColor &gt; should return success classes for scores &gt;= 80" time="0.000117541">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; debugReconnectTrace &gt; calls console.info with message and details when details provided" time="0.000396291">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustScoreBadgeColor &gt; should return muted/foreground classes for scores 60-79" time="0.000051166">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-dialog-utils.test.ts" name="reconnect-dialog-utils &gt; constants &gt; exports expected constants" time="0.000412208">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustScoreBadgeColor &gt; should return yellow classes for scores 40-59" time="0.000053417">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/reconnect-existing-failure.test.ts" timestamp="2026-03-31T12:19:23.680Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.009236667">
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; (1) does nothing when run is stale (getCurrentRunId !== runId)" time="0.001860541">
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustScoreBadgeColor &gt; should return muted classes for scores 20-39" time="0.000044625">
         </testcase>
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; (2) does nothing when getClosedByExternalReconnect is true" time="0.001276333">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; (3) sets state idle and clears error when shouldDeferExistingReconnectTerminalError (no toast)" time="0.000811917">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; (4) when attemptPrimarySignerFailover recovered: syncRelays, setState connected, toast, onOpenChange(false)" time="0.001922833">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; (5) when attemptPrimarySignerFailover not recovered: setState idle, setError, setExistingReconnectAttempt" time="0.001454625">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-existing-failure.test.ts" name="reconnect-existing-failure &gt; sets foregroundResumeAttemptFailed when trigger is foreground_resume and failover did not recover" time="0.000246292">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/reconnect-flows.test.ts" timestamp="2026-03-31T12:19:23.680Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.05514625">
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingNostrConnectReconnect &gt; calls setState reconnecting_existing then connected and onSuccess on success" time="0.003824042">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingNostrConnectReconnect &gt; calls setError and setState failed when pubkey mismatch" time="0.001901917">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingNostrConnectReconnect &gt; retries with relay union when first attempt fails and second succeeds" time="0.014166458">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingNostrConnectReconnect &gt; calls resetCachedSigner and setState idle when ping fails after connect" time="0.001448166">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; calls setState reconnecting_existing then connected and onSuccess on success" time="0.000633333">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; throws when parseBunkerInput returns null" time="0.002931958">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; first attempt fails, second succeeds" time="0.012870292">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; throws when both attempts fail" time="0.013494958">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; closes signer and does not call onSuccess when getIsRunStale returns true after connect" time="0.000417208">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; calls setError and setState failed on pubkey mismatch" time="0.000365542">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; runExistingBunkerReconnect &gt; calls resetCachedSigner and setState idle when ping fails after connect" time="0.00040725">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; handleExistingReconnectFailure &gt; calls setState idle and setError when primary failover does not recover" time="0.000564">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; handleExistingReconnectFailure &gt; calls toastSuccess and onReconnectSuccess when primary failover recovers" time="0.000414625">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-flows.test.ts" name="reconnect flows &gt; handleExistingReconnectFailure &gt; returns early when run is stale" time="0.000237042">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/reconnect-uri.test.ts" timestamp="2026-03-31T12:19:23.681Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.007961667">
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; bunkerCanonicalKey &gt; normalizes relays to lowercase, trims, wss-only, sorted, deduped" time="0.001740667">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; bunkerCanonicalKey &gt; uses empty string for null secret" time="0.000224042">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; splits by newlines and trims empty" time="0.000805542">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; handles CRLF" time="0.000432959">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; filters empty lines" time="0.000217666">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; returns empty array for empty string" time="0.00014975">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when isStandalonePWA is true" time="0.000297625">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when window is undefined" time="0.00014325">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when uri already has callback=" time="0.000142959">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; appends callback with encoded origin+pathname+search when no callback and window exists" time="0.000267084">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; uses &amp; when uri already has ?" time="0.000407625">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; returns null when sessionStorage has no key" time="0.000405458">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; returns null when stored value is invalid JSON" time="0.000158958">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; round-trips: set then get returns same shape" time="0.000574">
-        </testcase>
-        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; clearPendingReconnectStorage &gt; removes key from sessionStorage" time="0.000284708">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/useReconnectDialogState.test.ts" timestamp="2026-03-31T12:19:23.683Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.019679">
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; poll tryBackgroundReconnect while modal open &gt; calls tryBackgroundReconnect every 12s when open is true" time="0.008837458">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; poll tryBackgroundReconnect while modal open &gt; does not run poll interval when open is false" time="0.00113">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; poll tryBackgroundReconnect while modal open &gt; stops polling when open changes from true to false" time="0.001481833">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; poll tryBackgroundReconnect while modal open &gt; cleans up interval on unmount" time="0.001613208">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; visibilitychange when modal open &gt; calls tryBackgroundReconnect when document becomes visible and modal is open" time="0.001304542">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; visibilitychange when modal open &gt; adds visibility listener only when open is true" time="0.000795167">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; visibilitychange when modal open &gt; visibility handler calls tryBackgroundReconnect when open is true" time="0.000630792">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; visibilitychange when modal open &gt; cleans up visibility listener on unmount" time="0.000656083">
-        </testcase>
-        <testcase classname="tests/unit/auth/useReconnectDialogState.test.ts" name="useReconnectDialogState &gt; visibilitychange when modal open &gt; when visibility goes hidden during reconnecting_existing, state becomes idle (cancel in-flight, no reconnect loop)" time="0.002327708">
-            <system-out>
-[remote-signer-reconnect] Visibility hidden: cancelled in-flight existing-connection reconnect
+        <testcase classname="tests/unit/engagement-logic.test.ts" name="Engagement Logic Unit Tests &gt; getTrustScoreBadgeColor &gt; should return gray classes for scores &lt; 20" time="0.004086917">
+            <failure message="expected &apos;bg-muted/40 dark:bg-card text-foregro…&apos; to contain &apos;gray&apos;" type="AssertionError">
+AssertionError: expected &apos;bg-muted/40 dark:bg-card text-foregro…&apos; to contain &apos;gray&apos;
 
-            </system-out>
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/connection-cache.test.ts" timestamp="2026-03-31T12:19:23.683Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.010658583">
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; getCachedSigner returns null initially" time="0.001308125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; setCachedSigner and getCachedSigner round-trip" time="0.000377709">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set ConnectionEstablishedAt, LastActivityTime, LastVerificationTime, LastRelaySyncAt" time="0.000733875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set NeedsReprobe" time="0.000184167">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set in-flight promise and config json" time="0.000286959">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; getSignerResolutionRequestId and incrementSignerResolutionRequestId" time="0.000140875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; getSignerGeneration and incrementSignerGeneration" time="0.000144958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set ConnectionCooldownUntil" time="0.000155875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set TeardownInProgress" time="0.000150084">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; get/set cached signer and timestamps &gt; get/set WasHidden and LastVisibilityReconnectAt" time="0.000669834">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; resetCachedSigner &gt; clears cached signer and verification/sync times" time="0.0002765">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; recordSuccessfulSign &gt; updates lastActivityTime and lastVerificationTime" time="0.000216042">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; cacheNip46SignerFromLogin &gt; does nothing when signer type is not nip46" time="0.000406625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; cacheNip46SignerFromLogin &gt; does nothing when active config is not nip46" time="0.000317375">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-cache.test.ts" name="connection-cache &gt; cacheNip46SignerFromLogin &gt; caches signer and updates timestamps when signer and config are nip46" time="0.002405375">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/connection-connect.test.ts" timestamp="2026-03-31T12:19:23.684Z" hostname="Ivans-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.007619917">
-        <testcase classname="tests/unit/auth/signer/connection-connect.test.ts" name="connection-connect &gt; calls connectNip46WithBunkerInput when method is bunker_input" time="0.003462166">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-connect.test.ts" name="connection-connect &gt; calls connectNip46ReconnectWithStoredNostrConnect when bunkerPointer is set" time="0.000746667">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-connect.test.ts" name="connection-connect &gt; calls connectNip46ReconnectWithStoredNostrConnect when signerPubkey and relays" time="0.00037125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-connect.test.ts" name="connection-connect &gt; throws when no bunkerPointer and no signerPubkey/relays" time="0.001867042">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/connection-health.test.ts" timestamp="2026-03-31T12:19:23.685Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.016899375">
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; verifySignerConnection &gt; returns true when signer type is not nip46" time="0.002241667">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; verifySignerConnection &gt; returns true when signer has no ping function" time="0.000507292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; verifySignerConnection &gt; returns true and updates cache when ping resolves" time="0.000619833">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; verifySignerConnection &gt; returns false when ping rejects" time="0.000235583">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; verifySignerConnection &gt; returns false when ping times out" time="0.002732833">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; startHealthCheckMonitoring &gt; dispatches NOSTR_CONNECTION_STALE_EVENT when verification fails and cache still has same signer" time="0.002349125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; startHealthCheckMonitoring &gt; clears interval when no active config" time="0.000905375">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed false with reason unsupported when signer is not nip46" time="0.00071275">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed false when signer has no switchRelays" time="0.000186125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed false with reason not_nostrconnect_uri when config is not nostrconnect_uri" time="0.000289708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed false with reason no_change when switchRelays returns falsy" time="0.000659833">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed false with reason unchanged when normalized equals config.relays" time="0.0004515">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; returns changed true and updates session and log when relay sync succeeds" time="0.002691">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; does not call updateSession when getActiveConnection returns null" time="0.000334292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-health.test.ts" name="connection-health &gt; syncRelaysWithRemoteSigner &gt; uses existing config when activeConnection.config.method is not nostrconnect_uri" time="0.000374">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/connection-visibility.test.ts" timestamp="2026-03-31T12:19:23.686Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.012467167">
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; returns noop when document is undefined" time="0.003453333">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; registers visibilitychange, focus, pageshow, online listeners" time="0.002472958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onTeardown when document becomes hidden on mobile with nip46 signer" time="0.000598833">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when document becomes visible after was hidden and throttle passed" time="0.000432291">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; does not call onTeardown when not mobile" time="0.000315334">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; cleanup removes listeners" time="0.001005292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; does not call onResume when throttle has not passed since last visibility reconnect" time="0.000439875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; does not call onResume when getTeardownInProgress is true" time="0.000706917">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onTeardown on freeze when nip46 signer present and supportsFreezeResume" time="0.000375167">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when focus fires and getWasHidden was true" time="0.000382625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when pageshow fires and getWasHidden was true" time="0.000311166">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; cleanup removes freeze and resume listeners when supportsFreezeResume" time="0.00041525">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/nostr-signer-connection.test.ts" timestamp="2026-03-31T12:19:23.686Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.009954417">
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; returns null when no config and no cached signer" time="0.001514167">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; returns cached signer when cache is fresh (no verify path)" time="0.000574708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; returns nip07 signer when config is nip07 and cache empty" time="0.001426375">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; does not return cached signer when verification fails (stale connection)" time="0.000392792">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; clears cached signer when needsReprobe is true and verification fails" time="0.00022025">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; rejects when reconnect succeeds but probe-after-resume (verifySignerConnection) fails" time="0.001853709">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; returns null and does not overwrite cache when config changes while connect is in flight" time="0.000246292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; getActiveSigner &gt; deduplicates concurrent getActiveSigner calls with same config" time="0.00050475">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; tryBackgroundReconnect &gt; returns false and does not cache signer when no active connection" time="0.000282542">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; tryBackgroundReconnect &gt; returns false when getActiveSignerConfig is null" time="0.000198125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; teardownActiveNip46Signer &gt; calls resetCachedSigner and stopHealthCheckMonitoring when nip46 cached" time="0.000271875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; teardownVisibilityHandler &gt; calls cleanup when one was set" time="0.000127584">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; cacheNip46SignerFromLogin &gt; delegates to cache impl with startHealthCheckMonitoring" time="0.000869333">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-connection.test.ts" name="nostr-signer-connection &gt; recordSuccessfulSign &gt; delegates to recordSuccessfulSignImpl" time="0.000104833">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/nostr-signer-keys.test.ts" timestamp="2026-03-31T12:19:23.687Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.004464458">
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; hexToBytes &gt; parses valid hex string to Uint8Array" time="0.001374458">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; hexToBytes &gt; normalizes to lowercase" time="0.000199667">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; hexToBytes &gt; trims whitespace" time="0.00015">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; hexToBytes &gt; throws for invalid hex characters" time="0.000859708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; hexToBytes &gt; throws for odd length" time="0.000200042">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; serializeSecretKey &gt; converts Uint8Array to hex string" time="0.000152875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-keys.test.ts" name="nostr-signer-keys &gt; parseSecretKeyHex &gt; delegates to hexToBytes" time="0.000180416">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/nostr-signer-manager.test.ts" timestamp="2026-03-31T12:19:23.688Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.00871575">
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getActiveSignerConfig &gt; returns value from storage" time="0.001304625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getActiveSignerConfig &gt; returns null when storage has no config" time="0.000202583">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; setActiveSignerConfig &gt; calls storage set" time="0.001405667">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; clearActiveSignerConfig &gt; calls storage clear" time="0.000233">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getActiveSignerPubkeyHint &gt; returns null when no config" time="0.000178584">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getActiveSignerPubkeyHint &gt; returns null for nip07 config" time="0.0001165">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getActiveSignerPubkeyHint &gt; returns pubkey hint for nip46 config when getPublicKey succeeds" time="0.000280333">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getWindowNostrLikeSigner &gt; returns signer wrapper when getActiveSigner returns signer" time="0.000474417">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-manager.test.ts" name="nostr-signer-manager &gt; getWindowNostrLikeSigner &gt; returns null when getActiveSigner returns null and no window.nostr" time="0.000110125">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/nostr-signer-storage.test.ts" timestamp="2026-03-31T12:19:23.688Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.006021416">
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; returns null when storage is empty" time="0.001144666">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; round-trips nip07 config" time="0.000684208">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; round-trips nip46 bunker_input config" time="0.000195708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; round-trips nip46 nostrconnect_uri config" time="0.000187292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; returns null when stored JSON is invalid" time="0.00015275">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getActiveSignerConfig / setActiveSignerConfig &gt; returns null when getItem throws" time="0.000759542">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; setActiveSignerConfig catch &gt; ignores when setItem throws" time="0.000159458">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; clearActiveSignerConfig &gt; removes config from storage and clears in-memory cache" time="0.0002595">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; clearActiveSignerConfig &gt; ignores when removeItem throws (in-memory cache still cleared)" time="0.00066675">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getCachedConfigJson &gt; returns in-memory cache when set" time="0.000213209">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getCachedConfigJson &gt; falls back to sessionStorage when cache is null" time="0.000111875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; getCachedConfigJson &gt; returns null when sessionStorage getItem throws and cache is null" time="0.000129">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; setCachedConfigJson &gt; sets in-memory cache without writing to storage" time="0.000102625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/nostr-signer-storage.test.ts" name="nostr-signer-storage &gt; persistActiveSignerConfigWithoutReset &gt; writes config to storage via setActiveSignerConfig" time="0.000116625">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/primary-signer-failover.test.ts" timestamp="2026-03-31T12:19:23.689Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.008563417">
-        <testcase classname="tests/unit/auth/signer/primary-signer-failover.test.ts" name="primary-signer-failover &gt; attemptPrimarySignerFailover &gt; returns recovered false with reason no_primary_profile when no profile available" time="0.0019585">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-failover.test.ts" name="primary-signer-failover &gt; attemptPrimarySignerFailover &gt; returns recovered false when connectProfile throws" time="0.000877834">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-failover.test.ts" name="primary-signer-failover &gt; attemptPrimarySignerFailover &gt; returns recovered true and calls session/config updates when connect succeeds" time="0.001338875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-failover.test.ts" name="primary-signer-failover &gt; attemptPrimarySignerFailover &gt; returns recovered false with reason pubkey_mismatch when expected pubkey does not match" time="0.000259875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-failover.test.ts" name="primary-signer-failover &gt; clearPrimarySignerProfileCache &gt; clears cache so fetchPrimarySignerProfile can be re-tested" time="0.002731458">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/primary-signer-profile.test.ts" timestamp="2026-03-31T12:19:23.690Z" hostname="Ivans-MacBook-Pro.local" tests="16" failures="0" errors="0" skipped="0" time="0.004017125">
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects null" time="0.001128708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects non-object" time="0.0002235">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects arrays" time="0.000139625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects when type is not nip46" time="0.000122292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects invalid label (non-string, non-null)" time="0.000155709">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects invalid expectedPubkey (non-string, non-null)" time="0.00010425">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects invalid updatedAt (non-ISO date)" time="0.000091291">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; accepts bunker_input with non-empty bunkerInput" time="0.000084">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects bunker_input with empty bunkerInput" time="0.000090083">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects bunker_input when bunkerInput is not a string" time="0.000112">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; accepts nostrconnect_uri with non-empty uri and string relays" time="0.0000995">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects nostrconnect_uri with empty uri" time="0.000073792">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects nostrconnect_uri when relays is not an array" time="0.000066958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects nostrconnect_uri when relay element is not a string" time="0.000072292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; rejects unknown method" time="0.000069667">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/primary-signer-profile.test.ts" name="primary-signer-profile &gt; isPrimarySignerProfile &gt; accepts with string label and expectedPubkey" time="0.000072208">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/reconnect-scenarios.test.ts" timestamp="2026-03-31T12:19:23.691Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.0891285">
-        <testcase classname="tests/unit/auth/signer/reconnect-scenarios.test.ts" name="reconnect scenarios &gt; (1) when NOSTR_CONNECTION_STALE_EVENT is dispatched and tryBackgroundReconnect is invoked, it is called once and on success dispatches NOSTR_CONNECTION_HEALTHY_EVENT" time="0.086650625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/reconnect-scenarios.test.ts" name="reconnect scenarios &gt; (2) when reconnect is in progress and visibility becomes hidden, no second reconnect is started" time="0.000807416">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/reconnect-scenarios.test.ts" name="reconnect scenarios &gt; (3) health check interval does not trigger reconnect while already reconnecting" time="0.00043625">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-health.test.ts" timestamp="2026-03-31T12:19:23.691Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.008738834">
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy false when no signer and tryReconnect false" time="0.001776917">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; calls getActiveSigner with allowReconnect true when no signer and tryReconnect true" time="0.001576875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy false with generic message when no signer and no nip46 config" time="0.00023275">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy true via get_public_key when signer has no ping" time="0.0003755">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy true via ping when signer has ping" time="0.000782709">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy false when getPublicKey throws" time="0.000350334">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy false when ping throws" time="0.000251834">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-health.test.ts" name="remote-signer-health &gt; returns healthy false on timeout" time="0.0021665">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-reconnect.test.ts" timestamp="2026-03-31T12:19:23.692Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.003437042">
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitRemoteSignerTimeoutEvent &gt; dispatches event with detail when window exists" time="0.001401708">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitRemoteSignerTimeoutEvent &gt; dispatches with empty detail by default" time="0.000291542">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitRemoteSignerTimeoutEvent &gt; does not throw when window is undefined" time="0.000480875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitOpenRemoteSignerReconnectDialogEvent &gt; dispatches event with detail when window exists" time="0.00021625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitOpenRemoteSignerReconnectDialogEvent &gt; dispatches with empty detail by default" time="0.000136375">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-reconnect.test.ts" name="remote-signer-reconnect &gt; emitOpenRemoteSignerReconnectDialogEvent &gt; does not throw when window is undefined" time="0.000107209">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" timestamp="2026-03-31T12:19:23.692Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.004029166">
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; detectSignerAppName &gt; returns Browser Extension for nip07" time="0.001312958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; detectSignerAppName &gt; returns app name from bunker_input hostname" time="0.000480167">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; detectSignerAppName &gt; returns name from nostrconnect_uri ?name= param when present" time="0.000360834">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; detectSignerAppName &gt; returns app name from relay hostname when uri has no name param" time="0.000226584">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; maskConnectionUri &gt; returns uri as-is when length &lt;= 50" time="0.000180208">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-detect.test.ts" name="remote-signer-sessions-detect &gt; maskConnectionUri &gt; masks long uri with start and end" time="0.000284292">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" timestamp="2026-03-31T12:19:23.693Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.028844459">
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; normalizePubkeyHex &gt; returns lowercase hex for valid 64-char hex" time="0.002320208">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; normalizePubkeyHex &gt; returns null for empty or invalid" time="0.001065625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; normalizeUriForIdentity &gt; strips callback param and normalizes query order" time="0.000727958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; isConfigEquivalent &gt; returns true for same nostrconnect_uri (normalized)" time="0.016290792">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; isConfigEquivalent &gt; returns false for different nostrconnect_uri" time="0.000667291">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; isConfigEquivalent &gt; returns true for same bunker_input and secret" time="0.000340458">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; isConfigEquivalent &gt; returns false for different bunker_input" time="0.000162208">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; findMatchingConnectionForConfig &gt; returns connection matching by signerPubkey when provided" time="0.001523875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; findMatchingConnectionForConfig &gt; returns connection matching by config when no signerPubkey" time="0.001382583">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; matchOrCreateConnection &gt; updates label/config when equivalent config exists" time="0.000833292">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-matching.test.ts" name="remote-signer-sessions-matching &gt; matchOrCreateConnection &gt; creates new connection when no equivalent exists" time="0.0010065">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" timestamp="2026-03-31T12:19:23.693Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.00833725">
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; returns early when window is undefined" time="0.001431542">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; returns early when localStorage is undefined" time="0.000273541">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; returns early when already migrated (flag set)" time="0.000275041">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; sets flag and returns when getItem throws (continue with migration)" time="0.000807041">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; sets flag and returns when existingSessions.length &gt; 0" time="0.000253041">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; returns without throwing when setItem throws after existingSessions &gt; 0" time="0.000796417">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; sets flag and returns when getActiveSignerConfig returns null" time="0.000175042">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; sets flag and returns when existingConfig.type is nip07" time="0.0001575">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; creates session, sets active, and sets flag on happy path (NIP-46 config)" time="0.001555">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; sets flag and does not rethrow when createSession throws" time="0.000461375">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-migration.test.ts" name="remote-signer-sessions-migration &gt; when window and localStorage are defined &gt; does not throw when createSession throws and setItem in catch throws (inner catch)" time="0.000625208">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" timestamp="2026-03-31T12:19:23.694Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.010100125">
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; getStorageKey / getStorageKeyV2 &gt; returns base prefix when currentUserNpub is null" time="0.001615959">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; getStorageKey / getStorageKeyV2 &gt; returns key with npub suffix when currentUserNpub is set" time="0.000400333">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; generateId &gt; returns a string with timestamp and random part" time="0.000295291">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; getStorage &gt; returns empty V2 shape when no stored data" time="0.001385666">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; getStorage &gt; migrates V1 to V2 and persists when V1 data exists at storage key" time="0.000849042">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; getStorage &gt; clears V1 keys after migrating to V2" time="0.000190625">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; saveStorage &gt; returns early when window is undefined" time="0.000648875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; saveStorage &gt; calls console.warn when localStorage.setItem throws" time="0.000407834">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; updateStorage &gt; mutates storage and persists" time="0.001383916">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; normalizeActiveConnectionId &gt; clears activeConnectionId when it does not exist in connections" time="0.000185125">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-sessions-storage.test.ts" name="remote-signer-sessions-storage &gt; normalizeCurrentSessionIds &gt; clears currentSessionId when session does not exist" time="0.000121041">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signer/remote-signer-status.test.ts" timestamp="2026-03-31T12:19:23.695Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.013062625">
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; getConnectionStatus &gt; returns inactive when connection does not exist" time="0.00176025">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; getConnectionStatus &gt; returns connection metadata status when connection exists" time="0.000873791">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; updateConnectionStatus &gt; updates session metadata status" time="0.000802583">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; updateConnectionStatus &gt; does nothing when connection does not exist" time="0.000231459">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; getConnectionStatus / updateConnectionStatus &gt; getConnectionStatus returns initial status for new connection" time="0.00044825">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; getConnectionStatus / updateConnectionStatus &gt; updateConnectionStatus updates status" time="0.000935209">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; does nothing when connection does not exist" time="0.000613084">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; records connected event and updates metadata" time="0.0024355">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; records disconnected event" time="0.001317875">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; records health_check event" time="0.000476917">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; records error event" time="0.0004165">
-        </testcase>
-        <testcase classname="tests/unit/auth/signer/remote-signer-status.test.ts" name="remote-signer-status &gt; recordConnectionEvent &gt; records signed event" time="0.000453625">
+Expected: &quot;gray&quot;
+Received: &quot;bg-muted/40 dark:bg-card text-foreground border-border&quot;
+
+ ❯ tests/unit/engagement-logic.test.ts:669:42
+            </failure>
         </testcase>
     </testsuite>
 </testsuites>

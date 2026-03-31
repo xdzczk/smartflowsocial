@@ -2,12 +2,12 @@
  * Display helpers for plan caps.
  *
  * Internal semantics can use `null` for “not capped by plan”, but UI should not
- * automatically promise “Unlimited”.
+ * automatically promise “Unlimited”. When caps are null, use tier labels
+ * (“Expanded” / “Operator-grade”) instead of vague “higher” wording.
  */
-
 export function higherTierLabelFromLegacyPlanId(planId: string): string | null {
-  if (planId === "basic") return "Higher";
-  if (planId === "premium") return "Highest";
+  if (planId === "basic") return "Expanded";
+  if (planId === "premium") return "Operator-grade";
   return null;
 }
 

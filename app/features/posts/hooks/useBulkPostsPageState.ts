@@ -32,7 +32,7 @@ import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
-  addHours,
+  addMinutes,
   formatForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
@@ -591,7 +591,7 @@ export function useBulkPostsPageState({
       queueType: "unassigned",
       scheduledFor:
         posts.length === 0 && i === 0
-          ? formatForDateTimeLocal(addHours(now, 1), userTimezone)
+          ? formatForDateTimeLocal(addMinutes(now, 15), userTimezone)
           : "",
       isRecyclable: false,
       includeHashtagsInNoteBody: true,

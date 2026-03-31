@@ -12,6 +12,7 @@ import {
   deletePost,
   getPostsByIds,
 } from "~/features/posts/server";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { logError } from "~/lib/error-logger.server";
 import { nowSeconds } from "~/lib/temporal";
 import {
@@ -32,6 +33,7 @@ import {
 
 const ERROR_POST_NOT_FOUND = "Post not found";
 const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";
+const ERROR_REPOST_CHAIN = "Cannot repost or quote a repost.";
 const DEFAULT_RELAY = "wss://relay.primal.net";
 const DEFAULT_QUEUE_TYPE = "unassigned";
 
@@ -118,6 +120,9 @@ async function handleBulkRepost(formData: FormData, userId: string) {
     return result.response;
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
+  if (postsData.some((p) => isPureRepostSourcePost(p))) {
+    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+  }
   return json({ repostData: postsData });
 }
 
@@ -130,6 +135,9 @@ async function handleBulkScheduledRepost(formData: FormData, userId: string) {
     return result.response;
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
+  if (postsData.some((p) => isPureRepostSourcePost(p))) {
+    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+  }
   return json({ scheduledRepostData: postsData });
 }
 
@@ -142,6 +150,9 @@ async function handleBulkQuote(formData: FormData, userId: string) {
     return result.response;
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
+  if (postsData.some((p) => isPureRepostSourcePost(p))) {
+    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+  }
 
   // Transform posts data into quote post format
   const quotePostsData = postsData.map((post) => {
@@ -210,6 +221,9 @@ async function handleRepost(formData: FormData, userId: string) {
     const originalPost = postsData[0];
     if (!originalPost) {
       return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    }
+    if (isPureRepostSourcePost(originalPost)) {
+      return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -287,6 +301,9 @@ async function handleQuote(formData: FormData, userId: string) {
     const originalPost = postsData[0];
     if (!originalPost) {
       return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    }
+    if (isPureRepostSourcePost(originalPost)) {
+      return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
     }
     const originalEvent = originalPost.signedEvent;
 

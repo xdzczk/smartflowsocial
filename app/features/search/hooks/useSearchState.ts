@@ -1,15 +1,12 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
+import type { SignedEvent } from "~/features/nostr/types";
+import type { PostData } from "~/features/posts/types";
 import type {
   LookupLoaderErrorPayload,
   SearchLookupResolution,
 } from "~/features/search";
-import {
-  addHours,
-  formatForDateTimeLocal,
-  nowInTimezone,
-} from "~/lib/temporal";
 import { searchFormClientSchema } from "~/lib/validation";
 import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
@@ -62,11 +59,32 @@ function normalizeLookupError(
   return raw;
 }
 
+function buildLookupSignedEventFromSearchEvent(e: {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  content: string;
+  tags: string[][];
+}): SignedEvent {
+  return {
+    id: e.id,
+    pubkey: e.pubkey,
+    created_at: e.created_at,
+    kind: e.kind,
+    content: e.content,
+    tags: e.tags,
+    sig: "",
+  };
+}
+
 interface UseSearchStateProps {
+  /** Reserved for future (timezone-aware actions); currently unused. */
   user: User | null;
-  fetcherData: SearchResultData | null;
-  /** Result from loader when page was opened with ?q= (post viewer mode) */
-  loaderSearchResult?: SearchResultData | null;
+  /** Typically `validateSearchResultData(fetcher.data)` (may include `scheduleSourcePost`). */
+  fetcherData: unknown;
+  /** Result from loader when page was opened with ?q= (post viewer mode). */
+  loaderSearchResult?: unknown;
 }
 
 /**
@@ -75,7 +93,7 @@ interface UseSearchStateProps {
  * current result when there is no fetcher data (post viewer mode).
  */
 export function useSearchState({
-  user,
+  user: _user,
   fetcherData,
   loaderSearchResult = null,
 }: UseSearchStateProps) {
@@ -85,6 +103,11 @@ export function useSearchState({
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [scheduleRepostQuote, setScheduleRepostQuote] = useState<{
+    mode: "repost" | "quote";
+    post: PostData | null;
+    lookupSourceSignedEvent: SignedEvent | null;
+  } | null>(null);
 
   const form = useZodForm(searchFormClientSchema, {
     defaultValues: {
@@ -93,12 +116,21 @@ export function useSearchState({
   });
 
   const isSearching = fetcher.state !== "idle";
-  const dataSource = fetcherData ?? loaderSearchResult;
+  const dataSource = (fetcherData ?? loaderSearchResult) as
+    | SearchResultData
+    | null
+    | undefined;
   const searchResult = dataSource?.event;
   const searchStats = dataSource?.stats;
   const searchReplies = dataSource?.replies ?? [];
   const searchResolution = dataSource?.resolution ?? null;
   const searchLookupError = normalizeLookupError(dataSource?.error);
+  const scheduleSourcePost: PostData | null = (() => {
+    if (!dataSource || typeof dataSource !== "object") return null;
+    const raw = (dataSource as Record<string, unknown>)["scheduleSourcePost"];
+    if (raw == null) return null;
+    return raw as PostData;
+  })();
 
   useEffect(() => {
     const err = dataSource?.error;
@@ -123,56 +155,20 @@ export function useSearchState({
 
   const handleScheduleQuote = () => {
     if (!searchResult) return;
-
-    const quotePostData = [
-      {
-        caption: "",
-        fileUrl: searchResult.mediaUrls?.[0] ?? "",
-        queueType: "unassigned",
-        scheduledFor: "",
-        originalPostId: null,
-        originalEventId: searchResult.id,
-        originalEventPubkey: searchResult.pubkey,
-        isQuotePost: true,
-        originalCaption: searchResult.content,
-        isRecyclable: false,
-      },
-    ];
-
-    sessionStorage.setItem("quotePostData", JSON.stringify(quotePostData));
-
-    navigate("/dashboard/bulkposts?mode=quote", { replace: true });
+    const post = scheduleSourcePost;
+    const lookupSourceSignedEvent = post
+      ? null
+      : buildLookupSignedEventFromSearchEvent(searchResult);
+    setScheduleRepostQuote({ mode: "quote", post, lookupSourceSignedEvent });
   };
 
   const handleScheduleRepost = () => {
     if (!searchResult) return;
-
-    const userTimezone = user?.timezone ?? "UTC";
-    const now = nowInTimezone(userTimezone);
-    const scheduleDateTime = addHours(now, 1);
-
-    const scheduledRepostData = [
-      {
-        caption: "",
-        fileUrl: "",
-        queueType: "unassigned",
-        scheduledFor: formatForDateTimeLocal(scheduleDateTime, userTimezone),
-        originalPostId: null,
-        originalEventId: searchResult.id,
-        originalEventPubkey: searchResult.pubkey,
-        isKind6Repost: true,
-        originalFileUrl: searchResult.mediaUrls,
-        originalCaption: searchResult.content,
-        isRecyclable: false,
-      },
-    ];
-
-    sessionStorage.setItem(
-      "scheduledRepostData",
-      JSON.stringify(scheduledRepostData)
-    );
-
-    navigate("/dashboard/bulkposts?mode=repost", { replace: true });
+    const post = scheduleSourcePost;
+    const lookupSourceSignedEvent = post
+      ? null
+      : buildLookupSignedEventFromSearchEvent(searchResult);
+    setScheduleRepostQuote({ mode: "repost", post, lookupSourceSignedEvent });
   };
 
   const clearSearch = () => {
@@ -196,5 +192,7 @@ export function useSearchState({
     handleScheduleQuote,
     handleScheduleRepost,
     clearSearch,
+    scheduleRepostQuote,
+    dismissScheduleRepostQuote: () => setScheduleRepostQuote(null),
   };
 }

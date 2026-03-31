@@ -32,6 +32,7 @@ import type {
   RepostConditions,
   UserData,
 } from "~/features/posts/types";
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import {
   getClientDisplayErrorMessage,
   handleErrorSafely,
@@ -43,6 +44,7 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
+  clampDateTimeLocalToMin,
   formatForDateTimeLocal,
   formatForDisplay,
   fromDate,
@@ -412,10 +414,11 @@ export function RescheduleScheduledPostModal({
     }
   };
 
-  const canScheduleRepostQuote = canScheduleRepostQuoteForPost(
-    isLongform,
-    post as unknown as CalendarPost
-  );
+  const canScheduleRepostQuote =
+    canScheduleRepostQuoteForPost(
+      isLongform,
+      post as unknown as CalendarPost
+    ) && !isPureRepostSourcePost(post as PostData);
 
   const requestClose = () => {
     if (scheduleRepostQuoteMode) {
@@ -471,7 +474,7 @@ export function RescheduleScheduledPostModal({
                       userTimezone,
                       post.scheduledAtUtc ?? undefined
                     );
-                    setRepostQuoteScheduledFor(v && v < min ? min : v);
+                    setRepostQuoteScheduledFor(clampDateTimeLocalToMin(v, min));
                   }}
                   min={getMinDatetimeLocalForSchedule(
                     userTimezone,

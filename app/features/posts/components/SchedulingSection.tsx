@@ -9,7 +9,10 @@ import {
   COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
   formatIntervalLabel,
 } from "~/lib/schedule-intervals";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 
 import type { QueueType } from "../types";
 interface SchedulingSectionProps {
@@ -68,7 +71,7 @@ export function SchedulingSection({
               onChange={(e) => {
                 const v = e.target.value;
                 const min = getNowForDateTimeLocal(userTimezone);
-                onScheduledForChange(v && v < min ? min : v);
+                onScheduledForChange(clampDateTimeLocalToMin(v, min));
               }}
               min={getNowForDateTimeLocal(userTimezone)}
               disabled={disabled}

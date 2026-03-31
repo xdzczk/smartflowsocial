@@ -2,6 +2,8 @@
  * Central rules for scheduled post actions — same on Dashboard, Calendar, Scheduled.
  */
 
+import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
+
 import type { ScheduledPostEntityKind } from "./scheduled-post-view-model";
 
 export interface ScheduledPostCapabilitiesInput {
@@ -26,9 +28,11 @@ export interface ScheduledPostCapabilities {
  */
 function isPureRepost(input: ScheduledPostCapabilitiesInput): boolean {
   if (input.entityKind === "longform") return false;
-  if (input.isQuotedPost) return false;
-  if (input.postKind === "REPOST") return true;
-  return input.repost === true;
+  return isPureRepostSourcePost({
+    postKind: input.postKind,
+    repost: input.repost,
+    isQuotedPost: input.isQuotedPost,
+  });
 }
 
 export function getScheduledPostCapabilities(

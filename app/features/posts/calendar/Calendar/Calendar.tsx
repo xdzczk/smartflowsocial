@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
+import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 import {
   PublishingContentTypeFilter,
@@ -17,6 +18,7 @@ import {
   PublishingSegmentedControlButtons,
   type PublishingSegmentButtonItem,
 } from "~/features/posts/components/publishing-suite";
+import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
@@ -344,6 +346,25 @@ export function Calendar({
   const queryClient = useQueryClient();
   const refreshPostViews = useRefreshPostViews();
 
+  const calendarPostsForStats = useMemo(() => {
+    const merged = [...scheduledPosts, ...pastPosts];
+    const shortPosts: PostData[] = [];
+    const longFormPosts: LongFormPostData[] = [];
+    for (const p of merged) {
+      if (getPostIsLongform(p, isLongform, isAll)) {
+        longFormPosts.push(calendarPostAsLongFormEntity(p));
+      } else {
+        shortPosts.push(calendarPostAsPostData(p));
+      }
+    }
+    return { shortPosts, longFormPosts };
+  }, [scheduledPosts, pastPosts, isLongform, isAll]);
+
+  const { stats: calendarStatsMerged } = usePostStatsQuery(
+    calendarPostsForStats.shortPosts,
+    { longFormPosts: calendarPostsForStats.longFormPosts }
+  );
+
   useEffect(() => {
     if (!calendarLiveMessage) return;
     const t = setTimeout(() => setCalendarLiveMessage(""), 3000);
@@ -405,6 +426,50 @@ export function Calendar({
     detailModalPost !== null
       ? getCalendarPostModalType(detailModalPost)
       : "scheduled";
+
+  const detailModalPublishedStats = useMemo(() => {
+    if (!detailModalPost || detailModalType !== "published") return;
+    if (detailModalPostIsLongform) {
+      const lf = calendarPostAsLongFormEntity(detailModalPost);
+      const id = getLongFormPublishedEventId(lf);
+      if (!id) return;
+      const entry = calendarStatsMerged[id];
+      if (!entry) return;
+      return {
+        likes: entry.likes,
+        replies: entry.replies,
+        mentions: entry.mentions,
+        reposts: entry.reposts,
+        zaps: entry.zaps,
+        satszapped: entry.satszapped,
+      };
+    }
+    const pd = calendarPostAsPostData(detailModalPost);
+    const se = pd.signedEvent;
+    if (
+      !se ||
+      typeof se !== "object" ||
+      !("id" in se) ||
+      typeof (se as { id: unknown }).id !== "string"
+    ) {
+      return;
+    }
+    const entry = calendarStatsMerged[(se as { id: string }).id];
+    if (!entry) return;
+    return {
+      likes: entry.likes,
+      replies: entry.replies,
+      mentions: entry.mentions,
+      reposts: entry.reposts,
+      zaps: entry.zaps,
+      satszapped: entry.satszapped,
+    };
+  }, [
+    detailModalPost,
+    detailModalType,
+    detailModalPostIsLongform,
+    calendarStatsMerged,
+  ]);
 
   // Keyboard shortcuts: T = Today, Left/Right = prev/next period (ignore when modal open or focus in input)
   useEffect(() => {
@@ -761,6 +826,7 @@ export function Calendar({
           post={
             detailModalPost as Parameters<typeof PostDetailsModal>[0]["post"]
           }
+          stats={detailModalPublishedStats}
           onClose={() => setDetailModalPost(null)}
           onDeleted={refreshPostViews}
           onEdit={(post) => {
@@ -772,6 +838,7 @@ export function Calendar({
             handlePostEdit(post as CalendarPost);
           }}
           scheduledCapabilities={detailModalVm?.capabilities}
+          showStats={detailModalType === "published"}
           showSignedEvent={true}
           type={detailModalType}
           userTimezone={userTimezone}
@@ -785,6 +852,7 @@ export function Calendar({
               typeof LongFormDetailsModal
             >[0]["post"]
           }
+          stats={detailModalPublishedStats}
           onClose={() => setDetailModalPost(null)}
           onDeleted={refreshPostViews}
           onEdit={(post) => {
@@ -796,6 +864,7 @@ export function Calendar({
             handlePostEdit(post as unknown as CalendarPost);
           }}
           type={detailModalType}
+          showStats={detailModalType === "published"}
           showSignedEvent={true}
           userTimezone={userTimezone}
           userTimeFormat={userTimeFormat}

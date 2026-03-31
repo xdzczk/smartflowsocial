@@ -23,7 +23,10 @@ import {
   COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
   formatIntervalLabel,
 } from "~/lib/schedule-intervals";
-import { getNowForDateTimeLocal } from "~/lib/temporal";
+import {
+  clampDateTimeLocalToMin,
+  getNowForDateTimeLocal,
+} from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
 interface QueueType {
@@ -249,7 +252,7 @@ export function LongFormPublishingOptions({
             return;
           }
           const min = getNowForDateTimeLocal(userTimezone);
-          onScheduledForChange(v < min ? min : v);
+          onScheduledForChange(clampDateTimeLocalToMin(v, min));
         }}
         min={getNowForDateTimeLocal(userTimezone)}
         placeholder="Select date and time"
@@ -307,7 +310,7 @@ export function LongFormPublishingOptions({
               return;
             }
             const min = getNowForDateTimeLocal(userTimezone);
-            onScheduledForChange(v < min ? min : v);
+            onScheduledForChange(clampDateTimeLocalToMin(v, min));
           }}
           min={getNowForDateTimeLocal(userTimezone)}
           className="bg-background flex-1"

@@ -8,6 +8,7 @@ import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import {
   addHours,
+  addMinutes,
   formatForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
@@ -119,9 +120,9 @@ export async function processBulkSelectedFiles(
     const userTimezone = user?.timezone ?? "UTC";
     const now = nowInTimezone(userTimezone);
 
-    // Add index+4 hours to schedule 4 post per hour (default)
+    // First post defaults to now + 15m; stagger uses index + first interval hours (default 4h offset)
     const hoursToAdd = index + Number(scheduleIntervals?.[0] ?? 4);
-    const scheduledZoned = addHours(now, hoursToAdd);
+    const scheduledZoned = addHours(addMinutes(now, 15), hoursToAdd);
 
     // Format for datetime-local input
     const scheduledFor = formatForDateTimeLocal(scheduledZoned, userTimezone);

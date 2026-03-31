@@ -73,15 +73,22 @@ export function FounderCheckoutModal({
       >
         <div className="p-6 pb-0">
           <div className="mb-4 flex items-start justify-between gap-4">
-            <DialogHeader className="space-y-1 text-left">
-              <DialogTitle className="text-xl font-semibold">
+            <DialogHeader className="space-y-2 text-left">
+              <DialogTitle className="text-2xl font-semibold tracking-tight">
                 Founder checkout
               </DialogTitle>
-              <p className="text-foreground text-base font-medium">
-                {plan.name} · ${plan.oneTimePriceUsd} one-time
+              <p className="text-primary text-xs font-semibold tracking-wider uppercase">
+                One-time lifetime access
               </p>
-              <p className="text-muted-foreground text-sm">
-                Lifetime access for one account. Non-recurring.
+              <p className="text-foreground text-lg font-semibold tabular-nums">
+                {plan.name} · ${plan.oneTimePriceUsd}{" "}
+                <span className="text-muted-foreground text-base font-normal">
+                  one-time
+                </span>
+              </p>
+              <p className="text-muted-foreground max-w-lg text-sm leading-relaxed">
+                Permanent Founder-tier access on this account after payment
+                confirms. No subscription—pay once, no recurring bill.
               </p>
             </DialogHeader>
             <DialogClose asChild>
@@ -114,8 +121,8 @@ export function FounderCheckoutModal({
                   One-time Lightning payment
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Pay once with Lightning. When payment confirms, your account
-                  receives permanent Founder-tier access.
+                  Single Lightning invoice. When it clears, this account is
+                  granted permanent Founder-tier access.
                 </p>
               </section>
             ) : null}
@@ -130,8 +137,8 @@ export function FounderCheckoutModal({
                   Bitcoin on-chain
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Pay via BTCPay. Lifetime access is granted after required
-                  confirmations.
+                  On-chain via BTCPay. Founder access activates after required
+                  confirmations—same outcome as Lightning, different rail.
                 </p>
               </section>
             ) : null}
