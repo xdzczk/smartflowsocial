@@ -17,7 +17,7 @@ import { Toaster } from "react-hot-toast";
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
 import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { getUser, refreshUserProfileIfEmpty } from "~/features/auth";
+import { getUser, refreshUserProfileIfChanged } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 import { BtcpayConfirmationWatchBar } from "~/features/payments/components/BtcpayConfirmationWatchBar";
 // Import migration to run on app load
@@ -69,9 +69,9 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     const { env } = await import("~/lib/env.server");
     // Always get fresh user data - getUser returns null for invalid/expired sessions
     let user = await getUser(request);
-    // Refresh Nostr profile (pfp, name) from Primal if missing (e.g. logged in before fix or fetch failed)
+    // Refresh Nostr profile (pfp, name) from Primal if changed (user-controlled & can update any time)
     if (user) {
-      user = await refreshUserProfileIfEmpty(user);
+      user = await refreshUserProfileIfChanged(user);
     }
 
     return json(

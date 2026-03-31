@@ -155,6 +155,42 @@ function isProfileEmpty(nostrProfile: unknown): boolean {
   );
 }
 
+function pickDisplayBits(nostrProfile: unknown): {
+  name?: string;
+  display_name?: string;
+  picture?: string;
+} {
+  if (nostrProfile == null) return {};
+  let p: Record<string, unknown> | null = null;
+  if (typeof nostrProfile === "string") {
+    try {
+      p = JSON.parse(nostrProfile) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  } else if (typeof nostrProfile === "object" && !Array.isArray(nostrProfile)) {
+    p = nostrProfile as Record<string, unknown>;
+  }
+  if (!p) return {};
+  const name = typeof p["name"] === "string" ? p["name"] : undefined;
+  const display_name =
+    typeof p["display_name"] === "string" ? p["display_name"] : undefined;
+  const picture = typeof p["picture"] === "string" ? p["picture"] : undefined;
+  return { name, display_name, picture };
+}
+
+function normalizeDisplayBits(bits: {
+  name?: string;
+  display_name?: string;
+  picture?: string;
+}): { name: string; display_name: string; picture: string } {
+  return {
+    name: (bits.name ?? "").trim(),
+    display_name: (bits.display_name ?? "").trim(),
+    picture: (bits.picture ?? "").trim(),
+  };
+}
+
 /**
  * If the user's stored profile has no picture/name, fetches from Primal cache and updates the user.
  * Use in root loader so existing users (e.g. logged in before profile fetch worked) get profile on next load.
@@ -165,12 +201,34 @@ export async function refreshUserProfileIfEmpty(
   if (!isProfileEmpty(user.nostrProfile)) return user;
 
   const { nostrProfile } = await getCompleteProfile({ npub: user.npub });
-  const p = nostrProfile as Record<string, unknown>;
-  const picture = p["picture"] != null && String(p["picture"]).trim() !== "";
-  const name = p["name"] != null && String(p["name"]).trim() !== "";
-  const displayName =
-    p["display_name"] != null && String(p["display_name"]).trim() !== "";
-  if (!picture && !name && !displayName) return user;
+  const fetched = normalizeDisplayBits(pickDisplayBits(nostrProfile));
+  if (!fetched.picture && !fetched.name && !fetched.display_name) return user;
+
+  await createUser(user.npub, JSON.stringify(nostrProfile));
+  const updated = await getUserById(user.id);
+  return updated ?? user;
+}
+
+/**
+ * Fetches the latest kind-0 profile from Primal and updates the stored user profile
+ * iff the visible display fields (name/display_name/picture) changed.
+ *
+ * This prevents "stuck" stale avatars/names while avoiding unnecessary DB writes.
+ */
+export async function refreshUserProfileIfChanged(
+  user: UserWithHashTagPresets
+): Promise<UserWithHashTagPresets> {
+  const { nostrProfile } = await getCompleteProfile({ npub: user.npub });
+
+  const fetched = normalizeDisplayBits(pickDisplayBits(nostrProfile));
+  if (!fetched.picture && !fetched.name && !fetched.display_name) return user;
+
+  const existing = normalizeDisplayBits(pickDisplayBits(user.nostrProfile));
+  const changed =
+    existing.name !== fetched.name ||
+    existing.display_name !== fetched.display_name ||
+    existing.picture !== fetched.picture;
+  if (!changed) return user;
 
   await createUser(user.npub, JSON.stringify(nostrProfile));
   const updated = await getUserById(user.id);
