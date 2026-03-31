@@ -1,4 +1,4 @@
-import { useLoginAuthShell } from "./LoginAuthShellContext.client";
+import { useLoginAuthShell } from "./LoginAuthShellContext";
 
 /** Hidden during remote-signer waiting state so the fold emphasizes status + scan. */
 export function LoginWelcomeHeader() {

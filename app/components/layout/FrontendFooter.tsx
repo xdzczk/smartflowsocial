@@ -3,8 +3,8 @@ import { Link } from "@remix-run/react";
 import { Logo } from "~/components/ui/Logo";
 
 // Public Nostr profile URL (not a secret; long nprofile path triggers entropy heuristic)
-// eslint-disable-next-line no-secrets/no-secrets -- public profile link only
 const PRIMAL_NOSTR_PROFILE_URL =
+  // eslint-disable-next-line no-secrets/no-secrets -- public profile link only
   "https://primal.net/p/nprofile1qqsvtq05wq8m4kggcdhzrsl6w8d57c8m48nslqnmcz4yt77p5td3ppcja7k2u";
 
 export default function Footer() {

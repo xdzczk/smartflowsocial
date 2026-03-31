@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 
-import { LoginAuthCard } from "./LoginAuthCard.client";
-import { LoginAuthShellProvider } from "./LoginAuthShellContext.client";
-import { LoginWelcomeHeader } from "./LoginWelcomeHeader.client";
+import { LoginAuthCard } from "./LoginAuthCard";
+import { LoginAuthShellProvider } from "./LoginAuthShellContext";
+import { LoginWelcomeHeader } from "./LoginWelcomeHeader";
 import NostrLoginPanel from "./NostrLoginPanel";
 
 export default function LoginPage() {

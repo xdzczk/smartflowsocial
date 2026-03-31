@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 
-import { useLoginAuthShell } from "./LoginAuthShellContext.client";
+import { useLoginAuthShell } from "./LoginAuthShellContext";
 
 function DefaultRightPanel() {
   return (

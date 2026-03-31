@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import type { RelayStatus } from "~/features/auth/login-flow.client";
 import { isMobile } from "~/lib/is-mobile";
 
-import { useLoginAuthShell } from "./LoginAuthShellContext.client";
+import { useLoginAuthShell } from "./LoginAuthShellContext";
 import { Nip46QrUri } from "./Nip46QrUri";
 import { PrimalLogoIcon } from "./PrimalLogoIcon";
 import { RelayCheckStatus } from "./RelayCheckStatus";
