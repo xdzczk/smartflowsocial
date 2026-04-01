@@ -15,8 +15,3 @@ export function getSiteOrigin(request: Request): string {
   }
   return new URL(request.url).origin;
 }
-
-export function absoluteUrl(siteOrigin: string, path: string): string {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${siteOrigin}${p}`;
-}

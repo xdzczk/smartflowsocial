@@ -1,7 +1,7 @@
 import type { MetaDescriptor } from "@remix-run/node";
 
 import { BRAND_APP_TITLE, BRAND_DESCRIPTION, BRAND_NAME } from "~/lib/brand";
-import { absoluteUrl } from "~/lib/site-url.server";
+import { absoluteUrl } from "~/lib/site-url";
 
 /** Default Open Graph / Twitter preview image (1200×630). */
 export const SEO_DEFAULT_OG_PATH = "/og/og-default.png";
