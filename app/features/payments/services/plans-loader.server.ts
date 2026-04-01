@@ -61,11 +61,11 @@ const FOUNDER_BENEFITS = [
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Full surface, hard caps — try the product end-to-end",
+  free: "Full surface, hard caps - try the product end-to-end",
   basic: "Default paid tier for one serious account",
   premium:
-    "Multi-account tier — stronger workflow, distribution, and infra limits",
-  teams: "Collaborative workspace — not open for self-serve yet",
+    "Multi-account tier - stronger workflow, distribution, and infra limits",
+  teams: "Collaborative workspace - not open for self-serve yet",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
@@ -290,7 +290,7 @@ export async function loadPlansData(request: Request) {
       checkoutPricing: buildCheckoutPricing("teams", 0, 0, priceIndex),
       description:
         PLAN_SUBTITLES["teams"] ??
-        "Collaborative publishing — not open for self-serve yet",
+        "Collaborative publishing - not open for self-serve yet",
       features: {},
       isPopular: false,
       planBillingModel: "disabled",

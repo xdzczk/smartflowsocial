@@ -166,22 +166,22 @@ export function PricingCard({
   return (
     <div className={cardClass}>
       {plan.isPopular && !isTeams ? (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-sm font-medium">
+        <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
+          <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-sm font-medium whitespace-nowrap">
             Default paid tier
           </span>
         </div>
       ) : null}
       {plan.id === "premium" && !isTeams ? (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-xs font-medium">
+        <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
+          <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-medium whitespace-nowrap">
             Multi-account operator
           </span>
         </div>
       ) : null}
       {isTeams ? (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-xs font-medium">
+        <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
+          <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-medium whitespace-nowrap">
             Coming soon
           </span>
         </div>

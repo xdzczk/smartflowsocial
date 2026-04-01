@@ -1,5 +1,5 @@
 /**
- * One-time lifetime (Founder) checkout — no cadence toggle, no auto-renew.
+ * One-time lifetime (Founder) checkout - no cadence toggle, no auto-renew.
  */
 
 import { Loader2 } from "lucide-react";
@@ -88,7 +88,7 @@ export function FounderCheckoutModal({
               </p>
               <p className="text-muted-foreground max-w-lg text-sm leading-relaxed">
                 Permanent Founder-tier access on this account after payment
-                confirms. No subscription—pay once, no recurring bill.
+                confirms. No subscription - pay once, no recurring bill.
               </p>
             </DialogHeader>
             <DialogClose asChild>
@@ -138,7 +138,7 @@ export function FounderCheckoutModal({
                 </h4>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   On-chain via BTCPay. Founder access activates after required
-                  confirmations—same outcome as Lightning, different rail.
+                  confirmations - same outcome as Lightning, different rail.
                 </p>
               </section>
             ) : null}

@@ -33,9 +33,9 @@ function planLineLabel(
   billingCadence: "monthly" | "yearly"
 ): string {
   if (billingCadence === "yearly") {
-    return `${planLabel} — yearly`;
+    return `${planLabel} - yearly`;
   }
-  return `${planLabel} — monthly`;
+  return `${planLabel} - monthly`;
 }
 
 function accessPeriodLabel(
@@ -62,7 +62,7 @@ export function CheckoutSummary({
     pricing,
   });
   const renewal = lifetimeOneTime
-    ? "Non-recurring — lifetime access"
+    ? "Non-recurring - lifetime access"
     : renewalSummaryLine({
         method,
         billingCadence,
@@ -70,7 +70,7 @@ export function CheckoutSummary({
       });
 
   const planLine = lifetimeOneTime
-    ? `${planLabel} — one-time (lifetime)`
+    ? `${planLabel} - one-time (lifetime)`
     : planLineLabel(planLabel, billingCadence);
 
   return (
@@ -112,7 +112,7 @@ export function CheckoutSummary({
         <div className="border-border flex justify-between gap-6 border-t pt-3">
           <dt className="text-muted-foreground shrink-0 pt-0.5">Due now</dt>
           <dd className="text-foreground text-right text-lg font-semibold tabular-nums">
-            {due != null && due > 0 ? `$${due}` : due === 0 ? "Free" : "—"}
+            {due != null && due > 0 ? `$${due}` : due === 0 ? "Free" : "-"}
           </dd>
         </div>
         <div className="flex justify-between gap-6">

@@ -82,9 +82,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
       if (ent.maxDrafts == null && ent.maxTemplates == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
       }
-      return `${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxDrafts })} drafts / ${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxTemplates })} templates`;
+      return `${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxDrafts, fallback: "-" })} drafts / ${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxTemplates, fallback: "-" })} templates`;
     },
   },
   {
@@ -94,7 +94,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
       if (ent.maxFutureScheduledItems == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
       }
       return ent.maxFutureScheduledItems;
     },
@@ -106,7 +106,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
       if (ent.maxQueues == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "—";
+        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
       }
       return ent.maxQueues;
     },
@@ -156,7 +156,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyStorageBytes)
-        : "—";
+        : "-";
     },
   },
   {
@@ -168,7 +168,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyUploadBytes)
-        : "—";
+        : "-";
     },
   },
   {
@@ -180,7 +180,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.maxFileBytes)
-        : "—";
+        : "-";
     },
   },
   {
@@ -193,7 +193,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Campaign commission",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      return campaignCommissionPercent(plan.id) ?? "—";
+      return campaignCommissionPercent(plan.id) ?? "-";
     },
   },
   {
@@ -240,7 +240,7 @@ function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
     );
   }
 
-  return <span className="text-muted-foreground">—</span>;
+  return <span className="text-muted-foreground">-</span>;
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {

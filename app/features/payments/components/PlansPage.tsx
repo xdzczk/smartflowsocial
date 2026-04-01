@@ -326,7 +326,7 @@ export function PlansPage(): ReactNode {
         <div className="relative container mx-auto px-4 py-12 lg:px-8 lg:py-24 xl:max-w-7xl">
           {/* Hero copy alternatives considered:
               (A) H1: "Nostr-native infrastructure for publishing operations" /
-                  Lead: "Plans for people running queues, campaigns, and relays—not dabbling."
+                  Lead: "Plans for people running queues, campaigns, and relays - not dabbling."
               (B) H1: "Operator pricing for Nostr publishing" /
                   Lead: "Clear economics. Non-custodial Bitcoin and Lightning. Scale when you are ready." */}
           <div className="mb-8 text-center">
@@ -338,8 +338,8 @@ export function PlansPage(): ReactNode {
             </h1>
             <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed font-medium md:text-xl">
               For solo publishers and multi-account operators: scheduling,
-              campaigns, and distribution—paid in Bitcoin and Lightning, aligned
-              with how you work on Nostr.
+              campaigns, and distribution - paid in Bitcoin and Lightning,
+              aligned with how you work on Nostr.
             </p>
           </div>
 
@@ -439,7 +439,7 @@ export function PlansPage(): ReactNode {
           {founderOffering ? (
             <section className="border-border from-card to-muted/30 mb-10 rounded-2xl border bg-gradient-to-br p-8 shadow-lg md:p-10">
               <p className="text-primary mb-3 text-xs font-semibold tracking-wider uppercase">
-                Limited allocation — lifetime access
+                Limited allocation - lifetime access
               </p>
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
                 <div className="max-w-xl flex-1">
@@ -448,9 +448,9 @@ export function PlansPage(): ReactNode {
                   </h2>
                   <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
                     One-time purchase for permanent access to the top individual
-                    workflow and infrastructure tier—no recurring bill. Limited
-                    to {founderOffering.seatCap} seats in this allocation; when
-                    they are gone, checkout closes.
+                    workflow and infrastructure tier - no recurring bill.
+                    Limited to {founderOffering.seatCap} seats in this
+                    allocation; when they are gone, checkout closes.
                   </p>
                   <p className="text-foreground mb-6 text-4xl font-bold tabular-nums">
                     ${founderOffering.oneTimePriceUsd}{" "}
@@ -506,8 +506,8 @@ export function PlansPage(): ReactNode {
                   <p className="text-muted-foreground text-xs leading-relaxed">
                     Tied to one account owner. Product updates track the top
                     individual tier, including matching infrastructure access;
-                    this is not Teams or a shared workspace—collaborative Teams
-                    features are not included unless offered separately.
+                    this is not Teams or a shared workspace - collaborative
+                    Teams features are not included unless offered separately.
                   </p>
                 </div>
                 <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72 lg:pt-1">
@@ -561,7 +561,7 @@ export function PlansPage(): ReactNode {
             </h2>
             <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
               Compare strict-cap Free, one-account Creator, and multi-account
-              Pro—including workflow limits vs infrastructure access (e.g.
+              Pro, including workflow limits vs infrastructure access (e.g.
               Blossom-compatible hosted media, Blastr fanout). Founder is
               one-time, permanent top individual tier. Numbers reflect current
               limits.
@@ -575,7 +575,7 @@ export function PlansPage(): ReactNode {
                 Founder at a glance
               </h3>
               <p className="text-muted-foreground mb-3 text-sm">
-                Short summary—see the Founder section above for full detail.
+                Short summary - see the Founder section above for full detail.
               </p>
               <ul className="text-muted-foreground list-inside list-disc space-y-1.5 text-sm">
                 <li>
@@ -583,7 +583,8 @@ export function PlansPage(): ReactNode {
                 </li>
                 <li>Tied to one account owner</li>
                 <li>
-                  {founderOffering.seatCap} seats in this allocation—then closed
+                  {founderOffering.seatCap} seats in this allocation - then
+                  closed
                 </li>
               </ul>
             </div>
@@ -594,7 +595,7 @@ export function PlansPage(): ReactNode {
               FAQ
             </h2>
             <p className="text-muted-foreground mx-auto mb-8 max-w-xl text-center text-sm">
-              Practical answers—nothing here replaces the comparison table or
+              Practical answers - nothing here replaces the comparison table or
               checkout terms.
             </p>
             <dl className="space-y-8 text-sm">
@@ -615,7 +616,7 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Permanent access to the top individual tier with a single
-                  payment—no subscription, including the same class of
+                  payment - no subscription, including the same class of
                   infrastructure benefits as the top individual recurring tier
                   (hosted media and fanout distribution), subject to product
                   changes. Perks are listed in the Founder section above. This
@@ -658,7 +659,7 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Shared workflows and roles need to ship complete. We are not
-                  selling a placeholder—enrollment opens when the product is
+                  selling a placeholder - enrollment opens when the product is
                   ready.
                 </dd>
               </div>
@@ -677,7 +678,7 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Creator and Pro include uploads on Blossom-compatible
-                  SmartFlowSocial infrastructure—not just an app attachment
+                  SmartFlowSocial infrastructure - not just an app attachment
                   bucket. Media is Nostr-native and aligned with broader Nostr
                   media workflows (portability and mirroring where supported).
                   Storage and file-size limits vary by plan.
@@ -689,7 +690,7 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Pro includes access to SmartFlowSocial&apos;s Blastr fanout
-                  relay distribution layer—stronger fanout-style relay
+                  relay distribution layer - stronger fanout-style relay
                   amplification for publishing, not merely &quot;more
                   relays&quot; in the UI. Reach depends on relay workflows and
                   setup; exact behavior varies by client and context where
@@ -704,7 +705,7 @@ export function PlansPage(): ReactNode {
                   Hosted media is built on Blossom-compatible infrastructure;
                   distribution uses SmartFlowSocial fanout relay infrastructure.
                   Some of this can support compatible Nostr setups beyond the
-                  core app, but interoperability is not universal—what works
+                  core app, but interoperability is not universal - what works
                   depends on the client, configuration, and supported flows.
                 </dd>
               </div>

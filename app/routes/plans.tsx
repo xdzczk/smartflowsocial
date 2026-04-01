@@ -10,7 +10,7 @@ import { withCSRFProtection } from "~/lib/csrf";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Pricing — SmartFlow Social" },
+    { title: "Pricing - SmartFlow Social" },
     {
       name: "description",
       content:
