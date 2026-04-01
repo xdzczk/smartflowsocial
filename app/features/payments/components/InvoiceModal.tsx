@@ -126,7 +126,7 @@ export function InvoiceModal({
               Open BTCPay checkout
             </a>
             <p className="text-muted-foreground mt-2 text-center text-xs">
-              After paying on-chain, return here — we detect the first
+              After paying on-chain, return here - we detect the first
               confirmation automatically (or use Check payment). Your plan
               activates only after one on-chain confirmation.
             </p>
@@ -151,7 +151,7 @@ export function InvoiceModal({
               <div className="flex items-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {isBtcpay && btcpayAwaitingConfirmations
-                  ? "Payment received — waiting for 1st confirmation..."
+                  ? "Payment received - waiting for 1st confirmation..."
                   : "Waiting for payment..."}
               </div>
               {isBtcpay && btcpayAwaitingConfirmations ? (

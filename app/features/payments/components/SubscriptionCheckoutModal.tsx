@@ -227,7 +227,7 @@ export function SubscriptionCheckoutModal({
                     </p>
                   ) : (
                     <p className="text-muted-foreground mt-1 text-xs">
-                      We request payments through your wallet—you approve each
+                      We request payments through your wallet - you approve each
                       charge. We never custody funds.
                     </p>
                   )}
@@ -248,7 +248,7 @@ export function SubscriptionCheckoutModal({
                   for; nothing renews unless you come back and pay again.
                 </p>
                 <p className="text-muted-foreground mt-2 text-xs">
-                  No NWC required—scan and pay.
+                  No NWC required - scan and pay.
                 </p>
                 {showManualDurationPicker ? (
                   <div className="mt-4">
