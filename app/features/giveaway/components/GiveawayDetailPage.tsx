@@ -28,6 +28,7 @@ import {
 } from "~/features/campaign-ui";
 import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
+import { BRAND_NAME, poweredByBrand } from "~/lib/brand";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
@@ -350,7 +351,7 @@ export function GiveawayDetailPage({
         `Winners: ${winners.length}`,
         `Sats (planned): ${totalBudgetSats.toLocaleString()}`,
         `Status: ${giveaway.statusLabel ?? giveaway.status}`,
-        "Powered by SmartFlow Social",
+        poweredByBrand,
       ].join("\n");
     try {
       await navigator.clipboard.writeText(text);
@@ -998,9 +999,8 @@ export function GiveawayDetailPage({
                         What this does not include
                       </p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        SmartFlowSocial does not hold prize funds. After lock,
-                        you can pay winners manually or with your connected
-                        wallet.
+                        {BRAND_NAME} does not hold prize funds. After lock, you
+                        can pay winners manually or with your connected wallet.
                       </p>
                     </div>
                   </div>

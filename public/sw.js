@@ -1,5 +1,5 @@
 /**
- * Service Worker for SmartFlow Social PWA
+ * Service Worker for SmartFlowSocial PWA
  * Implements app shell caching with stale-while-revalidate strategy
  */
 

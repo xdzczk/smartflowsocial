@@ -6,6 +6,7 @@ import {
 } from "nostr-tools/nip46";
 
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import { BRAND_NAME, brandLoginChallengeTitle } from "~/lib/brand";
 
 export type NostrSignerType = "nip07" | "nip46";
 
@@ -202,7 +203,7 @@ export function canonicalLoginMessage(input: {
   expiresAtIso: string;
 }): string {
   return [
-    "SmartFlowSocial login",
+    brandLoginChallengeTitle,
     "",
     `Nonce: ${input.nonce}`,
     "Purpose: login",
@@ -259,7 +260,7 @@ export function createNip46NostrConnectUri(input: {
     clientPubkey,
     relays: input.relays,
     secret,
-    name: input.appName ?? "SmartFlowSocial",
+    name: input.appName ?? BRAND_NAME,
     ...(input.appUrl && { url: input.appUrl }),
     ...(input.appIconUrl && { image: input.appIconUrl }),
   });

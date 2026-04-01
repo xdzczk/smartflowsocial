@@ -15,6 +15,7 @@ import {
   OPEN_REMOTE_SIGNER_RECONNECT_DIALOG_EVENT,
   type ReconnectDialogOpenMode,
 } from "~/features/auth/signer";
+import { BRAND_NAME } from "~/lib/brand";
 import { convertToHex } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -152,7 +153,7 @@ export function RemoteSignerReconnectDialog(props: {
           </DialogTitle>
           <DialogDescription>
             {isAddFlow
-              ? "Add a remote signer so SmartFlow can publish and sign with your approval—your key stays in your signer app."
+              ? `Add a remote signer so ${BRAND_NAME} can publish and sign with your approval—your key stays in your signer app.`
               : "If your signer app went inactive or the connection dropped, restore it here. Uses Nostr Connect (NIP-46) under the hood."}
           </DialogDescription>
         </DialogHeader>
@@ -194,7 +195,7 @@ export function RemoteSignerReconnectDialog(props: {
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Connection method</h3>
             <p className="text-muted-foreground text-xs">
-              Nostr Connect (NIP-46) links your SmartFlow session to a signer
+              Nostr Connect (NIP-46) links your {BRAND_NAME} session to a signer
               app—pick how you want to provide the connection.
             </p>
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>

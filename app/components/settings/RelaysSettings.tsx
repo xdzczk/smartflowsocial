@@ -25,6 +25,7 @@ import type {
   Nip65RelayScope,
 } from "~/features/relays/nip65-relay-entry";
 import { publishNip65RelayListToNostr } from "~/features/settings/publish-nip65-relay-list.client";
+import { BRAND_NAME } from "~/lib/brand";
 import { updateRelaysClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { relayUrlSchema } from "~/lib/validation/schemas/settings.schemas";
@@ -318,8 +319,8 @@ export function RelaysSettings({
 
   const publishSummaryLine =
     watchedSource === "nip65_profile"
-      ? "SmartFlow is currently publishing with your Nostr profile relay list."
-      : "SmartFlow is currently publishing with your SmartFlow app relay list.";
+      ? `${BRAND_NAME} is currently publishing with your Nostr profile relay list.`
+      : `${BRAND_NAME} is currently publishing with your ${BRAND_NAME} app relay list.`;
 
   const profileValidEntries = profileRows.filter((r) => r.url.trim());
   const profileHasInvalidUrl = profileRows.some((row) => {
@@ -340,7 +341,7 @@ export function RelaysSettings({
   const relayListDescription =
     watchedSource === "nip65_profile"
       ? "Edit the relay list that will be published to your Nostr profile."
-      : "Edit the relay list SmartFlow stores and uses for publishing from this app.";
+      : `Edit the relay list ${BRAND_NAME} stores and uses for publishing from this app.`;
 
   return (
     <div className="space-y-6">

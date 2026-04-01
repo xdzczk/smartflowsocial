@@ -8,7 +8,7 @@ export interface ThreadGroupSegmentDTO {
 }
 
 /**
- * Segments in a SmartFlow thread group, ordered by creation time.
+ * Segments in an app thread group, ordered by creation time.
  * Used by the post detail modal thread stack (not Nostr reply threading).
  */
 export async function getThreadGroupSegmentsForUser(

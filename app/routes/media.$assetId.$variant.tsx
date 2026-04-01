@@ -1,7 +1,14 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 
 import { getMediaAssetStatus, resolveMediaVariantUrl } from "~/features/upload";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    { page: "Media", robots: "noindex, nofollow" },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const assetId = params["assetId"] ?? "";

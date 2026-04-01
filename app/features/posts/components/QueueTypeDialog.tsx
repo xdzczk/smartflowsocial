@@ -26,6 +26,7 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
+import { BRAND_NAME } from "~/lib/brand";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { queueTypeClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
@@ -385,7 +386,7 @@ export function QueueTypeDialog({
                 </Select>
                 <p className="text-muted-foreground text-xs">
                   New posts in this queue can start from this preset. Queues and
-                  presets work together across SmartFlow.
+                  presets work together across {BRAND_NAME}.
                 </p>
               </div>
 

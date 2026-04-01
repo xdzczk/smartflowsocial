@@ -2,7 +2,9 @@ import { useNavigate } from "@remix-run/react";
 import { useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import { logClientError } from "~/lib/error-handler.client";
+
 interface UploadProvider {
   provider:
     | "S3"
@@ -160,7 +162,7 @@ export function useBlossomAwareUpload() {
             providerInfo.provider === "BLOSSOM_PRIMAL"
               ? "Primal"
               : providerInfo.provider === "BLOSSOM_SFS"
-                ? "SmartFlow Blossom"
+                ? BRAND_BLOSSOM_LABEL
                 : "Blosstr";
 
           // Log mirror configuration if enabled

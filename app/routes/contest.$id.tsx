@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { useCallback } from "react";
@@ -6,6 +6,13 @@ import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { getContestPublicPageData } from "~/features/contest";
+import { poweredByBrand } from "~/lib/brand";
+import {
+  buildSeoMeta,
+  pageTitle,
+  SEO_PUBLIC_CONTEST_FALLBACK_DESCRIPTION,
+  siteOriginFromMatches,
+} from "~/lib/seo";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const id = params["id"];
@@ -14,6 +21,46 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!data) throw new Response("Not found", { status: 404 });
   return json(data);
 }
+
+export const meta: MetaFunction<typeof loader> = ({
+  data,
+  matches,
+  params,
+}) => {
+  const siteOrigin = siteOriginFromMatches(matches);
+  const id = params["id"] ?? "";
+  const baseMeta = {
+    robots: "index, follow" as const,
+    canonicalPath: `/contest/${id}`,
+    ogType: "article" as const,
+    includeAuthor: true,
+  };
+  if (!data) {
+    return buildSeoMeta(
+      {
+        title: pageTitle("Contest"),
+        description: SEO_PUBLIC_CONTEST_FALLBACK_DESCRIPTION,
+        ...baseMeta,
+      },
+      { siteOrigin }
+    );
+  }
+  const rawTitle = data.title.trim();
+  const title = pageTitle(rawTitle ? rawTitle : "Contest");
+  const summaryLines = data.publicSummaryLines;
+  const description =
+    summaryLines && summaryLines.length > 0
+      ? summaryLines.join(" ").slice(0, 200)
+      : SEO_PUBLIC_CONTEST_FALLBACK_DESCRIPTION;
+  return buildSeoMeta(
+    {
+      title,
+      description,
+      ...baseMeta,
+    },
+    { siteOrigin }
+  );
+};
 
 export default function PublicContestPageRoute() {
   const data = useLoaderData<typeof loader>();
@@ -126,7 +173,7 @@ export default function PublicContestPageRoute() {
       </section>
 
       <footer className="text-muted-foreground text-xs">
-        Powered by SmartFlow Social ·{" "}
+        {poweredByBrand} ·{" "}
         <Link to="/dashboard/contests" className="hover:underline">
           Create your own contest
         </Link>

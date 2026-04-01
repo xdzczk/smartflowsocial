@@ -19,6 +19,7 @@ import {
   payoutCopy,
 } from "~/features/campaign-ui";
 import type { BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
+import { BRAND_NAME } from "~/lib/brand";
 
 import type { GiveawayWinnerEntry } from "../../types";
 
@@ -365,7 +366,7 @@ export function GiveawayDetailBatchZapFlow({
           <AlertDialogHeader>
             <AlertDialogTitle>Complete with pending payouts?</AlertDialogTitle>
             <AlertDialogDescription>
-              Not all winners are marked paid or sent. SmartFlowSocial does not
+              Not all winners are marked paid or sent. {BRAND_NAME} does not
               custody prizes — you are responsible for actual payouts. Complete
               anyway only if you accept leaving some payouts untracked here.
               Enter a short reason (at least 10 characters); it is stored in

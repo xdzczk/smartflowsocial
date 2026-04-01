@@ -7,10 +7,11 @@
 import type { Prisma } from "@prisma/client";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { BRAND_DELETE_REASON } from "~/lib/brand";
 import { env } from "~/lib/env.server";
 
 export const DELETE_EVENT_SCHEMA_VERSION = "1.0";
-export const DEFAULT_DELETE_REASON = "Deleted via SmartFlow";
+export const DEFAULT_DELETE_REASON = BRAND_DELETE_REASON;
 
 export function isNostrDeleteEventsEnabled(): boolean {
   const raw = env.ENABLE_NOSTR_DELETE_EVENTS;

@@ -2,6 +2,8 @@
  * Blossom upload provider adapter.
  */
 
+import { BRAND_NAME } from "~/lib/brand";
+
 import { hashFileSha256 } from "./upload-file-utils";
 import {
   runAdaptiveUploadQueue,
@@ -289,7 +291,7 @@ async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
         error:
           tokenResult?.message ??
           tokenResult?.error ??
-          "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+          `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
       };
     }
     const uploaded = await uploadToSfsWithToken(
@@ -522,7 +524,7 @@ export async function uploadSfsBulkFiles(
             success: false,
             error:
               current.error ??
-              "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+              `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
           };
         }
         let attempt = 0;

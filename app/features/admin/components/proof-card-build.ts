@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "~/lib/brand";
+
 import type {
   ProofCardData,
   ProofCardScope,
@@ -20,7 +22,6 @@ export interface ProofCardLines {
   footerLines: string[];
 }
 
-const BRAND = "SmartFlow Social";
 const BETA = "Public beta";
 
 const LABEL_PUBLISH_SUCCESS_30D = "Publish success (30d)";
@@ -65,7 +66,7 @@ function buildFooter(
   snapshotLabel: (iso: string) => string
 ): string[] {
   const lines = [
-    `${BETA} · ${BRAND}`,
+    `${BETA} · ${BRAND_NAME}`,
     `Snapshot · ${snapshotLabel(data.generatedAt)}`,
   ];
   if (SCOPES_SHOWING_RANGE_IN_FOOTER.includes(scope)) {
@@ -292,7 +293,7 @@ export function buildProofCardLines(
       value: `${last30d.publishSuccessRate}%`,
     });
     return {
-      eyebrow: BRAND,
+      eyebrow: BRAND_NAME,
       headline: fmtNum(inRange.postsPublished),
       headlineSub: `Short posts published in ${data.rangeLabel}`,
       support,
@@ -329,7 +330,7 @@ export function buildProofCardLines(
       });
     }
     return {
-      eyebrow: BRAND,
+      eyebrow: BRAND_NAME,
       headline: fmtNum(allTime.postsPublished),
       headlineSub: "Short posts published through the platform (all time)",
       support,
@@ -383,7 +384,7 @@ export function buildProofCardLines(
   }
 
   return {
-    eyebrow: BRAND,
+    eyebrow: BRAND_NAME,
     headline: fmtNum(allTime.postsPublished),
     headlineSub: HEADLINE_SUB_SHORT_POSTS_ALL_TIME,
     support,

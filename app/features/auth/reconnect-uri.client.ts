@@ -6,6 +6,7 @@
 import { parseBunkerInput as nip46ParseBunkerInput } from "nostr-tools/nip46";
 
 import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
+import { BRAND_NAME } from "~/lib/brand";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 
 import {
@@ -48,7 +49,7 @@ export function appendPrimalCallback(uri: string): string {
 export function createNip46NostrConnectUri(relays: string[]) {
   return createUriFromSigner({
     relays,
-    appName: "SmartFlowSocial",
+    appName: BRAND_NAME,
     ...getNostrConnectAppMetadata(),
   });
 }

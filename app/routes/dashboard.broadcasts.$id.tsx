@@ -1,9 +1,5 @@
 import { BroadcastSuppressionReasonCode } from "@prisma/client";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Form,
@@ -31,13 +27,6 @@ import { broadcastStatusBadgeKind } from "~/features/broadcast/broadcast-status"
 import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { cn } from "~/lib/utils";
-
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (data == null) return [{ title: "Broadcast — Vibe" }];
-  const name = data.campaign.name;
-  if (!name) return [{ title: "Broadcast — Vibe" }];
-  return [{ title: `${name} — Broadcast` }];
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

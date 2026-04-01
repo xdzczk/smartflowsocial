@@ -1,7 +1,7 @@
+import { brandLineProofCaption } from "~/lib/brand";
+
 import { buildProofSummary } from "./build-proof-summary";
 import type { ProofCardPayload } from "./types";
-
-const BRAND_LINE = "— SmartFlow Social";
 
 /**
  * Short social caption — compact single-paragraph feel where possible.
@@ -15,14 +15,14 @@ export function buildProofCaption(payload: ProofCardPayload): string {
     const winners = payload.winnersCount ?? 0;
     const w = `${winners} winner${winners === 1 ? "" : "s"}`;
     const core = `Completed giveaway: ${payload.title}. ${w}, ${payout}.`;
-    return `${core} ${BRAND_LINE}`.replace(/\s+/g, " ").trim();
+    return `${core} ${brandLineProofCaption}`.replace(/\s+/g, " ").trim();
   }
 
   if (payload.domain === "contest" && payload.cardType === "public-summary") {
     const winners = payload.winnersCount ?? 0;
     const sats = payload.satsPlanned ?? 0;
     const core = `Contest complete: ${payload.title}. ${winners} winner${winners === 1 ? "" : "s"} · ${sats.toLocaleString()} sats.`;
-    return `${core} ${BRAND_LINE}`.replace(/\s+/g, " ").trim();
+    return `${core} ${brandLineProofCaption}`.replace(/\s+/g, " ").trim();
   }
 
   if (payload.domain === "admin") {
@@ -30,12 +30,12 @@ export function buildProofCaption(payload: ProofCardPayload): string {
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 220);
-    return `${core}\n\n— SmartFlowSocial`;
+    return `${core}\n\n${brandLineProofCaption}`;
   }
 
   const core = buildProofSummary(payload)
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 280);
-  return `${core} ${BRAND_LINE}`.replace(/\s+/g, " ").trim();
+  return `${core} ${brandLineProofCaption}`.replace(/\s+/g, " ").trim();
 }

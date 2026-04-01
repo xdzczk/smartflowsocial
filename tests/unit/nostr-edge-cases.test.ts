@@ -6,6 +6,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+import { BRAND_NAME } from "~/lib/brand";
+
 // Mock window.nostr for client-side functions
 const mockWindowNostr = {
   signEvent: vi.fn(),
@@ -354,7 +356,7 @@ describe("Nostr Edge Cases", () => {
         "r",
         "wss://relay.primal.net/",
       ]);
-      expect(result.nostrEvent.tags).toContainEqual(["client", "SmartFlow"]);
+      expect(result.nostrEvent.tags).toContainEqual(["client", BRAND_NAME]);
       expect(result.nostrEvent.tags).not.toContainEqual(
         expect.arrayContaining(["title"])
       );

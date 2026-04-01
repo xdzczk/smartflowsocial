@@ -17,6 +17,7 @@ import {
 import { Switch } from "~/components/ui/switch";
 import type { Nip65RelayScope } from "~/features/relays/nip65-relay-entry";
 import { SettingsSectionHeader } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 import type { updateRelaysClientSchema } from "~/lib/validation";
@@ -92,14 +93,15 @@ export function RelayDeliverySection({
                 ) : null}
               </div>
               <p className="text-muted-foreground max-w-prose text-sm leading-relaxed">
-                Optional SmartFlow relay fan-out for broader publish delivery.
+                Optional {BRAND_NAME} relay fan-out for broader publish
+                delivery.
                 {!canToggleBlastr ? (
                   <> {blastrStatus.lockCopy}</>
                 ) : (
                   <>
                     {" "}
                     When enabled, publishes may also fan out through the
-                    SmartFlow relay.
+                    {BRAND_NAME} relay.
                   </>
                 )}
               </p>
@@ -186,7 +188,7 @@ export function RelaySourceSection({
     <section className={settingsSubsectionClassName()}>
       <SettingsSectionHeader
         title="Relay source"
-        description="Choose which relay list SmartFlow uses when publishing."
+        description={`Choose which relay list ${BRAND_NAME} uses when publishing.`}
       />
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <button
@@ -227,18 +229,18 @@ export function RelaySourceSection({
             {tabValue === "app" ? (
               <Check className="text-primary size-4 shrink-0" />
             ) : null}
-            SmartFlow app relays
+            {BRAND_NAME} app relays
           </span>
           <span className="text-muted-foreground mt-2 text-sm leading-snug">
-            Uses a relay list stored only in SmartFlow for publishing from this
-            app.
+            Uses a relay list stored only in {BRAND_NAME} for publishing from
+            this app.
           </span>
         </button>
       </div>
       <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
-        Relay source and your SmartFlow app relay list are saved when you use{" "}
+        Relay source and your {BRAND_NAME} app relay list are saved when you use{" "}
         <span className="text-foreground font-medium">
-          Save SmartFlow preferences
+          Save {BRAND_NAME} preferences
         </span>{" "}
         below. Updating your Nostr profile relay list requires signing with{" "}
         <span className="text-foreground font-medium">
@@ -248,8 +250,8 @@ export function RelaySourceSection({
       </p>
       <p className="text-foreground mt-2 text-sm font-medium">
         {watchedSource === "nip65_profile"
-          ? "SmartFlow will publish using your Nostr profile relay list once it is published to your profile."
-          : "SmartFlow will publish using your SmartFlow app relay list."}
+          ? `${BRAND_NAME} will publish using your Nostr profile relay list once it is published to your profile.`
+          : `${BRAND_NAME} will publish using your ${BRAND_NAME} app relay list.`}
       </p>
     </section>
   );
@@ -416,7 +418,7 @@ export function RelayListSection({
         ) : (
           <>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Relays are stored in SmartFlow. Save when you are ready to use
+              Relays are stored in {BRAND_NAME}. Save when you are ready to use
               this list for publishing (with this source selected).
             </p>
             {hasChanged ? (
@@ -458,7 +460,7 @@ export function RelayListSection({
                             <span>Last ACK: {formatAck(ack)}</span>
                           ) : null;
                         })()}
-                        <span>Stored in SmartFlow</span>
+                        <span>Stored in {BRAND_NAME}</span>
                       </div>
                       {form.formState.errors.relays?.[index] ? (
                         <p className="text-destructive text-sm">
@@ -515,7 +517,7 @@ export function RelayListSection({
                   isSubmitting || !hasChanged || !form.formState.isValid
                 }
               >
-                {isSubmitting ? "Saving…" : "Save SmartFlow preferences"}
+                {isSubmitting ? "Saving…" : `Save ${BRAND_NAME} preferences`}
               </Button>
               <Button
                 type="button"

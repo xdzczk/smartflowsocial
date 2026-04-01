@@ -4,6 +4,7 @@ import {
   buildLongFormKind5DeleteDraft,
   buildPostKind5DeleteDraft,
 } from "~/features/nostr/delete-event.server";
+import { BRAND_DELETE_REASON } from "~/lib/brand";
 
 describe("nostr delete event builder", () => {
   it("builds kind5 post delete draft with e-tag", () => {
@@ -24,7 +25,7 @@ describe("nostr delete event builder", () => {
       kind: 5,
       created_at: 123,
       tags: [["e", "event-abc"]],
-      content: "Deleted via SmartFlow",
+      content: BRAND_DELETE_REASON,
     });
   });
 
@@ -50,7 +51,7 @@ describe("nostr delete event builder", () => {
         ["a", "30023:pubkey-1:article"],
         ["e", "event-xyz"],
       ],
-      content: "Deleted via SmartFlow",
+      content: BRAND_DELETE_REASON,
     });
   });
 

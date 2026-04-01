@@ -9,7 +9,7 @@
  * (or lifetime access).
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { isSubscriptionActiveForGating } from "~/features/payments";
@@ -17,8 +17,15 @@ import { getUserByNpub } from "~/features/user";
 import { env } from "~/lib/env.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
 const BLOSSOM_INTERNAL_SECRET = env.BLOSSOM_INTERNAL_SECRET?.trim() ?? "";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    { page: "Internal", robots: "noindex, nofollow" },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const secret = request.headers.get("x-internal-secret") ?? "";

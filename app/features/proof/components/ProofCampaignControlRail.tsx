@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { BRAND_NAME } from "~/lib/brand";
 import {
   proofRatioLabel,
   type ProofCardType,
@@ -115,7 +116,7 @@ export function ProofCampaignControlRail({
         </p>
         <div className="flex items-center justify-between gap-2">
           <Label htmlFor="proof-show-logo" className="text-sm font-normal">
-            SmartFlow branding
+            {BRAND_NAME} branding
           </Label>
           <Switch
             id="proof-show-logo"

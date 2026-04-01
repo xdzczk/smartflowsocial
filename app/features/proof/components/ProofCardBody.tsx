@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "~/lib/brand";
 import {
   proofEyebrowClass,
   proofFooterTextClass,
@@ -116,11 +117,11 @@ function FooterBlock({
 function CampaignBrandingFoot({ domainLabel }: { domainLabel: string | null }) {
   return domainLabel ? (
     <p className="text-muted-foreground mt-2 text-[10px] font-medium tracking-wider uppercase">
-      SmartFlow Social · {domainLabel}
+      {BRAND_NAME} · {domainLabel}
     </p>
   ) : (
     <p className="text-muted-foreground mt-2 text-[10px] font-medium tracking-wider uppercase">
-      SmartFlow Social
+      {BRAND_NAME}
     </p>
   );
 }

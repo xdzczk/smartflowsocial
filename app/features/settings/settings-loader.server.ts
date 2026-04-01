@@ -89,7 +89,7 @@ export interface MutedList {
 
 export interface SettingsLoaderData {
   timezone: string | null;
-  /** SmartFlow app relay list (editable); defaults applied when DB empty. */
+  /** App relay list (editable); defaults applied when DB empty. */
   relays: string[];
   /** Which list is used for publishing: app list vs NIP-65 profile relays. */
   publishRelaySource: "app" | "nip65_profile";

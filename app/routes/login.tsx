@@ -1,5 +1,17 @@
 import { redirect } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    {
+      page: "Login",
+      description: "Log in to SmartFlowSocial.",
+      robots: "noindex, nofollow",
+    },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 /**
  * Legacy /login route: redirect to app root so login lives at app.smartflow.social.

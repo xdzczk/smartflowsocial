@@ -18,6 +18,7 @@ import {
   PlanBillingModel,
 } from "~/features/payments/data";
 import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
+import { planSubscriptionDescription } from "~/lib/brand";
 import { logError } from "~/lib/error-logger.server";
 import { trackProductEvent } from "~/lib/product-events.server";
 import { plansActionSchema, validateFormDataOrRespond } from "~/lib/validation";
@@ -77,7 +78,7 @@ async function createInvoiceForSelection(params: {
   return createPlanInvoice({
     planId: params.planId,
     userId: params.userId,
-    description: `SmartFlow Social - Plan subscription`,
+    description: planSubscriptionDescription,
     amountUsdOverride: params.priceUsd,
     billingCadence: params.billingCadence,
     accessDurationMonths: params.accessDurationMonths,

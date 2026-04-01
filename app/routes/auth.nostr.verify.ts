@@ -13,6 +13,7 @@ import {
   parseReferralContext,
   referralContextCookie,
 } from "~/features/referral/referral-context.server";
+import { brandLoginChallengeTitle } from "~/lib/brand";
 import { withCSRFProtection } from "~/lib/csrf";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
@@ -31,7 +32,7 @@ function canonicalLoginMessage(input: {
   expiresAtIso: string;
 }): string {
   return [
-    "SmartFlowSocial login",
+    brandLoginChallengeTitle,
     "",
     `Nonce: ${input.nonce}`,
     "Purpose: login",

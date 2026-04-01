@@ -32,6 +32,7 @@ import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import { useSubscription, type FeatureName } from "~/features/payments/types";
+import { BRAND_NAME } from "~/lib/brand";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
@@ -387,7 +388,7 @@ function SidebarHeader({
         className={`group text-foreground hover:text-primary focus:ring-ring inline-flex items-center rounded-lg transition-colors focus:ring-2 focus:outline-none ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
-        title="SmartFlow Social"
+        title={BRAND_NAME}
       >
         <Logo
           lightSrc={
@@ -400,7 +401,7 @@ function SidebarHeader({
               ? "/logos/Logo-Full-DarkMode.svg"
               : "/Logo-NoText.svg"
           }
-          alt="SmartFlow Social"
+          alt={BRAND_NAME}
           className={`h-9 w-auto lg:h-10 ${
             isDesktopExpanded ? "" : "lg:h-8 lg:w-8 lg:object-contain"
           }`}

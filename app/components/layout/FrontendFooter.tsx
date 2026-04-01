@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 
 import { Logo } from "~/components/ui/Logo";
+import { BRAND_NAME } from "~/lib/brand";
 
 // Public Nostr profile URL (not a secret; long nprofile path triggers entropy heuristic)
 const PRIMAL_NOSTR_PROFILE_URL =
@@ -15,7 +16,7 @@ export default function Footer() {
           <Logo
             lightSrc="/logos/Logo-Full-LightMode.svg"
             darkSrc="/logos/Logo-Full-DarkMode.svg"
-            alt="SmartFlow Social"
+            alt={BRAND_NAME}
             className="h-10 w-auto sm:h-12"
           />
         </div>
@@ -42,7 +43,7 @@ export default function Footer() {
           </a>
         </nav>
         <div className="text-muted-foreground text-sm">
-          <span className="font-medium">SmartFlow Social</span> ©{" "}
+          <span className="font-medium">{BRAND_NAME}</span> ©{" "}
           {new Date().getFullYear()}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { useCallback, useMemo, useState } from "react";
@@ -27,8 +27,6 @@ import {
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
 import { cn } from "~/lib/utils";
-
-export const meta: MetaFunction = () => [{ title: "Review broadcast — Vibe" }];
 
 function audienceResolvedMetadata(
   logs: Array<{ eventType: string; metadataJson: unknown }>

@@ -1,8 +1,15 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { applyUnsubscribeFromRawToken } from "~/features/broadcast/broadcast-unsubscribe.server";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    { page: "Unsubscribe", robots: "noindex, nofollow" },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 /**
  * Public GET: no auth. Uses opaque token in <code>?t=</code>; response does not distinguish invalid vs valid tokens.

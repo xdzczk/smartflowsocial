@@ -117,6 +117,7 @@ import {
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { queueClient } from "~/infra/queue/queue-client.server";
 import { processPayloadWithVersion } from "~/infra/queue/version-handler.server";
+import { BRAND_DELETE_REASON } from "~/lib/brand";
 import {
   recordOutboxEventProcessed,
   recordOutboxEventRetried,
@@ -158,7 +159,7 @@ describe("Outbox Worker", () => {
       expectedPubkey: "pubkey-1",
       unsignedEvent: {
         kind: 5,
-        content: "Deleted via SmartFlow",
+        content: BRAND_DELETE_REASON,
         created_at: 1234567890,
         tags: [["e", "event-1"]],
       },
@@ -168,7 +169,7 @@ describe("Outbox Worker", () => {
         expectedPubkey: "pubkey-1",
         unsignedEvent: {
           kind: 5,
-          content: "Deleted via SmartFlow",
+          content: BRAND_DELETE_REASON,
           created_at: 1234567890,
           tags: [["a", "30023:pub:d"]],
         },
@@ -189,7 +190,7 @@ describe("Outbox Worker", () => {
       created_at: 1234567890,
       kind: 5,
       tags: [["e", "event-1"]],
-      content: "Deleted via SmartFlow",
+      content: BRAND_DELETE_REASON,
       sig: "sig-1",
     });
     (getNostrPublisher as ReturnType<typeof vi.fn>).mockReturnValue({

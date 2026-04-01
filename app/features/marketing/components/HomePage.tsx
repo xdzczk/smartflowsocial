@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
+import { BRAND_NAME } from "~/lib/brand";
 
 export function HomePage(): ReactNode {
   return (
@@ -73,7 +74,7 @@ export function HomePage(): ReactNode {
                 FLOW WITHOUT CHAOS
               </h2>
               <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-                SmartFlowSocial links drafts, queues, automation, and analytics
+                {BRAND_NAME} links drafts, queues, automation, and analytics
                 into a single, repeating system. Cadence holds without constant
                 operator input.
               </p>

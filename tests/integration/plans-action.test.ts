@@ -15,6 +15,7 @@ import * as PaymentsData from "~/features/payments/data";
 import { PlanBillingModel } from "~/features/payments/data/billing-models.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
 import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
+import { planSubscriptionDescription } from "~/lib/brand";
 
 vi.mock("~/features/auth/session.server", () => ({
   requireUser: vi.fn(),
@@ -228,7 +229,7 @@ describe("Plans Action Handler", () => {
       expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
         planId: "basic",
         userId: TEST_USER_ID,
-        description: "SmartFlow Social - Plan subscription",
+        description: planSubscriptionDescription,
         amountUsdOverride: expect.any(Number) as unknown as number,
         billingCadence: "monthly",
         accessDurationMonths: 1,
@@ -334,7 +335,7 @@ describe("Plans Action Handler", () => {
       expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
         planId: "basic",
         userId: TEST_USER_ID,
-        description: "SmartFlow Social - Plan subscription",
+        description: planSubscriptionDescription,
         amountUsdOverride: expect.any(Number) as unknown as number,
         billingCadence: "monthly",
         accessDurationMonths: 6,

@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { PreferenceSection } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 
 const PRESETS = [21, 100, 500, 1000] as const;
@@ -96,7 +97,7 @@ export function DefaultZapAmountSettings({
   return (
     <PreferenceSection
       title="Zap defaults"
-      description="Used when pre-filling zap actions in SmartFlow engagement surfaces."
+      description={`Used when pre-filling zap actions in ${BRAND_NAME} engagement surfaces.`}
     >
       <div className="space-y-3">
         <div className="space-y-2">

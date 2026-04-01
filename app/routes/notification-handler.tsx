@@ -1,7 +1,15 @@
+import type { MetaFunction } from "@remix-run/node";
 import { useSearchParams } from "@remix-run/react";
 import { useEffect } from "react";
 
 import { useDeepLinkHandler } from "~/lib/deep-link-handler.client";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    { page: "Notifications", robots: "noindex, nofollow" },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 /**
  * Notification Handler Route

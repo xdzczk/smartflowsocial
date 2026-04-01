@@ -1,5 +1,5 @@
 /**
- * Settings section patterns (V4) — align with SmartFlow settings primitives:
+ * Settings section patterns (V4) — align with app settings primitives:
  * - PreferenceSection — small defaults (timezone, formats, zap default).
  * - ToggleRowSection — label + description + right-aligned switch.
  * - ManagementListSection — queues, presets, relays, templates, lists.

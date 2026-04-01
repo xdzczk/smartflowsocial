@@ -7,16 +7,25 @@ import {
   loadPlansData,
 } from "~/features/payments";
 import { withCSRFProtection } from "~/lib/csrf";
+import {
+  buildSeoMeta,
+  SEO_PLANS_DESCRIPTION,
+  siteOriginFromMatches,
+} from "~/lib/seo";
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: "Pricing - SmartFlow Social" },
+export const meta: MetaFunction = ({ matches }) => {
+  const siteOrigin = siteOriginFromMatches(matches);
+  return buildSeoMeta(
     {
-      name: "description",
-      content:
-        "Creator (1 account) and Pro (up to 3) with Nostr-native hosted media and fanout distribution; Founder lifetime top individual tier. Bitcoin/Lightning checkout.",
+      page: "Pricing",
+      description: SEO_PLANS_DESCRIPTION,
+      robots: "index, follow",
+      canonicalPath: "/plans",
+      ogType: "website",
+      includeAuthor: true,
     },
-  ];
+    { siteOrigin }
+  );
 };
 
 export const action = withCSRFProtection(

@@ -1,9 +1,20 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { commitBlossomBatch, type CommitItem } from "~/features/upload";
 import { env } from "~/lib/env.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+
+export const meta: MetaFunction = ({ matches }) =>
+  buildSeoMeta(
+    { page: "Internal", robots: "noindex, nofollow" },
+    { siteOrigin: siteOriginFromMatches(matches) }
+  );
 
 function isCommitItem(value: unknown): value is CommitItem {
   if (!value || typeof value !== "object") return false;

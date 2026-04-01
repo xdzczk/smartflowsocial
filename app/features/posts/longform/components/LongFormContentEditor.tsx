@@ -10,6 +10,7 @@ import type React from "react";
 import { Button } from "~/components/ui/button";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
 import { TiptapToolbar } from "~/features/posts/components/TiptapToolbar";
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import {
   SMALL_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -49,7 +50,7 @@ const LEGACY_PLACEHOLDER_MIN_HEIGHT = "min-h-[min(56vh,29rem)]";
 function blossomOrS3BadgeLabel(uploadProvider: string): string {
   if (!uploadProvider.includes("BLOSSOM")) return "☁️ S3";
   if (uploadProvider === "BLOSSOM_PRIMAL") return "🌸 Primal";
-  if (uploadProvider === "BLOSSOM_SFS") return "🌸 SmartFlow Blossom";
+  if (uploadProvider === "BLOSSOM_SFS") return `🌸 ${BRAND_BLOSSOM_LABEL}`;
   return "🌸 Blosstr";
 }
 

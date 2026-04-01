@@ -20,7 +20,7 @@ export function groupNotificationsByType(notifications: Notification[]) {
   };
 }
 
-/** Options for grouping when some parents are not SmartFlow-published posts. */
+/** Options for grouping when some parents are not app-published posts. */
 export interface GroupNotificationsByParentOptions {
   /**
    * When set, notifications whose `originalEventId` is not in the post map still create a group

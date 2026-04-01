@@ -11,6 +11,7 @@ import {
   updateUserEnableMirrorBlossom,
   updateUserMirrorUploadUrls,
 } from "~/features/user";
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import {
   updateUploadProviderSchema,
   updateBlossomMirrorsSchema,
@@ -35,8 +36,7 @@ export async function handleStorageSettingsAction(
       return json(
         {
           success: false,
-          error:
-            "SmartFlow Blossom requires an active paid subscription. Upgrade to select it.",
+          error: `${BRAND_BLOSSOM_LABEL} requires an active paid subscription. Upgrade to select it.`,
         },
         { status: 403 }
       );

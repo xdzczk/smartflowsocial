@@ -7,6 +7,7 @@ import { generateSecretKey, SimplePool } from "nostr-tools";
 
 import type { ActiveSignerConfig } from "~/features/auth/signer";
 import { serializeSecretKey } from "~/features/auth/signer";
+import { BRAND_NAME } from "~/lib/brand";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import {
@@ -83,7 +84,7 @@ export async function connectNip46WithNostrConnectUriForLogin(
 ): Promise<ConnectNip46WithNostrConnectUriForLoginResult> {
   const created = createNip46NostrConnectUri({
     relays: params.relays,
-    appName: params.appName ?? "SmartFlowSocial",
+    appName: params.appName ?? BRAND_NAME,
     ...getNostrConnectAppMetadata(),
   });
   params.onUriCreated?.(

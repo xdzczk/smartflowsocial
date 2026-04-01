@@ -9,6 +9,7 @@ import {
   AccountSummarySection,
   PreferenceSection,
 } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 
 export interface ReferralSettingsProps {
   referralLink: string;
@@ -107,7 +108,7 @@ export function ReferralSettings({
 
       <PreferenceSection
         title="Referral link"
-        description="Share this link to sign people up with your referral. Earnings apply when they subscribe to a paid SmartFlow plan."
+        description={`Share this link to sign people up with your referral. Earnings apply when they subscribe to a paid ${BRAND_NAME} plan.`}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <Input

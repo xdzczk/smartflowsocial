@@ -43,7 +43,7 @@ export function updateUserRelays(
 export type PublishRelaySource = "app" | "nip65_profile";
 
 /**
- * Persists the SmartFlow app relay list and which source is active for publishing.
+ * Persists the app relay list and which source is active for publishing.
  */
 export function updateUserRelayPublishingPreferences(
   userId: string,
