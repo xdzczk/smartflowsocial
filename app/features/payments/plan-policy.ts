@@ -9,6 +9,8 @@ import type {
 export interface CanonicalPlanPolicy {
   publicPlanName: CommercialPublicPlanName;
   planType: CommercialPlanType;
+  /** Connected identities included on one subscription (pricing / marketing source of truth). */
+  accountsIncluded: number;
 
   execution: {
     maxFutureScheduledItems: number | null;
@@ -58,6 +60,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   free: {
     publicPlanName: "Free",
     planType: "free",
+    accountsIncluded: 1,
     execution: {
       maxFutureScheduledItems: 10,
       maxQueues: 1,
@@ -96,6 +99,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   creator: {
     publicPlanName: "Creator",
     planType: "creator",
+    accountsIncluded: 1,
     execution: {
       // Preserve current “paid = uncapped” behavior until a future product decision.
       maxFutureScheduledItems: null,
@@ -135,6 +139,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   pro: {
     publicPlanName: "Pro",
     planType: "pro",
+    accountsIncluded: 3,
     execution: {
       maxFutureScheduledItems: null,
       maxQueues: null,
@@ -173,6 +178,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   teams: {
     publicPlanName: "Teams",
     planType: "teams",
+    accountsIncluded: 1,
     // Temporary: per user decision, treat Teams as paid for now.
     // We use Creator-like limits so we don’t silently grant Pro-only assumptions.
     execution: {
@@ -215,6 +221,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   founder: {
     publicPlanName: "Founder",
     planType: "founder",
+    accountsIncluded: 3,
     // Founder should behave as paid; spec recommends Pro-like.
     execution: {
       maxFutureScheduledItems: null,

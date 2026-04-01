@@ -16,6 +16,14 @@ const { mockPrisma } = vi.hoisted(() => {
     queueType: {
       findFirst: vi.fn(),
     },
+    subscription: {
+      findUnique: vi.fn().mockResolvedValue({
+        planId: "basic",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        Plan: { id: "basic", name: "Basic" },
+      }),
+    },
   };
   return { mockPrisma: mockPrisma2 };
 });

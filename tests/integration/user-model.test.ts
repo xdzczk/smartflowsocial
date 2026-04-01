@@ -125,7 +125,7 @@ describe("User Model Functions", () => {
         include: {
           hashTagPreset: true,
         },
-        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+        orderBy: [{ createdAt: "asc" }],
       });
       expect(result).toEqual(mockQueueTypes);
     });

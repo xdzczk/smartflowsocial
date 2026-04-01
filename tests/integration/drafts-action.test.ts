@@ -25,6 +25,14 @@ const { mockPrisma } = vi.hoisted(() => {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    subscription: {
+      findUnique: vi.fn().mockResolvedValue({
+        planId: "basic",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        Plan: { id: "basic", name: "Basic" },
+      }),
+    },
     postStateTransition: {
       create: vi.fn(),
     },

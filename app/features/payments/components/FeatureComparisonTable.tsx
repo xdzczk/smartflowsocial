@@ -2,9 +2,14 @@
  * Feature comparison: Free, Creator, Pro (no Teams/Founder columns).
  */
 
-import { Check, X } from "lucide-react";
+import { Check, HelpCircle, X } from "lucide-react";
 import { Fragment } from "react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
   formatBytesForPlanMarketing,
@@ -28,6 +33,8 @@ const GROUP_POWER = "Distribution";
 interface ComparisonRow {
   group: string;
   label: string;
+  /** Short helper for infrastructure rows; hidden on small screens via trigger. */
+  tooltip?: string;
   getValue: (plan: PricingPagePlan) => boolean | string | number | null;
 }
 
@@ -58,6 +65,15 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     group: GROUP_CORE_WORKFLOWS,
     label: "Drafts and templates",
     getValue: (plan) => (plan.isTeamsPlaceholder ? null : true),
+  },
+  {
+    group: GROUP_CORE_WORKFLOWS,
+    label: "Accounts included",
+    getValue: (plan) => {
+      if (plan.isTeamsPlaceholder) return null;
+      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      return getCanonicalPlanPolicy(planType).accountsIncluded;
+    },
   },
   {
     group: GROUP_CORE_WORKFLOWS,
@@ -120,7 +136,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     group: GROUP_MEDIA,
-    label: "SmartFlowSocial-hosted media",
+    label: "Blossom-compatible hosted media",
+    tooltip:
+      "Hosted on Blossom-compatible infrastructure for broader Nostr media workflows.",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
@@ -180,7 +198,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     group: GROUP_POWER,
-    label: "Relay blast & distribution",
+    label: "Blastr fanout distribution",
+    tooltip:
+      "Fanout relay infrastructure for stronger distribution on supported Nostr workflows.",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       // Only advertise this if it's explicitly enabled for the plan.
@@ -275,7 +295,28 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                       }`}
                     >
                       <td className="text-foreground p-4 text-sm font-medium">
-                        {feature.label}
+                        <span className="inline-flex items-center gap-1.5">
+                          {feature.label}
+                          {feature.tooltip ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="text-muted-foreground hover:text-foreground hidden shrink-0 md:inline-flex"
+                                  aria-label={`More about ${feature.label}`}
+                                >
+                                  <HelpCircle className="h-3.5 w-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="max-w-xs text-xs leading-snug"
+                              >
+                                {feature.tooltip}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : null}
+                        </span>
                       </td>
                       {plans.map((plan) => (
                         <td

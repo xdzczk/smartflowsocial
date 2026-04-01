@@ -337,8 +337,9 @@ export function PlansPage(): ReactNode {
               Pricing for operators running real workflows
             </h1>
             <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed font-medium md:text-xl">
-              Scheduling, campaigns, and distribution—paid in Bitcoin and
-              Lightning, aligned with how you already work on Nostr.
+              For solo publishers and multi-account operators: scheduling,
+              campaigns, and distribution—paid in Bitcoin and Lightning, aligned
+              with how you work on Nostr.
             </p>
           </div>
 
@@ -446,9 +447,10 @@ export function PlansPage(): ReactNode {
                     {founderOffering.name}
                   </h2>
                   <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
-                    A one-time purchase for early backers who want permanent
-                    individual-tier access. {founderOffering.seatCap} seats
-                    total—when they are gone, this path closes.
+                    One-time purchase for permanent access to the top individual
+                    workflow and infrastructure tier—no recurring bill. Limited
+                    to {founderOffering.seatCap} seats in this allocation; when
+                    they are gone, checkout closes.
                   </p>
                   <p className="text-foreground mb-6 text-4xl font-bold tabular-nums">
                     ${founderOffering.oneTimePriceUsd}{" "}
@@ -502,11 +504,10 @@ export function PlansPage(): ReactNode {
                     ))}
                   </ul>
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    Access is tied to a single account. There is no recurring
-                    bill. You receive ongoing updates that match what we ship
-                    for the Founder-equivalent individual plan; collaborative
-                    Teams features are not included unless we offer them
-                    separately.
+                    Tied to one account owner. Product updates track the top
+                    individual tier, including matching infrastructure access;
+                    this is not Teams or a shared workspace—collaborative Teams
+                    features are not included unless offered separately.
                   </p>
                 </div>
                 <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72 lg:pt-1">
@@ -554,31 +555,33 @@ export function PlansPage(): ReactNode {
             </section>
           ) : null}
 
-          <div className="mb-8">
+          <div className="mb-10">
             <h2 className="text-foreground mb-3 text-center text-2xl font-bold">
               Compare plans
             </h2>
             <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
-              Use this table to separate Free (strict caps) from Creator (solo
-              paid default) and Pro (broadcast scale, hosted media, relay
-              distribution, and campaign economics). Numbers reflect current
-              product limits.
+              Compare strict-cap Free, one-account Creator, and multi-account
+              Pro—including workflow limits vs infrastructure access (e.g.
+              Blossom-compatible hosted media, Blastr fanout). Founder is
+              one-time, permanent top individual tier. Numbers reflect current
+              limits.
             </p>
             <FeatureComparisonTable plans={comparisonTablePlans} />
           </div>
 
           {founderOffering ? (
-            <div className="border-border bg-muted/30 mb-10 rounded-lg border p-6">
+            <div className="border-border bg-muted/30 mb-12 rounded-lg border p-6">
               <h3 className="text-foreground mb-2 text-lg font-semibold">
                 Founder at a glance
               </h3>
               <p className="text-muted-foreground mb-3 text-sm">
-                For the full pitch, see the Founder block above—this is the
-                short list.
+                Short summary—see the Founder section above for full detail.
               </p>
               <ul className="text-muted-foreground list-inside list-disc space-y-1.5 text-sm">
-                <li>Non-recurring lifetime access on one account</li>
-                <li>Strongest self-serve economics we offer individually</li>
+                <li>
+                  Permanent top individual workflow and infrastructure access
+                </li>
+                <li>Tied to one account owner</li>
                 <li>
                   {founderOffering.seatCap} seats in this allocation—then closed
                 </li>
@@ -586,7 +589,7 @@ export function PlansPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="mx-auto mb-10 max-w-3xl">
+          <div className="mx-auto mb-14 max-w-3xl">
             <h2 className="text-foreground mb-2 text-center text-2xl font-bold">
               FAQ
             </h2>
@@ -597,11 +600,26 @@ export function PlansPage(): ReactNode {
             <dl className="space-y-8 text-sm">
               <div>
                 <dt className="text-foreground text-base font-semibold">
+                  How many accounts can I use on each plan?
+                </dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
+                  Free and Creator include one account on your subscription. Pro
+                  includes up to three. Teams is separate: a future
+                  collaborative workspace product, not the same as linking
+                  multiple identities under Pro.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-foreground text-base font-semibold">
                   What does lifetime Founder access include?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  The top individual self-serve tier, locked in with a single
-                  payment—no subscription. Founder perks are summarized above.
+                  Permanent access to the top individual tier with a single
+                  payment—no subscription, including the same class of
+                  infrastructure benefits as the top individual recurring tier
+                  (hosted media and fanout distribution), subject to product
+                  changes. Perks are listed in the Founder section above. This
+                  is not Teams and does not grant shared workspace seats.
                 </dd>
               </div>
               <div>
@@ -609,12 +627,12 @@ export function PlansPage(): ReactNode {
                   Is Founder limited?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Yes.
+                  Yes. One owner per purchase, non-recurring.
                   {founderOffering ? (
                     <>
                       {" "}
-                      There are {founderOffering.seatCap} seats in this
-                      allocation. When they are gone, Founder checkout closes.
+                      This allocation has {founderOffering.seatCap} seats; when
+                      they are gone, Founder checkout closes.
                     </>
                   ) : (
                     <>
@@ -655,12 +673,39 @@ export function PlansPage(): ReactNode {
               </div>
               <div>
                 <dt className="text-foreground text-base font-semibold">
-                  What is SmartFlowSocial-hosted media?
+                  What is hosted media?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  On Creator and Pro, uploads live in-app on our infrastructure
-                  instead of only external URLs. Storage and file-size limits
-                  scale with the plan.
+                  Creator and Pro include uploads on Blossom-compatible
+                  SmartFlowSocial infrastructure—not just an app attachment
+                  bucket. Media is Nostr-native and aligned with broader Nostr
+                  media workflows (portability and mirroring where supported).
+                  Storage and file-size limits vary by plan.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-foreground text-base font-semibold">
+                  What is Blastr fanout distribution?
+                </dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
+                  Pro includes access to SmartFlowSocial&apos;s Blastr fanout
+                  relay distribution layer—stronger fanout-style relay
+                  amplification for publishing, not merely &quot;more
+                  relays&quot; in the UI. Reach depends on relay workflows and
+                  setup; exact behavior varies by client and context where
+                  supported.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-foreground text-base font-semibold">
+                  Can I use SmartFlow infrastructure outside the app?
+                </dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
+                  Hosted media is built on Blossom-compatible infrastructure;
+                  distribution uses SmartFlowSocial fanout relay infrastructure.
+                  Some of this can support compatible Nostr setups beyond the
+                  core app, but interoperability is not universal—what works
+                  depends on the client, configuration, and supported flows.
                 </dd>
               </div>
               <div>

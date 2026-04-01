@@ -25,13 +25,15 @@ export function ActionRailNotice({
       <div
         className={cn(
           shell,
-          "border-destructive/45 bg-destructive/10 dark:bg-destructive/15 text-red-900 dark:border-red-900/60 dark:text-red-100",
+          "border-destructive/45 bg-destructive/10 text-red-950",
+          /* Dark: stronger surface + light text so body copy stays readable on near-black UI */
+          "dark:border-red-500/45 dark:bg-red-950/55 dark:text-red-50",
           className
         )}
       >
         <p className="font-semibold">{title}</p>
         {lines.map((line) => (
-          <p key={line} className="opacity-95">
+          <p key={line} className="text-red-950/95 dark:text-red-50/95">
             {line}
           </p>
         ))}
@@ -62,13 +64,16 @@ export function ActionRailNotice({
     <div
       className={cn(
         shell,
-        "border-amber-200/80 bg-amber-500/[0.12] text-amber-950 dark:border-amber-800 dark:bg-amber-950/25 dark:text-amber-100",
+        "border-amber-200/80 bg-amber-500/[0.12] text-amber-950",
+        "dark:border-amber-500/45 dark:bg-amber-950/50 dark:text-amber-50",
         className
       )}
     >
       <p className="font-semibold">{title}</p>
       {lines.map((line) => (
-        <p key={line}>{line}</p>
+        <p key={line} className="text-amber-950/95 dark:text-amber-50/95">
+          {line}
+        </p>
       ))}
     </div>
   );

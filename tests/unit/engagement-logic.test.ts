@@ -665,9 +665,9 @@ describe("Engagement Logic Unit Tests", () => {
       expect(getTrustScoreBadgeColor(39)).toContain("muted");
     });
 
-    it("should return gray classes for scores < 20", () => {
-      expect(getTrustScoreBadgeColor(0)).toContain("gray");
-      expect(getTrustScoreBadgeColor(19)).toContain("gray");
+    it("should return muted classes for scores < 20", () => {
+      expect(getTrustScoreBadgeColor(0)).toContain("muted");
+      expect(getTrustScoreBadgeColor(19)).toContain("muted");
     });
   });
 });

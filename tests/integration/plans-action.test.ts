@@ -11,15 +11,7 @@ import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUser } from "~/features/auth/session.server";
 import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
-import {
-  createPlanInvoice,
-  checkPaymentStatus,
-  manuallyVerifyPayment,
-  getPlanPriceUsd,
-  getPlanById,
-  countActiveSubscriptionsForPlan,
-  getUserSubscription,
-} from "~/features/payments/data";
+import * as PaymentsData from "~/features/payments/data";
 import { PlanBillingModel } from "~/features/payments/data/billing-models.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
 import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
@@ -28,16 +20,19 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUser: vi.fn(),
 }));
 
-vi.mock("~/features/payments/data", () => ({
-  PlanBillingModel,
-  createPlanInvoice: vi.fn(),
-  checkPaymentStatus: vi.fn(),
-  manuallyVerifyPayment: vi.fn(),
-  getPlanPriceUsd: vi.fn(),
-  getPlanById: vi.fn(),
-  countActiveSubscriptionsForPlan: vi.fn(),
-  getUserSubscription: vi.fn(),
-}));
+vi.mock("~/features/payments/data", async (importOriginal) => {
+  const actual = await importOriginal<typeof PaymentsData>();
+  return {
+    ...actual,
+    createPlanInvoice: vi.fn(),
+    checkPaymentStatus: vi.fn(),
+    manuallyVerifyPayment: vi.fn(),
+    getPlanPriceUsd: vi.fn(),
+    getPlanById: vi.fn(),
+    countActiveSubscriptionsForPlan: vi.fn(),
+    getUserSubscription: vi.fn(),
+  };
+});
 
 vi.mock("~/features/payments/btcpay.server", () => ({
   isBtcpayConfigured: vi.fn(() => false),
@@ -57,7 +52,7 @@ vi.mock("@getalby/sdk", () => ({
 }));
 
 describe("Plans Action Handler", () => {
-  /* eslint-disable @typescript-eslint/no-misused-promises -- mockImplementation returns Promise for async getPlanById; beforeEach expects void */
+  /* eslint-disable @typescript-eslint/no-misused-promises -- mockImplementation returns Promise for async PaymentsData.getPlanById; beforeEach expects void */
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -68,7 +63,7 @@ describe("Plans Action Handler", () => {
     });
     (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
-    (getPlanById as ReturnType<typeof vi.fn>).mockImplementation(
+    (PaymentsData.getPlanById as ReturnType<typeof vi.fn>).mockImplementation(
       (planId: string) => {
         if (planId === "teams") {
           return Promise.resolve({
@@ -98,15 +93,19 @@ describe("Plans Action Handler", () => {
       }
     );
     (
-      countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
+      PaymentsData.countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
     ).mockResolvedValue(0);
-    (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (
+      PaymentsData.getUserSubscription as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
   });
   /* eslint-enable @typescript-eslint/no-misused-promises */
 
   describe("Check Payment Status", () => {
     it("should check payment status without authentication", async () => {
-      (checkPaymentStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.checkPaymentStatus as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         paid: true,
         paidAt: new Date("2024-01-01"),
         status: "paid",
@@ -120,7 +119,9 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(checkPaymentStatus).toHaveBeenCalledWith("payment-123");
+      expect(PaymentsData.checkPaymentStatus).toHaveBeenCalledWith(
+        "payment-123"
+      );
       expect(requireUser).not.toHaveBeenCalled();
       expect(result).toEqual({
         success: true,
@@ -131,7 +132,9 @@ describe("Plans Action Handler", () => {
     });
 
     it("should return unpaid status when payment not completed", async () => {
-      (checkPaymentStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.checkPaymentStatus as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         paid: false,
         status: "pending",
       });
@@ -167,13 +170,13 @@ describe("Plans Action Handler", () => {
       };
       expect(data).toHaveProperty("error");
       expect(String(data.error)).toBeTruthy();
-      expect(checkPaymentStatus).not.toHaveBeenCalled();
+      expect(PaymentsData.checkPaymentStatus).not.toHaveBeenCalled();
     });
 
     it("should handle payment status check errors gracefully", async () => {
-      (checkPaymentStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Payment not found")
-      );
+      (
+        PaymentsData.checkPaymentStatus as ReturnType<typeof vi.fn>
+      ).mockRejectedValue(new Error("Payment not found"));
 
       const formData = createFormData({
         intent: "check_payment",
@@ -204,10 +207,12 @@ describe("Plans Action Handler", () => {
         planId: "basic",
       };
 
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockInvoice
-      );
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockInvoice);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -220,7 +225,7 @@ describe("Plans Action Handler", () => {
       const result = await handlePlansAction(formData, request);
 
       expect(requireUser).toHaveBeenCalledWith(request);
-      expect(createPlanInvoice).toHaveBeenCalledWith({
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
         planId: "basic",
         userId: TEST_USER_ID,
         description: "SmartFlow Social - Plan subscription",
@@ -256,18 +261,22 @@ describe("Plans Action Handler", () => {
         planId: "basic",
       };
 
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockInvoice
-      );
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockInvoice);
       (getDecryptedUserNWC as ReturnType<typeof vi.fn>).mockResolvedValue(
         "nostr+walletconnect://saved"
       );
-      (manuallyVerifyPayment as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.manuallyVerifyPayment as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         success: true,
         paid: true,
         message: "ok",
       });
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(120);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(120);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -282,7 +291,9 @@ describe("Plans Action Handler", () => {
 
       expect(updateUserNWC).not.toHaveBeenCalled();
       expect(getDecryptedUserNWC).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(manuallyVerifyPayment).toHaveBeenCalledWith("payment-123");
+      expect(PaymentsData.manuallyVerifyPayment).toHaveBeenCalledWith(
+        "payment-123"
+      );
       expect(result).toEqual({
         success: true,
         paid: true,
@@ -302,10 +313,12 @@ describe("Plans Action Handler", () => {
         planId: "basic",
       };
 
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockInvoice
-      );
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(60);
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockInvoice);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(60);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -318,7 +331,7 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(createPlanInvoice).toHaveBeenCalledWith({
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
         planId: "basic",
         userId: TEST_USER_ID,
         description: "SmartFlow Social - Plan subscription",
@@ -343,7 +356,9 @@ describe("Plans Action Handler", () => {
     });
 
     it("should return redirect for free plan", async () => {
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         invoice: "free_plan",
         paymentHash: null,
         amount: 0,
@@ -362,7 +377,7 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(createPlanInvoice).toHaveBeenCalledWith(
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith(
         expect.objectContaining({
           planId: "free",
           userId: TEST_USER_ID,
@@ -372,7 +387,7 @@ describe("Plans Action Handler", () => {
           amountUsdOverride: 0,
         })
       );
-      expect(getPlanPriceUsd).not.toHaveBeenCalled();
+      expect(PaymentsData.getPlanPriceUsd).not.toHaveBeenCalled();
       expect(result).toEqual({
         redirect:
           "/dashboard?planActivated=true&message=" +
@@ -396,14 +411,16 @@ describe("Plans Action Handler", () => {
       };
       expect(data).toHaveProperty("error");
       expect(String(data.error)).toBeTruthy();
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
 
     it("should handle invoice creation errors", async () => {
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Plan not found")
-      );
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockRejectedValue(new Error("Plan not found"));
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -420,10 +437,12 @@ describe("Plans Action Handler", () => {
     });
 
     it("should handle generic errors in invoice creation", async () => {
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
-        "Unknown error"
-      );
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(10);
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockRejectedValue("Unknown error");
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(10);
 
       const formData = createFormData({
         intent: "select_plan",
@@ -454,7 +473,7 @@ describe("Plans Action Handler", () => {
       const result = await handlePlansAction(formData, request);
 
       expect(result).toBeInstanceOf(Response);
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
       const data = (await (result as Response).json()) as { error?: string };
       expect(data.error).toBeDefined();
       expect(String(data.error)).toMatch(/yearly/i);
@@ -479,7 +498,7 @@ describe("Plans Action Handler", () => {
         error: "Bitcoin on-chain checkout is not available for the free plan.",
         status: 400,
       });
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
 
     it("should reject btc_onchain when BTCPay env is not configured", async () => {
@@ -501,14 +520,18 @@ describe("Plans Action Handler", () => {
         error: "Bitcoin on-chain checkout is not available right now.",
         status: 503,
       });
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
 
     it("should create BTCPay checkout for founder yearly when BTCPay is configured", async () => {
       (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(2600);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(2600);
       const exp = new Date("2030-01-01T00:00:00.000Z");
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         invoice: "https://pay.example/checkout/abc",
         paymentHash: "btcpay:abc",
         amount: 50_000,
@@ -531,7 +554,7 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(createPlanInvoice).toHaveBeenCalledWith(
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith(
         expect.objectContaining({
           planId: "founder",
           userId: TEST_USER_ID,
@@ -558,9 +581,13 @@ describe("Plans Action Handler", () => {
 
     it("should create BTCPay checkout for basic yearly when BTCPay is configured", async () => {
       (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
-      (getPlanPriceUsd as ReturnType<typeof vi.fn>).mockResolvedValue(336);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(336);
       const exp = new Date("2030-01-01T00:00:00.000Z");
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         invoice: "https://pay.example/checkout/basic",
         paymentHash: "btcpay:basic",
         amount: 500_000,
@@ -583,7 +610,7 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(createPlanInvoice).toHaveBeenCalledWith(
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith(
         expect.objectContaining({
           planId: "basic",
           billingPaymentMethod: "btc_btcpay_onchain",
@@ -616,7 +643,7 @@ describe("Plans Action Handler", () => {
         success: false,
         status: 400,
       });
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
 
     it("should reject auto_renew for Founder lifetime plan", async () => {
@@ -638,12 +665,12 @@ describe("Plans Action Handler", () => {
       expect(String((result as { error?: string }).error)).toMatch(
         /auto-renew/i
       );
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
 
     it("should reject Founder checkout when sold out", async () => {
       (
-        countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
+        PaymentsData.countActiveSubscriptionsForPlan as ReturnType<typeof vi.fn>
       ).mockResolvedValue(21);
 
       const formData = createFormData({
@@ -662,7 +689,7 @@ describe("Plans Action Handler", () => {
         status: 400,
       });
       expect((result as { error?: string }).error).toMatch(/sold out/i);
-      expect(createPlanInvoice).not.toHaveBeenCalled();
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
     });
   });
 

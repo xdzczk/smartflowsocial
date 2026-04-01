@@ -103,7 +103,12 @@ const { mockPrisma } = vi.hoisted(() => {
         .mockResolvedValue({ userRelays: ["wss://relay.example.com"] }),
     },
     subscription: {
-      findUnique: vi.fn().mockResolvedValue({ Plan: { price: 1000 } }),
+      findUnique: vi.fn().mockResolvedValue({
+        planId: "basic",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        Plan: { id: "basic", name: "Basic" },
+      }),
     },
     draftVersion: {
       aggregate: vi.fn().mockResolvedValue({ _max: { version: null } }),

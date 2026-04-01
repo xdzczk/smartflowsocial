@@ -172,6 +172,13 @@ export function PricingCard({
           </span>
         </div>
       ) : null}
+      {plan.id === "premium" && !isTeams ? (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
+          <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-xs font-medium">
+            Multi-account operator
+          </span>
+        </div>
+      ) : null}
       {isTeams ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
           <span className="bg-muted text-muted-foreground border-border rounded-full border px-3 py-1 text-xs font-medium">

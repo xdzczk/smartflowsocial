@@ -20,9 +20,9 @@ export function isAllowedScheduleInterval(value: number): boolean {
 }
 
 /**
- * Format an interval in hours for display (e.g. "15 min", "30 min", "2 hours").
+ * Format an interval in hours for display (e.g. "15m", "30m", "2 hours").
  * @param hours - Interval in hours (e.g. 0.25, 0.5, 2)
- * @param options.compact - If true, use short form with "+" prefix for buttons (e.g. "+15 min", "+2h")
+ * @param options.compact - If true, prefix with "+" for buttons (e.g. "+15m", "+2h")
  */
 export function formatIntervalLabel(
   hours: number,
@@ -31,7 +31,7 @@ export function formatIntervalLabel(
   const prefix = options?.compact ? "+" : "";
   if (hours < 1) {
     const minutes = Math.round(hours * 60);
-    return options?.compact ? `${prefix}${minutes} min` : `${minutes} min`;
+    return `${prefix}${minutes}m`;
   }
   if (options?.compact) {
     return `${prefix}${hours}h`;

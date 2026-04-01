@@ -190,10 +190,10 @@ describe("Content Helpers", () => {
       expect(result).toContain("muted");
     });
 
-    it("should return gray for unknown status", () => {
+    it("should return muted styling for unknown status", () => {
       const item = combinedContentFactory.post({ id: "1" });
       const result = getStatusColor(item);
-      expect(result).toContain("gray");
+      expect(result).toContain("muted");
     });
 
     it("should return destructive for FAILED state", () => {

@@ -14,7 +14,7 @@ export const meta: MetaFunction = () => {
     {
       name: "description",
       content:
-        "Operator-grade Nostr publishing: clear plan economics, Bitcoin/Lightning checkout, and infrastructure for serious workflows.",
+        "Creator (1 account) and Pro (up to 3) with Nostr-native hosted media and fanout distribution; Founder lifetime top individual tier. Bitcoin/Lightning checkout.",
     },
   ];
 };

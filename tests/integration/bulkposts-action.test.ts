@@ -79,6 +79,14 @@ const { mockPrisma } = vi.hoisted(() => {
       findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
       create: vi.fn(), // For post creation
     },
+    subscription: {
+      findUnique: vi.fn().mockResolvedValue({
+        planId: "basic",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        Plan: { id: "basic", name: "Basic" },
+      }),
+    },
     postStateTransition: {
       create: vi.fn(),
     },

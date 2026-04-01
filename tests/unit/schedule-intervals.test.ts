@@ -46,13 +46,13 @@ describe("schedule-intervals", () => {
 
   describe("formatIntervalLabel", () => {
     it("formats sub-hour intervals as minutes (compact)", () => {
-      expect(formatIntervalLabel(0.25, { compact: true })).toBe("+15 min");
-      expect(formatIntervalLabel(0.5, { compact: true })).toBe("+30 min");
+      expect(formatIntervalLabel(0.25, { compact: true })).toBe("+15m");
+      expect(formatIntervalLabel(0.5, { compact: true })).toBe("+30m");
     });
 
-    it("formats sub-hour intervals as minutes (non-compact)", () => {
-      expect(formatIntervalLabel(0.25, { compact: false })).toBe("15 min");
-      expect(formatIntervalLabel(0.5, { compact: false })).toBe("30 min");
+    it("formats sub-hour intervals as shortened minutes (non-compact)", () => {
+      expect(formatIntervalLabel(0.25, { compact: false })).toBe("15m");
+      expect(formatIntervalLabel(0.5, { compact: false })).toBe("30m");
     });
 
     it("formats whole hours (compact)", () => {

@@ -22,22 +22,24 @@ import { featureFlags } from "~/lib/feature-flags.server";
 
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
-    "Full product surface with strict operating limits",
+    "Test the full product with hard caps",
     "Up to 10 scheduled items",
     "1 queue included",
     "Browse broadcast workflows; paid tiers unlock full send volume",
   ],
   basic: [
+    "1 account included",
     "Built for consistent solo publishing",
-    "Expanded scheduling and queue headroom",
+    "Expanded scheduling and queue headroom vs Free",
     "Bulk workflows and broadcast sending",
-    "Native SmartFlowSocial-hosted media included",
+    "Nostr-native hosted media included",
   ],
   premium: [
-    "Operator-grade workflow and broadcast ceilings",
+    "Up to 3 accounts included",
+    "Highest workflow and broadcast capacity",
     "Best campaign economics on paid tiers",
-    "Largest hosted media footprint",
-    "Relay blast and distribution included",
+    "Nostr-native hosted media included",
+    "Fanout relay distribution included",
   ],
   teams: [
     "Shared workflows and roles",
@@ -48,19 +50,22 @@ const GRID_CALLOUTS: Record<string, string[]> = {
 };
 
 const FOUNDER_BENEFITS = [
-  "One-time lifetime access — non-recurring, one account",
+  "Lifetime access to the top individual tier",
+  "Includes top individual-tier Nostr-native media and fanout distribution access",
+  "Non-recurring, tied to one account owner",
   "Strongest self-serve individual economics",
   "Priority support",
   "Early access to major features",
-  "Lowest campaign commission tier among paid options",
+  "Lowest campaign commission among individual tiers",
   "Founder recognition in-product",
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Full surface, strict limits",
-  basic: "The default paid tier for solo operators",
-  premium: "Heavier campaigns, storage, and distribution",
-  teams: "Collaborative publishing — not open for self-serve yet",
+  free: "Full surface, hard caps — try the product end-to-end",
+  basic: "Default paid tier for one serious account",
+  premium:
+    "Multi-account tier — stronger workflow, distribution, and infra limits",
+  teams: "Collaborative workspace — not open for self-serve yet",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
