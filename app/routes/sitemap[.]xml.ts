@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
-import { absoluteUrl, getSiteOrigin } from "~/lib/site-url.server";
+import { absoluteUrl } from "~/lib/site-url";
+import { getSiteOrigin } from "~/lib/site-url.server";
 
 function escapeXml(s: string): string {
   return s
