@@ -6,6 +6,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  connectNip46WithBunkerInputForLogin,
+  connectNip46WithNostrConnectUriForLogin,
+  connectNip46WithPendingUriForLogin,
+} from "~/features/auth/nip46/nip46-connect.client";
+import { BRAND_NAME } from "~/lib/brand";
+
 vi.mock("nostr-tools", () => ({
   generateSecretKey: vi.fn().mockReturnValue(new Uint8Array(32).fill(1)),
   SimplePool: class MockSimplePool {
@@ -44,14 +51,8 @@ vi.mock("~/features/auth/nostr-signer.client", () => ({
   }),
   getNostrConnectAppMetadata: vi
     .fn()
-    .mockReturnValue({ name: "SmartFlowSocial", url: "https://example.com" }),
+    .mockReturnValue({ name: BRAND_NAME, url: "https://example.com" }),
 }));
-
-import {
-  connectNip46WithBunkerInputForLogin,
-  connectNip46WithNostrConnectUriForLogin,
-  connectNip46WithPendingUriForLogin,
-} from "~/features/auth/nip46/nip46-connect.client";
 
 describe("NIP-46 connect (login)", () => {
   beforeEach(() => {

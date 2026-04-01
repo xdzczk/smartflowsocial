@@ -18,6 +18,7 @@ import type {
   NostrEventData,
   LongFormEventData,
 } from "~/features/nostr/types";
+import { BRAND_NAME } from "~/lib/brand";
 
 /**
  * Canonical Nostr adapter for server-side operations
@@ -152,7 +153,7 @@ export const nostrAdapter = {
       eventTags.push(["title", eventData.title]);
     }
     eventTags.push(["r", "wss://relay.primal.net/"]);
-    eventTags.push(["client", "SmartFlow"]);
+    eventTags.push(["client", BRAND_NAME]);
     if (eventData.summary) {
       eventTags.push(["summary", eventData.summary]);
     }

@@ -40,6 +40,7 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import {
   validateAccounts,
   validateAvailablePlans,
@@ -358,7 +359,7 @@ function renderSettingsPanel(
           />
           <PreferenceSection
             title="Blossom media library"
-            description="Browse SmartFlow Blossom uploads and storage usage. Media from other upload providers does not appear here. Deleting removes the library entry and the file on SmartFlow Blossom when the server confirms removal; if deletion fails, the item stays."
+            description={`Browse ${BRAND_BLOSSOM_LABEL} uploads and storage usage. Media from other upload providers does not appear here. Deleting removes the library entry and the file on ${BRAND_BLOSSOM_LABEL} when the server confirms removal; if deletion fails, the item stays.`}
           >
             <p className="text-sm">
               <Link

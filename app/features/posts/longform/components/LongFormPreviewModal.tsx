@@ -2,6 +2,7 @@ import { Bookmark, MoreVertical } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
+import { BRAND_NAME } from "~/lib/brand";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, nowUTC } from "~/lib/temporal";
@@ -106,7 +107,7 @@ export default function LongFormPreviewModal({
             <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
               <span>{formatDate()}</span>
               <span>•</span>
-              <span>via SmartFlow</span>
+              <span>via {BRAND_NAME}</span>
               <div className="ml-auto">
                 <Bookmark
                   className="h-5 w-5"

@@ -385,7 +385,7 @@ export interface CombinedContent {
   templateId?: string;
   /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE) */
   postKind?: string;
-  /** SmartFlow thread group (segments from schedule-thread / post-thread). */
+  /** App thread group (segments from schedule-thread / post-thread). */
   threadGroupId?: string | null;
   replyToEventId?: string | null;
   replyToPostId?: string | null;

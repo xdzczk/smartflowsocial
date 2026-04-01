@@ -55,7 +55,7 @@ import { createPlanInvoice } from "~/features/payments/data";
 const invoice = await createPlanInvoice({
   planId: "basic", // plan ID from database
   userId: "user123",
-  description: "SmartFlow Social Basic Plan",
+  description: "SmartFlowSocial Basic Plan",
 });
 
 // Returns:

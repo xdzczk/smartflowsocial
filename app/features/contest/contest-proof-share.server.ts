@@ -1,3 +1,5 @@
+import { poweredByBrand } from "~/lib/brand";
+
 /**
  * Human-readable fairness highlights for sharing (mirrors giveaway proof cards).
  */
@@ -17,7 +19,7 @@ export function buildContestFairnessProofLines(input: {
     input.tieBreakRule ? `Tie-break: ${input.tieBreakRule}` : "Tie-break: —",
     `Locked / completed: ${input.lockedOrCompletedAt}`,
     "",
-    "Powered by SmartFlow Social",
+    poweredByBrand,
   ];
 }
 
@@ -49,6 +51,6 @@ export function buildContestPublicSummaryLines(input: {
   if (input.completedAtLabel) {
     lines.push("", `Completed: ${input.completedAtLabel}`);
   }
-  lines.push("", "Powered by SmartFlow Social");
+  lines.push("", poweredByBrand);
   return lines;
 }

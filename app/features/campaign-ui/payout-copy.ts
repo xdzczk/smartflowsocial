@@ -1,7 +1,8 @@
+import { BRAND_NAME } from "~/lib/brand";
+
 export const payoutCopy = {
   trustNote: "Non-custodial · paid from your wallet",
-  lockTrustNote:
-    "Prize funds stay in your wallet. SmartFlowSocial never holds prize funds.",
+  lockTrustNote: `Prize funds stay in your wallet. ${BRAND_NAME} never holds prize funds.`,
   payoutMethod: "Payout method",
   autoPayAfterLock: "Auto-pay after lock",
   autoPayAtEnd: "Auto-pay at end",

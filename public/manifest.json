@@ -1,7 +1,7 @@
 {
-  "name": "SmartFlow Social",
+  "name": "SmartFlowSocial",
   "short_name": "SmartFlow",
-  "description": "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.",
+  "description": "Nostr-native publishing with SmartFlowSocial: calendars, threads, articles, and Bitcoin-native campaigns.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

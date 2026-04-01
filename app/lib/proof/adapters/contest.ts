@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "~/lib/brand";
+
 import type {
   ProofCardPayload,
   ProofCardType,
@@ -44,7 +46,7 @@ function buildFooter(
   includeRef: boolean
 ): ProofCardPayload["footer"] {
   const lines: ProofCardPayload["footer"] = {
-    productLabel: "SmartFlow Social",
+    productLabel: BRAND_NAME,
     snapshotLabel:
       opts?.showTimestamp !== false ? dto.completedAtLabel : undefined,
   };

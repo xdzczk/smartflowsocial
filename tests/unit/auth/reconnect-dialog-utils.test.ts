@@ -15,6 +15,7 @@ import {
   TOAST_RECONNECT_SUCCESS,
   METHOD_BUNKER_INPUT,
 } from "~/features/auth/reconnect-dialog-utils.client";
+import { BRAND_NAME } from "~/lib/brand";
 
 describe("reconnect-dialog-utils", () => {
   beforeEach(() => {
@@ -79,7 +80,7 @@ describe("reconnect-dialog-utils", () => {
       expect(DEFAULT_RELAYS_ARRAY).toEqual(expect.any(Array));
       expect(RELAY_UNION_CAP).toBe(8);
       expect(PROFILE_MISMATCH_MESSAGE).toBe(
-        "Different signer profile detected. Please activate the same identity as your SmartFlow connection."
+        `Different signer profile detected. Please activate the same identity as your ${BRAND_NAME} connection.`
       );
       expect(TOAST_RECONNECT_SUCCESS).toBe("Remote signer reconnected.");
       expect(METHOD_BUNKER_INPUT).toBe("bunker_input");

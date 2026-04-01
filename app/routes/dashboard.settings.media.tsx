@@ -42,6 +42,7 @@ import {
   getMediaAggregateForUser,
   listMediaForUser,
 } from "~/features/upload";
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import { withCSRFProtection } from "~/lib/csrf";
 import {
   DeferredRouteLoaderProvider,
@@ -121,8 +122,7 @@ export const action = withCSRFProtection(
         } catch {
           return json(
             {
-              error:
-                "Could not delete file from SmartFlow Blossom. Nothing was removed.",
+              error: `Could not delete file from ${BRAND_BLOSSOM_LABEL}. Nothing was removed.`,
             },
             { status: 502 }
           );
@@ -179,10 +179,10 @@ function SettingsMediaPageInner() {
         <div className="max-w-2xl space-y-2">
           <h1 className="text-xl font-semibold sm:text-2xl">Media</h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Manage media uploaded through SmartFlow Blossom. Deleting removes
-            the library entry and the stored file when the server confirms
-            removal. If deletion fails, the item stays and you will see an
-            error.
+            Manage media uploaded through {BRAND_BLOSSOM_LABEL}. Deleting
+            removes the library entry and the stored file when the server
+            confirms removal. If deletion fails, the item stays and you will see
+            an error.
           </p>
         </div>
         <Link
@@ -199,7 +199,7 @@ function SettingsMediaPageInner() {
             <div>
               <CardTitle className="text-base">Usage</CardTitle>
               <CardDescription className="mt-1">
-                SmartFlow Blossom storage tracked for your account.
+                {BRAND_BLOSSOM_LABEL} storage tracked for your account.
                 {planName ? (
                   <>
                     {" "}
@@ -246,14 +246,14 @@ function SettingsMediaPageInner() {
               </div>
               <p className="text-muted-foreground text-xs">
                 {usagePercent >= 95
-                  ? "You are near your SmartFlow Blossom storage limit."
-                  : "Usage is counted for SmartFlow Blossom uploads only."}
+                  ? `You are near your ${BRAND_BLOSSOM_LABEL} storage limit.`
+                  : `Usage is counted for ${BRAND_BLOSSOM_LABEL} uploads only.`}
               </p>
             </div>
           ) : (
             <p className="text-muted-foreground text-xs">
-              Storage limits apply when your plan includes a SmartFlow Blossom
-              quota.
+              Storage limits apply when your plan includes a{" "}
+              {BRAND_BLOSSOM_LABEL} quota.
             </p>
           )}
         </CardContent>
@@ -263,8 +263,8 @@ function SettingsMediaPageInner() {
         <CardHeader>
           <CardTitle className="text-base">Library</CardTitle>
           <CardDescription>
-            Only SmartFlow Blossom uploads appear here. Other providers may not
-            be listed.
+            Only {BRAND_BLOSSOM_LABEL} uploads appear here. Other providers may
+            not be listed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -275,9 +275,9 @@ function SettingsMediaPageInner() {
             <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
               <p>No media yet.</p>
               <p>
-                Upload with SmartFlow Blossom as your media provider in Media
-                &amp; Storage settings. Items will show a preview, size, and
-                delete action once recorded.
+                Upload with {BRAND_BLOSSOM_LABEL} as your media provider in
+                Media &amp; Storage settings. Items will show a preview, size,
+                and delete action once recorded.
               </p>
               <p>
                 <Link
@@ -334,7 +334,7 @@ function SettingsMediaPageInner() {
                             {new Date(m.createdAt).toLocaleString()}
                           </p>
                           <p className="text-muted-foreground truncate text-xs">
-                            SmartFlow Blossom
+                            {BRAND_BLOSSOM_LABEL}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
@@ -404,9 +404,9 @@ function SettingsMediaPageInner() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this media?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the file from SmartFlow Blossom storage and deletes
-              your library record when the server confirms removal. If removal
-              fails, nothing changes.
+              This removes the file from {BRAND_BLOSSOM_LABEL} storage and
+              deletes your library record when the server confirms removal. If
+              removal fails, nothing changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -447,7 +447,7 @@ export default function SettingsMediaPage() {
         <DeferredListPageSkeleton
           variant="mediaGallery"
           title="Media"
-          subtitle="SmartFlow Blossom usage and your uploads"
+          subtitle={`${BRAND_BLOSSOM_LABEL} usage and your uploads`}
         />
       }
     >

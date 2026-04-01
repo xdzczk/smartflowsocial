@@ -27,6 +27,7 @@ import { getAvailableCheckoutMethods } from "~/features/payments/checkout/checko
 import { FounderCheckoutModal } from "~/features/payments/components/checkout/FounderCheckoutModal";
 import { usePlansPageCheckoutAnalytics } from "~/features/payments/hooks/use-plans-page-checkout-analytics";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
+import { BRAND_NAME } from "~/lib/brand";
 import type {
   action as plansAction,
   loader as plansLoader,
@@ -677,8 +678,8 @@ export function PlansPage(): ReactNode {
                   What is hosted media?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Creator and Pro include uploads on Blossom-compatible
-                  SmartFlowSocial infrastructure - not just an app attachment
+                  Creator and Pro include uploads on Blossom-compatible{" "}
+                  {BRAND_NAME} infrastructure - not just an app attachment
                   bucket. Media is Nostr-native and aligned with broader Nostr
                   media workflows (portability and mirroring where supported).
                   Storage and file-size limits vary by plan.
@@ -689,21 +690,20 @@ export function PlansPage(): ReactNode {
                   What is Blastr fanout distribution?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Pro includes access to SmartFlowSocial&apos;s Blastr fanout
-                  relay distribution layer - stronger fanout-style relay
-                  amplification for publishing, not merely &quot;more
-                  relays&quot; in the UI. Reach depends on relay workflows and
-                  setup; exact behavior varies by client and context where
-                  supported.
+                  Pro includes access to {BRAND_NAME}&apos;s Blastr fanout relay
+                  distribution layer - stronger fanout-style relay amplification
+                  for publishing, not merely &quot;more relays&quot; in the UI.
+                  Reach depends on relay workflows and setup; exact behavior
+                  varies by client and context where supported.
                 </dd>
               </div>
               <div>
                 <dt className="text-foreground text-base font-semibold">
-                  Can I use SmartFlow infrastructure outside the app?
+                  Can I use {BRAND_NAME} infrastructure outside the app?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Hosted media is built on Blossom-compatible infrastructure;
-                  distribution uses SmartFlowSocial fanout relay infrastructure.
+                  distribution uses {BRAND_NAME} fanout relay infrastructure.
                   Some of this can support compatible Nostr setups beyond the
                   core app, but interoperability is not universal - what works
                   depends on the client, configuration, and supported flows.

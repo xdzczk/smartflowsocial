@@ -2,6 +2,7 @@ import { Upload } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { ComposerCanvasSectionLabel } from "~/features/posts/composer/components/composer";
+import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
@@ -48,7 +49,7 @@ export function LongFormCoverImage({
             <span>via</span>
             <span className="text-muted-foreground/70 rounded px-1 py-px font-medium">
               {uploadProvider.includes("BLOSSOM")
-                ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? "SmartFlow Blossom" : "Blosstr"}`
+                ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? BRAND_BLOSSOM_LABEL : "Blosstr"}`
                 : "☁️ S3"}
             </span>
           </div>

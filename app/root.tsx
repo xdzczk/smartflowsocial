@@ -1,6 +1,10 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
 import { json } from "@remix-run/node";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import type {
+  LinksFunction,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -22,9 +26,12 @@ import { RemoteSignerReconnectController } from "~/features/auth/components/Remo
 import { BtcpayConfirmationWatchBar } from "~/features/payments/components/BtcpayConfirmationWatchBar";
 // Import migration to run on app load
 import "~/features/auth/signer/remote-signer-sessions-migration.client";
+import { BRAND_NAME } from "~/lib/brand";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";
+import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
+import { getSiteOrigin } from "~/lib/site-url.server";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => {
@@ -59,12 +66,8 @@ export const links: LinksFunction = () => {
   ];
 };
 
-const APP_NAME = "SmartFlow Social";
-const APP_TITLE = `${APP_NAME} - Nostr Post Scheduler`;
-const APP_DESCRIPTION =
-  "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.";
-
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const siteOrigin = getSiteOrigin(request);
   try {
     const { env } = await import("~/lib/env.server");
     // Always get fresh user data - getUser returns null for invalid/expired sessions
@@ -77,6 +80,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     return json(
       {
         user,
+        siteOrigin,
         // Expose Sentry DSN to client (safe - it's a public key)
         ENV: {
           SENTRY_DSN: env.SENTRY_DSN ?? null,
@@ -103,6 +107,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     // Handle root loader errors gracefully - always return null user on error
     return handleLoaderError(error, {
       user: null,
+      siteOrigin,
       ENV: {
         SENTRY_DSN: null,
         NODE_ENV: "development",
@@ -112,29 +117,23 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   }
 };
 
-export const meta = () => [
-  { title: APP_TITLE },
-  { name: "description", content: APP_DESCRIPTION },
-  {
-    name: "keywords",
-    content:
-      "nostr, post scheduler, content calendar, automation, social media scheduling, nostr automation, bitcoin",
-  },
-  { name: "author", content: APP_NAME },
-  { property: "og:title", content: APP_TITLE },
-  { property: "og:description", content: APP_DESCRIPTION },
-  { property: "og:type", content: "website" },
-  { name: "twitter:card", content: "summary_large_image" },
-  { name: "twitter:title", content: APP_TITLE },
-  { name: "twitter:description", content: APP_DESCRIPTION },
-  { name: "robots", content: "index, follow" },
-  { name: "viewport", content: "width=device-width, initial-scale=1" },
-  // iOS PWA meta tags
-  { name: "mobile-web-app-capable", content: "yes" },
-  { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-  { name: "apple-mobile-web-app-title", content: APP_NAME },
-  { name: "theme-color", content: "#4408FF" },
-];
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  const siteOrigin =
+    data &&
+    typeof data === "object" &&
+    "siteOrigin" in data &&
+    typeof (data as { siteOrigin: unknown }).siteOrigin === "string"
+      ? (data as { siteOrigin: string }).siteOrigin
+      : "http://localhost";
+  return [
+    ...buildRootDefaultMeta(siteOrigin),
+    { name: "viewport", content: "width=device-width, initial-scale=1" },
+    { name: "mobile-web-app-capable", content: "yes" },
+    { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+    { name: "apple-mobile-web-app-title", content: BRAND_NAME },
+    { name: "theme-color", content: "#4408FF" },
+  ];
+};
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -159,7 +158,6 @@ export default function App() {
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
         <Links />
         <script
@@ -244,18 +242,19 @@ export function ErrorBoundary() {
   // Determine error details
   let statusCode = 500;
   let errorMessage = "An unexpected error occurred";
-  let errorTitle = "Oops!";
+  let errorTitle = pageTitle("Error");
   const isDevelopment = process.env.NODE_ENV === "development";
 
   if (isRouteErrorResponse(error)) {
     statusCode = error.status;
     errorMessage = error.statusText || errorMessage;
-    errorTitle = `${error.status} Error`;
+    errorTitle =
+      error.status === 404 ? pageTitle("Not Found") : pageTitle("Error");
   } else if (error instanceof Error) {
     const normalizedError = normalizeError(error);
     statusCode = normalizedError.statusCode;
     errorMessage = normalizedError.message;
-    errorTitle = "Application Error";
+    errorTitle = pageTitle("Error");
   } else if (
     error &&
     typeof error === "object" &&
@@ -266,9 +265,10 @@ export function ErrorBoundary() {
     const errObj = error as unknown as { statusCode?: number };
     statusCode =
       typeof errObj.statusCode === "number" ? errObj.statusCode : 500;
-    errorTitle = "Application Error";
+    errorTitle = pageTitle("Error");
   } else if (error != null && typeof error === "object") {
     errorMessage = "An unexpected error occurred";
+    errorTitle = pageTitle("Error");
   }
 
   return (

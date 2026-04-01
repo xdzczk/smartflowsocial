@@ -28,6 +28,7 @@ import type {
   LongFormEventData,
 } from "~/features/nostr/types";
 import { buildPollTags, KIND_POLL } from "~/features/polls";
+import { BRAND_NAME } from "~/lib/brand";
 import {
   Nip07AccountMismatchError,
   RemoteSignerTimeoutError,
@@ -180,7 +181,7 @@ function buildLongFormEventTags(eventData: LongFormEventData): string[][] {
     eventTags.push(["title", eventData.title]);
   }
   eventTags.push(["r", "wss://relay.primal.net/"]);
-  eventTags.push(["client", "SmartFlow"]);
+  eventTags.push(["client", BRAND_NAME]);
   if (eventData.summary) {
     eventTags.push(["summary", eventData.summary]);
   }

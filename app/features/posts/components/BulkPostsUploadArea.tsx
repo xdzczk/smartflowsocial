@@ -7,6 +7,7 @@ import { Loader2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload";
+import { BRAND_NAME } from "~/lib/brand";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
@@ -30,7 +31,7 @@ function isImageOrVideoFile(file: File): boolean {
 function uploadProviderCaption(uploadProvider: string): string {
   if (!uploadProvider.includes("BLOSSOM")) return "S3";
   if (uploadProvider === "BLOSSOM_PRIMAL") return "Blossom · Primal";
-  if (uploadProvider === "BLOSSOM_SFS") return "Blossom · SmartFlow";
+  if (uploadProvider === "BLOSSOM_SFS") return `Blossom · ${BRAND_NAME}`;
   return "Blossom";
 }
 

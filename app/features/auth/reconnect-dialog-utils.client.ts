@@ -3,6 +3,8 @@
  * Used by RemoteSignerReconnectController and useReconnectDialogState.
  */
 
+import { BRAND_NAME } from "~/lib/brand";
+
 export const DEFAULT_RELAYS = [
   "wss://relay.primal.net",
   "wss://relay.damus.io",
@@ -36,8 +38,7 @@ export function buildRelayUnion(
   return out;
 }
 
-export const PROFILE_MISMATCH_MESSAGE =
-  "Different signer profile detected. Please activate the same identity as your SmartFlow connection.";
+export const PROFILE_MISMATCH_MESSAGE = `Different signer profile detected. Please activate the same identity as your ${BRAND_NAME} connection.`;
 
 export const RECONNECT_SUCCESS_TOAST_RETRY =
   "Remote signer reconnected. Please retry your action.";

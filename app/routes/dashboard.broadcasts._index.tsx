@@ -1,8 +1,4 @@
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { defer, json, redirect } from "@remix-run/node";
 import {
   Await,
@@ -39,8 +35,6 @@ import {
 } from "~/lib/remix/deferred-route-loader-context";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
-
-export const meta: MetaFunction = () => [{ title: "Broadcasts — Vibe" }];
 
 function parseIndexFilters(url: URL): BroadcastIndexFilters {
   const q = url.searchParams.get("q")?.trim();

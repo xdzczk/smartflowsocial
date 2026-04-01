@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { PreferenceSection } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { updateTimezoneClientSchema } from "~/lib/validation";
 import {
   useZodForm,
@@ -158,7 +159,7 @@ export function RegionalDisplaySettings({
   return (
     <PreferenceSection
       title="Regional & display"
-      description="Set how time and dates appear across SmartFlow."
+      description={`Set how time and dates appear across ${BRAND_NAME}.`}
       contentClassName="mt-4 space-y-0"
     >
       <div className="border-border/60 space-y-2 border-b pb-4">
@@ -192,7 +193,7 @@ export function RegionalDisplaySettings({
             Time format
           </Label>
           <p className="text-muted-foreground text-xs leading-snug">
-            Choose how time appears across SmartFlow.
+            Choose how time appears across {BRAND_NAME}.
           </p>
         </div>
         <Select

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ProviderSelectionSection } from "~/features/settings/components/patterns";
+import { BRAND_BLOSSOM_LABEL, BRAND_NAME } from "~/lib/brand";
 import { clearUploadProviderCache } from "~/lib/query";
 import { cn } from "~/lib/utils";
 
@@ -196,7 +197,7 @@ export function UploadProviderSettings({
               <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-foreground text-sm font-medium">
-                    SmartFlow Blossom (NOSTR)
+                    {BRAND_BLOSSOM_LABEL} (NOSTR)
                   </span>
                   <Badge variant="secondary">Paid feature</Badge>
                   <Badge variant="outline">Locked on Free plan</Badge>
@@ -215,7 +216,7 @@ export function UploadProviderSettings({
                   <Badge variant="outline">Subscription required</Badge>
                 </div>
                 <Button variant="secondary" size="sm" asChild>
-                  <Link to="/plans">Upgrade to use SmartFlow Blossom</Link>
+                  <Link to="/plans">Upgrade to use {BRAND_BLOSSOM_LABEL}</Link>
                 </Button>
               </div>
             </div>
@@ -241,7 +242,7 @@ export function UploadProviderSettings({
                   htmlFor="blossom-sfs"
                   className="text-foreground block text-sm font-medium"
                 >
-                  SmartFlow Blossom (NOSTR)
+                  {BRAND_BLOSSOM_LABEL} (NOSTR)
                 </label>
                 <p className="text-muted-foreground mt-1 text-xs">
                   blossom-api.smartflow.social · blossom.smartflow.social
@@ -279,7 +280,7 @@ export function UploadProviderSettings({
               </label>
               <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
                 Use your own trusted HTTPS Blossom endpoint for uploads from
-                SmartFlow. Only HTTPS URLs are accepted;{" "}
+                {BRAND_NAME}. Only HTTPS URLs are accepted;{" "}
                 <span className="text-foreground/90">
                   format is validated when you save
                 </span>

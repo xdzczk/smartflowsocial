@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "~/lib/brand";
+
 export function scheduleCapExceededMessage(): string {
   return "Free includes up to 10 scheduled items. Upgrade to schedule more.";
 }
@@ -23,5 +25,5 @@ export function bulkBlockedMessage(): string {
 }
 
 export function sfsBlossomBlockedMessage(): string {
-  return "SmartFlowSocial-hosted media storage is available on paid plans.";
+  return `${BRAND_NAME}-hosted media storage is available on paid plans.`;
 }

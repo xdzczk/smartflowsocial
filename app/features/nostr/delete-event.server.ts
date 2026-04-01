@@ -3,9 +3,10 @@ import type {
   LongFormDeleteRequestedPayload,
   PostDeleteRequestedPayload,
 } from "~/infra/outbox/outbox.server";
+import { BRAND_DELETE_REASON } from "~/lib/brand";
 
 const NOSTR_DELETE_EVENT_KIND = 5;
-const DEFAULT_DELETE_REASON = "Deleted via SmartFlow";
+const DEFAULT_DELETE_REASON = BRAND_DELETE_REASON;
 
 interface Kind5DeletionDraft {
   unsignedEvent: NostrEvent;

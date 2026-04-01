@@ -1,6 +1,6 @@
 /**
  * Media metadata service (Blossom uploads).
- * SmartFlow owns metadata; Blossom owns storage.
+ * The app owns metadata; Blossom owns storage.
  */
 
 import { env } from "~/lib/env.server";

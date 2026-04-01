@@ -1,19 +1,20 @@
 import { Shield, Wallet, XCircle, Zap } from "lucide-react";
 
-const ITEMS = [
-  { icon: Wallet, label: "Non-custodial payments" },
-  { icon: Shield, label: "SmartFlow never holds your funds" },
-  { icon: XCircle, label: "Cancel anytime" },
-  { icon: Zap, label: "Access activates after payment" },
-] as const;
+import { BRAND_NAME } from "~/lib/brand";
 
 export function TrustStrip(): React.ReactElement {
+  const items = [
+    { icon: Wallet, label: "Non-custodial payments" },
+    { icon: Shield, label: `${BRAND_NAME} never holds your funds` },
+    { icon: XCircle, label: "Cancel anytime" },
+    { icon: Zap, label: "Access activates after payment" },
+  ];
   return (
     <div
       className="border-border bg-muted/30 text-muted-foreground flex flex-wrap items-center gap-2 border-y py-3 text-xs"
       role="list"
     >
-      {ITEMS.map(({ icon: Icon, label }) => (
+      {items.map(({ icon: Icon, label }) => (
         <span
           key={label}
           role="listitem"

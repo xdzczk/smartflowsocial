@@ -2,6 +2,7 @@ import {
   json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  type MetaFunction,
 } from "@remix-run/node";
 
 import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
@@ -21,6 +22,26 @@ import {
 } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
+import { NOINDEX, resolveDashboardPageLabel } from "~/lib/seo-dashboard-routes";
+
+export const meta: MetaFunction = ({ matches, location }) => {
+  const siteOrigin = siteOriginFromMatches(matches);
+  const leaf = matches[matches.length - 1];
+  const leafId = leaf?.id ?? "";
+  const label = resolveDashboardPageLabel({
+    leafId,
+    search: location.search,
+    leafData: leaf?.data,
+  });
+  return buildSeoMeta(
+    {
+      page: label,
+      robots: NOINDEX,
+    },
+    { siteOrigin }
+  );
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   let user = await requireUser(request);

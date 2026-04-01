@@ -11,6 +11,7 @@ import {
   payoutCopy,
 } from "~/features/campaign-ui";
 import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
+import { BRAND_NAME } from "~/lib/brand";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
 
 import { contestCopy } from "../contest-copy";
@@ -479,7 +480,7 @@ export function ContestDetailFormsSection({
           />
           <p className="text-muted-foreground text-sm">
             Locking makes final placements immutable for payout and proof.
-            SmartFlowSocial does not hold prize funds.
+            {BRAND_NAME} does not hold prize funds.
           </p>
           <p className="text-muted-foreground text-xs">
             {feeLabel} · Planned {data.quote.plannedPayoutSats.toLocaleString()}{" "}

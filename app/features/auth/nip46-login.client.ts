@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
+import { BRAND_NAME } from "~/lib/brand";
 import {
   canAttemptCircuitBreaker,
   getCircuitBreakerStatus,
@@ -242,7 +243,7 @@ export function useNip46Login({
           relays,
           timeoutMs,
           retryCount,
-          appName: "SmartFlowSocial",
+          appName: BRAND_NAME,
           onUriCreated: (uri, pool, relaysToClose, clientSecretKey) => {
             setNostrConnectUriState(uri);
             const pending = {

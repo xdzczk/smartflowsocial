@@ -20,6 +20,7 @@ import {
   PreferenceSection,
   ToggleRowSection,
 } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { cn } from "~/lib/utils";
 
 interface NotificationSettingsProps {
@@ -430,7 +431,7 @@ export function NotificationSettings({
     return (
       <PreferenceSection
         title="Push notifications"
-        description="Choose which SmartFlow events send push notifications on this device."
+        description={`Choose which ${BRAND_NAME} events send push notifications on this device.`}
       >
         <p className="text-muted-foreground text-sm">
           Push notifications are not supported in this browser.
@@ -442,7 +443,7 @@ export function NotificationSettings({
   return (
     <PreferenceSection
       title="Push notifications"
-      description="Choose which SmartFlow events send push notifications on this device. Enable notifications on each device or browser separately."
+      description={`Choose which ${BRAND_NAME} events send push notifications on this device. Enable notifications on each device or browser separately.`}
       contentClassName="mt-4 space-y-0"
     >
       <div className="space-y-0">

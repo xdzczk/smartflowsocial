@@ -1,5 +1,5 @@
 import { json, redirect } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 
 import { LoginPage, getUser } from "~/features/auth";
 import {
@@ -7,6 +7,8 @@ import {
   serializeReferralContext,
 } from "~/features/referral/referral-context.server";
 import { validateAndNormalizeRefNpub } from "~/features/referral/referral-validation.server";
+import { BRAND_DESCRIPTION } from "~/lib/brand";
+import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
 const CACHE_CONTROL = "no-cache, no-store, must-revalidate";
 
@@ -52,6 +54,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
-export const meta = () => [{ title: "Login" }];
+export const meta: MetaFunction = ({ matches }) => {
+  const siteOrigin = siteOriginFromMatches(matches);
+  return buildSeoMeta(
+    {
+      description: BRAND_DESCRIPTION,
+      robots: "index, follow",
+      canonicalPath: "/",
+      ogType: "website",
+      includeAuthor: true,
+    },
+    { siteOrigin }
+  );
+};
 
 export default LoginPage;

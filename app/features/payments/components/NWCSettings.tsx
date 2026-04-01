@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { PreferenceSection } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { updateNWCClientSchema } from "~/lib/validation";
 import {
   useZodForm,
@@ -88,7 +89,7 @@ export function NWCSettings({
   return (
     <PreferenceSection
       title="Auto-renew wallet"
-      description="Connect a Lightning wallet (NWC) so subscription renewals can be paid automatically. SmartFlow never holds your funds—you can disconnect or revoke access at any time."
+      description={`Connect a Lightning wallet (NWC) so subscription renewals can be paid automatically. ${BRAND_NAME} never holds your funds—you can disconnect or revoke access at any time.`}
     >
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -96,7 +97,7 @@ export function NWCSettings({
             <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
             <p className="text-muted-foreground text-sm">
               When on, renewals can be charged via your connected wallet.
-              SmartFlow never holds your funds.
+              {BRAND_NAME} never holds your funds.
             </p>
           </div>
           <Switch

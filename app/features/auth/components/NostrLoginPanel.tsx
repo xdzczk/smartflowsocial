@@ -27,6 +27,7 @@ import {
   getStoredReferralContext,
   setStoredReferralContext,
 } from "~/features/referral/referral-context.client";
+import { BRAND_NAME } from "~/lib/brand";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import { appendPrimalCallback } from "../reconnect-uri.client";
@@ -334,7 +335,7 @@ export default function NostrLoginPanel() {
     if (relays.length === 0) return;
     const created = createNip46NostrConnectUri({
       relays,
-      appName: "SmartFlowSocial",
+      appName: BRAND_NAME,
       ...getNostrConnectAppMetadata(),
     });
     const uriWithCallback = appendPrimalCallback(created.uri);

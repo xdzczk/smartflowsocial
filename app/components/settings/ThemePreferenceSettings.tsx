@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { PreferenceSection } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import {
   applyThemePreferenceToDocument,
   setStoredThemePreference,
@@ -74,7 +75,7 @@ export function ThemePreferenceSettings({
   return (
     <PreferenceSection
       title="Appearance"
-      description="Choose how SmartFlow looks on this device. Saved to your account."
+      description={`Choose how ${BRAND_NAME} looks on this device. Saved to your account.`}
     >
       <div className="space-y-2">
         <Label htmlFor="themePreference">Theme</Label>

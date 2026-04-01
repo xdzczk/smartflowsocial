@@ -24,6 +24,7 @@ import {
   type ReconnectDialogOpenMode,
 } from "~/features/auth/signer";
 import { ManagementListSection } from "~/features/settings/components/patterns";
+import { BRAND_NAME } from "~/lib/brand";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { RemoteSignerConnectionList } from "./RemoteSignerConnectionList";
@@ -326,7 +327,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
     <>
       <div className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
         <p>
-          Remote signers let SmartFlow publish and act on your behalf without
+          Remote signers let {BRAND_NAME} publish and act on your behalf without
           storing your secret key. Connect a signer app to approve signing when
           needed.
         </p>
@@ -335,7 +336,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
           <span className="text-foreground font-medium">
             primary fallback signer
           </span>{" "}
-          below is optional but recommended if you use SmartFlow on more than
+          below is optional but recommended if you use {BRAND_NAME} on more than
           one device, so you can recover if a local session goes stale.
         </p>
       </div>
@@ -385,7 +386,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
 
       <ManagementListSection
         title="Primary fallback signer"
-        description="Set an account-level fallback signer so SmartFlow can recover from stale local sessions across devices."
+        description={`Set an account-level fallback signer so ${BRAND_NAME} can recover from stale local sessions across devices.`}
         footer={
           <div className="border-border/60 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
@@ -475,7 +476,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
               signer session becomes stale.
             </p>
             <p className="text-muted-foreground mt-3 text-xs">
-              Recommended if you use SmartFlow on more than one device.
+              Recommended if you use {BRAND_NAME} on more than one device.
             </p>
           </div>
         )}

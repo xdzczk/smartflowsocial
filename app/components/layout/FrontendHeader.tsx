@@ -1,6 +1,7 @@
 import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
+import { BRAND_NAME } from "~/lib/brand";
 
 export default function Header() {
   return (
@@ -14,12 +15,12 @@ export default function Header() {
             href="https://smartflow.social"
             rel="noopener noreferrer"
             className="flex h-10 items-center justify-center transition sm:h-12 lg:h-16"
-            aria-label="SmartFlow Social – Home"
+            aria-label={`${BRAND_NAME} – Home`}
           >
             <Logo
               lightSrc="/logos/Logo-Full-LightMode.svg"
               darkSrc="/logos/Logo-Full-DarkMode.svg"
-              alt="SmartFlow Social"
+              alt={BRAND_NAME}
               className="h-7 w-auto sm:h-9 lg:h-10"
             />
           </a>

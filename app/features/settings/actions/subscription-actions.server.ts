@@ -15,6 +15,7 @@ import {
 } from "~/features/payments/data";
 import type { InvoiceResponse } from "~/features/payments/types";
 import { getDecryptedUserNWC } from "~/features/user";
+import { subscriptionTopUpDescription } from "~/lib/brand";
 import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
 import {
@@ -354,7 +355,7 @@ async function handleTopUpSubscription(
     const invoice = await createPlanInvoice({
       planId: plan.id,
       userId,
-      description: `SmartFlow Social - Subscription top-up`,
+      description: subscriptionTopUpDescription,
       amountUsdOverride: priceUsd,
       billingCadence: cadence,
       accessDurationMonths: durationMonths,

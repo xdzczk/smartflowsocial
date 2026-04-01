@@ -4,6 +4,7 @@ import { getUserSubscription } from "~/features/payments/data";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { getUserById } from "~/features/user";
+import { BRAND_NAME } from "~/lib/brand";
 import { env } from "~/lib/env.server";
 import { AuthorizationError } from "~/lib/errors";
 
@@ -167,7 +168,7 @@ export async function issueBlossomBulkTokens(
   const canonicalPolicy = getCanonicalPlanPolicy(commercialPlanType);
   if (!canonicalPolicy.media.canUseSfsBlossomStorage) {
     throw new AuthorizationError(
-      "SmartFlowSocial-hosted media is available on Creator and Pro plans.",
+      `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
       { commercialPlanType, planId: subscription?.planId ?? null }
     );
   }

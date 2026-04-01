@@ -6,6 +6,7 @@ import type {
   PrimarySignerProfile,
   RemoteSignerConnection,
 } from "~/features/auth/signer";
+import { BRAND_NAME } from "~/lib/brand";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import { SessionCard } from "./SessionCard";
@@ -102,7 +103,7 @@ export function RemoteSignerConnectionList({
             </h3>
             <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
               Connect a signer app to publish securely without exposing your key
-              to SmartFlow.
+              to {BRAND_NAME}.
             </p>
             <Button
               type="button"

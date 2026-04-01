@@ -21,6 +21,7 @@ import type {
   ComposerRelayListSource,
   ComposerRelayLists,
 } from "~/features/relays/composer-relay-lists";
+import { BRAND_NAME } from "~/lib/brand";
 
 function formatRelayUrl(url: string): string {
   try {
@@ -129,7 +130,7 @@ export function RelaySelectorModal({
   const defaultHint =
     accountPublishRelaySource === "nip65_profile"
       ? "Account default follows your Nostr profile relay list (NIP-65)."
-      : "Account default follows your SmartFlow app relay list.";
+      : `Account default follows your ${BRAND_NAME} app relay list.`;
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
@@ -162,7 +163,7 @@ export function RelaySelectorModal({
             className="flex-1 min-[380px]:flex-none"
             onClick={() => applySource("app")}
           >
-            SmartFlow app
+            {BRAND_NAME} app
           </Button>
           <Button
             type="button"
