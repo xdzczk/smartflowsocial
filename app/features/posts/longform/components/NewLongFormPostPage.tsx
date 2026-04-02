@@ -371,20 +371,21 @@ export default function NewLongFormPostPage() {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
             const action = determineModalAction(modalPost, modalLongFormPost);
 
+            setShowPublishModal(false);
+            setModalPostId(null);
+            setModalPost(null);
+            setModalLongFormPost(null);
+
             if (action === "schedule") {
-              // Navigate to scheduled page
               if (postType === "longform") {
                 navigate("/dashboard/scheduled?tab=longform");
               } else {
                 navigate("/dashboard/scheduled");
               }
+            } else if (postType === "longform") {
+              navigate("/dashboard/published?tab=longform");
             } else {
-              // Navigate to posted page
-              if (postType === "longform") {
-                navigate("/dashboard/published?tab=longform");
-              } else {
-                navigate("/dashboard/published");
-              }
+              navigate("/dashboard/published");
             }
           }}
         />
