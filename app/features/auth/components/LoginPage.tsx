@@ -39,7 +39,16 @@ export default function LoginPage() {
               <LoginWelcomeHeader />
 
               <div className="space-y-6">
-                {mounted ? <NostrLoginPanel /> : null}
+                {mounted ? (
+                  <NostrLoginPanel />
+                ) : (
+                  <div
+                    className="text-muted-foreground animate-pulse text-sm"
+                    aria-live="polite"
+                  >
+                    Preparing sign-in…
+                  </div>
+                )}
               </div>
             </LoginAuthCard>
           </LoginAuthShellProvider>

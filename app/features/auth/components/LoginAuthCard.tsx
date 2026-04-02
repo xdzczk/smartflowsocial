@@ -49,13 +49,14 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
   return (
     <Card
       className={cn(
-        "border-border ring-border/45 flex min-h-[min(520px,72vh)] flex-col overflow-hidden ring-1 shadow-xl md:min-h-[440px] dark:ring-0 dark:shadow-2xl",
-        isAwaitingApproval && "flex-col-reverse md:flex-row"
+        "border-border ring-border/45 flex min-h-0 w-full min-w-0 flex-col overflow-hidden ring-1 shadow-xl md:min-h-[min(440px,70vh)] md:flex-row dark:ring-0 dark:shadow-2xl",
+        /* Mobile: show QR / approval block first when waiting for NIP-46 */
+        isAwaitingApproval && "max-md:flex-col-reverse"
       )}
     >
       <CardContent
         className={cn(
-          "flex flex-1 flex-col p-6 md:min-h-0 md:min-w-0 md:flex-[1_1_0] md:p-10 lg:p-16",
+          "flex w-full min-w-0 flex-col p-6 md:min-h-0 md:min-w-0 md:flex-[1_1_0] md:overflow-y-auto md:p-10 lg:p-16",
           !isAwaitingApproval && "border-border/70 md:border-r"
         )}
       >
@@ -64,7 +65,9 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
 
       <div
         className={cn(
-          "login-motif-panel hero-motif-bg relative flex min-h-[220px] flex-1 flex-col items-center justify-center px-6 py-10 md:min-h-full md:flex-[1_1_0] md:px-10 lg:p-16",
+          "login-motif-panel hero-motif-bg relative flex w-full min-w-0 shrink-0 flex-col items-center justify-center px-6 py-10 md:min-h-0 md:flex-[1_1_0] md:self-stretch md:px-10 lg:p-16",
+          /* Mobile: fixed sensible height for trust/motif; avoid flex-1 splitting with left column (clips CTAs under overflow-hidden) */
+          "min-h-[200px] max-md:max-h-[min(40vh,320px)] md:min-h-full",
           isAwaitingApproval &&
             "border-border/60 bg-muted/25 dark:bg-muted/10 md:border-border/60 border-t md:border-t-0 md:border-l"
         )}
