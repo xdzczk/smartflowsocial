@@ -30,7 +30,8 @@ export function hasStoredThemePreference(): boolean {
 
 export function setStoredThemePreference(value: StoredThemePreference): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(THEME_STORAGE_KEY, value);
+  // Must match ThemeToggle's useLocalStorage, which reads via JSON.parse.
+  window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(value));
 }
 
 export function getSystemEffectiveTheme(): EffectiveTheme {
