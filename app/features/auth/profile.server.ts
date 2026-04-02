@@ -27,7 +27,10 @@ export function validateNpub(npub: string): boolean {
   }
 }
 
-/** Max time login-related paths wait on Primal before continuing without profile data. */
+/**
+ * Max wall-clock time to wait on Primal before continuing without profile data.
+ * Used for login, root loader refresh, and other interactive paths (HTTP Primal alone can be ~8s/attempt).
+ */
 export const LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS = 5000;
 
 /**
@@ -226,7 +229,10 @@ export async function refreshUserProfileIfEmpty(
 ): Promise<UserWithHashTagPresets> {
   if (!isProfileEmpty(user.nostrProfile)) return user;
 
-  const { nostrProfile } = await getCompleteProfile({ npub: user.npub });
+  const { nostrProfile } = await getCompleteProfile({
+    npub: user.npub,
+    primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+  });
   const fetched = normalizeDisplayBits(pickDisplayBits(nostrProfile));
   if (!fetched.picture && !fetched.name && !fetched.display_name) return user;
 
@@ -244,7 +250,10 @@ export async function refreshUserProfileIfEmpty(
 export async function refreshUserProfileIfChanged(
   user: UserWithHashTagPresets
 ): Promise<UserWithHashTagPresets> {
-  const { nostrProfile } = await getCompleteProfile({ npub: user.npub });
+  const { nostrProfile } = await getCompleteProfile({
+    npub: user.npub,
+    primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+  });
 
   const fetched = normalizeDisplayBits(pickDisplayBits(nostrProfile));
   if (!fetched.picture && !fetched.name && !fetched.display_name) return user;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { setActiveSignerConfig } from "~/features/auth/signer";
+import { recordNip07GetPublicKeyUsed } from "~/lib/nip07-readiness.client";
 import {
   canAttemptCircuitBreaker,
   getCircuitBreakerStatus,
@@ -104,6 +105,7 @@ export function useNip07Login({
     try {
       const s = new Nip07Signer();
       const pk = await s.getPublicKey();
+      recordNip07GetPublicKeyUsed();
       if (myAttempt !== connectAttemptRef.current) {
         setStatus("idle");
         return;

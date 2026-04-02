@@ -22,6 +22,14 @@ const EVENT_NOSTR_CONNECTION_STALE = "nostr-connection-stale";
 let currentReadiness: Nip07Readiness = "unknown";
 /** Last time we called window.nostr.getPublicKey() for readiness check (0 = never). */
 let lastGetPublicKeyCheckTime = 0;
+
+/**
+ * Call after a successful NIP-07 `getPublicKey` elsewhere (e.g. login) so dashboard
+ * `checkNip07Readiness` does not immediately call `getPublicKey` again within the throttle window (60s).
+ */
+export function recordNip07GetPublicKeyUsed(): void {
+  lastGetPublicKeyCheckTime = Date.now();
+}
 /** Consecutive getPublicKey check failures (timeout/error). Reset on success. */
 let consecutiveReadinessFailures = 0;
 const listeners = new Set<(state: Nip07Readiness) => void>();

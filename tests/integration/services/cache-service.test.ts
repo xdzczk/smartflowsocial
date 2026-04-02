@@ -26,6 +26,13 @@ vi.mock("~/lib/env.server", async (importOriginal) => {
             "https://cache.example.com/api"
           );
         }
+        // Match pre–fail-fast production defaults so retry / timer tests stay stable.
+        if (prop === "PRIMAL_HTTP_TIMEOUT_MS") {
+          return process.env["PRIMAL_HTTP_TIMEOUT_MS"] ?? "15000";
+        }
+        if (prop === "PRIMAL_HTTP_MAX_RETRIES") {
+          return process.env["PRIMAL_HTTP_MAX_RETRIES"] ?? "2";
+        }
         return envRecord[prop];
       },
     }),

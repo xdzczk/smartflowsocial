@@ -23,19 +23,24 @@ interface CachedUserProfile {
 }
 
 /**
- * Fetch user profile from API with timeout
+ * Fetch user profile from Primal with a hard wall-clock budget.
+ * Resolves to [] on timeout (does not cancel the upstream fetch).
  */
 async function fetchUserProfileFromAPI(
   pubkey: string,
-  timeout = 2000
+  budgetMs = 8000
 ): Promise<unknown[]> {
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("Request timeout")), timeout)
+  const timeoutPromise = new Promise<unknown[]>((resolve) =>
+    setTimeout(() => resolve([]), budgetMs)
   );
 
-  const fetchPromise = connectToPrimalCache("user_profile", {
-    pubkey,
-  });
+  const fetchPromise = (async (): Promise<unknown[]> => {
+    try {
+      return await connectToPrimalCache("user_profile", { pubkey });
+    } catch {
+      return [];
+    }
+  })();
 
   const result = await Promise.race([fetchPromise, timeoutPromise]);
   return Array.isArray(result) ? result : [];

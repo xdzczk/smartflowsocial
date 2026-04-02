@@ -520,10 +520,16 @@ export default function NostrLoginPanel() {
         cacheNip46SignerFromLogin(signer);
         signerTransferredToManagerRef.current = true;
       }
-      // Use client-side navigation so the in-memory NIP-46 signer cache is preserved (full reload would lose it)
       queryClient.clear();
       clearPersistedState();
-      navigate(verify.redirectTo, { replace: true });
+      const nextUrl = verify.redirectTo;
+      // NIP-07: full navigation avoids a long blank "authenticated" state if SPA transition waits on loaders.
+      // NIP-46: keep client-side navigation so in-memory signer survives.
+      if (signer.type === "nip07" && typeof window !== "undefined") {
+        window.location.assign(nextUrl);
+        return;
+      }
+      navigate(nextUrl, { replace: true });
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors
@@ -599,6 +605,8 @@ export default function NostrLoginPanel() {
       return;
     }
     if (lastFailureOrigin === "verify") {
+      // Effect also runs on requesting_signature; avoid double performLogin.
+      hasTriggeredLoginRef.current = true;
       void performLogin();
       return;
     }
@@ -745,6 +753,10 @@ export default function NostrLoginPanel() {
       {!pubkey &&
       (state === "requesting_signature" || state === "verifying_signature") ? (
         <LoginGenericLoading message="Finalizing sign in…" />
+      ) : null}
+
+      {state === "authenticated" ? (
+        <LoginGenericLoading message="Signed in. Opening your dashboard…" />
       ) : null}
 
       {state === "failed" && error ? (
