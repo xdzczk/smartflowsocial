@@ -48,6 +48,7 @@ const USER_SCALAR_SELECT = {
   defaultZapAmountSats: true,
   blastrRelayEnabled: true,
   broadcastSettings: true,
+  themePreference: true,
 } as const;
 
 export type UserWithHashTagPresetsRow = {

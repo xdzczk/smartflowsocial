@@ -34,6 +34,14 @@ import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
 import { getSiteOrigin } from "~/lib/site-url.server";
 import stylesheet from "~/tailwind.css";
 
+/** Serialized for inline script: valid theme string or `null` when logged out. */
+function accountThemeScriptLiteral(user: unknown): string {
+  if (!user || typeof user !== "object") return "null";
+  const t = (user as { themePreference?: unknown }).themePreference;
+  if (t === "system" || t === "light" || t === "dark") return JSON.stringify(t);
+  return JSON.stringify("system");
+}
+
 export const links: LinksFunction = () => {
   return [
     // KanitCyrillic font from Google Fonts
@@ -154,6 +162,11 @@ export default function App() {
       ? loaderData.nonce
       : undefined;
 
+  const userForTheme =
+    typeof loaderData === "object" && "user" in loaderData
+      ? (loaderData as { user: unknown }).user
+      : null;
+
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
@@ -162,6 +175,11 @@ export default function App() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__SFS_ACCOUNT_THEME__=${accountThemeScriptLiteral(userForTheme)};`,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -183,11 +201,18 @@ export default function App() {
                   else document.documentElement.classList.remove('dark');
                 }
 
+                var accountPref = window.__SFS_ACCOUNT_THEME__;
                 var stored = localStorage.getItem('theme');
                 var pref = parseStoredTheme(stored);
 
-                // Default for first-run: follow system.
-                if (!pref) pref = 'system';
+                if (accountPref === 'system' || accountPref === 'light' || accountPref === 'dark') {
+                  pref = accountPref;
+                  try {
+                    localStorage.setItem('theme', JSON.stringify(accountPref));
+                  } catch (e) { /* ignore */ }
+                } else if (!pref) {
+                  pref = 'system';
+                }
 
                 var effective = (pref === 'system') ? systemEffectiveTheme() : pref;
                 applyEffectiveTheme(effective);
