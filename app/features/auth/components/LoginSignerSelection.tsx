@@ -1,4 +1,7 @@
+"use client";
+
 import { AlertTriangle, ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -6,6 +9,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { isMobile } from "~/lib/is-mobile";
+import { cn } from "~/lib/utils";
 
 import { PrimalLogoIcon } from "./PrimalLogoIcon";
 
@@ -23,18 +27,36 @@ export function LoginSignerSelection({
   onPrimal,
   nip07Available,
 }: LoginSignerSelectionProps) {
+  const [highlighted, setHighlighted] = useState<"nip07" | "nip46" | null>(
+    null
+  );
+
+  const implied = useMemo(
+    () => (nip07Available === false ? "nip46" : "nip07"),
+    [nip07Available]
+  );
+  const activeHint = highlighted ?? implied;
+
+  const helperLine =
+    activeHint === "nip07"
+      ? "Best for Alby, nos2x, and other NIP-07 browser signers."
+      : "Best for Amber, nsecBunker, and other NIP-46 remote signers.";
+
   return (
-    <div className="min-h-[164px] space-y-4">
-      <div className="text-foreground text-base font-semibold">
-        Sign in with Nostr
-      </div>
+    <div className="animate-in fade-in slide-in-from-bottom-1 min-h-[164px] space-y-4 duration-200">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Button
             type="button"
             variant="default"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-full py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl"
+            className={cn(
+              "bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-full py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl",
+              highlighted === "nip07" &&
+                "ring-primary/50 ring-offset-background ring-2 ring-offset-2"
+            )}
             onClick={onNip07}
+            onMouseEnter={() => setHighlighted("nip07")}
+            onFocus={() => setHighlighted("nip07")}
             disabled={nip07Available === false}
           >
             <span className="flex items-center justify-center gap-2">
@@ -83,15 +105,33 @@ export function LoginSignerSelection({
             </div>
           ) : null}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="border-border bg-card hover:bg-muted hover:text-foreground h-auto py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg"
-          onClick={onNip46}
-        >
-          Remote Signer
-        </Button>
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "border-border bg-card hover:bg-muted hover:text-foreground h-auto w-full py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg",
+              highlighted === "nip46" &&
+                "ring-primary/40 ring-offset-background ring-2 ring-offset-2"
+            )}
+            onClick={onNip46}
+            onMouseEnter={() => setHighlighted("nip46")}
+            onFocus={() => setHighlighted("nip46")}
+          >
+            Remote Signer
+          </Button>
+        </div>
       </div>
+
+      <p className="text-muted-foreground min-h-[2.5rem] text-center text-xs leading-relaxed sm:text-left">
+        {helperLine}
+      </p>
+
+      <div className="text-muted-foreground/90 border-border/60 space-y-0.5 border-t pt-3 text-center text-[11px] leading-relaxed sm:text-left">
+        <p>No private key upload</p>
+        <p>Signer-based authentication only</p>
+      </div>
+
       {isMobile() && onPrimal ? (
         <Button
           type="button"

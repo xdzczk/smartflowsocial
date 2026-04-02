@@ -11,8 +11,27 @@ type CacheResponse = unknown[];
 const SENTRY_SPAN_NAME_PRIMAL_FETCH = "primal_cache.fetch";
 const SENTRY_SPAN_OP_HTTP_CLIENT = "http.client";
 
-/** Timeout for Primal HTTP fetch (relay/cache can be slow under load). */
-const PRIMAL_HTTP_TIMEOUT_MS = 15000;
+/** Default per-attempt timeout when calling Primal over HTTP (was 15s × 3 attempts ≈ 45s wall time). */
+const DEFAULT_PRIMAL_HTTP_TIMEOUT_MS = 8000;
+
+/** Default extra retries after the first attempt (maxRetries in fetch layer = this value). */
+const DEFAULT_PRIMAL_HTTP_MAX_RETRIES = 0;
+
+function parsePrimalHttpTimeoutMs(): number {
+  const raw = env.PRIMAL_HTTP_TIMEOUT_MS?.trim();
+  if (!raw) return DEFAULT_PRIMAL_HTTP_TIMEOUT_MS;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) return DEFAULT_PRIMAL_HTTP_TIMEOUT_MS;
+  return Math.min(60_000, Math.max(2_000, n));
+}
+
+function parsePrimalHttpMaxRetries(): number {
+  const raw = env.PRIMAL_HTTP_MAX_RETRIES?.trim();
+  if (!raw) return DEFAULT_PRIMAL_HTTP_MAX_RETRIES;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) return DEFAULT_PRIMAL_HTTP_MAX_RETRIES;
+  return Math.min(5, Math.max(0, n));
+}
 
 function cacheTtlSecondsForRequestType(requestType: string): {
   ttlSeconds: number | null;
@@ -70,8 +89,8 @@ async function fetchFromPrimalViaHttp(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requestType, params }),
-        timeout: PRIMAL_HTTP_TIMEOUT_MS,
-        maxRetries: 2,
+        timeout: parsePrimalHttpTimeoutMs(),
+        maxRetries: parsePrimalHttpMaxRetries(),
         retryOn5xx: true,
       })
   );

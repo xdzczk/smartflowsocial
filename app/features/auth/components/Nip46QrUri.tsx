@@ -31,7 +31,7 @@ export interface Nip46QrUriProps {
   approvalSubtext?: string;
 }
 
-const QR_APPROVAL_SIZE = 256;
+const QR_APPROVAL_SIZE = 280;
 const QR_INLINE_SIZE = 168;
 
 /** NIP-46 QR code and Nostr Connect URI display with copy button. */
@@ -71,7 +71,7 @@ export function Nip46QrUri({
 
         <div
           className={cn(
-            "border-border/60 flex min-h-[280px] w-full max-w-[280px] items-center justify-center rounded-xl border bg-white p-5 shadow-sm",
+            "border-border flex min-h-[min(320px,85vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-6 shadow-md",
             "dark:border-white/10 dark:bg-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_8px_40px_-12px_rgba(0,0,0,0.45)]"
           )}
         >
@@ -79,7 +79,7 @@ export function Nip46QrUri({
             <QRCode value={uri} size={QR_APPROVAL_SIZE} />
           ) : (
             <div
-              className="bg-muted/80 flex h-[256px] w-[256px] max-w-full animate-pulse rounded-md"
+              className="bg-muted/80 flex h-[280px] w-[280px] max-w-full animate-pulse rounded-md"
               aria-hidden
             />
           )}
@@ -88,7 +88,7 @@ export function Nip46QrUri({
         <div className="w-full max-w-md space-y-3 text-left">
           <Label
             htmlFor={textareaId}
-            className="text-muted-foreground text-xs font-medium"
+            className="text-foreground text-xs font-semibold"
           >
             {label}
           </Label>
@@ -97,7 +97,7 @@ export function Nip46QrUri({
               id={textareaId}
               readOnly
               value={uri}
-              className="border-input bg-background/80 focus-visible:ring-ring w-full truncate rounded-md border px-3 py-2 font-mono text-xs shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+              className="border-input bg-background focus-visible:ring-ring w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs shadow-sm focus-visible:ring-1 focus-visible:outline-none"
             />
           ) : (
             <div

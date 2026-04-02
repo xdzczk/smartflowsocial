@@ -5,7 +5,10 @@
 
 import { json } from "@remix-run/node";
 
-import { getCompleteProfile } from "~/features/auth/profile.server";
+import {
+  getCompleteProfile,
+  LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+} from "~/features/auth/profile.server";
 import type { ProfileData } from "~/features/nostr/types";
 import { getUserSubscription } from "~/features/payments/data";
 import {
@@ -113,7 +116,10 @@ export async function loadChildrenData(userId: string) {
   const refreshedProfiles = await Promise.all(
     confirmed.map(async (c) => {
       try {
-        const { nostrProfile } = await getCompleteProfile({ npub: c.npub });
+        const { nostrProfile } = await getCompleteProfile({
+          npub: c.npub,
+          primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+        });
         if (!isDisplayProfileEmpty(nostrProfile)) {
           await createUser(c.npub, JSON.stringify(nostrProfile));
           return { npub: c.npub, nostrProfile };

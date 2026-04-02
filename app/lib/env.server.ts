@@ -31,6 +31,10 @@ interface EnvConfig {
 
   // Optional
   PRIMAL_CACHING_URL?: string;
+  /** HTTP Primal proxy: per-attempt timeout ms (default 8000). */
+  PRIMAL_HTTP_TIMEOUT_MS?: string;
+  /** HTTP Primal proxy: extra retries after first attempt (default 0). */
+  PRIMAL_HTTP_MAX_RETRIES?: string;
   OWNER_NWC?: string;
   OWNER_NWC_RELAY?: string;
   OWNER_NWC_RELAYS?: string;
@@ -193,6 +197,8 @@ function addOptionalStorageConfig(
 function addOptionalConfig(config: EnvConfig): void {
   const optionalVars: Array<keyof EnvConfig> = [
     "PRIMAL_CACHING_URL",
+    "PRIMAL_HTTP_TIMEOUT_MS",
+    "PRIMAL_HTTP_MAX_RETRIES",
     "OWNER_NWC",
     "OWNER_NWC_RELAY",
     "OWNER_NWC_RELAYS",

@@ -36,113 +36,128 @@ export function LoginNip46Form({
   nostrConnectUri,
 }: LoginNip46FormProps) {
   return (
-    <div className="border-border bg-card space-y-4 rounded-lg border p-6 shadow-lg dark:bg-[hsl(var(--landing-card-elevated))] dark:shadow-xl">
+    <div className="animate-in fade-in slide-in-from-bottom-1 space-y-6 duration-200">
       <div className="space-y-2">
-        <div className="text-foreground text-base font-bold">Remote signer</div>
-        <div className="text-muted-foreground text-sm leading-relaxed">
-          Connect a remote signer and approve a profile. Each profile represents
-          a different identity (pubkey).
-        </div>
+        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          Remote signer
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Connect with Amber, nsecBunker, or another NIP-46 signer. Your keys
+          stay in the signer — we never ask for your private key.
+        </p>
       </div>
 
-      <Tabs
-        value={nip46Tab}
-        onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
-      >
-        <TabsList className="border-border bg-muted w-full">
-          <TabsTrigger
-            value="bunker"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
-          >
-            Paste bunker input
-          </TabsTrigger>
-          <TabsTrigger
-            value="nostrconnect"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1"
-          >
-            Generate nostrconnect URI
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="bunker" className="space-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="nip46BunkerInput">Bunker input</Label>
-            <Input
-              id="nip46BunkerInput"
-              name="nip46BunkerInput"
-              value={nip46Input}
-              onChange={(e) => setNip46Input(e.target.value)}
-              placeholder="bunker://..."
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={onConnect}
-              disabled={!nip46Input.trim() || isConnectionInProgress}
+      <div className="border-border/80 border-t pt-5">
+        <Tabs
+          value={nip46Tab}
+          onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
+        >
+          <TabsList className="border-border bg-muted/80 h-auto w-full flex-wrap gap-1 p-1">
+            <TabsTrigger
+              value="bunker"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 px-3 py-2 text-sm"
             >
-              Connect
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onCancel()}>
-              Cancel
-            </Button>
-          </div>
-        </TabsContent>
+              Paste bunker input
+            </TabsTrigger>
+            <TabsTrigger
+              value="nostrconnect"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 px-3 py-2 text-sm"
+            >
+              Generate nostrconnect URI
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="nostrconnect" className="space-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="nip46Relays">Relays</Label>
-            <textarea
-              id="nip46Relays"
-              name="nip46Relays"
-              aria-describedby="nip46RelaysHelp"
-              className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
-              value={relayList}
-              onChange={(e) => setRelayList(e.target.value)}
-            />
-            <div id="nip46RelaysHelp" className="text-muted-foreground text-xs">
-              If approval gets stuck, try removing unreachable relays or add
-              alternatives.
-            </div>
-            {relayUrls.length > 0 ? (
-              <RelayCheckStatus
-                relayUrls={relayUrls}
-                relayStatuses={relayStatuses}
-                title="Relay status (best-effort connectivity check):"
+          <TabsContent value="bunker" className="mt-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="nip46BunkerInput">Bunker input</Label>
+              <Input
+                id="nip46BunkerInput"
+                name="nip46BunkerInput"
+                value={nip46Input}
+                onChange={(e) => setNip46Input(e.target.value)}
+                placeholder="bunker+nostr://… or bunker://…"
               />
-            ) : null}
-          </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={onConnect}
+                disabled={!nip46Input.trim() || isConnectionInProgress}
+              >
+                Connect
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onCancel()}
+              >
+                Back
+              </Button>
+            </div>
+          </TabsContent>
 
-          {nostrConnectUri ? (
-            <div className="space-y-1">
-              <Label htmlFor="nip46NostrConnectUri">nostrconnect URI</Label>
+          <TabsContent value="nostrconnect" className="mt-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="nip46Relays">Relays</Label>
               <textarea
-                id="nip46NostrConnectUri"
-                readOnly
-                className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
-                value={nostrConnectUri}
+                id="nip46Relays"
+                name="nip46Relays"
+                aria-describedby="nip46RelaysHelp"
+                className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                value={relayList}
+                onChange={(e) => setRelayList(e.target.value)}
               />
-              <div className="text-muted-foreground text-xs">
-                Paste this into your remote signer to approve. Then return here
-                and wait for approval.
+              <div
+                id="nip46RelaysHelp"
+                className="text-muted-foreground text-xs"
+              >
+                If approval gets stuck, remove unreachable relays or add
+                alternatives.
               </div>
+              {relayUrls.length > 0 ? (
+                <RelayCheckStatus
+                  relayUrls={relayUrls}
+                  relayStatuses={relayStatuses}
+                  title="Relay connectivity"
+                />
+              ) : null}
             </div>
-          ) : null}
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={onConnect}
-              disabled={isConnectionInProgress}
-            >
-              {nostrConnectUri ? "Retry" : "Generate & wait"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onCancel()}>
-              Cancel
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+            {nostrConnectUri ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="nip46NostrConnectUri">nostrconnect URI</Label>
+                <textarea
+                  id="nip46NostrConnectUri"
+                  readOnly
+                  className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                  value={nostrConnectUri}
+                />
+                <div className="text-muted-foreground text-xs">
+                  Approve in your remote signer, then keep this page open while
+                  we finish connecting.
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={onConnect}
+                disabled={isConnectionInProgress}
+              >
+                {nostrConnectUri ? "Retry" : "Generate & wait"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onCancel()}
+              >
+                Back
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

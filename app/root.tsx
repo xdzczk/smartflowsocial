@@ -203,15 +203,15 @@ export default function App() {
 
                 var accountPref = window.__SFS_ACCOUNT_THEME__;
                 var stored = localStorage.getItem('theme');
-                var pref = parseStoredTheme(stored);
+                var sessionRaw = localStorage.getItem('theme_session');
+                var sessionOverride = parseStoredTheme(sessionRaw);
+                var pref;
 
                 if (accountPref === 'system' || accountPref === 'light' || accountPref === 'dark') {
-                  pref = accountPref;
-                  try {
-                    localStorage.setItem('theme', JSON.stringify(accountPref));
-                  } catch (e) { /* ignore */ }
-                } else if (!pref) {
-                  pref = 'system';
+                  pref = sessionOverride || accountPref;
+                } else {
+                  pref = parseStoredTheme(stored);
+                  if (!pref) pref = 'system';
                 }
 
                 var effective = (pref === 'system') ? systemEffectiveTheme() : pref;
