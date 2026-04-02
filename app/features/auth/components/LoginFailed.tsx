@@ -10,6 +10,8 @@ import {
   type RelayStatus,
 } from "~/features/auth/login-flow.client";
 
+import { AuthInlineTipList } from "./auth-ui";
+
 export interface LoginFailedProps {
   error: { code: LoginError; message: string; details?: string };
   relayStatuses: Record<string, RelayStatus>;
@@ -18,7 +20,9 @@ export interface LoginFailedProps {
   nip46AttemptCount: number;
   onTryAgain: () => void;
   onBack: () => void;
-  errorRegionRef?: React.RefObject<HTMLDivElement | null>;
+  /** Offer remote signer when browser extension path is unlikely to succeed */
+  showRemoteSignerFallback?: boolean;
+  onUseRemoteSigner?: () => void;
 }
 
 export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
@@ -31,7 +35,8 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
       nip46AttemptCount,
       onTryAgain,
       onBack,
-      errorRegionRef,
+      showRemoteSignerFallback = false,
+      onUseRemoteSigner,
     },
     ref
   ) {
@@ -45,92 +50,54 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
     });
 
     const classification = classifyErrorForRetry(error);
+    const cappedTips = suggestions.slice(0, 5);
 
     return (
       <Alert
-        ref={errorRegionRef ?? ref}
+        ref={ref}
         tabIndex={-1}
         aria-live="assertive"
-        variant="destructive"
-        className="space-y-3 p-5 text-sm shadow-lg"
+        variant="default"
+        className="animate-in fade-in slide-in-from-bottom-1 border-destructive/45 bg-destructive/5 dark:bg-destructive/10 space-y-4 p-5 text-sm shadow-lg duration-200"
       >
-        <AlertTitle>{getErrorTitle(error.code)}</AlertTitle>
-        <AlertDescription className="space-y-3">
-          <div className="leading-relaxed">{error.message}</div>
-          <ul className="list-disc space-y-1.5 pl-5 text-xs">
-            {suggestions.map((s) => (
-              <li key={s} className="leading-relaxed">
-                {s}
-              </li>
-            ))}
-          </ul>
+        <AlertTitle className="text-destructive text-base">
+          {getErrorTitle(error.code)}
+        </AlertTitle>
+        <AlertDescription className="space-y-4">
+          <p className="text-foreground/95 leading-relaxed">{error.message}</p>
+
+          {cappedTips.length > 0 ? (
+            <AuthInlineTipList intro="What to try" items={cappedTips} />
+          ) : null}
 
           <details className="text-xs">
             <summary className="hover:text-foreground cursor-pointer font-medium select-none">
-              Advanced Troubleshooting
+              Technical details
             </summary>
             <div className="mt-3 space-y-3">
               {error.details ? (
-                <div>
-                  <div className="mb-1 font-medium">Technical Details:</div>
-                  <pre className="border-border bg-background dark:bg-card overflow-x-auto rounded-md border p-3 text-xs whitespace-pre-wrap">
-                    {error.details}
-                  </pre>
-                </div>
-              ) : null}
-
-              <div>
-                <div className="mb-1 font-medium">Error Classification:</div>
-                <div className="border-border bg-muted/50 dark:bg-muted/30 rounded-md border p-2 text-xs">
-                  <div className="space-y-1">
-                    <div>
-                      <span className="font-medium">Type: </span>
-                      {classification.isNetworkError ? "Network Error" : null}
-                      {classification.isTimeoutError ? "Timeout Error" : null}
-                      {classification.isPermissionError
-                        ? "Permission Error"
-                        : null}
-                      {!classification.isNetworkError &&
-                      !classification.isTimeoutError &&
-                      !classification.isPermissionError
-                        ? "Other Error"
-                        : null}
-                    </div>
-                    <div>
-                      <span className="font-medium">Retry Strategy: </span>
-                      {classification.retryStrategy === "exponential_backoff"
-                        ? "Exponential Backoff"
-                        : null}
-                      {classification.retryStrategy === "progressive_timeout"
-                        ? "Progressive Timeout"
-                        : null}
-                      {classification.retryStrategy === "none"
-                        ? "No Auto-Retry"
-                        : null}
-                    </div>
-                    <div>
-                      <span className="font-medium">Should Retry: </span>
-                      {classification.shouldRetry ? "Yes" : "No"}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <pre className="border-border bg-background dark:bg-card max-h-40 overflow-x-auto overflow-y-auto rounded-md border p-3 text-[11px] whitespace-pre-wrap">
+                  {error.details}
+                </pre>
+              ) : (
+                <p className="text-muted-foreground">No extra details.</p>
+              )}
 
               {relayUrls.length > 0 ? (
                 <div>
-                  <div className="mb-1 font-medium">Relay Status:</div>
-                  <div className="border-border bg-muted/50 dark:bg-muted/30 space-y-1 rounded-md border p-2 text-xs">
+                  <div className="mb-1.5 font-medium">Relays last checked</div>
+                  <div className="border-border bg-muted/40 space-y-1 rounded-md border p-2 text-[11px]">
                     {relayUrls.map((url) => {
                       const status = relayStatuses[url];
                       return (
-                        <div key={url} className="flex justify-between">
+                        <div key={url} className="flex justify-between gap-2">
                           <span className="truncate font-mono">{url}</span>
-                          <span className="ml-2 shrink-0">
+                          <span className="shrink-0">
                             {status?.status === "connected"
-                              ? "✓ Connected"
+                              ? "OK"
                               : status?.status === "failed"
-                                ? "✗ Failed"
-                                : "… Checking"}
+                                ? "Unreachable"
+                                : "…"}
                           </span>
                         </div>
                       );
@@ -139,42 +106,44 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
                 </div>
               ) : null}
 
-              <div>
-                <div className="mb-1 font-medium">Copy Error for Support:</div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => {
-                    void (async () => {
-                      const errorText = `Error Code: ${error.code}\nMessage: ${error.message}\nDetails: ${error.details ?? "N/A"}\nTimestamp: ${new Date().toISOString()}`;
-                      try {
-                        await navigator.clipboard.writeText(errorText);
-                        alert("Error details copied to clipboard");
-                      } catch {
-                        const textarea = document.createElement("textarea");
-                        textarea.value = errorText;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand("copy");
-                        document.body.removeChild(textarea);
-                        alert("Error details copied to clipboard");
-                      }
-                    })();
-                  }}
-                >
-                  Copy Error Details
-                </Button>
+              <div className="text-muted-foreground border-border/60 border-t pt-2 text-[11px]">
+                Retry:{" "}
+                {classification.shouldRetry ? "recommended" : "may not help"} ·
+                Strategy: {classification.retryStrategy.replace(/_/g, " ")}
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  void (async () => {
+                    const errorText = `Error Code: ${error.code}\nMessage: ${error.message}\nDetails: ${error.details ?? "N/A"}\nTimestamp: ${new Date().toISOString()}`;
+                    try {
+                      await navigator.clipboard.writeText(errorText);
+                    } catch {
+                      const textarea = document.createElement("textarea");
+                      textarea.value = errorText;
+                      document.body.appendChild(textarea);
+                      textarea.select();
+                      document.execCommand("copy");
+                      document.body.removeChild(textarea);
+                    }
+                  })();
+                }}
+              >
+                Copy for support
+              </Button>
             </div>
           </details>
-          <div className="flex gap-3 pt-2">
+
+          <div className="flex flex-wrap gap-2 pt-1">
             {error.code === "SIGNER_NOT_FOUND" ? (
               <Button
                 type="button"
                 variant="outline"
-                className="border-border bg-card hover:bg-muted hover:text-foreground"
+                className="border-border"
                 onClick={() => onBack()}
               >
                 Back
@@ -191,13 +160,23 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-border bg-card hover:bg-muted hover:text-foreground"
+                  className="border-border"
                   onClick={() => onBack()}
                 >
                   Back
                 </Button>
               </>
             )}
+            {showRemoteSignerFallback && onUseRemoteSigner ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="font-medium"
+                onClick={() => onUseRemoteSigner()}
+              >
+                Use remote signer instead
+              </Button>
+            ) : null}
           </div>
         </AlertDescription>
       </Alert>

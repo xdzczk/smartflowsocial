@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { setActiveSignerConfig } from "~/features/auth/signer";
 import {
@@ -34,6 +34,7 @@ export function useNip07Login({
   onFailure,
 }: UseNip07LoginOptions): {
   connect: () => Promise<void>;
+  cancelPending: () => void;
   status: Nip07LoginStatus;
   error: Nip07LoginError | null;
   available: boolean | null;
@@ -41,6 +42,7 @@ export function useNip07Login({
   const [status, setStatus] = useState<Nip07LoginStatus>("idle");
   const [error, setError] = useState<Nip07LoginError | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
+  const connectAttemptRef = useRef(0);
 
   useEffect(() => {
     const check = () => {
@@ -64,12 +66,22 @@ export function useNip07Login({
     };
   }, [available]);
 
+  const cancelPending = useCallback(() => {
+    connectAttemptRef.current += 1;
+    setStatus("idle");
+    setError(null);
+  }, []);
+
   const connect = useCallback(async () => {
+    const myAttempt = (connectAttemptRef.current += 1);
     const startTime = Date.now();
     setError(null);
     setStatus("loading");
 
     if (!canAttemptCircuitBreaker("nip07")) {
+      if (myAttempt !== connectAttemptRef.current) {
+        return;
+      }
       const status = getCircuitBreakerStatus("nip07");
       recordConnectionAttempt({
         signerType: "nip07",
@@ -92,6 +104,10 @@ export function useNip07Login({
     try {
       const s = new Nip07Signer();
       const pk = await s.getPublicKey();
+      if (myAttempt !== connectAttemptRef.current) {
+        setStatus("idle");
+        return;
+      }
       if (expectedPubkey && pk !== expectedPubkey) {
         recordCircuitBreakerFailure("nip07");
         recordConnectionAttempt({
@@ -122,6 +138,10 @@ export function useNip07Login({
       setError(null);
       onSuccess(s, pk);
     } catch (e) {
+      if (myAttempt !== connectAttemptRef.current) {
+        setStatus("idle");
+        return;
+      }
       recordCircuitBreakerFailure("nip07");
       const n = normalizeError(e);
       recordConnectionAttempt({
@@ -137,5 +157,8 @@ export function useNip07Login({
     }
   }, [expectedPubkey, onSuccess, onFailure]);
 
-  return { connect, status, error, available };
+  return useMemo(
+    () => ({ connect, cancelPending, status, error, available }),
+    [connect, cancelPending, status, error, available]
+  );
 }

@@ -52,21 +52,21 @@ export function formatNpubShort(pubkeyHex?: string | null): string {
 export function getErrorTitle(code: LoginError): string {
   switch (code) {
     case "SIGNER_NOT_FOUND":
-      return "No signer detected";
+      return "Extension or signer not available";
     case "SIGNER_CONNECTION_DROPPED":
-      return "Couldn't connect to remote signer";
+      return "Lost connection to remote signer";
     case "SIGNER_TIMEOUT":
-      return "Approval timed out";
+      return "Request timed out";
     case "PERMISSION_DENIED":
-      return "Permission denied";
+      return "Request was declined";
     case "PROFILE_MISMATCH":
-      return "Wrong signer profile";
+      return "Wrong identity in signer";
     case "CHALLENGE_EXPIRED":
-      return "Login expired";
+      return "Login session expired";
     case "SIGNATURE_INVALID":
-      return "Signature invalid";
+      return "Couldn't verify signature";
     default:
-      return "Sign-in failed";
+      return "Something went wrong";
   }
 }
 
@@ -82,9 +82,18 @@ export function getErrorSuggestions(
 
   switch (code) {
     case "SIGNER_NOT_FOUND":
-      suggestions.push(
-        "Install/enable a NIP-07 browser extension, or use Remote Signer (NIP-46)."
-      );
+      if (context?.lastFailureOrigin === "nip07_init") {
+        suggestions.push(
+          "Install or enable a NIP-07 browser extension (e.g. Alby or nos2x)."
+        );
+        suggestions.push(
+          "Or use Remote signer — your keys stay in Amber, nsecBunker, etc."
+        );
+      } else {
+        suggestions.push(
+          "Install a NIP-07 extension, or connect with Remote signer (NIP-46)."
+        );
+      }
       break;
     case "SIGNER_CONNECTION_DROPPED":
       suggestions.push("Try again.");
@@ -124,9 +133,15 @@ export function getErrorSuggestions(
       }
       break;
     case "SIGNER_TIMEOUT":
-      suggestions.push(
-        "Approve the request in your remote signer, then try again."
-      );
+      if (context?.lastFailureOrigin === "nip07_init") {
+        suggestions.push(
+          "Your extension didn’t respond in time — unlock it and try again."
+        );
+      } else {
+        suggestions.push(
+          "Approve the request in your remote signer, then try again."
+        );
+      }
       if (context?.relayStatuses) {
         const failedRelays = Object.values(context.relayStatuses).filter(
           (s) => s.status === "failed"
@@ -148,7 +163,10 @@ export function getErrorSuggestions(
       break;
     case "PERMISSION_DENIED":
       suggestions.push(
-        "Approve the permission request in your signer/extension, then try again."
+        "You declined the request — approve it in your extension or remote signer and try again."
+      );
+      suggestions.push(
+        "Unlock the signer and check for a hidden popup or blocked pop-ups."
       );
       break;
     case "PROFILE_MISMATCH":
@@ -230,6 +248,18 @@ export function getRelayStatusLabel(status: RelayCheckStatus): string {
       return "Connected";
     case "failed":
       return "Failed";
+  }
+}
+
+/** User-facing relay row label (calmer than "Failed" in product UI). */
+export function getRelayStatusUserLabel(status: RelayCheckStatus): string {
+  switch (status) {
+    case "checking":
+      return "Checking";
+    case "connected":
+      return "Connected";
+    case "failed":
+      return "Unreachable";
   }
 }
 

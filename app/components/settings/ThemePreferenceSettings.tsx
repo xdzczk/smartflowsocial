@@ -1,6 +1,6 @@
 /**
- * Appearance — theme preference (System / Light / Dark).
- * Persists to account (server) and applies immediately on this device.
+ * Appearance — account default theme (System / Light / Dark).
+ * Header toggle can override for this browser only until you save here again.
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";
@@ -15,26 +15,39 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { PreferenceSection } from "~/features/settings/components/patterns";
-import { BRAND_NAME } from "~/lib/brand";
 import {
-  applyThemePreferenceToDocument,
-  setStoredThemePreference,
+  clearSessionThemeOverride,
+  getSessionThemeOverride,
+  notifyThemeSessionChanged,
+  setSessionThemeOverride,
   type StoredThemePreference,
 } from "~/lib/theme.client";
 
 type AccountThemePreference = StoredThemePreference | null;
+
+interface ThemePreferenceFetcherData {
+  success?: boolean;
+  error?: string;
+  themePreference?: StoredThemePreference;
+}
 
 export function ThemePreferenceSettings({
   themePreference,
 }: {
   themePreference: AccountThemePreference;
 }) {
-  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const fetcher = useFetcher<ThemePreferenceFetcherData>();
   const revalidator = useRevalidator();
   const revalidatorRef = useRef(revalidator);
   useEffect(() => {
     revalidatorRef.current = revalidator;
   }, [revalidator]);
+
+  const pendingClearExpectedRef = useRef<StoredThemePreference | null>(null);
+  const snapshotRef = useRef<{ captured: StoredThemePreference | null } | null>(
+    null
+  );
+  const prevFetcherStateRef = useRef(fetcher.state);
 
   const value: StoredThemePreference = useMemo(() => {
     const pending =
@@ -48,15 +61,43 @@ export function ThemePreferenceSettings({
   }, [fetcher.formData, fetcher.state, themePreference]);
 
   useEffect(() => {
-    if (fetcher.data?.success) {
+    const wasSubmitting = prevFetcherStateRef.current === "submitting";
+    prevFetcherStateRef.current = fetcher.state;
+    if (!wasSubmitting || fetcher.state !== "idle") return;
+    const d = fetcher.data;
+    if (d?.success && d.themePreference) {
+      pendingClearExpectedRef.current = d.themePreference;
       revalidatorRef.current.revalidate();
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.state, fetcher.data]);
+
+  useEffect(() => {
+    const expected = pendingClearExpectedRef.current;
+    if (expected == null) return;
+    const current = themePreference ?? "system";
+    if (current === expected) {
+      clearSessionThemeOverride();
+      notifyThemeSessionChanged();
+      pendingClearExpectedRef.current = null;
+    }
+  }, [themePreference]);
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || fetcher.data == null) return;
+    if (fetcher.data.success) return;
+    if (!("error" in fetcher.data) || !fetcher.data.error) return;
+    const snap = snapshotRef.current;
+    if (snap == null) return;
+    snapshotRef.current = null;
+    if (snap.captured === null) clearSessionThemeOverride();
+    else setSessionThemeOverride(snap.captured);
+    notifyThemeSessionChanged();
+  }, [fetcher.data, fetcher.state]);
 
   const submit = (next: StoredThemePreference) => {
-    // Apply immediately on this device.
-    setStoredThemePreference(next);
-    applyThemePreferenceToDocument(next);
+    snapshotRef.current = { captured: getSessionThemeOverride() };
+    setSessionThemeOverride(next);
+    notifyThemeSessionChanged();
 
     const formData = new FormData();
     formData.append("_action", "update_theme_preference");
@@ -75,7 +116,7 @@ export function ThemePreferenceSettings({
   return (
     <PreferenceSection
       title="Appearance"
-      description={`Choose how ${BRAND_NAME} looks on this device. Saved to your account.`}
+      description={`Default look for new visits and other devices. The header theme button only affects this browser until you save here.`}
     >
       <div className="space-y-2">
         <Label htmlFor="themePreference">Theme</Label>

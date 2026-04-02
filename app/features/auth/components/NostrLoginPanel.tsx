@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { clearPersistedState } from "~/features/auth/lifecycle-manager.client";
 import { postJson } from "~/features/auth/login-api.client";
@@ -37,7 +37,7 @@ import { useRelayCheck } from "../useRelayCheck.client";
 import { LoginAwaitingProfileSelection } from "./LoginAwaitingProfileSelection";
 import { LoginFailed } from "./LoginFailed";
 import { LoginGenericLoading } from "./LoginGenericLoading";
-import { LoginNip07Initializing } from "./LoginNip07Initializing";
+import { LoginNip07ExtensionProgress } from "./LoginNip07ExtensionProgress";
 import { LoginNip46Form } from "./LoginNip46Form";
 import { LoginRequestingSignature } from "./LoginRequestingSignature";
 import { LoginSignerSelection } from "./LoginSignerSelection";
@@ -97,6 +97,7 @@ export default function NostrLoginPanel() {
 
   const errorRegionRef = useRef<HTMLDivElement | null>(null);
   const signerTransferredToManagerRef = useRef(false);
+  const [nip07ProgressSession, setNip07ProgressSession] = useState(0);
 
   const { startRelayChecks, closeRelaySockets } =
     useRelayCheck(setRelayStatuses);
@@ -140,6 +141,7 @@ export default function NostrLoginPanel() {
   }, [signer]);
 
   const resetToSelection = useCallback(async () => {
+    nip07.cancelPending();
     closeRelaySockets();
     setRelayStatuses({});
     try {
@@ -161,6 +163,7 @@ export default function NostrLoginPanel() {
   }, [
     cleanup,
     closeRelaySockets,
+    nip07,
     nip46,
     setActiveSignerFlow,
     setCopyOk,
@@ -589,6 +592,7 @@ export default function NostrLoginPanel() {
       return;
     }
     if (lastFailureOrigin === "nip07_init") {
+      setNip07ProgressSession((s) => s + 1);
       setActiveSignerFlow("nip07");
       setState("signer_initializing");
       void nip07.connect();
@@ -606,6 +610,7 @@ export default function NostrLoginPanel() {
     performLogin,
     resetToSelection,
     setActiveSignerFlow,
+    setNip07ProgressSession,
     setState,
   ]);
 
@@ -614,6 +619,19 @@ export default function NostrLoginPanel() {
     (state === "awaiting_profile_selection" ||
       state === "requesting_signature" ||
       state === "verifying_signature");
+
+  const handleNip07TryAgain = useCallback(() => {
+    setNip07ProgressSession((s) => s + 1);
+    void nip07.connect();
+  }, [nip07]);
+
+  const handleNip07UseRemoteSigner = useCallback(() => {
+    void (async () => {
+      await resetToSelection();
+      setActiveSignerFlow("nip46");
+      setState("signer_initializing");
+    })();
+  }, [resetToSelection, setActiveSignerFlow, setState]);
 
   const connectNip46 = useCallback(() => {
     setNip46AttemptCount((c) => c + 1);
@@ -647,6 +665,7 @@ export default function NostrLoginPanel() {
       {state === "signer_selection" ? (
         <LoginSignerSelection
           onNip07={() => {
+            setNip07ProgressSession((s) => s + 1);
             setActiveSignerFlow("nip07");
             setState("signer_initializing");
             void nip07.connect();
@@ -663,7 +682,13 @@ export default function NostrLoginPanel() {
       {state === "signer_initializing" &&
       !signer &&
       activeSignerFlow === "nip07" ? (
-        <LoginNip07Initializing />
+        <LoginNip07ExtensionProgress
+          key={nip07ProgressSession}
+          nip07Status={nip07.status}
+          nip07Available={nip07.available}
+          onTryAgain={handleNip07TryAgain}
+          onUseRemoteSigner={handleNip07UseRemoteSigner}
+        />
       ) : null}
 
       {state === "signer_initializing" &&
@@ -713,6 +738,7 @@ export default function NostrLoginPanel() {
           pubkey={pubkey}
           isVerifying={state === "verifying_signature"}
           onCancel={() => void resetToSelection()}
+          signerFlow={activeSignerFlow === "nip46" ? "nip46" : "nip07"}
         />
       ) : null}
 
@@ -731,6 +757,14 @@ export default function NostrLoginPanel() {
           nip46AttemptCount={nip46AttemptCount}
           onTryAgain={handleTryAgain}
           onBack={() => void resetToSelection()}
+          showRemoteSignerFallback={
+            lastFailureOrigin === "nip07_init" ||
+            (lastFailureOrigin === "verify" &&
+              (error.code === "SIGNER_TIMEOUT" ||
+                error.code === "PERMISSION_DENIED" ||
+                error.code === "SIGNATURE_INVALID"))
+          }
+          onUseRemoteSigner={handleNip07UseRemoteSigner}
         />
       ) : null}
     </div>

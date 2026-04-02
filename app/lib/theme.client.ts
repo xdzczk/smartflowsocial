@@ -3,6 +3,11 @@ export type EffectiveTheme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "theme" as const;
 
+/** Logged-in only: overrides account default until cleared (e.g. after saving Appearance). */
+export const THEME_SESSION_OVERRIDE_KEY = "theme_session" as const;
+
+const THEME_SESSION_CHANGED_EVENT = "sfs-theme-session-changed";
+
 function safeParseStoredTheme(
   raw: string | null
 ): StoredThemePreference | null {
@@ -32,6 +37,38 @@ export function setStoredThemePreference(value: StoredThemePreference): void {
   if (typeof window === "undefined") return;
   // Must match ThemeToggle's useLocalStorage, which reads via JSON.parse.
   window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(value));
+}
+
+export function getSessionThemeOverride(): StoredThemePreference | null {
+  if (typeof window === "undefined") return null;
+  return safeParseStoredTheme(
+    window.localStorage.getItem(THEME_SESSION_OVERRIDE_KEY)
+  );
+}
+
+export function setSessionThemeOverride(value: StoredThemePreference): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    THEME_SESSION_OVERRIDE_KEY,
+    JSON.stringify(value)
+  );
+}
+
+export function clearSessionThemeOverride(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(THEME_SESSION_OVERRIDE_KEY);
+}
+
+export function notifyThemeSessionChanged(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(THEME_SESSION_CHANGED_EVENT));
+}
+
+export function subscribeThemeSessionChanged(onChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(THEME_SESSION_CHANGED_EVENT, onChange);
+  return () =>
+    window.removeEventListener(THEME_SESSION_CHANGED_EVENT, onChange);
 }
 
 export function getSystemEffectiveTheme(): EffectiveTheme {

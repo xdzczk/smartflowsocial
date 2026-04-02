@@ -21,12 +21,17 @@ export default function LoginPage() {
       id="page-container"
       className="bg-background landing-texture relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
     >
-      {/* Enhanced background gradient with micro-depth - matching landing page */}
-      <div className="hero-gradient-light dark:hero-gradient-dark absolute inset-0" />
-      <Header />
+      {/* Decorative layer only — must not capture clicks above header/main/footer */}
+      <div
+        className="hero-gradient-light dark:hero-gradient-dark pointer-events-none absolute inset-0 z-0"
+        aria-hidden
+      />
+      <div className="relative z-10 flex flex-none flex-col">
+        <Header />
+      </div>
       <main
         id="page-content"
-        className="relative mt-16 flex max-w-full flex-auto flex-col px-4 sm:px-6 lg:px-8"
+        className="relative z-10 mt-16 flex max-w-full flex-auto flex-col px-4 sm:px-6 lg:px-8"
       >
         <div className="mx-auto w-full max-w-md py-8 sm:max-w-xl lg:max-w-5xl lg:py-16">
           <LoginAuthShellProvider>
@@ -40,7 +45,9 @@ export default function LoginPage() {
           </LoginAuthShellProvider>
         </div>
       </main>
-      <Footer />
+      <div className="relative z-10 mt-auto shrink-0">
+        <Footer marketingHome />
+      </div>
     </div>
   );
 }

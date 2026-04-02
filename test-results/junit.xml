@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.005946417">
-    <testsuite name="tests/unit/auth/nip46-connect.test.ts" timestamp="2026-04-01T14:34:12.100Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.005946417">
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; returns config with method bunker_input and trimmed bunkerInput" time="0.00114325">
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.001516833">
+    <testsuite name="tests/unit/auth/login-flow-relay-labels.test.ts" timestamp="2026-04-02T13:57:43.675Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001516833">
+        <testcase classname="tests/unit/auth/login-flow-relay-labels.test.ts" name="getRelayStatusUserLabel &gt; uses Unreachable instead of Failed for product UI" time="0.000731833">
         </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithBunkerInputForLogin &gt; passes retryCount to connectNip46WithBunkerInput when provided" time="0.002002541">
-        </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; returns config with method nostrconnect_uri, uri, and relays" time="0.00049575">
-        </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithNostrConnectUriForLogin &gt; calls onUriCreated with uri, pool, relays, clientSecretKey when provided" time="0.000409875">
-        </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls connectNip46WithNostrConnectUri and returns signer, pubkey, config with optional bunkerPointer" time="0.000632375">
-        </testcase>
-        <testcase classname="tests/unit/auth/nip46-connect.test.ts" name="NIP-46 connect (login) &gt; connectNip46WithPendingUriForLogin &gt; calls onPoolCreated when provided" time="0.000276958">
+        <testcase classname="tests/unit/auth/login-flow-relay-labels.test.ts" name="getRelayStatusUserLabel &gt; matches connected and checking intent" time="0.000116208">
         </testcase>
     </testsuite>
 </testsuites>
