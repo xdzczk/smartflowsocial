@@ -158,6 +158,8 @@ export default function App() {
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        {/* Early viewport for mobile Safari / installed PWA (keep in sync with meta export below). */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
         <script

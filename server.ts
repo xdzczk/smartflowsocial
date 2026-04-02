@@ -481,6 +481,13 @@ async function run() {
     })
   );
 
+  // PWA: never cache the service worker script so updates (e.g. cache version bumps) reach clients.
+  app.get("/sw.js", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.type("application/javascript");
+    res.sendFile(path.join(process.cwd(), "public", "sw.js"));
+  });
+
   // Everything else (like favicon.ico) is cached for an hour.
   app.use(express.static(path.resolve("public"), { maxAge: "1h" }));
 
