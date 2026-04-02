@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { scheduleRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 
 interface ModalPost {
   id: string;
@@ -60,7 +60,7 @@ export function usePostResultFromUrl({
         };
         if (data.post || data.longFormPost) {
           if (paramName === "scheduled") {
-            refreshPostViews(queryClient);
+            scheduleRefreshPostViews(queryClient);
           }
           setTimeout(() => {
             setModalPost(data.post ?? null);

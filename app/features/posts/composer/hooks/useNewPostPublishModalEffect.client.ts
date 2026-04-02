@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { scheduleRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 
 interface ModalPostShape {
   id: string;
@@ -90,7 +90,7 @@ export function useNewPostPublishModalEffect(input: {
         // Invalidate published/scheduled/dashboard/drafts/calendar queries so
         // Published and other views show the new post without a full page reload.
         if (publishedPostId || scheduledPostId) {
-          refreshPostViews(queryClient);
+          scheduleRefreshPostViews(queryClient);
         }
         setTimeout(() => {
           setModalPost(data.post ?? null);

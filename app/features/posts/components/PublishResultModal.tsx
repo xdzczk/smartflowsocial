@@ -676,6 +676,7 @@ export default function PublishResultModal({
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
+        stackClassName="z-[130]"
         className="max-w-2xl [&>button]:hidden"
         onInteractOutside={(e) => {
           // Prevent closing by clicking outside

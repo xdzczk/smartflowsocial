@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
@@ -8,13 +8,19 @@ import { LoginAuthShellProvider } from "./LoginAuthShellContext";
 import { LoginWelcomeHeader } from "./LoginWelcomeHeader";
 import NostrLoginPanel from "./NostrLoginPanel";
 
+/** True on the client after hydration; false on server and on the first client pass (matches SSR). */
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export default function LoginPage() {
-  // NostrLoginPanel uses useLoginPanelState from a .client module; only render it on the client to avoid SSR 500
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only gate for .client hook
-    setMounted(true);
-  }, []);
+  // NostrLoginPanel pulls .client hooks; render only on client (avoid SSR 500).
+  // useSyncExternalStore flips as soon as React hydrates—no useEffect delay (important on slow mobile).
+  const isClient = useIsClient();
 
   return (
     <div
@@ -39,7 +45,7 @@ export default function LoginPage() {
               <LoginWelcomeHeader />
 
               <div className="space-y-6">
-                {mounted ? (
+                {isClient ? (
                   <NostrLoginPanel />
                 ) : (
                   <div

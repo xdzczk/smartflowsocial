@@ -16,7 +16,7 @@ import { CreateComposerShell } from "~/features/posts/composer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
 import { DraftPickerModal } from "~/features/posts/drafts";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
-import { refreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { scheduleRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { RelaySelectorModal } from "~/features/posts/ui";
 import {
   getPostTypeFromPost,
@@ -142,7 +142,7 @@ export default function NewLongFormPostPage() {
 
           if (data.post || data.longFormPost) {
             if (publishedPostId || scheduledPostId) {
-              refreshPostViews(queryClient);
+              scheduleRefreshPostViews(queryClient);
             }
             setTimeout(() => {
               setModalPost(data.post ?? null);
