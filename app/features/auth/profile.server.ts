@@ -27,25 +27,48 @@ export function validateNpub(npub: string): boolean {
   }
 }
 
+/** Max time login-related paths wait on Primal before continuing without profile data. */
+export const LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS = 5000;
+
 /**
  * Fetches profile data from Primal cache (HTTP proxy or WebSocket per PRIMAL_CACHING_URL).
+ * @param primalFetchBudgetMs - When set, resolves to [] after this delay if Primal is still pending (does not cancel the upstream request).
  */
 export async function fetchPrimalProfileData(
-  npub: string
+  npub: string,
+  options?: { primalFetchBudgetMs?: number }
 ): Promise<PrimalEvent[]> {
+  const budgetMs = options?.primalFetchBudgetMs;
+
+  const doFetch = async (): Promise<PrimalEvent[]> => {
+    try {
+      const pubkey = nostrAdapter.decodeNpub(npub);
+      const responses = await connectToPrimalCache("user_profile", {
+        pubkey,
+      });
+      return responses as PrimalEvent[];
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message: "Failed to fetch profile data from Primal cache",
+        npub,
+      });
+      return [];
+    }
+  };
+
+  if (budgetMs == null || budgetMs <= 0) {
+    return doFetch();
+  }
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<PrimalEvent[]>((resolve) => {
+    timeoutId = setTimeout(() => resolve([]), budgetMs);
+  });
+
   try {
-    const pubkey = nostrAdapter.decodeNpub(npub);
-    const responses = await connectToPrimalCache("user_profile", {
-      pubkey,
-    });
-    return responses as PrimalEvent[];
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "Failed to fetch profile data from Primal cache",
-      npub,
-    });
-    // Return empty array to allow login to proceed without profile data
-    return [];
+    return await Promise.race([doFetch(), timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
@@ -103,8 +126,11 @@ export function processPrimalData(data: PrimalEvent[]): {
 
 export async function getCompleteProfile({
   npub,
+  primalFetchBudgetMs,
 }: GetCompleteProfileParams): Promise<CompleteProfileResult> {
-  const primalData = await fetchPrimalProfileData(npub);
+  const primalData = await fetchPrimalProfileData(npub, {
+    primalFetchBudgetMs,
+  });
 
   // If no data returned, return empty profile
   if (primalData.length === 0) {

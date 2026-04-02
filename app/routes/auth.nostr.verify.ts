@@ -6,7 +6,10 @@ import {
   consumeLoginChallengeAndCreateSession,
   getLoginChallengeForVerify,
 } from "~/features/auth";
-import { getCompleteProfile } from "~/features/auth/profile.server";
+import {
+  getCompleteProfile,
+  LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+} from "~/features/auth/profile.server";
 import { getSession, sessionStorage } from "~/features/auth/session.server";
 import {
   getReferralContextFromCookie,
@@ -154,8 +157,12 @@ export const action = withCSRFProtection(
         throw new AuthenticationError("Invalid signature");
       }
 
-      // Fetch profile outside the DB transaction (network-bound, best-effort)
-      const { nostrProfile } = await getCompleteProfile({ npub: pubkey });
+      // Fetch profile outside the DB transaction (network-bound, best-effort).
+      // Do not block login on Primal retries/timeouts (can exceed 45s).
+      const { nostrProfile } = await getCompleteProfile({
+        npub: pubkey,
+        primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+      });
       const profileJson = JSON.stringify(nostrProfile);
 
       // Referral context: cookie first, then body (client may send from localStorage)

@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
 import {
   fetchPrimalProfileData,
+  LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
   processPrimalData,
 } from "~/features/auth/profile.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
@@ -29,7 +30,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const primalData = await fetchPrimalProfileData(npub);
+    const primalData = await fetchPrimalProfileData(npub, {
+      primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+    });
     const { profile } = processPrimalData(primalData);
     const d =
       typeof profile.display_name === "string"

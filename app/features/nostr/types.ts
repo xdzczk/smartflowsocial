@@ -127,6 +127,8 @@ export interface CompleteProfileResult {
  */
 export interface GetCompleteProfileParams {
   npub: string;
+  /** When set, stop waiting for Primal after this many ms (best-effort; login UX). */
+  primalFetchBudgetMs?: number;
 }
 
 /**
