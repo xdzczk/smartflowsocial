@@ -3,7 +3,8 @@
  * Implements app shell caching with stale-while-revalidate strategy
  */
 
-const CACHE_VERSION = "v1";
+/** Bump when a deploy ships incompatible HTML/JS (forces clients to drop stale cached bundles). */
+const CACHE_VERSION = "v2";
 const APP_SHELL_CACHE = `app-shell-${CACHE_VERSION}`;
 const STATIC_ASSETS_CACHE = `static-assets-${CACHE_VERSION}`;
 
