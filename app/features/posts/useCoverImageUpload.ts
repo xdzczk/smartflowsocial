@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useCallback } from "react";
 
 import { resizeImage } from "~/features/upload/image-resize";
+import { preflightMediaUpload } from "~/features/upload/upload-preflight.client";
 interface UseCoverImageUploadOptions {
   uploadProvider: string | null;
   initialImage?: string;
@@ -52,6 +53,12 @@ export function useCoverImageUpload({
           setUploadError(
             "Connect a NIP-07 extension or NIP-46 remote signer in Settings to upload cover images."
           );
+          return;
+        }
+
+        const pf = await preflightMediaUpload(processedFile);
+        if (!pf.ok) {
+          setUploadError(pf.message);
           return;
         }
 

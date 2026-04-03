@@ -30,6 +30,10 @@ import type { RepostConditions } from "~/features/posts/types";
 import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate.client";
+import {
+  MEDIA_UPLOAD_MAX_IMAGE_BYTES,
+  MEDIA_UPLOAD_MAX_VIDEO_BYTES,
+} from "~/features/upload/media-upload-limits";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addMinutes,
@@ -610,8 +614,8 @@ export function useBulkPostsPageState({
       return;
     }
     const { isVideoFile } = await import("~/utils/media-helpers");
-    const MAX_IMAGE = 10 * 1024 * 1024;
-    const MAX_VIDEO = 100 * 1024 * 1024;
+    const MAX_IMAGE = MEDIA_UPLOAD_MAX_IMAGE_BYTES;
+    const MAX_VIDEO = MEDIA_UPLOAD_MAX_VIDEO_BYTES;
     const isVideo = isVideoFile(file);
     if (isVideo && file.size > MAX_VIDEO) {
       alert("Video exceeds 100MB limit.");

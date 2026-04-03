@@ -44,5 +44,21 @@ export function orderAttachmentsForPreview(
       kind: mediaKind(a.mime),
     });
   }
+  const pending = attachments.filter(
+    (a) => (a.status === "uploading" || a.status === "failed") && !a.url
+  );
+  for (const a of pending) {
+    if (seen.has(a.localId)) continue;
+    ordered.push({
+      id: a.localId,
+      url: "",
+      alt: a.alt,
+      kind: mediaKind(a.mime),
+      phase: a.status === "uploading" ? "uploading" : "failed",
+      failureMessage: a.uploadErrorMessage,
+      fileLabel: a.file?.name,
+    });
+    seen.add(a.localId);
+  }
   return ordered;
 }

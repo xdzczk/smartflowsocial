@@ -2,10 +2,11 @@
  * Composer UI helpers: schedule time label, relative time, summary line, media filter.
  */
 
+import { MEDIA_UPLOAD_ACCEPT_MIME } from "~/features/upload/media-upload-limits";
 import { inferMimeTypeFromFileName } from "~/features/upload/upload-file-utils";
 
 /** Regex for accepted attachment MIME types (image/*, video/*). */
-export const ACCEPTED_MEDIA_TYPES = /^image\/|^video\//;
+export const ACCEPTED_MEDIA_TYPES = MEDIA_UPLOAD_ACCEPT_MIME;
 
 /** Effective MIME for UI and policy when `File.type` is missing (common on iOS). */
 export function composerAttachmentMime(file: File): string {

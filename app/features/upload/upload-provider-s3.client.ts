@@ -2,6 +2,7 @@
  * S3 upload provider adapter.
  */
 
+import { enrichFailedUploadResult } from "./upload-error-codes";
 import { isBlossomProvider } from "./upload-provider-blossom.client";
 import type { UploadResultClient } from "./upload-types.client";
 
@@ -71,8 +72,11 @@ export async function uploadFileToS3(
       },
     };
   }
-  return {
-    success: false,
-    error: errorMessage || "S3 upload failed",
-  };
+  return enrichFailedUploadResult(
+    {
+      success: false,
+      error: errorMessage || "S3 upload failed",
+    },
+    response.status
+  );
 }

@@ -3,8 +3,12 @@
  * For the public UploadResult type see ~/features/upload/types.
  */
 
+import type { UploadErrorCode } from "./upload-error-codes";
+
 export interface UploadResultClient {
   success: boolean;
+  /** Set on failures for structured composer / logging. */
+  code?: UploadErrorCode;
   file?: {
     url: string;
     size: number;
