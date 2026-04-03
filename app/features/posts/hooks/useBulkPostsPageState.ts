@@ -98,6 +98,22 @@ export function useBulkPostsPageState({
   const [bulkComposerStage, setBulkComposerStage] =
     useState<BulkComposerStage>("build");
   const [bulkBatchMode, setBulkBatchMode] = useState<BulkBatchMode>("schedule");
+  const prevBulkBatchModeRef = useRef<BulkBatchMode>(bulkBatchMode);
+  useEffect(() => {
+    const prev = prevBulkBatchModeRef.current;
+    prevBulkBatchModeRef.current = bulkBatchMode;
+    if (prev !== "queue" || bulkBatchMode !== "schedule") return;
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => ({
+        ...p,
+        queueType: "unassigned",
+        scheduledFor: "",
+      }))
+    );
+    setDisplayedHashtags(tags);
+    setSelectedQueueType("unassigned");
+    setBulkScheduleRandomWindowMinutes(0);
+  }, [bulkBatchMode, tags]);
   const [focusPostIndex, setFocusPostIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({

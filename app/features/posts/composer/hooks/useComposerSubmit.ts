@@ -11,7 +11,10 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import { nowMillis } from "~/lib/temporal";
 
-import { resolveContentForSigning } from "../../utils/inline-tokens.client";
+import {
+  appendMediaUrlsForSigning,
+  stripAttachmentTokens,
+} from "../../utils/inline-tokens.client";
 import {
   ACTION_POST_TEXT,
   ACTION_SCHEDULE_TEXT,
@@ -442,15 +445,20 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             .filter((tag) => tag.length > 0)
             .map((tag) => ["t", tag.replace("#", "")]);
 
-          const attachmentsWithUrl = attachments.filter((a) => a.url);
-          const contentResolvedForSign = resolveContentForSigning(
-            data.content,
-            attachmentsWithUrl
-          );
+          const contentResolvedForSign = stripAttachmentTokens(
+            data.content
+          ).trim();
           const appendTagsSingle = data.includeHashtagsInNoteBody !== false;
-          const contentToSign = appendTagsSingle
+          const bodyWithOptionalTags = appendTagsSingle
             ? `${contentResolvedForSign}\n${effectiveHashtags}`
             : contentResolvedForSign;
+          const mediaUrlsForSign = attachments
+            .filter((a): a is typeof a & { url: string } => Boolean(a.url))
+            .map((a) => a.url);
+          const contentToSign = appendMediaUrlsForSigning(
+            bodyWithOptionalTags,
+            mediaUrlsForSign
+          );
 
           generation = ++submitGenerationRef.current;
           lastSubmitForRetryRef.current = { data, event };

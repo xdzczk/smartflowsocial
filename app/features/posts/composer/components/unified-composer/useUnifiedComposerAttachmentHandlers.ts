@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from "react";
-import type { UseFormReturn } from "react-hook-form";
 
 import { getActiveSignerConfig } from "~/features/auth/signer";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
@@ -15,18 +14,9 @@ import { getUploadProvider } from "~/lib/query";
 
 import type { ComposerAttachment } from "../../../types";
 import {
-  appendToken,
-  getTokenLocalIds,
-  removeToken,
-  reorderAttachmentTokensInContent,
-} from "../../../utils/inline-tokens.client";
-import type { TextPostFormData } from "../../hooks/composer-submit-types";
-import {
   composerAttachmentMime,
   filterMediaFiles,
 } from "../composer/composer-helpers";
-
-type TextPostForm = UseFormReturn<TextPostFormData>;
 
 function signerTypeForLog(): "nip07" | "nip46" | "none" {
   const c = getActiveSignerConfig();
@@ -71,8 +61,6 @@ function logAttachmentUploadFailure(args: {
 
 export interface UseUnifiedComposerAttachmentHandlersParams {
   blossomMediaBlocked: boolean;
-  content: string;
-  form: TextPostForm;
   setAttachments: React.Dispatch<React.SetStateAction<ComposerAttachment[]>>;
   mergeThreadSegments: (
     updater: React.SetStateAction<
@@ -94,8 +82,6 @@ export interface UseUnifiedComposerAttachmentHandlersParams {
 
 export function useUnifiedComposerAttachmentHandlers({
   blossomMediaBlocked,
-  content,
-  form,
   setAttachments,
   mergeThreadSegments,
   isThreadMode,
@@ -172,12 +158,6 @@ export function useUnifiedComposerAttachmentHandlers({
                     : a
                 )
               );
-              const body = form.getValues("content");
-              if (!getTokenLocalIds(body).includes(att.localId)) {
-                form.setValue("content", appendToken(body, att.localId), {
-                  shouldDirty: true,
-                });
-              }
             } else {
               const code =
                 r.code ?? inferUploadErrorCodeFromMessage(r.error ?? "");
@@ -232,7 +212,7 @@ export function useUnifiedComposerAttachmentHandlers({
         }
       })();
     },
-    [blossomMediaBlocked, form, setAttachments]
+    [blossomMediaBlocked, setAttachments]
   );
 
   const processNewFilesForSegment = useCallback(
@@ -309,13 +289,8 @@ export function useUnifiedComposerAttachmentHandlers({
               mergeThreadSegments((prev) =>
                 prev.map((p) => {
                   if (p.id !== segmentId) return p;
-                  let newContent = p.content;
-                  if (!getTokenLocalIds(p.content).includes(att.localId)) {
-                    newContent = appendToken(p.content, att.localId);
-                  }
                   return {
                     ...p,
-                    content: newContent,
                     attachments: p.attachments.map((a) =>
                       a.localId === att.localId
                         ? {
@@ -475,13 +450,8 @@ export function useUnifiedComposerAttachmentHandlers({
               mergeThreadSegments((prev) =>
                 prev.map((p) => {
                   if (p.id !== segmentId) return p;
-                  let newContent = p.content;
-                  if (!getTokenLocalIds(p.content).includes(localId)) {
-                    newContent = appendToken(p.content, localId);
-                  }
                   return {
                     ...p,
-                    content: newContent,
                     attachments: p.attachments.map((a) =>
                       a.localId === localId
                         ? {
@@ -609,12 +579,6 @@ export function useUnifiedComposerAttachmentHandlers({
                     : a
                 )
               );
-              const body = form.getValues("content");
-              if (!getTokenLocalIds(body).includes(localId)) {
-                form.setValue("content", appendToken(body, localId), {
-                  shouldDirty: true,
-                });
-              }
             } else {
               const code =
                 r?.code ?? inferUploadErrorCodeFromMessage(r?.error ?? "");
@@ -679,7 +643,6 @@ export function useUnifiedComposerAttachmentHandlers({
     },
     [
       blossomMediaBlocked,
-      form,
       isThreadMode,
       mergeThreadSegments,
       setAttachments,
@@ -738,10 +701,9 @@ export function useUnifiedComposerAttachmentHandlers({
 
   const handleRemoveAttachment = useCallback(
     (localId: string) => {
-      form.setValue("content", removeToken(content, localId));
       setAttachments((prev) => prev.filter((a) => a.localId !== localId));
     },
-    [content, form, setAttachments]
+    [setAttachments]
   );
 
   const handleReorderAttachments = useCallback(
@@ -760,15 +722,10 @@ export function useUnifiedComposerAttachmentHandlers({
         const moved = next.splice(fromIndex, 1)[0];
         if (!moved) return prev;
         next.splice(toIndex, 0, moved);
-        const ids = next.map((a) => a.localId);
-        const body = form.getValues("content");
-        form.setValue("content", reorderAttachmentTokensInContent(body, ids), {
-          shouldDirty: true,
-        });
         return next;
       });
     },
-    [form, setAttachments]
+    [setAttachments]
   );
 
   return {

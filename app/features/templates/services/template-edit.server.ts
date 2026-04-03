@@ -7,7 +7,7 @@ import { json } from "@remix-run/node";
 
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
-import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
+import { prepareComposerTextAndFileUrls } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
 import { updateLongFormPost, updatePost } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import {
@@ -192,13 +192,12 @@ export async function handleTemplateEditAction(
     }
 
     const attachmentMeta = parseAttachmentMeta(formData);
-    let content = data.content;
-    let fileUrl: string[] = [];
-    if (attachmentMeta.length > 0) {
-      const resolved = resolveContentWithTokens(data.content, attachmentMeta);
-      content = resolved.content;
-      fileUrl = resolved.fileUrl;
-    }
+    const tplResolved = prepareComposerTextAndFileUrls(
+      data.content,
+      attachmentMeta
+    );
+    const content = tplResolved.content;
+    const { fileUrl } = tplResolved;
 
     const hashtagResult = await getHashtagPresetTags(
       userId,

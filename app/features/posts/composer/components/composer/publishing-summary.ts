@@ -83,9 +83,6 @@ export function buildDeliveryLines({
       `Scheduled for: ${scheduledFor?.trim() ? scheduledFor : "Not set"}`,
       `Timezone: ${timezone ?? "UTC"}`,
       `Randomization: ${randomizationLabel ?? "Off"}`,
-      selectedQueue && selectedQueue !== "unassigned"
-        ? `Optional queue: ${selectedQueue}`
-        : "Optional queue: None",
     ];
   }
 

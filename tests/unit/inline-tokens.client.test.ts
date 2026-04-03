@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  contentHasAttachmentTokens,
-  reorderAttachmentTokensInContent,
+  appendMediaUrlsForSigning,
   stripAttachmentTokens,
 } from "~/features/posts/utils/inline-tokens.client";
 
@@ -12,20 +11,19 @@ describe("inline-tokens.client", () => {
     expect(stripAttachmentTokens(raw)).toBe("Hello\n\nWorld");
   });
 
-  it("reorderAttachmentTokensInContent moves token block to match attachment order", () => {
-    const content = "Intro\n\n[attach:old1]\n\n[attach:old2]";
-    const next = reorderAttachmentTokensInContent(content, ["old2", "old1"]);
-    expect(next).toBe("Intro\n\n[attach:old2]\n\n[attach:old1]");
-  });
-
-  it("reorderAttachmentTokensInContent returns only tokens when body empty", () => {
-    expect(reorderAttachmentTokensInContent("[attach:x]", ["x"])).toBe(
-      "[attach:x]"
+  it("appendMediaUrlsForSigning appends URLs after body with blank line", () => {
+    expect(appendMediaUrlsForSigning("Hello", ["https://x.test/a.jpg"])).toBe(
+      "Hello\n\nhttps://x.test/a.jpg"
     );
   });
 
-  it("contentHasAttachmentTokens detects placeholders", () => {
-    expect(contentHasAttachmentTokens("hi [attach:x]")).toBe(true);
-    expect(contentHasAttachmentTokens("no tokens")).toBe(false);
+  it("appendMediaUrlsForSigning returns only URLs when body empty", () => {
+    expect(
+      appendMediaUrlsForSigning("", ["https://a.test/1", "https://b.test/2"])
+    ).toBe("https://a.test/1\nhttps://b.test/2");
+  });
+
+  it("appendMediaUrlsForSigning leaves content unchanged when no urls", () => {
+    expect(appendMediaUrlsForSigning("Hi", [])).toBe("Hi");
   });
 });

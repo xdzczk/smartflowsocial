@@ -125,8 +125,10 @@ export async function loadEngagementFeedData(
 
   if (!userResult) throw new Error("User not found");
   const user: UserWithHashTagPresets = userResult;
-  const npub = user.npub;
-  const userPubkeyHex = nostrAdapter.decodeNpub(npub) ?? npub;
+  /** Schema requires npub; null still appears in tests and edge data. */
+  const npub = user.npub as string | null | undefined;
+  const userPubkeyHex =
+    npub != null && npub !== "" ? (nostrAdapter.decodeNpub(npub) ?? npub) : "";
   const mutedNpubs = getMutedNpubsFromUser(user);
   const eventIds = getEventIdsFromPosts(posts);
 

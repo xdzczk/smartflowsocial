@@ -20,14 +20,14 @@ function att(
 }
 
 describe("composer preview", () => {
-  it("orderAttachmentsForPreview follows token order then remainder", () => {
+  it("orderAttachmentsForPreview follows composer strip order", () => {
     const content = "Hi\n\n[attach:b]\n\n[attach:a]";
     const attachments = [
       att("a", "https://a.test/x.jpg"),
       att("b", "https://b.test/y.jpg"),
     ];
     const ordered = orderAttachmentsForPreview(content, attachments);
-    expect(ordered.map((m) => m.id)).toEqual(["b", "a"]);
+    expect(ordered.map((m) => m.id)).toEqual(["a", "b"]);
   });
 
   it("normalizePostPreviewFromComposer strips tokens and hides tags flag", () => {
@@ -43,17 +43,16 @@ describe("composer preview", () => {
     expect(n.hideTags).toBe(true);
   });
 
-  it("computePostPreviewWarnings surfaces attachment placeholders when unresolved", () => {
-    const w = computePostPreviewWarnings({ rawContent: "x [attach:1]" });
-    expect(w.some((x) => x.id === "attach-tokens")).toBe(true);
-  });
-
-  it("computePostPreviewWarnings omits placeholder warn when tokens match done attachments", () => {
-    const w = computePostPreviewWarnings({
-      rawContent: "x [attach:1]",
-      attachments: [att("1", "https://x.test/a.jpg")],
-    });
-    expect(w.some((x) => x.id === "attach-tokens")).toBe(false);
+  it("computePostPreviewWarnings returns no token-based warnings", () => {
+    expect(computePostPreviewWarnings({ rawContent: "x [attach:1]" })).toEqual(
+      []
+    );
+    expect(
+      computePostPreviewWarnings({
+        rawContent: "x [attach:1]",
+        attachments: [att("1", "https://x.test/a.jpg")],
+      })
+    ).toEqual([]);
   });
 
   it("orderAttachmentsForPreview appends pending uploads after resolved media", () => {

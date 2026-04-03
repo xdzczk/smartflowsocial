@@ -32,7 +32,13 @@ export function RailSegmentedTabGroup({
     <div
       role="radiogroup"
       aria-label={radiogroupAriaLabel}
-      className={cn("divide-border/60 relative grid divide-x", COLS[columns])}
+      className={cn(
+        "relative grid divide-x",
+        /* Light: standard borders; dark: higher-contrast dividers so segments read as separate controls */
+        "divide-border/75 border-border/75 border-b",
+        "dark:divide-white/16 dark:border-b-white/16",
+        COLS[columns]
+      )}
     >
       {items.map((item) => {
         const active = value === item.id;
@@ -49,8 +55,8 @@ export function RailSegmentedTabGroup({
               "flex items-center justify-center px-1 text-center text-xs transition-colors",
               disabled && "pointer-events-none opacity-90",
               active
-                ? "text-foreground bg-muted/40 relative z-[1] border-b border-b-transparent font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/20 border-border/60 border-b font-medium"
+                ? "text-foreground bg-muted/40 relative z-[1] font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/20 font-medium"
             )}
             onClick={() => {
               if (!disabled) onValueChange(item.id);

@@ -22,7 +22,7 @@ import {
   applyHashtags,
   parseIncludeHashtagsInNoteBodyFromForm,
 } from "./hashtag-utils.server";
-import { resolveContentWithTokens } from "./inline-tokens.server";
+import { prepareComposerTextAndFileUrls } from "./inline-tokens.server";
 
 const DEFAULT_DELAY_SECONDS = 60; // 1 minute
 const MIN_THREAD_SEGMENTS = 2;
@@ -236,13 +236,12 @@ export async function handleThreadAction(
     const seg = segments[i];
     if (!seg) continue;
     const attachmentMeta = seg.attachmentMeta ?? [];
-    let content = seg.content;
-    let fileUrl: string[] = [];
-    if (attachmentMeta.length > 0) {
-      const resolved = resolveContentWithTokens(seg.content, attachmentMeta);
-      content = resolved.content;
-      fileUrl = resolved.fileUrl;
-    }
+    const resolved = prepareComposerTextAndFileUrls(
+      seg.content,
+      attachmentMeta
+    );
+    const content = resolved.content;
+    const { fileUrl } = resolved;
     await assertMediaUrlsReady(fileUrl);
 
     const contentWithHashtags = applyHashtags(

@@ -5,13 +5,12 @@
  * with transaction-based isolation for safety.
  *
  * **Requirements:**
- * - Set `TEST_DATABASE_URL` environment variable to a test database URL
- * - Or set `SKIP_DATABASE_TESTS=true` to skip these tests
- * - Database must be running and accessible
+ * - Set `RUN_DATABASE_EXAMPLES=true` and `TEST_DATABASE_URL` or `DATABASE_URL` to a working DB
+ * - Or set `SKIP_DATABASE_TESTS=true` (suite still skipped without the run flag)
+ * - Database must exist and be migrated (e.g. `smartflow_test` if that is your URL)
  *
- * **Note:** This example runs when a test database is configured
- * (`TEST_DATABASE_URL` or `DATABASE_URL` set and `SKIP_DATABASE_TESTS` not true),
- * or when `RUN_DATABASE_EXAMPLES=true`.
+ * **Note:** This file is opt-in only (`RUN_DATABASE_EXAMPLES=true`) so default `vitest run`
+ * does not fail when no local test database is provisioned.
  */
 import type { PrismaClient } from "@prisma/client";
 import {
@@ -35,15 +34,14 @@ import { getTestPrisma } from "../database/test-db";
 import { createPost } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
 
-// This file is an example. Run when test DB is configured (same as other DB tests)
-// or when explicitly enabled via RUN_DATABASE_EXAMPLES=true.
+// Opt-in example suite: avoids failures when env has a URL but the DB was never created.
 const testDatabaseUrl =
   process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 const shouldSkipDatabaseExamples =
-  process.env["SKIP_DATABASE_TESTS"] === "true" || !testDatabaseUrl;
-const RUN_DATABASE_EXAMPLES =
-  process.env["RUN_DATABASE_EXAMPLES"] === "true" ||
-  !shouldSkipDatabaseExamples;
+  process.env["SKIP_DATABASE_TESTS"] === "true" ||
+  !testDatabaseUrl ||
+  process.env["RUN_DATABASE_EXAMPLES"] !== "true";
+const RUN_DATABASE_EXAMPLES = !shouldSkipDatabaseExamples;
 
 // Don't mock Prisma - this test uses the real database
 // Model functions will use the real Prisma client from getTestPrisma()
@@ -188,11 +186,11 @@ describeDb("Database Integration Example", () => {
   });
 });
 
-// Example: Test without transactions (for testing transaction behavior)
-if (shouldSkipDatabaseExamples) {
+// Example: Test without transactions (same opt-in as main example block)
+if (!RUN_DATABASE_EXAMPLES) {
   describe.skip("Database Tests Without Transactions", () => {
     it("should persist data without transactions", () => {
-      // Skipped - database not configured
+      // Skipped - database example suite not enabled
     });
   });
 } else {

@@ -235,6 +235,21 @@ export function PollComposer({
     [applyQueueDefaultScheduleRandom, setSelectedQueue]
   );
 
+  const prevPublishModeRef = useRef(publishMode);
+  useEffect(() => {
+    const prev = prevPublishModeRef.current;
+    prevPublishModeRef.current = publishMode;
+    if (prev !== "queue" || publishMode === "queue") return;
+    setSelectedQueue("unassigned");
+    setScheduledFor("");
+    applyQueueDefaultScheduleRandom("unassigned");
+  }, [
+    applyQueueDefaultScheduleRandom,
+    publishMode,
+    setSelectedQueue,
+    setScheduledFor,
+  ]);
+
   const pollQueueEffectFirstRef = useRef(true);
   useEffect(() => {
     if (pollQueueEffectFirstRef.current) {
