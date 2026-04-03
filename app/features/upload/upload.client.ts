@@ -1,6 +1,10 @@
 // Type declaration for window.nostr is in app/types/window.d.ts
 
 import {
+  mapUnknownToUploadError,
+  type UploadErrorCode,
+} from "./upload-error-codes";
+import {
   runAdaptiveUploadQueue,
   decideSfsRetry,
   type QueueTask,
@@ -67,16 +71,17 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       },
     });
   } catch (error) {
-    const { handleAsyncError, getErrorMessage } =
-      await import("~/lib/error-handler.client");
+    const { handleAsyncError } = await import("~/lib/error-handler.client");
     handleAsyncError(
       error,
       { component: COMPONENT_UPLOAD_CLIENT, action: "uploadFile" },
       false
     );
+    const mapped = mapUnknownToUploadError(error);
     return {
       success: false,
-      error: getErrorMessage(error) || "Upload failed",
+      code: mapped.code,
+      error: mapped.message,
     };
   }
 }
@@ -97,23 +102,44 @@ export async function uploadMultipleFiles(
 
   if (isBlossom) {
     if (providerPolicy.lane === "authoritative_tokenized") {
-      return uploadSfsBulkFiles(
-        files,
-        {
-          enableMirrorBlossom: data.enableMirrorBlossom ?? false,
-          mirrorUploadUrls: data.mirrorUploadUrls ?? [],
-        },
-        onProgress
-      );
+      try {
+        return await uploadSfsBulkFiles(
+          files,
+          {
+            enableMirrorBlossom: data.enableMirrorBlossom ?? false,
+            mirrorUploadUrls: data.mirrorUploadUrls ?? [],
+          },
+          onProgress
+        );
+      } catch (error) {
+        const mapped = mapUnknownToUploadError(error);
+        return files.map(() => ({
+          success: false,
+          code: mapped.code,
+          error: mapped.message,
+        }));
+      }
     }
 
-    const uploaderResult = await createBlossomUploader(
-      provider,
-      customBlossomUrl,
-      data.enableMirrorBlossom ?? false,
-      data.mirrorUploadUrls ?? []
-    );
-    const sharedUploader = uploaderResult.uploader;
+    let sharedUploader: Awaited<
+      ReturnType<typeof createBlossomUploader>
+    >["uploader"];
+    try {
+      const uploaderResult = await createBlossomUploader(
+        provider,
+        customBlossomUrl,
+        data.enableMirrorBlossom ?? false,
+        data.mirrorUploadUrls ?? []
+      );
+      sharedUploader = uploaderResult.uploader;
+    } catch (error) {
+      const mapped = mapUnknownToUploadError(error);
+      return files.map(() => ({
+        success: false,
+        code: mapped.code,
+        error: mapped.message,
+      }));
+    }
 
     const startConcurrency =
       typeof navigator !== "undefined" &&
@@ -181,9 +207,12 @@ export async function uploadMultipleFiles(
 /**
  * Upload file for EditorJS image tool compatibility.
  */
-export async function uploadEditorJSImage(
-  file: File
-): Promise<{ success: number; file?: { url: string } }> {
+export async function uploadEditorJSImage(file: File): Promise<{
+  success: number;
+  file?: { url: string };
+  code?: UploadErrorCode;
+  error?: string;
+}> {
   try {
     const { getUploadProvider } = await import("~/lib/query");
     const data = await getUploadProvider();
@@ -194,7 +223,11 @@ export async function uploadEditorJSImage(
       if (uploadResult.success && uploadResult.file?.url) {
         return { success: 1, file: { url: uploadResult.file.url } };
       }
-      return { success: 0 };
+      return {
+        success: 0,
+        code: uploadResult.code,
+        error: uploadResult.error,
+      };
     }
 
     const formData = new FormData();
@@ -213,12 +246,15 @@ export async function uploadEditorJSImage(
       return { success: 1, file: { url: result.file.url } };
     }
     const { logClientError } = await import("~/lib/error-handler.client");
-    logClientError(
-      new Error(result.error?.message ?? "EditorJS upload failed"),
-      { component: COMPONENT_UPLOAD_CLIENT, action: "uploadEditorJSImage" },
-      "warning"
-    );
-    return { success: 0 };
+    const msg = result.error?.message ?? "EditorJS upload failed";
+    logClientError(new Error(msg), {
+      component: COMPONENT_UPLOAD_CLIENT,
+      action: "uploadEditorJSImage",
+    });
+    const mapped = mapUnknownToUploadError(msg, {
+      httpStatus: response.status,
+    });
+    return { success: 0, code: mapped.code, error: mapped.message };
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
     handleAsyncError(
@@ -226,7 +262,8 @@ export async function uploadEditorJSImage(
       { component: COMPONENT_UPLOAD_CLIENT, action: "uploadEditorJSImage" },
       false
     );
-    return { success: 0 };
+    const mapped = mapUnknownToUploadError(error);
+    return { success: 0, code: mapped.code, error: mapped.message };
   }
 }
 

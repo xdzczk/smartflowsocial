@@ -23,6 +23,7 @@ export interface UnifiedComposerContentSectionProps {
   mediaUploadDisabled?: boolean;
   attachments: ComposerAttachment[];
   onRemoveAttachment: (localId: string) => void;
+  onRetryAttachment?: (localId: string) => void;
   onAddAttachment: () => void;
   onReorderAttachments?: (fromIndex: number, toIndex: number) => void;
   onFilesDroppedSingle: (files: File[]) => void;
@@ -63,6 +64,7 @@ export function UnifiedComposerContentSection({
   mediaUploadDisabled = false,
   attachments,
   onRemoveAttachment,
+  onRetryAttachment,
   onAddAttachment,
   onReorderAttachments,
   onFilesDroppedSingle,
@@ -96,6 +98,7 @@ export function UnifiedComposerContentSection({
         onDraggingOverSegmentIdChange={onDraggingOverSegmentIdChange}
         signerConnectionNote={blossomSignerMediaNote}
         attachmentFailedTitle={attachmentFailedTitleHint}
+        onRetryAttachment={onRetryAttachment}
       />
     );
   }
@@ -120,6 +123,7 @@ export function UnifiedComposerContentSection({
       <ComposerMediaField
         attachments={attachments}
         onRemove={onRemoveAttachment}
+        onRetry={onRetryAttachment}
         onAdd={onAddAttachment}
         onReorder={onReorderAttachments}
         onFilesDropped={onFilesDroppedSingle}

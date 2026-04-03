@@ -3,6 +3,12 @@ import type { MutableRefObject } from "react";
 
 import { type ToastMessage } from "~/components/types";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
+import {
+  inferUploadErrorCodeFromMessage,
+  mapUnknownToUploadError,
+} from "~/features/upload/upload-error-codes";
+import { logUploadFailure } from "~/features/upload/upload-failure-log.client";
+import { preflightMediaUpload } from "~/features/upload/upload-preflight.client";
 import { nowMillis, nowUTC } from "~/lib/temporal";
 
 import type { BulkPost } from "../types";
@@ -70,6 +76,29 @@ export async function runUploadPreparation(
 
   if (filesToUpload.length > 0) {
     try {
+      for (let pi = 0; pi < filesToUpload.length; pi++) {
+        const f = filesToUpload[pi]!;
+        const pf = await preflightMediaUpload(f);
+        if (!pf.ok) {
+          setToast({
+            type: "error",
+            message: pf.message,
+          });
+          setTimeout(() => setToast(null), 8000);
+          setIsPreviewSubmitting(false);
+          logUploadFailure({
+            component: "bulk-post-events-fetcher",
+            action: "preflight",
+            code: pf.code,
+            fileName: f.name,
+            fileMime: f.type,
+            fileSize: f.size,
+            rawError: pf.message,
+          });
+          return false;
+        }
+      }
+
       setPreparationProgress?.({
         current: 0,
         total: filesToUpload.length + 3,
@@ -91,9 +120,26 @@ export async function runUploadPreparation(
       );
       const failedUploads = uploadResults.filter((r) => !r.success);
       if (failedUploads.length > 0) {
-        throw new Error(
-          `Upload failed: ${failedUploads.map((r) => r.error).join(", ")}`
-        );
+        const first = failedUploads[0];
+        const msg =
+          first?.error ??
+          "One or more files failed to upload. Retry or remove them.";
+        for (let fi = 0; fi < uploadResults.length; fi++) {
+          const r = uploadResults[fi]!;
+          const file = filesToUpload[fi];
+          if (!r.success && file) {
+            logUploadFailure({
+              component: "bulk-post-events-fetcher",
+              action: "uploadMany",
+              code: r.code ?? inferUploadErrorCodeFromMessage(r.error ?? ""),
+              fileName: file.name,
+              fileMime: file.type,
+              fileSize: file.size,
+              rawError: r.error,
+            });
+          }
+        }
+        throw new Error(msg);
       }
       let urlIndex = 0;
       const fileUrlsPerPost: string[][] = posts.map((post) => {
@@ -127,7 +173,9 @@ export async function runUploadPreparation(
     } catch (error: unknown) {
       const { handleAsyncErrorWithMessage, getErrorMessage } =
         await import("~/lib/error-handler.client");
-      const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
+      const mapped = mapUnknownToUploadError(error);
+      const errorMessage =
+        mapped.message || `Upload failed: ${getErrorMessage(error)}`;
       handleAsyncErrorWithMessage(
         error,
         errorMessage,

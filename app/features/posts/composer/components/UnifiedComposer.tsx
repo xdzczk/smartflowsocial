@@ -374,6 +374,7 @@ export function UnifiedComposer({
     onFileChange,
     handleRemoveAttachment,
     handleReorderAttachments,
+    handleRetryAttachment,
   } = useUnifiedComposerAttachmentHandlers({
     blossomMediaBlocked,
     content,
@@ -907,6 +908,7 @@ export function UnifiedComposer({
       content,
       threadSegments,
       attachmentsLength: attachments.length,
+      attachments,
     });
 
   const issueList = [...hardBlockers, ...deferrableBlockers];
@@ -1178,6 +1180,7 @@ export function UnifiedComposer({
               disabled={disabled}
               attachments={attachments}
               onRemoveAttachment={handleRemoveAttachment}
+              onRetryAttachment={handleRetryAttachment}
               onAddAttachment={handleAddAttachment}
               onReorderAttachments={handleReorderAttachments}
               onFilesDroppedSingle={processNewFilesForSingleNote}

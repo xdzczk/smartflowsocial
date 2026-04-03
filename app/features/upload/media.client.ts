@@ -1,3 +1,9 @@
+import {
+  UploadErrorCodes,
+  defaultMessageForUploadError,
+  enrichFailedUploadResult,
+  type UploadErrorCode,
+} from "./upload-error-codes";
 import { inferMimeTypeFromFileName } from "./upload-file-utils";
 import {
   uploadFile as uploadFileLegacy,
@@ -33,6 +39,7 @@ function commitMimeTypeForFile(
 
 interface LegacyUploadResult {
   success: boolean;
+  code?: UploadErrorCode;
   file?: {
     url: string;
     size: number;
@@ -130,10 +137,31 @@ async function commitUploads(
     );
 }
 
+function markMissingCommitsAsFinalizeFailed(
+  results: LegacyUploadResult[],
+  committed: Array<{ resultIndex: number; finalUrl: string }>
+): void {
+  const indices = new Set(committed.map((c) => c.resultIndex));
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r?.success && r.file && !indices.has(i)) {
+      const failed = enrichFailedUploadResult({
+        success: false,
+        error: defaultMessageForUploadError(
+          UploadErrorCodes.UPLOAD_FINALIZE_FAILED
+        ),
+        code: UploadErrorCodes.UPLOAD_FINALIZE_FAILED,
+      });
+      results[i] = { ...failed, file: undefined };
+    }
+  }
+}
+
 export async function upload(file: File): Promise<LegacyUploadResult> {
-  await createIntent([file]);
+  const intent = await createIntent([file]);
   const result = await uploadFileLegacy(file);
-  const committed = await commitUploads([result], [file]);
+  const committed = intent ? await commitUploads([result], [file]) : [];
+  if (intent) markMissingCommitsAsFinalizeFailed([result], committed);
   const finalUrl = committed[0]?.finalUrl;
   if (finalUrl && result.success && result.file) {
     result.file.url = finalUrl;
@@ -145,9 +173,10 @@ export async function uploadMany(
   files: File[],
   onProgress?: (current: number, total: number, fileName: string) => void
 ): Promise<LegacyUploadResult[]> {
-  await createIntent(files);
+  const intent = await createIntent(files);
   const results = await uploadMultipleFilesLegacy(files, onProgress);
-  const committed = await commitUploads(results, files);
+  const committed = intent ? await commitUploads(results, files) : [];
+  if (intent) markMissingCommitsAsFinalizeFailed(results, committed);
   for (const entry of committed) {
     const result = results[entry.resultIndex];
     if (result?.success && result.file) {

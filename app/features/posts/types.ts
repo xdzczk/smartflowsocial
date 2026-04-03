@@ -6,6 +6,7 @@
 import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { UploadErrorCode } from "~/features/upload/upload-error-codes";
 
 import type {
   LongFormPost,
@@ -423,6 +424,11 @@ export interface ComposerAttachment {
   alt?: string;
   /** Client-only: File before upload */
   file?: File;
+  /** Set when status is failed (normalized upload error). */
+  uploadErrorCode?: UploadErrorCode;
+  uploadErrorMessage?: string;
+  /** Client-only: correlates logs per retry attempt */
+  uploadAttemptId?: string;
 }
 
 /** Engagement thresholds for conditional repost (only publish if source meets all set minimums) */

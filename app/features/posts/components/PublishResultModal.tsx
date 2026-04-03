@@ -676,6 +676,7 @@ export default function PublishResultModal({
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
+        stackClassName="z-[130]"
         className="max-w-2xl [&>button]:hidden"
         onInteractOutside={(e) => {
           // Prevent closing by clicking outside
@@ -764,6 +765,7 @@ export default function PublishResultModal({
 
         <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Button
+            type="button"
             variant="outline"
             onClick={onCreateNew}
             className="w-full sm:w-auto"
@@ -771,12 +773,17 @@ export default function PublishResultModal({
             <Plus className="mr-2 h-4 w-4" />
             Create New {postType === "longform" ? "Article" : "Post"}
           </Button>
-          <Button onClick={onViewPage} className="w-full sm:w-auto">
+          <Button
+            type="button"
+            onClick={onViewPage}
+            className="w-full sm:w-auto"
+          >
             <CheckSquare className="mr-2 h-4 w-4" />
             View {action === "schedule" ? "Scheduled" : "Published"}
           </Button>
           {onGoToDashboard ? (
             <Button
+              type="button"
               variant="outline"
               onClick={onGoToDashboard}
               className="w-full sm:w-auto"

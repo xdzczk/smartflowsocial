@@ -48,6 +48,27 @@ export {
   upload as uploadMedia,
   uploadMany as uploadMediaMany,
 } from "./media.client";
+export {
+  UploadErrorCodes,
+  type UploadErrorCode,
+  defaultMessageForUploadError,
+  inferUploadErrorCodeFromMessage,
+  mapUnknownToUploadError,
+  enrichFailedUploadResult,
+} from "./upload-error-codes";
+export {
+  MEDIA_UPLOAD_ACCEPT_MIME,
+  MEDIA_UPLOAD_MAX_IMAGE_BYTES,
+  MEDIA_UPLOAD_MAX_VIDEO_BYTES,
+  mediaUploadMaxBytesForVideo,
+} from "./media-upload-limits";
+export { preflightMediaUpload } from "./upload-preflight.client";
+export type {
+  PreflightFail,
+  PreflightOk,
+  PreflightResult,
+} from "./upload-preflight.client";
+export { logUploadFailure } from "./upload-failure-log.client";
 
 // ============================================================================
 // Blossom-aware Upload Hook

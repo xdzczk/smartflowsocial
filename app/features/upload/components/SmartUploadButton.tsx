@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import { useState, useCallback, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
+import { preflightMediaUpload } from "~/features/upload/upload-preflight.client";
 import { logClientError } from "~/lib/error-handler.client";
 interface SmartUploadButtonProps {
   onUploadStart?: () => void;
@@ -125,6 +126,12 @@ export function SmartUploadButton({
 
       try {
         onUploadProgress?.(5); // Starting
+
+        const pf = await preflightMediaUpload(file);
+        if (!pf.ok) {
+          onUploadError?.(pf.message);
+          return;
+        }
 
         // Check which provider the user has selected
         const providerInfo = await checkUploadProvider();

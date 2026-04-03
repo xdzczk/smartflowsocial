@@ -4,6 +4,10 @@
 
 import { BRAND_NAME } from "~/lib/brand";
 
+import {
+  enrichFailedUploadResult,
+  mapUnknownToUploadError,
+} from "./upload-error-codes";
 import { hashFileSha256 } from "./upload-file-utils";
 import {
   runAdaptiveUploadQueue,
@@ -18,7 +22,6 @@ import type {
 } from "./upload-types.client";
 
 const DEFAULT_BLOB_MIME_TYPE = "application/octet-stream";
-const BLOSSOM_UPLOAD_FAILED_MESSAGE = "Blossom upload failed";
 const PRIMARY_DESKTOP_CONCURRENCY = 4;
 const PRIMARY_MOBILE_CONCURRENCY = 2;
 const PRIMARY_CONCURRENCY_CAP = 10;
@@ -286,13 +289,13 @@ async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
     const tokenResponse = await requestSfsTokens([{ file, sha256 }]);
     const tokenResult = tokenResponse.results[0];
     if (!tokenResult?.token) {
-      return {
+      return enrichFailedUploadResult({
         success: false,
         error:
           tokenResult?.message ??
           tokenResult?.error ??
           `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
-      };
+      });
     }
     const uploaded = await uploadToSfsWithToken(
       tokenResponse.uploadUrl,
@@ -312,10 +315,11 @@ async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
       },
     };
   } catch (error) {
+    const mapped = mapUnknownToUploadError(error);
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : BLOSSOM_UPLOAD_FAILED_MESSAGE,
+      code: mapped.code,
+      error: mapped.message,
     };
   }
 }
@@ -450,14 +454,17 @@ export async function uploadFileToBlossom(
         },
       };
     }
-    return {
-      success: false,
-      error: result.error ?? "Blossom upload failed",
-    };
+    return enrichFailedUploadResult(
+      {
+        success: false,
+        error: result.error ?? "Blossom upload failed",
+      },
+      response.status
+    );
   } catch (error) {
+    const mapped = mapUnknownToUploadError(error);
     if (options?.componentLabel) {
-      const { handleAsyncError, getErrorMessage } =
-        await import("~/lib/error-handler.client");
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
         error,
         {
@@ -467,15 +474,11 @@ export async function uploadFileToBlossom(
         },
         false
       );
-      return {
-        success: false,
-        error: getErrorMessage(error) || BLOSSOM_UPLOAD_FAILED_MESSAGE,
-      };
     }
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : BLOSSOM_UPLOAD_FAILED_MESSAGE,
+      code: mapped.code,
+      error: mapped.message,
     };
   }
 }
@@ -520,12 +523,12 @@ export async function uploadSfsBulkFiles(
       fileName: current.file.name,
       run: async () => {
         if (!current.token) {
-          return {
+          return enrichFailedUploadResult({
             success: false,
             error:
               current.error ??
               `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
-          };
+          });
         }
         let attempt = 0;
         let token = current.token;
@@ -559,10 +562,10 @@ export async function uploadSfsBulkFiles(
               ]);
               const refreshedToken = refreshed.results[0]?.token;
               if (!refreshedToken) {
-                return {
+                return enrichFailedUploadResult({
                   success: false,
                   error: refreshed.results[0]?.error ?? "token_expired",
-                };
+                });
               }
               token = refreshedToken;
               continue;
@@ -571,10 +574,16 @@ export async function uploadSfsBulkFiles(
               await sleepMs(decision.delayMs ?? 1000);
               continue;
             }
-            return { success: false, error: decision.error ?? "upload_failed" };
+            return enrichFailedUploadResult({
+              success: false,
+              error: decision.error ?? "upload_failed",
+            });
           }
         }
-        return { success: false, error: "upload_failed" };
+        return enrichFailedUploadResult({
+          success: false,
+          error: "upload_failed",
+        });
       },
     })
   );

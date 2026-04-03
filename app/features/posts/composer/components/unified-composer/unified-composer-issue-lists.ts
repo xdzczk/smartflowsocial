@@ -1,5 +1,9 @@
+import type { ComposerAttachment } from "~/features/posts/types";
+
 import type { ComposerPublishMode } from "../composer";
 import { MIN_THREAD_SEGMENTS } from "../composer/thread-constants";
+
+import { unifiedComposerMediaDeferrableMessage } from "./composer-media-rail-messages";
 
 export interface UnifiedComposerIssueListParams {
   isTemplateMode: boolean;
@@ -15,8 +19,9 @@ export interface UnifiedComposerIssueListParams {
   hasContent: boolean;
   relayCount: number;
   content: string;
-  threadSegments: Array<{ content: string; attachments: unknown[] }>;
+  threadSegments: Array<{ content: string; attachments: ComposerAttachment[] }>;
   attachmentsLength: number;
+  attachments: ComposerAttachment[];
 }
 
 export function buildUnifiedComposerHardAndDeferrableBlockers(
@@ -28,7 +33,12 @@ export function buildUnifiedComposerHardAndDeferrableBlockers(
   if (p.isTemplateMode) {
     if (!p.canSubmit) {
       hardBlockers.push(
-        "Resolve media upload issues before saving the template."
+        unifiedComposerMediaDeferrableMessage({
+          isThreadMode: p.isThreadMode,
+          attachments: p.attachments,
+          threadSegments: p.threadSegments,
+          isTemplateMode: true,
+        })
       );
     }
   } else {
@@ -36,7 +46,14 @@ export function buildUnifiedComposerHardAndDeferrableBlockers(
       hardBlockers.push("Signer not connected");
     }
     if (!p.canSubmit) {
-      deferrableBlockers.push("Resolve media upload issues before publishing");
+      deferrableBlockers.push(
+        unifiedComposerMediaDeferrableMessage({
+          isThreadMode: p.isThreadMode,
+          attachments: p.attachments,
+          threadSegments: p.threadSegments,
+          isTemplateMode: false,
+        })
+      );
     }
     if (
       (p.embedContext === "contest" ? p.contestSubmitMode : p.publishMode) ===
@@ -71,7 +88,7 @@ export function buildUnifiedComposerHardAndDeferrableBlockers(
 export function buildUnifiedComposerTemplateRailWarnings(p: {
   isTemplateMode: boolean;
   isThreadMode: boolean;
-  threadSegments: Array<{ content: string; attachments: unknown[] }>;
+  threadSegments: Array<{ content: string; attachments: ComposerAttachment[] }>;
   content: string;
   attachmentsLength: number;
 }): string[] {

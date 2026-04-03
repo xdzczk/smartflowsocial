@@ -13,6 +13,10 @@ export interface NormalizedPreviewMedia {
   url: string;
   alt?: string;
   kind: PreviewMediaKind;
+  /** In-composer upload not finished or failed (no public URL yet). */
+  phase?: "uploading" | "failed";
+  failureMessage?: string;
+  fileLabel?: string;
 }
 
 export interface NormalizedPostPreview {

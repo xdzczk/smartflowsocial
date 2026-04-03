@@ -15,6 +15,8 @@ import type { ComposerAttachment } from "../types";
 interface AttachmentsStripProps {
   attachments: ComposerAttachment[];
   onRemove: (localId: string) => void;
+  /** Retry a failed upload (same file reference). */
+  onRetry?: (localId: string) => void;
   onAdd: () => void;
   disabled?: boolean;
   /** Shown as native tooltip on failed tiles (e.g. Blossom + signer hints). */
@@ -44,6 +46,7 @@ interface AttachmentsStripProps {
 export function AttachmentsStrip({
   attachments,
   onRemove,
+  onRetry,
   onAdd,
   disabled = false,
   failedStatusTitle,
@@ -60,6 +63,9 @@ export function AttachmentsStrip({
   const tileClass = compact
     ? "h-12 w-12 rounded border-border/40"
     : "h-16 w-16 rounded border-border";
+  const failedTileClass = compact
+    ? "min-h-[3.75rem] w-[4.75rem] max-w-[5.5rem] rounded border-border/40"
+    : "min-h-[5.75rem] w-[7.25rem] rounded border-border";
   const addBtnClass = compact ? "h-12 w-12 shrink-0" : "h-16 w-16 shrink-0";
   const plusClass = compact ? "h-4 w-4" : "h-6 w-6";
   const minimalAddBtnClass =
@@ -113,13 +119,21 @@ export function AttachmentsStrip({
         className
       )}
     >
+      {/* eslint-disable-next-line sonarjs/cognitive-complexity -- per-tile upload states */}
       {attachments.map((att, index) => (
         <div
           key={att.localId}
           className={cn(
             "bg-muted/50 relative flex shrink-0 items-center justify-center overflow-hidden border",
-            tileClass
+            att.status === "failed" ? failedTileClass : tileClass
           )}
+          title={
+            att.status === "failed"
+              ? [att.file?.name, att.uploadErrorMessage, failedStatusTitle]
+                  .filter(Boolean)
+                  .join(" — ")
+              : undefined
+          }
         >
           {att.status === "done" && att.url ? (
             <>
@@ -149,12 +163,33 @@ export function AttachmentsStrip({
             </span>
           ) : null}
           {att.status === "failed" ? (
-            <span
-              className="text-destructive text-xs"
-              title={failedStatusTitle}
-            >
-              Failed
-            </span>
+            <div className="flex h-full w-full flex-col items-stretch justify-end gap-1 px-1 pt-5 pb-1 text-center">
+              <span className="text-destructive text-[10px] leading-tight font-medium">
+                Upload failed
+              </span>
+              {att.file?.name ? (
+                <span className="text-muted-foreground line-clamp-2 text-[9px] leading-snug">
+                  {att.file.name}
+                </span>
+              ) : null}
+              {att.uploadErrorMessage ? (
+                <span className="text-muted-foreground/90 line-clamp-2 text-[8px] leading-snug">
+                  {att.uploadErrorMessage}
+                </span>
+              ) : null}
+              {onRetry ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-6 shrink-0 px-1 text-[10px]"
+                  disabled={disabled}
+                  onClick={() => onRetry(att.localId)}
+                >
+                  Retry
+                </Button>
+              ) : null}
+            </div>
           ) : null}
           {onReorder && attachments.length > 1 ? (
             <div className="bg-background/80 absolute bottom-0 left-0 flex flex-col gap-0 p-0.5">

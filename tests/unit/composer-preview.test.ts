@@ -43,9 +43,31 @@ describe("composer preview", () => {
     expect(n.hideTags).toBe(true);
   });
 
-  it("computePostPreviewWarnings surfaces attachment placeholders", () => {
+  it("computePostPreviewWarnings surfaces attachment placeholders when unresolved", () => {
     const w = computePostPreviewWarnings({ rawContent: "x [attach:1]" });
     expect(w.some((x) => x.id === "attach-tokens")).toBe(true);
+  });
+
+  it("computePostPreviewWarnings omits placeholder warn when tokens match done attachments", () => {
+    const w = computePostPreviewWarnings({
+      rawContent: "x [attach:1]",
+      attachments: [att("1", "https://x.test/a.jpg")],
+    });
+    expect(w.some((x) => x.id === "attach-tokens")).toBe(false);
+  });
+
+  it("orderAttachmentsForPreview appends pending uploads after resolved media", () => {
+    const ordered = orderAttachmentsForPreview("hi", [
+      att("a", "https://a.test/x.jpg"),
+      {
+        localId: "p",
+        status: "uploading",
+        mime: "image/png",
+        file: new File([], "n.png", { type: "image/png" }),
+      },
+    ]);
+    expect(ordered.map((m) => m.id)).toEqual(["a", "p"]);
+    expect(ordered[1]?.phase).toBe("uploading");
   });
 
   it("computeHiddenTagsWarning when hide on and no tags", () => {

@@ -48,6 +48,7 @@ export interface ComposerThreadFieldProps {
   signerConnectionNote?: React.ReactNode;
   /** Tooltip on failed attachment tiles in each segment */
   attachmentFailedTitle?: string;
+  onRetryAttachment?: (localId: string) => void;
 }
 
 export function ComposerThreadField({
@@ -64,6 +65,7 @@ export function ComposerThreadField({
   onDraggingOverSegmentIdChange,
   signerConnectionNote,
   attachmentFailedTitle,
+  onRetryAttachment,
 }: ComposerThreadFieldProps) {
   const attachmentsBlocked = disabled || attachmentsDisabled;
 
@@ -340,6 +342,7 @@ export function ComposerThreadField({
                 onAdd={() => onAddSegmentClick(seg.id)}
                 disabled={attachmentsBlocked}
                 failedStatusTitle={attachmentFailedTitle}
+                onRetry={onRetryAttachment}
               />
               <button
                 type="button"

@@ -13,6 +13,7 @@ import { ComposerCanvasSectionLabel } from "./composer-canvas-primitives";
 export interface ComposerMediaFieldProps {
   attachments: ComposerAttachment[];
   onRemove: (localId: string) => void;
+  onRetry?: (localId: string) => void;
   onAdd: () => void;
   onFilesDropped?: (files: File[]) => void;
   onReorder?: (fromIndex: number, toIndex: number) => void;
@@ -31,6 +32,7 @@ export interface ComposerMediaFieldProps {
 export function ComposerMediaField({
   attachments,
   onRemove,
+  onRetry,
   onAdd,
   onFilesDropped,
   onReorder,
@@ -127,6 +129,7 @@ export function ComposerMediaField({
           density={compact ? "compact" : "default"}
           attachments={attachments}
           onRemove={onRemove}
+          onRetry={onRetry}
           onAdd={onAdd}
           onReorder={onReorder}
           disabled={disabled}

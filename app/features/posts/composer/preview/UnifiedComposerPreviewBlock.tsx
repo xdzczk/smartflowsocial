@@ -54,7 +54,10 @@ function threadHasPreviewableContent(
   return segments.some(
     (s) =>
       s.content.replace(/\s+/g, "").length > 0 ||
-      s.attachments.some((a) => a.url)
+      s.attachments.some(
+        (a) =>
+          Boolean(a.url) || a.status === "uploading" || a.status === "failed"
+      )
   );
 }
 
@@ -117,7 +120,10 @@ export function UnifiedComposerPreviewBlock(
 
   const postWarnings: PreviewWarning[] = useMemo(() => {
     if (props.isThreadMode) return [];
-    const base = computePostPreviewWarnings({ rawContent: props.content });
+    const base = computePostPreviewWarnings({
+      rawContent: props.content,
+      attachments: props.attachments,
+    });
     const hidden = computeHiddenTagsWarning(
       props.includeHashtagsInNoteBody === false,
       effectiveTagsLine
@@ -126,6 +132,7 @@ export function UnifiedComposerPreviewBlock(
   }, [
     props.isThreadMode,
     props.content,
+    props.attachments,
     props.includeHashtagsInNoteBody,
     effectiveTagsLine,
   ]);

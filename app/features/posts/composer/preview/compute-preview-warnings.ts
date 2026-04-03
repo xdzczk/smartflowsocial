@@ -1,6 +1,7 @@
 import type { ComposerAttachment } from "~/features/posts/types";
 import {
   contentHasAttachmentTokens,
+  getTokenLocalIds,
   stripAttachmentTokens,
 } from "~/features/posts/utils/inline-tokens.client";
 
@@ -14,18 +15,39 @@ import { parsePreviewTagLabels } from "./parse-preview-tags";
 const SHORT_SEGMENT_CHARS = 12;
 const LONG_SEGMENT_CHARS = 900;
 
+function attachmentTokensResolvedForAttachments(
+  rawContent: string,
+  attachments: ComposerAttachment[]
+): boolean {
+  const byId = new Map(attachments.map((a) => [a.localId, a]));
+  for (const id of getTokenLocalIds(rawContent)) {
+    const a = byId.get(id);
+    if (a?.status !== "done" || !a.url) return false;
+  }
+  return true;
+}
+
 export function computePostPreviewWarnings(input: {
   rawContent: string;
+  attachments?: ComposerAttachment[];
 }): PreviewWarning[] {
   const out: PreviewWarning[] = [];
-  if (contentHasAttachmentTokens(input.rawContent)) {
-    out.push({
-      id: "attach-tokens",
-      message:
-        "Attachment placeholder text detected in post body. It is hidden in this preview.",
-      tone: "warn",
-    });
+  if (!contentHasAttachmentTokens(input.rawContent)) return out;
+
+  if (
+    input.attachments &&
+    input.attachments.length > 0 &&
+    attachmentTokensResolvedForAttachments(input.rawContent, input.attachments)
+  ) {
+    return out;
   }
+
+  out.push({
+    id: "attach-tokens",
+    message:
+      "Attachment placeholder text detected in post body. It is hidden in this preview.",
+    tone: "warn",
+  });
   return out;
 }
 
@@ -82,14 +104,18 @@ export function computeThreadPreviewWarnings(input: {
 }): PreviewWarning[] {
   const out: PreviewWarning[] = [];
   const { segments } = input.normalized;
+  const rawMediaCount = (s: { attachments: ComposerAttachment[] }) =>
+    s.attachments.filter(
+      (a) => Boolean(a.url) || a.status === "uploading" || a.status === "failed"
+    ).length;
   const maxMedia = Math.max(
     0,
     ...segments.map((s) => s.media.length),
-    ...input.rawSegments.map((s) => s.attachments.filter((a) => a.url).length)
+    ...input.rawSegments.map((s) => rawMediaCount(s))
   );
   const minMedia = Math.min(
     ...segments.map((s) => s.media.length),
-    ...input.rawSegments.map((s) => s.attachments.filter((a) => a.url).length)
+    ...input.rawSegments.map((s) => rawMediaCount(s))
   );
 
   let prevNorm = "";
@@ -98,11 +124,17 @@ export function computeThreadPreviewWarnings(input: {
     const raw = input.rawSegments[i];
     const rawContent = raw?.content ?? "";
     if (contentHasAttachmentTokens(rawContent)) {
-      out.push({
-        id: `attach-tokens-${seg.id}`,
-        message: `Segment ${seg.index}: attachment placeholders are hidden in this preview.`,
-        tone: "warn",
-      });
+      const segAtt = raw?.attachments ?? [];
+      if (
+        segAtt.length === 0 ||
+        !attachmentTokensResolvedForAttachments(rawContent, segAtt)
+      ) {
+        out.push({
+          id: `attach-tokens-${seg.id}`,
+          message: `Segment ${seg.index}: attachment placeholders are hidden in this preview.`,
+          tone: "warn",
+        });
+      }
     }
     const empty = !seg.text.trim() && seg.media.length === 0;
     if (empty) {

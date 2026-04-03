@@ -4,6 +4,7 @@
  */
 
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
+import { preflightMediaUpload } from "~/features/upload/upload-preflight.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { nowSeconds } from "~/lib/temporal";
 
@@ -40,6 +41,13 @@ async function uploadNewFiles(
   const allImageUrls = [...existingImages];
   if (newFiles.length === 0) {
     return allImageUrls;
+  }
+
+  for (const f of newFiles) {
+    const pf = await preflightMediaUpload(f);
+    if (!pf.ok) {
+      throw new Error(pf.message);
+    }
   }
 
   const uploadResults = await uploadMultipleFiles(newFiles);

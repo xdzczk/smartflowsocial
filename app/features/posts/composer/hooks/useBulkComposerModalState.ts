@@ -33,6 +33,10 @@ import {
   BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
   useBlossomUploadGate,
 } from "~/features/upload";
+import {
+  MEDIA_UPLOAD_MAX_IMAGE_BYTES,
+  MEDIA_UPLOAD_MAX_VIDEO_BYTES,
+} from "~/features/upload/media-upload-limits";
 import type { User } from "~/features/user";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -511,8 +515,8 @@ export function useBulkComposerModalState({
       }
       const { isVideoFile: isVideoFileFn } =
         await import("~/utils/media-helpers");
-      const MAX_IMAGE = 10 * 1024 * 1024;
-      const MAX_VIDEO = 100 * 1024 * 1024;
+      const MAX_IMAGE = MEDIA_UPLOAD_MAX_IMAGE_BYTES;
+      const MAX_VIDEO = MEDIA_UPLOAD_MAX_VIDEO_BYTES;
       const isVideo = isVideoFileFn(file);
       if (isVideo && file.size > MAX_VIDEO) {
         alert("Video exceeds 100MB limit.");
