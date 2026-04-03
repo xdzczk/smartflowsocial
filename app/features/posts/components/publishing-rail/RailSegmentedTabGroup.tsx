@@ -30,42 +30,49 @@ export function RailSegmentedTabGroup({
 }) {
   return (
     <div
-      role="radiogroup"
-      aria-label={radiogroupAriaLabel}
       className={cn(
-        "relative grid divide-x",
-        /* Light: standard borders; dark: higher-contrast dividers so segments read as separate controls */
-        "divide-border/75 border-border/75 border-b",
-        "dark:divide-white/16 dark:border-b-white/16",
-        COLS[columns]
+        "overflow-hidden rounded-t-xl border-x border-t",
+        /* Frame the mode strip; dark needs stronger edge vs canvas */
+        "border-border/85 dark:border-white/20"
       )}
     >
-      {items.map((item) => {
-        const active = value === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={item.ariaLabel}
-            disabled={disabled}
-            className={cn(
-              TAB_ROW_H,
-              "flex items-center justify-center px-1 text-center text-xs transition-colors",
-              disabled && "pointer-events-none opacity-90",
-              active
-                ? "text-foreground bg-muted/40 relative z-[1] font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/20 font-medium"
-            )}
-            onClick={() => {
-              if (!disabled) onValueChange(item.id);
-            }}
-          >
-            {item.label}
-          </button>
-        );
-      })}
+      <div
+        role="radiogroup"
+        aria-label={radiogroupAriaLabel}
+        className={cn(
+          "relative grid divide-x",
+          "divide-border/80 dark:divide-white/18",
+          COLS[columns]
+        )}
+      >
+        {items.map((item) => {
+          const active = value === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={item.ariaLabel}
+              disabled={disabled}
+              className={cn(
+                TAB_ROW_H,
+                "flex items-center justify-center px-1 text-center text-xs transition-colors",
+                disabled && "pointer-events-none opacity-90",
+                /* Active: no bottom rule so it reads as one surface with the rail body below */
+                active
+                  ? "bg-card text-foreground relative z-[1] border-b border-b-transparent font-semibold"
+                  : "bg-muted/30 text-muted-foreground border-border/85 hover:bg-muted/45 hover:text-foreground border-b font-medium dark:border-b-white/18 dark:bg-white/[0.05]"
+              )}
+              onClick={() => {
+                if (!disabled) onValueChange(item.id);
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
