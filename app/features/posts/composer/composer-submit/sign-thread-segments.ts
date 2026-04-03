@@ -1,7 +1,10 @@
 import type { SignedEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
-import { resolveContentForSigning } from "../../utils/inline-tokens.client";
+import {
+  appendMediaUrlsForSigning,
+  stripAttachmentTokens,
+} from "../../utils/inline-tokens.client";
 import { getThreadReplyTags } from "../../utils/repost-quote-events.client";
 import type { ThreadSegment } from "../hooks/composer-submit-types";
 
@@ -28,12 +31,18 @@ async function trySignSegmentAt(params: {
     includeHashtagsInNoteBody,
   } = params;
 
-  const withUrl = seg.attachments.filter((a) => a.url);
-  const contentToSign = resolveContentForSigning(seg.content, withUrl);
+  const segmentBody = stripAttachmentTokens(seg.content).trim();
   const appendTags = includeHashtagsInNoteBody !== false;
-  const contentWithTags = appendTags
-    ? `${contentToSign}\n${effectiveHashtags}`
-    : contentToSign;
+  const bodyWithOptionalTags = appendTags
+    ? `${segmentBody}\n${effectiveHashtags}`
+    : segmentBody;
+  const mediaUrlsForSign = seg.attachments
+    .filter((a): a is typeof a & { url: string } => Boolean(a.url))
+    .map((a) => a.url);
+  const contentWithTags = appendMediaUrlsForSigning(
+    bodyWithOptionalTags,
+    mediaUrlsForSign
+  );
   const created_at = baseTime + index * threadDelayMinutes * 60;
   const tags =
     index === 0

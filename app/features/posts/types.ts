@@ -411,7 +411,7 @@ export interface LongFormPostJobData {
   signedEvent: SignedEvent;
 }
 
-/** Inline attachment token status (composer) */
+/** Attachment upload status (composer strip) */
 export type AttachmentStatus = "queued" | "uploading" | "done" | "failed";
 
 /** Single attachment in composer draft (client + persisted in draftMeta) */
@@ -466,6 +466,7 @@ export interface PostDraftMeta {
     alt?: string;
     position?: number;
   }>;
+  /** @deprecated No longer written; may exist on older drafts */
   contentWithTokens?: string;
   threadSegments?: Array<{
     content: string;
@@ -543,10 +544,6 @@ export interface ArticleDraftPayload {
   queueType?: string;
   scheduledFor?: string;
 }
-
-/** Inline token format: [attach:localId] */
-export const COMPOSER_ATTACH_TOKEN_PREFIX = "[attach:";
-export const COMPOSER_ATTACH_TOKEN_SUFFIX = "]";
 
 /**
  * Prepared event for bulk posting operations

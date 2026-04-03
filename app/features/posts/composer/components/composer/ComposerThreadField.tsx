@@ -18,7 +18,6 @@ import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { AttachmentsStrip } from "~/features/posts/components/AttachmentsStrip";
 import type { ComposerAttachment } from "~/features/posts/types";
-import { removeToken } from "~/features/posts/utils/inline-tokens.client";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
@@ -330,7 +329,6 @@ export function ComposerThreadField({
                       p.id === seg.id
                         ? {
                             ...p,
-                            content: removeToken(p.content, localId),
                             attachments: p.attachments.filter(
                               (a) => a.localId !== localId
                             ),

@@ -224,6 +224,24 @@ body.has-btcpay-confirmation-bar {
     --chart-5: 250 100% 5%;                 /* Dark indigo */
     --radius: 0.625rem;                      /* Softer corners (was 0.5rem) */
 
+    /* Switch / toggle — distinct off-state on cards; brand on-state (see .dark for contrast pass) */
+    --switch-track-off: 0 0% 91%;
+    --switch-track-off-hover: 0 0% 86%;
+    --switch-border-off: 0 0% 74%;
+    --switch-border-off-hover: 0 0% 66%;
+    --switch-thumb-off: 0 0% 100%;
+    --switch-track-on: 255 97% 51%;
+    --switch-track-on-hover: 255 97% 54%;
+    --switch-border-on: 255 82% 44%;
+    --switch-border-on-hover: 255 75% 40%;
+    --switch-thumb-on: 0 0% 100%;
+    --switch-track-off-disabled: 0 0% 95%;
+    --switch-border-off-disabled: 0 0% 86%;
+    --switch-thumb-off-disabled: 0 0% 90%;
+    --switch-track-on-disabled: 255 42% 72%;
+    --switch-border-on-disabled: 255 38% 62%;
+    --switch-thumb-on-disabled: 0 0% 100%;
+
     /* Calendar: Surface & elevation (Surface 0 = --background). Use only these in Calendar. */
     --calendar-surface-1-bg: 0 0% 99%;      /* Surface 1 – main content container */
     --calendar-surface-1-shadow: none;
@@ -292,6 +310,24 @@ body.has-btcpay-confirmation-bar {
     --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
     --chart-4: 250 25% 60%;                 /* Medium lavender */
     --chart-5: 250 25% 80%;                 /* Light lavender */
+
+    /* Switch / toggle — visible off-track vs card (~6.7%); decisive purple on-state */
+    --switch-track-off: 0 0% 15%;
+    --switch-track-off-hover: 0 0% 18%;
+    --switch-border-off: 0 0% 28%;
+    --switch-border-off-hover: 0 0% 36%;
+    --switch-thumb-off: 0 0% 96%;
+    --switch-track-on: 255 97% 51%;
+    --switch-track-on-hover: 255 97% 56%;
+    --switch-border-on: 255 88% 42%;
+    --switch-border-on-hover: 255 82% 48%;
+    --switch-thumb-on: 0 0% 100%;
+    --switch-track-off-disabled: 0 0% 11%;
+    --switch-border-off-disabled: 0 0% 17%;
+    --switch-thumb-off-disabled: 0 0% 52%;
+    --switch-track-on-disabled: 255 52% 34%;
+    --switch-border-on-disabled: 255 44% 28%;
+    --switch-thumb-on-disabled: 0 0% 82%;
     
     /* Landing page specific variables */
     --landing-card-elevated: 0 0% 8.6%;     /* Elevated cards #16161A */

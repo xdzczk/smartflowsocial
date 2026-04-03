@@ -23,7 +23,7 @@ import { isContestEmbedRequest } from "./contest-embed-response.server";
 import { parseAttachmentMeta } from "./handlers/text-handlers.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
 import { parseIncludeHashtagsInNoteBodyFromForm } from "./hashtag-utils.server";
-import { resolveContentWithTokens } from "./inline-tokens.server";
+import { prepareComposerTextAndFileUrls } from "./inline-tokens.server";
 
 function getFormString(formData: FormData, key: string): string {
   const v = formData.get(key);
@@ -55,13 +55,10 @@ export async function persistShortDraft(
   const tagsStr = getFormString(formData, "tags");
 
   const attachmentMeta = parseAttachmentMeta(formData);
-  let content = contentRaw;
-  let fileUrl: string[] = [];
-  if (attachmentMeta.length > 0) {
-    const resolved = resolveContentWithTokens(contentRaw, attachmentMeta);
-    content = resolved.content;
-    fileUrl = resolved.fileUrl;
-  }
+  const { content, fileUrl } = prepareComposerTextAndFileUrls(
+    contentRaw,
+    attachmentMeta
+  );
 
   const draftMeta = {
     attachmentMeta: attachmentMeta.map((a) => ({
@@ -70,7 +67,6 @@ export async function persistShortDraft(
       url: a.url,
       alt: (a as { alt?: string }).alt,
     })),
-    contentWithTokens: contentRaw,
   };
 
   if (draftId && typeof draftId === "string" && draftId.length > 0) {

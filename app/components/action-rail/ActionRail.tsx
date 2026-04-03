@@ -21,7 +21,7 @@ export function ActionRail({
       )}
       aria-label={ariaLabel}
     >
-      <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+      <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm dark:border-white/14">
         <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
         {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>

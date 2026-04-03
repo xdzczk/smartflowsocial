@@ -174,6 +174,22 @@ export function useBulkComposerModalState({
       : [];
   }, [tagsProp, contextFetcher.data?.tags, defaultPreset?.tags]);
 
+  const prevBulkBatchModeRef = useRef<BulkBatchMode>(bulkBatchMode);
+  useEffect(() => {
+    const prev = prevBulkBatchModeRef.current;
+    prevBulkBatchModeRef.current = bulkBatchMode;
+    if (prev !== "queue" || bulkBatchMode !== "schedule") return;
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => ({
+        ...p,
+        queueType: "unassigned",
+        scheduledFor: "",
+      }))
+    );
+    setDisplayedHashtags(Array.isArray(tags) ? tags.join(" ") : "");
+    setBulkScheduleRandomWindowMinutes(0);
+  }, [bulkBatchMode, tags]);
+
   const isSubmitting = submitFetcher.state !== "idle";
 
   const submitAction =

@@ -1,6 +1,6 @@
 /**
- * Server-side resolution of [attach:localId] tokens in content.
- * Produces final content (tokens removed) and fileUrl array for NIP-94 / post.
+ * Strip legacy `[attach:localId]` from composer content and derive `fileUrl`
+ * in attachment strip / attachmentMeta order (not token order).
  */
 
 const ATTACH_TOKEN_REGEX = /\[attach:([^\]]+)\]/g;
@@ -10,24 +10,18 @@ export interface AttachmentMetaItem {
   url?: string;
 }
 
-export function resolveContentWithTokens(
+/**
+ * Removes inline attachment tokens from text and builds `fileUrl` from
+ * `attachmentMeta` array order (matches composer strip order).
+ */
+export function prepareComposerTextAndFileUrls(
   content: string,
   attachmentMeta: AttachmentMetaItem[]
 ): { content: string; fileUrl: string[] } {
-  const urlByLocalId = new Map(
-    attachmentMeta.filter((a) => a.url).map((a) => [a.localId, a.url as string])
-  );
-  const fileUrl: string[] = [];
-  const contentResolved = content.replace(ATTACH_TOKEN_REGEX, (_, localId) => {
-    const url = urlByLocalId.get(localId);
-    if (url) {
-      fileUrl.push(url);
-      return "";
-    }
-    return "";
-  });
-  return {
-    content: contentResolved.replace(/\n{3,}/g, "\n\n").trim(),
-    fileUrl,
-  };
+  const contentStripped = content.replace(ATTACH_TOKEN_REGEX, "");
+  const contentNormalized = contentStripped.replace(/\n{3,}/g, "\n\n").trim();
+  const fileUrl = attachmentMeta
+    .map((a) => a.url)
+    .filter((u): u is string => Boolean(u));
+  return { content: contentNormalized, fileUrl };
 }

@@ -201,13 +201,11 @@ export async function handleDraftText({
   let fileUrl: string[] = [];
 
   const attachmentMeta = parseAttachmentMeta(formData);
-  if (attachmentMeta.length > 0) {
-    const { resolveContentWithTokens } =
-      await import("../inline-tokens.server");
-    const resolved = resolveContentWithTokens(content, attachmentMeta);
-    content = resolved.content;
-    fileUrl = resolved.fileUrl;
-  }
+  const { prepareComposerTextAndFileUrls } =
+    await import("../inline-tokens.server");
+  const draftResolved = prepareComposerTextAndFileUrls(content, attachmentMeta);
+  content = draftResolved.content;
+  fileUrl = draftResolved.fileUrl;
   await assertMediaUrlsReady(fileUrl);
 
   // Apply hashtags
@@ -262,13 +260,11 @@ export async function handlePostOrScheduleText({
   let fileUrl: string[] = [];
 
   const attachmentMeta = parseAttachmentMeta(formData);
-  if (attachmentMeta.length > 0) {
-    const { resolveContentWithTokens } =
-      await import("../inline-tokens.server");
-    const resolved = resolveContentWithTokens(content, attachmentMeta);
-    content = resolved.content;
-    fileUrl = resolved.fileUrl;
-  }
+  const { prepareComposerTextAndFileUrls: preparePostContent } =
+    await import("../inline-tokens.server");
+  const postResolved = preparePostContent(content, attachmentMeta);
+  content = postResolved.content;
+  fileUrl = postResolved.fileUrl;
   await assertMediaUrlsReady(fileUrl);
 
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";

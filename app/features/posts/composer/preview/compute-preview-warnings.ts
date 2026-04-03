@@ -1,9 +1,4 @@
 import type { ComposerAttachment } from "~/features/posts/types";
-import {
-  contentHasAttachmentTokens,
-  getTokenLocalIds,
-  stripAttachmentTokens,
-} from "~/features/posts/utils/inline-tokens.client";
 
 import type {
   NormalizedPollPreview,
@@ -15,40 +10,11 @@ import { parsePreviewTagLabels } from "./parse-preview-tags";
 const SHORT_SEGMENT_CHARS = 12;
 const LONG_SEGMENT_CHARS = 900;
 
-function attachmentTokensResolvedForAttachments(
-  rawContent: string,
-  attachments: ComposerAttachment[]
-): boolean {
-  const byId = new Map(attachments.map((a) => [a.localId, a]));
-  for (const id of getTokenLocalIds(rawContent)) {
-    const a = byId.get(id);
-    if (a?.status !== "done" || !a.url) return false;
-  }
-  return true;
-}
-
-export function computePostPreviewWarnings(input: {
+export function computePostPreviewWarnings(_input: {
   rawContent: string;
   attachments?: ComposerAttachment[];
 }): PreviewWarning[] {
-  const out: PreviewWarning[] = [];
-  if (!contentHasAttachmentTokens(input.rawContent)) return out;
-
-  if (
-    input.attachments &&
-    input.attachments.length > 0 &&
-    attachmentTokensResolvedForAttachments(input.rawContent, input.attachments)
-  ) {
-    return out;
-  }
-
-  out.push({
-    id: "attach-tokens",
-    message:
-      "Attachment placeholder text detected in post body. It is hidden in this preview.",
-    tone: "warn",
-  });
-  return out;
+  return [];
 }
 
 export function computePollPreviewWarnings(
@@ -121,21 +87,6 @@ export function computeThreadPreviewWarnings(input: {
   let prevNorm = "";
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i]!;
-    const raw = input.rawSegments[i];
-    const rawContent = raw?.content ?? "";
-    if (contentHasAttachmentTokens(rawContent)) {
-      const segAtt = raw?.attachments ?? [];
-      if (
-        segAtt.length === 0 ||
-        !attachmentTokensResolvedForAttachments(rawContent, segAtt)
-      ) {
-        out.push({
-          id: `attach-tokens-${seg.id}`,
-          message: `Segment ${seg.index}: attachment placeholders are hidden in this preview.`,
-          tone: "warn",
-        });
-      }
-    }
     const empty = !seg.text.trim() && seg.media.length === 0;
     if (empty) {
       out.push({
@@ -196,12 +147,4 @@ export function computeHiddenTagsWarning(
     };
   }
   return null;
-}
-
-export function rawSegmentHasPlaceholder(content: string): boolean {
-  return contentHasAttachmentTokens(content);
-}
-
-export function strippedSegmentLength(content: string): number {
-  return stripAttachmentTokens(content).trim().length;
 }

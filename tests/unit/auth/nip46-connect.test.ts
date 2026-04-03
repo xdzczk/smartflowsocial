@@ -11,7 +11,6 @@ import {
   connectNip46WithNostrConnectUriForLogin,
   connectNip46WithPendingUriForLogin,
 } from "~/features/auth/nip46/nip46-connect.client";
-import { BRAND_NAME } from "~/lib/brand";
 
 vi.mock("nostr-tools", () => ({
   generateSecretKey: vi.fn().mockReturnValue(new Uint8Array(32).fill(1)),
@@ -49,9 +48,10 @@ vi.mock("~/features/auth/nostr-signer.client", () => ({
     relays: ["wss://relay.example.com"],
     clientSecretKey: new Uint8Array(32).fill(2),
   }),
-  getNostrConnectAppMetadata: vi
-    .fn()
-    .mockReturnValue({ name: BRAND_NAME, url: "https://example.com" }),
+  getNostrConnectAppMetadata: vi.fn().mockReturnValue({
+    name: "TestApp",
+    url: "https://example.com",
+  }),
 }));
 
 describe("NIP-46 connect (login)", () => {

@@ -36,6 +36,7 @@ import {
   type QueueType,
   type ComposerAttachment,
 } from "../../types";
+import { stripAttachmentTokens } from "../../utils/inline-tokens.client";
 import type { TextPostFormData } from "../hooks/composer-submit-types";
 import {
   useComposerLocalDraft,
@@ -342,7 +343,7 @@ export function UnifiedComposer({
 
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
-      content: initialDraft?.content ?? "",
+      content: stripAttachmentTokens(initialDraft?.content ?? ""),
       scheduledFor: initialScheduledFor ?? "",
       queueType: initialDraft?.queueType ?? "unassigned",
       isRecyclable: false,
@@ -377,8 +378,6 @@ export function UnifiedComposer({
     handleRetryAttachment,
   } = useUnifiedComposerAttachmentHandlers({
     blossomMediaBlocked,
-    content,
-    form: form as UseFormReturn<TextPostFormData>,
     setAttachments,
     mergeThreadSegments,
     isThreadMode,
@@ -446,7 +445,7 @@ export function UnifiedComposer({
       return;
     appliedLocalRestoredRef.current = true;
     form.reset({
-      content: localRestored.content,
+      content: stripAttachmentTokens(localRestored.content),
       scheduledFor: localRestored.scheduledFor,
       queueType: localRestored.queueType,
       isRecyclable: false,
@@ -477,7 +476,7 @@ export function UnifiedComposer({
       setThreadAutoNumberSegments(threadNumbering);
       const mapped = localRestored.threadSegments.map((segment) => ({
         id: segment.id,
-        content: segment.content,
+        content: stripAttachmentTokens(segment.content),
         attachments: segment.attachments.map((attachment) => ({
           localId: attachment.localId,
           url: attachment.url,
@@ -564,6 +563,33 @@ export function UnifiedComposer({
     form.setValue("scheduledFor", contestRailScheduledFor);
     setSchedulingScheduledFor(contestRailScheduledFor);
   }, [contestRailScheduledFor, embedContext, form, setSchedulingScheduledFor]);
+
+  const prevPublishModeRef = React.useRef(publishMode);
+  React.useEffect(() => {
+    const prev = prevPublishModeRef.current;
+    prevPublishModeRef.current = publishMode;
+    if (prev !== "queue" || publishMode === "queue") return;
+
+    setSelectedQueue("unassigned");
+    if (
+      embedContext === "contest" &&
+      contestRailScheduledFor != null &&
+      contestRailScheduledFor.trim() !== ""
+    ) {
+      setSchedulingScheduledFor(contestRailScheduledFor);
+      form.setValue("scheduledFor", contestRailScheduledFor);
+    } else {
+      setSchedulingScheduledFor("");
+      form.setValue("scheduledFor", "");
+    }
+  }, [
+    contestRailScheduledFor,
+    embedContext,
+    form,
+    publishMode,
+    setSchedulingScheduledFor,
+    setSelectedQueue,
+  ]);
 
   const formScheduledFor = form.watch("scheduledFor");
   const selectedQueueType = queueTypes.find(

@@ -120,8 +120,11 @@ function getNotificationAuthorPubkey(n: Notification): string {
 /** Remove notifications from groups where the author is the current user (case-insensitive). */
 export function filterGroupedExcludingUser(
   groups: GroupedNotification[],
-  userPubkeyHex: string
+  userPubkeyHex: string | null | undefined
 ): GroupedNotification[] {
+  if (userPubkeyHex == null || userPubkeyHex.trim() === "") {
+    return groups;
+  }
   const userLower = userPubkeyHex.toLowerCase();
   return groups
     .map((group) => ({

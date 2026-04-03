@@ -7,7 +7,7 @@ import { redirect } from "@remix-run/node";
 
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
-import { resolveContentWithTokens } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
+import { prepareComposerTextAndFileUrls } from "~/features/posts/composer/services/newpost-action/inline-tokens.server";
 import { CreatePostUseCase } from "~/features/posts/server/composer";
 import { CreateLongFormPostUseCase } from "~/features/posts/server/longform";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
@@ -43,13 +43,12 @@ export async function handleCreateTemplateFromScratchPost(
   } = result.data;
 
   const attachmentMeta = parseAttachmentMeta(formData);
-  let content = contentRaw;
-  let fileUrl: string[] = [];
-  if (attachmentMeta.length > 0) {
-    const resolved = resolveContentWithTokens(contentRaw, attachmentMeta);
-    content = resolved.content;
-    fileUrl = resolved.fileUrl;
-  }
+  const scratchResolved = prepareComposerTextAndFileUrls(
+    contentRaw,
+    attachmentMeta
+  );
+  const content = scratchResolved.content;
+  const { fileUrl } = scratchResolved;
 
   const hashtagResult = await getHashtagPresetTags(
     userId,

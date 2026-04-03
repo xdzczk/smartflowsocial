@@ -213,6 +213,17 @@ export default function LongFormPost({
     setSchedulingScheduledFor(initialScheduledFor);
   }, [initialScheduledFor, initialData, setSchedulingScheduledFor]);
 
+  const prevLongformPublishModeRef = useRef(publishMode);
+  useEffect(() => {
+    const prev = prevLongformPublishModeRef.current;
+    prevLongformPublishModeRef.current = publishMode;
+    if (prev !== "queue" || publishMode === "queue") return;
+    void updateDisplayedHashtags("unassigned");
+    setSchedulingScheduledFor(null);
+    form.setValue("scheduledFor", "");
+    form.setValue("queueType", "unassigned");
+  }, [form, publishMode, setSchedulingScheduledFor, updateDisplayedHashtags]);
+
   const longformDraftKey =
     initialData?.id != null
       ? `longform-draft-${initialData.id}`
