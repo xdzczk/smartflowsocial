@@ -130,7 +130,8 @@ export const uploadPreviewSchema = z.object({
  */
 export const draftTextPostSchema = newPostBaseSchema.extend({
   _action: z.literal("draft-text"),
-  content: z.string().min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY),
+  // Allow media-only drafts; composer submit path enforces constraints.
+  content: z.string().default(""),
 });
 
 /**
@@ -138,7 +139,8 @@ export const draftTextPostSchema = newPostBaseSchema.extend({
  */
 export const postOrScheduleTextSchema = newPostBaseSchema.extend({
   _action: z.enum(["post-text", "schedule-text"]),
-  content: z.string().min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY),
+  // Allow media-only text posts; submit logic validates text-or-media.
+  content: z.string().default(""),
 });
 
 /**
