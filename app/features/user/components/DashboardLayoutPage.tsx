@@ -7,6 +7,7 @@ import {
   useLocation,
   useNavigation,
 } from "@remix-run/react";
+import { X } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -25,6 +26,10 @@ import {
 } from "~/features/payments";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
+import {
+  INLINE_ICON_SIZE_CLASS,
+  INLINE_ICON_STROKE,
+} from "~/lib/icon-constants";
 import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
@@ -303,22 +308,24 @@ export function DashboardLayoutPage(): ReactNode {
             </div>
           ) : shouldShowFreePlanBanner ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-border bg-muted text-muted-foreground mb-4 rounded-lg border p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="border-border-subtle bg-card/80 text-muted-foreground mb-4 rounded-xl border px-4 py-3.5 shadow-sm">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium">You’re on the Free plan</p>
-                    <p className="text-sm opacity-90">
+                    <p className="text-foreground text-sm font-semibold tracking-tight">
+                      You’re on the Free plan
+                    </p>
+                    <p className="mt-1 text-sm leading-5">
                       Full product surface, strict operating limits. Upgrade for
                       higher limits, more accounts, and stronger publishing
                       infrastructure.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 self-start">
+                  <div className="flex items-center gap-1.5 self-start md:ml-4 md:shrink-0">
                     <Link
                       prefetch="intent"
                       to="/plans"
                       onClick={handleFreePlanBannerCtaClick}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
                     >
                       View plans
                     </Link>
@@ -326,9 +333,13 @@ export function DashboardLayoutPage(): ReactNode {
                       type="button"
                       aria-label="Dismiss free plan banner"
                       onClick={handleDismissFreePlanBanner}
-                      className="text-muted-foreground hover:text-foreground hover:bg-background/50 focus:ring-ring inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-1 focus-visible:outline-none"
                     >
-                      X
+                      <X
+                        className={INLINE_ICON_SIZE_CLASS}
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden="true"
+                      />
                     </button>
                   </div>
                 </div>
