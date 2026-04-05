@@ -3,10 +3,10 @@
  * Central gate so UI can disable pickers and handlers stay consistent.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { SIGNER_CONFIG_HYDRATED_EVENT } from "~/features/auth/signer";
-import { getUploadProvider } from "~/lib/query/hooks/useApiQuery";
+import { useUploadProvider } from "~/lib/query/hooks/useApiQuery";
 
 import { isBlossomProvider } from "./upload-provider-blossom.client";
 
@@ -31,12 +31,13 @@ export function useBlossomUploadGate(): {
   mediaUploadBlocked: boolean;
   uploadProviderKnown: boolean;
 } {
-  const [provider, setProvider] = useState<string | undefined>();
-  const [known, setKnown] = useState(false);
   const [signerReady, setSignerReady] = useState<boolean | null>(null);
   const [windowNostr, setWindowNostr] = useState(
     () => typeof window !== "undefined" && !!window.nostr
   );
+  const uploadProvider = useUploadProvider();
+  const provider = uploadProvider.data?.provider;
+  const known = uploadProvider.isSuccess || uploadProvider.isError;
 
   const refreshSigner = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -55,29 +56,6 @@ export function useBlossomUploadGate(): {
     return () =>
       window.removeEventListener(SIGNER_CONFIG_HYDRATED_EVENT, handler);
   }, [refreshSigner]);
-
-  const uploadProviderEffectActiveRef = useRef(true);
-
-  useEffect(() => {
-    uploadProviderEffectActiveRef.current = true;
-    void (async () => {
-      try {
-        const d = await getUploadProvider();
-        if (uploadProviderEffectActiveRef.current) {
-          setProvider(d.provider);
-        }
-      } catch {
-        // ignore — provider unknown until settings load
-      } finally {
-        if (uploadProviderEffectActiveRef.current) {
-          setKnown(true);
-        }
-      }
-    })();
-    return () => {
-      uploadProviderEffectActiveRef.current = false;
-    };
-  }, []);
 
   const mediaUploadBlocked = isBlossomMediaUploadBlocked({
     uploadProviderKnown: known,

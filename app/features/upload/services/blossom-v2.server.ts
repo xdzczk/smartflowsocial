@@ -4,8 +4,10 @@ import { getUserSubscription } from "~/features/payments/data";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { getUserById } from "~/features/user";
+import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
 import { BRAND_NAME } from "~/lib/brand";
 import { env } from "~/lib/env.server";
+import { logInfo, logWarning } from "~/lib/error-logger.server";
 import { AuthorizationError } from "~/lib/errors";
 
 import {
@@ -18,6 +20,7 @@ import {
   getBlossomReservationDriftStats as getBlossomReservationDriftStatsFromRepo,
   upsertBlossomUsagePeriod,
 } from "../repositories/blossom-data.server";
+import { findMediaUploadIntentByIntentId } from "../repositories/media-intent-data.server";
 
 import { getCanonicalOwnedBytesForUser } from "./media.server";
 
@@ -32,6 +35,19 @@ interface UploadFileIntent {
   type: string;
   filename?: string;
 }
+
+interface IssueTokenContext {
+  intentId: string;
+  requestedProvider: string;
+  requestId?: string;
+}
+
+type UploadProviderName =
+  | "S3"
+  | "BLOSSOM_PRIMAL"
+  | "BLOSSOM_BLOSSTR"
+  | "BLOSSOM_SFS"
+  | "BLOSSOM_CUSTOM";
 
 interface TokenResult {
   sha256: string;
@@ -145,9 +161,51 @@ function isSha256Hex(value: string): boolean {
   return /^[0-9a-f]{64}$/i.test(value);
 }
 
+function normalizeUploadProvider(
+  provider: string | null | undefined
+): UploadProviderName | null {
+  if (
+    provider === "S3" ||
+    provider === "BLOSSOM_PRIMAL" ||
+    provider === "BLOSSOM_BLOSSTR" ||
+    provider === "BLOSSOM_SFS" ||
+    provider === "BLOSSOM_CUSTOM"
+  ) {
+    return provider;
+  }
+  return null;
+}
+
+function throwProviderMismatch(args: {
+  userId: string;
+  requestId?: string;
+  requestedProvider: string;
+  resolvedProvider: string;
+  intentProvider: string;
+  reservationBatchProvider: string | null;
+  authorizationProvider: string;
+  reason: string;
+  intentId: string;
+}) {
+  logWarning("MEDIA_PROVIDER_MISMATCH", {
+    errorCode: "MEDIA_PROVIDER_MISMATCH",
+    userId: args.userId,
+    requestId: args.requestId ?? undefined,
+    intentId: args.intentId,
+    requestedProvider: args.requestedProvider,
+    resolvedProvider: args.resolvedProvider,
+    intentProvider: args.intentProvider,
+    reservationBatchProvider: args.reservationBatchProvider,
+    authorizationProvider: args.authorizationProvider,
+    reason: args.reason,
+  });
+  throw new Error("MEDIA_PROVIDER_MISMATCH");
+}
+
 export async function issueBlossomBulkTokens(
   userId: string,
-  files: UploadFileIntent[]
+  files: UploadFileIntent[],
+  context: IssueTokenContext
 ): Promise<BulkTokenIssueResult> {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("files array is required");
@@ -155,6 +213,76 @@ export async function issueBlossomBulkTokens(
   if (files.length > MAX_BATCH_SIZE) {
     throw new Error(`batch size exceeds max of ${MAX_BATCH_SIZE}`);
   }
+  if (!context.intentId || !context.requestedProvider) {
+    throw new Error("media_intent_required");
+  }
+
+  const requestedProvider = normalizeUploadProvider(context.requestedProvider);
+  if (!requestedProvider) {
+    throw new Error("MEDIA_PROVIDER_MISMATCH");
+  }
+
+  const [intent, uploadSettings] = await Promise.all([
+    findMediaUploadIntentByIntentId(context.intentId),
+    loadUploadProviderSettings(userId),
+  ]);
+  if (intent?.userId !== userId) {
+    throw new Error("media_intent_not_found");
+  }
+  if (intent.expiresAt.getTime() < Date.now()) {
+    throw new Error("media_intent_expired");
+  }
+  const resolvedProvider = normalizeUploadProvider(uploadSettings.provider);
+  if (!resolvedProvider) {
+    throw new Error("MEDIA_PROVIDER_MISMATCH");
+  }
+  const intentProvider = normalizeUploadProvider(intent.provider);
+  if (!intentProvider) {
+    throw new Error("MEDIA_PROVIDER_MISMATCH");
+  }
+  if (
+    requestedProvider !== intentProvider ||
+    resolvedProvider !== intentProvider ||
+    requestedProvider !== resolvedProvider
+  ) {
+    throwProviderMismatch({
+      userId,
+      requestId: context.requestId,
+      intentId: context.intentId,
+      requestedProvider,
+      resolvedProvider,
+      intentProvider,
+      reservationBatchProvider: null,
+      authorizationProvider: "n/a",
+      reason: "requested_resolved_intent_mismatch",
+    });
+  }
+  if (intentProvider !== "BLOSSOM_SFS") {
+    throwProviderMismatch({
+      userId,
+      requestId: context.requestId,
+      intentId: context.intentId,
+      requestedProvider,
+      resolvedProvider,
+      intentProvider,
+      reservationBatchProvider: null,
+      authorizationProvider: intentProvider,
+      reason: "token_lane_requires_blossom_sfs",
+    });
+  }
+
+  logInfo("blossom_token_issuance_provider_resolved", {
+    userId,
+    requestId: context.requestId ?? undefined,
+    requestedProvider,
+    resolvedProvider,
+    intentProvider,
+    reservationBatchProvider: null,
+    authorizationProvider: intentProvider,
+    fallbackUsed: false,
+    fallbackReason: null,
+    intentId: context.intentId,
+  });
 
   const user = await getUserById(userId);
   if (!user?.npub) {
@@ -296,6 +424,8 @@ export async function issueBlossomBulkTokens(
       batchId,
       userId,
       pubkey,
+      intentProvider,
+      context.intentId,
       totalBytes,
       batchExpiresAt,
       acceptedForDb.map(({ jti, file }) => ({
@@ -306,6 +436,21 @@ export async function issueBlossomBulkTokens(
       }))
     );
   }
+
+  logInfo("blossom_token_issuance_completed", {
+    userId,
+    requestId: context.requestId ?? undefined,
+    requestedProvider,
+    resolvedProvider,
+    intentProvider,
+    reservationBatchProvider: intentProvider,
+    authorizationProvider: intentProvider,
+    fallbackUsed: false,
+    fallbackReason: null,
+    intentId: context.intentId,
+    batchId,
+    issuedTokenCount: acceptedForDb.length,
+  });
 
   return {
     uploadUrl: `${resolveBlossomUploadBaseUrl()}/upload`,

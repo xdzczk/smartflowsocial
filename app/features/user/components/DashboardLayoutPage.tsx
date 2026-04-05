@@ -7,7 +7,13 @@ import {
   useLocation,
   useNavigation,
 } from "@remix-run/react";
-import { useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReactNode } from "react";
 
 import Footer from "~/components/layout/DashboardFooter";
@@ -23,6 +29,32 @@ import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
+const FREE_PLAN_BANNER_DISMISSED_KEY =
+  "smartflowsocial:dismissed-free-plan-banner";
+const FREE_PLAN_BANNER_ANALYTICS_EVENT = "smartflow:free-plan-banner-analytics";
+const subscribeNoop = () => () => {};
+const getClientMountedSnapshot = () => true;
+const getServerMountedSnapshot = () => false;
+
+type FreePlanBannerAnalyticsEventName =
+  | "free_plan_banner_viewed"
+  | "free_plan_banner_dismissed"
+  | "free_plan_banner_cta_clicked";
+
+function trackFreePlanBannerEvent(
+  name: FreePlanBannerAnalyticsEventName
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(
+      new CustomEvent(FREE_PLAN_BANNER_ANALYTICS_EVENT, {
+        detail: { name, at: Date.now() },
+      })
+    );
+  } catch {
+    // Ignore analytics errors.
+  }
+}
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
   let name: string | undefined;
@@ -99,6 +131,55 @@ export function DashboardLayoutPage(): ReactNode {
     return localStorage.getItem(DESKTOP_SIDEBAR_OPEN_KEY) !== "false";
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const isClientMounted = useSyncExternalStore(
+    subscribeNoop,
+    getClientMountedSnapshot,
+    getServerMountedSnapshot
+  );
+  const [
+    isFreePlanBannerDismissedLocally,
+    setIsFreePlanBannerDismissedLocally,
+  ] = useState(false);
+  const isFreePlanBannerDismissed = useMemo(() => {
+    if (!isClientMounted) return false;
+    try {
+      return sessionStorage.getItem(FREE_PLAN_BANNER_DISMISSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }, [isClientMounted]);
+  const hasTrackedFreePlanBannerView = useRef(false);
+
+  const shouldShowFreePlanBanner =
+    isClientMounted &&
+    isFreePlan &&
+    !showBillingAlert &&
+    !isSubscriptionExpired &&
+    !isFreePlanBannerDismissed &&
+    !isFreePlanBannerDismissedLocally;
+
+  useEffect(() => {
+    if (!shouldShowFreePlanBanner || hasTrackedFreePlanBannerView.current) {
+      return;
+    }
+    hasTrackedFreePlanBannerView.current = true;
+    trackFreePlanBannerEvent("free_plan_banner_viewed");
+  }, [shouldShowFreePlanBanner]);
+
+  const handleDismissFreePlanBanner = () => {
+    try {
+      sessionStorage.setItem(FREE_PLAN_BANNER_DISMISSED_KEY, "1");
+    } catch {
+      // Ignore storage access errors.
+    }
+    setIsFreePlanBannerDismissedLocally(true);
+    trackFreePlanBannerEvent("free_plan_banner_dismissed");
+  };
+
+  const handleFreePlanBannerCtaClick = () => {
+    trackFreePlanBannerEvent("free_plan_banner_cta_clicked");
+  };
+
   const handleDesktopSidebarToggle = () => {
     setDesktopSidebarOpen((prev) => {
       const next = !prev;
@@ -220,23 +301,37 @@ export function DashboardLayoutPage(): ReactNode {
                 </Link>
               </div>
             </div>
-          ) : isFreePlan ? (
+          ) : shouldShowFreePlanBanner ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
-                <div>
-                  <p className="font-medium">You’re on the Free plan</p>
-                  <p className="text-sm opacity-90">
-                    Upgrade to unlock calendars, drafts, templates, bulk
-                    scheduling, and more.
-                  </p>
+              <div className="border-border bg-muted text-muted-foreground mb-4 rounded-lg border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">You’re on the Free plan</p>
+                    <p className="text-sm opacity-90">
+                      Full product surface, strict operating limits. Upgrade for
+                      higher limits, more accounts, and stronger publishing
+                      infrastructure.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start">
+                    <Link
+                      prefetch="intent"
+                      to="/plans"
+                      onClick={handleFreePlanBannerCtaClick}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                    >
+                      View plans
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label="Dismiss free plan banner"
+                      onClick={handleDismissFreePlanBanner}
+                      className="text-muted-foreground hover:text-foreground hover:bg-background/50 focus:ring-ring inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                    >
+                      X
+                    </button>
+                  </div>
                 </div>
-                <Link
-                  prefetch="intent"
-                  to="/plans"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
-                >
-                  View plans
-                </Link>
               </div>
             </div>
           ) : null}

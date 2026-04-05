@@ -2,8 +2,6 @@
  * Blossom upload provider adapter.
  */
 
-import { BRAND_NAME } from "~/lib/brand";
-
 import {
   enrichFailedUploadResult,
   mapUnknownToUploadError,
@@ -85,14 +83,22 @@ interface SfsUploadResponse {
   retry_after?: number;
 }
 
+interface SfsTokenRequestContext {
+  intentId: string;
+  requestedProvider: string;
+}
+
 function normalizeSfsErrorPayload(errorPayload: unknown): {
   error?: string;
+  message?: string;
   retry_after?: number;
 } {
   if (!errorPayload || typeof errorPayload !== "object") return {};
   const payload = errorPayload as Record<string, unknown>;
   return {
     error: typeof payload["error"] === "string" ? payload["error"] : undefined,
+    message:
+      typeof payload["message"] === "string" ? payload["message"] : undefined,
     retry_after:
       typeof payload["retry_after"] === "number"
         ? payload["retry_after"]
@@ -197,7 +203,8 @@ export async function createBlossomUploader(
 }
 
 async function requestSfsTokens(
-  files: Array<{ file: File; sha256: string }>
+  files: Array<{ file: File; sha256: string }>,
+  context?: SfsTokenRequestContext
 ): Promise<SfsBulkTokenResponse> {
   const response = await fetch("/api/blossom/tokens", {
     method: "POST",
@@ -209,13 +216,19 @@ async function requestSfsTokens(
         type: file.type || DEFAULT_BLOB_MIME_TYPE,
         filename: file.name,
       })),
+      intentId: context?.intentId,
+      requestedProvider: context?.requestedProvider,
     }),
   });
   if (!response.ok) {
     const payload = normalizeSfsErrorPayload(
       await response.json().catch(() => ({}))
     );
-    throw new Error(payload.error ?? `token_request_failed_${response.status}`);
+    throw new Error(
+      payload.message ??
+        payload.error ??
+        `token_request_failed_${response.status}`
+    );
   }
   return (await response.json()) as SfsBulkTokenResponse;
 }
@@ -283,10 +296,13 @@ async function postBlossomMetadataCallback(params: {
   }).catch(() => {});
 }
 
-async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
+async function uploadFileToSfsToken(
+  file: File,
+  context?: SfsTokenRequestContext
+): Promise<UploadResultClient> {
   try {
     const sha256 = await hashFileSha256(file);
-    const tokenResponse = await requestSfsTokens([{ file, sha256 }]);
+    const tokenResponse = await requestSfsTokens([{ file, sha256 }], context);
     const tokenResult = tokenResponse.results[0];
     if (!tokenResult?.token) {
       return enrichFailedUploadResult({
@@ -294,7 +310,7 @@ async function uploadFileToSfsToken(file: File): Promise<UploadResultClient> {
         error:
           tokenResult?.message ??
           tokenResult?.error ??
-          `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
+          "Your current media provider requires Creator or Pro. Switch to Primal Blossom or upgrade your plan.",
       });
     }
     const uploaded = await uploadToSfsWithToken(
@@ -381,12 +397,13 @@ export async function uploadFileToBlossom(
   uploader?: BlossomUploaderInstance,
   options?: {
     componentLabel?: string;
+    tokenContext?: SfsTokenRequestContext;
     onProviderSwitchToS3?: UploadBlossomFallbackToS3;
   }
 ): Promise<UploadResultClient> {
   const policy = getProviderUploadPolicy(provider);
   if (policy.lane === "authoritative_tokenized") {
-    return uploadFileToSfsToken(file);
+    return uploadFileToSfsToken(file, options?.tokenContext);
   }
 
   const _fileUploadStart = Date.now();
@@ -489,12 +506,13 @@ export async function uploadSfsBulkFiles(
     enableMirrorBlossom: boolean;
     mirrorUploadUrls: string[];
   },
-  onProgress?: (current: number, total: number, fileName: string) => void
+  onProgress?: (current: number, total: number, fileName: string) => void,
+  tokenContext?: SfsTokenRequestContext
 ): Promise<UploadResultClient[]> {
   const hashing = await Promise.all(
     files.map(async (file) => ({ file, sha256: await hashFileSha256(file) }))
   );
-  const tokenResponse = await requestSfsTokens(hashing);
+  const tokenResponse = await requestSfsTokens(hashing, tokenContext);
   const uploadUrl = tokenResponse.uploadUrl;
 
   const tasks = hashing
@@ -527,7 +545,7 @@ export async function uploadSfsBulkFiles(
             success: false,
             error:
               current.error ??
-              `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
+              "Your current media provider requires Creator or Pro. Switch to Primal Blossom or upgrade your plan.",
           });
         }
         let attempt = 0;
@@ -557,9 +575,10 @@ export async function uploadSfsBulkFiles(
           } catch (error) {
             const decision = decideSfsRetry(error, attempt, maxAttempts);
             if (decision.type === "refresh_token") {
-              const refreshed = await requestSfsTokens([
-                { file: current.file, sha256: current.sha256 },
-              ]);
+              const refreshed = await requestSfsTokens(
+                [{ file: current.file, sha256: current.sha256 }],
+                tokenContext
+              );
               const refreshedToken = refreshed.results[0]?.token;
               if (!refreshedToken) {
                 return enrichFailedUploadResult({

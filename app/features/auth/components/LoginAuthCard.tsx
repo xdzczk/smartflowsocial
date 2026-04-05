@@ -66,8 +66,9 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
       <div
         className={cn(
           "login-motif-panel hero-motif-bg relative flex w-full min-w-0 shrink-0 flex-col items-center justify-center px-6 py-10 md:min-h-0 md:flex-[1_1_0] md:self-stretch md:px-10 lg:p-16",
-          /* Mobile: fixed sensible height for trust/motif; avoid flex-1 splitting with left column (clips CTAs under overflow-hidden) */
-          "min-h-[200px] max-md:max-h-[min(40vh,320px)] md:min-h-full",
+          /* Keep a compact trust panel on mobile, but don't clamp awaiting approval QR UI. */
+          "min-h-[200px] md:min-h-full",
+          !isAwaitingApproval && "max-md:max-h-[min(40vh,320px)]",
           isAwaitingApproval &&
             "border-border/60 bg-muted/25 dark:bg-muted/10 md:border-border/60 border-t md:border-t-0 md:border-l"
         )}

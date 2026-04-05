@@ -28,13 +28,51 @@ const PRIMARY_CONCURRENCY_FLOOR = 2;
 /** Public upload result shape (success/file/error). Alias for compatibility. */
 export type UploadResult = UploadResultClient;
 
+type UploadProviderName =
+  | "S3"
+  | "BLOSSOM_PRIMAL"
+  | "BLOSSOM_BLOSSTR"
+  | "BLOSSOM_SFS"
+  | "BLOSSOM_CUSTOM";
+
+export interface UploadExecutionContext {
+  intentId?: string;
+  provider: UploadProviderName;
+  customBlossomUrl?: string | null;
+  enableMirrorBlossom?: boolean;
+  mirrorUploadUrls?: string[];
+}
+
+interface UploadExecutionOptions {
+  context?: UploadExecutionContext;
+}
+
 /**
  * Upload a file using the user's preferred upload provider (S3 or Blossom).
  */
-export async function uploadFile(file: File): Promise<UploadResult> {
+export async function uploadFile(
+  file: File,
+  options?: UploadExecutionOptions
+): Promise<UploadResult> {
+  return uploadFileWithOptions(file, options);
+}
+
+async function uploadFileWithOptions(
+  file: File,
+  options?: UploadExecutionOptions
+): Promise<UploadResult> {
   try {
-    const { getUploadProvider } = await import("~/lib/query");
-    const data = await getUploadProvider();
+    const data = options?.context
+      ? {
+          provider: options.context.provider,
+          customBlossomUrl: options.context.customBlossomUrl ?? null,
+          enableMirrorBlossom: options.context.enableMirrorBlossom ?? false,
+          mirrorUploadUrls: options.context.mirrorUploadUrls ?? [],
+        }
+      : await (async () => {
+          const { getUploadProvider } = await import("~/lib/query");
+          return getUploadProvider();
+        })();
     const uploadProvider = data.provider;
     const customBlossomUrl = data.customBlossomUrl;
     const enableMirrorBlossom = data.enableMirrorBlossom;
@@ -50,6 +88,12 @@ export async function uploadFile(file: File): Promise<UploadResult> {
         undefined,
         {
           componentLabel: COMPONENT_UPLOAD_CLIENT,
+          tokenContext: options?.context?.intentId
+            ? {
+                intentId: options.context.intentId,
+                requestedProvider: uploadProvider ?? "BLOSSOM_PRIMAL",
+              }
+            : undefined,
           onProviderSwitchToS3: (f) => uploadFileToS3(f),
         }
       );
@@ -91,10 +135,20 @@ export async function uploadFile(file: File): Promise<UploadResult> {
  */
 export async function uploadMultipleFiles(
   files: File[],
-  onProgress?: (current: number, total: number, fileName: string) => void
+  onProgress?: (current: number, total: number, fileName: string) => void,
+  options?: UploadExecutionOptions
 ): Promise<UploadResult[]> {
-  const { getUploadProvider } = await import("~/lib/query");
-  const data = await getUploadProvider();
+  const data = options?.context
+    ? {
+        provider: options.context.provider,
+        customBlossomUrl: options.context.customBlossomUrl ?? null,
+        enableMirrorBlossom: options.context.enableMirrorBlossom ?? false,
+        mirrorUploadUrls: options.context.mirrorUploadUrls ?? [],
+      }
+    : await (async () => {
+        const { getUploadProvider } = await import("~/lib/query");
+        return getUploadProvider();
+      })();
   const isBlossom = isBlossomProvider(data.provider);
   const provider = data.provider ?? "BLOSSOM_PRIMAL";
   const customBlossomUrl = data.customBlossomUrl ?? null;
@@ -109,7 +163,13 @@ export async function uploadMultipleFiles(
             enableMirrorBlossom: data.enableMirrorBlossom ?? false,
             mirrorUploadUrls: data.mirrorUploadUrls ?? [],
           },
-          onProgress
+          onProgress,
+          options?.context?.intentId
+            ? {
+                intentId: options.context.intentId,
+                requestedProvider: provider,
+              }
+            : undefined
         );
       } catch (error) {
         const mapped = mapUnknownToUploadError(error);
@@ -159,7 +219,15 @@ export async function uploadMultipleFiles(
             data.enableMirrorBlossom ?? false,
             data.mirrorUploadUrls ?? [],
             sharedUploader,
-            { componentLabel: COMPONENT_UPLOAD_CLIENT }
+            {
+              componentLabel: COMPONENT_UPLOAD_CLIENT,
+              tokenContext: options?.context?.intentId
+                ? {
+                    intentId: options.context.intentId,
+                    requestedProvider: provider,
+                  }
+                : undefined,
+            }
           ),
       })
     );
@@ -184,7 +252,7 @@ export async function uploadMultipleFiles(
       const currentIndex = index++;
       const file = files[currentIndex];
       if (file) {
-        const result = await uploadFile(file);
+        const result = await uploadFileWithOptions(file, options);
         results[currentIndex] = result;
         completed++;
         const percentage = Math.round((completed / files.length) * 100);
@@ -219,7 +287,7 @@ export async function uploadEditorJSImage(file: File): Promise<{
     const isBlossom = isBlossomProvider(data.provider);
 
     if (isBlossom) {
-      const uploadResult = await uploadFile(file);
+      const uploadResult = await uploadFileWithOptions(file);
       if (uploadResult.success && uploadResult.file?.url) {
         return { success: 1, file: { url: uploadResult.file.url } };
       }

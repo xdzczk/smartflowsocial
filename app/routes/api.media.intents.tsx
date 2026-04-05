@@ -13,6 +13,12 @@ interface IntentFilePayload {
   sha256?: string;
 }
 
+interface IntentRequestPayload {
+  files?: unknown[];
+  selectedProvider?: string;
+  composeSessionId?: string;
+}
+
 function isIntentFilePayload(value: unknown): value is IntentFilePayload {
   if (!value || typeof value !== "object") return false;
   const payload = value as Record<string, unknown>;
@@ -27,7 +33,7 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       const userId = await requireUserId(request);
-      const payload = (await request.json()) as { files?: unknown[] };
+      const payload = (await request.json()) as IntentRequestPayload;
       const files = Array.isArray(payload.files) ? payload.files : [];
       if (
         files.length === 0 ||
@@ -35,11 +41,29 @@ export const action = withCSRFProtection(
       ) {
         return json({ error: "invalid_request" }, { status: 400 });
       }
-      const intent = await createMediaIngestIntent(userId, files);
+      const intent = await createMediaIngestIntent(userId, files, {
+        composeSessionId:
+          typeof payload.composeSessionId === "string"
+            ? payload.composeSessionId
+            : undefined,
+      });
+      const requestId = request.headers.get("x-request-id") ?? undefined;
       logInfo("media_intent_created", {
         userId,
         fileCount: files.length,
-        provider: intent.provider,
+        selectedProvider:
+          typeof payload.selectedProvider === "string"
+            ? payload.selectedProvider
+            : null,
+        resolvedProvider: intent.provider,
+        source: "resolved_upload_provider_settings",
+        commercialPlanType: null,
+        intentId: intent.intentId,
+        composeSessionId:
+          typeof payload.composeSessionId === "string"
+            ? payload.composeSessionId
+            : null,
+        requestId,
       });
       return json(intent);
     } catch (error) {

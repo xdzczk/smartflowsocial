@@ -36,7 +36,10 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       const userId = await requireUserId(request);
-      const payload = (await request.json()) as { items?: unknown[] };
+      const payload = (await request.json()) as {
+        items?: unknown[];
+        intentId?: string;
+      };
       const items = Array.isArray(payload.items) ? payload.items : [];
       if (
         items.length === 0 ||
@@ -44,15 +47,33 @@ export const action = withCSRFProtection(
       ) {
         return json({ error: "invalid_request" }, { status: 400 });
       }
-      const result = await commitMediaIngest(userId, items);
+      const intentId =
+        typeof payload.intentId === "string" ? payload.intentId : undefined;
+      const result = await commitMediaIngest(userId, items, { intentId });
       logInfo("media_commit_completed", {
         userId,
         itemCount: items.length,
         committedCount: result.committed.length,
+        intentId: intentId ?? null,
       });
       return json(result);
     } catch (error) {
       if (error instanceof Response) return error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        message.includes("MEDIA_PROVIDER_MISMATCH") ||
+        message.includes("media_intent_") ||
+        message.includes("invalid_media_intent")
+      ) {
+        return json(
+          {
+            error: "MEDIA_PROVIDER_MISMATCH",
+            message:
+              "Media provider mismatch detected. Please refresh and try again.",
+          },
+          { status: 409 }
+        );
+      }
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
     }

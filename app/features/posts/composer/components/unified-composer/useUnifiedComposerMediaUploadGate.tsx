@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
 import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate.client";
 import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
-import { getUploadProvider } from "~/lib/query/hooks/useApiQuery";
+import { useUploadProvider } from "~/lib/query/hooks/useApiQuery";
 
 import { UnifiedComposerBlossomSignerMediaNote } from "./UnifiedComposerBlossomSignerMediaNote";
 
@@ -10,33 +10,10 @@ export function useUnifiedComposerMediaUploadGate(
   signerReady: boolean | null,
   windowNostrBridgePresent: boolean
 ) {
-  const [mediaUploadProvider, setMediaUploadProvider] = useState<
-    string | undefined
-  >();
-  const [mediaUploadProviderKnown, setMediaUploadProviderKnown] =
-    useState(false);
-
-  const uploadProviderFetchActiveRef = useRef(false);
-  useEffect(() => {
-    uploadProviderFetchActiveRef.current = true;
-    void (async () => {
-      try {
-        const d = await getUploadProvider();
-        if (uploadProviderFetchActiveRef.current) {
-          setMediaUploadProvider(d.provider);
-        }
-      } catch {
-        // ignore — treat as unknown provider until a later refresh
-      } finally {
-        if (uploadProviderFetchActiveRef.current) {
-          setMediaUploadProviderKnown(true);
-        }
-      }
-    })();
-    return () => {
-      uploadProviderFetchActiveRef.current = false;
-    };
-  }, []);
+  const uploadProvider = useUploadProvider();
+  const mediaUploadProvider = uploadProvider.data?.provider;
+  const mediaUploadProviderKnown =
+    uploadProvider.isSuccess || uploadProvider.isError;
 
   const blossomMediaUploads =
     mediaUploadProviderKnown && isBlossomProvider(mediaUploadProvider);

@@ -90,6 +90,13 @@ export async function createBlossomReservationBatchAndItems(
   batchId: string,
   userId: string,
   pubkey: string,
+  provider:
+    | "S3"
+    | "BLOSSOM_PRIMAL"
+    | "BLOSSOM_BLOSSTR"
+    | "BLOSSOM_SFS"
+    | "BLOSSOM_CUSTOM",
+  sourceIntentId: string | null,
   totalBytes: bigint,
   expiresAt: Date,
   items: Array<{ jti: string; sha256: string; size: number; mimeType: string }>
@@ -100,6 +107,8 @@ export async function createBlossomReservationBatchAndItems(
         batchId,
         userId,
         pubkey,
+        provider,
+        sourceIntentId,
         totalBytes,
         expiresAt,
         status: "ACTIVE",
@@ -206,7 +215,7 @@ export async function runCommitBlossomItemInTransaction(
         sha256: item.sha256,
         size: item.size,
         mimeType: item.type ?? null,
-        provider: "BLOSSOM_SFS",
+        provider: reservation.batch.provider,
       },
     });
   }

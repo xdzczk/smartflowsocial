@@ -253,6 +253,25 @@ describe("User Settings", () => {
       expect(result).toBe("BLOSSOM_PRIMAL");
     });
 
+    it("should resolve S3 to Primal for free tier even when subscription row is ACTIVE", async () => {
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        uploadProvider: "S3",
+        customBlossomUrl: null,
+      });
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        planId: "free",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 60_000),
+        Plan: { id: "free", name: "Free", enableLifetimeAccess: false },
+      });
+
+      const result = await getUserUploadProvider(TEST_USER_ID);
+
+      expect(result).toBe("BLOSSOM_PRIMAL");
+    });
+
     it("should resolve S3 to SFS for active paid users", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         uploadProvider: "S3",
