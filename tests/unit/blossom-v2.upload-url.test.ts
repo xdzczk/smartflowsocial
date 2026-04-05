@@ -24,6 +24,14 @@ vi.mock("~/features/upload/services/media.server", () => ({
   getCanonicalOwnedBytesForUser: vi.fn(),
 }));
 
+vi.mock("~/features/user/services/upload-provider.server", () => ({
+  loadUploadProviderSettings: vi.fn(),
+}));
+
+vi.mock("~/features/upload/repositories/media-intent-data.server", () => ({
+  findMediaUploadIntentByIntentId: vi.fn(),
+}));
+
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
     blossomReservationItem: {
@@ -40,9 +48,11 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 import { getUserSubscription } from "~/features/payments/data";
+import { findMediaUploadIntentByIntentId } from "~/features/upload/repositories/media-intent-data.server";
 import { issueBlossomBulkTokens } from "~/features/upload/services/blossom-v2.server";
 import { getCanonicalOwnedBytesForUser } from "~/features/upload/services/media.server";
 import { getUserById } from "~/features/user";
+import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
 import { prisma } from "~/lib/prisma.server";
 
 describe("issueBlossomBulkTokens uploadUrl normalization", () => {
@@ -66,6 +76,20 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
     (
       prisma.blossomUploadUsagePeriod.findUnique as ReturnType<typeof vi.fn>
     ).mockResolvedValue(null);
+    (loadUploadProviderSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
+      provider: "BLOSSOM_SFS",
+      customBlossomUrl: null,
+      enableMirrorBlossom: false,
+      mirrorUploadUrls: [],
+    });
+    (
+      findMediaUploadIntentByIntentId as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      intentId: "intent-1",
+      userId: "user-1",
+      provider: "BLOSSOM_SFS",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
     (prisma.$transaction as ReturnType<typeof vi.fn>).mockResolvedValue(
       undefined
     );
@@ -73,9 +97,11 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
 
   it("returns single /upload when BLOSSOM_SFS_API_URL is API root", async () => {
     mockEnv.BLOSSOM_SFS_API_URL = "https://blossom-api.smartflow.social";
-    const result = await issueBlossomBulkTokens("user-1", [
-      { sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" },
-    ]);
+    const result = await issueBlossomBulkTokens(
+      "user-1",
+      [{ sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" }],
+      { intentId: "intent-1", requestedProvider: "BLOSSOM_SFS" }
+    );
     expect(result.uploadUrl).toBe(
       "https://blossom-api.smartflow.social/upload"
     );
@@ -83,9 +109,11 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
 
   it("returns single /upload when BLOSSOM_SFS_API_URL already ends with /upload", async () => {
     mockEnv.BLOSSOM_SFS_API_URL = "https://blossom-api.smartflow.social/upload";
-    const result = await issueBlossomBulkTokens("user-1", [
-      { sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" },
-    ]);
+    const result = await issueBlossomBulkTokens(
+      "user-1",
+      [{ sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" }],
+      { intentId: "intent-1", requestedProvider: "BLOSSOM_SFS" }
+    );
     expect(result.uploadUrl).toBe(
       "https://blossom-api.smartflow.social/upload"
     );
@@ -94,9 +122,11 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
   it("returns single /upload when BLOSSOM_SFS_API_URL ends with /upload/", async () => {
     mockEnv.BLOSSOM_SFS_API_URL =
       "https://blossom-api.smartflow.social/upload/";
-    const result = await issueBlossomBulkTokens("user-1", [
-      { sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" },
-    ]);
+    const result = await issueBlossomBulkTokens(
+      "user-1",
+      [{ sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" }],
+      { intentId: "intent-1", requestedProvider: "BLOSSOM_SFS" }
+    );
     expect(result.uploadUrl).toBe(
       "https://blossom-api.smartflow.social/upload"
     );

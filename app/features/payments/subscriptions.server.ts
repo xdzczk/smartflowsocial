@@ -4,6 +4,7 @@ import {
   ensureUserHasFreePlan,
   getUserSubscription,
 } from "~/features/payments/data";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { deriveBillingContext } from "~/features/payments/services/subscription-status.server";
 import { getUserById } from "~/features/user";
 
@@ -141,6 +142,12 @@ export async function isSubscriptionActiveForGating(
 ): Promise<boolean> {
   const subscription = await getUserSubscription(userId);
   if (!subscription || subscription.status !== "ACTIVE") {
+    return false;
+  }
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+    subscription.planId ?? subscription.Plan?.id ?? subscription.Plan?.name
+  );
+  if (commercialPlanType === "free") {
     return false;
   }
   if (subscription.Plan?.enableLifetimeAccess) {

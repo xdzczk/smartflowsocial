@@ -1,4 +1,5 @@
 import { Link, useFetcher } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -42,6 +43,7 @@ export function UploadProviderSettings({
   customBlossomUrl,
   isSubscriptionActiveForGating,
 }: UploadProviderSettingsProps) {
+  const queryClient = useQueryClient();
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const isSubmitting =
     fetcher.state === "submitting" &&
@@ -59,8 +61,9 @@ export function UploadProviderSettings({
     if (fetcher.state !== "idle") return;
     if (fetcher.data?.success) {
       clearUploadProviderCache();
+      void queryClient.invalidateQueries({ queryKey: ["upload-provider"] });
     }
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, queryClient]);
 
   const isCustomSelected = selectedProvider === "BLOSSOM_CUSTOM";
   const customUrlValid = isValidHttpsUrl(customBlossomUrlInput);

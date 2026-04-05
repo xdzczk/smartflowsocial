@@ -13,6 +13,7 @@ export const UploadErrorCodes = {
   UPLOAD_UNSUPPORTED_TYPE: "UPLOAD_UNSUPPORTED_TYPE",
   UPLOAD_RESPONSE_INVALID: "UPLOAD_RESPONSE_INVALID",
   UPLOAD_FINALIZE_FAILED: "UPLOAD_FINALIZE_FAILED",
+  MEDIA_PROVIDER_MISMATCH: "MEDIA_PROVIDER_MISMATCH",
   UNKNOWN_UPLOAD_ERROR: "UNKNOWN_UPLOAD_ERROR",
 } as const;
 
@@ -40,6 +41,8 @@ const DEFAULT_MESSAGES: Record<UploadErrorCode, string> = {
     "The upload response was invalid. Please retry.",
   [UploadErrorCodes.UPLOAD_FINALIZE_FAILED]:
     "Upload could not be finalized. Please retry.",
+  [UploadErrorCodes.MEDIA_PROVIDER_MISMATCH]:
+    "Media provider mismatch detected. Please refresh and try again.",
   [UploadErrorCodes.UNKNOWN_UPLOAD_ERROR]:
     "Upload failed. Retry or remove this file.",
 };
@@ -114,6 +117,16 @@ export function inferUploadErrorCodeFromMessage(
     return UploadErrorCodes.UPLOAD_RESPONSE_INVALID;
   }
   if (
+    m.includes("media_provider_mismatch") ||
+    m.includes("media provider mismatch") ||
+    m.includes("media_intent_")
+  ) {
+    return UploadErrorCodes.MEDIA_PROVIDER_MISMATCH;
+  }
+  if (
+    m.includes("creator or pro") ||
+    m.includes("hosted media") ||
+    m.includes("current media provider requires creator or pro") ||
     m.includes("plan") ||
     m.includes("not enabled") ||
     m.includes("token_request_failed") ||
@@ -149,8 +162,12 @@ export function mapUnknownToUploadError(
         ? error
         : UploadErrorCodes.UNKNOWN_UPLOAD_ERROR;
   const code = inferUploadErrorCodeFromMessage(message, ctx);
-  const display =
-    code === UploadErrorCodes.UNKNOWN_UPLOAD_ERROR && message
+  const planProviderBlocked =
+    code === UploadErrorCodes.UPLOAD_PROVIDER_UNAVAILABLE &&
+    message.toLowerCase().includes("creator or pro");
+  const display = planProviderBlocked
+    ? "Your current media provider requires Creator or Pro. Switch to Primal Blossom or upgrade your plan."
+    : code === UploadErrorCodes.UNKNOWN_UPLOAD_ERROR && message
       ? message
       : defaultMessageForUploadError(code);
   return { code, message: display };

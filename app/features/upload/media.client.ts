@@ -59,14 +59,39 @@ interface LegacyUploadResult {
 
 interface IntentResponse {
   intentId: string;
+  provider:
+    | "S3"
+    | "BLOSSOM_PRIMAL"
+    | "BLOSSOM_BLOSSTR"
+    | "BLOSSOM_SFS"
+    | "BLOSSOM_CUSTOM";
+  customBlossomUrl: string | null;
+  enableMirrorBlossom: boolean;
+  mirrorUploadUrls: string[];
+  files: Array<{
+    intentFileId: string;
+    fileName: string;
+    size: number;
+    mimeType: string;
+    lane: "server_upload" | "direct_client_upload";
+    uploadEndpoint: string;
+  }>;
 }
 
 async function createIntent(files: File[]): Promise<IntentResponse | null> {
   try {
+    let selectedProvider: string | undefined;
+    try {
+      const { getUploadProvider } = await import("~/lib/query");
+      selectedProvider = (await getUploadProvider()).provider;
+    } catch {
+      selectedProvider = undefined;
+    }
     const response = await fetch("/api/media/intents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        selectedProvider,
         files: files.map((file) => ({
           fileName: file.name,
           size: file.size,
@@ -83,7 +108,8 @@ async function createIntent(files: File[]): Promise<IntentResponse | null> {
 
 async function commitUploads(
   results: LegacyUploadResult[],
-  originalFiles: File[]
+  originalFiles: File[],
+  intentId?: string
 ): Promise<Array<{ resultIndex: number; finalUrl: string }>> {
   const items = results
     .map((result, index) => {
@@ -106,6 +132,7 @@ async function commitUploads(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      intentId,
       items: items.map((item) => ({
         fileName: item.fileName,
         url: item.url,
@@ -159,8 +186,20 @@ function markMissingCommitsAsFinalizeFailed(
 
 export async function upload(file: File): Promise<LegacyUploadResult> {
   const intent = await createIntent([file]);
-  const result = await uploadFileLegacy(file);
-  const committed = intent ? await commitUploads([result], [file]) : [];
+  const result = await uploadFileLegacy(file, {
+    context: intent
+      ? {
+          intentId: intent.intentId,
+          provider: intent.provider,
+          customBlossomUrl: intent.customBlossomUrl,
+          enableMirrorBlossom: intent.enableMirrorBlossom,
+          mirrorUploadUrls: intent.mirrorUploadUrls,
+        }
+      : undefined,
+  });
+  const committed = intent
+    ? await commitUploads([result], [file], intent.intentId)
+    : [];
   if (intent) markMissingCommitsAsFinalizeFailed([result], committed);
   const finalUrl = committed[0]?.finalUrl;
   if (finalUrl && result.success && result.file) {
@@ -174,8 +213,20 @@ export async function uploadMany(
   onProgress?: (current: number, total: number, fileName: string) => void
 ): Promise<LegacyUploadResult[]> {
   const intent = await createIntent(files);
-  const results = await uploadMultipleFilesLegacy(files, onProgress);
-  const committed = intent ? await commitUploads(results, files) : [];
+  const results = await uploadMultipleFilesLegacy(files, onProgress, {
+    context: intent
+      ? {
+          intentId: intent.intentId,
+          provider: intent.provider,
+          customBlossomUrl: intent.customBlossomUrl,
+          enableMirrorBlossom: intent.enableMirrorBlossom,
+          mirrorUploadUrls: intent.mirrorUploadUrls,
+        }
+      : undefined,
+  });
+  const committed = intent
+    ? await commitUploads(results, files, intent.intentId)
+    : [];
   if (intent) markMissingCommitsAsFinalizeFailed(results, committed);
   for (const entry of committed) {
     const result = results[entry.resultIndex];

@@ -9,6 +9,10 @@ import {
   findMediaVariantByAssetKindProviderUrl,
   updateMediaAssetStatus,
 } from "../repositories/media-data.server";
+import {
+  createMediaUploadIntent,
+  findMediaUploadIntentByIntentId,
+} from "../repositories/media-intent-data.server";
 
 import { evaluateMediaPolicy } from "./media-policy.server";
 import { enqueueMediaProcessing } from "./media-processing.server";
@@ -43,6 +47,9 @@ export interface MediaIntentItem {
 export interface MediaIntentResponse {
   intentId: string;
   provider: UploadProviderName;
+  customBlossomUrl: string | null;
+  enableMirrorBlossom: boolean;
+  mirrorUploadUrls: string[];
   files: MediaIntentItem[];
 }
 
@@ -65,6 +72,8 @@ export interface MediaCommitResponse {
   }>;
 }
 
+const MEDIA_INTENT_TTL_MS = 30 * 60 * 1000;
+
 function normalizeProvider(provider: string): UploadProviderName {
   if (
     provider === "BLOSSOM_PRIMAL" ||
@@ -79,7 +88,8 @@ function normalizeProvider(provider: string): UploadProviderName {
 
 export async function createMediaIngestIntent(
   userId: string,
-  files: MediaIntentFile[]
+  files: MediaIntentFile[],
+  options?: { composeSessionId?: string | null }
 ): Promise<MediaIntentResponse> {
   for (const file of files) {
     const policy = evaluateMediaPolicy({
@@ -96,10 +106,22 @@ export async function createMediaIngestIntent(
     provider === "S3" ? "server_upload" : "direct_client_upload";
   const uploadEndpoint =
     lane === "server_upload" ? "/api/upload" : "/api/upload-blossom";
+  const intentId = randomUUID();
+  await createMediaUploadIntent({
+    intentId,
+    userId,
+    provider,
+    fileCount: files.length,
+    composeSessionId: options?.composeSessionId ?? null,
+    expiresAt: new Date(Date.now() + MEDIA_INTENT_TTL_MS),
+  });
 
   return {
-    intentId: randomUUID(),
+    intentId,
     provider,
+    customBlossomUrl: settings.customBlossomUrl,
+    enableMirrorBlossom: settings.enableMirrorBlossom,
+    mirrorUploadUrls: settings.mirrorUploadUrls,
     files: files.map((file) => ({
       intentFileId: randomUUID(),
       fileName: file.fileName,
@@ -114,9 +136,25 @@ export async function createMediaIngestIntent(
 
 export async function commitMediaIngest(
   userId: string,
-  items: MediaCommitItem[]
+  items: MediaCommitItem[],
+  options?: { intentId?: string }
 ): Promise<MediaCommitResponse> {
   const committed: MediaCommitResponse["committed"] = [];
+  if (options?.intentId) {
+    const intent = await findMediaUploadIntentByIntentId(options.intentId);
+    if (intent?.userId !== userId) {
+      throw new Error("invalid_media_intent");
+    }
+    if (intent.expiresAt.getTime() < Date.now()) {
+      throw new Error("media_intent_expired");
+    }
+    const providerMismatch = items.some(
+      (item) => item.provider !== intent.provider
+    );
+    if (providerMismatch) {
+      throw new Error("MEDIA_PROVIDER_MISMATCH");
+    }
+  }
 
   for (const item of items) {
     const mediaResult = await createMediaIfMissing({

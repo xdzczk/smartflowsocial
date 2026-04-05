@@ -71,15 +71,19 @@ export function Nip46QrUri({
 
         <div
           className={cn(
-            "border-border flex min-h-[min(320px,85vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-6 shadow-md",
+            "border-border flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-4 shadow-md sm:min-h-[min(320px,85vw)] sm:p-6",
             "dark:border-white/10 dark:bg-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_8px_40px_-12px_rgba(0,0,0,0.45)]"
           )}
         >
           {uri ? (
-            <QRCode value={uri} size={QR_APPROVAL_SIZE} />
+            <QRCode
+              value={uri}
+              size={QR_APPROVAL_SIZE}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            />
           ) : (
             <div
-              className="bg-muted/80 flex h-[280px] w-[280px] max-w-full animate-pulse rounded-md"
+              className="bg-muted/80 flex aspect-square w-full max-w-[280px] animate-pulse rounded-md"
               aria-hidden
             />
           )}

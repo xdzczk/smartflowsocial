@@ -375,11 +375,13 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
 
       function getSinglePostValidationError(): string | null {
-        if (!data.content.trim()) return COMPOSER_CONTENT_REQUIRED;
         if (attachments.some((a) => a.status === "uploading"))
           return COMPOSER_UPLOAD_WAIT;
         if (attachments.some((a) => a.status === "failed"))
           return COMPOSER_REMOVE_FAILED_ATTACHMENTS;
+        const hasText = data.content.trim().length > 0;
+        const hasResolvedMedia = attachments.some((a) => Boolean(a.url));
+        if (!hasText && !hasResolvedMedia) return COMPOSER_CONTENT_REQUIRED;
         return null;
       }
 
