@@ -5,7 +5,10 @@
  */
 
 import { getPostById } from "~/features/posts/server";
-import { deriveIsPublished } from "~/features/posts/state-machine/post-state";
+import {
+  deriveIsPublished,
+  isPublishingState,
+} from "~/features/posts/state-machine/post-state";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import type { PublishNowInput } from "~/features/posts/use-cases/types";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
@@ -88,43 +91,36 @@ export class PublishNowUseCase {
       userId: input.userId,
     });
     if (!lease) {
-      logInfo(
-        "PublishNowUseCase: Publish lease not acquired; failing publish",
-        {
-          postId: input.postId,
-          userId: input.userId,
-          correlationId,
-        }
-      );
-      try {
-        await this.stateMachine.transition(
-          input.postId,
-          input.userId,
-          "FAILED",
-          "Publish lease not acquired (concurrent publish or lock held)",
+      logInfo("PublishNowUseCase: Publish lease not acquired", {
+        postId: input.postId,
+        userId: input.userId,
+        correlationId,
+      });
+
+      // Duplicate submissions can race: one request holds lease and publishes,
+      // while another request cannot acquire lease. Treat in-flight/already-done
+      // states as idempotent success instead of failing the post.
+      const latestPost = await getPostById({
+        id: input.postId,
+        userId: input.userId,
+      });
+      const latestState = latestPost?.currentState;
+      if (
+        latestState &&
+        (deriveIsPublished(latestState) || isPublishingState(latestState))
+      ) {
+        logInfo(
+          "PublishNowUseCase: Lease miss treated as duplicate publish request",
           {
-            additionalPostData: {
-              publishingLockId: null,
-              publishingLockExpiresAt: null,
-            },
+            postId: input.postId,
+            userId: input.userId,
+            correlationId,
+            latestState,
           }
         );
-      } catch (transitionError) {
-        logErrorUtil(
-          transitionError instanceof Error
-            ? transitionError
-            : new Error(String(transitionError)),
-          {
-            ...buildObsContext({
-              postId: input.postId,
-              userId: input.userId,
-              correlationId,
-            }),
-            message:
-              "PublishNowUseCase: Failed to transition to FAILED after lease miss",
-          }
-        );
+        return;
       }
+
       throw new Error(
         "Could not start publish (another publish may be in progress). Please try again in a few seconds."
       );
