@@ -110,15 +110,18 @@ describe("Nostr Edge Cases", () => {
       };
 
       vi.useFakeTimers();
-      const promise = signEventFn(eventData);
+      try {
+        // Attach rejection expectation immediately to avoid Vitest unhandled rejection warnings.
+        const rejection = expect(signEventFn(eventData)).rejects.toThrow(
+          "Nostr extension not found after retries"
+        );
 
-      // Flush all pending timers so the retry loop runs to completion and the rejection is delivered
-      await vi.runAllTimersAsync();
-
-      await expect(promise).rejects.toThrow(
-        "Nostr extension not found after retries"
-      );
-      vi.useRealTimers();
+        // Flush all pending timers so the retry loop runs to completion.
+        await vi.runAllTimersAsync();
+        await rejection;
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("should handle string return type from signEvent", async () => {

@@ -271,6 +271,41 @@ describe("PublishNowUseCase", () => {
       expect(recordPublishLatency).toHaveBeenCalled();
     });
 
+    it("should treat lease miss as idempotent when post is already publishing", async () => {
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        postType: "TEXT",
+        currentState: "PUBLISHING",
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      mockAcquirePostPublishLease.mockResolvedValue(null);
+
+      await expect(
+        useCase.execute({
+          postId: TEST_POST_ID,
+          userId: TEST_USER_ID,
+          signedEvent: createValidSignedEvent({ content: "test" }),
+          relays: ["wss://relay1.com"],
+        })
+      ).resolves.toBeUndefined();
+
+      expect(mockTransition).toHaveBeenCalledWith(
+        TEST_POST_ID,
+        TEST_USER_ID,
+        "PUBLISHING",
+        "Publishing post immediately"
+      );
+      expect(mockTransition).not.toHaveBeenCalledWith(
+        TEST_POST_ID,
+        TEST_USER_ID,
+        "FAILED",
+        expect.any(String),
+        expect.anything()
+      );
+    });
+
     it("should use correlation ID if provided", async () => {
       const mockPost = {
         id: TEST_POST_ID,
