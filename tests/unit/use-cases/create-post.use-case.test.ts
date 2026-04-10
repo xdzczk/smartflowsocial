@@ -11,6 +11,10 @@ const { mockPrisma } = vi.hoisted(() => {
     post: {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    longFormPost: {
+      count: vi.fn().mockResolvedValue(0),
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
@@ -76,6 +80,10 @@ describe("CreatePostUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+      0
+    );
     mockTransition.mockResolvedValue(undefined);
     useCase = new CreatePostUseCase();
   });

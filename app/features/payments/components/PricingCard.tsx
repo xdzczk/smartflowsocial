@@ -157,8 +157,8 @@ export function PricingCard({
     (isLoading ? selectedPlan === plan.id : false);
 
   const cardClass = isTeams
-    ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-6 shadow-sm"
-    : `border-border relative flex h-full flex-col rounded-lg border p-6 shadow-lg ${
+    ? "border-border bg-muted/20 relative flex h-full flex-col rounded-lg border p-5 shadow-sm"
+    : `border-border relative flex h-full flex-col rounded-lg border p-5 shadow-lg ${
         plan.isPopular
           ? "bg-muted/10 ring-primary/35 dark:ring-primary/40 border-primary/25 ring-2"
           : "bg-card"
@@ -169,14 +169,14 @@ export function PricingCard({
       {plan.isPopular && !isTeams ? (
         <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
           <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-sm font-medium whitespace-nowrap">
-            Default paid tier
+            Most popular
           </span>
         </div>
       ) : null}
       {plan.id === "pro" && !isTeams ? (
         <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
           <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-medium whitespace-nowrap">
-            Multi-account operator
+            Multi-account
           </span>
         </div>
       ) : null}
@@ -188,9 +188,9 @@ export function PricingCard({
         </div>
       ) : null}
 
-      <div className="mb-4 text-center">
+      <div className="mb-3 text-center">
         <h3 className="text-foreground mb-2 text-2xl font-bold">{plan.name}</h3>
-        <div className="mb-2 min-h-[3rem]">
+        <div className="mb-2 min-h-[2.75rem]">
           {isTeams ? (
             <span className="text-foreground text-2xl font-semibold">
               Coming soon
@@ -222,7 +222,9 @@ export function PricingCard({
 
       <div className="flex-1">
         {plan.callouts.length > 0 ? (
-          <ul className={`${bulletTextClass} mb-6 space-y-2 text-left text-sm`}>
+          <ul
+            className={`${bulletTextClass} mb-5 space-y-1.5 text-left text-sm`}
+          >
             {plan.callouts.map((line) => (
               <li key={line} className="flex gap-2">
                 <span className="text-primary shrink-0">·</span>

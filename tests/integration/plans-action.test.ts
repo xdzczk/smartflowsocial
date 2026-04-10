@@ -73,6 +73,7 @@ describe("Plans Action Handler", () => {
             planBillingModel: PlanBillingModel.disabled,
             purchasable: false,
             founderSeatCap: null,
+            price: 0,
           });
         }
         if (planId === "founder") {
@@ -82,6 +83,7 @@ describe("Plans Action Handler", () => {
             planBillingModel: PlanBillingModel.lifetime,
             purchasable: true,
             founderSeatCap: 21,
+            price: 899,
           });
         }
         return Promise.resolve({
@@ -90,6 +92,7 @@ describe("Plans Action Handler", () => {
           planBillingModel: PlanBillingModel.recurring,
           purchasable: true,
           founderSeatCap: null,
+          price: 7,
         });
       }
     );
@@ -353,6 +356,62 @@ describe("Plans Action Handler", () => {
         planName: "Creator Plan",
         planId: "creator",
         checkoutKind: "lightning",
+      });
+    });
+
+    it("falls back to plan base price when plan price row is missing", async () => {
+      const mockInvoice = {
+        invoice: "lnbc_fallback...",
+        paymentHash: "hash_fallback",
+        amount: 400,
+        amountUsd: 4.0,
+        paymentId: "payment-fallback",
+        expiresAt: new Date("2024-12-31"),
+        planName: "Starter Plan",
+        planId: "starter",
+      };
+
+      (
+        PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockInvoice);
+      (
+        PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
+      (
+        PaymentsData.getPlanById as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        id: "starter",
+        isActive: true,
+        planBillingModel: PlanBillingModel.recurring,
+        purchasable: true,
+        founderSeatCap: null,
+        price: 4,
+      });
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "starter",
+        paymentMode: "manual",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          planId: "starter",
+          amountUsdOverride: 4,
+          billingCadence: "monthly",
+          accessDurationMonths: 1,
+          billingPaymentMethod: "lightning_one_time",
+        })
+      );
+      expect(result).toMatchObject({
+        success: true,
+        planId: "starter",
+        paymentMode: "manual",
       });
     });
 

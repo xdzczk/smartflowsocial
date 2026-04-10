@@ -27,7 +27,6 @@ import { getAvailableCheckoutMethods } from "~/features/payments/checkout/checko
 import { FounderCheckoutModal } from "~/features/payments/components/checkout/FounderCheckoutModal";
 import { usePlansPageCheckoutAnalytics } from "~/features/payments/hooks/use-plans-page-checkout-analytics";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
-import { BRAND_NAME } from "~/lib/brand";
 import type {
   action as plansAction,
   loader as plansLoader,
@@ -324,35 +323,33 @@ export function PlansPage(): ReactNode {
 
         <Header />
 
-        <div className="relative container mx-auto px-4 py-12 lg:px-8 lg:py-24 xl:max-w-7xl">
+        <div className="relative container mx-auto px-4 py-10 lg:px-8 lg:py-16 xl:max-w-7xl">
           {/* Hero copy alternatives considered:
               (A) H1: "Nostr-native infrastructure for publishing operations" /
                   Lead: "Plans for people running queues, campaigns, and relays - not dabbling."
               (B) H1: "Operator pricing for Nostr publishing" /
                   Lead: "Clear economics. Non-custodial Bitcoin and Lightning. Scale when you are ready." */}
-          <div className="mb-8 text-center">
-            <div className="border-border bg-muted text-muted-foreground mb-2.5 inline-flex rounded-full border px-4 py-2 text-sm font-medium">
+          <div className="mb-6 text-center">
+            <div className="border-border bg-muted text-muted-foreground mb-2 inline-flex rounded-full border px-4 py-1.5 text-sm font-medium">
               Nostr-native publishing infrastructure
             </div>
-            <h1 className="text-foreground mb-3 text-4xl font-black tracking-tight">
-              Pricing for operators running real workflows
+            <h1 className="text-foreground mb-2 text-4xl font-black tracking-tight">
+              Simple pricing for serious Nostr publishing
             </h1>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed font-medium md:text-xl">
-              For solo publishers and multi-account operators: scheduling,
-              campaigns, and distribution - paid in Bitcoin and Lightning,
-              aligned with how you work on Nostr.
+            <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed font-medium">
+              Start free, then upgrade when you need more accounts, more
+              workflow capacity, and hosted infrastructure.
             </p>
           </div>
 
-          <div className="mb-5 text-center">
+          <div className="mb-4 text-center">
             <p className="text-muted-foreground text-sm">
-              Yearly billing is available for <strong>Starter</strong>,{" "}
-              <strong>Creator</strong>, and <strong>Pro</strong> at the
+              Yearly billing is available for Starter, Creator, and Pro at the
               equivalent of 10 months.
             </p>
           </div>
 
-          <div className="mb-8 flex items-center justify-center">
+          <div className="mb-6 flex items-center justify-center">
             <div className="border-border bg-muted/30 inline-flex rounded-lg border p-1">
               <button
                 type="button"
@@ -401,7 +398,7 @@ export function PlansPage(): ReactNode {
             </div>
           </div>
 
-          <div className="mb-14 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {mainGridPlans.map((plan) => (
               <PricingCard
                 key={plan.id}
@@ -439,32 +436,31 @@ export function PlansPage(): ReactNode {
           </div>
 
           {founderOffering ? (
-            <section className="border-border from-card to-muted/30 mb-10 rounded-2xl border bg-gradient-to-br p-8 shadow-lg md:p-10">
-              <p className="text-primary mb-3 text-xs font-semibold tracking-wider uppercase">
+            <section className="border-border from-card to-muted/30 mb-8 rounded-2xl border bg-gradient-to-br p-6 shadow-lg md:p-8">
+              <p className="text-primary mb-2 text-xs font-semibold tracking-wider uppercase">
                 Limited allocation - lifetime access
               </p>
-              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
                 <div className="max-w-xl flex-1">
-                  <h2 className="text-foreground mb-2 text-3xl font-bold tracking-tight">
+                  <h2 className="text-foreground mb-2 text-2xl font-bold tracking-tight md:text-3xl">
                     {founderOffering.name}
                   </h2>
-                  <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
                     One-time purchase for permanent access to the top individual
-                    workflow and infrastructure tier - no recurring bill.
-                    Limited to {founderOffering.seatCap} seats in this
-                    allocation; when they are gone, checkout closes.
+                    tier. Limited to {founderOffering.seatCap} seats in this
+                    allocation.
                   </p>
-                  <p className="text-foreground mb-6 text-4xl font-bold tabular-nums">
+                  <p className="text-foreground mb-5 text-3xl font-bold tabular-nums md:text-4xl">
                     ${founderOffering.oneTimePriceUsd}{" "}
                     <span className="text-muted-foreground text-lg font-normal">
                       one-time
                     </span>
                   </p>
-                  <div className="border-border bg-background/60 mb-6 rounded-lg border px-4 py-5">
+                  <div className="border-border bg-background/60 mb-5 rounded-lg border px-4 py-4">
                     <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                       Seat status
                     </p>
-                    <p className="text-foreground mt-1 text-4xl font-bold tracking-tight tabular-nums">
+                    <p className="text-foreground mt-1 text-3xl font-bold tracking-tight tabular-nums md:text-4xl">
                       {founderOffering.seatsRemaining}{" "}
                       <span className="text-muted-foreground text-base font-semibold">
                         remaining
@@ -474,7 +470,7 @@ export function PlansPage(): ReactNode {
                       {founderOffering.seatsClaimed} claimed ·{" "}
                       {founderOffering.seatCap} total
                     </p>
-                    <div className="bg-muted/50 mt-4 h-2 w-full overflow-hidden rounded-full">
+                    <div className="bg-muted/50 mt-3 h-2 w-full overflow-hidden rounded-full">
                       <div
                         className="bg-primary h-full"
                         style={{
@@ -497,7 +493,7 @@ export function PlansPage(): ReactNode {
                       </p>
                     ) : null}
                   </div>
-                  <ul className="text-muted-foreground mb-6 space-y-2 text-sm">
+                  <ul className="text-muted-foreground mb-4 space-y-1.5 text-sm">
                     {founderOffering.benefits.map((b) => (
                       <li key={b} className="flex gap-2">
                         <span className="text-primary shrink-0">✓</span>
@@ -511,7 +507,7 @@ export function PlansPage(): ReactNode {
                     this is not a shared workspace seat model.
                   </p>
                 </div>
-                <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72 lg:pt-1">
+                <div className="flex w-full shrink-0 flex-col gap-2.5 lg:w-64 lg:pt-0.5">
                   {isFounderCurrent ? (
                     <Link
                       to="/dashboard"
@@ -556,11 +552,11 @@ export function PlansPage(): ReactNode {
             </section>
           ) : null}
 
-          <div className="mb-10">
+          <div className="mb-8">
             <h2 className="text-foreground mb-3 text-center text-2xl font-bold">
               Compare plans
             </h2>
-            <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
+            <p className="text-muted-foreground mx-auto mb-5 max-w-3xl text-center text-sm leading-relaxed">
               Compare strict-cap Free, Starter, Creator, and Pro, including
               workflow limits vs infrastructure access (e.g. Blossom-compatible
               hosted media and Blastr fanout). Founder is one-time, permanent
@@ -569,76 +565,22 @@ export function PlansPage(): ReactNode {
             <FeatureComparisonTable plans={comparisonTablePlans} />
           </div>
 
-          {founderOffering ? (
-            <div className="border-border bg-muted/30 mb-12 rounded-lg border p-6">
-              <h3 className="text-foreground mb-2 text-lg font-semibold">
-                Founder at a glance
-              </h3>
-              <p className="text-muted-foreground mb-3 text-sm">
-                Short summary - see the Founder section above for full detail.
-              </p>
-              <ul className="text-muted-foreground list-inside list-disc space-y-1.5 text-sm">
-                <li>
-                  Permanent top individual workflow and infrastructure access
-                </li>
-                <li>Tied to one account owner</li>
-                <li>
-                  {founderOffering.seatCap} seats in this allocation - then
-                  closed
-                </li>
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="mx-auto mb-14 max-w-3xl">
+          <div className="mx-auto mb-10 max-w-3xl">
             <h2 className="text-foreground mb-2 text-center text-2xl font-bold">
               FAQ
             </h2>
-            <p className="text-muted-foreground mx-auto mb-8 max-w-xl text-center text-sm">
+            <p className="text-muted-foreground mx-auto mb-5 max-w-xl text-center text-sm">
               Practical answers - nothing here replaces the comparison table or
               checkout terms.
             </p>
-            <dl className="space-y-8 text-sm">
+            <dl className="space-y-5 text-sm">
               <div>
                 <dt className="text-foreground text-base font-semibold">
                   How many accounts can I use on each plan?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Free and Starter include one account on your subscription.
-                  Creator includes up to two, and Pro includes up to five.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-foreground text-base font-semibold">
-                  What does lifetime Founder access include?
-                </dt>
-                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Permanent access to the top individual tier with a single
-                  payment - no subscription, including the same class of
-                  infrastructure benefits as the top individual recurring tier
-                  (hosted media and fanout distribution), subject to product
-                  changes. Perks are listed in the Founder section above.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-foreground text-base font-semibold">
-                  Is Founder limited?
-                </dt>
-                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Yes. One owner per purchase, non-recurring.
-                  {founderOffering ? (
-                    <>
-                      {" "}
-                      This allocation has {founderOffering.seatCap} seats; when
-                      they are gone, Founder checkout closes.
-                    </>
-                  ) : (
-                    <>
-                      {" "}
-                      It is sold in a fixed allocation; when seats are gone,
-                      checkout closes.
-                    </>
-                  )}
+                  Free and Starter include one account. Creator includes up to
+                  two. Pro includes up to five.
                 </dd>
               </div>
               <div>
@@ -646,8 +588,9 @@ export function PlansPage(): ReactNode {
                   Can I change plans later?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Move between Free, Starter, Creator, and Pro anytime. Founder
-                  stays a separate one-time purchase while seats remain.
+                  Yes. Move between Free, Starter, Creator, and Pro anytime.
+                  Founder remains a separate one-time purchase while seats
+                  remain.
                 </dd>
               </div>
               <div>
@@ -655,8 +598,8 @@ export function PlansPage(): ReactNode {
                   Can I pay yearly?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Starter, Creator, and Pro support yearly billing at 10 months
-                  worth of monthly pricing. Founder is one-time only.
+                  Yes. Starter, Creator, and Pro support yearly billing at the
+                  equivalent of 10 months. Founder is one-time only.
                 </dd>
               </div>
               <div>
@@ -665,10 +608,8 @@ export function PlansPage(): ReactNode {
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   Starter, Creator, and Pro include uploads on
-                  Blossom-compatible {BRAND_NAME} infrastructure - not just an
-                  app attachment bucket. Media is Nostr-native and aligned with
-                  broader Nostr media workflows (portability and mirroring where
-                  supported). Storage and file-size limits vary by plan.
+                  SmartFlowSocial&apos;s Blossom-compatible media
+                  infrastructure. Storage and file-size limits vary by plan.
                 </dd>
               </div>
               <div>
@@ -676,23 +617,9 @@ export function PlansPage(): ReactNode {
                   What is Blastr fanout distribution?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Pro includes access to {BRAND_NAME}&apos;s Blastr fanout relay
-                  distribution layer - stronger fanout-style relay amplification
-                  for publishing, not merely &quot;more relays&quot; in the UI.
-                  Reach depends on relay workflows and setup; exact behavior
-                  varies by client and context where supported.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-foreground text-base font-semibold">
-                  Can I use {BRAND_NAME} infrastructure outside the app?
-                </dt>
-                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Hosted media is built on Blossom-compatible infrastructure;
-                  distribution uses {BRAND_NAME} fanout relay infrastructure.
-                  Some of this can support compatible Nostr setups beyond the
-                  core app, but interoperability is not universal - what works
-                  depends on the client, configuration, and supported flows.
+                  Pro includes access to SmartFlowSocial&apos;s Blastr fanout
+                  relay distribution layer for stronger publishing distribution
+                  where supported.
                 </dd>
               </div>
               <div>
@@ -700,9 +627,9 @@ export function PlansPage(): ReactNode {
                   Do I need a wallet connection?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Lightning and on-chain checkout work without NWC. Add Nostr
-                  Wallet Connect when you want auto-renew and smoother
-                  wallet-driven flows on recurring plans.
+                  No. Lightning and on-chain checkout work without NWC. Add
+                  Nostr Wallet Connect later if you want smoother recurring
+                  wallet-driven flows.
                 </dd>
               </div>
             </dl>

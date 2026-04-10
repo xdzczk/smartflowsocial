@@ -13,6 +13,12 @@ global.fetch = vi.fn();
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma2 = {
     $use: vi.fn(),
+    post: {
+      count: vi.fn().mockResolvedValue(0),
+    },
+    longFormPost: {
+      count: vi.fn().mockResolvedValue(0),
+    },
     queueType: {
       findFirst: vi.fn(),
     },

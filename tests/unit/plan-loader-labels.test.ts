@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { getAvailableCheckoutMethods } from "~/features/payments/checkout/checkout-method-config";
-import { higherTierLabelFromLegacyPlanId } from "~/features/payments/limit-display";
 import { yearlySavingsLabel } from "~/features/payments/types/plan-loader.types";
 
 describe("yearlySavingsLabel", () => {
@@ -17,15 +16,6 @@ describe("yearlySavingsLabel", () => {
   it("returns null when discount is under two months equivalent", () => {
     const label = yearlySavingsLabel(100, 1100);
     expect(label).toBeNull();
-  });
-});
-
-describe("higherTierLabelFromLegacyPlanId", () => {
-  it("uses public tier language for paid plans", () => {
-    expect(higherTierLabelFromLegacyPlanId("starter")).toBe("Expanded");
-    expect(higherTierLabelFromLegacyPlanId("creator")).toBe("Creator-grade");
-    expect(higherTierLabelFromLegacyPlanId("pro")).toBe("Operator-grade");
-    expect(higherTierLabelFromLegacyPlanId("free")).toBeNull();
   });
 });
 

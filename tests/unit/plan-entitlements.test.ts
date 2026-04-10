@@ -14,17 +14,32 @@ describe("getPlanEntitlements", () => {
     expect(e.canExecuteBulkActions).toBe(false);
   });
 
-  it("removes caps for creator", () => {
+  it("applies concrete caps for creator", () => {
     const e = getPlanEntitlements("creator");
-    expect(e.maxFutureScheduledItems).toBeNull();
-    expect(e.maxQueues).toBeNull();
+    expect(e.maxFutureScheduledItems).toBe(200);
+    expect(e.maxQueues).toBe(5);
+    expect(e.maxDrafts).toBe(100);
+    expect(e.maxTemplates).toBe(100);
     expect(e.canSendBroadcast).toBe(true);
     expect(e.canExecuteBulkActions).toBe(true);
   });
 
-  it("applies Starter queue and bulk defaults", () => {
+  it("applies Starter concrete limits", () => {
     const e = getPlanEntitlements("starter");
+    expect(e.maxFutureScheduledItems).toBe(50);
     expect(e.maxQueues).toBe(2);
+    expect(e.maxDrafts).toBe(25);
+    expect(e.maxTemplates).toBe(25);
+    expect(e.canExecuteBulkActions).toBe(true);
+  });
+
+  it("applies highest concrete caps for pro", () => {
+    const e = getPlanEntitlements("pro");
+    expect(e.maxFutureScheduledItems).toBe(1000);
+    expect(e.maxQueues).toBe(15);
+    expect(e.maxDrafts).toBe(500);
+    expect(e.maxTemplates).toBe(500);
+    expect(e.canSendBroadcast).toBe(true);
     expect(e.canExecuteBulkActions).toBe(true);
   });
 });

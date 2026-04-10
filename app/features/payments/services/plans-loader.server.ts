@@ -23,49 +23,49 @@ import { featureFlags } from "~/lib/feature-flags.server";
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
     "Test the full product with hard caps",
-    "Up to 10 scheduled items",
-    "1 queue included",
-    "Browse broadcast workflows; paid tiers unlock full send volume",
+    "10 scheduled items",
+    "1 queue",
+    "Browse broadcasts",
+    "Paid plans unlock full send volume",
   ],
   starter: [
-    "1 account included",
-    "Up to 2 queues",
-    "5 GB monthly hosted storage / 20 GB monthly uploads",
-    "50 MB max hosted file size",
-    "7.5% campaign commission with bulk posts enabled",
+    "1 account",
+    "2 queues",
+    "5 GB storage / 20 GB uploads",
+    "50 MB max file size",
+    "Bulk posts enabled",
+    "7.5% campaign commission",
   ],
   creator: [
-    "Up to 2 accounts included",
-    "Built for consistent solo publishing",
-    "Expanded scheduling and queue headroom vs Starter",
+    "Up to 2 accounts",
+    "More scheduling and queue capacity",
     "Bulk workflows and broadcast sending",
-    "Nostr-native hosted media included",
+    "Hosted media included",
+    "5% campaign commission",
   ],
   pro: [
-    "Up to 5 accounts included",
-    "Highest workflow and broadcast capacity",
-    "Best campaign economics on paid tiers",
-    "Nostr-native hosted media included",
-    "Fanout relay distribution included",
+    "Up to 5 accounts",
+    "Highest workflow capacity",
+    "Hosted media included",
+    "Blastr fanout distribution",
+    "0% campaign commission",
   ],
 };
 
 const FOUNDER_BENEFITS = [
-  "Lifetime access to the top individual tier",
-  "Includes top individual-tier Nostr-native media and fanout distribution access",
+  "Permanent access to the top individual tier",
+  "Hosted media and fanout access included",
   "Non-recurring, tied to one account owner",
-  "Strongest self-serve individual economics",
   "Priority support",
   "Early access to major features",
-  "Lowest campaign commission among individual tiers",
   "Founder recognition in-product",
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Full surface, hard caps - try the product end-to-end",
-  starter: "Low-friction paid entry tier for solo operators",
-  creator: "Default creator tier for serious solo publishing",
-  pro: "Multi-account tier - stronger workflow, distribution, and infra limits",
+  free: "Try the full product with hard caps",
+  starter: "Low-friction paid entry for one serious account",
+  creator: "More capacity for consistent solo publishing",
+  pro: "For multi-account publishing and distribution",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {

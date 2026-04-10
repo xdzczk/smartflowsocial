@@ -11,11 +11,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
-import {
-  formatBytesForPlanMarketing,
-  formatPlanCapForDisplay,
-  higherTierLabelFromLegacyPlanId,
-} from "~/features/payments/limit-display";
+import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
@@ -82,10 +78,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      if (ent.maxDrafts == null && ent.maxTemplates == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
-      }
-      return `${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxDrafts, fallback: "-" })} drafts / ${formatPlanCapForDisplay({ planId: plan.id, value: ent.maxTemplates, fallback: "-" })} templates`;
+      if (ent.maxDrafts == null || ent.maxTemplates == null) return "-";
+      return `${ent.maxDrafts} drafts / ${ent.maxTemplates} templates`;
     },
   },
   {
@@ -94,10 +88,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      if (ent.maxFutureScheduledItems == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
-      }
-      return ent.maxFutureScheduledItems;
+      return ent.maxFutureScheduledItems ?? "-";
     },
   },
   {
@@ -106,10 +97,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
       const ent = getPlanEntitlements(plan.id);
-      if (ent.maxQueues == null) {
-        return higherTierLabelFromLegacyPlanId(plan.id) ?? "-";
-      }
-      return ent.maxQueues;
+      return ent.maxQueues ?? "-";
     },
   },
   {

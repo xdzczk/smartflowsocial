@@ -90,9 +90,13 @@ vi.mock(
 // Mock Prisma for ScheduleLongFormPostUseCase, LongFormPostStateMachine, and relay resolution
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
+    post: {
+      count: vi.fn().mockResolvedValue(0),
+    },
     longFormPost: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     longFormPostStateTransition: {
       create: vi.fn(),
@@ -283,6 +287,10 @@ describe("Longform Edit Action Handler", () => {
     (
       mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
     ).mockResolvedValue({});
+    (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
     (
       mockPrisma.longFormPostStateTransition.create as ReturnType<typeof vi.fn>
     ).mockResolvedValue({});

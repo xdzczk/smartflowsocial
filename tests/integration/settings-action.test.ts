@@ -657,7 +657,8 @@ describe("Settings Action Handler", () => {
         expect(updateQueueType).not.toHaveBeenCalled();
         expect(result.status).toBe(403);
         expect(data).toEqual({
-          error: "Free includes 1 queue. Upgrade to create and manage more.",
+          error:
+            "Your plan includes up to 1 queue. Upgrade to create and manage more.",
         });
       });
 

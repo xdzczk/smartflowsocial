@@ -116,7 +116,7 @@ async function checkQueueCreationCap(userId: string): Promise<Response | null> {
   if (count >= maxQueues) {
     return json(
       {
-        error: queueCapExceededMessage(),
+        error: queueCapExceededMessage(maxQueues),
       },
       { status: 403 }
     );

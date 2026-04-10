@@ -64,6 +64,43 @@ function resolveDurationMonths(params: {
   return params.billingCadence === "yearly" ? 12 : 1;
 }
 
+function fallbackPriceUsd(params: {
+  plan: { price: unknown; planBillingModel: PlanBillingModel };
+  billingCadence: "monthly" | "yearly";
+  accessDurationMonths: number;
+  billingPaymentMethod:
+    | "nwc_auto_renew"
+    | "lightning_one_time"
+    | "btc_btcpay_onchain";
+}): number | null {
+  const baseMonthly = Number(params.plan.price);
+  if (!Number.isFinite(baseMonthly) || baseMonthly < 0) return null;
+
+  if (params.plan.planBillingModel === PlanBillingModel.lifetime) {
+    return baseMonthly;
+  }
+
+  if (params.billingCadence === "yearly") {
+    if (params.accessDurationMonths !== 12) return null;
+    // Public policy: yearly equals 10 months.
+    return baseMonthly * 10;
+  }
+
+  if (
+    params.accessDurationMonths !== 1 &&
+    params.accessDurationMonths !== 3 &&
+    params.accessDurationMonths !== 6
+  ) {
+    return null;
+  }
+
+  if (params.billingPaymentMethod === "nwc_auto_renew") {
+    return params.accessDurationMonths === 1 ? baseMonthly : null;
+  }
+
+  return baseMonthly * params.accessDurationMonths;
+}
+
 async function createInvoiceForSelection(params: {
   planId: string;
   userId: string;
@@ -258,7 +295,16 @@ async function handleSelectPlanIntent(
       paymentMethod: billingPaymentMethod,
     });
 
-    if (priceUsd == null) {
+    const resolvedPriceUsd =
+      priceUsd ??
+      fallbackPriceUsd({
+        plan,
+        billingCadence: cadence,
+        accessDurationMonths: durationMonths,
+        billingPaymentMethod,
+      });
+
+    if (resolvedPriceUsd == null) {
       return {
         success: false,
         error:
@@ -273,7 +319,7 @@ async function handleSelectPlanIntent(
       billingCadence: cadence,
       accessDurationMonths: durationMonths,
       billingPaymentMethod,
-      priceUsd,
+      priceUsd: resolvedPriceUsd,
     });
 
     trackProductEvent("checkout_btcpay_invoice_created", {
@@ -323,7 +369,16 @@ async function handleSelectPlanIntent(
     paymentMethod: billingPaymentMethod,
   });
 
-  if (priceUsd == null) {
+  const resolvedPriceUsd =
+    priceUsd ??
+    fallbackPriceUsd({
+      plan,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      billingPaymentMethod,
+    });
+
+  if (resolvedPriceUsd == null) {
     return {
       success: false,
       error: "This billing option is not available for the selected plan.",
@@ -337,7 +392,7 @@ async function handleSelectPlanIntent(
     billingCadence: cadence,
     accessDurationMonths: durationMonths,
     billingPaymentMethod,
-    priceUsd,
+    priceUsd: resolvedPriceUsd,
   });
 
   if (selectData.paymentMode === "auto_renew") {

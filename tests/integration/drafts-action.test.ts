@@ -24,6 +24,10 @@ const { mockPrisma } = vi.hoisted(() => {
     post: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    longFormPost: {
+      count: vi.fn().mockResolvedValue(0),
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
@@ -94,6 +98,10 @@ describe("Drafts Action Handler", () => {
       }
     );
     (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
     (
       mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
     ).mockResolvedValue({});

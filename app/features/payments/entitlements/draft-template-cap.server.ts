@@ -50,7 +50,7 @@ export async function checkDraftCapacity(
   if (maxDrafts == null) return null;
   const current = await countDraftItems(userId);
   if (current + additionalDrafts > maxDrafts) {
-    return draftCapExceededMessage();
+    return draftCapExceededMessage(maxDrafts);
   }
   return null;
 }
@@ -81,7 +81,7 @@ export async function checkTemplateCapacity(
   if (maxTemplates == null) return null;
   const current = await countTemplatesForUser(userId);
   if (current + additionalTemplates > maxTemplates) {
-    return templateCapExceededMessage();
+    return templateCapExceededMessage(maxTemplates);
   }
   return null;
 }
