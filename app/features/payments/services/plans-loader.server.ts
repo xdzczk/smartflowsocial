@@ -22,32 +22,32 @@ import { featureFlags } from "~/lib/feature-flags.server";
 
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
-    "Test the full product with hard caps",
+    "Full product access with strict hard caps",
     "10 scheduled items",
     "1 queue",
-    "Browse broadcasts",
+    "Browse broadcasts (no sending)",
     "Paid plans unlock full send volume",
   ],
   starter: [
-    "1 account",
+    "1 serious account",
     "2 queues",
     "5 GB storage / 20 GB uploads",
     "50 MB max file size",
-    "Bulk posts enabled",
+    "Bulk workflows enabled",
     "7.5% campaign commission",
   ],
   creator: [
     "Up to 2 accounts",
-    "More scheduling and queue capacity",
-    "Bulk workflows and broadcast sending",
+    "More scheduling and queue headroom",
+    "Bulk workflows + broadcast sending",
     "Hosted media included",
     "5% campaign commission",
   ],
   pro: [
     "Up to 5 accounts",
-    "Highest workflow capacity",
-    "Hosted media included",
-    "Blastr fanout distribution",
+    "Highest workflow and queue capacity",
+    "Largest hosted media allocation",
+    "Blastr fanout distribution included",
     "0% campaign commission",
   ],
 };
@@ -62,10 +62,10 @@ const FOUNDER_BENEFITS = [
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Try the full product with hard caps",
-  starter: "Low-friction paid entry for one serious account",
-  creator: "More capacity for consistent solo publishing",
-  pro: "For multi-account publishing and distribution",
+  free: "Try everything with strict limits before you pay",
+  starter: "Cheapest paid tier for one serious account",
+  creator: "Best solo plan with more workflow headroom",
+  pro: "Multi-account tier with top infra and fanout",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
