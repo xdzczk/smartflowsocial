@@ -20,7 +20,7 @@ if (!DATABASE_URL) {
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
-const skipSeed = args.has("--skip-seed");
+const runSeed = args.has("--seed");
 const repairOnly = args.has("--repair-only");
 
 const FREE_PLAN_ID = "free";
@@ -111,12 +111,14 @@ async function getBrokenSubscriptionCount(
 async function main(): Promise<void> {
   log("== Reseed plans + backfill free ==");
   log(`mode: ${dryRun ? "dry-run" : "apply"}`);
-  log(`seed step: ${skipSeed ? "skipped" : "enabled"}`);
+  log(
+    `seed step: ${runSeed ? "enabled (explicit)" : "skipped (safe default)"}`
+  );
   log(
     `subscription scope: ${repairOnly ? "repair broken only" : "force all users to free"}`
   );
 
-  if (!skipSeed) {
+  if (runSeed) {
     if (dryRun) {
       log("[dry-run] would run: pnpm db:seed");
     } else {
@@ -126,7 +128,9 @@ async function main(): Promise<void> {
         env: process.env,
       });
       if (result.status !== 0) {
-        throw new Error("Seed command failed");
+        throw new Error(
+          "Seed command failed. This commonly happens when subscriptions reference existing plans and seed deletes plan rows. Re-run without --seed."
+        );
       }
       log("Seed completed.");
     }
