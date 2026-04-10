@@ -489,7 +489,7 @@ export interface RunwaySettings {
 const DEFAULT_RED_THRESHOLD_DAYS = 3;
 const DEFAULT_ORANGE_THRESHOLD_DAYS = 7;
 
-const DEFAULT_TARGET_POSTS_PER_DAY = 1;
+const DEFAULT_TARGET_POSTS_PER_DAY = 0;
 
 const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
   queueNames: [],

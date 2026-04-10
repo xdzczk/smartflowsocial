@@ -142,7 +142,7 @@ export default function DashboardIndexPage() {
   const targetPerDay =
     typeof loaderData.runwaySettings?.targetPostsPerDay === "number"
       ? loaderData.runwaySettings.targetPostsPerDay
-      : 1;
+      : 0;
   const isFirstRunDashboard = loaderData.isFirstRunDashboard === true;
   const dashboardActivity = {
     hasDrafts: loaderData.dashboardActivity?.hasDrafts === true,
