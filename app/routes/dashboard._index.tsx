@@ -9,7 +9,9 @@ import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import {
+  deriveDashboardActivitySummary,
   getContentStatistics,
+  getDraftCountForDashboard,
   getQueueCountsForDashboard,
   getRunwayLastScheduledAtUtcMs,
   getScheduleNext7DaysCounts,
@@ -41,6 +43,15 @@ const FALLBACK_FLOW = {
     | undefined,
   postStatistics: EMPTY_STATS,
   queueCountsByQueue: [] as Array<{ queueName: string; count: number }>,
+  dashboardActivity: {
+    draftCount: 0,
+    hasDrafts: false,
+    hasScheduled: false,
+    hasPublished: false,
+    hasQueuesWithContent: false,
+    isFirstRunDashboard: true,
+  },
+  isFirstRunDashboard: true,
   scheduleNext7Days: [] as Array<{
     dateKey: string;
     count: number;
@@ -72,19 +83,26 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Initial load: fetch only ~5–8 visible cards + buffer for fast TTI; load-more fills the rest
     const initialPastLimit = before !== undefined ? 20 : 6;
     const initialFutureLimit = after !== undefined ? 30 : 10;
-    const [data, postStatistics, queueCountsByQueue] = await Promise.all([
-      loadFlowData({
-        userId,
-        queueType,
-        contentTab: contentTab === "all" ? undefined : contentTab,
-        pastLimit: initialPastLimit,
-        futureLimit: initialFutureLimit,
-        before,
-        after,
-      }),
-      getContentStatistics(userId),
-      getQueueCountsForDashboard(userId),
-    ]);
+    const [data, postStatistics, queueCountsByQueue, draftCount] =
+      await Promise.all([
+        loadFlowData({
+          userId,
+          queueType,
+          contentTab: contentTab === "all" ? undefined : contentTab,
+          pastLimit: initialPastLimit,
+          futureLimit: initialFutureLimit,
+          before,
+          after,
+        }),
+        getContentStatistics(userId),
+        getQueueCountsForDashboard(userId),
+        getDraftCountForDashboard(userId),
+      ]);
+    const dashboardActivity = deriveDashboardActivitySummary({
+      draftCount,
+      postStatistics,
+      queueCountsByQueue,
+    });
 
     // Validate loader response with Zod schema
     let validatedData;
@@ -104,6 +122,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         ...FALLBACK_FLOW,
         postStatistics,
         queueCountsByQueue,
+        dashboardActivity,
+        isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
         scheduleNext7Days: [],
       });
     }
@@ -122,6 +142,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       runwaySettings,
       postStatistics,
       queueCountsByQueue,
+      dashboardActivity,
+      isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
       scheduleNext7Days,
     });
   } catch (error) {

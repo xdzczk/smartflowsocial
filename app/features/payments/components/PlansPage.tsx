@@ -310,11 +310,13 @@ export function PlansPage(): ReactNode {
     currentSubscription?.planId === founderOffering?.id &&
     !currentSubscription?.isExpired;
 
-  const lowSeatsThreshold = 5;
-  const showLowSeatsWarning =
-    founderOffering != null &&
-    founderOffering.seatsRemaining > 0 &&
-    founderOffering.seatsRemaining <= lowSeatsThreshold;
+  const founderHighlights = [
+    "Permanent access to the top individual tier",
+    "Hosted media and fanout access included",
+    "Priority support",
+    "Early access to major features",
+    "Founder recognition in product",
+  ];
 
   return (
     <>
@@ -435,87 +437,53 @@ export function PlansPage(): ReactNode {
           </div>
 
           {founderOffering ? (
-            <section className="border-border from-card via-card to-muted/25 mb-7 rounded-2xl border bg-gradient-to-br p-5 shadow-md md:p-7">
-              <p className="text-primary mb-1.5 text-xs font-semibold tracking-[0.14em] uppercase">
-                Limited allocation - lifetime access
+            <section className="border-border from-card via-card to-muted/20 mb-7 rounded-2xl border bg-gradient-to-r p-4 shadow-md md:p-5">
+              <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+                LIMITED ALLOCATION — LIFETIME ACCESS
               </p>
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-                <div className="max-w-xl flex-1">
-                  <h2 className="text-foreground mb-1.5 text-2xl font-bold tracking-tight md:text-3xl">
-                    {founderOffering.name}
+              <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-start lg:gap-5">
+                <div className="md:col-span-1 lg:col-span-4">
+                  <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-[1.9rem]">
+                    Founder
                   </h2>
-                  <p className="text-muted-foreground mb-3 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
                     One-time purchase for permanent access to the top individual
-                    tier. Limited to {founderOffering.seatCap} seats in this
-                    allocation.
+                    tier. Limited to 21 seats.
                   </p>
-                  <p className="text-foreground mb-4 text-3xl font-bold tabular-nums md:text-4xl">
+                  <p className="text-foreground mt-3 text-3xl font-bold tabular-nums">
                     ${founderOffering.oneTimePriceUsd}{" "}
-                    <span className="text-muted-foreground text-base font-medium md:text-lg">
+                    <span className="text-muted-foreground text-base font-medium">
                       one-time
                     </span>
                   </p>
-                  <div className="border-border bg-background/70 mb-4 rounded-lg border px-4 py-3.5">
-                    <p className="text-muted-foreground text-[11px] font-medium tracking-[0.12em] uppercase">
-                      Seat status
-                    </p>
-                    <p className="text-foreground mt-0.5 text-3xl font-bold tracking-tight tabular-nums md:text-4xl">
-                      {founderOffering.seatsRemaining}{" "}
-                      <span className="text-muted-foreground text-sm font-semibold md:text-base">
-                        remaining
-                      </span>
-                    </p>
-                    <p className="text-muted-foreground mt-1.5 text-sm tabular-nums">
-                      {founderOffering.seatsClaimed} claimed ·{" "}
-                      {founderOffering.seatCap} total
-                    </p>
-                    <div className="bg-muted/50 mt-2.5 h-2 w-full overflow-hidden rounded-full">
-                      <div
-                        className="bg-primary h-full"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.max(
-                              0,
-                              (founderOffering.seatsClaimed /
-                                founderOffering.seatCap) *
-                                100
-                            )
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    {showLowSeatsWarning ? (
-                      <p className="text-muted-foreground mt-2.5 text-xs">
-                        {founderOffering.seatsRemaining} seats left in this
-                        allocation.
-                      </p>
-                    ) : null}
-                  </div>
-                  <ul className="text-muted-foreground mb-3.5 space-y-1.5 text-sm">
-                    {founderOffering.benefits.map((b) => (
-                      <li key={b} className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5 shrink-0">✓</span>
-                        {b}
+                </div>
+
+                <div className="md:col-span-1 lg:col-span-5">
+                  <ul className="text-muted-foreground space-y-1.5 text-sm">
+                    {founderHighlights.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5 shrink-0 text-xs">
+                          ✓
+                        </span>
+                        <span>{benefit}</span>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-muted-foreground/90 text-xs leading-relaxed">
-                    Tied to one account owner. Product updates track the top
-                    individual tier, including matching infrastructure access;
-                    this is not a shared workspace seat model.
+                  <p className="text-muted-foreground/80 mt-2.5 text-xs">
+                    Tied to one account owner. Not a shared workspace seat.
                   </p>
                 </div>
-                <div className="flex w-full shrink-0 flex-col gap-2 lg:w-64 lg:pt-1">
-                  {isFounderCurrent ? (
-                    <Link
-                      to="/dashboard"
-                      className="bg-secondary text-secondary-foreground hover:bg-secondary/90 focus-visible:ring-primary/40 flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                      You have Founder access
-                    </Link>
-                  ) : founderOffering.canPurchase ? (
-                    <>
+
+                <div className="md:col-span-2 lg:col-span-3">
+                  <div className="flex w-full flex-col gap-2">
+                    {isFounderCurrent ? (
+                      <Link
+                        to="/dashboard"
+                        className="bg-secondary text-secondary-foreground hover:bg-secondary/90 focus-visible:ring-primary/40 flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        You have Founder access
+                      </Link>
+                    ) : founderOffering.canPurchase ? (
                       <button
                         type="button"
                         disabled={isLoading}
@@ -532,20 +500,30 @@ export function PlansPage(): ReactNode {
                           ? "Processing…"
                           : "Claim Founder access"}
                       </button>
-                      <p className="text-muted-foreground hidden text-xs lg:block">
-                        One-time purchase · {founderOffering.seatCap} seats in
-                        this allocation
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="bg-muted text-muted-foreground cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium"
+                      >
+                        Sold out
+                      </button>
+                    )}
+
+                    <div className="border-border bg-background/70 rounded-lg border px-3 py-2.5">
+                      <p className="text-foreground text-sm font-semibold tabular-nums">
+                        {founderOffering.seatsRemaining} seats remaining
                       </p>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="bg-muted text-muted-foreground cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium"
-                    >
-                      Sold out
-                    </button>
-                  )}
+                      <p className="text-muted-foreground mt-0.5 text-xs tabular-nums">
+                        {founderOffering.seatsClaimed} claimed ·{" "}
+                        {founderOffering.seatCap} total
+                      </p>
+                    </div>
+
+                    <p className="text-muted-foreground text-xs">
+                      One-time purchase
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>

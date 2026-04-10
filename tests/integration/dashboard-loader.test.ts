@@ -29,6 +29,8 @@ vi.mock("~/features/posts/server", () => ({
   loadFlowData: vi.fn(),
   handleDashboardAction: vi.fn(),
   getContentStatistics: vi.fn(),
+  getDraftCountForDashboard: vi.fn(),
+  deriveDashboardActivitySummary: vi.fn(),
   getQueueCountsForDashboard: vi.fn(),
   getRunwayLastScheduledAtUtcMs: vi.fn(),
   getScheduleNext7DaysCounts: vi.fn(),
@@ -50,6 +52,8 @@ import { requireAnySubscription } from "~/features/payments/subscriptions.server
 import {
   loadFlowData,
   getContentStatistics,
+  getDraftCountForDashboard,
+  deriveDashboardActivitySummary,
   getQueueCountsForDashboard,
   getRunwayLastScheduledAtUtcMs,
   getScheduleNext7DaysCounts,
@@ -80,9 +84,22 @@ describe("Dashboard Loader Integration", () => {
       scheduledCount: 0,
       successCount: 0,
     });
+    (getDraftCountForDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(
+      0
+    );
     (getQueueCountsForDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(
       []
     );
+    (
+      deriveDashboardActivitySummary as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      draftCount: 0,
+      hasDrafts: false,
+      hasScheduled: false,
+      hasPublished: false,
+      hasQueuesWithContent: false,
+      isFirstRunDashboard: true,
+    });
     (
       getRunwayLastScheduledAtUtcMs as ReturnType<typeof vi.fn>
     ).mockResolvedValue(null);
@@ -185,6 +202,75 @@ describe("Dashboard Loader Integration", () => {
       expect(data["user"]).toBeDefined();
       expect(data).toHaveProperty("queueTypes");
       expect(Array.isArray(data["queueTypes"])).toBe(true);
+    });
+
+    it("should expose first-run dashboard state for new users", async () => {
+      const request = new Request("http://localhost:3000/dashboard");
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
+
+      expect(getDraftCountForDashboard).toHaveBeenCalledWith("user-123");
+      expect(deriveDashboardActivitySummary).toHaveBeenCalledWith({
+        draftCount: 0,
+        postStatistics: { scheduledCount: 0, successCount: 0 },
+        queueCountsByQueue: [],
+      });
+      expect(data["isFirstRunDashboard"]).toBe(true);
+      expect(data["dashboardActivity"]).toEqual(
+        expect.objectContaining({
+          hasDrafts: false,
+          hasScheduled: false,
+          hasPublished: false,
+          hasQueuesWithContent: false,
+        })
+      );
+    });
+
+    it("should disable first-run dashboard when user has activity", async () => {
+      (
+        deriveDashboardActivitySummary as ReturnType<typeof vi.fn>
+      ).mockReturnValue({
+        draftCount: 1,
+        hasDrafts: true,
+        hasScheduled: false,
+        hasPublished: false,
+        hasQueuesWithContent: false,
+        isFirstRunDashboard: false,
+      });
+      (getDraftCountForDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(
+        1
+      );
+
+      const request = new Request("http://localhost:3000/dashboard");
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
+
+      expect(data["isFirstRunDashboard"]).toBe(false);
+      expect(data["dashboardActivity"]).toEqual(
+        expect.objectContaining({
+          draftCount: 1,
+          hasDrafts: true,
+          isFirstRunDashboard: false,
+        })
+      );
     });
   });
 

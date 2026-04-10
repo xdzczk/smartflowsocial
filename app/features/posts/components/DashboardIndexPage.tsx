@@ -8,6 +8,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { LongFormDetailsModal } from "~/features/posts/longform";
@@ -118,6 +119,13 @@ export default function DashboardIndexPage() {
 
   const loaderData = useLoaderData<{
     queueCountsByQueue?: Array<{ queueName: string; count: number }>;
+    isFirstRunDashboard?: boolean;
+    dashboardActivity?: {
+      hasDrafts?: boolean;
+      hasScheduled?: boolean;
+      hasPublished?: boolean;
+      hasQueuesWithContent?: boolean;
+    };
     scheduleNext7Days?: Array<{
       dateKey: string;
       count: number;
@@ -135,6 +143,14 @@ export default function DashboardIndexPage() {
     typeof loaderData.runwaySettings?.targetPostsPerDay === "number"
       ? loaderData.runwaySettings.targetPostsPerDay
       : 1;
+  const isFirstRunDashboard = loaderData.isFirstRunDashboard === true;
+  const dashboardActivity = {
+    hasDrafts: loaderData.dashboardActivity?.hasDrafts === true,
+    hasScheduled: loaderData.dashboardActivity?.hasScheduled === true,
+    hasPublished: loaderData.dashboardActivity?.hasPublished === true,
+    hasQueuesWithContent:
+      loaderData.dashboardActivity?.hasQueuesWithContent === true,
+  };
 
   const { userTimeFormat } = useFormattedDate();
   const navigation = useNavigation();
@@ -221,6 +237,7 @@ export default function DashboardIndexPage() {
   const queueTypesFiltered: QueueType[] = Array.isArray(queueTypes)
     ? (queueTypes as QueueType[])
     : [];
+  const hasAnyQueue = queueTypesFiltered.length > 0;
 
   const hashTagPresetsArray = Array.isArray(hashTagPresets)
     ? (hashTagPresets as Parameters<
@@ -355,124 +372,141 @@ export default function DashboardIndexPage() {
 
       {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queue Health + Top Posts) */}
       <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-1 flex-col lg:h-full lg:min-h-0">
-        <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
+        {isFirstRunDashboard ? (
           <div className="mt-2.5">
-            <Statistics
-              runwayDays={runwayDays}
-              onRunwayClick={() => setRunwayModalOpen(true)}
-              runwayRedThresholdDays={runwaySettings?.redThresholdDays}
-              runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
+            <FirstRunDashboard
+              activity={dashboardActivity}
+              hasAnyQueue={hasAnyQueue}
             />
           </div>
-          <div className="mt-2 flex min-w-0 items-center gap-3">
-            <ContentListPageHeader pageType="flow" className="min-w-0" />
-            {flowItems.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => flowViewRef.current?.scrollToNext()}
-                className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
-                aria-label="Scroll timeline to next posts or schedule"
-              >
-                Scroll to next
-              </button>
-            ) : null}
-          </div>
+        ) : (
+          <>
+            <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
+              <div className="mt-2.5">
+                <Statistics
+                  runwayDays={runwayDays}
+                  onRunwayClick={() => setRunwayModalOpen(true)}
+                  runwayRedThresholdDays={runwaySettings?.redThresholdDays}
+                  runwayOrangeThresholdDays={
+                    runwaySettings?.orangeThresholdDays
+                  }
+                />
+              </div>
+              <div className="mt-2 flex min-w-0 items-center gap-3">
+                <ContentListPageHeader pageType="flow" className="min-w-0" />
+                {flowItems.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => flowViewRef.current?.scrollToNext()}
+                    className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
+                    aria-label="Scroll timeline to next posts or schedule"
+                  >
+                    Scroll to next
+                  </button>
+                ) : null}
+              </div>
 
-          <PublishingFilterRow
-            className="mt-4 mb-0"
-            leading={
-              <PublishingContentTypeFilter
-                data-testid="dashboard-type-filter"
-                value={currentContentTab}
-                ariaLabel="Dashboard content type"
-                items={buildDashboardContentTypeFilterItems({
-                  basePath: "/dashboard",
-                  searchParams,
-                  nip88PollsEnabled,
-                })}
-              />
-            }
-            trailing={
-              <PublishingQueueFilter
-                currentTab={currentContentTab}
-                queueTypes={queueTypesFiltered}
-                basePath="/dashboard"
-              />
-            }
-          />
-        </div>
-
-        {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-        <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
-          {flowError ? (
-            <Alert
-              variant="destructive"
-              className="mx-4 flex flex-col gap-2 lg:mx-8"
-            >
-              <AlertDescription className="flex flex-col gap-2">
-                <span className="font-medium">{flowError.message}</span>
-                <button
-                  type="button"
-                  onClick={() => revalidator.revalidate()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
-                >
-                  Retry
-                </button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-
-          {flowError ? null : isNavigatingToDashboard &&
-            flowItems.length === 0 ? (
-            <div
-              className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
-              role="status"
-              aria-label="Loading timeline"
-              aria-live="polite"
-            >
-              <p className="text-muted-foreground text-sm">Loading timeline…</p>
-            </div>
-          ) : (
-            <div className="flex min-h-0 min-w-0 flex-col">
-              <FlowView
-                ref={flowViewRef}
-                flowItems={flowItems}
-                hasMorePast={hasMorePast}
-                hasMoreFuture={hasMoreFuture}
-                isLoadingMorePast={isLoadingMorePast}
-                isLoadingMoreFuture={isLoadingMoreFuture}
-                onCardClick={(item) =>
-                  handleContentSelection(
-                    item,
-                    setSelectedPost,
-                    setSelectedLongFormPost
-                  )
+              <PublishingFilterRow
+                className="mt-4 mb-0"
+                leading={
+                  <PublishingContentTypeFilter
+                    data-testid="dashboard-type-filter"
+                    value={currentContentTab}
+                    ariaLabel="Dashboard content type"
+                    items={buildDashboardContentTypeFilterItems({
+                      basePath: "/dashboard",
+                      searchParams,
+                      nip88PollsEnabled,
+                    })}
+                  />
                 }
-                onFetchMorePast={fetchMorePast}
-                onFetchMoreFuture={fetchMoreFuture}
-                lastPrependedPastCount={lastPrependedPastCount}
-                onPrependedPastCompensated={clearPrependedPastCount}
-                onHasLiveEdgeChange={setHasLiveEdge}
+                trailing={
+                  <PublishingQueueFilter
+                    currentTab={currentContentTab}
+                    queueTypes={queueTypesFiltered}
+                    basePath="/dashboard"
+                  />
+                }
               />
             </div>
-          )}
-        </div>
 
-        <div className="max-w-10xl mx-auto mt-6 w-full flex-shrink-0 px-4 lg:px-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
-            <ScheduleNext7DaysCard
-              days={scheduleNext7Days}
-              targetPerDay={targetPerDay}
-              userTimezone={getUserTimezone(user)}
-              onOpenTargetModal={() => setScheduleOverviewTargetModalOpen(true)}
-              queueTypes={queueTypesFiltered}
-            />
-            <QueueHealth
-              queueCounts={queueCountsByQueue}
-              queueTypes={queueTypesFiltered}
-            />
-          </div>
-        </div>
+            {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
+            <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
+              {flowError ? (
+                <Alert
+                  variant="destructive"
+                  className="mx-4 flex flex-col gap-2 lg:mx-8"
+                >
+                  <AlertDescription className="flex flex-col gap-2">
+                    <span className="font-medium">{flowError.message}</span>
+                    <button
+                      type="button"
+                      onClick={() => revalidator.revalidate()}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
+                    >
+                      Retry
+                    </button>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {flowError ? null : isNavigatingToDashboard &&
+                flowItems.length === 0 ? (
+                <div
+                  className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
+                  role="status"
+                  aria-label="Loading timeline"
+                  aria-live="polite"
+                >
+                  <p className="text-muted-foreground text-sm">
+                    Loading timeline…
+                  </p>
+                </div>
+              ) : (
+                <div className="flex min-h-0 min-w-0 flex-col">
+                  <FlowView
+                    ref={flowViewRef}
+                    flowItems={flowItems}
+                    hasMorePast={hasMorePast}
+                    hasMoreFuture={hasMoreFuture}
+                    isLoadingMorePast={isLoadingMorePast}
+                    isLoadingMoreFuture={isLoadingMoreFuture}
+                    onCardClick={(item) =>
+                      handleContentSelection(
+                        item,
+                        setSelectedPost,
+                        setSelectedLongFormPost
+                      )
+                    }
+                    onFetchMorePast={fetchMorePast}
+                    onFetchMoreFuture={fetchMoreFuture}
+                    lastPrependedPastCount={lastPrependedPastCount}
+                    onPrependedPastCompensated={clearPrependedPastCount}
+                    onHasLiveEdgeChange={setHasLiveEdge}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="max-w-10xl mx-auto mt-6 w-full flex-shrink-0 px-4 lg:px-8">
+              <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
+                <ScheduleNext7DaysCard
+                  days={scheduleNext7Days}
+                  targetPerDay={targetPerDay}
+                  userTimezone={getUserTimezone(user)}
+                  onOpenTargetModal={() =>
+                    setScheduleOverviewTargetModalOpen(true)
+                  }
+                  queueTypes={queueTypesFiltered}
+                />
+                <QueueHealth
+                  queueCounts={queueCountsByQueue}
+                  queueTypes={queueTypesFiltered}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <RunwaySettingsModal

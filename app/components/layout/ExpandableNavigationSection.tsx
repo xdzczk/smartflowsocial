@@ -27,6 +27,7 @@ interface ExpandableNavigationSectionProps {
   icon: React.ReactNode;
   items: NavigationChildItem[];
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
+  showSubtleHint?: boolean;
   /** When provided and child link is active (current page), click closes sidebar instead of navigating (e.g. mobile) */
   onActiveClick?: () => void;
   collapsed?: boolean;
@@ -112,6 +113,7 @@ export function ExpandableNavigationSection({
   icon,
   items,
   onUpgradeClick,
+  showSubtleHint = false,
   onActiveClick,
   collapsed = false,
 }: ExpandableNavigationSectionProps) {
@@ -224,7 +226,17 @@ export function ExpandableNavigationSection({
         >
           {icon}
         </span>
-        <span className="grow py-2 text-left">{title}</span>
+        <span className="grow py-2 text-left">
+          <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            {showSubtleHint ? (
+              <span
+                className="bg-primary/70 inline-block h-1.5 w-1.5 rounded-full"
+                aria-hidden
+              />
+            ) : null}
+          </span>
+        </span>
         <span
           className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE} transition-transform duration-200 ease-in-out ${
             isExpanded ? "rotate-180" : "rotate-0"
