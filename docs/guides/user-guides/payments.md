@@ -53,9 +53,9 @@ OWNER_NWC_RELAYS=wss://relay1.example.com,wss://relay2.example.com
 import { createPlanInvoice } from "~/features/payments/data";
 
 const invoice = await createPlanInvoice({
-  planId: "basic", // plan ID from database
+  planId: "creator", // plan ID from database
   userId: "user123",
-  description: "SmartFlowSocial Basic Plan",
+  description: "SmartFlowSocial Creator Plan",
 });
 
 // Returns:
@@ -65,7 +65,7 @@ const invoice = await createPlanInvoice({
 //   amount: 2800, // amount in satoshis
 //   amountUsd: 28, // amount in USD
 //   expiresAt: Date, // 30 minutes from creation
-//   paymentId: "basic_1697123456_user123"
+//   paymentId: "creator_1697123456_user123"
 // }
 ```
 
@@ -74,7 +74,7 @@ const invoice = await createPlanInvoice({
 ```typescript
 import { checkPaymentStatus } from "~/features/payments/data";
 
-const status = await checkPaymentStatus("basic_1697123456_user123");
+const status = await checkPaymentStatus("creator_1697123456_user123");
 
 // Returns:
 // {

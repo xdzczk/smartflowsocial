@@ -59,7 +59,7 @@ describe("API: Children", () => {
   });
 
   describe("Successful Requests", () => {
-    it("should return children for parent with premium subscription", async () => {
+    it("should return children for parent with pro subscription", async () => {
       const expectedResponse = json({
         children: [
           {
@@ -336,7 +336,7 @@ describe("API: Children", () => {
       expect(data).toEqual({ children: [] });
     });
 
-    it("should return empty array when user doesn't have premium/founder subscription", async () => {
+    it("should return empty array when user doesn't have pro/founder subscription", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
         json({ children: [] })
       );

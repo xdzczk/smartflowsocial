@@ -99,6 +99,7 @@ export function useUnifiedComposerAttachmentHandlers({
         file,
         mime: composerAttachmentMime(file),
         uploadAttemptId: crypto.randomUUID(),
+        source: "new",
       }));
       setAttachments((prev) => [...prev, ...newAttachments]);
       void (async () => {
@@ -226,6 +227,7 @@ export function useUnifiedComposerAttachmentHandlers({
         file,
         mime: composerAttachmentMime(file),
         uploadAttemptId: crypto.randomUUID(),
+        source: "new" as const,
       }));
       mergeThreadSegments((prev) =>
         prev.map((p) => {

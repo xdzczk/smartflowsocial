@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { computeDueNotificationIntents } from "~/features/payments/services/subscription-notification-policy.server";
 
 const basePlan = {
-  name: "Premium",
-  id: "premium",
+  name: "Pro",
+  id: "pro",
   enableLifetimeAccess: false,
 };
 
@@ -19,7 +19,7 @@ describe("computeDueNotificationIntents", () => {
       user: { nwcEnabled: false, encryptedNwc: null },
       subscription: {
         id: "sub_1",
-        planId: "premium",
+        planId: "pro",
         status: "ACTIVE",
         paymentMethod: "lightning_one_time",
         renewalMode: "manual",
@@ -43,7 +43,7 @@ describe("computeDueNotificationIntents", () => {
       user: { nwcEnabled: false, encryptedNwc: null },
       subscription: {
         id: "sub_1",
-        planId: "premium",
+        planId: "pro",
         status: "UNPAID",
         paymentMethod: "lightning_one_time",
         renewalMode: "manual",
@@ -66,7 +66,7 @@ describe("computeDueNotificationIntents", () => {
       user: { nwcEnabled: false, encryptedNwc: null },
       subscription: {
         id: "sub_1",
-        planId: "premium",
+        planId: "pro",
         status: "ACTIVE",
         paymentMethod: "nwc_auto_renew",
         renewalMode: "auto_renew",

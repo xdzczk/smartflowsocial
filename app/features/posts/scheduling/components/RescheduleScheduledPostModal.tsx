@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -20,6 +20,7 @@ import {
   submitQuoteSchedule,
   submitRepostSchedule,
 } from "~/features/posts/calendar";
+import { buildComposeEditUrl } from "~/features/posts/composer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
 import { QueueSelector } from "~/features/posts/scheduled/components/QueueSelector";
@@ -44,6 +45,8 @@ import {
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
+  addDays,
+  addHours,
   clampDateTimeLocalToMin,
   formatForDateTimeLocal,
   formatForDisplay,
@@ -113,6 +116,7 @@ export function RescheduleScheduledPostModal({
   wasAutoScheduled = false,
 }: RescheduleScheduledPostModalProps) {
   const { dateLocale } = useFormattedDate();
+  const navigate = useNavigate();
   const isLongform = "title" in post;
   const userTimezone = user?.timezone ?? "UTC";
 
@@ -437,6 +441,31 @@ export function RescheduleScheduledPostModal({
     onClose();
   };
 
+  const rescheduleErrorMessage = getClientDisplayErrorMessage(
+    fetcher.data?.error ?? signingError
+  );
+  const requiresFullEditor =
+    /follow-up|parent|account|unsupported|invalid/i.test(
+      rescheduleErrorMessage
+    );
+  const openFullEditor = () => {
+    const editUrl =
+      !isLongform && post.dependencyMode === "attached"
+        ? buildComposeEditUrl({
+            mode: "edit_follow_up",
+            followUpActionId: post.id,
+            ...(post.parentScheduledActionId
+              ? { parentActionId: post.parentScheduledActionId }
+              : {}),
+          })
+        : buildComposeEditUrl({
+            mode: "edit_scheduled",
+            scheduledActionId: post.id,
+          });
+    onClose();
+    navigate(editUrl);
+  };
+
   return (
     <Dialog open onOpenChange={(open) => !open && requestClose()}>
       <DialogContent
@@ -598,6 +627,51 @@ export function RescheduleScheduledPostModal({
                 }}
                 humanReadableLine={formatDateTime(scheduledFor)}
               />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    form.setValue(
+                      "scheduledFor",
+                      toDate(addHours(fromDate(scheduledFor, "UTC"), 1))
+                    )
+                  }
+                >
+                  +1h
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const tomorrow = addDays(fromDate(scheduledFor, "UTC"), 1);
+                    const tomorrowMorning = tomorrow.with({
+                      hour: 9,
+                      minute: 0,
+                      second: 0,
+                      millisecond: 0,
+                    });
+                    form.setValue("scheduledFor", toDate(tomorrowMorning));
+                  }}
+                >
+                  Tomorrow morning
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    form.setValue(
+                      "scheduledFor",
+                      toDate(addDays(fromDate(scheduledFor, "UTC"), 7))
+                    )
+                  }
+                >
+                  Next week same time
+                </Button>
+              </div>
 
               {!isLongform ? (
                 <QueueSelector
@@ -619,6 +693,10 @@ export function RescheduleScheduledPostModal({
                   chosen time (manual scheduling).
                 </p>
               ) : null}
+              <p className="text-muted-foreground text-xs">
+                If this post has attached follow-ups, their schedule will be
+                adjusted automatically.
+              </p>
 
               {canScheduleRepostQuote ? (
                 <div className="space-y-2">
@@ -698,9 +776,18 @@ export function RescheduleScheduledPostModal({
 
               {(fetcher.data?.error ?? signingError) ? (
                 <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
-                  {getClientDisplayErrorMessage(
-                    fetcher.data?.error ?? signingError
-                  )}
+                  <p>{rescheduleErrorMessage}</p>
+                  {requiresFullEditor ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive mt-2 px-0 underline"
+                      onClick={openFullEditor}
+                    >
+                      Open full editor to resolve
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </>

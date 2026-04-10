@@ -11,7 +11,32 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/features/posts/server", () => ({
   deletePost: vi.fn(),
   deleteLongFormPost: vi.fn(),
+  createPostWithOutbox: vi.fn(),
+  getPostById: vi.fn(),
 }));
+vi.mock("~/features/posts/repositories/post-queries-data.server", () => ({
+  findPostByCreationIdempotencyKey: vi
+    .fn()
+    .mockResolvedValue({ existing: null, columnExists: true }),
+}));
+vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
+  resolveQueueTypeId: vi.fn().mockResolvedValue("queue-default"),
+}));
+vi.mock("~/features/posts/state-machine/post-state-machine.server", () => ({
+  PostStateMachine: class {
+    transition = vi.fn().mockResolvedValue(undefined);
+  },
+}));
+vi.mock("~/features/payments/entitlements/schedule-cap-policy.server", () => ({
+  assertScheduleCapacity: vi.fn().mockResolvedValue(undefined),
+  ScheduleCapExceededError: class ScheduleCapExceededError extends Error {},
+}));
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeDeleteAttachedFollowups: vi.fn().mockResolvedValue([]),
+  })
+);
 
 import {
   createActionFormData,
@@ -21,8 +46,11 @@ import {
   createPostIds,
 } from "../utils/test-helpers";
 
+import { findPostByCreationIdempotencyKey } from "~/features/posts/repositories/post-queries-data.server";
 import { deleteLongFormPost } from "~/features/posts/server";
 import { deletePost } from "~/features/posts/server";
+import { createPostWithOutbox } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
 import { handleScheduledAction } from "~/features/posts/server/scheduling";
 
 describe("Scheduled Action Handler", () => {
@@ -298,6 +326,86 @@ describe("Scheduled Action Handler", () => {
       await expect(
         handleScheduledAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Delete failed");
+    });
+  });
+
+  describe("Schedule idempotency", () => {
+    it("should return existing post for duplicate schedule quote submit", async () => {
+      (
+        findPostByCreationIdempotencyKey as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        existing: { id: "existing-post-id" },
+        columnExists: true,
+      });
+
+      const formData = createActionFormData("scheduleQuote", {
+        sourceSignedEvent: JSON.stringify({ kind: 1 }),
+        scheduledFor: String(Math.floor(Date.now() / 1000) + 3600),
+        signedEvent: JSON.stringify({
+          id: "a".repeat(64),
+          pubkey: "b".repeat(64),
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+          content: "quote content",
+          sig: "c".repeat(128),
+        }),
+        quoteCaption: "caption",
+      });
+
+      const result = await handleScheduledAction(formData, TEST_USER_ID);
+
+      expect(result).toEqual({ success: true, postId: "existing-post-id" });
+      expect(createPostWithOutbox).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Attached follow-up classification", () => {
+    it("marks scheduled quote of scheduled parent as attached", async () => {
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        postType: "TEXT",
+        queueTypeId: "queue-1",
+        currentState: "SCHEDULED",
+        nostrEventId: null,
+        signedEvent: { id: "parent-event-id" },
+        rootScheduledActionId: null,
+      });
+      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "child-1",
+      });
+
+      const formData = createActionFormData("scheduleQuote", {
+        postId: TEST_POST_ID,
+        scheduledFor: String(Math.floor(Date.now() / 1000) + 3600),
+        signedEvent: JSON.stringify({
+          id: "child-event-id",
+          pubkey: "b".repeat(64),
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+          content: "quote content",
+          sig: "c".repeat(128),
+        }),
+        quoteCaption: "caption",
+      });
+
+      const result = await handleScheduledAction(formData, TEST_USER_ID);
+      expect(result).toEqual({ success: true, postId: "child-1" });
+      expect(createPostWithOutbox).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dependencyMode: "attached",
+          targetMode: "scheduled_parent",
+          parentScheduledActionId: TEST_POST_ID,
+          rootScheduledActionId: TEST_POST_ID,
+          targetScheduledActionId: TEST_POST_ID,
+          expectedParentEventId: "parent-event-id",
+          signingState: "signed",
+          signedChildEventId: "child-event-id",
+        }),
+        expect.any(Number)
+      );
     });
   });
 });

@@ -28,7 +28,7 @@ describe("draft-editor-navigation", () => {
     const post: DraftPostLike = { postType: "POLL" };
     const url = getShortDraftComposeUrl("id/with space", post);
     expect(url).toContain("type=poll");
-    expect(url).toContain("draftId=id%2Fwith%20space");
+    expect(url).toContain("id=id%2Fwith%20space");
   });
 
   it("builds longform edit and bulk URLs", () => {

@@ -22,55 +22,56 @@ import { featureFlags } from "~/lib/feature-flags.server";
 
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
-    "Test the full product with hard caps",
-    "Up to 10 scheduled items",
-    "1 queue included",
-    "Browse broadcast workflows; paid tiers unlock full send volume",
+    "Full product access with strict hard caps",
+    "10 scheduled items",
+    "1 queue",
+    "Browse broadcasts (no sending)",
+    "Paid plans unlock full send volume",
   ],
-  basic: [
-    "1 account included",
-    "Built for consistent solo publishing",
-    "Expanded scheduling and queue headroom vs Free",
-    "Bulk workflows and broadcast sending",
-    "Nostr-native hosted media included",
+  starter: [
+    "1 serious account",
+    "2 queues",
+    "5 GB storage / 20 GB uploads",
+    "50 MB max file size",
+    "Bulk workflows enabled",
+    "7.5% campaign commission",
   ],
-  premium: [
-    "Up to 3 accounts included",
-    "Highest workflow and broadcast capacity",
-    "Best campaign economics on paid tiers",
-    "Nostr-native hosted media included",
-    "Fanout relay distribution included",
+  creator: [
+    "Up to 2 accounts",
+    "More scheduling and queue headroom",
+    "Bulk workflows + broadcast sending",
+    "Hosted media included",
+    "5% campaign commission",
   ],
-  teams: [
-    "Shared workflows and roles",
-    "Collaborative publishing controls",
-    "Not yet open for self-serve purchase",
-    "We will open enrollment when the product is ready",
+  pro: [
+    "Up to 5 accounts",
+    "Highest workflow and queue capacity",
+    "Largest hosted media allocation",
+    "Blastr fanout distribution included",
+    "0% campaign commission",
   ],
 };
 
 const FOUNDER_BENEFITS = [
-  "Lifetime access to the top individual tier",
-  "Includes top individual-tier Nostr-native media and fanout distribution access",
+  "Permanent access to the top individual tier",
+  "Hosted media and fanout access included",
   "Non-recurring, tied to one account owner",
-  "Strongest self-serve individual economics",
   "Priority support",
   "Early access to major features",
-  "Lowest campaign commission among individual tiers",
   "Founder recognition in-product",
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
-  free: "Full surface, hard caps - try the product end-to-end",
-  basic: "Default paid tier for one serious account",
-  premium:
-    "Multi-account tier - stronger workflow, distribution, and infra limits",
-  teams: "Collaborative workspace - not open for self-serve yet",
+  free: "Try everything with strict limits before you pay",
+  starter: "Cheapest paid tier for one serious account",
+  creator: "Best solo plan with more workflow headroom",
+  pro: "Multi-account tier with top infra and fanout",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
-  if (planId === "basic") return "Creator";
-  if (planId === "premium") return "Pro";
+  if (planId === "starter") return "Starter";
+  if (planId === "creator") return "Creator";
+  if (planId === "pro") return "Pro";
   return dbName;
 }
 
@@ -200,7 +201,9 @@ export async function loadPlansData(request: Request) {
 
   const mainGridSource = visiblePlans.filter(
     (p) =>
-      !p.isSpecialOffering && p.planBillingModel !== PlanBillingModel.lifetime
+      !p.isSpecialOffering &&
+      p.planBillingModel !== PlanBillingModel.lifetime &&
+      p.id !== "teams"
   );
 
   const planIdsForPrices = [
@@ -264,7 +267,7 @@ export async function loadPlansData(request: Request) {
       checkoutPricing,
       description: subtitle,
       features,
-      isPopular: plan.id === "basic",
+      isPopular: plan.id === "creator",
       planBillingModel: toBillingModelString(plan.planBillingModel),
       purchasable: plan.purchasable,
       isComingSoon: plan.isComingSoon,
@@ -277,32 +280,8 @@ export async function loadPlansData(request: Request) {
     mapToPricingPagePlan(plan)
   );
 
-  // Always show the Teams card on the pricing page, even if the DB visibility
-  // configuration is out of sync in some environments.
-  const hasTeamsInGrid = mainGridPlans.some((p) => p.id === "teams");
-  if (!hasTeamsInGrid) {
-    mainGridPlans.push({
-      id: "teams",
-      name: "Teams",
-      monthlyPriceUsd: 0,
-      yearlyPriceUsd: 0,
-      yearlySavingsNote: null,
-      checkoutPricing: buildCheckoutPricing("teams", 0, 0, priceIndex),
-      description:
-        PLAN_SUBTITLES["teams"] ??
-        "Collaborative publishing - not open for self-serve yet",
-      features: {},
-      isPopular: false,
-      planBillingModel: "disabled",
-      purchasable: false,
-      isComingSoon: true,
-      isTeamsPlaceholder: true,
-      callouts: GRID_CALLOUTS["teams"] ?? [],
-    });
-  }
-
   // Enforce canonical ordering in the main grid.
-  const gridOrder = ["free", "basic", "premium", "teams"] as const;
+  const gridOrder = ["free", "starter", "creator", "pro"] as const;
   mainGridPlans.sort((a, b) => {
     const ai = gridOrder.indexOf(a.id as (typeof gridOrder)[number]);
     const bi = gridOrder.indexOf(b.id as (typeof gridOrder)[number]);
@@ -312,9 +291,7 @@ export async function loadPlansData(request: Request) {
     return ai - bi;
   });
 
-  const comparisonTablePlans: PricingPagePlan[] = mainGridPlans.filter(
-    (p) => p.id !== "teams"
-  );
+  const comparisonTablePlans: PricingPagePlan[] = [...mainGridPlans];
 
   let founderOffering: FounderOfferingPayload | null = null;
   if (founderPlan?.founderSeatCap != null) {

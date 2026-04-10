@@ -229,6 +229,7 @@ export function ScheduleRepostQuoteModal({
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 
   const pendingRetryRef = useRef<(() => void) | null>(null);
+  const submitInFlightRef = useRef(false);
   const clearSigningState = useCallback(() => {
     setIsSigning(false);
     setSigningError(null);
@@ -270,6 +271,7 @@ export function ScheduleRepostQuoteModal({
   }, [fetcher.data, fetcher.state, mode, onClose, onSuccess]);
 
   const handleConfirm = async () => {
+    if (submitInFlightRef.current) return;
     const validation = validateScheduleInput(
       post,
       lookupSourceSignedEvent,
@@ -283,6 +285,7 @@ export function ScheduleRepostQuoteModal({
     }
     const { scheduledForUnix, signed } = validation;
     if ((!post && !lookupSourceSignedEvent) || !mode) return;
+    submitInFlightRef.current = true;
     try {
       setSigningError(null);
       setIsSigning(true);
@@ -320,6 +323,7 @@ export function ScheduleRepostQuoteModal({
     } finally {
       pendingRetryRef.current = null;
       setIsSigning(false);
+      submitInFlightRef.current = false;
     }
   };
 

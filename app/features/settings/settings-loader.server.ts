@@ -14,6 +14,8 @@ import {
   getUserPaymentHistory,
   getUserSubscription,
 } from "~/features/payments/data";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import {
   getSubscriptionData,
   isSubscriptionActiveForGating,
@@ -64,6 +66,7 @@ import {
   getUserPolicy as getBlastrUserPolicy,
   resolvePubkeyHex as resolveBlastrPubkeyHex,
 } from "~/infra/blastr/blastr-admin.client.server";
+import { logWarning } from "~/lib/error-logger.server";
 
 import { findLatestPublishRelayAcksByUserAndUrls } from "./repositories/settings-loader-data.server";
 
@@ -343,18 +346,23 @@ export async function loadSettingsData(
 ): Promise<SettingsLoaderData> {
   // Get subscription and plan name for gating Accounts tab
   const currentSub = await getUserSubscription(userId);
-  const planName = currentSub?.Plan?.name ?? null;
+  const planName = currentSub?.Plan?.name ?? "";
   const planId = (currentSub?.planId ?? "").toLowerCase();
+  const parsedPlanType = parseCommercialPlanType(planId || planName);
+  const commercialPlanType = parsedPlanType ?? "free";
+  if (!parsedPlanType && (planId || planName)) {
+    logWarning("Invalid subscription plan in settings loader", {
+      userId,
+      planId: planId || null,
+      planName: planName || null,
+    });
+  }
 
   const userRecord = await getUserBasicInfo(userId);
   const myNpub = userRecord?.npub as string;
   const isChild = !!userRecord?.isChild;
   const hasAccountsAccess =
-    isChild ||
-    planId === "premium" ||
-    planName === "Founder" ||
-    planName === "Premium" ||
-    planName === "Pro";
+    isChild || getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
   // Load all settings data in parallel
   // Use cached versions for rarely-changing data (queue types, hashtag presets)

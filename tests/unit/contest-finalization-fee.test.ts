@@ -21,7 +21,7 @@ describe("quoteContestFinalization", () => {
     expect(quote.feeSats).toBe(300);
   });
 
-  it("calculates ranked-mode payout and waived fee for premium plan", () => {
+  it("calculates ranked-mode payout and waived fee for pro plan", () => {
     const quote = quoteContestFinalization({
       contest: {
         sourceNoteId: "note123",
@@ -35,7 +35,7 @@ describe("quoteContestFinalization", () => {
           { rank: 3, sats: 1000 },
         ],
       },
-      planType: "premium",
+      planType: "pro",
     });
 
     expect(quote.plannedPayoutSats).toBe(8000);

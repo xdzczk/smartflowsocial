@@ -8,7 +8,7 @@ import {
 } from "~/features/payments/types";
 
 export class ScheduleCapExceededError extends Error {
-  constructor(message = scheduleCapExceededMessage()) {
+  constructor(message: string) {
     super(message);
     this.name = "ScheduleCapExceededError";
   }
@@ -49,6 +49,8 @@ export async function assertScheduleCapacity(
   if (maxFutureScheduledItems == null) return;
   const current = await countFutureScheduledItems(userId);
   if (current + additionalScheduledItems > maxFutureScheduledItems) {
-    throw new ScheduleCapExceededError();
+    throw new ScheduleCapExceededError(
+      scheduleCapExceededMessage(maxFutureScheduledItems)
+    );
   }
 }

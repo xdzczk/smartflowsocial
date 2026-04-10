@@ -37,7 +37,7 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
-  basic: {
+  starter: {
     basicScheduling: true,
     newPost: true,
     dashboard: true,
@@ -56,7 +56,7 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
-  premium: {
+  creator: {
     basicScheduling: true,
     newPost: true,
     dashboard: true,
@@ -76,25 +76,6 @@ export const PLAN_FEATURES = {
     broadcasts: true,
   },
   pro: {
-    basicScheduling: true,
-    newPost: true,
-    dashboard: true,
-    drafts: true,
-    calendar: true,
-    bulkScheduling: true,
-    longformPosts: true,
-    templates: true,
-    recyclables: true,
-    scheduled: true,
-    posted: true,
-    published: true,
-    giveaways: true,
-    contests: true,
-    settings: true,
-    engagement_feed: true,
-    broadcasts: true,
-  },
-  enterprise: {
     basicScheduling: true,
     newPost: true,
     dashboard: true,
@@ -133,7 +114,7 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
-  /** Lifetime / early-supporter tier: same entitlements as premium for product gates */
+  /** Lifetime / early-supporter tier: same entitlements as Pro for product gates */
   founder: {
     basicScheduling: true,
     newPost: true,
@@ -230,7 +211,7 @@ export function isSubscriptionPeriodExpired(
 
 /**
  * Get the current user's plan type from their subscription.
- * When the billing period has ended, returns "free" so premium features are gated.
+ * When the billing period has ended, returns "free" so paid features are gated.
  */
 export function getUserPlanType(
   subscription: UserSubscription | null
@@ -247,16 +228,16 @@ export function getUserPlanType(
   const planId = subscription.planId.toLowerCase();
 
   // Check planId first (more reliable), then plan name
-  if (planId === "basic" || planName.includes("basic")) {
-    return "basic";
+  if (planId === "starter" || planName.includes("starter")) {
+    return "starter";
+  }
+  if (planId === "creator" || planName.includes("creator")) {
+    return "creator";
   }
   if (planId === "founder" || planName.includes("founder")) {
     return "founder";
   }
-  if (planId === "premium" || planName.includes("premium")) return "premium";
   if (planId === "pro" || planName.includes("pro")) return "pro";
-  if (planId === "enterprise" || planName.includes("enterprise"))
-    return "enterprise";
   if (planId === "teams" || planName.includes("teams")) return "teams";
 
   return "free";
@@ -356,7 +337,7 @@ export { getPlanEntitlements };
 /**
  * Giveaway plan limits (Option A: single giveaways flag, tier gates advanced).
  * Free: basic scope (PERIOD/SINGLE_POST), low winner cap, no presets.
- * Paid (basic+): QUEUE scope, higher cap, presets.
+ * Paid (starter+): QUEUE scope, higher cap, presets.
  */
 export function getGiveawayPlanLimits(planType: PlanType): {
   maxWinnerCount: number;
@@ -381,11 +362,11 @@ export function getPlanDisplayName(
 
 /**
  * Get the minimum plan required for a feature (upgrade prompts).
- * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Creator.
+ * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Starter.
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
   if (feature === "bulkScheduling" || feature === "broadcasts") {
-    return "basic";
+    return "starter";
   }
   // PLAN_FEATURES currently marks all surface features true on every tier; paid execution uses getPlanEntitlements.
   return "free";

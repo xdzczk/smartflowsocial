@@ -6,24 +6,25 @@ validation**.
 ## Public plan ladder (commercial)
 
 - **Free**
+- **Starter**
 - **Creator**
 - **Pro**
-- **Teams** (placeholder; currently treated as paid per current code policy)
 - **Founder**
 
-## Legacy IDs → commercial plan mapping
+`Teams` remains a legacy/internal plan type in code, but is not shown in the public pricing UI.
+
+## Persisted IDs → commercial plan mapping
 
 Canonical mapping lives in:
 
 - `app/features/payments/plan-mapping.ts`
 
-Current legacy identifiers in the codebase:
+Persisted identifiers after strict cutover:
 
 - `free` → `free`
-- `basic` → `creator`
-- `premium` → `pro`
-- `pro` → `pro` (legacy)
-- `enterprise` → `pro` (legacy fallback)
+- `starter` → `starter`
+- `creator` → `creator`
+- `pro` → `pro`
 - `teams` → `teams`
 - `founder` → `founder`
 
@@ -66,7 +67,7 @@ Enforcement entrypoints (server):
 Policy intent:
 
 - **Free**: must not receive SFS Blossom bulk upload tokens; must not use SFS-hosted quota.
-- **Paid** (Creator/Pro/Teams/Founder): eligible.
+- **Paid** (Starter/Creator/Pro/Founder): eligible.
 
 Authoritative token issuance (SFS lane):
 
@@ -121,4 +122,4 @@ UX.
 
 `Plan.maxPostsPerMonth`, `maxQueueTypes`, `maxTemplates`, `maxLongFormPosts` exist in Prisma and are
 seeded (see `prisma/seed.ts`), but **they are not the enforcement source** for current execution
-caps.\n+ Canonical enforcement should come from `plan-policy.ts` and its projections.\n+
+caps. Canonical enforcement should come from `plan-policy.ts` and its projections.

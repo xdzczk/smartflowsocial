@@ -10,6 +10,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: {
     template: {
       create: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
       findMany: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
@@ -17,10 +18,10 @@ vi.mock("~/lib/prisma.server", () => ({
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
-        planId: "basic",
+        planId: "creator",
         status: "ACTIVE",
         currentPeriodEnd: new Date(Date.now() + 86400000),
-        Plan: { id: "basic", name: "Basic" },
+        Plan: { id: "creator", name: "Creator" },
       }),
     },
   },
@@ -41,6 +42,7 @@ import { prisma } from "~/lib/prisma.server";
 describe("Template Model", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.template.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
   });
 
   describe("createTemplate", () => {

@@ -24,16 +24,16 @@ export default function Footer({
       id="page-footer"
       className={cn("border-border bg-card border-t", className)}
     >
-      <div className="container mx-auto px-4 py-10 text-center sm:py-12 lg:px-8 lg:py-14 xl:max-w-7xl xl:py-16">
-        <div className="mb-7 flex justify-center sm:mb-9">
+      <div className="container mx-auto px-4 py-8 text-center sm:py-9 lg:px-8 lg:py-10 xl:max-w-7xl">
+        <div className="mb-5 flex justify-center sm:mb-6">
           <Logo
             lightSrc="/logos/Logo-Full-LightMode.svg"
             darkSrc="/logos/Logo-Full-DarkMode.svg"
             alt={BRAND_NAME}
-            className="h-10 w-auto sm:h-12"
+            className="h-9 w-auto sm:h-10"
           />
         </div>
-        <nav className="mb-7 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm sm:mb-9 sm:gap-x-8">
+        <nav className="mb-5 flex flex-wrap justify-center gap-x-5 gap-y-2.5 text-sm sm:mb-6 sm:gap-x-7">
           {marketingHome ? (
             <a
               href={BRAND_MARKETING_URL}

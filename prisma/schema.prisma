@@ -622,7 +622,7 @@ model Giveaway {
   finalizationFeeRateBps Int?
   finalizationFeeSats    Int?
   finalizationFeeStatus  GiveawayFinalizationFeeStatus?
-  /** Commercial plan id or label at lock (e.g. basic, premium) */
+  /** Commercial plan id or label at lock (e.g. creator, pro) */
   planAtFinalization String?
   /** SHA-256 hex of canonical lock-bound config (preview snapshot + rules) */
   lockConfigHash     String?
@@ -978,6 +978,18 @@ model Post {
   replyToPostId           String?
   replyTo                 Post?                  @relation("PostReplies", fields: [replyToPostId], references: [id])
   replies                 Post[]                 @relation("PostReplies")
+  parentScheduledActionId String?
+  parentScheduledAction   Post?                  @relation("AttachedFollowups", fields: [parentScheduledActionId], references: [id], onDelete: SetNull)
+  attachedFollowups       Post[]                 @relation("AttachedFollowups")
+  rootScheduledActionId   String?
+  targetScheduledActionId String?
+  dependencyMode          ScheduledDependencyMode @default(standalone)
+  targetMode              ScheduledTargetMode     @default(direct)
+  followUpTimingMode      FollowUpTimingMode?
+  followUpOffsetSeconds   Int?
+  expectedParentEventId   String?
+  signedChildEventId      String?
+  signingState            ScheduledSigningState   @default(unsigned)
   draftVersions           DraftVersion[]
   draftGroupId            String?
   draftGroup              DraftGroup?  @relation(fields: [draftGroupId], references: [id], onDelete: SetNull)
@@ -994,6 +1006,11 @@ model Post {
   @@index([quoteOfLongFormPostId])
   @@index([replyToPostId])
   @@index([draftGroupId])
+  @@index([parentScheduledActionId])
+  @@index([rootScheduledActionId])
+  @@index([targetScheduledActionId])
+  @@index([dependencyMode, currentState, scheduledAtUtc])
+  @@index([signingState, currentState])
 }
 
 enum PostKind {
@@ -1002,6 +1019,28 @@ enum PostKind {
   REPLY
   REPOST
   QUOTE
+}
+
+enum ScheduledDependencyMode {
+  standalone
+  attached
+}
+
+enum ScheduledTargetMode {
+  direct
+  scheduled_parent
+}
+
+enum FollowUpTimingMode {
+  offset_from_parent
+  fixed_datetime
+}
+
+enum ScheduledSigningState {
+  unsigned
+  signed
+  stale
+  invalidated
 }
 
 model LongFormPost {

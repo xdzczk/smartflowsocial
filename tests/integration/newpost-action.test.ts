@@ -17,8 +17,19 @@ vi.mock("~/features/user", () => ({
 }));
 
 // Use cases: handlers import CreatePostUseCase from the use-case module, so mock there
-const mockCreatePostExecute = vi.fn();
-const mockPublishNowExecute = vi.fn();
+const {
+  mockCreatePostExecute,
+  mockPublishNowExecute,
+  mockSchedulePostExecute,
+  mockGetPostById,
+  mockUpdatePost,
+} = vi.hoisted(() => ({
+  mockCreatePostExecute: vi.fn(),
+  mockPublishNowExecute: vi.fn(),
+  mockSchedulePostExecute: vi.fn(),
+  mockGetPostById: vi.fn(),
+  mockUpdatePost: vi.fn(),
+}));
 
 vi.mock(
   "~/features/posts/composer/use-cases/create-post.use-case.server",
@@ -43,11 +54,30 @@ vi.mock("~/features/posts/server", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as Record<string, unknown>),
+    getPostById: mockGetPostById,
+    updatePost: mockUpdatePost,
     PublishNowUseCase: class {
       execute = mockPublishNowExecute;
     },
   };
 });
+
+vi.mock(
+  "~/features/posts/scheduling/use-cases/schedule-post.use-case.server",
+  () => ({
+    SchedulePostUseCase: class {
+      execute = mockSchedulePostExecute;
+    },
+  })
+);
+
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeAttachedReschedule: vi.fn(),
+    resyncAttachedChildrenAfterParentMutation: vi.fn(),
+  })
+);
 
 vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
@@ -127,6 +157,9 @@ describe("New Post Action Handler", () => {
       needsScheduling: false,
     });
     mockPublishNowExecute.mockResolvedValue(undefined);
+    mockSchedulePostExecute.mockResolvedValue(undefined);
+    mockGetPostById.mockResolvedValue(null);
+    mockUpdatePost.mockResolvedValue({ id: "scheduled-1" });
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
       (userId, queueTypeId, queueType): Promise<string | null> => {
@@ -709,6 +742,87 @@ describe("New Post Action Handler", () => {
           isRecyclable: true,
         })
       );
+    });
+  });
+
+  describe("Composer edit action invariants", () => {
+    it("requires attachmentDiff for update-scheduled", async () => {
+      mockGetPostById.mockResolvedValue({
+        id: "scheduled-1",
+        queueTypeId: "queue-1",
+        dependencyMode: null,
+        draftMeta: { attachmentMeta: [] },
+      });
+      const formData = createActionFormData("update-scheduled", {
+        content: "Updated content",
+        scheduledActionId: "scheduled-1",
+      });
+      const request = new Request("http://localhost:3000/dashboard/newpost", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const body = (await result.json()) as { error?: string };
+      expect(result.status).toBe(400);
+      expect(body.error).toContain("Attachment diff is required");
+    });
+
+    it("rejects attached follow-up in update-scheduled mode", async () => {
+      mockGetPostById.mockResolvedValue({
+        id: "follow-up-1",
+        queueTypeId: "queue-1",
+        dependencyMode: "attached",
+        parentScheduledActionId: "parent-1",
+        draftMeta: { attachmentMeta: [] },
+      });
+      const formData = createActionFormData("update-scheduled", {
+        content: "Updated content",
+        scheduledActionId: "follow-up-1",
+        attachmentDiff: JSON.stringify({
+          removed: [],
+          retained: [],
+          added: [],
+        }),
+      });
+      const request = new Request("http://localhost:3000/dashboard/newpost", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const body = (await result.json()) as { error?: string };
+      expect(result.status).toBe(400);
+      expect(body.error).toContain("Use follow-up editing");
+    });
+
+    it("requires parent linkage for update-follow-up", async () => {
+      mockGetPostById.mockResolvedValue({
+        id: "follow-up-1",
+        queueTypeId: "queue-1",
+        dependencyMode: "attached",
+        parentScheduledActionId: null,
+        scheduledAtUtc: new Date("2026-04-10T10:00:00.000Z"),
+        draftMeta: { attachmentMeta: [] },
+      });
+      const formData = createActionFormData("update-follow-up", {
+        content: "Updated follow-up",
+        followUpActionId: "follow-up-1",
+        attachmentDiff: JSON.stringify({
+          removed: [],
+          retained: [],
+          added: [],
+        }),
+      });
+      const request = new Request("http://localhost:3000/dashboard/newpost", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const body = (await result.json()) as { error?: string };
+      expect(result.status).toBe(400);
+      expect(body.error).toContain("parent relationship is missing");
     });
   });
 });

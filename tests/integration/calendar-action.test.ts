@@ -13,11 +13,21 @@ const { mockSchedulePostExecute, mockScheduleLongFormExecute } = vi.hoisted(
     return { mockSchedulePostExecute, mockScheduleLongFormExecute };
   }
 );
+const {
+  mockCascadeAttachedReschedule,
+  mockResyncAttachedChildrenAfterParentMutation,
+} = vi.hoisted(() => ({
+  mockCascadeAttachedReschedule: vi.fn(),
+  mockResyncAttachedChildrenAfterParentMutation: vi.fn(),
+}));
 
 vi.mock("~/features/posts/scheduling/index.server", () => ({
   SchedulePostUseCase: class {
     execute = mockSchedulePostExecute;
   },
+  cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+  resyncAttachedChildrenAfterParentMutation:
+    mockResyncAttachedChildrenAfterParentMutation,
 }));
 
 vi.mock("~/lib/error-logger.server", () => ({
@@ -42,6 +52,14 @@ vi.mock("~/features/posts/server/longform", () => ({
     execute = mockScheduleLongFormExecute;
   },
 }));
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+    resyncAttachedChildrenAfterParentMutation:
+      mockResyncAttachedChildrenAfterParentMutation,
+  })
+);
 
 import {
   createFormData,
@@ -64,6 +82,8 @@ const TEST_SESSION_PUBKEY = "pk-123";
 describe("Calendar Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCascadeAttachedReschedule.mockResolvedValue([]);
+    mockResyncAttachedChildrenAfterParentMutation.mockResolvedValue([]);
   });
 
   describe("handleCalendarAction", () => {
@@ -207,6 +227,7 @@ describe("Calendar Action Handler", () => {
         scheduledAtUtc: parseInt(newTime, 10),
         overrideQueue: false,
       });
+      expect(mockCascadeAttachedReschedule).toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response
@@ -274,6 +295,7 @@ describe("Calendar Action Handler", () => {
         })
       );
       expect(mockSchedulePostExecute).toHaveBeenCalled();
+      expect(mockResyncAttachedChildrenAfterParentMutation).toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response

@@ -315,9 +315,9 @@ export function DashboardLayoutPage(): ReactNode {
                       You’re on the Free plan
                     </p>
                     <p className="mt-1 text-sm leading-5">
-                      Full product surface, strict operating limits. Upgrade for
-                      higher limits, more accounts, and stronger publishing
-                      infrastructure.
+                      You’re on Free - enough to test the core workflow. Upgrade
+                      later for more accounts, higher limits, and stronger
+                      publishing infrastructure.
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 self-start md:ml-4 md:shrink-0">

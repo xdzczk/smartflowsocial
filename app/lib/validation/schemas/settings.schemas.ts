@@ -30,11 +30,18 @@ const ERROR_NOSTRCONNECT_URI_REQUIRED =
   "nostrconnect URI is required for URI primary signer";
 const ERROR_PRIMARY_RELAYS_REQUIRED =
   "At least one relay is required for URI primary signer";
-const ERROR_PLAN_ID_REQUIRED = "Plan ID is required";
 
 // Form value constants
 const FORM_VALUE_ON = "on";
 const FORM_VALUE_TRUE = "true";
+const canonicalPlanIdSchema = z.enum([
+  "free",
+  "starter",
+  "creator",
+  "pro",
+  "teams",
+  "founder",
+]);
 
 /**
  * Relay URL validation schema
@@ -691,7 +698,7 @@ export const updateTagsSchema = z.object({
  * Subscription action schemas
  */
 export const switchToFreePlanSchema = z.object({
-  planId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
+  planId: canonicalPlanIdSchema,
 });
 
 /** No body required; intent is cancel_at_period_end */
@@ -699,12 +706,12 @@ export const cancelAtPeriodEndSchema = z.object({});
 
 /** Schedule downgrade to a plan at period end */
 export const scheduleDowngradeSchema = z.object({
-  planId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
+  planId: canonicalPlanIdSchema,
 });
 
 export const topUpSubscriptionSchema = z
   .object({
-    targetPlanId: z.string().min(1, ERROR_PLAN_ID_REQUIRED),
+    targetPlanId: canonicalPlanIdSchema,
     paymentLane: z.enum(["lightning_one_time", "nwc_auto_renew"]),
     billingCadence: z.enum(["monthly", "yearly"]).optional().default("monthly"),
     accessDurationMonths: z

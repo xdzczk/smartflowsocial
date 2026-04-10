@@ -247,8 +247,8 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               value={query}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
-              placeholder="Paste note, nevent, naddr, event ID, or Nostr URL"
-              title="Examples: note1…, nevent1…, naddr1…, nostr:note1… — ⌘K to focus"
+              placeholder="Inspect a Nostr note, profile, or URL"
+              title="Paste a Nostr note, profile, or URL — ⌘K to focus"
               className={cn(
                 "border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pl-10",
                 lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"

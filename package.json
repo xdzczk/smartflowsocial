@@ -76,7 +76,9 @@
     "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
     "clean": "rm -rf build .remix node_modules/.cache coverage .tsbuildinfo",
     "lint:fix": "node scripts/fix-eslint-errors.js",
-    "generate-icons": "tsx scripts/generate-pwa-icons.ts"
+    "generate-icons": "tsx scripts/generate-pwa-icons.ts",
+    "db:reseed-and-backfill-free": "tsx scripts/reseed-and-backfill-free.ts",
+    "db:reseed-and-backfill-free:with-seed": "tsx scripts/reseed-and-backfill-free.ts --seed"
   },
   "eslintIgnore": [
     "/node_modules",

@@ -62,8 +62,8 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
       npub: "npub1test",
     });
     (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
-      planId: "basic",
-      Plan: { id: "basic", name: "Basic", features: null },
+      planId: "creator",
+      Plan: { id: "creator", name: "Creator", features: null },
     });
     (
       getCanonicalOwnedBytesForUser as ReturnType<typeof vi.fn>

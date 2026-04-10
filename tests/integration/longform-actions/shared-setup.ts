@@ -13,15 +13,21 @@ global.fetch = vi.fn();
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma2 = {
     $use: vi.fn(),
+    post: {
+      count: vi.fn().mockResolvedValue(0),
+    },
+    longFormPost: {
+      count: vi.fn().mockResolvedValue(0),
+    },
     queueType: {
       findFirst: vi.fn(),
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
-        planId: "basic",
+        planId: "creator",
         status: "ACTIVE",
         currentPeriodEnd: new Date(Date.now() + 86400000),
-        Plan: { id: "basic", name: "Basic" },
+        Plan: { id: "creator", name: "Creator" },
       }),
     },
   };

@@ -37,7 +37,7 @@ describe("GET /internal/blossom/policy", () => {
       isSubscriptionActiveForGating as ReturnType<typeof vi.fn>
     ).mockResolvedValue(true);
     (getSubscriptionData as ReturnType<typeof vi.fn>).mockResolvedValue({
-      currentSubscription: { planId: "premium" },
+      currentSubscription: { planId: "pro" },
     });
   });
 

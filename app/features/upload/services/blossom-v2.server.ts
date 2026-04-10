@@ -1,7 +1,7 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 import { getUserSubscription } from "~/features/payments/data";
-import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { getUserById } from "~/features/user";
 import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
@@ -290,13 +290,19 @@ export async function issueBlossomBulkTokens(
   }
   const pubkey = user.npub.toLowerCase();
   const subscription = await getUserSubscription(userId);
-  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+  const commercialPlanType = parseCommercialPlanType(
     subscription?.planId ?? subscription?.Plan?.id ?? subscription?.Plan?.name
   );
+  if (!commercialPlanType) {
+    throw new AuthorizationError("Invalid subscription plan configuration.", {
+      planId: subscription?.planId ?? null,
+      planName: subscription?.Plan?.name ?? null,
+    });
+  }
   const canonicalPolicy = getCanonicalPlanPolicy(commercialPlanType);
   if (!canonicalPolicy.media.canUseSfsBlossomStorage) {
     throw new AuthorizationError(
-      `${BRAND_NAME}-hosted media is available on Creator and Pro plans.`,
+      `${BRAND_NAME}-hosted media is available on paid plans.`,
       { commercialPlanType, planId: subscription?.planId ?? null }
     );
   }
@@ -399,8 +405,7 @@ export async function issueBlossomBulkTokens(
       jti,
       batchId,
       // Used by the Blossom gateway to enforce policy independently.
-      // Keep legacy plan ids so the gateway can map: basic→creator, premium→pro, etc.
-      rateClass: subscription?.planId ?? commercialPlanType,
+      rateClass: commercialPlanType,
     };
     validationResults[entry.index] = {
       sha256: entry.file.sha256,

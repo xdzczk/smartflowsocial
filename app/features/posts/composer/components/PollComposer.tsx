@@ -137,6 +137,10 @@ export function PollComposer({
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] =
     useState(true);
+  const [
+    hasManualIncludeHashtagsPreference,
+    setHasManualIncludeHashtagsPreference,
+  ] = useState(false);
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
@@ -256,10 +260,13 @@ export function PollComposer({
       pollQueueEffectFirstRef.current = false;
       return;
     }
+    if (hasManualIncludeHashtagsPreference) {
+      return;
+    }
     setIncludeHashtagsInNoteBody(
       defaultIncludeHashtagsForQueueSelection(selectedQueue, queueTypes)
     );
-  }, [selectedQueue, queueTypes]);
+  }, [selectedQueue, queueTypes, hasManualIncludeHashtagsPreference]);
 
   const relayUrls =
     relayOverride && relayOverride.length > 0 ? relayOverride : defaultRelays;
@@ -657,6 +664,7 @@ export function PollComposer({
         : 24
     );
     setSelectedHashtags(pollDraftRestored.selectedHashtags);
+    setHasManualIncludeHashtagsPreference(true);
     setIncludeHashtagsInNoteBody(
       pollDraftRestored.includeHashtagsInNoteBody !== false
     );
@@ -713,6 +721,7 @@ export function PollComposer({
       setEndsAtLocal("");
     }
     setSelectedHashtags(initialPollRestore.selectedHashtags);
+    setHasManualIncludeHashtagsPreference(true);
     setIncludeHashtagsInNoteBody(
       initialPollRestore.includeHashtagsInNoteBody !== false
     );
@@ -1183,7 +1192,10 @@ export function PollComposer({
               }}
               disabled={disabled}
               includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-              onIncludeHashtagsInNoteBodyChange={setIncludeHashtagsInNoteBody}
+              onIncludeHashtagsInNoteBodyChange={(value) => {
+                setHasManualIncludeHashtagsPreference(true);
+                setIncludeHashtagsInNoteBody(value);
+              }}
             />
           </div>
         </ComposerLeftCanvas>

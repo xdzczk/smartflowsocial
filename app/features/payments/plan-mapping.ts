@@ -1,5 +1,6 @@
 export type CommercialPlanType =
   | "free"
+  | "starter"
   | "creator"
   | "pro"
   | "teams"
@@ -7,42 +8,46 @@ export type CommercialPlanType =
 
 export type CommercialPublicPlanName =
   | "Free"
+  | "Starter"
   | "Creator"
   | "Pro"
   | "Teams"
   | "Founder";
 
 /**
- * Map persisted/legacy plan IDs (and legacy names) to canonical commercial plan types.
- *
- * Notes:
- * - Legacy/internal ids in this repo include: free, basic, premium, pro, enterprise, teams, founder.
- * - We intentionally keep this mapping layer so we can migrate DB ids later (if ever) without
- *   forcing a huge refactor.
+ * Parse a plan id/name to canonical commercial plan type.
+ * Returns null for unknown values (strict cutover behavior).
  */
-export function mapLegacyPlanIdToCommercialPlanType(
+export function parseCommercialPlanType(
   planIdOrName: string | null | undefined
-): CommercialPlanType {
+): CommercialPlanType | null {
   const raw = (planIdOrName ?? "").trim().toLowerCase();
   switch (raw) {
     case "free":
       return "free";
-    case "basic":
+    case "starter":
+      return "starter";
+    case "creator":
       return "creator";
-    case "premium":
-      return "pro";
     case "pro":
-      return "pro";
-    case "enterprise":
-      // Legacy placeholder: treat as Pro commercially for now.
       return "pro";
     case "teams":
       return "teams";
     case "founder":
       return "founder";
     default:
-      return "free";
+      return null;
   }
+}
+
+/**
+ * Map persisted plan IDs (and plan display names) to canonical commercial plan types.
+ * Fallback behavior is retained for non-critical callers.
+ */
+export function mapLegacyPlanIdToCommercialPlanType(
+  planIdOrName: string | null | undefined
+): CommercialPlanType {
+  return parseCommercialPlanType(planIdOrName) ?? "free";
 }
 
 export function getCommercialPlanDisplayName(
@@ -51,6 +56,8 @@ export function getCommercialPlanDisplayName(
   switch (planType) {
     case "free":
       return "Free";
+    case "starter":
+      return "Starter";
     case "creator":
       return "Creator";
     case "pro":

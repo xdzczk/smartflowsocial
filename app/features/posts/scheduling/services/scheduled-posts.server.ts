@@ -34,6 +34,12 @@ import { fromUnixTimestamp, toDate, toPrismaDate } from "~/lib/temporal";
 import type { Prisma } from "../../data/posts-prisma-types.server";
 import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
 
+import {
+  cascadeAttachedReschedule,
+  cascadeDeleteAttachedFollowups,
+  resyncAttachedChildrenAfterParentMutation,
+} from "./attached-followups.server";
+
 const ERROR_POST_NOT_FOUND = "Post not found";
 const ERROR_LONGFORM_POST_NOT_FOUND = "Article not found";
 const ERROR_PARSING_SIGNED_EVENTS = "Error parsing signed events";
@@ -260,6 +266,7 @@ function parseFileUrl(
 // ============================================================================
 
 async function handleDelete(postId: string, userId: string) {
+  await cascadeDeleteAttachedFollowups({ rootPostId: postId, userId });
   await deletePost({ id: postId, userId });
   return json({ success: true });
 }
@@ -272,7 +279,12 @@ async function handleDeleteLongForm(postId: string, userId: string) {
 async function handleBulkDelete(formData: FormData, userId: string) {
   const postIdsValue = formData.get("postIds");
   const postIds = parsePostIds(postIdsValue);
-  await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+  await Promise.all(
+    postIds.map(async (id: string) => {
+      await cascadeDeleteAttachedFollowups({ rootPostId: id, userId });
+      await deletePost({ id, userId });
+    })
+  );
   return json({ success: true });
 }
 
@@ -290,7 +302,10 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
   const itemData = parseItemData(itemDataValue);
   const promises = itemData.map((item: { id: string; type: string }) => {
     if (item.type === "post") {
-      return deletePost({ id: item.id, userId });
+      return (async () => {
+        await cascadeDeleteAttachedFollowups({ rootPostId: item.id, userId });
+        return deletePost({ id: item.id, userId });
+      })();
     } else {
       return deleteLongFormPost({ id: item.id, userId });
     }
@@ -319,6 +334,22 @@ async function handleReschedule(formData: FormData, userId: string) {
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
     parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
 
+  if (originalPost.parentScheduledActionId && newTime) {
+    const parent = await getPostById({
+      id: originalPost.parentScheduledActionId,
+      userId,
+    });
+    if (parent?.scheduledAtUtc) {
+      const parentUnix = Math.floor(parent.scheduledAtUtc.getTime() / 1000);
+      if (Number(newTime) < parentUnix) {
+        return json(
+          { error: "Follow-up must be scheduled at or after the parent post." },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
   const updatedPost = await reschedulePost({
     id: postId,
     userId,
@@ -327,6 +358,13 @@ async function handleReschedule(formData: FormData, userId: string) {
     queueTypeId,
     signedEvent: parsedSignedEvent as unknown as SignedEvent | undefined,
     nostrEvent: parsedNostrEvent as unknown as NostrEvent | undefined,
+  });
+  const parentScheduleDate =
+    updatedPost.scheduledAtUtc ?? new Date(parseInt(newTime, 10) * 1000);
+  await cascadeAttachedReschedule({
+    rootPostId: postId,
+    userId,
+    parentScheduledAtUtc: parentScheduleDate,
   });
 
   if (parsedSignedEvent && parsedNostrEvent) {
@@ -339,6 +377,11 @@ async function handleReschedule(formData: FormData, userId: string) {
       userId,
       scheduledAtUtc,
       signedEvent: parsedSignedEvent as SignedEvent,
+    });
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: postId,
+      userId,
+      parentPredictedEventId: parsedSignedEvent.id,
     });
     return json({ success: true, post: updatedPost, signed: true });
   }
@@ -451,6 +494,13 @@ async function handleEditPost(formData: FormData, userId: string) {
     }
     await assertScheduleCapacity(userId, additionalSlots);
   }
+  if (scheduledFor) {
+    await cascadeAttachedReschedule({
+      rootPostId: postId,
+      userId,
+      parentScheduledAtUtc: new Date(Number(scheduledFor) * 1000),
+    });
+  }
 
   const updated = await updatePost({
     id: postId,
@@ -484,6 +534,19 @@ async function handleEditPost(formData: FormData, userId: string) {
       userId,
       scheduledAtUtc,
       signedEvent: parsedSignedEvent as SignedEvent,
+    });
+  }
+  if (parsedSignedEvent) {
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: postId,
+      userId,
+      parentPredictedEventId: parsedSignedEvent.id,
+    });
+  } else {
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: postId,
+      userId,
+      parentPredictedEventId: null,
     });
   }
 

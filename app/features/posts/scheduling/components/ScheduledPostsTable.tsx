@@ -378,11 +378,24 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3">
-                      <p className="font-medium">
+                      <p
+                        className={cn(
+                          "font-medium",
+                          post.dependencyMode === "attached" && "pl-3"
+                        )}
+                      >
                         {post.caption && post.caption.length > 21
                           ? post.caption.substring(0, 21) + "..."
                           : post.caption}
                       </p>
+                      {post.dependencyMode === "attached" ? (
+                        <p className="text-muted-foreground text-xs">
+                          Follow-up
+                          {post.followUpTimingMode === "offset_from_parent"
+                            ? " · Offset from parent"
+                            : " · Fixed date/time"}
+                        </p>
+                      ) : null}
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {formatDate(post.scheduledAtUtc)}

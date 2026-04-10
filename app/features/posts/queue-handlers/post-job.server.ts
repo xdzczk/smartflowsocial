@@ -52,6 +52,13 @@ import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cry
 
 import { findPostUnique } from "../repositories/post-queries-data.server";
 
+function eventIdFromUnknown(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!("id" in value)) return null;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
 // ---------------------------------------------------------------------------
 // processPost (used by checker)
 // ---------------------------------------------------------------------------
@@ -409,9 +416,69 @@ export async function runScheduledPostJob(input: {
   const repostMeta = await findPostUnique(
     { id: postId, userId },
     {
-      select: { postKind: true, repostOfPostId: true, repostConditions: true },
+      select: {
+        postKind: true,
+        repostOfPostId: true,
+        repostConditions: true,
+        dependencyMode: true,
+        signingState: true,
+        parentScheduledActionId: true,
+        expectedParentEventId: true,
+        currentState: true,
+      },
     }
   );
+  if (
+    repostMeta?.dependencyMode === "attached" &&
+    repostMeta.parentScheduledActionId
+  ) {
+    const invalidReason =
+      repostMeta.currentState !== "SCHEDULED"
+        ? "Attached child is no longer scheduled"
+        : repostMeta.signingState !== "signed"
+          ? "Attached child signing state is not signed"
+          : null;
+    if (invalidReason) {
+      await releasePostPublishLease({ postId, userId, lockId: lease.lockId });
+      input.ctx.lease = null;
+      logInfo("Skipping attached child publish due to dependency guard", {
+        postId,
+        userId,
+        correlationId,
+        reason: invalidReason,
+      });
+      recordJobSkipped(queueName, "attached_dependency_invalid");
+      return { success: true, postId, skipped: true };
+    }
+
+    const parentPost = await findPostUnique(
+      { id: repostMeta.parentScheduledActionId, userId },
+      {
+        select: { currentState: true, nostrEventId: true, signedEvent: true },
+      }
+    );
+    const parentEventId =
+      parentPost?.nostrEventId ?? eventIdFromUnknown(parentPost?.signedEvent);
+    const dependencyInvalid =
+      parentPost?.currentState !== "PUBLISHED" ||
+      !parentEventId ||
+      (repostMeta.expectedParentEventId != null &&
+        parentEventId !== repostMeta.expectedParentEventId);
+    if (dependencyInvalid) {
+      await releasePostPublishLease({ postId, userId, lockId: lease.lockId });
+      input.ctx.lease = null;
+      logInfo("Skipping attached child publish due to parent guard", {
+        postId,
+        userId,
+        correlationId,
+        parentScheduledActionId: repostMeta.parentScheduledActionId,
+        expectedParentEventId: repostMeta.expectedParentEventId,
+        parentEventId,
+      });
+      recordJobSkipped(queueName, "attached_parent_not_ready");
+      return { success: true, postId, skipped: true };
+    }
+  }
   const conditions = repostMeta?.repostConditions as
     | RepostConditions
     | null

@@ -77,6 +77,13 @@ function buildQuoteList(input: CreatePostInput) {
       : [];
 }
 
+function getSignedEventId(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!("id" in value)) return null;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
 export class CreatePostUseCase {
   private readonly stateMachine = new PostStateMachine();
 
@@ -178,6 +185,10 @@ export class CreatePostUseCase {
         ...(columnExists && creationIdempotencyKey
           ? { creationIdempotencyKey }
           : {}),
+        dependencyMode: "standalone",
+        targetMode: "direct",
+        signingState: input.signedEvent ? "signed" : "unsigned",
+        signedChildEventId: getSignedEventId(input.signedEvent) ?? undefined,
       },
       input.scheduledFor,
       correlationId
@@ -207,6 +218,7 @@ export class CreatePostUseCase {
 
     const repostList = repostListEarly;
     const quoteList = quoteListEarly;
+    const isAttachableParent = input.scheduledFor != null;
 
     for (const item of repostList) {
       const repostScheduledForDate = toPrismaDate(
@@ -238,6 +250,27 @@ export class CreatePostUseCase {
           isQuotedPost: false,
           repostOfPostId: post.id,
           postKind: "REPOST",
+          ...(isAttachableParent
+            ? {
+                parentScheduledActionId: post.id,
+                rootScheduledActionId: post.id,
+                targetScheduledActionId: post.id,
+                dependencyMode: "attached" as const,
+                targetMode: "scheduled_parent" as const,
+                followUpTimingMode: "offset_from_parent" as const,
+                followUpOffsetSeconds:
+                  input.scheduledFor != null
+                    ? Math.max(0, item.scheduledFor - input.scheduledFor)
+                    : null,
+                expectedParentEventId:
+                  getSignedEventId(post.signedEvent) ?? undefined,
+              }
+            : {
+                dependencyMode: "standalone" as const,
+                targetMode: "direct" as const,
+              }),
+          signedChildEventId: getSignedEventId(repostSignedEv) ?? undefined,
+          signingState: "signed",
           ...(repostConditions && { repostConditions }),
         },
         item.scheduledFor,
@@ -279,6 +312,27 @@ export class CreatePostUseCase {
           isQuotedPost: true,
           quoteOfPostId: post.id,
           postKind: "QUOTE",
+          ...(isAttachableParent
+            ? {
+                parentScheduledActionId: post.id,
+                rootScheduledActionId: post.id,
+                targetScheduledActionId: post.id,
+                dependencyMode: "attached" as const,
+                targetMode: "scheduled_parent" as const,
+                followUpTimingMode: "offset_from_parent" as const,
+                followUpOffsetSeconds:
+                  input.scheduledFor != null
+                    ? Math.max(0, item.scheduledFor - input.scheduledFor)
+                    : null,
+                expectedParentEventId:
+                  getSignedEventId(post.signedEvent) ?? undefined,
+              }
+            : {
+                dependencyMode: "standalone" as const,
+                targetMode: "direct" as const,
+              }),
+          signedChildEventId: getSignedEventId(quoteSignedEv) ?? undefined,
+          signingState: "signed",
         },
         item.scheduledFor,
         correlationId

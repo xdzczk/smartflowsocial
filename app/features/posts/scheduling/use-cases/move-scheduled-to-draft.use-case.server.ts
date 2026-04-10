@@ -9,6 +9,8 @@ import { deriveIsScheduled } from "~/features/posts/state-machine/post-state";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { cancelPostJob } from "~/infra/queue";
 
+import { cascadeCancelAttachedFollowups } from "../services/attached-followups.server";
+
 export interface MoveScheduledToDraftInput {
   postId: string;
   userId: string;
@@ -34,6 +36,12 @@ export class MoveScheduledToDraftUseCase {
     }
 
     await cancelPostJob(input.postId);
+    await cascadeCancelAttachedFollowups({
+      rootPostId: input.postId,
+      userId: input.userId,
+      targetState: "DRAFT",
+      reason: "Parent moved to drafts; attached follow-up moved to drafts",
+    });
 
     await updatePost({
       id: input.postId,

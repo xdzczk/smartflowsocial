@@ -10,6 +10,7 @@ import {
   ScheduleCapExceededError,
 } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { MoveScheduledLongFormToDraftUseCase } from "~/features/posts/longform/index.server";
+import { findPostByCreationIdempotencyKey } from "~/features/posts/repositories/post-queries-data.server";
 import {
   createPostWithOutbox,
   deleteLongFormPost,
@@ -19,6 +20,7 @@ import {
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
+import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
 import {
   scheduledActionSchema,
   validateFormDataOrRespond,
@@ -26,7 +28,20 @@ import {
 
 import { MoveScheduledToDraftUseCase } from "../use-cases/move-scheduled-to-draft.use-case.server";
 
+import { cascadeDeleteAttachedFollowups } from "./attached-followups.server";
+
 const REPOST_CHAIN_BLOCKED_ERROR = "Cannot repost or quote a repost.";
+const PARENT_SIGNING_REQUIRED_ERROR =
+  "Parent scheduled post must be signed before scheduling attached follow-ups.";
+
+async function getExistingScheduledPostByIdempotency(
+  creationIdempotencyKey: string
+) {
+  const { existing, columnExists } = await findPostByCreationIdempotencyKey(
+    creationIdempotencyKey
+  );
+  return { existing, columnExists };
+}
 
 export async function handleScheduledAction(
   formData: FormData,
@@ -69,6 +84,10 @@ export async function handleScheduledAction(
   }
 
   if (_action === "delete") {
+    await cascadeDeleteAttachedFollowups({
+      rootPostId: result.data.postId,
+      userId,
+    });
     const deletedPost = await deletePost({ id: result.data.postId, userId });
     // Return success even if post was already deleted (idempotent operation)
     return { success: true, deleted: deletedPost !== null };
@@ -85,7 +104,10 @@ export async function handleScheduledAction(
 
   if (_action === "bulkDelete") {
     const results = await Promise.all(
-      result.data.postIds.map((id: string) => deletePost({ id, userId }))
+      result.data.postIds.map(async (id: string) => {
+        await cascadeDeleteAttachedFollowups({ rootPostId: id, userId });
+        return deletePost({ id, userId });
+      })
     );
     const deletedCount = results.filter((post) => post !== null).length;
     return { success: true, deletedCount };
@@ -104,7 +126,10 @@ export async function handleScheduledAction(
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
   const promises = result.data.itemData.map((item) => {
     if (item.type === "post") {
-      return deletePost({ id: item.id, userId });
+      return (async () => {
+        await cascadeDeleteAttachedFollowups({ rootPostId: item.id, userId });
+        return deletePost({ id: item.id, userId });
+      })();
     } else {
       return deleteLongFormPost({ id: item.id, userId });
     }
@@ -144,6 +169,13 @@ function buildRepostConditionsFromData(data: {
   return Object.keys(conditions).length > 0 ? conditions : null;
 }
 
+function getSignedEventIdFromUnknown(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!("id" in value)) return null;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
 async function handleScheduleRepost(
   data: {
     postId?: string;
@@ -167,6 +199,16 @@ async function handleScheduleRepost(
     return json({ error: "Invalid scheduled time" }, { status: 400 });
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
+  const creationIdempotencyKey = generateCreationIdempotencyKey(
+    userId,
+    `scheduleRepost:${signedEvent.id}`,
+    scheduledForUnix
+  );
+  const { existing, columnExists } =
+    await getExistingScheduledPostByIdempotency(creationIdempotencyKey);
+  if (existing) {
+    return { success: true, postId: existing.id };
+  }
   const repostConditions = buildRepostConditionsFromData(data);
   try {
     await assertScheduleCapacity(userId, 1);
@@ -186,6 +228,15 @@ async function handleScheduleRepost(
     if (isPureRepostSourcePost(sourcePost)) {
       return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
     }
+    const isAttachedFollowUp =
+      sourcePost.currentState === "SCHEDULED" &&
+      sourcePost.nostrEventId == null;
+    const expectedParentEventId =
+      sourcePost.nostrEventId ??
+      getSignedEventIdFromUnknown(sourcePost.signedEvent);
+    if (isAttachedFollowUp && !expectedParentEventId) {
+      return json({ error: PARENT_SIGNING_REQUIRED_ERROR }, { status: 400 });
+    }
     const post = await createPostWithOutbox(
       {
         userId,
@@ -201,6 +252,24 @@ async function handleScheduleRepost(
         repostOfPostId: sourcePost.id,
         postKind: "REPOST",
         signedEvent,
+        signedChildEventId: signedEvent.id,
+        signingState: "signed",
+        ...(isAttachedFollowUp
+          ? {
+              parentScheduledActionId: sourcePost.id,
+              rootScheduledActionId:
+                sourcePost.rootScheduledActionId ?? sourcePost.id,
+              targetScheduledActionId: sourcePost.id,
+              dependencyMode: "attached" as const,
+              targetMode: "scheduled_parent" as const,
+              followUpTimingMode: "fixed_datetime" as const,
+              expectedParentEventId: expectedParentEventId ?? undefined,
+            }
+          : {
+              dependencyMode: "standalone" as const,
+              targetMode: "direct" as const,
+            }),
+        ...(columnExists ? { creationIdempotencyKey } : {}),
         ...(repostConditions && { repostConditions }),
       },
       scheduledForUnix
@@ -237,6 +306,11 @@ async function handleScheduleRepost(
       isQuotedPost: false,
       postKind: "REPOST",
       signedEvent,
+      signedChildEventId: signedEvent.id,
+      signingState: "signed",
+      dependencyMode: "standalone",
+      targetMode: "direct",
+      ...(columnExists ? { creationIdempotencyKey } : {}),
       ...(repostConditions && { repostConditions }),
     },
     scheduledForUnix
@@ -270,6 +344,16 @@ async function handleScheduleQuote(
     return json({ error: "Invalid scheduled time" }, { status: 400 });
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
+  const creationIdempotencyKey = generateCreationIdempotencyKey(
+    userId,
+    `scheduleQuote:${signedEvent.id}`,
+    scheduledForUnix
+  );
+  const { existing, columnExists } =
+    await getExistingScheduledPostByIdempotency(creationIdempotencyKey);
+  if (existing) {
+    return { success: true, postId: existing.id };
+  }
   const quoteCaption = data.quoteCaption ?? "";
   try {
     await assertScheduleCapacity(userId, 1);
@@ -289,6 +373,15 @@ async function handleScheduleQuote(
     if (isPureRepostSourcePost(sourcePost)) {
       return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
     }
+    const isAttachedFollowUp =
+      sourcePost.currentState === "SCHEDULED" &&
+      sourcePost.nostrEventId == null;
+    const expectedParentEventId =
+      sourcePost.nostrEventId ??
+      getSignedEventIdFromUnknown(sourcePost.signedEvent);
+    if (isAttachedFollowUp && !expectedParentEventId) {
+      return json({ error: PARENT_SIGNING_REQUIRED_ERROR }, { status: 400 });
+    }
     const post = await createPostWithOutbox(
       {
         userId,
@@ -304,6 +397,24 @@ async function handleScheduleQuote(
         quoteOfPostId: sourcePost.id,
         postKind: "QUOTE",
         signedEvent,
+        signedChildEventId: signedEvent.id,
+        signingState: "signed",
+        ...(isAttachedFollowUp
+          ? {
+              parentScheduledActionId: sourcePost.id,
+              rootScheduledActionId:
+                sourcePost.rootScheduledActionId ?? sourcePost.id,
+              targetScheduledActionId: sourcePost.id,
+              dependencyMode: "attached" as const,
+              targetMode: "scheduled_parent" as const,
+              followUpTimingMode: "fixed_datetime" as const,
+              expectedParentEventId: expectedParentEventId ?? undefined,
+            }
+          : {
+              dependencyMode: "standalone" as const,
+              targetMode: "direct" as const,
+            }),
+        ...(columnExists ? { creationIdempotencyKey } : {}),
       },
       scheduledForUnix
     );
@@ -339,6 +450,11 @@ async function handleScheduleQuote(
       isQuotedPost: true,
       postKind: "QUOTE",
       signedEvent,
+      signedChildEventId: signedEvent.id,
+      signingState: "signed",
+      dependencyMode: "standalone",
+      targetMode: "direct",
+      ...(columnExists ? { creationIdempotencyKey } : {}),
     },
     scheduledForUnix
   );

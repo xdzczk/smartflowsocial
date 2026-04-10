@@ -10,6 +10,8 @@ import {
 } from "~/features/posts/server";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 
+import { countDraftItemsForUser } from "../repositories/entitlement-counts.server";
+
 export interface ContentStatistics {
   scheduledCount: number;
   successCount: number;
@@ -18,6 +20,15 @@ export interface ContentStatistics {
 export interface QueueCountItem {
   queueName: string;
   count: number;
+}
+
+export interface DashboardActivitySummary {
+  draftCount: number;
+  hasDrafts: boolean;
+  hasScheduled: boolean;
+  hasPublished: boolean;
+  hasQueuesWithContent: boolean;
+  isFirstRunDashboard: boolean;
 }
 
 export async function getContentStatistics(
@@ -30,6 +41,44 @@ export async function getContentStatistics(
   return {
     scheduledCount: postStats.scheduledCount + longformStats.scheduledCount,
     successCount: postStats.successCount + longformStats.successCount,
+  };
+}
+
+export async function getDraftCountForDashboard(
+  userId: string
+): Promise<number> {
+  return countDraftItemsForUser(userId);
+}
+
+export function deriveDashboardActivitySummary({
+  draftCount,
+  postStatistics,
+  queueCountsByQueue,
+}: {
+  draftCount: number;
+  postStatistics: ContentStatistics;
+  queueCountsByQueue: QueueCountItem[];
+}): DashboardActivitySummary {
+  const hasDrafts = draftCount > 0;
+  const hasScheduled = postStatistics.scheduledCount > 0;
+  const hasPublished = postStatistics.successCount > 0;
+  const hasQueuesWithContent = queueCountsByQueue.some(
+    (queue) => queue.count > 0
+  );
+  const isFirstRunDashboard = !(
+    hasDrafts ||
+    hasScheduled ||
+    hasPublished ||
+    hasQueuesWithContent
+  );
+
+  return {
+    draftCount,
+    hasDrafts,
+    hasScheduled,
+    hasPublished,
+    hasQueuesWithContent,
+    isFirstRunDashboard,
   };
 }
 

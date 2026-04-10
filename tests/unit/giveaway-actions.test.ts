@@ -103,7 +103,7 @@ describe("giveaway-actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFindPaidFinalizationForLock.mockReset();
-    mockGetUserPlanType.mockReturnValue("premium");
+    mockGetUserPlanType.mockReturnValue("pro");
     mockGetGiveawayPlanLimits.mockReturnValue({
       canUseQueueScope: true,
       maxWinnerCount: 10,
@@ -345,7 +345,7 @@ describe("giveaway-actions", () => {
     });
 
     it("updates status to LOCKED when PREVIEWED and has winners (no fee)", async () => {
-      mockGetUserPlanType.mockReturnValue("premium");
+      mockGetUserPlanType.mockReturnValue("pro");
       mockFindGiveawayByIdAndUser.mockResolvedValue({
         id: giveawayId,
         userId,

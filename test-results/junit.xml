@@ -1,239 +1,108 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="3.689405083">
-    <testsuite name="tests/unit/nostr-edge-cases.test.ts" timestamp="2026-04-06T12:19:12.864Z" hostname="Ivans-MacBook-Pro.local" tests="16" failures="0" errors="0" skipped="0" time="3.689405083">
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should retry when window.nostr is not available initially" time="1.144593792">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+<testsuites name="vitest tests" tests="15" failures="0" errors="0" time="0.158367166">
+    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-04-10T19:15:49.633Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.016674">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.007003208">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-[remote-signer-sign] Retry loop iteration {
-  retries: 1,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 2,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should throw error after max retries" time="0.014715792">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.001154583">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-[remote-signer-sign] Retry loop iteration {
-  retries: 1,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 2,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 3,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 4,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should handle string return type from signEvent" time="0.002457417">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.00111925">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should handle object return type with missing fields" time="0.002056541">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000914959">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should use default kind if not provided" time="0.002114959">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000481833">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should use empty tags array if not provided" time="0.002388458">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000444375">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should recover via primary signer fallback on remote connection failure" time="0.002812">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;nip46&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000472208">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-[remote-signer-sign] Configured signer connection-like error {
-  error: &apos;websocket closed&apos;,
-  connectionRetryCount: 1,
-  signRetryCount: 0,
-  clearCache: true
-}
-
-[remote-signer-sign] Configured signer attempt failed { error: &apos;websocket closed&apos;, isConnectionError: true, retries: 0 }
-
-[remote-signer-sign] Recovered via primary failover in retry loop
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;nip46&apos;
-}
-
-[remote-signer-sign] Configured signer resolved { hasSigner: true, connectionRetryCount: 1, signRetryCount: 0 }
-
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should still throw extension error when fallback is unavailable" time="2.508009042">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000358375">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
 }
 
-[remote-signer-sign] Retry loop iteration {
-  retries: 1,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 2,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 3,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-[remote-signer-sign] Retry loop iteration {
-  retries: 4,
-  maxRetries: 5,
-  triedPrimaryFailover: true,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should build tags with all optional fields" time="0.002336583">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000241416">
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000151333">
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.003462209">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
 }
 
-            </system-out>
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should build tags without optional fields" time="0.001354084">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+    </testsuite>
+    <testsuite name="tests/unit/posts/FirstRunDashboard.test.tsx" timestamp="2026-04-10T19:15:49.635Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.139751541">
+        <testcase classname="tests/unit/posts/FirstRunDashboard.test.tsx" name="FirstRunDashboard &gt; renders activation hero and primary actions" time="0.129054333">
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should trim and lowercase topic tags" time="0.000906875">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+        <testcase classname="tests/unit/posts/FirstRunDashboard.test.tsx" name="FirstRunDashboard &gt; shows checklist completion from activity" time="0.009901416">
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should skip empty topic tags" time="0.00136375">
-            <system-out>
-[remote-signer-sign] Retry loop iteration {
-  retries: 0,
-  maxRetries: 5,
-  triedPrimaryFailover: false,
-  signerType: &apos;none&apos;
-}
-
-            </system-out>
+    </testsuite>
+    <testsuite name="tests/unit/posts/dashboard-activity-summary.test.ts" timestamp="2026-04-10T19:15:49.635Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001941625">
+        <testcase classname="tests/unit/posts/dashboard-activity-summary.test.ts" name="deriveDashboardActivitySummary &gt; returns first-run true when all activity signals are empty" time="0.000975625">
         </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should delegate ping to bunker signer" time="0.000446083">
-        </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should parse switch_relays response and normalize relay list" time="0.000476458">
-        </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should return null for malformed switch_relays payload" time="0.000395709">
-        </testcase>
-        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should use ping in testConnection when available" time="0.001362958">
-            <system-out>
-[remote-signer-sign] Health check success { method: &apos;ping&apos;, duration: 0 }
-
-            </system-out>
+        <testcase classname="tests/unit/posts/dashboard-activity-summary.test.ts" name="deriveDashboardActivitySummary &gt; returns first-run false when any activity exists" time="0.000244333">
         </testcase>
     </testsuite>
 </testsuites>

@@ -96,16 +96,54 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
     },
   },
 
+  starter: {
+    publicPlanName: "Starter",
+    planType: "starter",
+    accountsIncluded: 1,
+    execution: {
+      maxFutureScheduledItems: 50,
+      maxQueues: 2,
+      maxDrafts: 25,
+      maxTemplates: 25,
+      canSendBroadcast: true,
+      canExecuteBulkActions: true,
+    },
+    campaigns: {
+      maxGiveawayWinnerCount: 50,
+      canUseGiveawayQueueScope: true,
+      canUseGiveawayPresets: true,
+      campaignCommissionPercent: 7.5,
+    },
+    broadcasts: {
+      maxRecipientsPerCampaign: 75,
+      maxConcurrentActiveCampaigns: 2,
+      maxDailyBroadcastRecipients: 150,
+      allowAdvancedDelivery: false,
+      allowSchedule: true,
+      allowStaggered: false,
+      allowedAudienceTypes: ["CUSTOM"],
+    },
+    media: {
+      canUseSfsBlossomStorage: true,
+      monthlyStorageBytes: BigInt(5 * GB),
+      monthlyUploadBytes: BigInt(20 * GB),
+      maxFileBytes: 50 * MB,
+      maxParallelUploadsHint: 4,
+    },
+    powerFeatures: {
+      relayBlastAndDistribution: false,
+    },
+  },
+
   creator: {
     publicPlanName: "Creator",
     planType: "creator",
-    accountsIncluded: 1,
+    accountsIncluded: 2,
     execution: {
-      // Preserve current “paid = uncapped” behavior until a future product decision.
-      maxFutureScheduledItems: null,
-      maxQueues: null,
-      maxDrafts: null,
-      maxTemplates: null,
+      maxFutureScheduledItems: 200,
+      maxQueues: 5,
+      maxDrafts: 100,
+      maxTemplates: 100,
       canSendBroadcast: true,
       canExecuteBulkActions: true,
     },
@@ -139,12 +177,12 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   pro: {
     publicPlanName: "Pro",
     planType: "pro",
-    accountsIncluded: 3,
+    accountsIncluded: 5,
     execution: {
-      maxFutureScheduledItems: null,
-      maxQueues: null,
-      maxDrafts: null,
-      maxTemplates: null,
+      maxFutureScheduledItems: 1000,
+      maxQueues: 15,
+      maxDrafts: 500,
+      maxTemplates: 500,
       canSendBroadcast: true,
       canExecuteBulkActions: true,
     },
@@ -221,13 +259,13 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
   founder: {
     publicPlanName: "Founder",
     planType: "founder",
-    accountsIncluded: 3,
+    accountsIncluded: 5,
     // Founder should behave as paid; spec recommends Pro-like.
     execution: {
-      maxFutureScheduledItems: null,
-      maxQueues: null,
-      maxDrafts: null,
-      maxTemplates: null,
+      maxFutureScheduledItems: 1000,
+      maxQueues: 15,
+      maxDrafts: 500,
+      maxTemplates: 500,
       canSendBroadcast: true,
       canExecuteBulkActions: true,
     },

@@ -39,6 +39,34 @@ import {
   type ScheduledPostsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
+function sortPostsWithAttachedGrouping(posts: PostData[]): PostData[] {
+  const byId = new Map(posts.map((post) => [post.id, post]));
+  return [...posts].sort((a, b) => {
+    const rootA = a.rootScheduledActionId ?? a.id;
+    const rootB = b.rootScheduledActionId ?? b.id;
+    const rootPostA = byId.get(rootA) ?? a;
+    const rootPostB = byId.get(rootB) ?? b;
+    const rootTimeA = rootPostA.scheduledAtUtc?.getTime() ?? 0;
+    const rootTimeB = rootPostB.scheduledAtUtc?.getTime() ?? 0;
+    if (rootTimeA !== rootTimeB) return rootTimeA - rootTimeB;
+    if (rootA !== rootB) return rootA.localeCompare(rootB);
+
+    const aIsRoot = a.id === rootA;
+    const bIsRoot = b.id === rootB;
+    if (aIsRoot && !bIsRoot) return -1;
+    if (!aIsRoot && bIsRoot) return 1;
+
+    const parentA = a.parentScheduledActionId ?? "";
+    const parentB = b.parentScheduledActionId ?? "";
+    if (parentA !== parentB) return parentA.localeCompare(parentB);
+
+    const timeA = a.scheduledAtUtc?.getTime() ?? 0;
+    const timeB = b.scheduledAtUtc?.getTime() ?? 0;
+    if (timeA !== timeB) return timeA - timeB;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 /**
  * Query key factory for scheduled posts
  */
@@ -242,9 +270,10 @@ export function useScheduledPostsData() {
       ? typedData.hashTagPresets
       : [];
 
-  const posts: PostData[] = Array.isArray(postsRaw)
+  const postsUnsorted: PostData[] = Array.isArray(postsRaw)
     ? fromPostDTOArray(postsRaw as unknown as PostDTO[])
     : [];
+  const posts = sortPostsWithAttachedGrouping(postsUnsorted);
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
     ? fromLongFormPostDTOArray(longformPostsRaw as unknown as LongFormPostDTO[])
     : [];
@@ -406,7 +435,7 @@ export function useScheduledPostsInfiniteData() {
 
   // Flatten all pages
   const allPages = data.pages;
-  const allPosts: PostData[] = [];
+  const allPostsUnsorted: PostData[] = [];
   const allLongformPosts: LongFormPostData[] = [];
 
   // Process each page
@@ -414,9 +443,10 @@ export function useScheduledPostsInfiniteData() {
     const { pagePosts, pageLongformPosts } = parsePagePosts(
       pageData as Record<string, unknown>
     );
-    allPosts.push(...pagePosts);
+    allPostsUnsorted.push(...pagePosts);
     allLongformPosts.push(...pageLongformPosts);
   }
+  const allPosts = sortPostsWithAttachedGrouping(allPostsUnsorted);
 
   // Reconstruct allContent from flattened posts
   const allContent: CombinedContent[] = combineContent(

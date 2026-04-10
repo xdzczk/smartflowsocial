@@ -227,6 +227,14 @@ export function ContentTableRow({
             {excerpt}
           </p>
         ) : null}
+        {type === "scheduled" && item.dependencyMode === "attached" ? (
+          <p className="text-muted-foreground mt-1 text-xs">
+            Follow-up
+            {item.followUpTimingMode === "offset_from_parent"
+              ? " · Offset from parent"
+              : " · Fixed date/time"}
+          </p>
+        ) : null}
       </td>
       <td
         className={cn(

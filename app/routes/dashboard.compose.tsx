@@ -14,6 +14,7 @@ import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
 import { requireUserId } from "~/features/auth";
 import {
+  parseComposerContext,
   CreateComposerShell,
   getComposeMode,
   NewPostPage,
@@ -145,6 +146,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userId = await requireUserId(request);
     const url = new URL(request.url);
     const type = url.searchParams.get("type");
+    const composerContextResult = parseComposerContext(url.searchParams);
+    const composerContext = composerContextResult.context;
 
     if (getComposeMode(type) === "article") {
       const templateId = url.searchParams.get("templateId");
@@ -160,14 +163,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const draftId = url.searchParams.get("draftId");
     const templateId = url.searchParams.get("templateId");
-    const payload = await loadNewPostData(
-      userId,
-      draftId && draftId.length > 0 ? draftId : null,
-      templateId && templateId.length > 0 ? templateId : null
-    );
+    const payload = await loadNewPostData(userId, {
+      draftId: draftId && draftId.length > 0 ? draftId : null,
+      templateId: templateId && templateId.length > 0 ? templateId : null,
+      composerContext,
+    });
     return json({
       ...payload,
       __composeMode: "shortform" as const,
+      composerContextError: composerContextResult.error,
     });
   } catch (error) {
     if (error instanceof Response) {
@@ -186,6 +190,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       uploadProvider: null,
       initialTemplateData: null,
       __composeMode: mode,
+      composerContext: { mode: "create" as const },
+      hydrationStatus: "error" as const,
+      hydrationError: "Composer data temporarily unavailable",
       // Keep loader failures local and non-fatal during fast tab transitions.
       error: {
         message: "Composer data temporarily unavailable",

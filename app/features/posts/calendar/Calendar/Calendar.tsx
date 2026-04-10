@@ -1,4 +1,4 @@
-import { useSearchParams } from "@remix-run/react";
+import { useNavigate, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import {
   PublishingSegmentedControlButtons,
   type PublishingSegmentButtonItem,
 } from "~/features/posts/components/publishing-suite";
+import { buildComposeEditUrl } from "~/features/posts/composer";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
 import { LongFormDetailsModal } from "~/features/posts/longform";
@@ -345,6 +346,7 @@ export function Calendar({
   const isLg = useIsLg();
   const queryClient = useQueryClient();
   const refreshPostViews = useRefreshPostViews();
+  const navigate = useNavigate();
 
   const calendarPostsForStats = useMemo(() => {
     const merged = [...scheduledPosts, ...pastPosts];
@@ -596,12 +598,28 @@ export function Calendar({
   const handleContentEditFromCalendar = useCallback(
     (cp: CalendarPost) => {
       const lf = getPostIsLongform(cp, isLongform, isAll);
-      setPostToEdit(
-        lf ? calendarPostAsLongFormEntity(cp) : calendarPostAsPostData(cp)
-      );
-      setShowEditModal(true);
+      if (lf) {
+        setPostToEdit(calendarPostAsLongFormEntity(cp));
+        setShowEditModal(true);
+        return;
+      }
+      const postData = calendarPostAsPostData(cp);
+      const composeUrl =
+        postData.dependencyMode === "attached"
+          ? buildComposeEditUrl({
+              mode: "edit_follow_up",
+              followUpActionId: postData.id,
+              ...(postData.parentScheduledActionId
+                ? { parentActionId: postData.parentScheduledActionId }
+                : {}),
+            })
+          : buildComposeEditUrl({
+              mode: "edit_scheduled",
+              scheduledActionId: postData.id,
+            });
+      navigate(composeUrl);
     },
-    [isLongform, isAll]
+    [isLongform, isAll, navigate]
   );
 
   const detailModalVm = useMemo(() => {

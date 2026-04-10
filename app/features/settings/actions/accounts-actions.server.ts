@@ -8,6 +8,8 @@ import {
   updateUserSubscription,
   getUserSubscription,
 } from "~/features/payments/data";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import {
   getUserBasicInfo,
   searchUsersByProfileName,
@@ -176,26 +178,29 @@ export async function handleAccountsAction(
   const sub = await getUserSubscription(userId);
   const planName = sub?.Plan?.name ?? "";
   const planId = (sub?.planId ?? "").toLowerCase();
+  const parsedPlanType = parseCommercialPlanType(planId || planName);
+  const commercialPlanType = parsedPlanType ?? "free";
+  if (!parsedPlanType && (planId || planName)) {
+    logWarning("Invalid subscription plan in accounts action", {
+      userId,
+      planId: planId || null,
+      planName: planName || null,
+    });
+  }
+  const hasAccountsAccess =
+    getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
   // Check access for account management actions
-  const requiresPremium = [
+  const requiresLinkedAccountsPlan = [
     "search_accounts",
     "request_child",
     "cancel_child_request",
     "unlink_child",
   ].includes(action);
-  if (
-    requiresPremium &&
-    !(
-      planId === "premium" ||
-      planName === "Founder" ||
-      planName === "Premium" ||
-      planName === "Pro"
-    )
-  ) {
+  if (requiresLinkedAccountsPlan && !hasAccountsAccess) {
     return json(
       {
-        error: "Accounts management requires Founder or Pro. Please upgrade.",
+        error: "Accounts management requires a plan with multi-account access.",
       },
       { status: 403 }
     );

@@ -50,16 +50,16 @@ export async function handleDashboardAction(
       return json({ error: res.reason }, { status: 400 });
     }
 
-    // Promote child's subscription to basic on accept
+    // Promote child's subscription to creator on accept
     if (decision === "accept") {
       try {
         await updateUserSubscription(
           userId,
-          "basic",
-          `free_childlink_basic_${Date.now()}_${userId}`
+          "creator",
+          `free_childlink_creator_${Date.now()}_${userId}`
         );
       } catch (e) {
-        logWarning("Failed to promote child to basic plan after accept", {
+        logWarning("Failed to promote child to creator plan after accept", {
           userId,
           error: e instanceof Error ? e.message : String(e),
         });

@@ -51,14 +51,14 @@ describe("deriveBillingContext", () => {
         encryptedNwc: null,
       },
       subscription: {
-        planId: "premium",
+        planId: "pro",
         status: "ACTIVE",
         paymentMethod: "lightning_one_time",
         renewalMode: "manual",
         cancelAtPeriodEnd: false,
         currentPeriodEnd: periodEnd,
         gracePeriodEndsAt: null,
-        Plan: { name: "Premium", id: "premium", enableLifetimeAccess: false },
+        Plan: { name: "Pro", id: "pro", enableLifetimeAccess: false },
       },
     });
     expect(ctx.commMode).toBe("MANUAL_TOP_UP");

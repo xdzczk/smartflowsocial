@@ -8,8 +8,8 @@ import {
 describe("giveaway-finalization-fee.shared", () => {
   it("maps plan types to bps", () => {
     expect(getFinalizationFeeRateBps("free")).toBe(1000);
-    expect(getFinalizationFeeRateBps("basic")).toBe(500);
-    expect(getFinalizationFeeRateBps("premium")).toBe(0);
+    expect(getFinalizationFeeRateBps("creator")).toBe(500);
+    expect(getFinalizationFeeRateBps("pro")).toBe(0);
     expect(getFinalizationFeeRateBps("founder")).toBe(0);
     expect(getFinalizationFeeRateBps("pro")).toBe(0);
   });
@@ -20,7 +20,7 @@ describe("giveaway-finalization-fee.shared", () => {
     expect(r.waivedByPlan).toBe(false);
   });
 
-  it("applies minimum 1 sat on basic when percentage rounds to zero", () => {
+  it("applies minimum 1 sat on creator when percentage rounds to zero", () => {
     const r = computeFinalizationFeeSats(11, 500);
     expect(r.feeSats).toBe(1);
     expect(r.waivedByPlan).toBe(false);

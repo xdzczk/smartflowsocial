@@ -66,8 +66,11 @@ export { loadDashboardData } from "../services/dashboard-loader.server";
 export { handleDashboardAction } from "../services/dashboard-action.server";
 export {
   getContentStatistics,
+  getDraftCountForDashboard,
   getQueueCountsForDashboard,
+  deriveDashboardActivitySummary,
   type ContentStatistics,
+  type DashboardActivitySummary,
   type QueueCountItem,
 } from "../services/content-statistics.server";
 export {

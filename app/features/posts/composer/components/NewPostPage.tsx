@@ -29,6 +29,7 @@ import {
   determineModalAction,
 } from "../../utils/publish-result.utils";
 import { useNewPostState } from "../hooks/useNewPostState";
+import type { ComposerContext } from "../services/compose-route-contract";
 import type { InitialPollRestore } from "../types/initial-poll-restore";
 import { trackComposerEvent } from "../utils/composer-analytics.client";
 
@@ -231,8 +232,47 @@ export interface NewPostLoaderParsed {
   initialPollRestore: InitialPollRestore | null;
   templates: Array<{ id: string; name: string | null }>;
   nip88PollsEnabled: boolean;
+  composerContext: ComposerContext;
+  hydrationStatus: "ready" | "error";
+  hydrationError: string | null;
+  initialScheduledFor: string | null;
+  editingMeta: {
+    modeLabel: string;
+    accountLabel: string;
+    scheduledForLabel?: string;
+    statusLabel?: string;
+    queueLabel?: string;
+    parentActionId?: string;
+  } | null;
 }
 
+function parseComposerContextUnknown(raw: unknown): ComposerContext {
+  if (!raw || typeof raw !== "object") return { mode: "create" };
+  const obj = raw as Record<string, unknown>;
+  const mode = obj["mode"];
+  if (mode === "edit_draft" && typeof obj["draftId"] === "string") {
+    return { mode, draftId: obj["draftId"] };
+  }
+  if (
+    mode === "edit_scheduled" &&
+    typeof obj["scheduledActionId"] === "string"
+  ) {
+    return { mode, scheduledActionId: obj["scheduledActionId"] };
+  }
+  if (
+    mode === "edit_follow_up" &&
+    typeof obj["followUpActionId"] === "string"
+  ) {
+    const parentActionId =
+      typeof obj["parentActionId"] === "string"
+        ? obj["parentActionId"]
+        : undefined;
+    return { mode, followUpActionId: obj["followUpActionId"], parentActionId };
+  }
+  return { mode: "create" };
+}
+
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- parser normalizes many optional loader fields defensively */
 export function parseNewPostLoaderData(
   loaderDataRaw: unknown
 ): NewPostLoaderParsed {
@@ -333,6 +373,24 @@ export function parseNewPostLoaderData(
     "nip88PollsEnabled" in loaderData &&
     loaderData["nip88PollsEnabled"] === true
   );
+  const composerContext = parseComposerContextUnknown(
+    loaderData["composerContext"]
+  );
+  const hydrationStatus =
+    loaderData["hydrationStatus"] === "error" ? "error" : "ready";
+  const hydrationError =
+    typeof loaderData["hydrationError"] === "string"
+      ? loaderData["hydrationError"]
+      : null;
+  const initialScheduledFor =
+    typeof loaderData["initialScheduledFor"] === "string"
+      ? loaderData["initialScheduledFor"]
+      : null;
+  const editingMetaRaw = loaderData["editingMeta"];
+  const editingMeta =
+    editingMetaRaw && typeof editingMetaRaw === "object"
+      ? (editingMetaRaw as NewPostLoaderParsed["editingMeta"])
+      : null;
 
   return {
     typedQueueTypes,
@@ -347,6 +405,11 @@ export function parseNewPostLoaderData(
     initialPollRestore,
     templates,
     nip88PollsEnabled,
+    composerContext,
+    hydrationStatus,
+    hydrationError,
+    initialScheduledFor,
+    editingMeta,
   };
 }
 
@@ -364,6 +427,11 @@ export default function NewPostPage() {
     initialDraftId,
     initialPollRestore,
     templates,
+    composerContext,
+    hydrationStatus,
+    hydrationError,
+    initialScheduledFor: loaderInitialScheduledFor,
+    editingMeta,
   } = parseNewPostLoaderData(useLoaderData<unknown>());
 
   const {
@@ -375,6 +443,7 @@ export default function NewPostPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
   const scheduledAt = searchParams.get("scheduledAt");
+  const composedScheduledAt = scheduledAt ?? loaderInitialScheduledFor;
   const publishResultToken =
     searchParams.get("published") ?? searchParams.get("scheduled");
   const navigate = useNavigate();
@@ -438,17 +507,21 @@ export default function NewPostPage() {
       : defaultRelays.length;
 
   const title =
-    initialDraftId != null
-      ? publishMode === "queue"
-        ? "Edit queue post"
-        : publishMode === "schedule"
-          ? "Edit scheduled post"
-          : "Edit draft"
-      : composerTab === "poll"
-        ? "Create poll"
-        : composerTab === "thread"
-          ? "Create thread"
-          : "Create post";
+    composerContext.mode === "edit_scheduled"
+      ? "Edit scheduled post"
+      : composerContext.mode === "edit_follow_up"
+        ? "Edit follow-up"
+        : composerContext.mode === "edit_draft"
+          ? "Edit draft"
+          : initialDraftId != null
+            ? "Edit draft"
+            : composerTab === "poll"
+              ? "Create poll"
+              : composerTab === "thread"
+                ? "Create thread"
+                : "Create post";
+  const isEditMode = composerContext.mode !== "create";
+  const showHydrationHardError = isEditMode && hydrationStatus === "error";
 
   const shortComposeDraftPickerBase =
     composerTab === "thread"
@@ -528,195 +601,256 @@ export default function NewPostPage() {
       saveStateLabel={saveStateLabel}
     >
       <div>
-        {relaySelectorOpen ? (
-          <RelaySelectorModal
-            relayLists={{
-              default: defaultRelays,
-              app: relaysApp,
-              nip65Profile: relaysNip65Profile,
-            }}
-            accountPublishRelaySource={accountPublishRelaySource}
-            inheritRelays={selectedRelayUrls === null}
-            selectedRelays={selectedRelayUrls ?? defaultRelays}
-            onClose={() => setRelaySelectorOpen(false)}
-            onSave={(urls) => {
-              setSelectedRelayUrls(urls);
-              setRelaySelectorOpen(false);
-            }}
-          />
+        {isEditMode && editingMeta ? (
+          <div className="bg-muted/40 border-border mb-4 rounded-md border px-3 py-2 text-sm">
+            <p className="font-medium">{editingMeta.modeLabel}</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Changes update the existing item. A new post will not be created.
+            </p>
+            <p className="text-muted-foreground mt-1">
+              Account: {editingMeta.accountLabel}
+              {editingMeta.scheduledForLabel
+                ? ` · Scheduled for: ${editingMeta.scheduledForLabel}`
+                : ""}
+              {editingMeta.queueLabel
+                ? ` · Queue: ${editingMeta.queueLabel}`
+                : ""}
+              {editingMeta.statusLabel
+                ? ` · Status: ${editingMeta.statusLabel}`
+                : ""}
+            </p>
+            {editingMeta.parentActionId ? (
+              <p className="text-muted-foreground mt-1">
+                Parent action: {editingMeta.parentActionId}
+              </p>
+            ) : null}
+          </div>
         ) : null}
+        {showHydrationHardError ? (
+          <div className="bg-destructive/10 border-destructive/30 text-destructive mb-4 rounded-md border px-3 py-2 text-sm">
+            {hydrationError ??
+              "This item is no longer editable. Open the parent or return to scheduled posts."}
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/dashboard/scheduled")}
+              >
+                Go back
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {showHydrationHardError ? null : (
+          <>
+            {relaySelectorOpen ? (
+              <RelaySelectorModal
+                relayLists={{
+                  default: defaultRelays,
+                  app: relaysApp,
+                  nip65Profile: relaysNip65Profile,
+                }}
+                accountPublishRelaySource={accountPublishRelaySource}
+                inheritRelays={selectedRelayUrls === null}
+                selectedRelays={selectedRelayUrls ?? defaultRelays}
+                onClose={() => setRelaySelectorOpen(false)}
+                onSave={(urls) => {
+                  setSelectedRelayUrls(urls);
+                  setRelaySelectorOpen(false);
+                }}
+              />
+            ) : null}
 
-        {composerTab === "poll" ? (
-          <PollComposer
-            key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-            queueTypes={typedQueueTypes}
-            hashTagPresets={typedHashTagPresets}
-            scheduleIntervals={
-              scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-            }
-            onQueueTypeChange={handleQueueTypeChange}
-            selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={(
-              presetId: string | null,
-              _hashtags: string
-            ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-            relayOverride={selectedRelayUrls ?? undefined}
-            relayCount={relayCount}
-            onRelayClick={() => setRelaySelectorOpen(true)}
-            defaultRelays={defaultRelays}
-            initialScheduledFor={scheduledAt ?? undefined}
-            publishMode={publishMode}
-            onPublishModeChange={setPublishMode}
-            skipLocalDraftRestore={
-              Boolean(publishResultToken) || Boolean(initialDraftId)
-            }
-            initialQueue={initialDraft?.queueType ?? "unassigned"}
-            initialPollRestore={initialPollRestore}
-            initialDraftId={initialDraftId}
-            onDraftStateLabelChange={setSaveStateLabel}
-          />
-        ) : (
-          <UnifiedComposer
-            key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-            queueTypes={typedQueueTypes}
-            hashTagPresets={typedHashTagPresets}
-            scheduleIntervals={
-              scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-            }
-            onQueueTypeChange={handleQueueTypeChange}
-            selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={(
-              presetId: string | null,
-              _hashtags: string
-            ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-            relayOverride={selectedRelayUrls ?? undefined}
-            relayCount={relayCount}
-            onRelayClick={() => setRelaySelectorOpen(true)}
-            initialDraft={initialDraft}
-            initialDraftId={initialDraftId}
-            initialScheduledFor={scheduledAt ?? undefined}
-            skipLocalDraftRestore={Boolean(publishResultToken)}
-            localDraftStorageKey={
-              composerTab === "thread"
-                ? "composer-newpost-thread-draft"
-                : "composer-newpost-post-draft"
-            }
-            draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
-            newPostContentTab={composerTab === "thread" ? "thread" : "post"}
-            publishMode={publishMode}
-            onPublishModeChange={setPublishMode}
-            composerTemplates={templates}
-            suppressBuiltInDraftPicker
-            onDraftStateLabelChange={setSaveStateLabel}
-          />
-        )}
+            {composerTab === "poll" ? (
+              <PollComposer
+                key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+                queueTypes={typedQueueTypes}
+                hashTagPresets={typedHashTagPresets}
+                scheduleIntervals={
+                  scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+                }
+                onQueueTypeChange={handleQueueTypeChange}
+                selectedHashTagPresetId={selectedHashTagPresetId}
+                onHashtagPresetChange={(
+                  presetId: string | null,
+                  _hashtags: string
+                ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
+                relayOverride={selectedRelayUrls ?? undefined}
+                relayCount={relayCount}
+                onRelayClick={() => setRelaySelectorOpen(true)}
+                defaultRelays={defaultRelays}
+                initialScheduledFor={composedScheduledAt ?? undefined}
+                publishMode={publishMode}
+                onPublishModeChange={setPublishMode}
+                skipLocalDraftRestore={
+                  Boolean(publishResultToken) ||
+                  Boolean(initialDraftId) ||
+                  isEditMode
+                }
+                initialQueue={initialDraft?.queueType ?? "unassigned"}
+                initialPollRestore={initialPollRestore}
+                initialDraftId={initialDraftId}
+                onDraftStateLabelChange={setSaveStateLabel}
+              />
+            ) : (
+              <UnifiedComposer
+                key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+                queueTypes={typedQueueTypes}
+                hashTagPresets={typedHashTagPresets}
+                scheduleIntervals={
+                  scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+                }
+                onQueueTypeChange={handleQueueTypeChange}
+                selectedHashTagPresetId={selectedHashTagPresetId}
+                onHashtagPresetChange={(
+                  presetId: string | null,
+                  _hashtags: string
+                ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
+                relayOverride={selectedRelayUrls ?? undefined}
+                relayCount={relayCount}
+                onRelayClick={() => setRelaySelectorOpen(true)}
+                initialDraft={initialDraft}
+                initialDraftId={initialDraftId}
+                initialScheduledFor={composedScheduledAt ?? undefined}
+                composerContext={composerContext}
+                skipLocalDraftRestore={
+                  Boolean(publishResultToken) || isEditMode
+                }
+                localDraftStorageKey={
+                  composerTab === "thread"
+                    ? "composer-newpost-thread-draft"
+                    : "composer-newpost-post-draft"
+                }
+                draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
+                newPostContentTab={composerTab === "thread" ? "thread" : "post"}
+                publishMode={publishMode}
+                onPublishModeChange={setPublishMode}
+                composerTemplates={templates}
+                suppressBuiltInDraftPicker
+                onDraftStateLabelChange={setSaveStateLabel}
+              />
+            )}
 
-        <DraftPickerModal
-          key={`${composerTab}-${shortDraftPicker.mode}`}
-          open={shortDraftPicker.open}
-          onClose={() => setShortDraftPicker((s) => ({ ...s, open: false }))}
-          type="short"
-          shortDraftFilter={shortDraftFilter}
-          onSelect={
-            shortDraftPicker.mode === "drafts"
-              ? (id) => {
-                  const separator = shortComposeDraftPickerBase.includes("?")
-                    ? "&"
-                    : "?";
-                  navigate(
-                    `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
+            <DraftPickerModal
+              key={`${composerTab}-${shortDraftPicker.mode}`}
+              open={shortDraftPicker.open}
+              onClose={() =>
+                setShortDraftPicker((s) => ({ ...s, open: false }))
+              }
+              type="short"
+              shortDraftFilter={shortDraftFilter}
+              onSelect={
+                shortDraftPicker.mode === "drafts"
+                  ? (id) => {
+                      const separator = shortComposeDraftPickerBase.includes(
+                        "?"
+                      )
+                        ? "&"
+                        : "?";
+                      navigate(
+                        `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
+                      );
+                    }
+                  : undefined
+              }
+              draftsAndTemplates={
+                shortDraftPicker.mode === "templates"
+                  ? {
+                      templates,
+                      templatesOnly: true,
+                      onSelectTemplate: (templateId) => {
+                        const separator = shortComposeDraftPickerBase.includes(
+                          "?"
+                        )
+                          ? "&"
+                          : "?";
+                        navigate(
+                          `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
+                        );
+                      },
+                    }
+                  : undefined
+              }
+            />
+
+            {showPublishModal &&
+            modalPostId &&
+            (modalPost || modalLongFormPost) ? (
+              <PublishResultModal
+                isOpen={showPublishModal}
+                postId={modalPostId}
+                publishAttemptId={
+                  modalPost?.publishAttemptId ??
+                  modalLongFormPost?.publishAttemptId ??
+                  null
+                }
+                action={determineModalAction(modalPost, modalLongFormPost)}
+                postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+                scheduledFor={
+                  modalPost?.scheduledAtUtc ??
+                  modalLongFormPost?.scheduledAtUtc ??
+                  null
+                }
+                onCreateNew={() => {
+                  const postType = getPostTypeFromPost(
+                    modalPost,
+                    modalLongFormPost
                   );
-                }
-              : undefined
-          }
-          draftsAndTemplates={
-            shortDraftPicker.mode === "templates"
-              ? {
-                  templates,
-                  templatesOnly: true,
-                  onSelectTemplate: (templateId) => {
-                    const separator = shortComposeDraftPickerBase.includes("?")
-                      ? "&"
-                      : "?";
-                    navigate(
-                      `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
-                    );
-                  },
-                }
-              : undefined
-          }
-        />
+                  setShowPublishModal(false);
+                  setModalPostId(null);
+                  setModalPost(null);
+                  setModalLongFormPost(null);
+                  setComposerSessionKey((k) => k + 1);
+                  // Clear composer localStorage so the new post page shows an empty composer
+                  try {
+                    for (const key of LOCAL_DRAFT_KEYS) {
+                      localStorage.removeItem(key);
+                    }
+                  } catch {
+                    // ignore
+                  }
+                  // Client-side navigation preserves in-memory NIP-46 signer cache so the next post can sign without reconnecting
+                  navigate(getNewPostUrl(postType), { replace: true });
+                }}
+                onGoToDashboard={() => {
+                  setShowPublishModal(false);
+                  setModalPostId(null);
+                  setModalPost(null);
+                  setModalLongFormPost(null);
+                  navigate("/dashboard");
+                }}
+                onViewPage={() => {
+                  const postType = getPostTypeFromPost(
+                    modalPost,
+                    modalLongFormPost
+                  );
+                  const action = determineModalAction(
+                    modalPost,
+                    modalLongFormPost
+                  );
 
-        {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
-          <PublishResultModal
-            isOpen={showPublishModal}
-            postId={modalPostId}
-            publishAttemptId={
-              modalPost?.publishAttemptId ??
-              modalLongFormPost?.publishAttemptId ??
-              null
-            }
-            action={determineModalAction(modalPost, modalLongFormPost)}
-            postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
-            scheduledFor={
-              modalPost?.scheduledAtUtc ??
-              modalLongFormPost?.scheduledAtUtc ??
-              null
-            }
-            onCreateNew={() => {
-              const postType = getPostTypeFromPost(
-                modalPost,
-                modalLongFormPost
-              );
-              setShowPublishModal(false);
-              setModalPostId(null);
-              setModalPost(null);
-              setModalLongFormPost(null);
-              setComposerSessionKey((k) => k + 1);
-              // Clear composer localStorage so the new post page shows an empty composer
-              try {
-                for (const key of LOCAL_DRAFT_KEYS) {
-                  localStorage.removeItem(key);
-                }
-              } catch {
-                // ignore
-              }
-              // Client-side navigation preserves in-memory NIP-46 signer cache so the next post can sign without reconnecting
-              navigate(getNewPostUrl(postType), { replace: true });
-            }}
-            onGoToDashboard={() => {
-              setShowPublishModal(false);
-              setModalPostId(null);
-              setModalPost(null);
-              setModalLongFormPost(null);
-              navigate("/dashboard");
-            }}
-            onViewPage={() => {
-              const postType = getPostTypeFromPost(
-                modalPost,
-                modalLongFormPost
-              );
-              const action = determineModalAction(modalPost, modalLongFormPost);
+                  setShowPublishModal(false);
+                  setModalPostId(null);
+                  setModalPost(null);
+                  setModalLongFormPost(null);
 
-              setShowPublishModal(false);
-              setModalPostId(null);
-              setModalPost(null);
-              setModalLongFormPost(null);
-
-              if (action === "schedule") {
-                if (postType === "longform") {
-                  navigate("/dashboard/scheduled?tab=longform");
-                } else {
-                  navigate("/dashboard/scheduled");
-                }
-              } else if (postType === "longform") {
-                navigate("/dashboard/published?tab=longform");
-              } else {
-                navigate("/dashboard/published");
-              }
-            }}
-          />
-        ) : null}
+                  if (action === "schedule") {
+                    if (postType === "longform") {
+                      navigate("/dashboard/scheduled?tab=longform");
+                    } else {
+                      navigate("/dashboard/scheduled");
+                    }
+                  } else if (postType === "longform") {
+                    navigate("/dashboard/published?tab=longform");
+                  } else {
+                    navigate("/dashboard/published");
+                  }
+                }}
+              />
+            ) : null}
+          </>
+        )}
       </div>
     </CreateComposerShell>
   );

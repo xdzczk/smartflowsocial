@@ -1,4 +1,9 @@
-import { Link, useLocation, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useRouteLoaderData,
+} from "@remix-run/react";
 import {
   CalendarDays,
   Check,
@@ -268,6 +273,7 @@ interface SidebarNavContentProps {
   isDesktopExpanded: boolean;
   onUpgradeClick: (feature: FeatureName, featureName: string) => void;
   onMobileNavActiveClick: (() => void) | undefined;
+  isFirstRunDashboard: boolean;
 }
 
 function SidebarNavContent({
@@ -275,6 +281,7 @@ function SidebarNavContent({
   isDesktopExpanded,
   onUpgradeClick,
   onMobileNavActiveClick,
+  isFirstRunDashboard,
 }: SidebarNavContentProps) {
   const collapsed = !isDesktopExpanded;
   return (
@@ -297,6 +304,7 @@ function SidebarNavContent({
         icon={
           <Plus className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
         }
+        showSubtleHint={isFirstRunDashboard}
         collapsed={collapsed}
         items={CREATE_SECTION_ITEMS}
         onUpgradeClick={onUpgradeClick}
@@ -524,6 +532,12 @@ export default function Header({
     featureName: string;
   }>({ isOpen: false, feature: null, featureName: "" });
   const location = useLocation();
+  const dashboardIndexData = useRouteLoaderData("routes/dashboard._index") as
+    | { isFirstRunDashboard?: boolean }
+    | undefined;
+  const isFirstRunDashboard =
+    location.pathname === "/dashboard" &&
+    dashboardIndexData?.isFirstRunDashboard === true;
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 1023px)").matches
@@ -575,6 +589,7 @@ export default function Header({
               isDesktopExpanded={isDesktopExpanded}
               onUpgradeClick={handleUpgradeClick}
               onMobileNavActiveClick={onMobileNavActiveClick}
+              isFirstRunDashboard={isFirstRunDashboard}
             />
           </div>
         </div>

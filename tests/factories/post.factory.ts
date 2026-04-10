@@ -277,6 +277,16 @@ export class PostFactory {
       replyToEventId: this.options.replyToEventId ?? null,
       replyToPostId: this.options.replyToPostId ?? null,
       repostConditions: this.options.repostConditions ?? null,
+      parentScheduledActionId: null,
+      rootScheduledActionId: null,
+      targetScheduledActionId: null,
+      dependencyMode: "standalone",
+      targetMode: "direct",
+      followUpTimingMode: null,
+      followUpOffsetSeconds: null,
+      expectedParentEventId: null,
+      signedChildEventId: null,
+      signingState: "unsigned",
     };
     return post;
   }
