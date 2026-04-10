@@ -20,6 +20,7 @@ import {
   runTransaction,
   schedulePostInTx,
 } from "../../repositories/schedule-post-data.server";
+import { resyncAttachedChildrenAfterParentMutation } from "../services/attached-followups.server";
 
 export class SchedulePostUseCase {
   async execute(input: SchedulePostInput): Promise<void> {
@@ -120,6 +121,11 @@ export class SchedulePostUseCase {
 
     // Record metrics
     recordPostScheduled(post.postType);
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: input.postId,
+      userId: input.userId,
+      parentPredictedEventId: input.signedEvent.id,
+    });
 
     logInfo("SchedulePostUseCase: Post scheduled successfully", {
       postId: input.postId,

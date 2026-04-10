@@ -13,6 +13,8 @@ import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo, logError } from "~/lib/error-logger.server";
 import { recordPostCancelled } from "~/lib/metrics/business-metrics.server";
 
+import { cascadeCancelAttachedFollowups } from "../services/attached-followups.server";
+
 export class CancelScheduleUseCase {
   private readonly stateMachine = new PostStateMachine();
 
@@ -51,6 +53,12 @@ export class CancelScheduleUseCase {
 
     // Cancel the job in the queue
     const jobCancelled = await cancelPostJob(input.postId);
+    await cascadeCancelAttachedFollowups({
+      rootPostId: input.postId,
+      userId: input.userId,
+      targetState: "CANCELLED",
+      reason: "Parent schedule cancelled; attached follow-up cancelled",
+    });
 
     if (!jobCancelled) {
       logInfo(

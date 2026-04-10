@@ -1,4 +1,4 @@
-import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import {
   getCanonicalPlanPolicy,
   toExecutionEntitlements,
@@ -21,10 +21,13 @@ export interface PlanEntitlements {
 
 /**
  * Returns limits and capability flags for a plan tier.
- * Free and teams match browse-all + strict execution caps.
+ * Free (and legacy teams mapping) match browse-all + strict execution caps.
  */
 export function getPlanEntitlements(planType: string): PlanEntitlements {
-  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(planType);
+  const commercialPlanType = parseCommercialPlanType(planType);
+  if (!commercialPlanType) {
+    throw new Error(`Invalid plan type: ${planType}`);
+  }
   const policy = getCanonicalPlanPolicy(commercialPlanType);
   return toExecutionEntitlements(policy);
 }

@@ -9,10 +9,11 @@ const BYTES_PER_MB = 1024 * 1024;
 /** Storage limit in bytes per plan id. Free = 50 MB; paid tiers get more. */
 const BLOSSOM_STORAGE_LIMIT_BYTES: Record<string, number> = {
   free: 50 * BYTES_PER_MB,
-  basic: 1 * BYTES_PER_GB,
-  premium: 5 * BYTES_PER_GB,
-  pro: 20 * BYTES_PER_GB,
-  enterprise: 100 * BYTES_PER_GB,
+  starter: 5 * BYTES_PER_GB,
+  creator: 10 * BYTES_PER_GB,
+  pro: 50 * BYTES_PER_GB,
+  teams: 50 * BYTES_PER_GB,
+  founder: 50 * BYTES_PER_GB,
 };
 
 /**

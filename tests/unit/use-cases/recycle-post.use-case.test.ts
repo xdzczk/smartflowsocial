@@ -38,10 +38,10 @@ vi.mock("~/lib/prisma.server", () => ({
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
-        planId: "basic",
+        planId: "creator",
         status: "ACTIVE",
         currentPeriodEnd: new Date(Date.now() + 86400000),
-        Plan: { id: "basic", name: "Basic" },
+        Plan: { id: "creator", name: "Creator" },
       }),
     },
   },

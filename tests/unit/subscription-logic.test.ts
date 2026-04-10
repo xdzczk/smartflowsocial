@@ -27,9 +27,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
     it("should return 'free' for inactive subscription", () => {
       const subscription: UserSubscription = {
-        planId: "basic",
+        planId: "creator",
         status: "EXPIRED",
-        Plan: { name: "Basic Plan", id: "basic" },
+        Plan: { name: "Creator Plan", id: "creator" },
       };
 
       const result = getUserPlanType(subscription);
@@ -38,35 +38,24 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
     it("should return 'free' for pending subscription", () => {
       const subscription: UserSubscription = {
-        planId: "premium",
+        planId: "pro",
         status: "PENDING",
-        Plan: { name: "Premium Plan", id: "premium" },
+        Plan: { name: "Pro Plan", id: "pro" },
       };
 
       const result = getUserPlanType(subscription);
       expect(result).toBe("free");
     });
 
-    it("should return 'basic' for active basic subscription", () => {
+    it("should return 'creator' for active creator subscription", () => {
       const subscription: UserSubscription = {
-        planId: "basic",
+        planId: "creator",
         status: "ACTIVE",
-        Plan: { name: "Basic Plan", id: "basic" },
+        Plan: { name: "Creator Plan", id: "creator" },
       };
 
       const result = getUserPlanType(subscription);
-      expect(result).toBe("basic");
-    });
-
-    it("should return 'premium' for active premium subscription", () => {
-      const subscription: UserSubscription = {
-        planId: "premium",
-        status: "ACTIVE",
-        Plan: { name: "Premium Plan", id: "premium" },
-      };
-
-      const result = getUserPlanType(subscription);
-      expect(result).toBe("premium");
+      expect(result).toBe("creator");
     });
 
     it("should return 'pro' for active pro subscription", () => {
@@ -80,37 +69,37 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("pro");
     });
 
-    it("should return 'enterprise' for active enterprise subscription", () => {
+    it("should return 'pro' for active pro subscription", () => {
       const subscription: UserSubscription = {
-        planId: "enterprise",
+        planId: "pro",
         status: "ACTIVE",
-        Plan: { name: "Enterprise Plan", id: "enterprise" },
+        Plan: { name: "Pro Plan", id: "pro" },
       };
 
       const result = getUserPlanType(subscription);
-      expect(result).toBe("enterprise");
+      expect(result).toBe("pro");
     });
 
     it("should match by planId first (more reliable)", () => {
       const subscription: UserSubscription = {
-        planId: "premium",
+        planId: "pro",
         status: "ACTIVE",
-        Plan: { name: "Custom Plan Name", id: "premium" },
+        Plan: { name: "Custom Plan Name", id: "pro" },
       };
 
       const result = getUserPlanType(subscription);
-      expect(result).toBe("premium");
+      expect(result).toBe("pro");
     });
 
     it("should fallback to plan name matching", () => {
       const subscription: UserSubscription = {
         planId: "custom-id",
         status: "ACTIVE",
-        Plan: { name: "Enterprise Special", id: "custom-id" },
+        Plan: { name: "Creator Special", id: "custom-id" },
       };
 
       const result = getUserPlanType(subscription);
-      expect(result).toBe("enterprise");
+      expect(result).toBe("creator");
     });
 
     it("should return 'free' for unrecognized plan", () => {
@@ -184,37 +173,39 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       });
     });
 
-    describe("Basic Plan Feature Access", () => {
-      const basicSubscription: UserSubscription = {
-        planId: "basic",
+    describe("Creator Plan Feature Access", () => {
+      const creatorSubscription: UserSubscription = {
+        planId: "creator",
         status: "ACTIVE",
-        Plan: { name: "Basic", id: "basic" },
+        Plan: { name: "Creator", id: "creator" },
       };
 
-      it("should allow all free features for basic users", () => {
-        expect(hasFeatureAccess(basicSubscription, "basicScheduling")).toBe(
+      it("should allow all free features for creator users", () => {
+        expect(hasFeatureAccess(creatorSubscription, "basicScheduling")).toBe(
           true
         );
-        expect(hasFeatureAccess(basicSubscription, "newPost")).toBe(true);
-        expect(hasFeatureAccess(basicSubscription, "dashboard")).toBe(true);
+        expect(hasFeatureAccess(creatorSubscription, "newPost")).toBe(true);
+        expect(hasFeatureAccess(creatorSubscription, "dashboard")).toBe(true);
       });
 
-      it("should allow premium features for basic users", () => {
-        expect(hasFeatureAccess(basicSubscription, "drafts")).toBe(true);
-        expect(hasFeatureAccess(basicSubscription, "calendar")).toBe(true);
-        expect(hasFeatureAccess(basicSubscription, "bulkScheduling")).toBe(
+      it("should allow paid features for creator users", () => {
+        expect(hasFeatureAccess(creatorSubscription, "drafts")).toBe(true);
+        expect(hasFeatureAccess(creatorSubscription, "calendar")).toBe(true);
+        expect(hasFeatureAccess(creatorSubscription, "bulkScheduling")).toBe(
           true
         );
-        expect(hasFeatureAccess(basicSubscription, "longformPosts")).toBe(true);
-        expect(hasFeatureAccess(basicSubscription, "templates")).toBe(true);
+        expect(hasFeatureAccess(creatorSubscription, "longformPosts")).toBe(
+          true
+        );
+        expect(hasFeatureAccess(creatorSubscription, "templates")).toBe(true);
       });
     });
 
     describe("Expired Subscription Access", () => {
       const expiredSubscription: UserSubscription = {
-        planId: "premium",
+        planId: "pro",
         status: "EXPIRED",
-        Plan: { name: "Premium", id: "premium" },
+        Plan: { name: "Pro", id: "pro" },
       };
 
       it("should only have free-tier browse access when expired", () => {
@@ -225,7 +216,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         );
       });
 
-      it("should still allow basic features when expired", () => {
+      it("should still allow free features when expired", () => {
         expect(hasFeatureAccess(expiredSubscription, "basicScheduling")).toBe(
           true
         );
@@ -261,9 +252,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("free");
     });
 
-    it("should return 'basic' for bulkScheduling", () => {
+    it("should return 'starter' for bulkScheduling", () => {
       const result = getMinimumPlanForFeature("bulkScheduling");
-      expect(result).toBe("basic");
+      expect(result).toBe("starter");
     });
 
     it("should return 'free' for longformPosts", () => {
@@ -276,8 +267,8 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("free");
     });
 
-    it("should return 'basic' for broadcasts (send / scale)", () => {
-      expect(getMinimumPlanForFeature("broadcasts")).toBe("basic");
+    it("should return 'starter' for broadcasts (send / scale)", () => {
+      expect(getMinimumPlanForFeature("broadcasts")).toBe("starter");
     });
   });
 
@@ -311,9 +302,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       const subscriptionData: SubscriptionData = {
         user: { id: "user-123", isEnabled: true },
         currentSubscription: {
-          planId: "basic",
+          planId: "creator",
           status: "EXPIRED",
-          Plan: { name: "Basic", id: "basic" },
+          Plan: { name: "Creator", id: "creator" },
         },
       };
 
@@ -325,9 +316,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       const subscriptionData: SubscriptionData = {
         user: { id: "user-123", isEnabled: true },
         currentSubscription: {
-          planId: "basic",
+          planId: "creator",
           status: "ACTIVE",
-          Plan: { name: "Basic", id: "basic" },
+          Plan: { name: "Creator", id: "creator" },
         },
       };
 
@@ -340,19 +331,20 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
     it("should have all required plan types", () => {
       const plans = Object.keys(PLAN_FEATURES);
       expect(plans).toContain("free");
-      expect(plans).toContain("basic");
-      expect(plans).toContain("premium");
+      expect(plans).toContain("starter");
+      expect(plans).toContain("creator");
       expect(plans).toContain("pro");
-      expect(plans).toContain("enterprise");
+      expect(plans).toContain("teams");
+      expect(plans).toContain("founder");
     });
 
     it("should have consistent feature keys across all plans", () => {
       const freeFeatures = Object.keys(PLAN_FEATURES.free);
-      const basicFeatures = Object.keys(PLAN_FEATURES.basic);
+      const creatorFeatures = Object.keys(PLAN_FEATURES.creator);
 
-      // All free features should exist in basic (and basic may have more)
+      // All free features should exist in creator (and creator may have more)
       freeFeatures.forEach((feature) => {
-        expect(basicFeatures).toContain(feature);
+        expect(creatorFeatures).toContain(feature);
       });
     });
 
@@ -365,7 +357,13 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
     });
 
     it("should have paid plans with full features", () => {
-      const paidPlans: PlanType[] = ["basic", "premium", "pro", "enterprise"];
+      const paidPlans: PlanType[] = [
+        "starter",
+        "creator",
+        "pro",
+        "teams",
+        "founder",
+      ];
 
       paidPlans.forEach((plan) => {
         expect(PLAN_FEATURES[plan].drafts).toBe(true);

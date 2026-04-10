@@ -13,6 +13,8 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import type { ProfileData } from "~/features/nostr/types";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatNpubShort } from "~/lib/nostr-conversion";
@@ -101,9 +103,11 @@ export default function AccountSwitchMenu() {
     .toLowerCase();
   const isChild = !!user?.["isChild"];
   const parentNpub = user?.["parentNpub"] as string | undefined;
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+    planId || planName
+  );
   const hasAccountsAccess =
-    !isChild &&
-    (planId === "premium" || planName === "premium" || planName === "founder");
+    !isChild && getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
   React.useEffect(() => {
     if (

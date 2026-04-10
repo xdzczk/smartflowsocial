@@ -68,12 +68,22 @@ export function parseTopicTagValues(hashtagLine: string): string[] {
     .map((t) => t.replace(/^#/u, ""));
 }
 
+function formatHashtagLineForNoteBody(hashtagLine: string): string {
+  return hashtagLine
+    .split(/\s+/u)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .map((t) => `#${t.replace(/^#/u, "")}`)
+    .join(" ");
+}
+
 export function pollQuestionForSignedEvent(
   questionTrimmed: string,
   tagLine: string,
   appendTagsToBody: boolean
 ): string {
-  return appendTagsToBody && tagLine
-    ? `${questionTrimmed}\n${tagLine}`.trim()
+  const hashtagLineForBody = formatHashtagLineForNoteBody(tagLine);
+  return appendTagsToBody && hashtagLineForBody
+    ? `${questionTrimmed}\n${hashtagLineForBody}`.trim()
     : questionTrimmed;
 }

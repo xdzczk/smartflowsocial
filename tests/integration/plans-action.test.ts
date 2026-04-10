@@ -204,8 +204,8 @@ describe("Plans Action Handler", () => {
         amountUsd: 10.0,
         paymentId: "payment-123",
         expiresAt: new Date("2024-12-31"),
-        planName: "Basic Plan",
-        planId: "basic",
+        planName: "Creator Plan",
+        planId: "creator",
       };
 
       (
@@ -217,7 +217,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
         billingCadence: "monthly",
         accessDurationMonths: "1",
       });
@@ -227,7 +227,7 @@ describe("Plans Action Handler", () => {
 
       expect(requireUser).toHaveBeenCalledWith(request);
       expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
-        planId: "basic",
+        planId: "creator",
         userId: TEST_USER_ID,
         description: planSubscriptionDescription,
         amountUsdOverride: expect.any(Number) as unknown as number,
@@ -244,8 +244,8 @@ describe("Plans Action Handler", () => {
         amountUsd: 10.0,
         paymentId: "payment-123",
         expiresAt: mockInvoice.expiresAt.toISOString(),
-        planName: "Basic Plan",
-        planId: "basic",
+        planName: "Creator Plan",
+        planId: "creator",
         checkoutKind: "lightning",
       });
     });
@@ -258,8 +258,8 @@ describe("Plans Action Handler", () => {
         amountUsd: 10.0,
         paymentId: "payment-123",
         expiresAt: new Date("2024-12-31"),
-        planName: "Basic Plan",
-        planId: "basic",
+        planName: "Creator Plan",
+        planId: "creator",
       };
 
       (
@@ -281,7 +281,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
         paymentMode: "auto_renew",
         billingCadence: "yearly",
         accessDurationMonths: "12",
@@ -310,8 +310,8 @@ describe("Plans Action Handler", () => {
         amountUsd: 60.0,
         paymentId: "payment-123",
         expiresAt: new Date("2024-12-31"),
-        planName: "Basic Plan",
-        planId: "basic",
+        planName: "Creator Plan",
+        planId: "creator",
       };
 
       (
@@ -323,7 +323,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
         paymentMode: "manual",
         billingCadence: "monthly",
         accessDurationMonths: "6",
@@ -333,7 +333,7 @@ describe("Plans Action Handler", () => {
       const result = await handlePlansAction(formData, request);
 
       expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith({
-        planId: "basic",
+        planId: "creator",
         userId: TEST_USER_ID,
         description: planSubscriptionDescription,
         amountUsdOverride: expect.any(Number) as unknown as number,
@@ -350,8 +350,8 @@ describe("Plans Action Handler", () => {
         amountUsd: 60.0,
         paymentId: "payment-123",
         expiresAt: mockInvoice.expiresAt.toISOString(),
-        planName: "Basic Plan",
-        planId: "basic",
+        planName: "Creator Plan",
+        planId: "creator",
         checkoutKind: "lightning",
       });
     });
@@ -425,7 +425,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "invalid-plan",
+        planId: "creator",
       });
 
       const request = new Request("http://localhost:3000/plans");
@@ -447,7 +447,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
       });
 
       const request = new Request("http://localhost:3000/plans");
@@ -464,7 +464,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
         paymentMode: "btc_onchain",
         billingCadence: "monthly",
         accessDurationMonths: "1",
@@ -580,7 +580,7 @@ describe("Plans Action Handler", () => {
       });
     });
 
-    it("should create BTCPay checkout for basic yearly when BTCPay is configured", async () => {
+    it("should create BTCPay checkout for creator yearly when BTCPay is configured", async () => {
       (isBtcpayConfigured as ReturnType<typeof vi.fn>).mockReturnValue(true);
       (
         PaymentsData.getPlanPriceUsd as ReturnType<typeof vi.fn>
@@ -589,20 +589,20 @@ describe("Plans Action Handler", () => {
       (
         PaymentsData.createPlanInvoice as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
-        invoice: "https://pay.example/checkout/basic",
-        paymentHash: "btcpay:basic",
+        invoice: "https://pay.example/checkout/creator",
+        paymentHash: "btcpay:creator",
         amount: 500_000,
         amountUsd: 336,
         expiresAt: exp,
-        paymentId: "basic_12_u",
-        planName: "Basic",
-        planId: "basic",
+        paymentId: "creator_12_u",
+        planName: "Creator",
+        planId: "creator",
         checkoutKind: "btcpay",
       });
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
         paymentMode: "btc_onchain",
         billingCadence: "yearly",
         accessDurationMonths: "12",
@@ -613,7 +613,7 @@ describe("Plans Action Handler", () => {
 
       expect(PaymentsData.createPlanInvoice).toHaveBeenCalledWith(
         expect.objectContaining({
-          planId: "basic",
+          planId: "creator",
           billingPaymentMethod: "btc_btcpay_onchain",
           billingCadence: "yearly",
           accessDurationMonths: 12,
@@ -623,7 +623,7 @@ describe("Plans Action Handler", () => {
       expect(result).toMatchObject({
         success: true,
         paymentMode: "btc_onchain",
-        planId: "basic",
+        planId: "creator",
         checkoutKind: "btcpay",
       });
     });
@@ -719,7 +719,7 @@ describe("Plans Action Handler", () => {
 
       const formData = createFormData({
         intent: "select_plan",
-        planId: "basic",
+        planId: "creator",
       });
 
       const request = new Request("http://localhost:3000/plans");

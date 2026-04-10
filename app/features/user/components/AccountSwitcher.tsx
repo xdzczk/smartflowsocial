@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -31,8 +33,11 @@ export default function AccountSwitcher() {
   const planName = (
     subscription?.currentSubscription?.Plan?.name ?? ""
   ).toLowerCase();
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+    planId || planName
+  );
   const hasAccountsAccess =
-    planId === "premium" || planName === "premium" || planName === "founder";
+    getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
   const isChild = !!user?.isChild;
 
   React.useEffect(() => {

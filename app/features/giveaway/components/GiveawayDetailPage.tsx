@@ -682,7 +682,7 @@ export function GiveawayDetailPage({
                   be charged.
                 </p>
               ) : null}
-              {(planType === "free" || planType === "basic") &&
+              {(planType === "free" || planType === "creator") &&
               finalizationQuote.feeSats > 0 ? (
                 <p className="text-muted-foreground mt-2 text-xs">
                   Running giveaways regularly? Upgrade to Pro to reduce or

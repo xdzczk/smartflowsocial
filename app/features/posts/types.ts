@@ -15,6 +15,15 @@ import type {
   PrismaQueueType,
 } from "./data/posts-prisma-types.server";
 import { getQueueAccentHex } from "./queue-colors";
+
+export type ScheduledDependencyMode = "standalone" | "attached";
+export type ScheduledTargetMode = "direct" | "scheduled_parent";
+export type FollowUpTimingMode = "offset_from_parent" | "fixed_datetime";
+export type ScheduledSigningState =
+  | "unsigned"
+  | "signed"
+  | "stale"
+  | "invalidated";
 /**
  * Schedule configuration for INTERVAL schedule type
  */
@@ -390,6 +399,16 @@ export interface CombinedContent {
   threadGroupId?: string | null;
   replyToEventId?: string | null;
   replyToPostId?: string | null;
+  parentScheduledActionId?: string | null;
+  rootScheduledActionId?: string | null;
+  targetScheduledActionId?: string | null;
+  dependencyMode?: ScheduledDependencyMode;
+  targetMode?: ScheduledTargetMode;
+  followUpTimingMode?: FollowUpTimingMode | null;
+  followUpOffsetSeconds?: number | null;
+  expectedParentEventId?: string | null;
+  signedChildEventId?: string | null;
+  signingState?: ScheduledSigningState;
   originalData: PostData | LongFormPostData;
 }
 
@@ -429,6 +448,10 @@ export interface ComposerAttachment {
   uploadErrorMessage?: string;
   /** Client-only: correlates logs per retry attempt */
   uploadAttemptId?: string;
+  /** Hydrated from existing persisted media on edit flows. */
+  source?: "existing" | "new";
+  /** Explicit removal marker for diff-based updates. */
+  markedForRemoval?: boolean;
 }
 
 /** Engagement thresholds for conditional repost (only publish if source meets all set minimums) */

@@ -11,6 +11,15 @@ const { mockScheduleExecute } = vi.hoisted(() => {
   const mockScheduleExecute = vi.fn();
   return { mockScheduleExecute };
 });
+const {
+  mockCascadeAttachedReschedule,
+  mockResyncAttachedChildrenAfterParentMutation,
+  mockCascadeDeleteAttachedFollowups,
+} = vi.hoisted(() => ({
+  mockCascadeAttachedReschedule: vi.fn(),
+  mockResyncAttachedChildrenAfterParentMutation: vi.fn(),
+  mockCascadeDeleteAttachedFollowups: vi.fn(),
+}));
 
 // Single mock so all used exports are available
 vi.mock("~/features/posts/server", () => ({
@@ -24,6 +33,15 @@ vi.mock("~/features/posts/server", () => ({
 vi.mock("~/features/payments/entitlements/schedule-cap-policy.server", () => ({
   assertScheduleCapacity: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+    resyncAttachedChildrenAfterParentMutation:
+      mockResyncAttachedChildrenAfterParentMutation,
+    cascadeDeleteAttachedFollowups: mockCascadeDeleteAttachedFollowups,
+  })
+);
 
 const mockCancelLongFormExecute = vi.fn();
 const mockScheduleLongFormExecute = vi.fn();
@@ -67,6 +85,9 @@ describe("Scheduled Posts Service Action Handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockScheduleExecute.mockResolvedValue(undefined);
+    mockCascadeAttachedReschedule.mockResolvedValue([]);
+    mockResyncAttachedChildrenAfterParentMutation.mockResolvedValue([]);
+    mockCascadeDeleteAttachedFollowups.mockResolvedValue([]);
     mockCancelLongFormExecute.mockResolvedValue({ cancelled: true });
     mockScheduleLongFormExecute.mockResolvedValue(undefined);
   });
@@ -125,7 +146,9 @@ describe("Scheduled Posts Service Action Handlers", () => {
         userId: TEST_USER_ID,
       });
       expect(reschedulePost).toHaveBeenCalled();
+      expect(mockCascadeAttachedReschedule).toHaveBeenCalled();
       expect(mockScheduleExecute).toHaveBeenCalled();
+      expect(mockResyncAttachedChildrenAfterParentMutation).toHaveBeenCalled();
 
       const responseObj =
         result instanceof Response

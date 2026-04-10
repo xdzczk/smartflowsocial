@@ -10,6 +10,7 @@ import type {
   RepostConditions,
 } from "../../types";
 import type { ComposerPublishMode } from "../components/composer/publish-mode";
+import type { ComposerContext } from "../services/compose-route-contract";
 
 export type TextPostFormData = z.infer<typeof textPostClientSchema>;
 
@@ -30,6 +31,11 @@ export interface UseComposerSubmitOptions {
   editTemplateContext: { templateId: string; postId: string } | null;
   clearLocalSnapshot: () => void;
   attachments: ComposerAttachment[];
+  initialAttachmentMeta?: Array<{
+    localId: string;
+    url: string;
+    alt?: string;
+  }>;
   selectedHashtags: string;
   selectedQueue: string;
   queueTypeId: string | null;
@@ -69,4 +75,5 @@ export interface UseComposerSubmitOptions {
   calculateQueueScheduleTime?: (queueName: string) => Promise<string | null>;
   /** Fires when the user submits a server draft save (`save-draft` / `draft-text`). */
   onBeginSaveDraft?: () => void;
+  composerContext?: ComposerContext;
 }

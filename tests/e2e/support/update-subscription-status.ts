@@ -95,7 +95,7 @@ async function updateSubscriptionStatus(
     } else {
       // Create a new active subscription
       let plan = await prisma.plan.findFirst({
-        where: { id: "premium" },
+        where: { id: "pro" },
       });
 
       plan ??= await prisma.plan.findFirst({
@@ -139,7 +139,7 @@ async function updateSubscriptionStatus(
     } else {
       // Create an expired subscription
       let plan = await prisma.plan.findFirst({
-        where: { id: "premium" },
+        where: { id: "pro" },
       });
 
       plan ??= await prisma.plan.findFirst({
@@ -185,7 +185,7 @@ async function updateSubscriptionStatus(
     } else {
       // Create a canceled subscription
       let plan = await prisma.plan.findFirst({
-        where: { id: "premium" },
+        where: { id: "pro" },
       });
 
       plan ??= await prisma.plan.findFirst({
@@ -229,7 +229,7 @@ async function updateSubscriptionStatus(
     } else {
       // Create a past due subscription
       let plan = await prisma.plan.findFirst({
-        where: { id: "premium" },
+        where: { id: "pro" },
       });
 
       plan ??= await prisma.plan.findFirst({

@@ -40,6 +40,8 @@ import type {
 } from "./composer-submit-types";
 
 export type { TextPostFormData, ThreadSegment, UseComposerSubmitOptions };
+const ACTION_UPDATE_SCHEDULED = "update-scheduled";
+const ACTION_UPDATE_FOLLOW_UP = "update-follow-up";
 
 export function useComposerSubmit(options: UseComposerSubmitOptions) {
   const {
@@ -52,6 +54,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     editTemplateContext,
     clearLocalSnapshot,
     attachments,
+    initialAttachmentMeta = [],
     selectedHashtags,
     selectedQueue,
     queueTypeId,
@@ -74,6 +77,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     publishMode = "now",
     calculateQueueScheduleTime,
     onBeginSaveDraft,
+    composerContext = { mode: "create" },
   } = options;
 
   const fetcherSubmitOptions = React.useMemo(
@@ -98,6 +102,67 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
   } | null>(null);
   /** Bumped on cancel/reconnect-without-retry or new submit so stale sign completions do not submit twice. */
   const submitGenerationRef = React.useRef(0);
+
+  const appendComposerContextFormData = React.useCallback(
+    (target: FormData | Record<string, string>) => {
+      if (composerContext.mode === "create") return;
+      if (target instanceof FormData) {
+        target.set("composerMode", composerContext.mode);
+      } else {
+        target["composerMode"] = composerContext.mode;
+      }
+      if (composerContext.mode === "edit_draft") {
+        if (target instanceof FormData)
+          target.set("draftId", composerContext.draftId);
+        else target["draftId"] = composerContext.draftId;
+      } else if (composerContext.mode === "edit_scheduled") {
+        if (target instanceof FormData)
+          target.set("scheduledActionId", composerContext.scheduledActionId);
+        else target["scheduledActionId"] = composerContext.scheduledActionId;
+      } else {
+        if (target instanceof FormData)
+          target.set("followUpActionId", composerContext.followUpActionId);
+        else target["followUpActionId"] = composerContext.followUpActionId;
+        if (composerContext.parentActionId) {
+          if (target instanceof FormData)
+            target.set("parentActionId", composerContext.parentActionId);
+          else target["parentActionId"] = composerContext.parentActionId;
+        }
+      }
+    },
+    [composerContext]
+  );
+
+  const buildAttachmentMetaForSubmit = React.useCallback(
+    () =>
+      attachments
+        .filter((a) => a.url)
+        .map((a) => ({ localId: a.localId, url: a.url as string, alt: a.alt })),
+    [attachments]
+  );
+
+  const buildAttachmentDiffJson = React.useCallback(() => {
+    if (composerContext.mode === "create") return null;
+    const previousByLocalId = new Map(
+      initialAttachmentMeta.map((entry) => [entry.localId, entry])
+    );
+    const current = buildAttachmentMetaForSubmit();
+    const currentIds = new Set(current.map((entry) => entry.localId));
+    const removed = initialAttachmentMeta
+      .filter((entry) => !currentIds.has(entry.localId))
+      .map((entry) => ({ ...entry, source: "existing" as const }));
+    const retained = current
+      .filter((entry) => previousByLocalId.has(entry.localId))
+      .map((entry) => ({ ...entry, source: "existing" as const }));
+    const added = current
+      .filter((entry) => !previousByLocalId.has(entry.localId))
+      .map((entry) => ({ ...entry, source: "new" as const }));
+    return JSON.stringify({ removed, retained, added });
+  }, [
+    buildAttachmentMetaForSubmit,
+    composerContext.mode,
+    initialAttachmentMeta,
+  ]);
 
   const runSubmit = React.useCallback(
     async (data: TextPostFormData, event?: React.BaseSyntheticEvent) => {
@@ -145,7 +210,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       function submitDraftSave(): void {
         clearLocalSnapshot();
         const formData = new FormData();
-        formData.set("_action", "save-draft");
+        formData.set(
+          "_action",
+          composerContext.mode === "edit_draft" ? "update-draft" : "save-draft"
+        );
         formData.set("content", data.content);
         formData.set("queueType", data.queueType);
         if (queueTypeId) formData.set("queueTypeId", queueTypeId);
@@ -157,17 +225,20 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (relayOverride && relayOverride.length > 0) {
           formData.set("relays", JSON.stringify(relayOverride));
         }
-        const draftAttachmentMeta = attachments
-          .filter((a) => a.url)
-          .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt }));
+        const draftAttachmentMeta = buildAttachmentMetaForSubmit();
         if (draftAttachmentMeta.length > 0) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
+        }
+        const attachmentDiff = buildAttachmentDiffJson();
+        if (attachmentDiff) {
+          formData.set("attachmentDiff", attachmentDiff);
         }
         formData.set(
           "includeHashtagsInNoteBody",
           String(Boolean(data.includeHashtagsInNoteBody))
         );
         if (embedContext) formData.set("_embedContext", embedContext);
+        appendComposerContextFormData(formData);
         fetcher.submit(formData, fetcherSubmitOptions);
       }
 
@@ -176,7 +247,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         return;
       }
       // Rail uses `value="save-draft"`; legacy buttons may use `draft-text`. Both skip signing.
-      if (submitType === "draft-text" || submitType === "save-draft") {
+      if (
+        submitType === "draft-text" ||
+        submitType === "save-draft" ||
+        submitType === "update-draft"
+      ) {
         onBeginSaveDraft?.();
         submitDraftSave();
         return;
@@ -240,8 +315,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             data,
             submitType
           );
+          const isUpdateScheduleAction =
+            submitType === ACTION_UPDATE_SCHEDULED ||
+            submitType === ACTION_UPDATE_FOLLOW_UP;
           if (
-            submitType === ACTION_SCHEDULE_TEXT &&
+            (submitType === ACTION_SCHEDULE_TEXT || isUpdateScheduleAction) &&
             !threadScheduleInput.trim()
           ) {
             setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
@@ -257,7 +335,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
                   )) / 1000
                 );
           if (
-            submitType === ACTION_SCHEDULE_TEXT &&
+            (submitType === ACTION_SCHEDULE_TEXT || isUpdateScheduleAction) &&
             nominalThreadBase * 1000 < Date.now()
           ) {
             setSigningError(COMPOSER_SCHEDULE_FUTURE);
@@ -265,7 +343,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           }
           const threadRandomMinutes = scheduleRandomWindowMinutes;
           const threadSignBase =
-            submitType === ACTION_SCHEDULE_TEXT && threadRandomMinutes > 0
+            (submitType === ACTION_SCHEDULE_TEXT || isUpdateScheduleAction) &&
+            threadRandomMinutes > 0
               ? applyRandomScheduleWindow(
                   nominalThreadBase,
                   threadRandomMinutes
@@ -326,7 +405,9 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             formData: data,
             actionSubmitType: submitType,
             threadSchedule:
-              submitType === ACTION_SCHEDULE_TEXT
+              submitType === ACTION_SCHEDULE_TEXT ||
+              submitType === ACTION_UPDATE_SCHEDULED ||
+              submitType === ACTION_UPDATE_FOLLOW_UP
                 ? {
                     scheduledFirstUnix: threadSignBase,
                     nominalFirstUnix:
@@ -343,6 +424,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             return;
           }
           const threadPayload = builtThread.formData;
+          appendComposerContextFormData(threadPayload);
 
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
@@ -411,8 +493,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             data,
             submitType
           );
+          const isUpdateScheduleAction =
+            submitType === ACTION_UPDATE_SCHEDULED ||
+            submitType === ACTION_UPDATE_FOLLOW_UP;
           if (
-            submitType === ACTION_SCHEDULE_TEXT &&
+            (submitType === ACTION_SCHEDULE_TEXT || isUpdateScheduleAction) &&
             !scheduledForInput.trim()
           ) {
             setSigningError(COMPOSER_SCHEDULE_OR_QUEUE_REQUIRED);
@@ -423,7 +508,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               ? nowMillis()
               : await parseScheduledTime(scheduledForInput, userTimezone);
           const nominalUnix = Math.floor(scheduledTime / 1000);
-          const isSchedule = submitType === ACTION_SCHEDULE_TEXT;
+          const isSchedule =
+            submitType === ACTION_SCHEDULE_TEXT || isUpdateScheduleAction;
           if (isSchedule && nominalUnix * 1000 < Date.now()) {
             setSigningError(COMPOSER_SCHEDULE_FUTURE);
             return;
@@ -503,11 +589,13 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           if (relayOverride && relayOverride.length > 0) {
             payload["relays"] = JSON.stringify(relayOverride);
           }
-          const attachmentMeta = attachments
-            .filter((a) => a.url)
-            .map((a) => ({ localId: a.localId, url: a.url, alt: a.alt }));
+          const attachmentMeta = buildAttachmentMetaForSubmit();
           if (attachmentMeta.length > 0) {
             payload["attachmentMeta"] = JSON.stringify(attachmentMeta);
+          }
+          const attachmentDiff = buildAttachmentDiffJson();
+          if (attachmentDiff) {
+            payload["attachmentDiff"] = attachmentDiff;
           }
 
           async function addRepostAndQuoteToPayload(
@@ -554,6 +642,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           if (!payloadComplete) return;
 
           if (embedContext) payload["_embedContext"] = embedContext;
+          appendComposerContextFormData(payload);
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
           fetcher.submit(payload, fetcherSubmitOptions);
@@ -592,7 +681,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
       if (
         isThreadMode &&
-        (submitType === ACTION_POST_TEXT || submitType === ACTION_SCHEDULE_TEXT)
+        (submitType === ACTION_POST_TEXT ||
+          submitType === ACTION_SCHEDULE_TEXT ||
+          submitType === ACTION_UPDATE_SCHEDULED ||
+          submitType === ACTION_UPDATE_FOLLOW_UP)
       ) {
         await runThreadSubmit();
         return;
@@ -631,6 +723,10 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       publishMode,
       calculateQueueScheduleTime,
       onBeginSaveDraft,
+      appendComposerContextFormData,
+      buildAttachmentMetaForSubmit,
+      buildAttachmentDiffJson,
+      composerContext.mode,
     ]
   );
 
@@ -706,6 +802,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     if (relayOverride && relayOverride.length > 0)
       threadPayload.set("relays", JSON.stringify(relayOverride));
     if (embedContext) threadPayload.set("_embedContext", embedContext);
+    appendComposerContextFormData(threadPayload);
     threadPayload.set(
       "includeHashtagsInNoteBody",
       String(Boolean(state.data.includeHashtagsInNoteBody))
@@ -724,6 +821,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     fetcher,
     fetcherSubmitOptions,
     embedContext,
+    appendComposerContextFormData,
     setLastPublishFailed,
     setPublishSubmitInFlight,
   ]);

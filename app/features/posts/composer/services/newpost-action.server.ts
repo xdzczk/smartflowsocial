@@ -6,15 +6,24 @@
 
 import {
   json,
+  redirect,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
+import {
+  cascadeAttachedReschedule,
+  resyncAttachedChildrenAfterParentMutation,
+  SchedulePostUseCase,
+} from "~/features/posts/scheduling/index.server";
+import { getPostById, updatePost } from "~/features/posts/server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
 import { logWarning } from "~/lib/error-logger.server";
+import { fromUnixTimestamp } from "~/lib/temporal";
 import {
   newPostActionSchema,
   validateFormDataOrRespond,
@@ -35,6 +44,208 @@ import {
   resolvePollHashtagContext,
 } from "./newpost-action/poll-handlers.server";
 import { handleUploadPreview } from "./newpost-action/upload-preview-handler.server";
+
+async function handleComposerUpdateMutation(
+  userId: string,
+  formData: FormData,
+  mode: "edit_scheduled" | "edit_follow_up"
+): Promise<Response> {
+  const targetId =
+    mode === "edit_follow_up"
+      ? String(formData.get("followUpActionId") ?? "")
+      : String(formData.get("scheduledActionId") ?? "");
+  if (!targetId) {
+    return json({ error: "Missing edit target id" }, { status: 400 });
+  }
+  const post = await getPostById({ id: targetId, userId });
+  if (!post) {
+    return json({ error: "Scheduled item not found" }, { status: 404 });
+  }
+  const postMeta = post as {
+    dependencyMode?: string | null;
+    parentScheduledActionId?: string | null;
+    draftMeta?: unknown;
+    scheduledAtUtc?: Date | null;
+  };
+  if (mode === "edit_follow_up" && postMeta.dependencyMode !== "attached") {
+    return json(
+      { error: "This scheduled item is not an attached follow-up." },
+      { status: 400 }
+    );
+  }
+  if (mode === "edit_scheduled" && postMeta.dependencyMode === "attached") {
+    return json(
+      { error: "Use follow-up editing for attached follow-ups." },
+      { status: 400 }
+    );
+  }
+
+  const { parseAttachmentMeta } =
+    await import("./newpost-action/handlers/text-handlers.server");
+  const { prepareComposerTextAndFileUrls } =
+    await import("./newpost-action/inline-tokens.server");
+
+  const content = String(formData.get("content") ?? "");
+  const isThreadUpdate = String(formData.get("segments") ?? "").trim() !== "";
+  const attachmentDiffRaw = String(formData.get("attachmentDiff") ?? "").trim();
+  if (!attachmentDiffRaw && !isThreadUpdate) {
+    return json(
+      { error: "Attachment diff is required when editing scheduled content." },
+      { status: 400 }
+    );
+  }
+  let attachmentDiff: {
+    removed?: Array<{ localId?: string }>;
+    retained?: Array<{ localId?: string }>;
+    added?: Array<{ localId?: string }>;
+  } = {};
+  if (attachmentDiffRaw) {
+    try {
+      attachmentDiff = JSON.parse(attachmentDiffRaw) as {
+        removed?: Array<{ localId?: string }>;
+        retained?: Array<{ localId?: string }>;
+        added?: Array<{ localId?: string }>;
+      };
+    } catch {
+      return json(
+        { error: "Attachment diff is invalid JSON." },
+        { status: 400 }
+      );
+    }
+  }
+  const attachmentMeta = parseAttachmentMeta(formData);
+  const existingAttachmentMeta = (() => {
+    const candidate = postMeta.draftMeta as { attachmentMeta?: unknown } | null;
+    const raw = candidate?.attachmentMeta;
+    if (!Array.isArray(raw)) return [] as Array<{ localId: string }>;
+    return raw.filter((entry): entry is { localId: string } =>
+      Boolean(
+        entry &&
+        typeof entry === "object" &&
+        "localId" in entry &&
+        typeof (entry as { localId?: unknown }).localId === "string"
+      )
+    );
+  })();
+  const existingIds = new Set(
+    existingAttachmentMeta.map((entry) => entry.localId)
+  );
+  const removedIds = new Set(
+    (attachmentDiff.removed ?? [])
+      .map((entry) => entry.localId)
+      .filter((id): id is string => Boolean(id))
+  );
+  for (const removedId of removedIds) {
+    if (!existingIds.has(removedId)) {
+      return json(
+        {
+          error: "Attachment removal payload is inconsistent with saved media.",
+        },
+        { status: 400 }
+      );
+    }
+  }
+  const prepared = prepareComposerTextAndFileUrls(content, attachmentMeta);
+  const scheduledForRaw = String(formData.get("scheduledFor") ?? "");
+  const scheduledFor =
+    scheduledForRaw.trim() !== "" ? parseInt(scheduledForRaw, 10) : null;
+  if (scheduledForRaw.trim() !== "" && Number.isNaN(scheduledFor)) {
+    return json({ error: "Invalid scheduled time." }, { status: 400 });
+  }
+
+  if (mode === "edit_follow_up") {
+    const parentId = String(
+      formData.get("parentActionId") ?? postMeta.parentScheduledActionId ?? ""
+    );
+    if (parentId) {
+      const parent = await getPostById({ id: parentId, userId });
+      const effectiveScheduledFor =
+        scheduledFor ??
+        (postMeta.scheduledAtUtc
+          ? Math.floor(postMeta.scheduledAtUtc.getTime() / 1000)
+          : null);
+      if (parent?.scheduledAtUtc && effectiveScheduledFor != null) {
+        const parentUnix = Math.floor(parent.scheduledAtUtc.getTime() / 1000);
+        if (effectiveScheduledFor < parentUnix) {
+          return json(
+            { error: "Follow-up must be scheduled at or after its parent." },
+            { status: 400 }
+          );
+        }
+      }
+    } else {
+      return json(
+        { error: "Follow-up parent relationship is missing." },
+        { status: 400 }
+      );
+    }
+  }
+
+  const signedEventRaw = String(formData.get("signedEvent") ?? "");
+  const nostrEventRaw = String(formData.get("nostrEvent") ?? "");
+  const signedEvent =
+    signedEventRaw.trim() !== ""
+      ? (JSON.parse(signedEventRaw) as SignedEvent)
+      : undefined;
+  const nostrEvent =
+    nostrEventRaw.trim() !== ""
+      ? (JSON.parse(nostrEventRaw) as NostrEvent)
+      : undefined;
+
+  const updated = await updatePost({
+    id: targetId,
+    userId,
+    data: {
+      content: prepared.content,
+      caption: prepared.content,
+      fileUrl: prepared.fileUrl,
+      queueTypeId:
+        String(formData.get("queueTypeId") ?? "") || post.queueTypeId,
+      scheduledAtUtc: scheduledFor ?? undefined,
+      signedEvent,
+      nostrEvent,
+      hashTagPresetId: String(formData.get("hashTagPresetId") ?? "") || null,
+    },
+  });
+
+  if (scheduledFor) {
+    await cascadeAttachedReschedule({
+      rootPostId: targetId,
+      userId,
+      parentScheduledAtUtc: new Date(scheduledFor * 1000),
+    });
+  }
+  if (signedEvent && scheduledFor) {
+    const schedulePostUseCase = new SchedulePostUseCase();
+    await schedulePostUseCase.execute({
+      postId: targetId,
+      userId,
+      scheduledAtUtc: fromUnixTimestamp(scheduledFor, "UTC"),
+      signedEvent,
+    });
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: targetId,
+      userId,
+      parentPredictedEventId: signedEvent.id,
+    });
+  }
+
+  return redirect(`/dashboard/scheduled?scheduled=${updated.id}`);
+}
+
+async function handleUpdateScheduledAction(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  return handleComposerUpdateMutation(userId, formData, "edit_scheduled");
+}
+
+async function handleUpdateFollowUpAction(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  return handleComposerUpdateMutation(userId, formData, "edit_follow_up");
+}
 
 /**
  * Main action handler for new post page
@@ -141,6 +352,28 @@ async function handleNewPostActionImpl(
     const { handleSaveDraft } =
       await import("./newpost-action/autosave-draft.server");
     return handleSaveDraft(userId, formData);
+  }
+  if (_action === "update-draft") {
+    const draftId = String(formData.get("draftId") ?? "").trim();
+    if (!draftId) {
+      return json({ error: "Missing draftId for update." }, { status: 400 });
+    }
+    const existingDraft = await getPostById({ id: draftId, userId });
+    if (!existingDraft || existingDraft.currentState !== "DRAFT") {
+      return json(
+        { error: "Draft no longer exists or is not editable." },
+        { status: 404 }
+      );
+    }
+    const { handleSaveDraft } =
+      await import("./newpost-action/autosave-draft.server");
+    return handleSaveDraft(userId, formData);
+  }
+  if (_action === "update-scheduled") {
+    return handleUpdateScheduledAction(userId, formData);
+  }
+  if (_action === "update-follow-up") {
+    return handleUpdateFollowUpAction(userId, formData);
   }
 
   if (_action === "post-thread" || _action === "schedule-thread") {

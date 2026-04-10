@@ -27,25 +27,26 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "1 queue included",
     "Browse broadcast workflows; paid tiers unlock full send volume",
   ],
-  basic: [
+  starter: [
     "1 account included",
+    "Up to 2 queues",
+    "5 GB monthly hosted storage / 20 GB monthly uploads",
+    "50 MB max hosted file size",
+    "7.5% campaign commission with bulk posts enabled",
+  ],
+  creator: [
+    "Up to 2 accounts included",
     "Built for consistent solo publishing",
-    "Expanded scheduling and queue headroom vs Free",
+    "Expanded scheduling and queue headroom vs Starter",
     "Bulk workflows and broadcast sending",
     "Nostr-native hosted media included",
   ],
-  premium: [
-    "Up to 3 accounts included",
+  pro: [
+    "Up to 5 accounts included",
     "Highest workflow and broadcast capacity",
     "Best campaign economics on paid tiers",
     "Nostr-native hosted media included",
     "Fanout relay distribution included",
-  ],
-  teams: [
-    "Shared workflows and roles",
-    "Collaborative publishing controls",
-    "Not yet open for self-serve purchase",
-    "We will open enrollment when the product is ready",
   ],
 };
 
@@ -62,15 +63,15 @@ const FOUNDER_BENEFITS = [
 
 const PLAN_SUBTITLES: Record<string, string> = {
   free: "Full surface, hard caps - try the product end-to-end",
-  basic: "Default paid tier for one serious account",
-  premium:
-    "Multi-account tier - stronger workflow, distribution, and infra limits",
-  teams: "Collaborative workspace - not open for self-serve yet",
+  starter: "Low-friction paid entry tier for solo operators",
+  creator: "Default creator tier for serious solo publishing",
+  pro: "Multi-account tier - stronger workflow, distribution, and infra limits",
 };
 
 function pricingPageDisplayName(planId: string, dbName: string): string {
-  if (planId === "basic") return "Creator";
-  if (planId === "premium") return "Pro";
+  if (planId === "starter") return "Starter";
+  if (planId === "creator") return "Creator";
+  if (planId === "pro") return "Pro";
   return dbName;
 }
 
@@ -200,7 +201,9 @@ export async function loadPlansData(request: Request) {
 
   const mainGridSource = visiblePlans.filter(
     (p) =>
-      !p.isSpecialOffering && p.planBillingModel !== PlanBillingModel.lifetime
+      !p.isSpecialOffering &&
+      p.planBillingModel !== PlanBillingModel.lifetime &&
+      p.id !== "teams"
   );
 
   const planIdsForPrices = [
@@ -264,7 +267,7 @@ export async function loadPlansData(request: Request) {
       checkoutPricing,
       description: subtitle,
       features,
-      isPopular: plan.id === "basic",
+      isPopular: plan.id === "creator",
       planBillingModel: toBillingModelString(plan.planBillingModel),
       purchasable: plan.purchasable,
       isComingSoon: plan.isComingSoon,
@@ -277,32 +280,8 @@ export async function loadPlansData(request: Request) {
     mapToPricingPagePlan(plan)
   );
 
-  // Always show the Teams card on the pricing page, even if the DB visibility
-  // configuration is out of sync in some environments.
-  const hasTeamsInGrid = mainGridPlans.some((p) => p.id === "teams");
-  if (!hasTeamsInGrid) {
-    mainGridPlans.push({
-      id: "teams",
-      name: "Teams",
-      monthlyPriceUsd: 0,
-      yearlyPriceUsd: 0,
-      yearlySavingsNote: null,
-      checkoutPricing: buildCheckoutPricing("teams", 0, 0, priceIndex),
-      description:
-        PLAN_SUBTITLES["teams"] ??
-        "Collaborative publishing - not open for self-serve yet",
-      features: {},
-      isPopular: false,
-      planBillingModel: "disabled",
-      purchasable: false,
-      isComingSoon: true,
-      isTeamsPlaceholder: true,
-      callouts: GRID_CALLOUTS["teams"] ?? [],
-    });
-  }
-
   // Enforce canonical ordering in the main grid.
-  const gridOrder = ["free", "basic", "premium", "teams"] as const;
+  const gridOrder = ["free", "starter", "creator", "pro"] as const;
   mainGridPlans.sort((a, b) => {
     const ai = gridOrder.indexOf(a.id as (typeof gridOrder)[number]);
     const bi = gridOrder.indexOf(b.id as (typeof gridOrder)[number]);
@@ -312,9 +291,7 @@ export async function loadPlansData(request: Request) {
     return ai - bi;
   });
 
-  const comparisonTablePlans: PricingPagePlan[] = mainGridPlans.filter(
-    (p) => p.id !== "teams"
-  );
+  const comparisonTablePlans: PricingPagePlan[] = [...mainGridPlans];
 
   let founderOffering: FounderOfferingPayload | null = null;
   if (founderPlan?.founderSeatCap != null) {

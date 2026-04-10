@@ -721,8 +721,8 @@ describe("Settings Action Handler", () => {
         planId: "current-plan",
       });
       (getPlanById as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "premium",
-        name: "Premium",
+        id: "pro",
+        name: "Pro",
         price: 20,
         isActive: true,
         enableLifetimeAccess: false,
@@ -735,13 +735,13 @@ describe("Settings Action Handler", () => {
         amountUsd: 60,
         expiresAt: new Date("2026-01-01T00:30:00.000Z"),
         paymentId: "pay_123",
-        planName: "Premium",
-        planId: "premium",
+        planName: "Pro",
+        planId: "pro",
       });
 
       const formData = createFormData({
         _action: "top_up_subscription",
-        targetPlanId: "premium",
+        targetPlanId: "pro",
         paymentLane: "lightning_one_time",
         billingCadence: "monthly",
         accessDurationMonths: "3",
@@ -752,7 +752,7 @@ describe("Settings Action Handler", () => {
 
       expect(res.status).toBe(200);
       expect(getPlanPriceUsd).toHaveBeenCalledWith({
-        planId: "premium",
+        planId: "pro",
         billingCadence: "monthly",
         accessDurationMonths: 3,
         paymentMethod: "lightning_one_time",
@@ -762,7 +762,7 @@ describe("Settings Action Handler", () => {
         success: true,
         invoice: "lnbc1testinvoice",
         paymentId: "pay_123",
-        planId: "premium",
+        planId: "pro",
       });
     });
   });

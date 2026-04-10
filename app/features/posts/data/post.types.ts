@@ -49,6 +49,16 @@ export interface CreatePostData {
   nominalScheduledAtUtc?: Date | null;
   /** Optional: only publish repost if source post meets these engagement thresholds */
   repostConditions?: RepostConditions | null;
+  parentScheduledActionId?: string | null;
+  rootScheduledActionId?: string | null;
+  targetScheduledActionId?: string | null;
+  dependencyMode?: "standalone" | "attached";
+  targetMode?: "direct" | "scheduled_parent";
+  followUpTimingMode?: "offset_from_parent" | "fixed_datetime" | null;
+  followUpOffsetSeconds?: number | null;
+  expectedParentEventId?: string | null;
+  signedChildEventId?: string | null;
+  signingState?: "unsigned" | "signed" | "stale" | "invalidated";
 }
 
 export type PostWithQueueType = Post & { queueType: QueueType | null };

@@ -9,6 +9,7 @@ import {
   RailChipGroup,
 } from "~/features/posts/components/publishing-rail";
 import type { TextPostFormData } from "~/features/posts/composer/hooks/composer-submit-types";
+import type { ComposerContext } from "~/features/posts/composer/services/compose-route-contract";
 import type { QueueType, RepostConditions } from "~/features/posts/types";
 
 import type { DelayAfterMain } from "../../../utils/delay-after-main";
@@ -107,8 +108,10 @@ export interface UnifiedComposerPublishingSummaryRailProps {
   primarySubmitRef: React.RefObject<HTMLButtonElement | null>;
   draftSubmitRef: React.RefObject<HTMLButtonElement | null>;
   onPrimaryActionBlocked: () => void;
+  composerContext: ComposerContext;
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- rail composes mode-specific controls and summaries in one place */
 export function UnifiedComposerPublishingSummaryRail({
   publishMode,
   onPublishModeChange,
@@ -160,15 +163,33 @@ export function UnifiedComposerPublishingSummaryRail({
   primarySubmitRef,
   draftSubmitRef,
   onPrimaryActionBlocked,
+  composerContext,
 }: UnifiedComposerPublishingSummaryRailProps) {
   const queueNextSlotLabel = getQueueNextSlotLabel(
     formScheduledFor ?? schedulingScheduledFor ?? ""
   );
+  const modeSectionTitle =
+    composerContext.mode === "create"
+      ? undefined
+      : composerContext.mode === "edit_scheduled"
+        ? "Scheduled settings"
+        : composerContext.mode === "edit_follow_up"
+          ? "Follow-up timing"
+          : "Draft settings";
+  const editOutcomeSentence =
+    composerContext.mode === "create"
+      ? outcomeSentence
+      : composerContext.mode === "edit_scheduled"
+        ? "Saving updates keeps the same scheduled action."
+        : composerContext.mode === "edit_follow_up"
+          ? "Saving updates keeps this follow-up linked to its parent."
+          : "Saving updates keeps the same draft.";
 
   const modeSpecificSection =
     publishMode === "now"
       ? undefined
       : {
+          title: modeSectionTitle,
           lines:
             publishMode === "queue"
               ? [
@@ -256,7 +277,7 @@ export function UnifiedComposerPublishingSummaryRail({
     <PublishingSummaryRail
       publishMode={publishMode}
       onPublishModeChange={onPublishModeChange}
-      outcomeSentence={outcomeSentence}
+      outcomeSentence={editOutcomeSentence}
       readiness={readinessForRail}
       sessionStrip={{
         composerStatus,
@@ -315,21 +336,31 @@ export function UnifiedComposerPublishingSummaryRail({
       warnings={displayAmberIssues}
       pristineHint={pristineHint}
       idleStatusLabel={idleStatusLabel}
-      primaryActionLabel={getPrimaryCtaLabelForMode(
-        publishMode,
-        isThreadMode ? "thread" : "post"
-      )}
+      primaryActionLabel={
+        composerContext.mode === "create"
+          ? getPrimaryCtaLabelForMode(
+              publishMode,
+              isThreadMode ? "thread" : "post"
+            )
+          : "Save changes"
+      }
       primaryActionLoading={primaryActionLoading}
-      primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
-        publishMode,
-        isThreadMode ? "thread" : "post"
-      )}
+      primaryActionLoadingLabel={
+        composerContext.mode === "create"
+          ? getPrimaryCtaPendingLabelForMode(
+              publishMode,
+              isThreadMode ? "thread" : "post"
+            )
+          : "Saving changes..."
+      }
       onPrimaryAction={() => primarySubmitRef.current?.click()}
       onPrimaryActionBlocked={onPrimaryActionBlocked}
       primaryActionDisabled={
         disabled || signerReady === false || issueListLength > 0
       }
-      secondaryActionLabel="Save draft"
+      secondaryActionLabel={
+        composerContext.mode === "create" ? "Save draft" : "Save as draft copy"
+      }
       onSecondaryAction={() => draftSubmitRef.current?.click()}
       secondaryActionDisabled={disabled}
     />

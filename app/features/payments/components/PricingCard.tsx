@@ -1,5 +1,5 @@
 /**
- * Pricing card component (main grid: Free, Creator, Pro, Teams).
+ * Pricing card component (main grid recurring tiers + Free).
  */
 
 import { Form, Link } from "@remix-run/react";
@@ -41,8 +41,9 @@ function planCtaLabel(
   if (isCurrentPlan && !isCurrentPlanExpired) return "Current plan";
   if (isCurrentPlan && isCurrentPlanExpired) return "Renew";
   if (isFree) return "Start free";
-  if (plan.id === "basic") return "Choose Creator";
-  if (plan.id === "premium") return "Choose Pro";
+  if (plan.id === "starter") return "Choose Starter";
+  if (plan.id === "creator") return "Choose Creator";
+  if (plan.id === "pro") return "Choose Pro";
   return "Choose plan";
 }
 
@@ -172,7 +173,7 @@ export function PricingCard({
           </span>
         </div>
       ) : null}
-      {plan.id === "premium" && !isTeams ? (
+      {plan.id === "pro" && !isTeams ? (
         <div className="absolute -top-3 right-0 left-0 z-10 flex justify-center px-2">
           <span className="bg-muted text-muted-foreground border-border inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-medium whitespace-nowrap">
             Multi-account operator

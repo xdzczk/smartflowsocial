@@ -23,7 +23,7 @@ export function getShortDraftComposeUrl(
   post: DraftPostLike
 ): string {
   const type = getShortDraftComposeType(post);
-  return `/dashboard/compose?type=${encodeURIComponent(type)}&draftId=${encodeURIComponent(postId)}`;
+  return `/dashboard/compose?type=${encodeURIComponent(type)}&mode=edit_draft&id=${encodeURIComponent(postId)}`;
 }
 
 /** Server redirect path; loader resolves poll/thread/post and redirects to compose. */

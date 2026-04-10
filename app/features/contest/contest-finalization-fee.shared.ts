@@ -28,7 +28,7 @@ export function computePlannedPayoutSats(input: {
 
 export function getContestFinalizationFeeRateBps(planType: PlanType): number {
   if (planType === "free") return 1000;
-  if (planType === "basic") return 500;
+  if (planType === "creator") return 500;
   return 0;
 }
 

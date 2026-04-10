@@ -47,6 +47,7 @@ import { useComposerState } from "../hooks/useComposerState";
 import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 import { UnifiedComposerPreviewBlock } from "../preview/UnifiedComposerPreviewBlock";
+import type { ComposerContext } from "../services/compose-route-contract";
 
 import {
   ComposerCanvasDivider,
@@ -175,6 +176,7 @@ export interface UnifiedComposerProps {
   templateLastUpdatedLabel?: string | null;
   /** Template edit: opens delete confirmation (parent owns dialog) */
   onTemplateDeleteClick?: () => void;
+  composerContext?: ComposerContext;
 }
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- composer has many branches by design */
@@ -211,6 +213,7 @@ export function UnifiedComposer({
   onRelayClick,
   templateLastUpdatedLabel = null,
   onTemplateDeleteClick,
+  composerContext = { mode: "create" },
   composerTemplates,
   shortDraftFilter: shortDraftFilterProp,
   suppressBuiltInDraftPicker = false,
@@ -227,6 +230,7 @@ export function UnifiedComposer({
     shortDraftFilterProp ?? (newPostContentTab === "thread" ? "thread" : "all");
   const user = useOptionalUser();
   const isTemplateMode = mode === "template";
+  const isEditingExisting = composerContext.mode !== "create";
   const hidePublishingRail =
     embedContext === "contest" &&
     (embeddedDensity ?? "contest-lite") !== "full";
@@ -240,6 +244,7 @@ export function UnifiedComposer({
       url: a.url,
       status: "done" as const,
       alt: a.alt,
+      source: "existing" as const,
     }));
   }, [initialDraft?.draftMeta?.attachmentMeta]);
 
@@ -651,6 +656,56 @@ export function UnifiedComposer({
       threadAutoNumberSegments,
     ]
   );
+  const [initialFingerprint] = useState(() => composerDraftFingerprint);
+
+  const hasUnsavedChanges =
+    initialFingerprint !== composerDraftFingerprint && fetcher.state === "idle";
+
+  React.useEffect(() => {
+    const shouldWarn = hasUnsavedChanges && composerContext.mode !== "create";
+    if (!shouldWarn) return;
+    const guardMessage = "You have unsaved changes. Leave without saving?";
+    const guardedUrl = window.location.href;
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const clickHandler = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const target = event.target as Element | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== "_self") return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      const nextUrl = new URL(anchor.href, window.location.href);
+      const currentUrl = new URL(window.location.href);
+      if (nextUrl.origin !== currentUrl.origin) return;
+      const noChange =
+        nextUrl.pathname === currentUrl.pathname &&
+        nextUrl.search === currentUrl.search &&
+        nextUrl.hash === currentUrl.hash;
+      if (noChange) return;
+      if (!window.confirm(guardMessage)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const popStateHandler = () => {
+      if (window.confirm(guardMessage)) return;
+      window.history.pushState(window.history.state, "", guardedUrl);
+    };
+    window.addEventListener("beforeunload", handler);
+    document.addEventListener("click", clickHandler, true);
+    window.addEventListener("popstate", popStateHandler);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+      document.removeEventListener("click", clickHandler, true);
+      window.removeEventListener("popstate", popStateHandler);
+    };
+  }, [hasUnsavedChanges, composerContext.mode]);
 
   React.useEffect(() => {
     setServerDraftSavedBaseline((prev) => {
@@ -777,6 +832,7 @@ export function UnifiedComposer({
     editTemplateContext,
     clearLocalSnapshot,
     attachments,
+    initialAttachmentMeta: initialDraft?.draftMeta?.attachmentMeta ?? [],
     selectedHashtags,
     selectedQueue,
     queueTypeId,
@@ -804,6 +860,7 @@ export function UnifiedComposer({
     publishMode: contestSubmitMode,
     calculateQueueScheduleTime,
     onBeginSaveDraft,
+    composerContext,
   });
 
   useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
@@ -1105,9 +1162,15 @@ export function UnifiedComposer({
 
   const primarySubmitAction = isTemplateMode
     ? "save-as-template"
-    : getTextSubmitActionForMode(
-        embedContext === "contest" ? contestSubmitMode : publishMode
-      );
+    : composerContext.mode === "edit_draft"
+      ? "update-draft"
+      : composerContext.mode === "edit_scheduled"
+        ? "update-scheduled"
+        : composerContext.mode === "edit_follow_up"
+          ? "update-follow-up"
+          : getTextSubmitActionForMode(
+              embedContext === "contest" ? contestSubmitMode : publishMode
+            );
 
   React.useLayoutEffect(() => {
     if (!embedContext || !onEmbedActionsReady) return;
@@ -1154,6 +1217,39 @@ export function UnifiedComposer({
         />
         {embedContext ? (
           <input type="hidden" name="_embedContext" value={embedContext} />
+        ) : null}
+        {isEditingExisting ? (
+          <input
+            type="hidden"
+            name="composerMode"
+            value={composerContext.mode}
+          />
+        ) : null}
+        {composerContext.mode === "edit_draft" ? (
+          <input type="hidden" name="draftId" value={composerContext.draftId} />
+        ) : null}
+        {composerContext.mode === "edit_scheduled" ? (
+          <input
+            type="hidden"
+            name="scheduledActionId"
+            value={composerContext.scheduledActionId}
+          />
+        ) : null}
+        {composerContext.mode === "edit_follow_up" ? (
+          <>
+            <input
+              type="hidden"
+              name="followUpActionId"
+              value={composerContext.followUpActionId}
+            />
+            {composerContext.parentActionId ? (
+              <input
+                type="hidden"
+                name="parentActionId"
+                value={composerContext.parentActionId}
+              />
+            ) : null}
+          </>
         ) : null}
         <input
           ref={fileInputRef}
@@ -1425,6 +1521,7 @@ export function UnifiedComposer({
           primarySubmitRef={primarySubmitRef}
           draftSubmitRef={draftSubmitRef}
           onPrimaryActionBlocked={() => setPublishAttempted(true)}
+          composerContext={composerContext}
         />
       ) : null}
       {!suppressBuiltInDraftPicker ? (

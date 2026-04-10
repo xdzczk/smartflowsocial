@@ -346,8 +346,9 @@ export function PlansPage(): ReactNode {
 
           <div className="mb-5 text-center">
             <p className="text-muted-foreground text-sm">
-              Yearly billing is available for <strong>Creator</strong> and{" "}
-              <strong>Pro</strong> (Founder is one-time only).
+              Yearly billing is available for <strong>Starter</strong>,{" "}
+              <strong>Creator</strong>, and <strong>Pro</strong> at the
+              equivalent of 10 months.
             </p>
           </div>
 
@@ -507,8 +508,7 @@ export function PlansPage(): ReactNode {
                   <p className="text-muted-foreground text-xs leading-relaxed">
                     Tied to one account owner. Product updates track the top
                     individual tier, including matching infrastructure access;
-                    this is not Teams or a shared workspace - collaborative
-                    Teams features are not included unless offered separately.
+                    this is not a shared workspace seat model.
                   </p>
                 </div>
                 <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72 lg:pt-1">
@@ -561,11 +561,10 @@ export function PlansPage(): ReactNode {
               Compare plans
             </h2>
             <p className="text-muted-foreground mx-auto mb-6 max-w-3xl text-center text-sm leading-relaxed">
-              Compare strict-cap Free, one-account Creator, and multi-account
-              Pro, including workflow limits vs infrastructure access (e.g.
-              Blossom-compatible hosted media, Blastr fanout). Founder is
-              one-time, permanent top individual tier. Numbers reflect current
-              limits.
+              Compare strict-cap Free, Starter, Creator, and Pro, including
+              workflow limits vs infrastructure access (e.g. Blossom-compatible
+              hosted media and Blastr fanout). Founder is one-time, permanent
+              top individual tier.
             </p>
             <FeatureComparisonTable plans={comparisonTablePlans} />
           </div>
@@ -605,10 +604,8 @@ export function PlansPage(): ReactNode {
                   How many accounts can I use on each plan?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Free and Creator include one account on your subscription. Pro
-                  includes up to three. Teams is separate: a future
-                  collaborative workspace product, not the same as linking
-                  multiple identities under Pro.
+                  Free and Starter include one account on your subscription.
+                  Creator includes up to two, and Pro includes up to five.
                 </dd>
               </div>
               <div>
@@ -620,8 +617,7 @@ export function PlansPage(): ReactNode {
                   payment - no subscription, including the same class of
                   infrastructure benefits as the top individual recurring tier
                   (hosted media and fanout distribution), subject to product
-                  changes. Perks are listed in the Founder section above. This
-                  is not Teams and does not grant shared workspace seats.
+                  changes. Perks are listed in the Founder section above.
                 </dd>
               </div>
               <div>
@@ -650,18 +646,8 @@ export function PlansPage(): ReactNode {
                   Can I change plans later?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Move between Free, Creator, and Pro anytime. Founder stays a
-                  separate one-time purchase while seats remain.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-foreground text-base font-semibold">
-                  Why is Teams not for sale?
-                </dt>
-                <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Shared workflows and roles need to ship complete. We are not
-                  selling a placeholder - enrollment opens when the product is
-                  ready.
+                  Move between Free, Starter, Creator, and Pro anytime. Founder
+                  stays a separate one-time purchase while seats remain.
                 </dd>
               </div>
               <div>
@@ -669,8 +655,8 @@ export function PlansPage(): ReactNode {
                   Can I pay yearly?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Creator and Pro support yearly billing. Founder is one-time
-                  only.
+                  Starter, Creator, and Pro support yearly billing at 10 months
+                  worth of monthly pricing. Founder is one-time only.
                 </dd>
               </div>
               <div>
@@ -678,11 +664,11 @@ export function PlansPage(): ReactNode {
                   What is hosted media?
                 </dt>
                 <dd className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
-                  Creator and Pro include uploads on Blossom-compatible{" "}
-                  {BRAND_NAME} infrastructure - not just an app attachment
-                  bucket. Media is Nostr-native and aligned with broader Nostr
-                  media workflows (portability and mirroring where supported).
-                  Storage and file-size limits vary by plan.
+                  Starter, Creator, and Pro include uploads on
+                  Blossom-compatible {BRAND_NAME} infrastructure - not just an
+                  app attachment bucket. Media is Nostr-native and aligned with
+                  broader Nostr media workflows (portability and mirroring where
+                  supported). Storage and file-size limits vary by plan.
                 </dd>
               </div>
               <div>

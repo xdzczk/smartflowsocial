@@ -6,8 +6,9 @@
  * (“Expanded” / “Operator-grade”) instead of vague “higher” wording.
  */
 export function higherTierLabelFromLegacyPlanId(planId: string): string | null {
-  if (planId === "basic") return "Expanded";
-  if (planId === "premium") return "Operator-grade";
+  if (planId === "starter") return "Expanded";
+  if (planId === "creator") return "Creator-grade";
+  if (planId === "pro" || planId === "founder") return "Operator-grade";
   return null;
 }
 

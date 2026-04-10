@@ -4,9 +4,10 @@ import {
   ensureUserHasFreePlan,
   getUserSubscription,
 } from "~/features/payments/data";
-import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { deriveBillingContext } from "~/features/payments/services/subscription-status.server";
 import { getUserById } from "~/features/user";
+import { logWarning } from "~/lib/error-logger.server";
 
 export { ensureUserHasFreePlan } from "~/features/payments/data";
 
@@ -144,9 +145,17 @@ export async function isSubscriptionActiveForGating(
   if (!subscription || subscription.status !== "ACTIVE") {
     return false;
   }
-  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+  const commercialPlanType = parseCommercialPlanType(
     subscription.planId ?? subscription.Plan?.id ?? subscription.Plan?.name
   );
+  if (!commercialPlanType) {
+    logWarning("Invalid subscription plan id for gating", {
+      userId,
+      planId: subscription.planId ?? null,
+      planName: subscription.Plan?.name ?? null,
+    });
+    return false;
+  }
   if (commercialPlanType === "free") {
     return false;
   }

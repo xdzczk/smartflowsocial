@@ -134,16 +134,16 @@ describe("Subscription/Billing Loader Integration", () => {
         nwcLastUsed: null,
         subscription: {
           id: "sub-123",
-          planId: "premium",
+          planId: "pro",
           status: "ACTIVE",
           Plan: {
-            id: "premium",
-            name: "Premium Plan",
+            id: "pro",
+            name: "Pro Plan",
           },
         },
         availablePlans: [
-          { id: "basic", name: "Basic", price: 1000 },
-          { id: "premium", name: "Premium", price: 2000 },
+          { id: "creator", name: "Creator", price: 1000 },
+          { id: "pro", name: "Pro", price: 2000 },
         ],
         paymentHistory: [{ id: "pay-1", amount: 2000, createdAt: new Date() }],
         isChild: false,
@@ -172,7 +172,7 @@ describe("Subscription/Billing Loader Integration", () => {
           : {};
 
       expect(data["subscription"]).toHaveProperty("status", "ACTIVE");
-      expect(data["subscription"]).toHaveProperty("planId", "premium");
+      expect(data["subscription"]).toHaveProperty("planId", "pro");
       expect(data["availablePlans"]).toHaveLength(2);
       const paymentHistory = data["paymentHistory"] as unknown[];
       expect(paymentHistory).toHaveLength(1);
@@ -194,8 +194,8 @@ describe("Subscription/Billing Loader Integration", () => {
         nwcLastUsed: null,
         subscription: null,
         availablePlans: [
-          { id: "basic", name: "Basic", price: 1000 },
-          { id: "premium", name: "Premium", price: 2000 },
+          { id: "creator", name: "Creator", price: 1000 },
+          { id: "pro", name: "Pro", price: 2000 },
         ],
         paymentHistory: [],
         isChild: false,
@@ -245,16 +245,16 @@ describe("Subscription/Billing Loader Integration", () => {
         nwcLastUsed: null,
         subscription: {
           id: "sub-123",
-          planId: "premium",
+          planId: "pro",
           status: "EXPIRED",
           Plan: {
-            id: "premium",
-            name: "Premium Plan",
+            id: "pro",
+            name: "Pro Plan",
           },
         },
         availablePlans: [
-          { id: "basic", name: "Basic", price: 1000 },
-          { id: "premium", name: "Premium", price: 2000 },
+          { id: "creator", name: "Creator", price: 1000 },
+          { id: "pro", name: "Pro", price: 2000 },
         ],
         paymentHistory: [],
         isChild: false,
@@ -301,11 +301,11 @@ describe("Subscription/Billing Loader Integration", () => {
         nwcLastUsed: null,
         subscription: {
           id: "sub-123",
-          planId: "premium",
+          planId: "pro",
           status: "ACTIVE",
           Plan: {
-            id: "premium",
-            name: "Premium Plan",
+            id: "pro",
+            name: "Pro Plan",
           },
         },
         availablePlans: [],

@@ -133,9 +133,9 @@ async function createNostrUserAndLogin(npub: string) {
     // Use the fetched user for the rest of the transaction
     currentUser = userWithSub;
 
-    // Find or create the premium plan for full feature access during testing
+    // Find or create the pro plan for full feature access during testing
     let plan = await tx.plan.findFirst({
-      where: { id: "premium" },
+      where: { id: "pro" },
     });
 
     // Fall back to any active plan
@@ -143,11 +143,11 @@ async function createNostrUserAndLogin(npub: string) {
       where: { isActive: true },
     });
 
-    // If no plan exists, create a premium plan for testing
+    // If no plan exists, create a pro plan for testing
     // This plan should have all features enabled for e2e tests
     plan ??= await tx.plan.create({
       data: {
-        id: "premium",
+        id: "pro",
         name: "Pro",
         price: 69,
         isActive: true,
@@ -220,7 +220,7 @@ async function createNostrUserAndLogin(npub: string) {
       existingSubscription &&
       existingSubscription.planId !== plan.id
     ) {
-      // Update subscription to use the premium plan
+      // Update subscription to use the pro plan
       await tx.subscription.update({
         where: { id: existingSubscription.id },
         data: { planId: plan.id },

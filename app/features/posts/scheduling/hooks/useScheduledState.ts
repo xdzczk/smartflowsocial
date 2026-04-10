@@ -1,7 +1,8 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 
+import { buildComposeEditUrl } from "~/features/posts/composer";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
@@ -34,6 +35,7 @@ export function useScheduledState({
   allContent,
   currentTab,
 }: UseScheduledStateProps) {
+  const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState({
     key: "scheduledAtUtc",
     direction: "asc" as "asc" | "desc",
@@ -323,6 +325,29 @@ export function useScheduledState({
   };
 
   const handleEditPost = (post: EditablePost) => {
+    if ("title" in post) {
+      setPostToEdit(post);
+      setShowEditModal(true);
+      return;
+    }
+    const editUrl =
+      post.dependencyMode === "attached"
+        ? buildComposeEditUrl({
+            mode: "edit_follow_up",
+            followUpActionId: post.id,
+            ...(post.parentScheduledActionId
+              ? { parentActionId: post.parentScheduledActionId }
+              : {}),
+          })
+        : buildComposeEditUrl({
+            mode: "edit_scheduled",
+            scheduledActionId: post.id,
+          });
+    navigate(editUrl);
+    return;
+  };
+
+  const handleEditLongForm = (post: EditablePost) => {
     setPostToEdit(post);
     setShowEditModal(true);
   };
@@ -373,7 +398,8 @@ export function useScheduledState({
     handleBulkDelete,
     handleMediaClick,
     handleCloseMediaModal,
-    handleEditPost,
+    handleEditPost: handleEditPost,
+    handleEditLongForm,
     handleReschedulePost,
     handleCloseEditModal,
     handleCloseRescheduleModal,

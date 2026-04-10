@@ -23,3 +23,9 @@ export {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
 } from "./services/queue-schedule.server";
+export {
+  cascadeAttachedReschedule,
+  cascadeCancelAttachedFollowups,
+  cascadeDeleteAttachedFollowups,
+  resyncAttachedChildrenAfterParentMutation,
+} from "./services/attached-followups.server";

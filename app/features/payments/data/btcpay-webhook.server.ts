@@ -7,6 +7,7 @@ import {
   btcpayGetInvoiceSnapshot,
 } from "~/features/payments/btcpay.server";
 import { handlePaymentCompleted } from "~/features/payments/data/payment.handlers.server";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -39,6 +40,20 @@ function parseWebhookType(payload: unknown): string | null {
 function planIdFromPaymentId(paymentId: string): string | null {
   const parts = paymentId.split("_");
   return parts.length >= 1 && parts[0] ? parts[0] : null;
+}
+
+function normalizeHistoricalPlanId(planId: string): string {
+  const raw = planId.trim().toLowerCase();
+  switch (raw) {
+    case "basic":
+      return "creator";
+    case "premium":
+      return "pro";
+    case "enterprise":
+      return "teams";
+    default:
+      return raw;
+  }
 }
 
 /**
@@ -79,13 +94,28 @@ export async function settleSubscriptionFromBtcpayInvoiceId(
     return;
   }
 
-  const planId = planIdFromPaymentId(payment.id);
-  if (!planId) {
+  const rawPlanId = planIdFromPaymentId(payment.id);
+  if (!rawPlanId) {
     logError(
       new Error("BTCPay settle: could not parse planId from payment id"),
       {
         paymentId: payment.id,
         btcpayInvoiceId,
+      }
+    );
+    return;
+  }
+
+  const normalizedPlanId = normalizeHistoricalPlanId(rawPlanId);
+  const planId = parseCommercialPlanType(normalizedPlanId);
+  if (!planId) {
+    logError(
+      new Error("BTCPay settle: invalid planId parsed from payment id"),
+      {
+        paymentId: payment.id,
+        btcpayInvoiceId,
+        rawPlanId,
+        normalizedPlanId,
       }
     );
     return;

@@ -11,6 +11,8 @@ import {
 } from "~/features/auth/profile.server";
 import type { ProfileData } from "~/features/nostr/types";
 import { getUserSubscription } from "~/features/payments/data";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import {
   createUser,
   getConfirmedChildrenForParent,
@@ -82,7 +84,7 @@ function isDisplayProfileEmpty(nostrProfile: unknown): boolean {
 
 /**
  * Load children information for a parent account
- * Only returns children if user has Pro or Founder plan
+ * Only returns children when the subscription supports linked accounts.
  */
 export async function loadChildrenData(userId: string) {
   // Fetch minimal user info
@@ -97,12 +99,20 @@ export async function loadChildrenData(userId: string) {
     return json({ children: [] });
   }
 
-  // Check subscription plan is Pro or Founder
+  // Check subscription plan supports linked accounts.
   const sub = await getUserSubscription(userId);
   const planId = (sub?.planId ?? "").toLowerCase();
   const planName = (sub?.Plan?.name ?? "").toLowerCase();
+  const commercialPlanType = parseCommercialPlanType(planId || planName);
+  if (!commercialPlanType && (planId || planName)) {
+    logError(new Error("Invalid subscription plan for children access"), {
+      userId,
+      planId: planId || null,
+      planName: planName || null,
+    });
+  }
   const hasAccountsAccess =
-    planId === "premium" || planName === "premium" || planName === "founder";
+    getCanonicalPlanPolicy(commercialPlanType ?? "free").accountsIncluded > 1;
 
   if (!hasAccountsAccess) {
     return json({ children: [] });

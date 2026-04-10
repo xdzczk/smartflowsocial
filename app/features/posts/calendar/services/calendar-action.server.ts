@@ -5,7 +5,11 @@
 
 import { json } from "@remix-run/node";
 
-import { SchedulePostUseCase } from "~/features/posts/scheduling/index.server";
+import {
+  SchedulePostUseCase,
+  cascadeAttachedReschedule,
+  resyncAttachedChildrenAfterParentMutation,
+} from "~/features/posts/scheduling/index.server";
 import {
   getLongFormPost,
   updateLongFormPost,
@@ -88,6 +92,12 @@ export async function handleCalendarReschedule(
         nostrEvent: parsedNostrEvent,
       }),
   });
+  await cascadeAttachedReschedule({
+    rootPostId: postId,
+    userId,
+    parentScheduledAtUtc:
+      updatedPost.scheduledAtUtc ?? new Date(parseInt(newTime, 10) * 1000),
+  });
 
   // If we have a newly signed event, schedule via use-case (outbox intent path).
   if (parsedSignedEvent && parsedNostrEvent) {
@@ -104,9 +114,20 @@ export async function handleCalendarReschedule(
       scheduledAtUtc: fromUnixTimestamp(parseInt(newTime, 10), "UTC"),
       signedEvent: parsedSignedEvent,
     });
+    await resyncAttachedChildrenAfterParentMutation({
+      parentPostId: postId,
+      userId,
+      parentPredictedEventId: parsedSignedEvent.id,
+    });
 
     return json({ success: true, post: updatedPost, signed: true });
   }
+
+  await resyncAttachedChildrenAfterParentMutation({
+    parentPostId: postId,
+    userId,
+    parentPredictedEventId: null,
+  });
 
   // Return success but indicate signing is needed
   return json({ success: true, post: updatedPost, needsSigning: true });

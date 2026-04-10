@@ -134,6 +134,16 @@ export function createPost(data: CreatePostData): Promise<Post> {
     threadGroupId,
     replyToEventId,
     replyToPostId,
+    parentScheduledActionId,
+    rootScheduledActionId,
+    targetScheduledActionId,
+    dependencyMode,
+    targetMode,
+    followUpTimingMode,
+    followUpOffsetSeconds,
+    expectedParentEventId,
+    signedChildEventId,
+    signingState,
   } = data;
 
   const scheduledAtUtc = toScheduledAtUtcDate(scheduledAtUtcInput);
@@ -197,6 +207,20 @@ export function createPost(data: CreatePostData): Promise<Post> {
           connect: { id: quoteOfLongFormPostId },
         },
       }),
+      ...(parentScheduledActionId && {
+        parentScheduledAction: {
+          connect: { id: parentScheduledActionId },
+        },
+      }),
+      rootScheduledActionId,
+      targetScheduledActionId,
+      dependencyMode,
+      targetMode,
+      followUpTimingMode,
+      followUpOffsetSeconds,
+      expectedParentEventId,
+      signedChildEventId,
+      signingState,
     },
   });
 }
@@ -283,6 +307,20 @@ export async function createPostWithOutbox(
             connect: { id: data.quoteOfLongFormPostId },
           },
         }),
+        ...(data.parentScheduledActionId && {
+          parentScheduledAction: {
+            connect: { id: data.parentScheduledActionId },
+          },
+        }),
+        rootScheduledActionId: data.rootScheduledActionId,
+        targetScheduledActionId: data.targetScheduledActionId,
+        dependencyMode: data.dependencyMode,
+        targetMode: data.targetMode,
+        followUpTimingMode: data.followUpTimingMode,
+        followUpOffsetSeconds: data.followUpOffsetSeconds,
+        expectedParentEventId: data.expectedParentEventId,
+        signedChildEventId: data.signedChildEventId,
+        signingState: data.signingState,
         ...(data.repostConditions != null &&
           Object.keys(data.repostConditions).length > 0 && {
             repostConditions:
@@ -705,6 +743,16 @@ export async function cloneDraftPost(
       quoteOfLongFormPostId: src.quoteOfLongFormPostId,
       replyToEventId: src.replyToEventId,
       replyToPostId: src.replyToPostId,
+      parentScheduledActionId: null,
+      rootScheduledActionId: null,
+      targetScheduledActionId: null,
+      dependencyMode: "standalone",
+      targetMode: "direct",
+      followUpTimingMode: null,
+      followUpOffsetSeconds: null,
+      expectedParentEventId: null,
+      signedChildEventId: null,
+      signingState: "unsigned",
     },
   });
 

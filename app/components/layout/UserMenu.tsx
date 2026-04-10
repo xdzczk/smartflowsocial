@@ -17,6 +17,8 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { clearActiveSignerConfig } from "~/features/auth/signer";
 import type { ProfileData } from "~/features/nostr/types";
+import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -182,9 +184,11 @@ export default function UserMenu() {
     .toLowerCase();
   const isChild = !!user?.["isChild"];
   const parentNpub = user?.["parentNpub"] as string | undefined;
+  const commercialPlanType = mapLegacyPlanIdToCommercialPlanType(
+    planId || planName
+  );
   const hasAccountsAccess =
-    !isChild &&
-    (planId === "premium" || planName === "premium" || planName === "founder");
+    !isChild && getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
   React.useEffect(() => {
     if (

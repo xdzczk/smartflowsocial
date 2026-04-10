@@ -109,6 +109,16 @@ export function longFormPostDataToCalendarPost(
     repostOfPostId: null,
     quoteOfPostId: null,
     repostConditions: null,
+    parentScheduledActionId: null,
+    rootScheduledActionId: null,
+    targetScheduledActionId: null,
+    dependencyMode: "standalone",
+    targetMode: "direct",
+    followUpTimingMode: null,
+    followUpOffsetSeconds: null,
+    expectedParentEventId: null,
+    signedChildEventId: null,
+    signingState: "unsigned",
     quoteOfLongFormPostId:
       (post as { quoteOfLongFormPostId?: string | null })
         .quoteOfLongFormPostId ?? null,

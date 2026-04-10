@@ -280,7 +280,7 @@ describe("User Settings", () => {
       (
         prisma.subscription.findUnique as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
-        planId: "premium",
+        planId: "pro",
         status: "ACTIVE",
         currentPeriodEnd: new Date(Date.now() + 60_000),
         Plan: { enableLifetimeAccess: false },

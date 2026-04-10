@@ -391,6 +391,9 @@ function ModeAndThreadZones({
     <div className={RAIL_MODE_THREAD_GAP}>
       {hasMode ? (
         <div className={RAIL_STACK_ROWS}>
+          {modeSpecificSection?.title ? (
+            <RailSectionHeader>{modeSpecificSection.title}</RailSectionHeader>
+          ) : null}
           {modeLines.length > 0 ? (
             <div className={RAIL_STACK_TIGHT}>
               {compactLines(modeLines, SECTION_LINE_LIMIT).map((line) => (

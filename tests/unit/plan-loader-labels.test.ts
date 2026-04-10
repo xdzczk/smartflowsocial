@@ -22,8 +22,9 @@ describe("yearlySavingsLabel", () => {
 
 describe("higherTierLabelFromLegacyPlanId", () => {
   it("uses public tier language for paid plans", () => {
-    expect(higherTierLabelFromLegacyPlanId("basic")).toBe("Expanded");
-    expect(higherTierLabelFromLegacyPlanId("premium")).toBe("Operator-grade");
+    expect(higherTierLabelFromLegacyPlanId("starter")).toBe("Expanded");
+    expect(higherTierLabelFromLegacyPlanId("creator")).toBe("Creator-grade");
+    expect(higherTierLabelFromLegacyPlanId("pro")).toBe("Operator-grade");
     expect(higherTierLabelFromLegacyPlanId("free")).toBeNull();
   });
 });

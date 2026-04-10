@@ -4,6 +4,15 @@
 
 import { z } from "zod";
 
+const canonicalPlanIdSchema = z.enum([
+  "free",
+  "starter",
+  "creator",
+  "pro",
+  "teams",
+  "founder",
+]);
+
 /**
  * Check payment status schema
  */
@@ -18,7 +27,7 @@ export const checkPaymentStatusSchema = z.object({
 export const selectPlanSchema = z
   .object({
     intent: z.literal("select_plan"),
-    planId: z.string().min(1, "Plan ID is required"),
+    planId: canonicalPlanIdSchema,
     paymentMode: z
       .enum(["manual", "auto_renew", "btc_onchain"])
       .optional()

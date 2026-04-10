@@ -239,6 +239,14 @@ export function ContentListCard({
           />
           {type === "draft" ? null : <ContentStatusChip item={item} />}
         </div>
+        {type === "scheduled" && item.dependencyMode === "attached" ? (
+          <p className="text-muted-foreground mt-1 text-xs">
+            Follow-up
+            {item.followUpTimingMode === "offset_from_parent"
+              ? " · Offset from parent"
+              : " · Fixed date/time"}
+          </p>
+        ) : null}
       </div>
       <DropdownMenu
         onOpenChange={(open) => {

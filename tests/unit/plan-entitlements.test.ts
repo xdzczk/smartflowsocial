@@ -14,11 +14,17 @@ describe("getPlanEntitlements", () => {
     expect(e.canExecuteBulkActions).toBe(false);
   });
 
-  it("removes caps for basic", () => {
-    const e = getPlanEntitlements("basic");
+  it("removes caps for creator", () => {
+    const e = getPlanEntitlements("creator");
     expect(e.maxFutureScheduledItems).toBeNull();
     expect(e.maxQueues).toBeNull();
     expect(e.canSendBroadcast).toBe(true);
+    expect(e.canExecuteBulkActions).toBe(true);
+  });
+
+  it("applies Starter queue and bulk defaults", () => {
+    const e = getPlanEntitlements("starter");
+    expect(e.maxQueues).toBe(2);
     expect(e.canExecuteBulkActions).toBe(true);
   });
 });
@@ -26,9 +32,10 @@ describe("getPlanEntitlements", () => {
 describe("getCanonicalPlanPolicy accountsIncluded", () => {
   it("matches public pricing boundaries", () => {
     expect(getCanonicalPlanPolicy("free").accountsIncluded).toBe(1);
-    expect(getCanonicalPlanPolicy("creator").accountsIncluded).toBe(1);
-    expect(getCanonicalPlanPolicy("pro").accountsIncluded).toBe(3);
-    expect(getCanonicalPlanPolicy("founder").accountsIncluded).toBe(3);
+    expect(getCanonicalPlanPolicy("starter").accountsIncluded).toBe(1);
+    expect(getCanonicalPlanPolicy("creator").accountsIncluded).toBe(2);
+    expect(getCanonicalPlanPolicy("pro").accountsIncluded).toBe(5);
+    expect(getCanonicalPlanPolicy("founder").accountsIncluded).toBe(5);
     expect(getCanonicalPlanPolicy("teams").accountsIncluded).toBe(1);
   });
 });

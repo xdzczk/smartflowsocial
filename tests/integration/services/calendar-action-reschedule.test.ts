@@ -11,11 +11,21 @@ const { mockSchedulePostExecute } = vi.hoisted(() => {
   const mockSchedulePostExecute = vi.fn();
   return { mockSchedulePostExecute };
 });
+const {
+  mockCascadeAttachedReschedule,
+  mockResyncAttachedChildrenAfterParentMutation,
+} = vi.hoisted(() => ({
+  mockCascadeAttachedReschedule: vi.fn(),
+  mockResyncAttachedChildrenAfterParentMutation: vi.fn(),
+}));
 
 vi.mock("~/features/posts/scheduling/index.server", () => ({
   SchedulePostUseCase: class {
     execute = mockSchedulePostExecute;
   },
+  cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+  resyncAttachedChildrenAfterParentMutation:
+    mockResyncAttachedChildrenAfterParentMutation,
 }));
 
 // Single mock so all used exports are available
@@ -43,6 +53,8 @@ describe("Calendar Action Reschedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSchedulePostExecute.mockResolvedValue(undefined);
+    mockCascadeAttachedReschedule.mockResolvedValue([]);
+    mockResyncAttachedChildrenAfterParentMutation.mockResolvedValue([]);
   });
 
   describe("handleCalendarReschedule", () => {

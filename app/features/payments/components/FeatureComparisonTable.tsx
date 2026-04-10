@@ -1,5 +1,5 @@
 /**
- * Feature comparison: Free, Creator, Pro (no Teams/Founder columns).
+ * Feature comparison: public recurring tiers from pricing grid.
  */
 
 import { Check, HelpCircle, X } from "lucide-react";
@@ -39,10 +39,11 @@ interface ComparisonRow {
 }
 
 function campaignCommissionPercent(planId: string): string | null {
-  if (planId === "free") return "10%";
-  if (planId === "basic") return "5%";
-  if (planId === "premium") return "0%";
-  return null;
+  const planType = mapLegacyPlanIdToCommercialPlanType(planId);
+  const pct =
+    getCanonicalPlanPolicy(planType).campaigns.campaignCommissionPercent;
+  if (pct == null) return null;
+  return Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(1)}%`;
 }
 
 const COMPARISON_ROWS: ComparisonRow[] = [
