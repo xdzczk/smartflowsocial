@@ -1136,7 +1136,17 @@ export function UnifiedComposer({
     conditionRuleCount: countRepostConditionRules(repostConditions),
   });
 
-  const primaryActionLoading = fetcher.state !== "idle" || isSigning;
+  const fetcherSubmitActionRaw =
+    fetcher.state !== "idle" ? fetcher.formData?.get("_action") : null;
+  const fetcherSubmitAction =
+    typeof fetcherSubmitActionRaw === "string" ? fetcherSubmitActionRaw : "";
+  const draftSaveInFlight =
+    fetcher.state !== "idle" &&
+    (fetcherSubmitAction === "save-draft" ||
+      fetcherSubmitAction === "update-draft" ||
+      fetcherSubmitAction === "draft-text");
+  const primaryActionLoading =
+    isSigning || (fetcher.state !== "idle" && !draftSaveInFlight);
 
   useUnifiedComposerKeyboardShortcuts(
     disabled,
