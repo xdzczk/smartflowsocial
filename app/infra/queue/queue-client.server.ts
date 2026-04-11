@@ -21,9 +21,21 @@ import type {
 import { getBullMQRetryConfig } from "./retry-policy.server";
 
 // Redis connection with BullMQ required config
+const isTestEnv = env.NODE_ENV === "test";
 const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: null,
+  lazyConnect: true,
+  enableOfflineQueue: !isTestEnv,
+  connectTimeout: isTestEnv ? 200 : 10_000,
+  retryStrategy: isTestEnv ? () => null : undefined,
 });
+
+if (isTestEnv) {
+  // Prevent noisy unhandled connection errors when Redis is intentionally absent in tests.
+  if ("on" in redis && typeof redis.on === "function") {
+    redis.on("error", () => {});
+  }
+}
 
 // Queue instances - lazy loaded
 const queues = new Map<QueueType, Queue>();

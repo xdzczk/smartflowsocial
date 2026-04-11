@@ -45,7 +45,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
-    "lint:ci": "eslint . --format json --output-file eslint-report.json || exit 1",
+    "lint:ci": "cross-env NODE_OPTIONS=--max-old-space-size=4096 eslint . --format json --output-file eslint-report.json || exit 1",
     "start": "cross-env NODE_ENV=production node ./build/server.js & cross-env NODE_ENV=production node ./build/worker.js & wait",
     "start:server": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
