@@ -35,10 +35,21 @@ for (const envPath of envPaths) {
   }
 }
 
+// In CI we often inject env vars via workflow/job env and do not commit a .env file.
+if (!process.env["DATABASE_URL"] && process.env["TEST_DATABASE_URL"]) {
+  process.env["DATABASE_URL"] = process.env["TEST_DATABASE_URL"];
+}
+
 if (!envFileLoaded) {
-  console.error("Error: Could not find .env file in any of these locations:");
-  envPaths.forEach((p) => console.error(`  - ${p}`));
-  process.exit(1);
+  // Do not fail just because .env is missing when required vars are already present.
+  const hasInjectedDatabaseUrl =
+    typeof process.env["DATABASE_URL"] === "string" &&
+    process.env["DATABASE_URL"].trim() !== "";
+  if (!hasInjectedDatabaseUrl) {
+    console.error("Error: Could not find .env file in any of these locations:");
+    envPaths.forEach((p) => console.error(`  - ${p}`));
+    process.exit(1);
+  }
 }
 
 // Verify critical env vars are loaded
