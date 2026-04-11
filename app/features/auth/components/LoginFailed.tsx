@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -40,6 +40,7 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
     },
     ref
   ) {
+    const [copiedForSupport, setCopiedForSupport] = useState(false);
     const suggestions = getErrorSuggestions(error.code, {
       relayStatuses,
       retryCount:
@@ -51,6 +52,12 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
 
     const classification = classifyErrorForRetry(error);
     const cappedTips = suggestions.slice(0, 5);
+
+    useEffect(() => {
+      if (!copiedForSupport) return;
+      const timer = window.setTimeout(() => setCopiedForSupport(false), 2000);
+      return () => window.clearTimeout(timer);
+    }, [copiedForSupport]);
 
     return (
       <Alert
@@ -130,11 +137,21 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
                       document.execCommand("copy");
                       document.body.removeChild(textarea);
                     }
+                    setCopiedForSupport(true);
                   })();
                 }}
               >
-                Copy for support
+                {copiedForSupport ? "Copied for support" : "Copy for support"}
               </Button>
+              <p
+                className="text-muted-foreground text-[11px]"
+                role="status"
+                aria-live="polite"
+              >
+                {copiedForSupport
+                  ? "Error details copied to clipboard."
+                  : "\u00A0"}
+              </p>
             </div>
           </details>
 

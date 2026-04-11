@@ -8,7 +8,7 @@ import {
   useRevalidator,
   useSearchParams,
 } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
@@ -216,6 +216,9 @@ export default function BroadcastDetailRoute() {
     take,
   } = data;
   const [searchParams, setSearchParams] = useSearchParams();
+  const [copiedRecipientId, setCopiedRecipientId] = useState<string | null>(
+    null
+  );
   const revalidator = useRevalidator();
 
   useEffect(() => {
@@ -231,6 +234,12 @@ export default function BroadcastDetailRoute() {
     }
     return;
   }, [campaign.status, revalidator]);
+
+  useEffect(() => {
+    if (!copiedRecipientId) return;
+    const timer = window.setTimeout(() => setCopiedRecipientId(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copiedRecipientId]);
 
   const total = campaign.totalRecipients || 1;
   const done = campaign.sentCount + campaign.failedCount;
@@ -521,9 +530,10 @@ export default function BroadcastDetailRoute() {
                         className="text-primary hover:underline"
                         onClick={() => {
                           void navigator.clipboard.writeText(r.recipientPubkey);
+                          setCopiedRecipientId(r.id);
                         }}
                       >
-                        Copy
+                        {copiedRecipientId === r.id ? "Copied" : "Copy"}
                       </button>
                       {r.status === "FAILED" ? (
                         <Form method="post" className="inline">

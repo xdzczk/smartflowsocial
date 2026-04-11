@@ -3,6 +3,7 @@
  */
 
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import type { InvoiceCheckoutKind } from "~/features/payments/types";
 
@@ -42,9 +43,61 @@ export function InvoiceModal({
   onCheckPayment,
   onClose,
 }: InvoiceModalProps) {
-  if (!isOpen) return null;
-
+  const [isCopied, setIsCopied] = useState(false);
+  const [isOpeningWallet, setIsOpeningWallet] = useState(false);
+  const [walletActionMessage, setWalletActionMessage] = useState("");
   const isBtcpay = checkoutKind === "btcpay";
+
+  useEffect(() => {
+    if (!isCopied) return;
+    const timer = window.setTimeout(() => setIsCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [isCopied]);
+
+  useEffect(() => {
+    setIsCopied(false);
+    setIsOpeningWallet(false);
+    setWalletActionMessage("");
+  }, [invoiceData.invoice, isOpen]);
+
+  const handlePayInWallet = async () => {
+    if (isBtcpay || isOpeningWallet) return;
+    const invoice = invoiceData.invoice.trim();
+    if (!invoice) return;
+
+    setIsOpeningWallet(true);
+    try {
+      if (window.webln?.sendPayment) {
+        try {
+          await window.webln.enable?.();
+          await window.webln.sendPayment(invoice);
+          setWalletActionMessage(
+            "Payment request sent to your Lightning wallet."
+          );
+          return;
+        } catch {
+          // Fall through to deep-link flow if WebLN isn't available or user cancels.
+        }
+      }
+
+      const lightningUrl = `lightning:${invoice}`;
+      const popup = window.open(lightningUrl, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        window.location.href = lightningUrl;
+      }
+      setWalletActionMessage("Opening your wallet app...");
+    } catch {
+      onCopy(invoice);
+      setIsCopied(true);
+      setWalletActionMessage(
+        "Couldn't open a wallet automatically. Invoice copied to clipboard."
+      );
+    } finally {
+      setIsOpeningWallet(false);
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-[60] flex items-center justify-center bg-black">
@@ -107,12 +160,43 @@ export function InvoiceModal({
             />
             <button
               type="button"
-              onClick={() => onCopy(invoiceData.invoice)}
+              onClick={() => {
+                onCopy(invoiceData.invoice);
+                setIsCopied(true);
+              }}
               className="border-border dark:border-border bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus:ring-1 focus:outline-none"
             >
-              Copy
+              {isCopied ? "Copied" : "Copy"}
             </button>
           </div>
+          <p
+            className="text-muted-foreground mt-2 text-xs"
+            role="status"
+            aria-live="polite"
+          >
+            {isCopied ? "Invoice copied to clipboard." : "\u00A0"}
+          </p>
+          {!isBtcpay ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handlePayInWallet();
+              }}
+              disabled={isOpeningWallet}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring mt-2 w-full rounded-lg px-4 py-2 text-sm font-medium focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isOpeningWallet ? "Opening wallet..." : "Pay in wallet"}
+            </button>
+          ) : null}
+          {!isBtcpay ? (
+            <p
+              className="text-muted-foreground mt-2 text-xs"
+              role="status"
+              aria-live="polite"
+            >
+              {walletActionMessage || "\u00A0"}
+            </p>
+          ) : null}
         </div>
 
         {isBtcpay ? (
@@ -140,11 +224,30 @@ export function InvoiceModal({
               : "Scan QR code or copy the invoice to your Lightning wallet"}
           </p>
           <div className="mb-4 flex justify-center">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(invoiceData.invoice)}`}
-              alt={isBtcpay ? "Checkout QR code" : "Lightning invoice QR code"}
-              className="border-border dark:border-border rounded border"
-            />
+            {!isBtcpay ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handlePayInWallet();
+                }}
+                disabled={isOpeningWallet}
+                className="rounded focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                aria-label="Open wallet from Lightning QR"
+                title="Open wallet"
+              >
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(invoiceData.invoice)}`}
+                  alt="Lightning invoice QR code"
+                  className="border-border dark:border-border rounded border"
+                />
+              </button>
+            ) : (
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(invoiceData.invoice)}`}
+                alt="Checkout QR code"
+                className="border-border dark:border-border rounded border"
+              />
+            )}
           </div>
           {isPolling ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-1 text-sm">

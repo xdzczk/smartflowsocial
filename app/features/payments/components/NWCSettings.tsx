@@ -39,6 +39,7 @@ export function NWCSettings({
   });
 
   const [showInput, setShowInput] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedEnabled = form.watch("nwcEnabled");
@@ -83,6 +84,12 @@ export function NWCSettings({
   useEffect(() => {
     form.setValue("nwcEnabled", nwcEnabled);
   }, [nwcEnabled, form]);
+
+  useEffect(() => {
+    if (!isCopied) return;
+    const timer = window.setTimeout(() => setIsCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [isCopied]);
 
   const connected = Boolean(maskedNwcString);
 
@@ -154,12 +161,20 @@ export function NWCSettings({
                   size="sm"
                   onClick={() => {
                     void navigator.clipboard.writeText(maskedNwcString);
+                    setIsCopied(true);
                   }}
                   className="ml-2 h-6 shrink-0 px-2 text-xs"
                 >
-                  Copy
+                  {isCopied ? "Copied" : "Copy"}
                 </Button>
               </div>
+              <p
+                className="text-muted-foreground text-xs"
+                role="status"
+                aria-live="polite"
+              >
+                {isCopied ? "Wallet string copied to clipboard." : "\u00A0"}
+              </p>
               {nwcLastUsed ? (
                 <p className="text-muted-foreground text-xs">
                   Last used: {new Date(nwcLastUsed).toLocaleString()}
