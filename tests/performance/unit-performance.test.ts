@@ -6,9 +6,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+// getPostStats uses Primal cache helper; mock transport so perf tests stay deterministic in CI.
+vi.mock("~/features/cache/primalCache.server", () => ({
+  connectToPrimalCache: vi.fn(),
+}));
 
 import { postFactory, longFormPostFactory } from "../factories";
 
+import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
@@ -101,21 +106,21 @@ describe("Performance: getPostStats()", () => {
   it("should handle single event ID in < 500ms", async () => {
     const eventId = "test-event-123";
 
-    // Mock fetch
-    const mockResponse: Response = {
-      ok: true,
-      json: async () => [
-        [
-          "EVENT",
-          "",
-          {
-            kind: 10000100,
-            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
-          },
-        ],
+    (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue([
+      [
+        "EVENT",
+        "",
+        {
+          kind: 10000100,
+          content: JSON.stringify({
+            event_id: eventId,
+            replies: 5,
+            reposts: 2,
+            likes: 10,
+          }),
+        },
       ],
-    } as unknown as Response;
-    global.fetch = vi.fn(async () => mockResponse);
+    ]);
 
     const start = performance.now();
     const result = await getPostStats([eventId]);
@@ -128,20 +133,21 @@ describe("Performance: getPostStats()", () => {
   it("should handle multiple event IDs (10-50) in < 2000ms", async () => {
     const eventIds = Array.from({ length: 25 }, (_, i) => `event-${i + 1}`);
 
-    // Mock fetch
-    const mockResponse: Response = {
-      ok: true,
-      json: async () =>
-        eventIds.map((_id) => [
-          "EVENT",
-          "",
-          {
-            kind: 10000100,
-            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
-          },
-        ]),
-    } as unknown as Response;
-    global.fetch = vi.fn(async () => mockResponse);
+    (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue([
+      [
+        "EVENT",
+        "",
+        {
+          kind: 10000100,
+          content: JSON.stringify({
+            event_id: "event-1",
+            replies: 5,
+            reposts: 2,
+            likes: 10,
+          }),
+        },
+      ],
+    ]);
 
     const start = performance.now();
     await getPostStats(eventIds);
@@ -153,20 +159,21 @@ describe("Performance: getPostStats()", () => {
   it("should handle many event IDs (50-100) in < 6000ms", async () => {
     const eventIds = Array.from({ length: 75 }, (_, i) => `event-${i + 1}`);
 
-    // Mock fetch
-    const mockResponse: Response = {
-      ok: true,
-      json: async () =>
-        eventIds.map((_id) => [
-          "EVENT",
-          "",
-          {
-            kind: 10000100,
-            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
-          },
-        ]),
-    } as unknown as Response;
-    global.fetch = vi.fn(async () => mockResponse);
+    (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue([
+      [
+        "EVENT",
+        "",
+        {
+          kind: 10000100,
+          content: JSON.stringify({
+            event_id: "event-1",
+            replies: 5,
+            reposts: 2,
+            likes: 10,
+          }),
+        },
+      ],
+    ]);
 
     const start = performance.now();
     const result = await getPostStats(eventIds);
