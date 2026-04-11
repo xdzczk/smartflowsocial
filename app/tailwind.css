@@ -25,7 +25,8 @@ body.has-btcpay-confirmation-bar {
 
   /* Subtle pulse animation for syncing state */
   @keyframes pulse-subtle {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
@@ -49,10 +50,12 @@ body.has-btcpay-confirmation-bar {
   @keyframes flow-next-shadow-glow {
     0%,
     100% {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-start), transparent);
+      box-shadow: 0 4px 14px 0
+        color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-start), transparent);
     }
     50% {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-end), transparent);
+      box-shadow: 0 4px 14px 0
+        color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-end), transparent);
     }
   }
 
@@ -105,8 +108,8 @@ body.has-btcpay-confirmation-bar {
 @theme {
   /* Font families */
   --font-sans:
-    "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+    "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Custom spacing scale */
@@ -192,37 +195,37 @@ body.has-btcpay-confirmation-bar {
 @layer base {
   :root {
     /* Light Mode - Neutral Foundation with Brand Accents */
-    --background: 0 0% 100%;              /* White #FFFFFF */
-    --foreground: 0 0% 5%;                /* Pure black (neutral) */
-    --card: 0 0% 99%;                      /* Slightly off-white for depth */
-    --card-foreground: 0 0% 5%;            /* Pure black (neutral) */
+    --background: 0 0% 100%; /* White #FFFFFF */
+    --foreground: 0 0% 5%; /* Pure black (neutral) */
+    --card: 0 0% 99%; /* Slightly off-white for depth */
+    --card-foreground: 0 0% 5%; /* Pure black (neutral) */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;         /* Pure black (neutral) */
-    --primary: 255 77% 51%;                /* Calm purple - desaturated by 20% for headlines, subtle accents */
-    --primary-action: 255 97% 51%;        /* Action purple - bright for buttons, active states */
-    --primary-foreground: 0 0% 100%;       /* White */
-    --secondary: 250 25% 90%;               /* Pale lavender #C7C8FF */
-    --secondary-foreground: 0 0% 5%;        /* Pure black (neutral) */
-    --muted: 0 0% 98%;                      /* Neutral light gray */
-    --muted-foreground: 25 10% 38%;        /* Stronger secondary for light auth / body */
-    --accent: 255 60% 70%;                  /* Medium lavender #8B66FF */
-    --accent-foreground: 0 0% 100%;         /* White */
+    --popover-foreground: 0 0% 5%; /* Pure black (neutral) */
+    --primary: 255 77% 51%; /* Calm purple - desaturated by 20% for headlines, subtle accents */
+    --primary-action: 255 97% 51%; /* Action purple - bright for buttons, active states */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 250 25% 90%; /* Pale lavender #C7C8FF */
+    --secondary-foreground: 0 0% 5%; /* Pure black (neutral) */
+    --muted: 0 0% 98%; /* Neutral light gray */
+    --muted-foreground: 25 10% 38%; /* Stronger secondary for light auth / body */
+    --accent: 255 60% 70%; /* Medium lavender #8B66FF */
+    --accent-foreground: 0 0% 100%; /* White */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 36%;                /* Green-600 equivalent */
-    --success-foreground: 0 0% 100%;      /* White */
-    --checkbox: 0 0% 50%;                  /* Neutral gray for checkboxes */
-    --checkbox-foreground: 0 0% 100%;      /* White checkmark */
-    --border: 0 0% 86%;                     /* Slightly stronger panel edges in light */
-    --border-subtle: 0 0% 92%;              /* Softer border for cards/surfaces (~30% less contrast) */
-    --input: 0 0% 90%;                      /* Neutral input border */
-    --ring: 255 97% 51%;                    /* Action purple for focus states */
-    --chart-1: 255 97% 51%;                 /* Brand primary */
-    --chart-2: 255 60% 70%;                 /* Brand secondary */
-    --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
-    --chart-4: 250 25% 80%;                 /* Light lavender */
-    --chart-5: 250 100% 5%;                 /* Dark indigo */
-    --radius: 0.625rem;                      /* Softer corners (was 0.5rem) */
+    --success: 142 76% 36%; /* Green-600 equivalent */
+    --success-foreground: 0 0% 100%; /* White */
+    --checkbox: 0 0% 50%; /* Neutral gray for checkboxes */
+    --checkbox-foreground: 0 0% 100%; /* White checkmark */
+    --border: 0 0% 86%; /* Slightly stronger panel edges in light */
+    --border-subtle: 0 0% 92%; /* Softer border for cards/surfaces (~30% less contrast) */
+    --input: 0 0% 90%; /* Neutral input border */
+    --ring: 255 97% 51%; /* Action purple for focus states */
+    --chart-1: 255 97% 51%; /* Brand primary */
+    --chart-2: 255 60% 70%; /* Brand secondary */
+    --chart-3: 250 100% 31%; /* Deep indigo #1E03A0 */
+    --chart-4: 250 25% 80%; /* Light lavender */
+    --chart-5: 250 100% 5%; /* Dark indigo */
+    --radius: 0.625rem; /* Softer corners (was 0.5rem) */
 
     /* Switch / toggle — distinct off-state on cards; brand on-state (see .dark for contrast pass) */
     --switch-track-off: 0 0% 91%;
@@ -243,23 +246,23 @@ body.has-btcpay-confirmation-bar {
     --switch-thumb-on-disabled: 0 0% 100%;
 
     /* Calendar: Surface & elevation (Surface 0 = --background). Use only these in Calendar. */
-    --calendar-surface-1-bg: 0 0% 99%;      /* Surface 1 – main content container */
+    --calendar-surface-1-bg: 0 0% 99%; /* Surface 1 – main content container */
     --calendar-surface-1-shadow: none;
-    --calendar-surface-1-radius: 0.875rem;   /* 14px – large panels */
-    --calendar-surface-2-bg: 0 0% 99%;       /* Surface 2 – calendar panel */
+    --calendar-surface-1-radius: 0.875rem; /* 14px – large panels */
+    --calendar-surface-2-bg: 0 0% 99%; /* Surface 2 – calendar panel */
     --calendar-surface-2-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
     --calendar-surface-2-radius: 0.875rem;
     --calendar-surface-2-border: 0 0% 90%;
     --calendar-surface-3-bg: 0 0% 99%;
     --calendar-surface-3-border: 0 0% 90%;
-    --calendar-surface-3-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);  /* Post card */
-    --calendar-surface-3-radius: 0.625rem;  /* 10px – cards */
-    --calendar-surface-4-bg: 0 0% 98%;       /* Hover/active */
+    --calendar-surface-3-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04); /* Post card */
+    --calendar-surface-3-radius: 0.625rem; /* 10px – cards */
+    --calendar-surface-4-bg: 0 0% 98%; /* Hover/active */
     --calendar-surface-4-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.08);
     /* Calendar radius scale: 6px (controls), 10px (cards), 14px (panels). No other values. */
-    --calendar-radius-sm: 0.375rem;   /* 6px – small controls / toggles */
-    --calendar-radius-md: 0.625rem;  /* 10px – cards / post blocks */
-    --calendar-radius-lg: 0.875rem;   /* 14px – large panels */
+    --calendar-radius-sm: 0.375rem; /* 6px – small controls / toggles */
+    --calendar-radius-md: 0.625rem; /* 10px – cards / post blocks */
+    --calendar-radius-lg: 0.875rem; /* 14px – large panels */
     --calendar-transition-duration: 200ms;
     --calendar-transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -270,46 +273,46 @@ body.has-btcpay-confirmation-bar {
   .dark {
     /* Dark Mode - True Neutral Foundation with Brand Accents */
     /* Three-layer neutral system (no color bias) */
-    --background: 0 0% 4.3%;                /* Base canvas #0B0B0D */
-    --foreground: 0 0% 98%;                 /* White */
-    --card: 0 0% 6.7%;                     /* Surface panels #111114 */
+    --background: 0 0% 4.3%; /* Base canvas #0B0B0D */
+    --foreground: 0 0% 98%; /* White */
+    --card: 0 0% 6.7%; /* Surface panels #111114 */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6.7%;                  /* Surface panels */
+    --popover: 0 0% 6.7%; /* Surface panels */
     --popover-foreground: 0 0% 98%;
-    --secondary: 0 0% 12%;                 /* Neutral grey, no blue tint */
+    --secondary: 0 0% 12%; /* Neutral grey, no blue tint */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 7.5%;                    /* Between surface and elevated */
-    --muted-foreground: 30 5% 60%;         /* Warm grey #9A948F for secondary text */
-    --border: 0 0% 9.5%;                   /* Borders/dividers - subtle, felt not seen */
-    --border-subtle: 0 0% 7%;              /* Softer border for cards (~30% less contrast) */
-    --input: 0 0% 9.5%;                    /* Input borders - matches border */
-    
+    --muted: 0 0% 7.5%; /* Between surface and elevated */
+    --muted-foreground: 30 5% 60%; /* Warm grey #9A948F for secondary text */
+    --border: 0 0% 9.5%; /* Borders/dividers - subtle, felt not seen */
+    --border-subtle: 0 0% 7%; /* Softer border for cards (~30% less contrast) */
+    --input: 0 0% 9.5%; /* Input borders - matches border */
+
     /* Brand colors - two-purple system */
-    --primary: 255 77% 51%;                 /* Calm purple - desaturated for headlines, subtle accents */
-    --primary-action: 255 97% 51%;          /* Action purple - bright for buttons, active states */
+    --primary: 255 77% 51%; /* Calm purple - desaturated for headlines, subtle accents */
+    --primary-action: 255 97% 51%; /* Action purple - bright for buttons, active states */
     --primary-foreground: 0 0% 100%;
-    --accent: 255 60% 70%;                  /* Medium lavender #8B66FF - hover/selection */
+    --accent: 255 60% 70%; /* Medium lavender #8B66FF - hover/selection */
     --accent-foreground: 0 0% 100%;
-    --ring: 255 97% 51%;                    /* Action purple for focus states */
-    
+    --ring: 255 97% 51%; /* Action purple for focus states */
+
     /* Destructive actions - desaturated by ~25% for restraint */
     --destructive: 0 50% 28%;
     --destructive-foreground: 0 0% 98%;
-    
+
     /* Success actions - desaturated by ~25% for restraint */
-    --success: 142 50% 40%;                 /* Desaturated green for dark backgrounds */
-    --success-foreground: 0 0% 100%;       /* White */
-    
+    --success: 142 50% 40%; /* Desaturated green for dark backgrounds */
+    --success-foreground: 0 0% 100%; /* White */
+
     /* Checkbox - neutral gray for selection states */
-    --checkbox: 0 0% 60%;                   /* Neutral gray for checkboxes in dark mode */
-    --checkbox-foreground: 0 0% 100%;      /* White checkmark */
-    
+    --checkbox: 0 0% 60%; /* Neutral gray for checkboxes in dark mode */
+    --checkbox-foreground: 0 0% 100%; /* White checkmark */
+
     /* Chart colors - keep brand for data visualization */
-    --chart-1: 255 97% 51%;                 /* Brand primary */
-    --chart-2: 255 60% 70%;                 /* Brand secondary */
-    --chart-3: 250 100% 31%;                 /* Deep indigo #1E03A0 */
-    --chart-4: 250 25% 60%;                 /* Medium lavender */
-    --chart-5: 250 25% 80%;                 /* Light lavender */
+    --chart-1: 255 97% 51%; /* Brand primary */
+    --chart-2: 255 60% 70%; /* Brand secondary */
+    --chart-3: 250 100% 31%; /* Deep indigo #1E03A0 */
+    --chart-4: 250 25% 60%; /* Medium lavender */
+    --chart-5: 250 25% 80%; /* Light lavender */
 
     /* Switch / toggle — visible off-track vs card (~6.7%); decisive purple on-state */
     --switch-track-off: 0 0% 15%;
@@ -328,10 +331,10 @@ body.has-btcpay-confirmation-bar {
     --switch-track-on-disabled: 255 52% 34%;
     --switch-border-on-disabled: 255 44% 28%;
     --switch-thumb-on-disabled: 0 0% 82%;
-    
+
     /* Landing page specific variables */
-    --landing-card-elevated: 0 0% 8.6%;     /* Elevated cards #16161A */
-    --landing-section-alt: 0 0% 4.3%;       /* Base canvas for alternation */
+    --landing-card-elevated: 0 0% 8.6%; /* Elevated cards #16161A */
+    --landing-section-alt: 0 0% 4.3%; /* Base canvas for alternation */
 
     /* Calendar: Surface & elevation (dark) */
     --calendar-surface-1-bg: 0 0% 6.7%;
@@ -579,17 +582,23 @@ body.has-btcpay-confirmation-bar {
 
 @layer utilities {
   /* Landing page specific utilities */
-  
+
   /* Subtle noise texture using CSS (no images) */
   .landing-texture {
-    background-image: 
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.03) 1px, transparent 0);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--foreground) / 0.03) 1px,
+      transparent 0
+    );
     background-size: 20px 20px;
   }
-  
+
   .dark .landing-texture {
-    background-image: 
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.05) 1px, transparent 0);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--foreground) / 0.05) 1px,
+      transparent 0
+    );
   }
 
   /* Dashboard base canvas: 1–2% grain so base feels crafted, not flat */
@@ -636,32 +645,24 @@ body.has-btcpay-confirmation-bar {
 
   /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
-    background: linear-gradient(
-      to bottom,
-      hsl(var(--muted) / 0.3),
-      hsl(var(--background))
-    );
+    background: linear-gradient(to bottom, hsl(var(--muted) / 0.3), hsl(var(--background)));
   }
 
   .hero-gradient-dark {
-    background: 
+    background:
       radial-gradient(ellipse at top, hsl(var(--muted) / 0.2) 0%, transparent 50%),
-      linear-gradient(
-        to bottom,
-        hsl(var(--muted) / 0.15),
-        hsl(var(--background))
-      );
+      linear-gradient(to bottom, hsl(var(--muted) / 0.15), hsl(var(--background)));
   }
 
   /* Hero motif backgrounds: use .dark so they follow app theme (not Tailwind’s dark: media query) */
   .hero-motif-bg {
-    background-image: url('/motifflightmode.webp');
+    background-image: url("/motifflightmode.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
   }
   .dark .hero-motif-bg {
-    background-image: url('/motiffdarkmode.webp');
+    background-image: url("/motiffdarkmode.webp");
   }
 
   /* Login right column: keep light-mode motif visible with readable foreground */
@@ -689,11 +690,7 @@ body.has-btcpay-confirmation-bar {
 
   /* Hero gradient text for controlled color moment */
   .hero-gradient-text {
-    background: linear-gradient(
-      to bottom,
-      hsl(var(--primary)),
-      hsl(var(--primary-action))
-    );
+    background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary-action)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -701,7 +698,9 @@ body.has-btcpay-confirmation-bar {
 
   /* Card lift: micro-depth on hover (shadow shift, slight lift); only when input can hover (avoids ghost hover on touch) */
   .card-lift {
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition:
+      transform 0.2s ease-out,
+      box-shadow 0.2s ease-out;
   }
 
   @media (hover: hover) {
@@ -839,7 +838,8 @@ body.has-btcpay-confirmation-bar {
 
   /* Arrow pulse animation */
   @keyframes arrowPulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 0.6;
       transform: translateX(0);
     }

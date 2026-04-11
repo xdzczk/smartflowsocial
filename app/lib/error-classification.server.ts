@@ -120,7 +120,10 @@ function classifyAppError(error: AppError): ErrorClassification {
   const errorCode = error.code;
 
   // Authentication errors
-  if (error instanceof AuthenticationError || errorCode === "AUTHENTICATION_ERROR") {
+  if (
+    error instanceof AuthenticationError ||
+    errorCode === "AUTHENTICATION_ERROR"
+  ) {
     return {
       category: ErrorCategory.AUTHENTICATION,
       severity: ErrorSeverity.HIGH,
@@ -132,7 +135,10 @@ function classifyAppError(error: AppError): ErrorClassification {
   }
 
   // Authorization errors
-  if (error instanceof AuthorizationError || errorCode === "AUTHORIZATION_ERROR") {
+  if (
+    error instanceof AuthorizationError ||
+    errorCode === "AUTHORIZATION_ERROR"
+  ) {
     return {
       category: ErrorCategory.AUTHORIZATION,
       severity: ErrorSeverity.HIGH,
@@ -209,12 +215,19 @@ function classifyAppError(error: AppError): ErrorClassification {
       recoveryStrategy: isConnectionError
         ? RecoveryStrategy.RETRY_EXPONENTIAL
         : RecoveryStrategy.MANUAL_INTERVENTION,
-      context: { code: errorCode, statusCode: error.statusCode, isConnectionError },
+      context: {
+        code: errorCode,
+        statusCode: error.statusCode,
+        isConnectionError,
+      },
     };
   }
 
   // External service errors
-  if (error instanceof ExternalServiceError || errorCode === "EXTERNAL_SERVICE_ERROR") {
+  if (
+    error instanceof ExternalServiceError ||
+    errorCode === "EXTERNAL_SERVICE_ERROR"
+  ) {
     const isTemporary =
       errorMessage.includes("timeout") ||
       errorMessage.includes("503") ||
@@ -374,7 +387,9 @@ export function isRetryableErrorEnhanced(error: Error | AppError): boolean {
 /**
  * Get suggested retry delay for an error
  */
-export function getRetryDelayForError(error: Error | AppError): number | undefined {
+export function getRetryDelayForError(
+  error: Error | AppError
+): number | undefined {
   const classification = classifyError(error);
   return classification.retryDelay;
 }
