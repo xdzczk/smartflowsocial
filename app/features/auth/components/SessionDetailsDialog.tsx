@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { Edit2, RefreshCw, Trash2, Check, X, Download } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -51,6 +51,13 @@ export function SessionDetailsDialog({
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     null
   );
+  const [copiedConnectionUri, setCopiedConnectionUri] = useState(false);
+
+  useEffect(() => {
+    if (!copiedConnectionUri) return;
+    const timer = window.setTimeout(() => setCopiedConnectionUri(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copiedConnectionUri]);
 
   if (!connection) {
     return null;
@@ -355,9 +362,10 @@ export function SessionDetailsDialog({
                       variant="ghost"
                       onClick={() => {
                         void navigator.clipboard.writeText(connectionUri);
+                        setCopiedConnectionUri(true);
                       }}
                     >
-                      Copy Full
+                      {copiedConnectionUri ? "Copied" : "Copy Full"}
                     </Button>
                   </div>
                 </div>

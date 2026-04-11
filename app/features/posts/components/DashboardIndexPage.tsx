@@ -88,6 +88,19 @@ function canAutoRevalidateDashboard(): boolean {
   return navigator.onLine;
 }
 
+function DashboardPlanSuccessMessage({
+  show,
+  message,
+  onDismiss,
+}: {
+  show: boolean;
+  message: string | null;
+  onDismiss: () => void;
+}) {
+  if (!show || !message) return null;
+  return <SuccessMessage message={message} onDismiss={onDismiss} />;
+}
+
 export default function DashboardIndexPage() {
   const {
     flowItems,
@@ -363,12 +376,11 @@ export default function DashboardIndexPage() {
 
   return (
     <>
-      {showSuccessMessage && successMessage ? (
-        <SuccessMessage
-          message={successMessage}
-          onDismiss={() => setShowSuccessMessage(false)}
-        />
-      ) : null}
+      <DashboardPlanSuccessMessage
+        show={showSuccessMessage}
+        message={successMessage}
+        onDismiss={() => setShowSuccessMessage(false)}
+      />
 
       {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queue Health + Top Posts) */}
       <div className="dashboard-canvas flex min-h-[calc(100dvh-12rem)] flex-1 flex-col lg:h-full lg:min-h-0">

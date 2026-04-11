@@ -13,8 +13,10 @@ import {
   updateUserUnlinkChild,
 } from "~/features/user/repositories/parent-child-data.server";
 import { logWarning, logError } from "~/lib/error-logger.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 const ERROR_CHILD_NOT_FOUND = "Child not found";
+const HEX64 = /^[0-9a-f]{64}$/i;
 
 type MinimalUser = Pick<User, "id" | "npub"> & {
   nostrProfile?: ProfileData | null;
@@ -23,7 +25,7 @@ type MinimalUser = Pick<User, "id" | "npub"> & {
   pendingParentRequests?: string[];
 };
 
-function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
+function extractProfileBits(nostrProfile: unknown): {
   name?: string;
   display_name?: string;
   picture?: string;
@@ -42,17 +44,47 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
         picture: parsed.picture,
       };
     }
-    if (typeof nostrProfile === "object") {
+    if (typeof nostrProfile === "object" && !Array.isArray(nostrProfile)) {
+      const profileRecord = nostrProfile as Record<string, unknown>;
       return {
-        name: nostrProfile.name,
-        display_name: nostrProfile.display_name,
-        picture: nostrProfile.picture,
+        name:
+          typeof profileRecord["name"] === "string"
+            ? profileRecord["name"]
+            : undefined,
+        display_name:
+          typeof profileRecord["display_name"] === "string"
+            ? profileRecord["display_name"]
+            : undefined,
+        picture:
+          typeof profileRecord["picture"] === "string"
+            ? profileRecord["picture"]
+            : undefined,
       };
     }
   } catch {
     // Ignore parsing errors, return empty object
   }
   return {};
+}
+
+function normalizeSearchTerms(rawQuery: string): {
+  prefilterQuery: string;
+  terms: string[];
+} {
+  const trimmed = rawQuery.trim();
+  const terms = [trimmed.toLowerCase()];
+  const decoded = nostrAdapter.decodeNpub(trimmed);
+  const decodedHex =
+    decoded && HEX64.test(decoded) ? decoded.toLowerCase() : null;
+
+  if (decodedHex && !terms.includes(decodedHex)) {
+    terms.push(decodedHex);
+  }
+
+  return {
+    prefilterQuery: decodedHex ?? trimmed,
+    terms,
+  };
 }
 
 /**
@@ -74,25 +106,27 @@ export async function searchUsersByProfileName(
 > {
   const trimmed = query.trim();
   if (!trimmed) return [];
+  const { prefilterQuery, terms } = normalizeSearchTerms(trimmed);
 
   // Broad prefilter to avoid full table scan; then filter in app
   const fetched = await findUsersForParentChildSearch(
     excludeNpub,
-    trimmed,
+    prefilterQuery,
     200
   );
 
-  const lowered = trimmed.toLowerCase();
   const filtered = fetched
     .map((u) => {
+      const bits = extractProfileBits(u.nostrProfile);
       const profile =
         u.nostrProfile &&
         typeof u.nostrProfile === "object" &&
         !Array.isArray(u.nostrProfile)
           ? (u.nostrProfile as ProfileData)
           : null;
-      const bits = extractProfileBits(profile);
-      const name = bits.name ?? bits.display_name ?? "";
+      const profileName = bits.name?.toLowerCase() ?? "";
+      const profileDisplayName = bits.display_name?.toLowerCase() ?? "";
+      const normalizedNpub = u.npub.toLowerCase();
       return {
         id: u.id,
         npub: u.npub,
@@ -103,9 +137,12 @@ export async function searchUsersByProfileName(
         profileName: bits.name,
         profileDisplayName: bits.display_name,
         profilePicture: bits.picture,
-        _match:
-          u.npub.toLowerCase().includes(lowered) ||
-          name.toLowerCase().includes(lowered),
+        _match: terms.some(
+          (term) =>
+            normalizedNpub.includes(term) ||
+            profileName.includes(term) ||
+            profileDisplayName.includes(term)
+        ),
       };
     })
     .filter((u) => u._match)

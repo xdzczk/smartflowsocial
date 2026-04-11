@@ -1,108 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="15" failures="0" errors="0" time="0.158367166">
-    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-04-10T19:15:49.633Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.016674">
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.007003208">
+<testsuites name="vitest tests" tests="24" failures="0" errors="0" time="0.015337">
+    <testsuite name="tests/integration/settings-action.test.ts" timestamp="2026-04-11T04:17:55.955Z" hostname="Ivans-MacBook-Pro.local" tests="24" failures="0" errors="0" skipped="0" time="0.015337">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Accounts Search &gt; should route search_accounts and return search results" time="0.004452959">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Timezone &gt; should update user timezone" time="0.000580916">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Relays &gt; should update user relays" time="0.000830458">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Relays &gt; should filter out empty relay lines" time="0.000450666">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Giveaway Blacklist &gt; should update giveaway blacklist with valid npubs" time="0.000404042">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Giveaway Blacklist &gt; should reject blacklist items that don&apos;t start with npub" time="0.00062575">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Engagement reply templates &gt; should update reply template" time="0.000352208">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Engagement reply templates &gt; should reject reply template update without id" time="0.000217334">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Schedule Intervals &gt; should update schedule intervals with valid numbers" time="0.000423333">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; General Settings Actions &gt; Update Schedule Intervals &gt; should reject invalid schedule intervals" time="0.000425459">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should create a hashtag preset" time="0.000353417">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should require name and tags" time="0.000264709">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Create Hashtag Preset &gt; should allow description to be optional" time="0.000152167">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Update Hashtag Preset &gt; should update a hashtag preset" time="0.000282875">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Update Hashtag Preset &gt; should require id, name and tags" time="0.000227709">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Delete Hashtag Preset &gt; should delete a hashtag preset" time="0.000190167">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Hashtag Preset Actions &gt; Delete Hashtag Preset &gt; should require id for deletion" time="0.000278708">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should create a queue type with INTERVAL schedule" time="0.001336625">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should create a queue type with FIXED_SLOTS schedule" time="0.000282667">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should reject queue type creation for free plan users" time="0.000164958">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Create Queue Type &gt; should reject invalid hashtag preset" time="0.000172416">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Queue Type Actions &gt; Delete Queue Type &gt; should delete a queue type" time="0.000212333">
+        </testcase>
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Subscription Actions &gt; should create a Lightning invoice for top-up" time="0.000836208">
             <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
+⚠️  Warning: Invalid subscription plan in accounts action { userId: &apos;user-123&apos;, planId: &apos;current-plan&apos;, planName: null }
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.001154583">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.00111925">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000914959">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000481833">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000444375">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000472208">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000358375">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000241416">
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000151333">
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.003462209">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Database error&apos;,
-  code: &apos;DATABASE_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/FirstRunDashboard.test.tsx" timestamp="2026-04-10T19:15:49.635Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.139751541">
-        <testcase classname="tests/unit/posts/FirstRunDashboard.test.tsx" name="FirstRunDashboard &gt; renders activation hero and primary actions" time="0.129054333">
-        </testcase>
-        <testcase classname="tests/unit/posts/FirstRunDashboard.test.tsx" name="FirstRunDashboard &gt; shows checklist completion from activity" time="0.009901416">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/dashboard-activity-summary.test.ts" timestamp="2026-04-10T19:15:49.635Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001941625">
-        <testcase classname="tests/unit/posts/dashboard-activity-summary.test.ts" name="deriveDashboardActivitySummary &gt; returns first-run true when all activity signals are empty" time="0.000975625">
-        </testcase>
-        <testcase classname="tests/unit/posts/dashboard-activity-summary.test.ts" name="deriveDashboardActivitySummary &gt; returns first-run false when any activity exists" time="0.000244333">
+        <testcase classname="tests/integration/settings-action.test.ts" name="Settings Action Handler &gt; Error Handling &gt; should handle database errors" time="0.000751709">
         </testcase>
     </testsuite>
 </testsuites>

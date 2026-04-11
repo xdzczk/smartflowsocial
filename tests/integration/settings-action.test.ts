@@ -40,6 +40,7 @@ vi.mock("~/features/user", () => ({
     isChild: false,
     parentNpub: null,
   }),
+  searchUsersByProfileName: vi.fn(),
 }));
 
 vi.mock("~/features/payments/data", () => ({
@@ -83,6 +84,7 @@ import {
   updateHashTagPreset,
   deleteHashTagPreset,
   hashTagPresetExistsForUser,
+  searchUsersByProfileName,
 } from "~/features/user";
 
 describe("Settings Action Handler", () => {
@@ -100,6 +102,48 @@ describe("Settings Action Handler", () => {
   });
 
   describe("General Settings Actions", () => {
+    describe("Accounts Search", () => {
+      it("should route search_accounts and return search results", async () => {
+        (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+          planId: "creator",
+          Plan: { name: "Creator" },
+        });
+        (
+          searchUsersByProfileName as ReturnType<typeof vi.fn>
+        ).mockResolvedValue([
+          {
+            id: "u1",
+            npub: "a".repeat(64),
+            profileName: "Alice",
+            profileDisplayName: "Alice A",
+            profilePicture: "https://example.com/alice.png",
+            isChild: false,
+            parentNpub: null,
+            pendingParentRequests: [],
+          },
+        ]);
+
+        const formData = createFormData({
+          _action: "search_accounts",
+          q: "npub1alice",
+        });
+
+        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const dataRaw: unknown = await result.json();
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { results?: unknown; error?: unknown })
+            : {};
+
+        expect(searchUsersByProfileName).toHaveBeenCalledWith(
+          "npub1alice",
+          "npub1test"
+        );
+        expect(result.status).toBe(200);
+        expect(data).toHaveProperty("results");
+      });
+    });
+
     describe("Update Timezone", () => {
       it("should update user timezone", async () => {
         (updateUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(

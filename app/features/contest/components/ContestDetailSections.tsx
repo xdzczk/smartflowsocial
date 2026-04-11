@@ -1,7 +1,7 @@
 import type { SerializeFrom } from "@remix-run/node";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -85,6 +85,14 @@ export function ContestDetailBackLink() {
 
 export function ContestPublicShareRow({ contestId }: { contestId: string }) {
   const publicPath = `/contest/${contestId}`;
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    if (!isCopied) return;
+    const timer = window.setTimeout(() => setIsCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [isCopied]);
+
   return (
     <div className="border-border bg-muted/15 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
       <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -105,10 +113,18 @@ export function ContestPublicShareRow({ contestId }: { contestId: string }) {
               ? `${window.location.origin}${publicPath}`
               : publicPath;
           void navigator.clipboard.writeText(url);
+          setIsCopied(true);
         }}
       >
-        Copy public link
+        {isCopied ? "Copied" : "Copy public link"}
       </Button>
+      <span
+        className="text-muted-foreground text-xs"
+        role="status"
+        aria-live="polite"
+      >
+        {isCopied ? "Public link copied." : "\u00A0"}
+      </span>
     </div>
   );
 }
