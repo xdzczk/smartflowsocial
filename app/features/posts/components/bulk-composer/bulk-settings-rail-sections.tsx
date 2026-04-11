@@ -29,8 +29,6 @@ import {
 } from "~/components/ui/select";
 import type { BulkBatchMode } from "~/features/posts/bulk-composer/types";
 import {
-  RailChip,
-  RailChipGroup,
   RailFeedbackBlock,
   RailSettingsRow,
   RailSettingsValueRow,
@@ -46,6 +44,7 @@ import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../BulkPostCard";
 import BulkPostsSchedulingPanel from "../BulkPostsSchedulingPanel";
+import { QueueSelector } from "../QueueSelector";
 
 export const REPOST_CONDITION_FIELDS = [
   ["minReactions", "Reactions"],
@@ -121,6 +120,14 @@ export function BulkSettingsRailBuildDefaultsBlock({
   handleBulkQueueUpdate: (queueType: string) => void;
   handleScheduleIntervalClick: (interval: number) => void;
 }) {
+  const selectedQueue = useMemo(() => {
+    if (posts.length === 0) return "unassigned";
+    const [firstPost] = posts;
+    const firstQueue = firstPost?.queueType ?? "unassigned";
+    const allSame = posts.every((post) => post.queueType === firstQueue);
+    return allSame ? firstQueue : "unassigned";
+  }, [posts]);
+
   return (
     <ActionRailSection>
       <ActionRailLabel>Batch defaults</ActionRailLabel>
@@ -143,29 +150,13 @@ export function BulkSettingsRailBuildDefaultsBlock({
             <p className="text-muted-foreground text-[11px] leading-snug">
               Set all to a queue, or use Advanced on each card.
             </p>
-            <RailChipGroup>
-              {queueTypes
-                .filter((q) => {
-                  const n = typeof q === "string" ? q : q.name;
-                  return n !== "Unassigned";
-                })
-                .map((queue) => {
-                  const queueName =
-                    typeof queue === "string" ? queue : queue.name;
-                  return (
-                    <RailChip
-                      key={queueName}
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={() => {
-                        handleBulkQueueUpdate(queueName);
-                      }}
-                    >
-                      {queueName}
-                    </RailChip>
-                  );
-                })}
-            </RailChipGroup>
+            <QueueSelector
+              queueTypes={queueTypes}
+              selectedQueue={selectedQueue}
+              onQueueChange={handleBulkQueueUpdate}
+              disabled={isProcessing}
+              className="w-full"
+            />
             <Button
               type="button"
               variant="outline"
