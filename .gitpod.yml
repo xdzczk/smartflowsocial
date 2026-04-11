@@ -45,7 +45,7 @@ tasks:
     command: |
       gp await-port 5432
       pnpm exec prisma generate
-      pnpm exec prisma db push --skip-generate
+      pnpm exec prisma db push
       pnpm build
       pnpm dev
 

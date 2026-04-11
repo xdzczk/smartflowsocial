@@ -22,5 +22,11 @@ describe("Core: Settings", () => {
     cy.location("search").should("include", "tab=billing");
     cy.getByTestId("settings-active-panel").should("be.visible");
   });
+
+  it("supports signers recovery deep link", () => {
+    cy.visitAndCheck("/dashboard/settings?tab=signers");
+    cy.location("search").should("include", "tab=signers");
+    cy.getByTestId("settings-active-panel").should("be.visible");
+  });
 });
 /* eslint-enable testing-library/prefer-screen-queries */

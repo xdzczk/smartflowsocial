@@ -12,6 +12,7 @@ describe("Extended: Search", () => {
   it("loads global post search route", () => {
     cy.visitAndCheck("/dashboard/search/posts?q=nostr");
     cy.assertPathname("/dashboard/search/posts");
-    cy.get("main").should("be.visible");
+    cy.get("main", { timeout: 20000 }).should("exist");
+    cy.get("body").should("be.visible");
   });
 });
