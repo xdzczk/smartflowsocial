@@ -83,13 +83,8 @@ async function createNostrUserAndLogin(npub: string) {
     adapter: adapter,
   });
 
-  // Import sessionStorage AFTER PrismaClient is created
-  // This prevents env.server.ts validation from running before env vars are loaded
-  // Using regular import since env vars are already loaded via require("./load-env.js")
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required to avoid dynamic import issues, require() returns any
-  const {
-    sessionStorage,
-  } = require("../../../app/features/auth/session.server");
+  // Import createUserSession lazily to keep env bootstrap ordering predictable.
+  const { createUserSession } = await import("../../../app/features/auth");
 
   // Create or find the user
   let user = await prisma.user.findUnique({
@@ -249,17 +244,17 @@ async function createNostrUserAndLogin(npub: string) {
     throw new Error("Failed to create user subscription");
   }
 
-  // Create session directly without redirect
-  // sessionStorage was dynamically imported above
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- require() returns any
-  const session = await sessionStorage.getSession();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- require() returns any
-  session.set("userId", user.id);
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment -- require() returns any
-  const cookieValue = await sessionStorage.commitSession(session, {
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+  // Create a real app session cookie using DB-backed session creation.
+  const response = await createUserSession({
+    request: new Request("http://localhost:3000/"),
+    userId: user.id,
+    remember: true,
+    redirectTo: "/dashboard",
   });
+  const cookieValue = response.headers.get("Set-Cookie");
+  if (!cookieValue) {
+    throw new Error("Cookie missing from createUserSession response");
+  }
 
   const parsedCookie = parse(cookieValue);
 

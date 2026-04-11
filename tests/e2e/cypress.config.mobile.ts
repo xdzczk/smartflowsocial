@@ -14,6 +14,6 @@ export default defineConfig({
     viewportHeight: 667,
     userAgent:
       "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
-    specPattern: "tests/e2e/mobile-viewport.cy.ts",
+    specPattern: "tests/e2e/smoke/**/*.cy.ts",
   },
 });

@@ -45,6 +45,11 @@ declare global {
       loginNostr: typeof loginNostr;
 
       /**
+       * Logs in with Cypress session caching to stabilize/accelerate tests.
+       */
+      loginNostrSession: typeof loginNostrSession;
+
+      /**
        * Deletes the current @user
        *
        * @returns {typeof cleanupUser}
@@ -79,6 +84,16 @@ declare global {
        *    cy.visitAndCheck('/', 500)
        */
       visitAndCheck: typeof visitAndCheck;
+
+      /**
+       * Stable selector helper for data-testid selectors.
+       */
+      getByTestId: typeof getByTestId;
+
+      /**
+       * Asserts current pathname includes the expected fragment.
+       */
+      assertPathname: typeof assertPathname;
 
       /**
        * Upload test files from tests/e2e/memes_test_files/ to a file input
@@ -126,14 +141,18 @@ function login({
   email?: string;
 } = {}) {
   cy.then(() => ({ email })).as("user");
-  cy.exec(`npx tsx ./tests/e2e/support/create-user.ts "${email}"`).then(
-    ({ stdout }) => {
-      const cookieValue = stdout
-        .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
-        .trim();
-      cy.setCookie("__session", cookieValue);
-    }
-  );
+  cy.exec(`npx tsx ./tests/e2e/support/create-user.ts "${email}"`, {
+    env: {
+      ...process.env,
+      E2E_TEST: "true",
+    },
+  }).then(({ stdout }) => {
+    const cookieValue = stdout
+      .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
+      .trim();
+    cy.visit("/", { failOnStatusCode: false });
+    cy.setCookie("__session", cookieValue);
+  });
   return cy.get("@user");
 }
 
@@ -144,6 +163,7 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
     failOnNonZeroExit: false,
     env: {
       ...process.env,
+      E2E_TEST: "true",
     },
   }).then(() => {
     // Get DATABASE_URL from Cypress env or process.env
@@ -168,6 +188,7 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
         NOSTR_PUBLISHER_URL: nostrPublisherUrl,
         REDIS_URL: redisUrl,
         ...process.env,
+        E2E_TEST: "true",
         // Override NODE_ENV after spread to ensure it's set
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
         NODE_ENV: process.env["NODE_ENV"] ?? "test",
@@ -179,6 +200,7 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
       const cookieMatch = stdout.match(/<cookie>\s*([^<]+)\s*<\/cookie>/s);
       const cookieValue = cookieMatch?.[1]?.trim();
       if (cookieValue) {
+        cy.visit("/", { failOnStatusCode: false });
         cy.setCookie("__session", cookieValue);
         return;
       }
@@ -200,6 +222,7 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
           )
           .trim();
         if (extractedCookie) {
+          cy.visit("/", { failOnStatusCode: false });
           cy.setCookie("__session", extractedCookie);
           return;
         }
@@ -211,6 +234,22 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
       );
     });
   });
+  return cy.get("@user");
+}
+
+function loginNostrSession({ npub = TEST_NPUB }: { npub?: string } = {}) {
+  cy.session(
+    `nostr:${npub}`,
+    () => {
+      loginNostr({ npub });
+    },
+    {
+      validate: () => {
+        cy.getCookie("__session").should("exist");
+      },
+    }
+  );
+  cy.then(() => ({ npub })).as("user");
   return cy.get("@user");
 }
 
@@ -267,6 +306,7 @@ function deleteNostrUserByNpub(npub: string) {
     failOnNonZeroExit: false,
     env: {
       ...process.env,
+      E2E_TEST: "true",
     },
   }).then((result) => {
     const code = "code" in result ? result.code : undefined;
@@ -286,15 +326,26 @@ function deleteNostrUserByNpub(npub: string) {
 // Also added custom types to avoid getting detached
 // https://github.com/cypress-io/cypress/issues/7306#issuecomment-1152752612
 // ===========================================================
-function visitAndCheck(url: string, waitTime = 1000) {
-  cy.visit(url);
+function visitAndCheck(url: string) {
+  cy.visit(url, { failOnStatusCode: false });
   // For URLs with query params, check the full href; otherwise check pathname
+  const targetPath = url.split("?")[0];
   if (url.includes("?")) {
-    const basePath = url.split("?")[0];
-    cy.location("pathname").should("contain", basePath).wait(waitTime);
+    cy.location("pathname", { timeout: 10000 }).should("contain", targetPath);
   } else {
-    cy.location("pathname").should("contain", url).wait(waitTime);
+    cy.location("pathname", { timeout: 10000 }).should("contain", targetPath);
   }
+}
+
+function getByTestId(testId: string, options?: Partial<Cypress.Loggable>) {
+  return cy.get(`[data-testid="${testId}"]`, options);
+}
+
+function assertPathname(expectedPathFragment: string) {
+  cy.location("pathname", { timeout: 10000 }).should(
+    "include",
+    expectedPathFragment
+  );
 }
 
 /**
@@ -364,6 +415,7 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
           NOSTR_PUBLISHER_URL: nostrPublisherUrl,
           REDIS_URL: redisUrl,
           ...process.env,
+          E2E_TEST: "true",
           // Override NODE_ENV after spread to ensure it's set
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
           NODE_ENV: process.env["NODE_ENV"] ?? "test",
@@ -413,9 +465,12 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
 export const registerCommands = () => {
   Cypress.Commands.add("login", login);
   Cypress.Commands.add("loginNostr", loginNostr);
+  Cypress.Commands.add("loginNostrSession", loginNostrSession);
   Cypress.Commands.add("cleanupUser", cleanupUser);
   Cypress.Commands.add("cleanupNostrUser", cleanupNostrUser);
   Cypress.Commands.add("visitAndCheck", visitAndCheck);
+  Cypress.Commands.add("getByTestId", getByTestId);
+  Cypress.Commands.add("assertPathname", assertPathname);
   Cypress.Commands.add("uploadTestFile", uploadTestFile);
   Cypress.Commands.add("signNostrEvent", signNostrEvent);
   Cypress.Commands.add("setSubscriptionStatus", setSubscriptionStatus);

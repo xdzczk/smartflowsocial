@@ -1,0 +1,140 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_ENV: test
+  E2E_TEST: "true"
+  PORT: "3000"
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+  SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
+  REDIS_URL: redis://localhost:6379
+  NOSTR_PUBLISHER_URL: http://localhost:3001/publish
+  ALLOW_HYDRATION_EXCEPTIONS: "true"
+
+jobs:
+  e2e-smoke:
+    name: E2E Smoke (Burn-in Aware)
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ !contains(toJSON(vars), '"E2E_ENFORCE_SMOKE":"true"') }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: smartflow_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d smartflow_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Prepare database
+        run: pnpm exec prisma db push --skip-generate
+
+      - name: Run smoke E2E suite
+        run: pnpm test:e2e:smoke:run
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-smoke-artifacts
+          path: |
+            tests/e2e/screenshots
+            cypress/videos
+          if-no-files-found: ignore
+          retention-days: 7
+
+  e2e-core:
+    name: E2E Core (Optional)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(toJSON(vars), '"E2E_RUN_CORE":"true"')
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: smartflow_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Prepare database
+        run: pnpm exec prisma db push --skip-generate
+
+      - name: Run core E2E suite
+        run: start-server-and-test "cross-env E2E_TEST=true PORT=3000 pnpm dev" http://localhost:3000 "E2E_TEST=true pnpm exec cypress run --spec \"tests/e2e/core/**/*.cy.ts\""
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-core-artifacts
+          path: |
+            tests/e2e/screenshots
+            cypress/videos
+          if-no-files-found: ignore
+          retention-days: 7

@@ -203,7 +203,8 @@ pnpm test
 # Run specific test suites
 pnpm test:unit          # Unit tests
 pnpm test:integration   # Integration tests
-pnpm test:e2e          # End-to-end tests (Cypress)
+pnpm test:e2e:smoke:run # Start app + smoke E2E gate
+pnpm test:e2e           # End-to-end tests (Cypress)
 pnpm test:security     # Security tests
 
 # With coverage
