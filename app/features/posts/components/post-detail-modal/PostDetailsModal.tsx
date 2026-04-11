@@ -46,6 +46,7 @@ import {
   resolvePostDetailVariant,
 } from "./resolve-post-detail-variant";
 import type { PostDetailHeightMode } from "./resolve-post-detail-variant";
+import { getPostDetailStateConfig } from "./state-config";
 import { usePostThreadGroup } from "./usePostThreadGroup";
 
 export interface PostDetailsModalProps {
@@ -216,8 +217,8 @@ export default function PostDetailsModal({
     ? "ultraCompact"
     : heightMode;
 
-  const headerTypeLabel = getPrimaryContentTypeLabel({ innerVariant });
-  const contentLabel = headerTypeLabel;
+  const headerTypeLabel = "Post";
+  const contentLabel = getPrimaryContentTypeLabel({ innerVariant });
 
   const statusLabel =
     type === "published"
@@ -225,6 +226,7 @@ export default function PostDetailsModal({
       : type === "scheduled"
         ? "Scheduled"
         : "Draft";
+  const stateConfig = getPostDetailStateConfig(type);
 
   const scheduledCapabilities = useMemo(() => {
     if (type !== "scheduled") return null;
@@ -286,6 +288,45 @@ export default function PostDetailsModal({
       userTimeFormat,
     ]
   );
+
+  const headerSubtitle = useMemo(() => {
+    if (
+      type === "scheduled" &&
+      "scheduledAtUtc" in post &&
+      post.scheduledAtUtc
+    ) {
+      return `${stateConfig.headerPrefix} ${formatScheduledDateWithLocale(
+        post.scheduledAtUtc,
+        userTimezone,
+        userTimeFormat
+      )}`;
+    }
+    if (type === "published" && post.publishedAt) {
+      return `${stateConfig.headerPrefix} ${formatDateWithLocale(
+        post.publishedAt,
+        false,
+        userTimezone,
+        userTimeFormat
+      )}`;
+    }
+    if (type === "draft") {
+      return `${stateConfig.headerPrefix} ${formatDateWithLocale(
+        post.createdAt,
+        false,
+        userTimezone,
+        userTimeFormat
+      )}`;
+    }
+    return null;
+  }, [
+    type,
+    post,
+    formatScheduledDateWithLocale,
+    formatDateWithLocale,
+    userTimezone,
+    userTimeFormat,
+    stateConfig.headerPrefix,
+  ]);
 
   const onImageClick = useCallback((url: string) => {
     setActiveMediaSrc(url);
@@ -498,7 +539,7 @@ export default function PostDetailsModal({
         variant="ghost"
         size="sm"
         disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
       >
         {deleteFetcher.state !== "idle" &&
         deleteFetcher.formData?.get("postId") === post.id
@@ -514,27 +555,28 @@ export default function PostDetailsModal({
         <DialogContent
           hideCloseButton
           className={cn(
-            "bg-card text-card-foreground border-border flex max-h-[90dvh] w-full flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl",
+            "bg-card text-card-foreground border-border/80 flex max-h-[86dvh] w-full flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl",
             useUltra
-              ? "max-w-[min(920px,calc(100vw-2rem))]"
-              : "max-w-[min(1040px,calc(100vw-2rem))]"
+              ? "max-w-[min(980px,calc(100vw-2rem))]"
+              : "max-w-[min(1200px,calc(100vw-2rem))]"
           )}
         >
           <PostDetailHeader
             typeLabel={headerTypeLabel}
             statusType={type}
             relationshipChipLabel={semantics.relationshipChipLabel}
+            subtitle={headerSubtitle}
           />
 
           <div className="flex min-h-0 shrink flex-col overflow-hidden md:flex-row md:items-stretch">
             <div
               className={cn(
-                "border-border min-h-0 min-w-0 grow overflow-y-auto md:w-[70%] md:max-w-[72%] md:border-r",
+                "border-border/70 min-h-0 min-w-0 grow overflow-y-auto md:w-[66%] md:max-w-[68%] md:border-r",
                 effectiveHeightMode === "ultraCompact"
-                  ? "px-4 py-3 md:px-5"
+                  ? "px-5 py-4 md:px-6"
                   : effectiveHeightMode === "compact"
-                    ? "px-5 py-4"
-                    : "px-5 py-5 md:px-6"
+                    ? "px-5 py-5 md:px-6"
+                    : "px-6 py-6"
               )}
             >
               {leftBody}
@@ -572,6 +614,7 @@ export default function PostDetailsModal({
               threadContextPosition={threadContextPosition}
               userTags={userTags}
               technicalTags={technicalTags}
+              stateSectionMode={stateConfig.sectionMode}
             />
           </div>
 

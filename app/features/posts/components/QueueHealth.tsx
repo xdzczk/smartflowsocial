@@ -31,6 +31,8 @@ export interface QueueHealthProps {
     | QueueType
     | { name: string; color?: string | null; colorToken?: string | null }
   >;
+  /** True when onboarding is complete but dashboard has no scheduled/published activity yet. */
+  isPostActivationEmpty?: boolean;
 }
 
 function getQueueToken(
@@ -68,6 +70,7 @@ function getQueueAccentHexOrNull(
 export default function QueueHealth({
   queueCounts,
   queueTypes,
+  isPostActivationEmpty = false,
 }: QueueHealthProps) {
   const [colorsRevealed, setColorsRevealed] = useState(false);
   const wasRevealedAtPointerDownRef = useRef(false);
@@ -118,9 +121,21 @@ export default function QueueHealth({
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
           {countsByQueue.length === 0 ? (
-            <p className="text-muted-foreground text-xs">
-              No queues with scheduled posts.
-            </p>
+            <div className="flex min-h-[12rem] flex-col justify-center gap-2">
+              <p className="text-muted-foreground text-xs">
+                {isPostActivationEmpty
+                  ? "Queues appear here once you start adding scheduled content."
+                  : "No queues with scheduled posts."}
+              </p>
+              {isPostActivationEmpty ? (
+                <Link
+                  to="/dashboard/compose?type=post"
+                  className="text-primary hover:text-primary/90 focus:ring-ring w-fit rounded text-xs font-medium underline focus:ring-2 focus:outline-none"
+                >
+                  Schedule first post
+                </Link>
+              ) : null}
+            </div>
           ) : (
             <ul
               className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 ${

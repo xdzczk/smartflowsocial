@@ -45,6 +45,11 @@ export async function getJsonFromRedis<T>(input: {
   cache: string;
   key: string;
 }): Promise<{ hit: true; value: T } | { hit: false }> {
+  if (!isRedisCacheEnabled()) {
+    recordRedisCacheRequest(input.cache, "bypass");
+    return { hit: false };
+  }
+
   const start = Date.now();
   try {
     const raw = await redis.get(input.key);
@@ -74,6 +79,11 @@ export async function setJsonInRedis(input: {
   value: unknown;
   ttlSeconds: number;
 }): Promise<void> {
+  if (!isRedisCacheEnabled()) {
+    recordRedisCacheRequest(input.cache, "bypass");
+    return;
+  }
+
   const start = Date.now();
   try {
     await redis.set(
@@ -100,6 +110,10 @@ export async function deleteFromRedis(input: {
   cache: string;
   key: string;
 }): Promise<void> {
+  if (!isRedisCacheEnabled()) {
+    return;
+  }
+
   try {
     await redis.del(input.key);
   } catch (error) {

@@ -433,7 +433,12 @@ export default (async () => {
         "no-console": ["error", { allow: ["error", "warn", "info"] }],
         "import/no-restricted-paths": [
           "error",
-          { zones: [...featureBoundaryRestrictions, ...postsSubmoduleBoundaries] },
+          {
+            zones: [
+              ...featureBoundaryRestrictions,
+              ...postsSubmoduleBoundaries,
+            ],
+          },
         ],
         "no-restricted-imports": "off", // Handled in routes-specific block
         // Import quality rules

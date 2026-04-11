@@ -1,290 +1,190 @@
 # SmartFlowSocial
 
-<div align="center">
+Professional Nostr social media management for creators, teams, and communities.  
+Schedule, publish, and operate your Nostr presence with hosted or self-hosted deployment.
 
-[![Remix](https://img.shields.io/badge/Built%20with-Remix-blue?logo=remix&logoColor=white)](https://remix.run/)
-[![Nostr](https://img.shields.io/badge/Protocol-Nostr-purple?logo=nostr&logoColor=white)](https://nostr.com/)
-[![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](https://www.elastic.co/licensing/elastic-license)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CI](https://github.com/xdzczk/SmartFlowSocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xdzczk/SmartFlowSocial/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/xdzczk/SmartFlowSocial?display_name=tag)](https://github.com/xdzczk/SmartFlowSocial/releases)
+[![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Professional Nostr social media management platform**
-
-Schedule, manage, and optimize your decentralized social presence.
-
-[🚀 Try Hosted](https://smartflow.social) • [📖 Documentation](./docs/README.md) •
-[🔧 Self-Host](#-self-hosted)
-
-</div>
+[Try Hosted](https://smartflow.social) • [Quick Start](#quick-start) •
+[Documentation](./docs/README.md) • [API Reference](./docs/reference/api.md)
 
 ---
 
-## What is SmartFlowSocial?
+## What SmartFlowSocial is
 
-SmartFlowSocial is a **professional-grade social media management platform** for the Nostr protocol.
-Available as a fully managed hosted service or self-hostable open source software, it helps
-creators, businesses, and communities manage their decentralized social presence with
-enterprise-level features.
+SmartFlowSocial is a Nostr-native publishing and operations platform:
 
-**Available at:** [smartflow.social](https://smartflow.social) •
-[smartflowsocial.com](https://smartflowsocial.com)
+- Manage posting workflows (drafts, queue scheduling, calendar planning, recyclable content).
+- Run engagement features (broadcast campaigns, contests, giveaways, multi-account operations).
+- Keep signing sovereign (NIP-07 browser extension signing or NIP-46 remote signer flows).
+- Choose deployment posture: managed hosted service or self-hosted open source stack.
 
-### Why SmartFlowSocial?
-
-- 🔐 **Privacy-first**: Your keys never touch SmartFlow servers (signing via NIP-07 extensions or
-  NIP-46 remote signers)
-- 📅 **Advanced scheduling**: Calendar view, queues, intervals, and bulk upload
-- 🎨 **Beautiful UI**: Modern, intuitive interface built with Remix and TailwindCSS
-- 🔓 **Open source**: ELv2 licensed, fully auditable code
-- ⚡ **Lightning-native**: Built for the Bitcoin/Lightning ecosystem
-- 🔧 **Developer-friendly**: TypeScript, REST API, well-documented, extensible
+For complete feature documentation, see the
+[Feature Coverage Matrix](./docs/reference/feature-coverage-matrix.md).
 
 ---
 
-## ✨ Key Features
+## Quick Start
 
-### 📝 Post Management
+### Hosted (fastest path)
 
-- **Instant posting** — Post to Nostr with one click
-- **Scheduled posts** — Plan content days, weeks, or months in advance
-- **Bulk upload** — Upload multiple images with auto-scheduled intervals
-- **Long-form articles** — Full NIP-23 article support with rich text editor
-- **Drafts & templates** — Save work-in-progress and reusable post structures
-- **Recyclable posts** — Reuse evergreen content efficiently
+1. Open [smartflow.social](https://smartflow.social)
+2. Sign in with a NIP-07 extension (Alby / nos2x / Amber) or NIP-46 remote signer
+3. Create and schedule your first post
 
-### 📅 Scheduling & Queues
+Next: [Hosted quick start](./docs/getting-started/hosted.md)
 
-- **Calendar view** — Visual drag-and-drop scheduling (weekly/monthly views)
-- **Multiple queues** — Organize content with different scheduling rules
-- **Interval scheduling** — Post every X hours automatically
-- **Fixed time slots** — Post at specific times daily
-- **Queue override** — Manual scheduling with smart queue integration
+### Self-hosted (local development)
 
-### 🎁 Engagement & Tools
-
-- **Engagement feed** — Track replies, mentions, and interactions
-- **Nostr giveaways** — Create native giveaways with fair winner selection
-- **Blacklist management** — Block bots and spam accounts
-- **Hashtag presets** — Reusable hashtag collections
-- **Multi-account** — Parent/child account relationships
-
-### 🔌 API & Integrations
-
-- **REST API** — Full programmatic access to all features
-- **File upload API** — Upload media programmatically
-- **Queue management** — Schedule and manage posts via API
-- **Session authentication** — Cookie-based authentication
-
-📖 **[Full API Reference](./docs/reference/api.md)** — Complete API documentation with examples
-
----
-
-## 🚀 Quick Start
-
-### Hosted (Recommended)
-
-**Start managing your Nostr presence in 30 seconds:**
-
-1. Go to [smartflow.social](https://smartflow.social)
-2. Log in with a NIP-07 compatible Nostr extension (Alby / nos2x / Amber) **or** a NIP-46 remote
-   signer
-3. Create your first scheduled post
-
-**Next steps:**
-
-- [Hosted quick start guide](./docs/getting-started/hosted.md)
-- [Posting guide](./docs/guides/user-guides/posting.md)
-- [Calendar guide](./docs/guides/user-guides/calendar.md)
-
-### Self-Hosted
-
-**Prerequisites:** Node.js 20+, pnpm, PostgreSQL, Redis, S3-compatible storage
+Prerequisites: Node.js 20+, pnpm, PostgreSQL, Redis, S3-compatible storage.
 
 ```bash
-# Clone and install
 git clone https://github.com/xdzczk/SmartFlowSocial.git
 cd SmartFlowSocial
 pnpm install
-
-# Configure environment
 cp example.env .env
-# Edit .env with your configuration
-
-# Optional: Feature flags for staged rollout / emergency toggles
-# - NOSTR_AUTH_V2_ENABLED (default true): enable /auth/nostr/challenge + /auth/nostr/verify
-# - ENFORCE_NOSTR_SESSION_PUBKEY (default true): enforce session pubkey === signed event pubkey
-
-# Start services (Docker)
-pnpm docker  # Starts PostgreSQL and Redis
-
-# Set up database
+pnpm docker
 pnpm exec prisma generate
 pnpm exec prisma db push
 pnpm db:seed
-
-# Start development server
 pnpm dev
 ```
 
-**That's it!** Open [http://localhost:3000](http://localhost:3000) and start managing your Nostr
-presence.
+Then open `http://localhost:3000`.
 
-**Next steps:**
+Next:
 
-- [Self-host quickstart](./docs/getting-started/quickstart.md) — 5-minute setup
-- [Installation guide](./docs/getting-started/installation.md) — Complete setup
-- [Deployment guide](./docs/guides/deployment.md) — Production deployment
-
----
-
-## 🏗️ Architecture
-
-SmartFlowSocial is built with modern, production-ready technologies:
-
-- **Framework**: [Remix](https://remix.run) — Full-stack React with excellent DX
-- **Database**: PostgreSQL + [Prisma](https://prisma.io) — Type-safe database access
-- **Queue System**: [BullMQ](https://docs.bullmq.io/) + Redis — Reliable background job processing
-- **Styling**: [TailwindCSS](https://tailwindcss.com) — Rapid UI development
-- **UI Components**: [Shadcn UI](https://ui.shadcn.com) (Radix UI) — Accessible components
-- **Payments**: Lightning Network (NWC) — Native Bitcoin payments
-- **Protocol**: [Nostr](https://nostr.com) — Decentralized social protocol
-
-See [Architecture Documentation](./docs/getting-started/architecture.md) for detailed information.
+- [Self-host quickstart](./docs/getting-started/quickstart.md)
+- [Installation guide](./docs/getting-started/installation.md)
+- [Deployment guide](./docs/guides/deployment.md)
 
 ---
 
-## 📚 Documentation
+## Verify in 60 Seconds
 
-### For Hosted Users
-
-- [Hosted quick start](./docs/getting-started/hosted.md) — Get started in 5 minutes
-- [Posting guide](./docs/guides/user-guides/posting.md) — Create and schedule posts
-- [Calendar guide](./docs/guides/user-guides/calendar.md) — Visual scheduling
-- [Payments guide](./docs/guides/user-guides/payments.md) — Subscription management
-
-### For Self-Hosters
-
-- [Quick start](./docs/getting-started/quickstart.md) — 5-minute setup
-- [Installation guide](./docs/getting-started/installation.md) — Complete setup
-- [Deployment guide](./docs/guides/deployment.md) — Production deployment
-- [Operations guide](./docs/guides/operations.md) — Monitoring and maintenance
-
-### For Developers
-
-- [Developer guide](./docs/guides/developer-guide.md) — Development workflow
-- [API reference](./docs/reference/api.md) — Complete API documentation
-- [Testing guide](./docs/guides/testing.md) — Testing strategies
-- [Contributing guide](./CONTRIBUTING.md) — How to contribute
-
-**📖 [Full Documentation Index](./docs/README.md)** — Complete documentation hub
-
----
-
-## 🔐 Privacy & Security
-
-**Your privacy is protected regardless of hosting choice:**
-
-- 🔐 **Client-side / remote signing** — Private keys never touch SmartFlow servers (NIP-07 / NIP-46)
-- 🔒 **No key storage** — We never see or store your private keys
-- 🛡️ **Transparent code** — Verify our security practices yourself (ELv2 licensed)
-- 🔓 **No vendor lock-in** — Self-host anytime, export your data, stay in control
-
-See [Security Guide](./docs/guides/security.md) for best practices and reporting.
-
----
-
-## 🧪 Testing
-
-SmartFlowSocial has comprehensive test coverage:
+After booting locally, confirm the stack is healthy:
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run specific test suites
-pnpm test:unit          # Unit tests
-pnpm test:integration   # Integration tests
-pnpm test:e2e:smoke:run # Start app + smoke E2E gate
-pnpm test:e2e           # End-to-end tests (Cypress)
-pnpm test:security     # Security tests
-
-# With coverage
-pnpm test:coverage
+curl -i http://localhost:3000/healthcheck
+curl -I http://localhost:3000
+curl http://localhost:3010/metrics
 ```
 
-**Coverage**: 70%+ with comprehensive test suites
+Expected outcomes:
 
-See [Testing Guide](./docs/guides/testing.md) for detailed information.
+- `/healthcheck` returns `200 OK`
+- Root URL returns an HTTP success or redirect response
+- `/metrics` responds with Prometheus-formatted text
 
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes**
-4. **Run tests** (`pnpm test`)
-5. **Commit your changes** (`git commit -m 'feat: add amazing feature'`)
-6. **Push to the branch** (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request**
-
-### Contribution Areas
-
-- 🐛 **Bug Fixes**: Report and fix issues
-- ✨ **Features**: Add new functionality
-- 📚 **Documentation**: Improve docs
-- 🧪 **Tests**: Increase test coverage
-- 🎨 **UI/UX**: Improve user experience
-- ⚡ **Performance**: Optimize code
-
-See [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
+Operational details: [Operations guide](./docs/guides/operations.md)
 
 ---
 
-## 📊 Project Status
+## Core Capabilities
 
-- ✅ **Production Ready**: Stable and battle-tested
-- ✅ **Active Development**: Regular updates and improvements
-- ✅ **Well Tested**: 70%+ test coverage
-- ✅ **Well Documented**: Comprehensive documentation
-- ✅ **Community Driven**: Open to contributions
-- ✅ **API Available**: Full REST API for automation and integrations
+### Publishing and planning
 
-**Current version:** See [CHANGELOG](./CHANGELOG.md) for latest changes.
+- Instant and scheduled posting
+- Queue-based and interval scheduling
+- Calendar-based planning
+- Drafts, templates, and recyclable content
+- Long-form article support (NIP-23)
 
----
+### Engagement and growth
 
-## 💬 Community & Support
+- Engagement feed and triage workflows
+- Signed DM broadcast campaigns
+- Giveaways and contests with payout tracking
+- Multi-account parent/child management
 
-- 🌐 **Hosted Instance**: [smartflow.social](https://smartflow.social) |
-  [smartflowsocial.com](https://smartflowsocial.com)
-- 📖 **Documentation**: [docs/README.md](./docs/README.md)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
-- 💡 **Feature Requests**:
-  [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
-- 📧 **Security Issues**: Report privately (see [Security Guide](./docs/guides/security.md))
+### APIs and automation
 
----
+- REST APIs for publishing, queue management, media uploads, and engagement workflows
+- Session-based authentication for app and API usage
+- Admin and telemetry endpoints for operations insight
 
-## 📄 License
-
-Elastic License 2.0 (ELv2) — see [LICENSE](./LICENSE) for full terms.
-
-**Summary:** Free for personal and commercial use, with restrictions on providing the software as a
-managed service to third parties. See
-[Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) for details.
+Full endpoint inventory: [API reference](./docs/reference/api.md)
 
 ---
 
-<div align="center">
+## Architecture at a Glance
 
-**SmartFlowSocial** — Tools for Sovereign Creators.
+- Full-stack app built with [Remix](https://remix.run) and TypeScript
+- PostgreSQL + Prisma for durable relational data
+- Redis + BullMQ for background jobs and queue orchestration
+- Tailwind + shadcn/ui for product interface layer
+- Lightning-native payment integrations (NWC and BTCPay configuration support)
+- Nostr protocol integration and signer workflows (NIP-07 and NIP-46)
 
-Built with ❤️ for the Nostr community.
+Deep dive: [Architecture documentation](./docs/getting-started/architecture.md)
 
-[Try Hosted](https://smartflow.social) • [Self-Host](#-self-hosted) •
-[API Docs](./docs/reference/api.md) • [Documentation](./docs/README.md) •
-[Contributing](./CONTRIBUTING.md)
+---
 
-</div>
+## Compatibility Matrix
+
+| Area            | Requirement / Support                            |
+| --------------- | ------------------------------------------------ |
+| Node runtime    | `20+`                                            |
+| Package manager | `pnpm`                                           |
+| Database        | PostgreSQL                                       |
+| Queue / cache   | Redis                                            |
+| Asset storage   | S3-compatible object storage                     |
+| Nostr signing   | NIP-07 browser extensions, NIP-46 remote signers |
+| Deploy options  | Hosted service or self-hosted deployment         |
+
+Runtime configuration details: [Configuration reference](./docs/reference/configuration.md)
+
+---
+
+## Operations and Security
+
+- Health, metrics, and reliability runbooks: [Operations guide](./docs/guides/operations.md)
+- Deployment patterns and hardening guidance: [Deployment guide](./docs/guides/deployment.md)
+- Security model and reporting guidance: [Security guide](./docs/guides/security.md)
+- Data and privacy model overview: [Threat model](./docs/reference/threat-model.md)
+
+---
+
+## Quality Gates for Contributors
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+Additional test suites (integration, E2E, security, performance) are documented in
+[Testing guide](./docs/guides/testing.md).
+
+Contribution workflow: [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+---
+
+## Current Scope and Known Limitations
+
+- The project supports both hosted and self-hosted usage, but production operations still require
+  explicit environment and observability setup.
+- E2E coverage is being modernized toward flow-oriented suites; see
+  [Legacy migration map](./tests/e2e/LEGACY_MIGRATION_MAP.md).
+- Feature and API documentation coverage is tracked separately from behavioral guarantees; see
+  [Feature coverage matrix](./docs/reference/feature-coverage-matrix.md).
+
+Roadmap and changes: [CHANGELOG](./CHANGELOG.md)
+
+---
+
+## Community and Support
+
+- Hosted: [smartflow.social](https://smartflow.social)
+- Docs hub: [docs/README.md](./docs/README.md)
+- Bug reports: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
+- Feature requests: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
+
+---
+
+## License
+
+MIT License. See [LICENSE](./LICENSE).

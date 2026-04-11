@@ -1,6 +1,6 @@
 # Configuration Reference
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-04-11
 
 Complete reference for all environment variables and configuration options in SmartFlowSocial.
 
@@ -447,6 +447,20 @@ NOSTR_AUTH_V2_ENABLED=true
 
 ---
 
+### MEDIA_PIPELINE_V2_ENABLED
+
+Enable the unified media intent/commit pipeline (`/api/media/intents`, `/api/media/commit`).
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+MEDIA_PIPELINE_V2_ENABLED=true
+```
+
+---
+
 ### ENFORCE_NOSTR_SESSION_PUBKEY
 
 Enforce that every signed Nostr event’s pubkey matches the active session pubkey. Prevents using one
@@ -710,6 +724,66 @@ NIP88_POLLS_ENABLED=true
 ```
 
 **Related:** [Nostr reference — NIP-88](./nostr.md#nip-88-polls-kind-1068--1018)
+
+---
+
+### CONTESTS_V1_ENABLED
+
+When `true`, enables Contests v1 UI/routes under `/dashboard/contests`.
+
+```env
+CONTESTS_V1_ENABLED=true
+```
+
+---
+
+### SUBSCRIPTION_CHECKOUT_V2_ENABLED
+
+When `true`, enables dual-lane subscription checkout flows.
+
+```env
+SUBSCRIPTION_CHECKOUT_V2_ENABLED=true
+```
+
+---
+
+### BTCPAY_URL
+
+Base URL for BTCPay Server Greenfield API.
+
+```env
+BTCPAY_URL=https://btcpay.yourdomain.com
+```
+
+---
+
+### BTCPAY_API_KEY
+
+Greenfield API key used by SmartFlowSocial to create/query BTCPay resources.
+
+```env
+BTCPAY_API_KEY=your-btcpay-greenfield-api-key
+```
+
+---
+
+### BTCPAY_STORE_ID
+
+BTCPay Store ID associated with your checkout/invoice flows.
+
+```env
+BTCPAY_STORE_ID=your-store-id
+```
+
+---
+
+### BTCPAY_WEBHOOK_SECRET
+
+Secret used to verify signatures for `POST /api/btcpay/webhook`.
+
+```env
+BTCPAY_WEBHOOK_SECRET=your-webhook-secret
+```
 
 ---
 

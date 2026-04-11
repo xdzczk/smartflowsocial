@@ -1,4 +1,6 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useFetcher, useNavigate } from "@remix-run/react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -6,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -20,6 +23,7 @@ import {
   submitQuoteSchedule,
   submitRepostSchedule,
 } from "~/features/posts/calendar";
+import { PostPreviewSurface } from "~/features/posts/components/post-detail-modal/previews/PostPreviewSurface";
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
@@ -43,6 +47,7 @@ import {
   formatAttemptElapsed,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   addDays,
@@ -143,6 +148,7 @@ export function RescheduleScheduledPostModal({
   const [scheduleRepostQuoteMode, setScheduleRepostQuoteMode] = useState<
     null | "repost" | "quote"
   >(null);
+  const [showAdvancedActions, setShowAdvancedActions] = useState(false);
   const [repostQuoteScheduledFor, setRepostQuoteScheduledFor] = useState("");
   const [repostQuoteCaption, setRepostQuoteCaption] = useState("");
   const [repostQuoteConditions, setRepostQuoteConditions] =
@@ -179,6 +185,7 @@ export function RescheduleScheduledPostModal({
     isLongform,
     initialDateTime
   );
+  const currentScheduledFor = getInitialScheduledFor(post, isLongform);
   const defaultQueueId =
     !isLongform && "queueType" in post ? (post.queueType?.id ?? "") : "";
 
@@ -202,6 +209,7 @@ export function RescheduleScheduledPostModal({
       queueTypeId: qid,
     };
     setScheduleRepostQuoteMode(null);
+    setShowAdvancedActions(false);
     setRepostQuoteScheduledFor("");
     setRepostQuoteCaption("");
     setRepostQuoteConditions(null);
@@ -423,6 +431,16 @@ export function RescheduleScheduledPostModal({
       isLongform,
       post as unknown as CalendarPost
     ) && !isPureRepostSourcePost(post as PostData);
+  const mediaCount =
+    "fileUrl" in post
+      ? post.fileUrl.length
+      : "image" in post && post.image
+        ? 1
+        : 0;
+  const queueSummary =
+    !isLongform && "queueType" in post
+      ? (post.queueType?.name ?? "Manual (No Queue)")
+      : "Long-form publishing";
 
   const requestClose = () => {
     if (scheduleRepostQuoteMode) {
@@ -469,381 +487,487 @@ export function RescheduleScheduledPostModal({
   return (
     <Dialog open onOpenChange={(open) => !open && requestClose()}>
       <DialogContent
-        className="bg-card border-border flex max-h-[90dvh] w-full max-w-md flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md"
-        hideCloseButton={false}
+        className="bg-card text-card-foreground border-border/80 flex max-h-[90dvh] w-full max-w-[min(920px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl"
+        hideCloseButton
+        data-testid="reschedule-modal"
       >
-        <DialogHeader className="border-border/60 shrink-0 border-b px-6 py-4 text-left">
-          <DialogTitle className="text-lg font-semibold">
-            Reschedule Post
-          </DialogTitle>
+        <DialogHeader className="border-border/70 bg-card/95 shrink-0 border-b px-6 py-4 text-left backdrop-blur-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <DialogTitle className="text-xl font-semibold tracking-tight">
+                Reschedule post
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Currently scheduled for {formatDateTime(currentScheduledFor)}
+              </DialogDescription>
+            </div>
+            <DialogPrimitive.Close
+              type="button"
+              className="ring-offset-background focus:ring-ring text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0 rounded-md border border-transparent p-1.5 transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
+              aria-label="Close"
+            >
+              <X className={INLINE_ICON_SIZE_CLASS} aria-hidden />
+            </DialogPrimitive.Close>
+          </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-          {scheduleRepostQuoteMode ? (
+        <div
+          className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row"
+          data-testid="reschedule-modal-layout"
+        >
+          <aside
+            className="border-border/70 bg-muted/10 min-h-0 shrink-0 border-b px-5 py-5 md:w-[38%] md:border-r md:border-b-0"
+            data-testid="reschedule-identity-pane"
+          >
             <div className="space-y-4">
-              <p className="text-muted-foreground text-sm">
-                {scheduleRepostQuoteMode === "repost"
-                  ? "Choose when to schedule the repost."
-                  : "Choose when to schedule the quote and add an optional caption."}
+              <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                Post identity
               </p>
-              <div>
-                <label
-                  htmlFor="repostQuoteScheduledFor"
-                  className="text-foreground mb-1 block text-sm font-medium"
-                >
-                  Schedule at
-                </label>
-                <input
-                  id="repostQuoteScheduledFor"
-                  type="datetime-local"
-                  value={repostQuoteScheduledFor}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const min = getMinDatetimeLocalForSchedule(
-                      userTimezone,
-                      post.scheduledAtUtc ?? undefined
-                    );
-                    setRepostQuoteScheduledFor(clampDateTimeLocalToMin(v, min));
-                  }}
-                  min={getMinDatetimeLocalForSchedule(
-                    userTimezone,
-                    post.scheduledAtUtc ?? undefined
-                  )}
-                  className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+              <PostPreviewSurface className="bg-card/70">
+                <ScheduledPostPreview
+                  post={post}
+                  isLongform={isLongform}
+                  imageClassName="mb-3 rounded-lg border border-border/70 bg-muted/20"
+                  captionClassName="text-sm leading-relaxed"
                 />
-              </div>
-              {scheduleRepostQuoteMode === "repost" ? (
-                <div className="border-border space-y-1.5 rounded-md border p-3">
-                  <span className="text-muted-foreground text-xs">
-                    Only repost if original gets (optional)
-                  </span>
-                  <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
-                    {(
-                      [
-                        { key: "minReactions" as const, label: "Reactions" },
-                        { key: "minZaps" as const, label: "Zaps" },
-                        { key: "minComments" as const, label: "Comments" },
-                        { key: "minReposts" as const, label: "Reposts" },
-                        { key: "minSats" as const, label: "Sats" },
-                      ] as const
-                    ).map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-1.5">
-                        <label className="text-muted-foreground text-xs whitespace-nowrap">
-                          {label}
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="—"
-                          value={repostQuoteConditions?.[key] ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            const v =
-                              raw.trim() === ""
-                                ? undefined
-                                : Math.max(0, parseInt(raw, 10) || 0);
-                            setRepostQuoteConditions((prev) => {
-                              if (v === undefined) {
-                                const next = prev ? { ...prev } : {};
-                                delete next[key];
-                                return Object.keys(next).length > 0
-                                  ? next
-                                  : null;
-                              }
-                              return { ...prev, [key]: v };
-                            });
-                          }}
-                          className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
-                          aria-label={`Min ${label.toLowerCase()}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
+              </PostPreviewSurface>
+              <dl className="space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground text-xs">Media</dt>
+                  <dd className="text-right text-sm font-medium">
+                    {mediaCount} file{mediaCount === 1 ? "" : "s"}
+                  </dd>
                 </div>
-              ) : null}
-              {scheduleRepostQuoteMode === "quote" ? (
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground text-xs">Queue</dt>
+                  <dd className="text-right text-sm font-medium">
+                    {queueSummary}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-muted-foreground text-xs">
+                    Current time
+                  </dt>
+                  <dd className="text-right text-sm font-medium">
+                    {formatDateTime(currentScheduledFor)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </aside>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-6">
+            {scheduleRepostQuoteMode ? (
+              <div className="space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  {scheduleRepostQuoteMode === "repost"
+                    ? "Choose when to schedule the repost."
+                    : "Choose when to schedule the quote and add an optional caption."}
+                </p>
                 <div>
                   <label
-                    htmlFor="repostQuoteCaption"
+                    htmlFor="repostQuoteScheduledFor"
                     className="text-foreground mb-1 block text-sm font-medium"
                   >
-                    Quote caption (optional)
+                    Schedule at
                   </label>
-                  <textarea
-                    id="repostQuoteCaption"
-                    value={repostQuoteCaption}
-                    onChange={(e) => setRepostQuoteCaption(e.target.value)}
-                    placeholder="Add your comment..."
-                    rows={3}
+                  <input
+                    id="repostQuoteScheduledFor"
+                    type="datetime-local"
+                    value={repostQuoteScheduledFor}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      const min = getMinDatetimeLocalForSchedule(
+                        userTimezone,
+                        post.scheduledAtUtc ?? undefined
+                      );
+                      setRepostQuoteScheduledFor(
+                        clampDateTimeLocalToMin(v, min)
+                      );
+                    }}
+                    min={getMinDatetimeLocalForSchedule(
+                      userTimezone,
+                      post.scheduledAtUtc ?? undefined
+                    )}
                     className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
-              ) : null}
-              {(scheduleRepostQuoteFetcher.data?.error ?? signingError) ? (
-                <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
-                  <div className="text-destructive text-sm">
-                    {getClientDisplayErrorMessage(
-                      scheduleRepostQuoteFetcher.data?.error ?? signingError
-                    )}
+                {scheduleRepostQuoteMode === "repost" ? (
+                  <div className="border-border space-y-1.5 rounded-md border p-3">
+                    <span className="text-muted-foreground text-xs">
+                      Only repost if original gets (optional)
+                    </span>
+                    <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
+                      {(
+                        [
+                          { key: "minReactions" as const, label: "Reactions" },
+                          { key: "minZaps" as const, label: "Zaps" },
+                          { key: "minComments" as const, label: "Comments" },
+                          { key: "minReposts" as const, label: "Reposts" },
+                          { key: "minSats" as const, label: "Sats" },
+                        ] as const
+                      ).map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <label className="text-muted-foreground text-xs whitespace-nowrap">
+                            {label}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="—"
+                            value={repostQuoteConditions?.[key] ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const v =
+                                raw.trim() === ""
+                                  ? undefined
+                                  : Math.max(0, parseInt(raw, 10) || 0);
+                              setRepostQuoteConditions((prev) => {
+                                if (v === undefined) {
+                                  const next = prev ? { ...prev } : {};
+                                  delete next[key];
+                                  return Object.keys(next).length > 0
+                                    ? next
+                                    : null;
+                                }
+                                return { ...prev, [key]: v };
+                              });
+                            }}
+                            className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                            aria-label={`Min ${label.toLowerCase()}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <ScheduledPostPreview post={post} isLongform={isLongform} />
+                ) : null}
+                {scheduleRepostQuoteMode === "quote" ? (
+                  <div>
+                    <label
+                      htmlFor="repostQuoteCaption"
+                      className="text-foreground mb-1 block text-sm font-medium"
+                    >
+                      Quote caption (optional)
+                    </label>
+                    <textarea
+                      id="repostQuoteCaption"
+                      value={repostQuoteCaption}
+                      onChange={(e) => setRepostQuoteCaption(e.target.value)}
+                      placeholder="Add your comment..."
+                      rows={3}
+                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                  </div>
+                ) : null}
+                {(scheduleRepostQuoteFetcher.data?.error ?? signingError) ? (
+                  <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
+                    <div className="text-destructive text-sm">
+                      {getClientDisplayErrorMessage(
+                        scheduleRepostQuoteFetcher.data?.error ?? signingError
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               </div>
-
-              <ScheduledTimeField
-                id="reschedule-scheduled-time"
-                valueDatetimeLocal={formatDateTimeForInput(scheduledFor)}
-                minDatetimeLocal={getNowForDateTimeLocal(userTimezone)}
-                onChange={(e) => {
-                  if (!e.target.value) return;
-                  try {
-                    const zonedDateTime = parseDateTimeLocal(
-                      e.target.value,
-                      userTimezone
-                    );
-                    const utcZoned = zonedDateTime.withTimeZone("UTC");
-                    form.setValue("scheduledFor", toDate(utcZoned), {
-                      shouldValidate: true,
-                    });
-                  } catch {
-                    try {
-                      const dateObj = new Date(e.target.value);
-                      const zoned = fromDate(dateObj, userTimezone);
-                      const utcZoned = zoned.withTimeZone("UTC");
-                      form.setValue("scheduledFor", toDate(utcZoned), {
-                        shouldValidate: true,
-                      });
-                    } catch {
-                      form.setValue("scheduledFor", new Date(e.target.value), {
-                        shouldValidate: true,
-                      });
-                    }
-                  }
-                }}
-                humanReadableLine={formatDateTime(scheduledFor)}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    form.setValue(
-                      "scheduledFor",
-                      toDate(addHours(fromDate(scheduledFor, "UTC"), 1))
-                    )
-                  }
+            ) : (
+              <div className="space-y-4">
+                <section
+                  className="space-y-3"
+                  data-testid="reschedule-time-section"
                 >
-                  +1h
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const tomorrow = addDays(fromDate(scheduledFor, "UTC"), 1);
-                    const tomorrowMorning = tomorrow.with({
-                      hour: 9,
-                      minute: 0,
-                      second: 0,
-                      millisecond: 0,
-                    });
-                    form.setValue("scheduledFor", toDate(tomorrowMorning));
-                  }}
-                >
-                  Tomorrow morning
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    form.setValue(
-                      "scheduledFor",
-                      toDate(addDays(fromDate(scheduledFor, "UTC"), 7))
-                    )
-                  }
-                >
-                  Next week same time
-                </Button>
-              </div>
+                  <ScheduledTimeField
+                    id="reschedule-scheduled-time"
+                    valueDatetimeLocal={formatDateTimeForInput(scheduledFor)}
+                    minDatetimeLocal={getNowForDateTimeLocal(userTimezone)}
+                    emphasis="primary"
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      try {
+                        const zonedDateTime = parseDateTimeLocal(
+                          e.target.value,
+                          userTimezone
+                        );
+                        const utcZoned = zonedDateTime.withTimeZone("UTC");
+                        form.setValue("scheduledFor", toDate(utcZoned), {
+                          shouldValidate: true,
+                        });
+                      } catch {
+                        try {
+                          const dateObj = new Date(e.target.value);
+                          const zoned = fromDate(dateObj, userTimezone);
+                          const utcZoned = zoned.withTimeZone("UTC");
+                          form.setValue("scheduledFor", toDate(utcZoned), {
+                            shouldValidate: true,
+                          });
+                        } catch {
+                          form.setValue(
+                            "scheduledFor",
+                            new Date(e.target.value),
+                            {
+                              shouldValidate: true,
+                            }
+                          );
+                        }
+                      }
+                    }}
+                    humanReadableLine={formatDateTime(scheduledFor)}
+                  />
+                </section>
 
-              {!isLongform ? (
-                <QueueSelector
-                  id="reschedule-queue"
-                  value={watchedQueue ?? ""}
-                  onChange={(id) => {
-                    (form.setValue as (n: string, v: string) => void)(
-                      "queueTypeId",
-                      id
-                    );
-                  }}
-                  queueTypes={queueTypes}
-                />
-              ) : null}
-
-              {wasAutoScheduled ? (
-                <p className="text-muted-foreground text-xs">
-                  This post followed a queue slot. Confirming applies your
-                  chosen time (manual scheduling).
-                </p>
-              ) : null}
-              <p className="text-muted-foreground text-xs">
-                If this post has attached follow-ups, their schedule will be
-                adjusted automatically.
-              </p>
-
-              {canScheduleRepostQuote ? (
-                <div className="space-y-2">
-                  <p className="text-foreground text-sm font-medium">
-                    Also schedule
+                <section className="space-y-2.5">
+                  <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                    Quick shortcuts
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setScheduleRepostQuoteMode("repost")}
+                      onClick={() =>
+                        form.setValue(
+                          "scheduledFor",
+                          toDate(addHours(fromDate(scheduledFor, "UTC"), 1))
+                        )
+                      }
                     >
-                      Schedule repost
+                      +1h
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setScheduleRepostQuoteMode("quote")}
-                    >
-                      Schedule quote
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              <NostrResignNotice variant="scheduleChange" />
-
-              {isSigningEvent ? (
-                <div className="bg-muted text-muted-foreground flex flex-col gap-2 rounded-lg border p-3 text-sm">
-                  <span>
-                    Waiting for signer approval…
-                    {signAttempt ? (
-                      <>
-                        {" "}
-                        Attempt {signAttempt.attempt} of{" "}
-                        {signAttempt.maxAttempts} ·{" "}
-                        {formatAttemptElapsed(
-                          signElapsedSeconds,
-                          signAttempt.timeoutMs
-                        )}
-                      </>
-                    ) : null}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        void requestNewSignerSession(cancelSigningState)
-                      }
-                    >
-                      Use new session
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
                       onClick={() => {
-                        cancelSigningState();
-                        void tryBackgroundReconnect();
+                        const tomorrow = addDays(
+                          fromDate(scheduledFor, "UTC"),
+                          1
+                        );
+                        const tomorrowMorning = tomorrow.with({
+                          hour: 9,
+                          minute: 0,
+                          second: 0,
+                          millisecond: 0,
+                        });
+                        form.setValue("scheduledFor", toDate(tomorrowMorning));
                       }}
                     >
-                      Cancel signing
+                      Tomorrow morning
                     </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              {form.formState.errors.scheduledFor ? (
-                <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
-                  {form.formState.errors.scheduledFor.message}
-                </div>
-              ) : null}
-
-              {(fetcher.data?.error ?? signingError) ? (
-                <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
-                  <p>{rescheduleErrorMessage}</p>
-                  {requiresFullEditor ? (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="text-destructive mt-2 px-0 underline"
-                      onClick={openFullEditor}
+                      onClick={() =>
+                        form.setValue(
+                          "scheduledFor",
+                          toDate(addDays(fromDate(scheduledFor, "UTC"), 7))
+                        )
+                      }
                     >
-                      Open full editor to resolve
+                      Next week same time
                     </Button>
+                  </div>
+                </section>
+
+                {!isLongform ? (
+                  <section className="space-y-2">
+                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                      Queue
+                    </p>
+                    <QueueSelector
+                      id="reschedule-queue"
+                      value={watchedQueue ?? ""}
+                      onChange={(id) => {
+                        (form.setValue as (n: string, v: string) => void)(
+                          "queueTypeId",
+                          id
+                        );
+                      }}
+                      queueTypes={queueTypes}
+                      className="bg-muted/20 border-border/70 rounded-lg border p-3"
+                      labelClassName="text-muted-foreground text-xs font-medium"
+                      selectClassName="text-sm"
+                    />
+                  </section>
+                ) : null}
+
+                <section className="space-y-2">
+                  {wasAutoScheduled ? (
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      This post followed a queue slot. Confirming applies your
+                      selected time as a manual schedule.
+                    </p>
                   ) : null}
-                </div>
-              ) : null}
-            </>
-          )}
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    If this post has attached follow-ups, their schedule will be
+                    adjusted automatically.
+                  </p>
+                  <NostrResignNotice variant="scheduleChange" />
+                </section>
+
+                {canScheduleRepostQuote ? (
+                  <section className="space-y-2">
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-medium"
+                      onClick={() => setShowAdvancedActions((prev) => !prev)}
+                      data-testid="reschedule-advanced-toggle"
+                    >
+                      {showAdvancedActions ? (
+                        <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      Advanced actions
+                    </button>
+                    {showAdvancedActions ? (
+                      <div className="bg-muted/20 border-border/70 space-y-2 rounded-lg border p-3">
+                        <p className="text-foreground text-sm font-medium">
+                          Also schedule
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setScheduleRepostQuoteMode("repost")}
+                          >
+                            Schedule repost
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setScheduleRepostQuoteMode("quote")}
+                          >
+                            Schedule quote
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
+                ) : null}
+
+                {isSigningEvent ? (
+                  <div className="bg-muted text-muted-foreground border-border/70 flex flex-col gap-2 rounded-lg border p-3 text-sm">
+                    <span>
+                      Waiting for signer approval…
+                      {signAttempt ? (
+                        <>
+                          {" "}
+                          Attempt {signAttempt.attempt} of{" "}
+                          {signAttempt.maxAttempts} ·{" "}
+                          {formatAttemptElapsed(
+                            signElapsedSeconds,
+                            signAttempt.timeoutMs
+                          )}
+                        </>
+                      ) : null}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          void requestNewSignerSession(cancelSigningState)
+                        }
+                      >
+                        Use new session
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          cancelSigningState();
+                          void tryBackgroundReconnect();
+                        }}
+                      >
+                        Cancel signing
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {form.formState.errors.scheduledFor ? (
+                  <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                    {form.formState.errors.scheduledFor.message}
+                  </div>
+                ) : null}
+
+                {(fetcher.data?.error ?? signingError) ? (
+                  <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                    <p>{rescheduleErrorMessage}</p>
+                    {requiresFullEditor ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive mt-2 px-0 underline"
+                        onClick={openFullEditor}
+                      >
+                        Open full editor to resolve
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-t px-6 py-3">
-          {scheduleRepostQuoteMode ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setScheduleRepostQuoteMode(null);
-                  setRepostQuoteScheduledFor("");
-                  setRepostQuoteCaption("");
-                  setRepostQuoteConditions(null);
-                }}
-              >
-                Back
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void handleScheduleRepostQuoteConfirm()}
-                disabled={
-                  scheduleRepostQuoteFetcher.state !== "idle" ||
-                  isSigningEvent ||
-                  !repostQuoteScheduledFor.trim()
-                }
-              >
-                {isSigningEvent ||
-                scheduleRepostQuoteFetcher.state === "submitting"
-                  ? "Signing…"
-                  : scheduleRepostQuoteMode === "repost"
-                    ? "Schedule repost"
-                    : "Schedule quote"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button type="button" variant="ghost" onClick={requestClose}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void handleSubmit()}
-                disabled={fetcher.state === "submitting" || isSigningEvent}
-              >
-                {isSigningEvent
-                  ? "Signing…"
-                  : fetcher.state === "submitting"
-                    ? "Saving…"
-                    : "Confirm reschedule"}
-              </Button>
-            </>
-          )}
+        <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {scheduleRepostQuoteMode ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setScheduleRepostQuoteMode(null);
+                    setRepostQuoteScheduledFor("");
+                    setRepostQuoteCaption("");
+                    setRepostQuoteConditions(null);
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void handleScheduleRepostQuoteConfirm()}
+                  disabled={
+                    scheduleRepostQuoteFetcher.state !== "idle" ||
+                    isSigningEvent ||
+                    !repostQuoteScheduledFor.trim()
+                  }
+                >
+                  {isSigningEvent ||
+                  scheduleRepostQuoteFetcher.state === "submitting"
+                    ? "Signing…"
+                    : scheduleRepostQuoteMode === "repost"
+                      ? "Schedule repost"
+                      : "Schedule quote"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="ghost" onClick={requestClose}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void handleSubmit()}
+                  disabled={fetcher.state === "submitting" || isSigningEvent}
+                >
+                  {isSigningEvent
+                    ? "Signing…"
+                    : fetcher.state === "submitting"
+                      ? "Saving…"
+                      : "Confirm reschedule"}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

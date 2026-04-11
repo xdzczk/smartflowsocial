@@ -20,7 +20,8 @@ import {
   getUserById,
 } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
-import { formatForDateTimeLocal, fromDate } from "~/lib/temporal";
+import { formatNpubShort } from "~/lib/nostr-conversion";
+import { dateFormatToLocale, formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { buildInitialPollRestoreFromDraftPost } from "./build-initial-poll-restore.server";
 
@@ -32,6 +33,66 @@ interface LoadNewPostDataOptions {
   draftId?: string | null;
   templateId?: string | null;
   composerContext?: ComposerContext;
+}
+
+function getAccountDisplayLabel(user: unknown): string {
+  const fallback = "@current-account";
+  if (!user || typeof user !== "object") return fallback;
+
+  const userObj = user as {
+    username?: unknown;
+    name?: unknown;
+    npub?: unknown;
+    nostrProfile?: unknown;
+  };
+
+  let profileName: string | undefined;
+  let profileDisplayName: string | undefined;
+
+  try {
+    const parsedProfile: unknown =
+      typeof userObj.nostrProfile === "string"
+        ? (JSON.parse(userObj.nostrProfile) as unknown)
+        : userObj.nostrProfile;
+    if (
+      parsedProfile &&
+      typeof parsedProfile === "object" &&
+      !Array.isArray(parsedProfile)
+    ) {
+      const profileObj = parsedProfile as {
+        name?: unknown;
+        display_name?: unknown;
+      };
+      profileName =
+        typeof profileObj.name === "string" && profileObj.name.trim().length > 0
+          ? profileObj.name.trim()
+          : undefined;
+      profileDisplayName =
+        typeof profileObj.display_name === "string" &&
+        profileObj.display_name.trim().length > 0
+          ? profileObj.display_name.trim()
+          : undefined;
+    }
+  } catch {
+    // Ignore invalid profile JSON and continue with safe fallbacks.
+  }
+
+  if (profileDisplayName) return profileDisplayName;
+  if (profileName) return profileName;
+
+  if (
+    typeof userObj.username === "string" &&
+    userObj.username.trim().length > 0
+  )
+    return userObj.username.trim();
+  if (typeof userObj.name === "string" && userObj.name.trim().length > 0)
+    return userObj.name.trim();
+
+  if (typeof userObj.npub === "string" && userObj.npub.trim().length > 0) {
+    return formatNpubShort(userObj.npub.trim());
+  }
+
+  return fallback;
 }
 
 function readDraftMetaAttachmentMeta(post: {
@@ -115,7 +176,17 @@ export async function loadNewPostData(
     getUserById(userId),
   ]);
 
-  const timezone = "UTC";
+  const timezone =
+    typeof user?.timezone === "string" && user.timezone.trim().length > 0
+      ? user.timezone.trim()
+      : "UTC";
+  const userTimeFormat: "12h" | "24h" =
+    user?.timeFormat === "24h" ? "24h" : "12h";
+  const userDateFormat =
+    user?.dateFormat === "mmddyyyy" || user?.dateFormat === "yyyymmdd"
+      ? user.dateFormat
+      : "ddmmyyyy";
+  const dateLocale = dateFormatToLocale(userDateFormat);
   const base = {
     scheduleIntervals,
     queueTypes,
@@ -141,15 +212,7 @@ export async function loadNewPostData(
       parentActionId?: string;
     } | null,
   };
-  const accountLabel = (() => {
-    const u = user as
-      | { name?: string | null; username?: string | null; npub?: string | null }
-      | null
-      | undefined;
-    const handle = u?.username ?? u?.name ?? u?.npub;
-    if (!handle) return "@current-account";
-    return handle.startsWith("@") ? handle : `@${handle}`;
-  })();
+  const accountLabel = getAccountDisplayLabel(user);
 
   if (templateId && templateId.length > 0) {
     const prefill = await getTemplatePrefill({ id: templateId, userId });
@@ -205,9 +268,18 @@ export async function loadNewPostData(
     };
     const scheduledForLabel =
       sourcePostForComposer.scheduledAtUtc != null
-        ? formatForDateTimeLocal(
+        ? formatForDisplay(
             fromDate(sourcePostForComposer.scheduledAtUtc, "UTC"),
-            timezone
+            timezone,
+            {
+              month: "2-digit",
+              day: "2-digit",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            },
+            userTimeFormat,
+            dateLocale
           )
         : undefined;
     const modeLabel =

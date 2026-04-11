@@ -22,8 +22,8 @@ Understand the fundamental concepts behind SmartFlowSocial and how everything wo
 
 ## What is SmartFlowSocial?
 
-SmartFlowSocial is a **self-hosted, professional-grade social media management platform** for the
-Nostr protocol. It enables you to:
+SmartFlowSocial is a professional-grade social media management platform for the Nostr protocol,
+available as both a hosted service and self-hosted software. It enables you to:
 
 - **Schedule Posts** - Plan content days, weeks, or months in advance
 - **Manage Multiple Accounts** - Handle parent/child account relationships
@@ -34,9 +34,9 @@ Nostr protocol. It enables you to:
 
 ### Key Principles
 
-1. **Privacy-First** - Your keys never leave your browser
-2. **Self-Hosted** - Full control over your data and infrastructure
-3. **Open Source** - ELv2 licensed, fully auditable
+1. **Privacy-First** - Signing keys remain in your signer (browser extension or remote signer)
+2. **Flexible Hosting** - Choose hosted convenience or self-hosted control
+3. **Open Source** - MIT licensed, fully auditable
 4. **Professional Features** - Enterprise-level scheduling and management
 
 ---
@@ -96,6 +96,16 @@ NIP-07 allows browser extensions to:
 
 ---
 
+### NIP-46 (Remote Signer)
+
+SmartFlowSocial also supports NIP-46 (Nostr Connect) for remote signing:
+
+- Sign with a remote signer/bunker instead of browser extension
+- Keep keys outside the browser while preserving user-controlled signing
+- Use the same account flow for publishing, scheduling, and auth
+
+---
+
 ## Architecture Overview
 
 ### System Components
@@ -135,14 +145,14 @@ NIP-07 allows browser extensions to:
 
 ### Technology Stack
 
-| Layer              | Technology          | Purpose                    |
-| ------------------ | ------------------- | -------------------------- |
-| **Framework**      | Remix               | Full-stack React framework |
-| **Database**       | PostgreSQL + Prisma | Data persistence           |
-| **Queue**          | BullMQ + Redis      | Background job processing  |
-| **Storage**        | S3-compatible       | Image uploads              |
-| **Authentication** | Nostr (NIP-07)      | Decentralized auth         |
-| **Payments**       | Lightning (NWC)     | Subscription payments      |
+| Layer              | Technology             | Purpose                    |
+| ------------------ | ---------------------- | -------------------------- |
+| **Framework**      | Remix                  | Full-stack React framework |
+| **Database**       | PostgreSQL + Prisma    | Data persistence           |
+| **Queue**          | BullMQ + Redis         | Background job processing  |
+| **Storage**        | S3-compatible          | Image uploads              |
+| **Authentication** | Nostr (NIP-07, NIP-46) | Decentralized auth         |
+| **Payments**       | Lightning + BTCPay     | Subscription payments      |
 
 ---
 
@@ -256,13 +266,13 @@ NIP-07 allows browser extensions to:
 
 ### Client-Side Signing
 
-**Principle:** Private keys never leave the browser.
+**Principle:** Private keys never leave the user's signer.
 
 **How it works:**
 
 1. Event created in browser
-2. Browser requests signature from extension
-3. Extension signs event (key stays in extension)
+2. Browser requests signature from extension or remote signer
+3. Signer signs event (key remains in signer)
 4. Signed event sent to server
 5. Server never sees private key
 

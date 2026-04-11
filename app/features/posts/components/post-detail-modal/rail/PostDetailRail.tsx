@@ -28,7 +28,7 @@ import type { PostThreadGroupResponse } from "../usePostThreadGroup";
 import { DetailModalReplySnippet } from "./DetailModalReplySnippet";
 
 const RAIL_SECTION_LABEL = cn(
-  "normal-case tracking-tight text-muted-foreground/70 !mb-1 text-[10px] font-medium"
+  "normal-case tracking-tight text-muted-foreground/75 !mb-1.5 text-[10px] font-medium"
 );
 
 const USER_TAGS_VISIBLE = 8;
@@ -127,6 +127,7 @@ export function PostDetailRail({
   threadContextPosition,
   userTags,
   technicalTags,
+  stateSectionMode,
 }: {
   type: "draft" | "published" | "scheduled";
   post: PostDetailModalPost;
@@ -192,6 +193,7 @@ export function PostDetailRail({
   userTags: string[];
   technicalTags: string[];
   variant: PostDetailContentVariant;
+  stateSectionMode: "performance" | "actions";
 }) {
   const [tagsExpanded, setTagsExpanded] = useState(false);
   /** When there is no signed-event JSON toggle, expand technical tags locally. */
@@ -223,7 +225,17 @@ export function PostDetailRail({
       value: String(pollOptionCount),
     });
   }
-  const showStructure = structureRows.length > 0;
+  const contentRows = [...structureRows];
+  if (relationshipType === "reply" && inReplyTo) {
+    contentRows.push({ label: "Reply target", value: "Present" });
+  }
+  if (relationshipType === "quote" && quotedPost) {
+    contentRows.push({ label: "Quoted post", value: "Attached" });
+  }
+  if (relationshipType === "repost" && repostedPost) {
+    contentRows.push({ label: "Reposted source", value: "Present" });
+  }
+  const showContent = contentRows.length > 0 || userTags.length > 0;
   const engagementStats =
     type === "published" && showStats && stats && eventId ? stats : null;
 
@@ -243,20 +255,12 @@ export function PostDetailRail({
     directReplies.length > 0;
 
   const showRepliesSection =
-    relationshipType === "repost"
+    stateSectionMode === "performance" &&
+    (relationshipType === "repost"
       ? false
       : relationshipType === "original"
         ? showRepliesOriginal
-        : showRepliesSecondary;
-
-  /* eslint-disable @typescript-eslint/prefer-nullish-coalescing -- Boolean OR of relationship guards, not nullish coalescing */
-  const showRelationshipRail = Boolean(
-    (relationshipType === "reply" && inReplyTo) ||
-    (relationshipType === "quote" && quotedPost) ||
-    (relationshipType === "repost" && repostedPost) ||
-    (relationshipType === "thread_item" && threadContextPosition)
-  );
-  /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
+        : showRepliesSecondary);
 
   const hasSignedEventJson = Boolean(showSignedEvent && post.signedEvent);
   const technicalTagsOnly = technicalTags.length > 0 && !hasSignedEventJson;
@@ -276,13 +280,13 @@ export function PostDetailRail({
   return (
     <aside
       className={cn(
-        "border-border bg-muted/10 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[30%] md:max-w-[320px] md:min-w-[260px]",
+        "border-border/70 bg-background/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
         "border-t md:border-t-0 md:border-l"
       )}
     >
       <div className={pad}>
         <RailSectionHeader className={RAIL_SECTION_LABEL}>
-          Overview
+          Publishing
         </RailSectionHeader>
         <div className="mt-1.5 space-y-2.5">
           <RailSettingsValueRow
@@ -333,112 +337,21 @@ export function PostDetailRail({
             />
           ) : null}
           {queueType ? (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <span className="text-foreground text-xs font-medium">Queue</span>
               <QueueTypeCalm queueType={queueType} />
             </div>
           ) : null}
-          {userTags.length > 0 && !post.repost ? (
-            <UserTagChips
-              tags={userTags}
-              expanded={tagsExpanded}
-              onToggle={() => setTagsExpanded((v) => !v)}
-            />
-          ) : null}
-          {type === "published" &&
-          eventId &&
-          openOnNostrUrl &&
-          !engagementStats ? (
-            <div className="flex flex-col gap-2 pt-1">
-              <Link
-                to={openOnNostrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                Open on Nostr
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-              <Link
-                to={viewThreadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                View thread
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-            </div>
-          ) : null}
         </div>
 
-        {showRelationshipRail ? (
-          <>
-            <div className={divide} />
-            {relationshipType === "reply" && inReplyTo ? (
-              <>
-                <RailSectionHeader className={RAIL_SECTION_LABEL}>
-                  In reply to
-                </RailSectionHeader>
-                <div className="mt-1.5">
-                  <InReplyToBlock
-                    authorLine={inReplyTo.authorLine}
-                    snippet={inReplyTo.snippet}
-                    viewThreadUrl={inReplyTo.viewThreadUrl}
-                  />
-                </div>
-              </>
-            ) : null}
-            {relationshipType === "quote" && quotedPost ? (
-              <>
-                <RailSectionHeader className={RAIL_SECTION_LABEL}>
-                  Quoted post
-                </RailSectionHeader>
-                <div className="mt-1.5">
-                  <QuotedPostBlock
-                    authorLine={quotedPost.authorLine}
-                    snippet={quotedPost.snippet}
-                    openUrl={quotedPost.openUrl}
-                    hasMediaHint={quotedPost.hasMediaHint}
-                  />
-                </div>
-              </>
-            ) : null}
-            {relationshipType === "repost" && repostedPost ? (
-              <>
-                <RailSectionHeader className={RAIL_SECTION_LABEL}>
-                  Reposted post
-                </RailSectionHeader>
-                <div className="mt-1.5">
-                  <RepostedPostBlock
-                    authorLine={repostedPost.authorLine}
-                    snippet={repostedPost.snippet}
-                    openUrl={repostedPost.openUrl}
-                  />
-                </div>
-              </>
-            ) : null}
-            {relationshipType === "thread_item" && threadContextPosition ? (
-              <>
-                <RailSectionHeader className={RAIL_SECTION_LABEL}>
-                  Thread context
-                </RailSectionHeader>
-                <div className="mt-1.5">
-                  <ThreadContextBlock positionLine={threadContextPosition} />
-                </div>
-              </>
-            ) : null}
-          </>
-        ) : null}
-
-        {showStructure ? (
+        {showContent ? (
           <>
             <div className={divide} />
             <RailSectionHeader className={RAIL_SECTION_LABEL}>
-              Structure
+              Content
             </RailSectionHeader>
-            <div className="mt-1.5 space-y-1">
-              {structureRows.map((row) => (
+            <div className="mt-1.5 space-y-1.5">
+              {contentRows.map((row) => (
                 <RailSettingsValueRow
                   key={row.label + row.value}
                   label={row.label}
@@ -446,6 +359,149 @@ export function PostDetailRail({
                   trailing={null}
                 />
               ))}
+              {relationshipType === "reply" && inReplyTo ? (
+                <InReplyToBlock
+                  authorLine={inReplyTo.authorLine}
+                  snippet={inReplyTo.snippet}
+                  viewThreadUrl={inReplyTo.viewThreadUrl}
+                />
+              ) : null}
+              {relationshipType === "quote" && quotedPost ? (
+                <QuotedPostBlock
+                  authorLine={quotedPost.authorLine}
+                  snippet={quotedPost.snippet}
+                  openUrl={quotedPost.openUrl}
+                  hasMediaHint={quotedPost.hasMediaHint}
+                />
+              ) : null}
+              {relationshipType === "repost" && repostedPost ? (
+                <RepostedPostBlock
+                  authorLine={repostedPost.authorLine}
+                  snippet={repostedPost.snippet}
+                  openUrl={repostedPost.openUrl}
+                />
+              ) : null}
+              {relationshipType === "thread_item" && threadContextPosition ? (
+                <ThreadContextBlock positionLine={threadContextPosition} />
+              ) : null}
+              {userTags.length > 0 && !post.repost ? (
+                <UserTagChips
+                  tags={userTags}
+                  expanded={tagsExpanded}
+                  onToggle={() => setTagsExpanded((v) => !v)}
+                />
+              ) : null}
+            </div>
+          </>
+        ) : null}
+
+        {stateSectionMode === "actions" ? (
+          <>
+            <div className={divide} />
+            <RailSectionHeader className={RAIL_SECTION_LABEL}>
+              Next steps
+            </RailSectionHeader>
+            <div className="mt-1.5 space-y-2">
+              <RailSettingsValueRow
+                label="Primary action"
+                value={type === "scheduled" ? "Edit post" : "Review details"}
+                trailing={null}
+              />
+              {type === "scheduled" ? (
+                <RailSettingsValueRow
+                  label="Secondary action"
+                  value="Reschedule"
+                  trailing={null}
+                />
+              ) : null}
+              <p className="text-muted-foreground text-xs">
+                {type === "scheduled"
+                  ? "Use Edit and Reschedule to validate this post before it goes live."
+                  : "No performance metrics are available for this state."}
+              </p>
+            </div>
+          </>
+        ) : null}
+
+        {stateSectionMode === "performance" ? (
+          <>
+            <div className={divide} />
+            <RailSectionHeader className={RAIL_SECTION_LABEL}>
+              Performance
+            </RailSectionHeader>
+            {engagementStats ? (
+              <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.replies}
+                  </p>
+                  <p className="text-muted-foreground">Replies</p>
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.likes}
+                  </p>
+                  <p className="text-muted-foreground">Likes</p>
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.reposts}
+                  </p>
+                  <p className="text-muted-foreground">Reposts</p>
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.zaps}
+                  </p>
+                  <p className="text-muted-foreground">Zaps</p>
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.mentions}
+                  </p>
+                  <p className="text-muted-foreground">Mentions</p>
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                    {engagementStats.satszapped}
+                  </p>
+                  <p className="text-muted-foreground">Sats</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                Performance metrics are not available yet.
+              </p>
+            )}
+            <div className="mt-2 flex flex-col gap-2">
+              {viewThreadUrl ? (
+                <Link
+                  to={viewThreadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  View thread
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
+              {openOnNostrUrl ? (
+                <Link
+                  to={openOnNostrUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  Open on Nostr
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
             </div>
           </>
         ) : null}
@@ -454,7 +510,7 @@ export function PostDetailRail({
           <>
             <div className={divide} />
             <RailSectionHeader className={RAIL_SECTION_LABEL}>
-              Replies
+              Recent replies
             </RailSectionHeader>
             <div
               className="mt-1.5 space-y-2"
@@ -476,74 +532,21 @@ export function PostDetailRail({
                   Replies: {directReplies.length}
                 </p>
               )}
-              <Link
-                to={viewThreadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                View thread
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
+              {viewThreadUrl ? (
+                <Link
+                  to={viewThreadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  View thread
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
             </div>
-          </>
-        ) : null}
-
-        {engagementStats ? (
-          <>
-            <div className={divide} />
-            <RailSectionHeader className={RAIL_SECTION_LABEL}>
-              Engagement
-            </RailSectionHeader>
-            <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.likes}
-                </p>
-                <p className="text-muted-foreground">Likes</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.reposts}
-                </p>
-                <p className="text-muted-foreground">Reposts</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.replies}
-                </p>
-                <p className="text-muted-foreground">Replies</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.zaps}
-                </p>
-                <p className="text-muted-foreground">Zaps</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.mentions}
-                </p>
-                <p className="text-muted-foreground">Mentions</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.satszapped}
-                </p>
-                <p className="text-muted-foreground">Sats</p>
-              </div>
-            </div>
-            {openOnNostrUrl ? (
-              <Link
-                to={openOnNostrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary mt-2 inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                Open on Nostr
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-            ) : null}
           </>
         ) : null}
 

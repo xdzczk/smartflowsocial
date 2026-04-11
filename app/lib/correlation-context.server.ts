@@ -50,5 +50,7 @@ export function extractCorrelationId(
   if (headers instanceof Headers) {
     return headers.get("X-Correlation-Id") ?? undefined;
   }
-  return headers["X-Correlation-Id"] ?? headers["x-correlation-id"] ?? undefined;
+  return (
+    headers["X-Correlation-Id"] ?? headers["x-correlation-id"] ?? undefined
+  );
 }

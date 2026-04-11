@@ -38,7 +38,7 @@ export function ScheduledPostActionBar({
 
   const editButton = (
     <Button
-      variant="outline"
+      variant="default"
       size="sm"
       type="button"
       disabled={editDisabled}
@@ -51,24 +51,35 @@ export function ScheduledPostActionBar({
   return (
     <div
       className={cn(
-        "border-border/60 bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm",
+        "border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm",
         className
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-muted-foreground min-h-[32px] min-w-0 text-xs">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="text-muted-foreground min-h-[36px] min-w-0 text-xs">
+          {deleteForm}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
           {openFullEditorHref ? (
             <Button
-              variant="link"
+              variant="ghost"
               size="sm"
-              className="h-auto p-0 text-xs"
+              className="text-muted-foreground hover:text-foreground"
               asChild
             >
               <Link to={openFullEditorHref}>{openFullEditorLabel}</Link>
             </Button>
           ) : null}
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+          {onReschedule ? (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={onReschedule}
+            >
+              Reschedule
+            </Button>
+          ) : null}
           {showEdit ? (
             editDisabled ? (
               <TooltipProvider>
@@ -89,19 +100,6 @@ export function ScheduledPostActionBar({
               editButton
             )
           ) : null}
-          {onReschedule ? (
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              onClick={onReschedule}
-            >
-              Reschedule
-            </Button>
-          ) : null}
-          <div className="border-border/60 ml-1 flex items-center border-l border-dashed pl-3">
-            {deleteForm}
-          </div>
         </div>
       </div>
     </div>

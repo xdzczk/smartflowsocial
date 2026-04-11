@@ -13,6 +13,7 @@ import {
 } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import { PostDetailHeader } from "~/features/posts/components/post-detail-modal/PostDetailHeader";
 import { DetailModalReplySnippet } from "~/features/posts/components/post-detail-modal/rail/DetailModalReplySnippet";
+import { getPostDetailStateConfig } from "~/features/posts/components/post-detail-modal/state-config";
 import {
   RailSectionHeader,
   RailSettingsValueRow,
@@ -161,6 +162,7 @@ function LongFormDetailRail({
   viewThreadUrl,
   showStats,
   stats,
+  stateSectionMode,
 }: {
   type: "draft" | "scheduled" | "published";
   post: LongFormPostType | LongFormPostData;
@@ -185,6 +187,7 @@ function LongFormDetailRail({
     zaps: number;
     satszapped: number;
   };
+  stateSectionMode: "performance" | "actions";
 }) {
   const pad = cn(RAIL_PAD_X, RAIL_ZONE_PY, "flex flex-col gap-0");
   const divide = cn(RAIL_MAJOR_DIVIDE, "my-3");
@@ -224,12 +227,12 @@ function LongFormDetailRail({
   return (
     <aside
       className={cn(
-        "border-border bg-muted/10 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[30%] md:max-w-[320px] md:min-w-[260px]",
+        "border-border/70 bg-background/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
         "border-t md:border-t-0 md:border-l"
       )}
     >
       <div className={pad}>
-        <RailSectionHeader>Overview</RailSectionHeader>
+        <RailSectionHeader>Publishing</RailSectionHeader>
         <div className="mt-2 space-y-2.5">
           <RailSettingsValueRow
             label="Status"
@@ -271,35 +274,10 @@ function LongFormDetailRail({
               </div>
             </div>
           ) : null}
-          {type === "published" &&
-          eventId &&
-          openOnNostrUrl &&
-          !engagementStats ? (
-            <div className="flex flex-col gap-2 pt-1">
-              <Link
-                to={openOnNostrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                Open on Nostr
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-              <Link
-                to={viewThreadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                View thread
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-            </div>
-          ) : null}
         </div>
 
         <div className={divide} />
-        <RailSectionHeader>Structure</RailSectionHeader>
+        <RailSectionHeader>Content</RailSectionHeader>
         <div className="mt-2 space-y-1">
           <RailSettingsValueRow
             label="Reading time"
@@ -313,10 +291,119 @@ function LongFormDetailRail({
           />
         </div>
 
-        {type === "published" && eventId ? (
+        {stateSectionMode === "actions" ? (
           <>
             <div className={divide} />
-            <RailSectionHeader>Replies</RailSectionHeader>
+            <RailSectionHeader>Next steps</RailSectionHeader>
+            <div className="mt-2 space-y-2">
+              <RailSettingsValueRow
+                label="Primary action"
+                value={type === "scheduled" ? "Edit post" : "Review details"}
+                trailing={null}
+              />
+              {type === "scheduled" ? (
+                <RailSettingsValueRow
+                  label="Secondary action"
+                  value="Reschedule"
+                  trailing={null}
+                />
+              ) : null}
+              <p className="text-muted-foreground text-xs">
+                {type === "scheduled"
+                  ? "Use Edit and Reschedule to verify this article before publishing."
+                  : "Performance metrics are only available once published."}
+              </p>
+            </div>
+          </>
+        ) : null}
+
+        {stateSectionMode === "performance" ? (
+          <>
+            <div className={divide} />
+            <RailSectionHeader>Performance</RailSectionHeader>
+            {engagementStats ? (
+              <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.replies}
+                  </p>
+                  <p className="text-muted-foreground">Replies</p>
+                </div>
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.likes}
+                  </p>
+                  <p className="text-muted-foreground">Likes</p>
+                </div>
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.reposts}
+                  </p>
+                  <p className="text-muted-foreground">Reposts</p>
+                </div>
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.zaps}
+                  </p>
+                  <p className="text-muted-foreground">Zaps</p>
+                </div>
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.mentions}
+                  </p>
+                  <p className="text-muted-foreground">Mentions</p>
+                </div>
+                <div>
+                  <p className="text-foreground font-semibold tabular-nums">
+                    {engagementStats.satszapped}
+                  </p>
+                  <p className="text-muted-foreground">Sats</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground mt-2 text-xs">
+                Performance metrics are not available yet.
+              </p>
+            )}
+            <div className="mt-2 flex flex-col gap-2">
+              {viewThreadUrl ? (
+                <Link
+                  to={viewThreadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  View thread
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
+              {openOnNostrUrl ? (
+                <Link
+                  to={openOnNostrUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  Open on Nostr
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+
+        {stateSectionMode === "performance" &&
+        type === "published" &&
+        eventId ? (
+          <>
+            <div className={divide} />
+            <RailSectionHeader>Recent replies</RailSectionHeader>
             <div
               className="mt-2 space-y-2"
               aria-live="polite"
@@ -337,72 +424,21 @@ function LongFormDetailRail({
                   Replies: {directReplies.length}
                 </p>
               )}
-              <Link
-                to={viewThreadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                View thread
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
+              {viewThreadUrl ? (
+                <Link
+                  to={viewThreadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                >
+                  View thread
+                  <ChevronRight
+                    className={INLINE_ICON_SIZE_CLASS}
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
             </div>
-          </>
-        ) : null}
-
-        {engagementStats ? (
-          <>
-            <div className={divide} />
-            <RailSectionHeader>Engagement</RailSectionHeader>
-            <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.likes}
-                </p>
-                <p className="text-muted-foreground">Likes</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.reposts}
-                </p>
-                <p className="text-muted-foreground">Reposts</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.replies}
-                </p>
-                <p className="text-muted-foreground">Replies</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.zaps}
-                </p>
-                <p className="text-muted-foreground">Zaps</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.mentions}
-                </p>
-                <p className="text-muted-foreground">Mentions</p>
-              </div>
-              <div>
-                <p className="text-foreground font-semibold tabular-nums">
-                  {engagementStats.satszapped}
-                </p>
-                <p className="text-muted-foreground">Sats</p>
-              </div>
-            </div>
-            {openOnNostrUrl ? (
-              <Link
-                to={openOnNostrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary mt-2 inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
-              >
-                Open on Nostr
-                <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
-              </Link>
-            ) : null}
           </>
         ) : null}
 
@@ -581,7 +617,7 @@ export default function LongFormDetailsModal({
         variant="ghost"
         size="sm"
         disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
       >
         {deleteFetcher.state !== "idle" &&
         deleteFetcher.formData?.get("postId") === post.id
@@ -601,66 +637,79 @@ export default function LongFormDetailsModal({
       : type === "scheduled"
         ? "scheduled"
         : "draft";
+  const stateConfig = getPostDetailStateConfig(type);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideCloseButton
-        className="bg-card text-card-foreground border-border flex max-h-[90dvh] w-full max-w-[min(1040px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-2xl"
+        className="bg-card text-card-foreground border-border/80 flex max-h-[86dvh] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl"
       >
         <PostDetailHeader
           typeLabel="Article"
           statusType={statusType}
           publishedPillLabel="Published"
+          subtitle={
+            type === "scheduled"
+              ? `${stateConfig.headerPrefix} ${metaLine}`
+              : type === "published"
+                ? `${stateConfig.headerPrefix} ${metaLine}`
+                : `${stateConfig.headerPrefix} ${metaLine}`
+          }
         />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row md:items-stretch">
-          <div className="border-border min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-5 md:w-[70%] md:max-w-[72%] md:border-r md:px-6 md:py-5">
+          <div className="border-border/70 min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-6 md:w-[66%] md:max-w-[68%] md:border-r">
             <div className="mx-auto max-w-3xl">
-              <p className="text-muted-foreground mb-4 text-sm">
-                {metaLine}
-                <span className="mx-2">·</span>
-                {getLongFormReadingTime(post.content ?? undefined)}
-              </p>
+              <div className="border-border/70 bg-muted/20 rounded-2xl border p-5 md:p-6">
+                <p className="text-muted-foreground mb-4 text-sm">
+                  {metaLine}
+                  <span className="mx-2">·</span>
+                  {getLongFormReadingTime(post.content ?? undefined)}
+                </p>
 
-              <h1 className="text-foreground mb-6 text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
-                {post.title ?? "Untitled Article"}
-              </h1>
+                <h1 className="text-foreground mb-6 text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
+                  {post.title ?? "Untitled Article"}
+                </h1>
 
-              {post.image ? (
-                <div className="mb-6 overflow-hidden rounded-xl">
-                  <img
-                    src={post.image}
-                    alt=""
-                    className="max-h-[min(52vh,520px)] w-full object-contain"
-                  />
-                </div>
-              ) : null}
-
-              {post.summary ? (
-                <div className="border-border/60 bg-muted/20 mb-6 rounded-lg border px-4 py-3">
-                  <p className="text-muted-foreground text-base leading-relaxed">
-                    {post.summary}
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="text-foreground text-[1.05rem] leading-relaxed">
-                <MarkdownPreview source={post.content ?? ""} />
-              </div>
-
-              {post.tags.length > 0 ? (
-                <>
-                  <Separator className="mt-8 mb-3" />
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <span key={tag} className="text-muted-foreground text-sm">
-                        #{tag}
-                      </span>
-                    ))}
+                {post.image ? (
+                  <div className="border-border/60 bg-muted/35 mb-6 overflow-hidden rounded-xl border">
+                    <img
+                      src={post.image}
+                      alt=""
+                      className="max-h-[min(54vh,560px)] w-full object-contain"
+                    />
                   </div>
-                </>
-              ) : null}
+                ) : null}
+
+                {post.summary ? (
+                  <div className="border-border/60 bg-background/55 mb-6 rounded-lg border px-4 py-3">
+                    <p className="text-muted-foreground text-base leading-relaxed">
+                      {post.summary}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="text-foreground text-[1.05rem] leading-relaxed">
+                  <MarkdownPreview source={post.content ?? ""} />
+                </div>
+
+                {post.tags.length > 0 ? (
+                  <>
+                    <Separator className="mt-8 mb-3" />
+                    <div className="flex flex-wrap gap-2">
+                      {post.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-muted-foreground text-sm"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -681,6 +730,7 @@ export default function LongFormDetailsModal({
             viewThreadUrl={viewThreadUrl}
             showStats={Boolean(showStats && type === "published")}
             stats={stats}
+            stateSectionMode={stateConfig.sectionMode}
           />
         </div>
 
@@ -693,41 +743,43 @@ export default function LongFormDetailsModal({
             deleteForm={deleteForm}
           />
         ) : (
-          <div className="border-border bg-card/95 shrink-0 border-t px-5 py-3 backdrop-blur-sm">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {type === "published" && openOnNostrUrl ? (
-                <Button variant="default" size="sm" asChild>
-                  <Link
-                    to={openOnNostrUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Open on Nostr (opens in new tab)"
-                  >
-                    Open on Nostr
-                  </Link>
-                </Button>
-              ) : null}
-              {type === "published" && eventIdForThread ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    to={viewThreadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="View thread (opens in new tab)"
-                  >
-                    View thread
-                  </Link>
-                </Button>
-              ) : null}
-              {type === "draft" ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/dashboard/drafts/longform/edit/${post.id}`}>
-                    Edit Draft
-                  </Link>
-                </Button>
-              ) : null}
-              <div className="border-border ml-1 flex items-center border-l border-dashed pl-3">
+          <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="text-muted-foreground min-h-[36px] text-xs">
                 {deleteForm}
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2.5">
+                {type === "published" && openOnNostrUrl ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link
+                      to={openOnNostrUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Open on Nostr (opens in new tab)"
+                    >
+                      Open on Nostr
+                    </Link>
+                  </Button>
+                ) : null}
+                {type === "published" && eventIdForThread ? (
+                  <Button variant="default" size="sm" asChild>
+                    <Link
+                      to={viewThreadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="View thread (opens in new tab)"
+                    >
+                      View thread
+                    </Link>
+                  </Button>
+                ) : null}
+                {type === "draft" ? (
+                  <Button variant="default" size="sm" asChild>
+                    <Link to={`/dashboard/drafts/longform/edit/${post.id}`}>
+                      Edit Draft
+                    </Link>
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>

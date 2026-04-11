@@ -69,6 +69,8 @@ export interface FlowViewProps {
   onFetchMoreFuture: () => void;
   /** Called when hasLiveEdge (future items exist) changes; used to show Scroll to next in header */
   onHasLiveEdgeChange?: (hasLiveEdge: boolean) => void;
+  /** True when first-run is done but no scheduled/published items exist yet. */
+  isPostActivationEmpty?: boolean;
 }
 
 export interface FlowViewHandle {
@@ -94,6 +96,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onFetchMorePast,
       onFetchMoreFuture,
       onHasLiveEdgeChange,
+      isPostActivationEmpty = false,
     },
     ref
   ): React.ReactNode {
@@ -440,6 +443,37 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
 
     if (flowItems.length === 0) {
+      if (isPostActivationEmpty) {
+        return (
+          <div
+            className="border-border-subtle flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-8 text-center"
+            role="region"
+            aria-label="Post timeline"
+          >
+            <h3 className="text-foreground text-base font-semibold">
+              Schedule your first post
+            </h3>
+            <p className="text-muted-foreground/90 max-w-xl text-sm">
+              You&apos;ve started. Once content is scheduled, your flow appears
+              here.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link
+                to="/dashboard/compose?type=post"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+              >
+                Schedule first post
+              </Link>
+              <Link
+                to="/dashboard/compose"
+                className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
+              >
+                Open composer
+              </Link>
+            </div>
+          </div>
+        );
+      }
       return (
         <div
           className="border-border-subtle flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"

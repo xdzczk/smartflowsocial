@@ -14,7 +14,7 @@ function PostStatusBadge({
   publishedLabel?: string;
 }) {
   const base =
-    "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium";
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium";
   if (type === "draft")
     return (
       <span className={`${base} border-border bg-muted/50 text-foreground`}>
@@ -30,7 +30,9 @@ function PostStatusBadge({
       </span>
     );
   return (
-    <span className={`${base} border-success bg-success/10 text-success`}>
+    <span
+      className={`${base} border-success/40 bg-success/10 text-foreground/90`}
+    >
       {publishedLabel}
     </span>
   );
@@ -42,6 +44,7 @@ export function PostDetailHeader({
   titleId,
   publishedPillLabel = "Posted",
   relationshipChipLabel,
+  subtitle,
 }: {
   typeLabel: string;
   statusType: "draft" | "published" | "scheduled";
@@ -49,36 +52,42 @@ export function PostDetailHeader({
   publishedPillLabel?: string;
   /** Reply / Quote / Repost / Thread item — layered on content type (V2.2). */
   relationshipChipLabel?: string | null;
+  subtitle?: string | null;
 }) {
   return (
-    <div className="border-border/60 bg-card/95 shrink-0 border-b px-5 py-3.5 backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <DialogTitle
-            id={titleId}
-            className="text-foreground text-lg font-semibold tracking-tight"
-          >
-            {typeLabel}
-          </DialogTitle>
-          <PostStatusBadge
-            type={statusType}
-            publishedLabel={publishedPillLabel}
-          />
-          {relationshipChipLabel ? (
-            <span
-              className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium"
-              data-testid="post-detail-relationship-chip"
+    <div className="border-border/70 bg-card/95 shrink-0 border-b px-6 py-4 backdrop-blur-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <DialogTitle
+              id={titleId}
+              className="text-foreground text-xl font-semibold tracking-tight"
             >
-              {relationshipChipLabel}
-            </span>
+              {typeLabel}
+            </DialogTitle>
+            <PostStatusBadge
+              type={statusType}
+              publishedLabel={publishedPillLabel}
+            />
+            {relationshipChipLabel ? (
+              <span
+                className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium"
+                data-testid="post-detail-relationship-chip"
+              >
+                {relationshipChipLabel}
+              </span>
+            ) : null}
+          </div>
+          {subtitle ? (
+            <p className="text-muted-foreground mt-1.5 text-xs">{subtitle}</p>
           ) : null}
         </div>
         <DialogPrimitive.Close
           type="button"
           className={cn(
-            "ring-offset-background focus:ring-ring rounded-sm opacity-70 transition-opacity hover:opacity-100",
+            "ring-offset-background focus:ring-ring text-muted-foreground hover:text-foreground rounded-md border border-transparent p-1.5 transition-colors",
             "focus:ring-2 focus:ring-offset-0 focus:outline-none",
-            "text-foreground shrink-0 p-1"
+            "hover:bg-muted/50 shrink-0"
           )}
           aria-label="Close"
         >

@@ -3,11 +3,35 @@
  * This file runs before all tests and configures the test environment
  */
 
+import { createRequire } from "node:module";
+
 import "dotenv/config";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { expect, afterEach, vi } from "vitest";
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
+
+const requireModule = createRequire(import.meta.url);
+if (typeof globalThis.WebSocket === "undefined") {
+  type WebSocketConstructor = new (
+    url: string | URL,
+    protocols?: string | string[]
+  ) => unknown;
+  const wsModule = requireModule("ws") as {
+    WebSocket?: WebSocketConstructor;
+    default?: WebSocketConstructor;
+  };
+  const webSocketCtor =
+    typeof wsModule.WebSocket === "function"
+      ? wsModule.WebSocket
+      : typeof wsModule.default === "function"
+        ? wsModule.default
+        : undefined;
+  if (webSocketCtor) {
+    (globalThis as unknown as { WebSocket: WebSocketConstructor }).WebSocket =
+      webSocketCtor;
+  }
+}
 
 // Clean up after each test
 afterEach(() => {

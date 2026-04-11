@@ -46,46 +46,53 @@ export function PostDetailFooterBar({
   }
 
   return (
-    <div className="border-border/60 bg-card/95 shrink-0 border-t px-5 py-3.5 backdrop-blur-sm">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {type === "published" && showOpenOnNostr && openOnNostrUrl ? (
-          <Button variant="default" size="sm" asChild>
-            <Link
-              to={openOnNostrUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open on Nostr (opens in new tab)"
-            >
-              Open on Nostr
-            </Link>
-          </Button>
-        ) : null}
-        {type === "published" && secondaryNostrLink ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link
-              to={secondaryNostrLink.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${secondaryNostrLink.label} (opens in new tab)`}
-            >
-              {secondaryNostrLink.label}
-            </Link>
-          </Button>
-        ) : null}
-        {type === "published" && showViewThread ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link
-              to={viewThreadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${viewThreadLabel} (opens in new tab)`}
-            >
-              {viewThreadLabel}
-            </Link>
-          </Button>
-        ) : null}
-        <div className="border-border/60 ml-1 flex items-center border-l border-dashed pl-3">
+    <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="text-muted-foreground min-h-[36px] text-xs">
           {deleteForm}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          {type === "published" && showOpenOnNostr && openOnNostrUrl ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                to={openOnNostrUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open on Nostr (opens in new tab)"
+              >
+                Open on Nostr
+              </Link>
+            </Button>
+          ) : null}
+          {type === "published" && secondaryNostrLink ? (
+            <Button variant="ghost" size="sm" asChild>
+              <Link
+                to={secondaryNostrLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${secondaryNostrLink.label} (opens in new tab)`}
+              >
+                {secondaryNostrLink.label}
+              </Link>
+            </Button>
+          ) : null}
+          {type === "published" && showViewThread ? (
+            <Button variant="default" size="sm" asChild>
+              <Link
+                to={viewThreadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${viewThreadLabel} (opens in new tab)`}
+              >
+                {viewThreadLabel}
+              </Link>
+            </Button>
+          ) : null}
+          {type === "draft" && onEdit ? (
+            <Button variant="default" size="sm" onClick={onEdit}>
+              Edit draft
+            </Button>
+          ) : null}
         </div>
       </div>
     </div>

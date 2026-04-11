@@ -41,7 +41,7 @@ jobs:
           user: postgres
 
       - name: Setup test database
-        run: pnpm exec prisma db push --skip-generate
+        run: pnpm exec prisma db push
         env:
           PGPASSWORD: postgres
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test

@@ -147,13 +147,49 @@ function login({
       E2E_TEST: "true",
     },
   }).then(({ stdout }) => {
-    const cookieValue = stdout
-      .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
-      .trim();
-    cy.visit("/", { failOnStatusCode: false });
-    cy.setCookie("__session", cookieValue);
+    const cookieValue = extractSessionCookieValue(stdout);
+    if (!cookieValue) {
+      throw new Error("No session cookie value found in create-user output.");
+    }
+    applySessionCookie(cookieValue);
   });
   return cy.get("@user");
+}
+
+function normalizeSessionCookieValue(rawValue: string): string {
+  return rawValue
+    .trim()
+    .replace(/^"+|"+$/g, "")
+    .replace(/[\r\n\t]/g, "")
+    .split(";")[0]
+    .trim();
+}
+
+function extractSessionCookieValue(stdout: string): string | null {
+  const tagged = stdout.match(/<cookie>\s*([^<]+)\s*<\/cookie>/s)?.[1];
+  if (tagged && tagged.trim() !== "") {
+    return normalizeSessionCookieValue(tagged);
+  }
+
+  const fromHeader = stdout.match(/(?:^|;\s*)__session=([^;\s]+)/)?.[1];
+  if (fromHeader && fromHeader.trim() !== "") {
+    return normalizeSessionCookieValue(fromHeader);
+  }
+
+  return null;
+}
+
+function applySessionCookie(cookieValue: string): void {
+  const normalized = normalizeSessionCookieValue(cookieValue);
+  if (!normalized) {
+    throw new Error("Cannot apply empty session cookie.");
+  }
+
+  cy.visit("/", { failOnStatusCode: false });
+  cy.window().then((win) => {
+    win.document.cookie = `__session=${normalized}; Path=/`;
+  });
+  cy.getCookie("__session", { timeout: 10000 }).should("exist");
 }
 
 function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
@@ -197,11 +233,9 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
       const { stdout, stderr } = result;
       const code = "code" in result ? result.code : undefined;
       // Check if cookie is in stdout (script succeeded even if code is undefined)
-      const cookieMatch = stdout.match(/<cookie>\s*([^<]+)\s*<\/cookie>/s);
-      const cookieValue = cookieMatch?.[1]?.trim();
+      const cookieValue = extractSessionCookieValue(stdout);
       if (cookieValue) {
-        cy.visit("/", { failOnStatusCode: false });
-        cy.setCookie("__session", cookieValue);
+        applySessionCookie(cookieValue);
         return;
       }
 
@@ -215,15 +249,9 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
 
       // If code is undefined but we have stdout, try to extract cookie anyway
       if (stdout) {
-        const extractedCookie = stdout
-          .replace(
-            /.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s,
-            "$<cookieValue>"
-          )
-          .trim();
+        const extractedCookie = extractSessionCookieValue(stdout);
         if (extractedCookie) {
-          cy.visit("/", { failOnStatusCode: false });
-          cy.setCookie("__session", extractedCookie);
+          applySessionCookie(extractedCookie);
           return;
         }
       }
@@ -337,7 +365,11 @@ function visitAndCheck(url: string) {
   }
 }
 
-function getByTestId(testId: string, options?: Partial<Cypress.Loggable>) {
+type GetByTestIdOptions = Partial<
+  Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow
+>;
+
+function getByTestId(testId: string, options?: GetByTestIdOptions) {
   return cy.get(`[data-testid="${testId}"]`, options);
 }
 
