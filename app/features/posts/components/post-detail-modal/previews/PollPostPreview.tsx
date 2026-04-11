@@ -7,6 +7,8 @@ import { PollVoteBlock } from "../../PollVoteBlock";
 import type { PostDetailModalPost } from "../post-detail-helpers";
 import { getPrimaryNoteText } from "../post-detail-helpers";
 
+import { PostPreviewSurface } from "./PostPreviewSurface";
+
 export function PollPostPreview({
   post,
   type,
@@ -40,21 +42,25 @@ export function PollPostPreview({
   const showIntro = Boolean(primary) && primary.trim() !== questionTrim;
 
   return (
-    <div className="space-y-2 py-1">
-      {showIntro ? (
-        <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
-          {primary}
-        </p>
-      ) : null}
-      <PollVoteBlock
-        post={post}
-        type={type}
-        nip88PollsEnabled={nip88PollsEnabled}
-        layout="inline"
-        hideQuestion={hideQuestionInPoll}
-      />
+    <div className="space-y-3">
+      <PostPreviewSurface>
+        <div className="space-y-3">
+          {showIntro ? (
+            <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
+              {primary}
+            </p>
+          ) : null}
+          <PollVoteBlock
+            post={post}
+            type={type}
+            nip88PollsEnabled={nip88PollsEnabled}
+            layout="inline"
+            hideQuestion={hideQuestionInPoll}
+          />
+        </div>
+      </PostPreviewSurface>
       {contextLine ? (
-        <p className="text-muted-foreground/70 text-[11px] leading-snug">
+        <p className="text-muted-foreground/80 text-xs leading-snug">
           {contextLine}
         </p>
       ) : null}

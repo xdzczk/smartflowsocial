@@ -24,6 +24,8 @@ export interface StatisticsProps {
   runwayRedThresholdDays?: number;
   /** Orange when runway ≤ this (default 7). */
   runwayOrangeThresholdDays?: number;
+  /** True when onboarding is complete but no scheduled/published activity exists yet. */
+  isPostActivationEmpty?: boolean;
 }
 
 const DEFAULT_RUNWAY_RED_DAYS = 3;
@@ -35,20 +37,24 @@ export default function Statistics({
   runwayRedThresholdDays: _runwayRedThresholdDays = DEFAULT_RUNWAY_RED_DAYS,
   runwayOrangeThresholdDays:
     _runwayOrangeThresholdDays = DEFAULT_RUNWAY_ORANGE_DAYS,
+  isPostActivationEmpty = false,
 }: StatisticsProps) {
   const { postStatistics } = useLoaderData<{
     postStatistics: PostStatistics | undefined;
   }>();
 
   const stats = postStatistics ?? { scheduledCount: 0, successCount: 0 };
-  const runwayLabel =
-    runwayDays != null && runwayDays > 0
+  const hasScheduledPosts = stats.scheduledCount > 0;
+  const shouldUseRunwayPlaceholder =
+    isPostActivationEmpty && !hasScheduledPosts;
+  const runwayLabel = shouldUseRunwayPlaceholder
+    ? "—"
+    : runwayDays != null && runwayDays > 0
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "0 days";
 
   // Runway icon color: muted (0 days, no posts); muted red (< 2 days); amber (2–7 days); neutral blue (7+ days)
   const runwayDaysNum = runwayDays ?? 0;
-  const hasScheduledPosts = stats.scheduledCount > 0;
   const runwayIconClass =
     runwayDaysNum <= 0 && !hasScheduledPosts
       ? "bg-muted text-muted-foreground dark:bg-muted/80"
@@ -74,6 +80,19 @@ export default function Statistics({
         : runwayDaysNum <= 7
           ? "#f59e0b" /* amber */
           : "#64748b"; /* slate */
+
+  const scheduledCaption =
+    isPostActivationEmpty && stats.scheduledCount === 0
+      ? "Not started yet"
+      : "Scheduled";
+  const publishedCaption =
+    isPostActivationEmpty && stats.successCount === 0
+      ? "Nothing live yet"
+      : "Published";
+  const runwayCaption =
+    shouldUseRunwayPlaceholder && runwayDaysNum <= 0
+      ? "Schedule to build"
+      : "Runway";
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
@@ -119,7 +138,7 @@ export default function Statistics({
             </div>
             <dl className="space-y-0 text-right">
               <dt className={dtBase}>{stats.scheduledCount}</dt>
-              <dd className={ddBase}>Scheduled</dd>
+              <dd className={ddBase}>{scheduledCaption}</dd>
             </dl>
           </Link>
         </CardContent>
@@ -143,7 +162,7 @@ export default function Statistics({
             </div>
             <dl className="space-y-0 text-right">
               <dt className={dtBase}>{stats.successCount}</dt>
-              <dd className={ddBase}>Published</dd>
+              <dd className={ddBase}>{publishedCaption}</dd>
             </dl>
           </Link>
         </CardContent>
@@ -154,7 +173,7 @@ export default function Statistics({
           <button
             type="button"
             onClick={onRunwayClick}
-            aria-label={`Runway, ${runwayLabel}. Configure which queues count.`}
+            aria-label={`Runway, ${runwayLabel}. ${shouldUseRunwayPlaceholder ? "Schedule posts to build runway." : "Configure which queues count."}`}
             className={`${contentBase} w-full cursor-pointer text-left`}
           >
             <div className={`${iconBase} ${runwayIconClass}`}>
@@ -166,7 +185,7 @@ export default function Statistics({
             </div>
             <dl className="space-y-0 text-right">
               <dt className={dtBase}>{runwayLabel}</dt>
-              <dd className={ddBase}>Runway</dd>
+              <dd className={ddBase}>{runwayCaption}</dd>
             </dl>
           </button>
         </CardContent>

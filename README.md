@@ -4,7 +4,7 @@
 
 [![Remix](https://img.shields.io/badge/Built%20with-Remix-blue?logo=remix&logoColor=white)](https://remix.run/)
 [![Nostr](https://img.shields.io/badge/Protocol-Nostr-purple?logo=nostr&logoColor=white)](https://nostr.com/)
-[![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](https://www.elastic.co/licensing/elastic-license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 **Professional Nostr social media management platform**
@@ -34,7 +34,9 @@ enterprise-level features.
   NIP-46 remote signers)
 - 📅 **Advanced scheduling**: Calendar view, queues, intervals, and bulk upload
 - 🎨 **Beautiful UI**: Modern, intuitive interface built with Remix and TailwindCSS
-- 🔓 **Open source**: ELv2 licensed, fully auditable code
+- 🔓 **Open source**: MIT licensed, fully auditable code
+- 📣 **Broadcast campaigns**: Signed DM broadcasts with audience and suppression controls
+- 🏆 **Contests & giveaways**: Run campaigns, pick winners, and track payout completion
 - ⚡ **Lightning-native**: Built for the Bitcoin/Lightning ecosystem
 - 🔧 **Developer-friendly**: TypeScript, REST API, well-documented, extensible
 
@@ -62,7 +64,9 @@ enterprise-level features.
 ### 🎁 Engagement & Tools
 
 - **Engagement feed** — Track replies, mentions, and interactions
+- **Broadcast campaigns** — Send targeted signed Nostr DM campaigns
 - **Nostr giveaways** — Create native giveaways with fair winner selection
+- **Contests** — Run ranked contests with lifecycle and payout tracking
 - **Blacklist management** — Block bots and spam accounts
 - **Hashtag presets** — Reusable hashtag collections
 - **Multi-account** — Parent/child account relationships
@@ -185,7 +189,7 @@ See [Architecture Documentation](./docs/getting-started/architecture.md) for det
 
 - 🔐 **Client-side / remote signing** — Private keys never touch SmartFlow servers (NIP-07 / NIP-46)
 - 🔒 **No key storage** — We never see or store your private keys
-- 🛡️ **Transparent code** — Verify our security practices yourself (ELv2 licensed)
+- 🛡️ **Transparent code** — Verify our security practices yourself (MIT licensed)
 - 🔓 **No vendor lock-in** — Self-host anytime, export your data, stay in control
 
 See [Security Guide](./docs/guides/security.md) for best practices and reporting.
@@ -269,11 +273,10 @@ See [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
 
 ## 📄 License
 
-Elastic License 2.0 (ELv2) — see [LICENSE](./LICENSE) for full terms.
+MIT License — see [LICENSE](./LICENSE) for full terms.
 
-**Summary:** Free for personal and commercial use, with restrictions on providing the software as a
-managed service to third parties. See
-[Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) for details.
+**Summary:** You can use, modify, and distribute this software with attribution. See
+[MIT License](https://opensource.org/licenses/MIT) for details.
 
 ---
 

@@ -11,6 +11,7 @@ export interface ScheduledTimeFieldProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   humanReadableLine: string | null;
   className?: string;
+  emphasis?: "default" | "primary";
 }
 
 export function ScheduledTimeField({
@@ -21,10 +22,24 @@ export function ScheduledTimeField({
   onChange,
   humanReadableLine,
   className,
+  emphasis = "default",
 }: ScheduledTimeFieldProps) {
   return (
-    <div className={cn("space-y-2", className)}>
-      <label htmlFor={id} className="text-foreground block text-sm font-medium">
+    <div
+      className={cn(
+        "space-y-2",
+        emphasis === "primary" &&
+          "bg-muted/20 border-border/70 rounded-xl border p-4",
+        className
+      )}
+    >
+      <label
+        htmlFor={id}
+        className={cn(
+          "text-foreground block text-sm font-medium",
+          emphasis === "primary" && "text-base"
+        )}
+      >
         {label}
       </label>
       <div className="flex items-center gap-2">
@@ -43,7 +58,14 @@ export function ScheduledTimeField({
         />
       </div>
       {humanReadableLine ? (
-        <p className="text-muted-foreground text-xs">{humanReadableLine}</p>
+        <p
+          className={cn(
+            "text-muted-foreground text-xs",
+            emphasis === "primary" && "text-foreground text-sm font-medium"
+          )}
+        >
+          {humanReadableLine}
+        </p>
       ) : null}
     </div>
   );

@@ -4,6 +4,8 @@ import { cn } from "~/lib/utils";
 
 import type { PostDetailModalPost } from "../post-detail-helpers";
 
+import { PostPreviewSurface } from "./PostPreviewSurface";
+
 export function MediaPostPreview({
   post,
   contextLine,
@@ -19,56 +21,63 @@ export function MediaPostPreview({
   const caption = post.caption?.trim();
 
   return (
-    <div className="space-y-3 py-1">
-      {singleImageUrl ? (
-        <button
-          type="button"
-          className="bg-muted/20 ring-border/60 relative block max-h-[min(52vh,520px)] w-full overflow-hidden rounded-xl ring-1"
-          onClick={() => onImageClick(singleImageUrl)}
-        >
-          <MediaThumbnail
-            src={singleImageUrl}
-            alt="Post media"
-            className="max-h-[min(52vh,520px)] w-full object-contain"
-          />
-        </button>
-      ) : (
-        <div
-          className={cn(
-            "ring-border/60 grid gap-2 overflow-hidden rounded-xl ring-1",
-            n === 2 && "grid-cols-2",
-            n >= 3 && "grid-cols-2"
-          )}
-        >
-          {urls.map((url, index) => (
+    <div className="space-y-3">
+      <PostPreviewSurface>
+        <div className="space-y-4">
+          {singleImageUrl ? (
             <button
-              key={url}
               type="button"
-              className={cn(
-                "bg-muted/25 relative aspect-square overflow-hidden",
-                n === 3 && index === 0 && "col-span-2 aspect-video max-h-56"
-              )}
-              onClick={() => onImageClick(url)}
+              className="bg-muted/30 border-border/60 relative mx-auto block max-h-[min(54vh,560px)] w-full overflow-hidden rounded-xl border"
+              onClick={() => onImageClick(singleImageUrl)}
             >
               <MediaThumbnail
-                src={url}
-                alt={`Post media ${index + 1}`}
-                className="h-full w-full object-cover"
+                src={singleImageUrl}
+                alt="Post media"
+                className="max-h-[min(54vh,560px)] w-full object-contain"
               />
             </button>
-          ))}
+          ) : (
+            <div
+              className={cn(
+                "grid gap-2 overflow-hidden rounded-xl",
+                n === 2 && "grid-cols-2",
+                n >= 3 && "grid-cols-2"
+              )}
+            >
+              {urls.map((url, index) => (
+                <button
+                  key={url}
+                  type="button"
+                  className={cn(
+                    "bg-muted/35 border-border/60 relative aspect-square overflow-hidden rounded-lg border",
+                    n === 3 &&
+                      index === 0 &&
+                      "col-span-2 aspect-[16/9] max-h-72"
+                  )}
+                  onClick={() => onImageClick(url)}
+                >
+                  <MediaThumbnail
+                    src={url}
+                    alt={`Post media ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+          {caption ? (
+            <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
+              {caption}
+            </p>
+          ) : null}
         </div>
-      )}
+      </PostPreviewSurface>
       <div>
-        {caption ? (
-          <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
-            {caption}
-          </p>
-        ) : (
+        {!caption ? (
           <p className="text-muted-foreground text-sm italic">No caption</p>
-        )}
+        ) : null}
         {contextLine ? (
-          <p className="text-muted-foreground/70 mt-1.5 text-[11px] leading-snug">
+          <p className="text-muted-foreground/80 mt-1.5 text-xs leading-snug">
             {contextLine}
           </p>
         ) : null}

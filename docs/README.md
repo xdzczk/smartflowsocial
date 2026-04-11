@@ -64,6 +64,8 @@ Comprehensive guides organized by role and topic.
 - [Posting Guide](./guides/user-guides/posting.md) - Create and schedule posts
 - [Calendar Guide](./guides/user-guides/calendar.md) - Visual scheduling
 - [Engagement Guide](./guides/user-guides/engagement.md) - Track interactions
+- [Broadcasts Guide](./guides/user-guides/broadcasts.md) - Send targeted DM campaigns
+- [Contests Guide](./guides/user-guides/contests.md) - Run ranked contests and payouts
 - [Posting Guide](./guides/user-guides/posting.md#templates) - Templates (included in posting guide)
 - [Payments Guide](./guides/user-guides/payments.md) - Subscription management
 - [Giveaways Guide](./guides/user-guides/giveaways.md) - Create and manage giveaways
@@ -93,6 +95,7 @@ Complete reference documentation.
 
 - [API Reference](./reference/api.md) - All API endpoints
 - [Configuration](./reference/configuration.md) - Environment variables and config
+- [Feature Coverage Matrix](./reference/feature-coverage-matrix.md) - Feature-to-doc coverage index
 - [Database Schema](./reference/database-schema.md) - Data models
 - [Nostr Integration](./reference/nostr.md) - Nostr protocol details
 - [Error Codes](./reference/error-codes.md) - Complete error code reference
@@ -129,7 +132,6 @@ Help when things go wrong.
 
 - [Common Issues](./troubleshooting/common-issues.md) - Frequently asked questions
 - [Error Solutions](./troubleshooting/errors.md) - Error resolution
-- [Error Troubleshooting](./troubleshooting/errors.md) - Error resolution and debugging techniques
 - [Performance Issues](./troubleshooting/performance.md) - Performance troubleshooting
 
 ---
@@ -203,12 +205,12 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 | Section          | Status         | Last Updated |
 | ---------------- | -------------- | ------------ |
-| Getting Started  | ✅ Complete    | 2025-03-12   |
-| User Guides      | ✅ Complete    | 2025-03-12   |
-| Developer Guides | ✅ Complete    | 2025-03-12   |
-| Reference        | ✅ Complete    | 2025-03-12   |
-| Examples         | 🚧 In Progress | 2025-03-12   |
-| Troubleshooting  | ✅ Complete    | 2025-03-12   |
+| Getting Started  | ✅ Complete    | 2026-04-11   |
+| User Guides      | ✅ Complete    | 2026-04-11   |
+| Developer Guides | ✅ Complete    | 2026-04-11   |
+| Reference        | ✅ Complete    | 2026-04-11   |
+| Examples         | 🚧 In Progress | 2026-04-11   |
+| Troubleshooting  | ✅ Complete    | 2026-04-11   |
 
 ---
 

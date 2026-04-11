@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import type { PostDetailRelationshipType } from "../derive-post-detail-semantics";
 import type { PostDetailModalPost } from "../post-detail-helpers";
 import {
@@ -5,6 +7,8 @@ import {
   getSecondaryCaption,
 } from "../post-detail-helpers";
 import { QuotedPostBlock } from "../relationships/RelationshipPreviewBlocks";
+
+import { PostPreviewSurface } from "./PostPreviewSurface";
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- relationship-specific branches (quote/repost/reply)
 export function TextPostPreview({
@@ -52,90 +56,110 @@ export function TextPostPreview({
   const isReply = relationshipType === "reply";
 
   const showEmptyBody = !primary && relationshipType === "original";
+  const [expanded, setExpanded] = useState(false);
+  const shouldClampPrimary = primary.length > 720;
+  const primaryBodyClass =
+    shouldClampPrimary && !expanded ? "line-clamp-10" : "";
 
   const repostHero = isRepost && repostSourcePreview?.openUrl;
 
   return (
-    <div className={pad}>
-      {isReply && replyParentHint ? (
-        <p className="text-muted-foreground mb-2 text-[11px] font-medium">
-          Replying to {replyParentHint}
-        </p>
-      ) : null}
-
-      {isQuote && primary ? <p className={primaryClass}>{primary}</p> : null}
-
-      {isQuote ? (
-        <div className="mt-3">
-          <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
-            Quoted post
+    <div className="space-y-3">
+      <PostPreviewSurface className={pad}>
+        {isReply && replyParentHint ? (
+          <p className="text-muted-foreground mb-2 text-[11px] font-medium">
+            Replying to {replyParentHint}
           </p>
-          <QuotedPostBlock
-            authorLine={quotedAuthorHint ?? null}
-            snippet={quotedSnippet ?? null}
-            openUrl={quotedOpenUrl ?? null}
-            hasMediaHint={false}
-          />
-        </div>
-      ) : null}
+        ) : null}
 
-      {isRepost ? (
-        <div className="space-y-3">
-          {repostHero ? (
-            <>
-              <div>
-                <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
-                  Reposted post
-                </p>
-                <QuotedPostBlock
-                  authorLine={repostSourcePreview.authorLine}
-                  snippet={repostSourcePreview.snippet}
-                  openUrl={repostSourcePreview.openUrl}
-                  hasMediaHint={false}
-                />
-              </div>
-              {primary ? (
+        {isQuote && primary ? (
+          <p className={primaryClass + " " + primaryBodyClass}>{primary}</p>
+        ) : null}
+
+        {isQuote ? (
+          <div className="mt-3">
+            <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
+              Quoted post
+            </p>
+            <QuotedPostBlock
+              authorLine={quotedAuthorHint ?? null}
+              snippet={quotedSnippet ?? null}
+              openUrl={quotedOpenUrl ?? null}
+              hasMediaHint={false}
+            />
+          </div>
+        ) : null}
+
+        {isRepost ? (
+          <div className="space-y-3">
+            {repostHero ? (
+              <>
                 <div>
-                  <p className="text-muted-foreground/90 mb-1 text-[10px] font-medium">
-                    Added text
+                  <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
+                    Reposted post
                   </p>
-                  <p className={primaryClass}>{primary}</p>
+                  <QuotedPostBlock
+                    authorLine={repostSourcePreview.authorLine}
+                    snippet={repostSourcePreview.snippet}
+                    openUrl={repostSourcePreview.openUrl}
+                    hasMediaHint={false}
+                  />
                 </div>
-              ) : (
-                <p className="text-muted-foreground text-sm italic">
-                  No added text
-                </p>
-              )}
-            </>
-          ) : primary ? (
-            <p className={primaryClass}>{primary}</p>
-          ) : (
-            <p className="text-muted-foreground text-sm italic">Repost</p>
-          )}
-        </div>
-      ) : null}
+                {primary ? (
+                  <div>
+                    <p className="text-muted-foreground/90 mb-1 text-[10px] font-medium">
+                      Added text
+                    </p>
+                    <p className={primaryClass + " " + primaryBodyClass}>
+                      {primary}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm italic">
+                    No added text
+                  </p>
+                )}
+              </>
+            ) : primary ? (
+              <p className={primaryClass + " " + primaryBodyClass}>{primary}</p>
+            ) : (
+              <p className="text-muted-foreground text-sm italic">Repost</p>
+            )}
+          </div>
+        ) : null}
 
-      {!isQuote && !isRepost ? (
-        primary ? (
-          <p className={primaryClass}>{primary}</p>
-        ) : showEmptyBody ? (
-          <p className="text-muted-foreground text-sm italic">
-            {detailType === "scheduled" ? "No caption" : "Empty post"}
+        {!isQuote && !isRepost ? (
+          primary ? (
+            <p className={primaryClass + " " + primaryBodyClass}>{primary}</p>
+          ) : showEmptyBody ? (
+            <p className="text-muted-foreground text-sm italic">
+              {detailType === "scheduled" ? "No caption" : "Empty post"}
+            </p>
+          ) : null
+        ) : null}
+
+        {shouldClampPrimary ? (
+          <button
+            type="button"
+            className="text-primary mt-1 text-xs font-medium hover:underline"
+            onClick={() => setExpanded((value) => !value)}
+          >
+            {expanded ? "Show less" : "Read more"}
+          </button>
+        ) : null}
+
+        {secondary && !isRepost ? (
+          <p className="text-muted-foreground border-border mt-3 border-t pt-3 text-sm leading-relaxed whitespace-pre-wrap">
+            {secondary}
           </p>
-        ) : null
-      ) : null}
-
-      {secondary && !isRepost ? (
-        <p className="text-muted-foreground border-border mt-3 border-t pt-3 text-sm leading-relaxed whitespace-pre-wrap">
-          {secondary}
-        </p>
-      ) : null}
+        ) : null}
+      </PostPreviewSurface>
       {contextLine ? (
         <p
           className={
             ultraCompact
               ? "text-muted-foreground/70 mt-1.5 text-[10px] leading-snug"
-              : "text-muted-foreground/70 mt-2 text-[11px] leading-snug"
+              : "text-muted-foreground/80 mt-2 text-xs leading-snug"
           }
         >
           {contextLine}

@@ -1,5 +1,6 @@
 import {
   useLoaderData,
+  useNavigate,
   useNavigation,
   useRevalidator,
   useRouteLoaderData,
@@ -10,10 +11,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
+import { buildComposeEditUrl } from "~/features/posts/composer";
 import { usePostStatsQuery } from "~/features/posts/hooks/usePostStatsQuery";
 import { LongFormDetailsModal } from "~/features/posts/longform";
 import {
-  EditScheduledPostModal,
   RescheduleScheduledPostModal,
   ScheduleNext7DaysCard,
   ScheduleOverviewTargetModal,
@@ -109,7 +110,7 @@ export default function DashboardIndexPage() {
     lastScheduledAtUtc: lastScheduledAtUtcMs,
     user,
     queueTypes,
-    hashTagPresets,
+    hashTagPresets: _hashTagPresets,
     runwaySettings,
     isLoadingMorePast,
     isLoadingMoreFuture,
@@ -164,6 +165,11 @@ export default function DashboardIndexPage() {
     hasQueuesWithContent:
       loaderData.dashboardActivity?.hasQueuesWithContent === true,
   };
+  const isPostActivationEmpty =
+    !isFirstRunDashboard &&
+    !dashboardActivity.hasScheduled &&
+    !dashboardActivity.hasPublished &&
+    !dashboardActivity.hasQueuesWithContent;
 
   const { userTimeFormat } = useFormattedDate();
   const navigation = useNavigation();
@@ -185,28 +191,15 @@ export default function DashboardIndexPage() {
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
   const [selectedLongFormPost, setSelectedLongFormPost] =
     useState<LongFormPostData | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [postToEdit, setPostToEdit] = useState<
-    PostData | LongFormPostData | null
-  >(null);
   const [postToReschedule, setPostToReschedule] = useState<
     PostData | LongFormPostData | null
   >(null);
-
-  const _handleEditPost = (post: PostData | LongFormPostData) => {
-    setPostToEdit(post);
-    setShowEditModal(true);
-  };
+  const navigate = useNavigate();
 
   const _handleReschedulePost = (post: PostData | LongFormPostData) => {
     setPostToReschedule(post);
     setShowRescheduleModal(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setPostToEdit(null);
   };
 
   const handleCloseRescheduleModal = () => {
@@ -231,7 +224,6 @@ export default function DashboardIndexPage() {
 
   const handleModalSuccess = () => {
     resetFlowMergeState();
-    handleCloseEditModal();
     handleCloseRescheduleModal();
     setSelectedPost(null);
     setSelectedLongFormPost(null);
@@ -251,12 +243,6 @@ export default function DashboardIndexPage() {
     ? (queueTypes as QueueType[])
     : [];
   const hasAnyQueue = queueTypesFiltered.length > 0;
-
-  const hashTagPresetsArray = Array.isArray(hashTagPresets)
-    ? (hashTagPresets as Parameters<
-        typeof EditScheduledPostModal
-      >[0]["hashTagPresets"])
-    : [];
 
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => {
@@ -402,6 +388,7 @@ export default function DashboardIndexPage() {
                   runwayOrangeThresholdDays={
                     runwaySettings?.orangeThresholdDays
                   }
+                  isPostActivationEmpty={isPostActivationEmpty}
                 />
               </div>
               <div className="mt-2 flex min-w-0 items-center gap-3">
@@ -419,7 +406,7 @@ export default function DashboardIndexPage() {
               </div>
 
               <PublishingFilterRow
-                className="mt-4 mb-0"
+                className="mt-4 mb-0 border-b-0 pb-0"
                 leading={
                   <PublishingContentTypeFilter
                     data-testid="dashboard-type-filter"
@@ -495,6 +482,7 @@ export default function DashboardIndexPage() {
                     lastPrependedPastCount={lastPrependedPastCount}
                     onPrependedPastCompensated={clearPrependedPastCount}
                     onHasLiveEdgeChange={setHasLiveEdge}
+                    isPostActivationEmpty={isPostActivationEmpty}
                   />
                 </div>
               )}
@@ -510,10 +498,12 @@ export default function DashboardIndexPage() {
                     setScheduleOverviewTargetModalOpen(true)
                   }
                   queueTypes={queueTypesFiltered}
+                  isPostActivationEmpty={isPostActivationEmpty}
                 />
                 <QueueHealth
                   queueCounts={queueCountsByQueue}
                   queueTypes={queueTypesFiltered}
+                  isPostActivationEmpty={isPostActivationEmpty}
                 />
               </div>
             </div>
@@ -556,7 +546,12 @@ export default function DashboardIndexPage() {
           }}
           onEdit={(p) => {
             setSelectedPost(null);
-            _handleEditPost(p as PostData);
+            navigate(
+              buildComposeEditUrl({
+                mode: "edit_scheduled",
+                scheduledActionId: String(p.id),
+              })
+            );
           }}
           onReschedule={(p) => {
             setSelectedPost(null);
@@ -581,7 +576,9 @@ export default function DashboardIndexPage() {
           }}
           onEdit={(p) => {
             setSelectedLongFormPost(null);
-            _handleEditPost(p as LongFormPostData);
+            navigate(
+              `/dashboard/compose?type=article&scheduled=${encodeURIComponent(String(p.id))}`
+            );
           }}
           onReschedule={(p) => {
             setSelectedLongFormPost(null);
@@ -592,17 +589,6 @@ export default function DashboardIndexPage() {
           showSignedEvent={true}
           userTimezone={getUserTimezone(user)}
           userTimeFormat={userTimeFormat}
-        />
-      ) : null}
-
-      {showEditModal && postToEdit ? (
-        <EditScheduledPostModal
-          post={postToEdit}
-          onClose={handleCloseEditModal}
-          onConfirm={handleModalSuccess}
-          user={user ? (validateUserData(user) ?? undefined) : undefined}
-          queueTypes={queueTypesFiltered}
-          hashTagPresets={hashTagPresetsArray}
         />
       ) : null}
 
