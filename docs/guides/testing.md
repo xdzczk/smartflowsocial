@@ -59,14 +59,14 @@ We follow the **test pyramid** principle:
 
 SmartFlowSocial uses multiple testing frameworks and techniques:
 
-| Type                     | Description                                     | Location                      | Framework           | Speed    |
-| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- | -------- |
-| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              | < 100ms  |
-| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              | < 1s     |
-| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check | 1-5s     |
-| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              | < 1s     |
-| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         | Variable |
-| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             | 5-30s    |
+| Type                     | Description                                     | Location                          | Framework           | Speed    |
+| ------------------------ | ----------------------------------------------- | --------------------------------- | ------------------- | -------- |
+| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`            | Vitest              | < 100ms  |
+| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts`     | Vitest              | < 1s     |
+| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`        | Vitest + fast-check | 1-5s     |
+| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`        | Vitest              | < 1s     |
+| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts`     | Vitest + k6         | Variable |
+| **E2E Tests**            | Full user flow tests (smoke/core/extended)      | `tests/e2e/{smoke,core,extended}` | Cypress             | 5-30s    |
 
 ### When to Use Each
 
@@ -236,18 +236,20 @@ pnpm test:performance
 
 ### Cypress Tests (E2E)
 
-> [!IMPORTANT] The development server **must be running** before executing Cypress tests. Tests run
-> against `http://localhost:3000` by default.
-
 ```bash
-# Terminal 1: Start the dev server
-pnpm dev
+# Run smoke suite with app startup (recommended local CI-like check)
+pnpm test:e2e:smoke:run
 
-# Terminal 2: Run Cypress tests
+# Run all rewritten E2E specs (app must already be running)
 pnpm test:e2e
 
-# Open Cypress UI for interactive testing
-pnpm test:e2e:open
+# Scope by suite
+pnpm test:e2e:smoke
+pnpm test:e2e:core
+pnpm test:e2e:extended
+
+# Open Cypress UI with app startup
+pnpm test:e2e:dev
 ```
 
 ### Running Specific Tests
@@ -260,7 +262,7 @@ pnpm test -- tests/unit/scheduling-logic.test.ts
 pnpm test -- --grep "dashboard"
 
 # Cypress - Run a single test file
-pnpm exec cypress run --spec "tests/e2e/smoke.cy.ts"
+pnpm exec cypress run --spec "tests/e2e/smoke/critical-path.cy.ts"
 ```
 
 ### Test suite health
@@ -320,9 +322,10 @@ tests/
     └── test-scenario-builders.ts  # Scenario builders
 
 tests/e2e/                   # Cypress E2E tests
-├── smoke.cy.ts
-├── dashboard.cy.ts
-└── posts/
+├── smoke/
+├── core/
+├── extended/
+└── support/
 ```
 
 ### Unit Test Example
@@ -775,9 +778,10 @@ Configuration is in `vitest.config.ts`:
 
 Configuration is in `cypress.config.ts`:
 
-- **Base URL**: Defaults to `http://localhost:3000` (or port from `PORT` env var)
-- **CI Mode**: Uses port `8811` when `CI=true`
-- **Screenshots**: Disabled in CI, enabled locally on failure
+- **Base URL**: Defaults to `http://localhost:3000` (or `PORT`).
+- **Spec discovery**: `tests/e2e/smoke`, `tests/e2e/core`, `tests/e2e/extended`.
+- **Retries**: enabled for run mode (`1`) to reduce transient flake impact.
+- **Screenshots**: enabled on failures for local and CI triage.
 
 ---
 
