@@ -40,6 +40,28 @@ import { updatePost as updatePostInRepo } from "./repositories/post-queries-data
 import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 import { PostStateMachine } from "./state-machine/post-state-machine.server";
 
+function getSignedEventIdFromUnknown(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!("id" in value)) return null;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+function toUnixSeconds(value: unknown): number | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : Math.floor(value.getTime() / 1000);
+  }
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? null
+      : Math.floor(parsed.getTime() / 1000);
+  }
+  return null;
+}
+
 /**
  * Handle file upload preview: accepts fileUrls (array of URL arrays per post).
  * Returns 400 if fileUrls is missing or invalid.
@@ -278,6 +300,11 @@ export async function handleSignAndSchedule(
     for (let i = 0; i < createdPosts.length; i++) {
       const mainPost = createdPosts[i];
       if (!mainPost) continue;
+      const parentScheduledForUnix = toUnixSeconds(mainPost.scheduledAtUtc);
+      const expectedParentEventId =
+        (typeof mainPost.nostrEventId === "string" && mainPost.nostrEventId) ||
+        getSignedEventIdFromUnknown(mainPost.signedEvent);
+      const isAttachableParent = parentScheduledForUnix != null;
       const queueTypeName = queueTypes[i] ?? "unassigned";
       const queueTypeId = await resolveQueueTypeId(
         userId,
@@ -358,6 +385,32 @@ export async function handleSignAndSchedule(
                   isQuotedPost: false,
                   repostOfPostId: mainPost.id,
                   postKind: "REPOST",
+                  ...(isAttachableParent
+                    ? {
+                        parentScheduledActionId: mainPost.id,
+                        rootScheduledActionId:
+                          typeof mainPost.rootScheduledActionId === "string" &&
+                          mainPost.rootScheduledActionId
+                            ? mainPost.rootScheduledActionId
+                            : mainPost.id,
+                        targetScheduledActionId: mainPost.id,
+                        dependencyMode: "attached" as const,
+                        targetMode: "scheduled_parent" as const,
+                        followUpTimingMode: "offset_from_parent" as const,
+                        followUpOffsetSeconds:
+                          parentScheduledForUnix != null
+                            ? Math.max(
+                                0,
+                                item.scheduledFor - parentScheduledForUnix
+                              )
+                            : null,
+                        expectedParentEventId:
+                          expectedParentEventId ?? undefined,
+                      }
+                    : {
+                        dependencyMode: "standalone" as const,
+                        targetMode: "direct" as const,
+                      }),
                   ...(repostConditions && { repostConditions }),
                 },
                 item.scheduledFor,
@@ -425,6 +478,32 @@ export async function handleSignAndSchedule(
                   isQuotedPost: true,
                   quoteOfPostId: mainPost.id,
                   postKind: "QUOTE",
+                  ...(isAttachableParent
+                    ? {
+                        parentScheduledActionId: mainPost.id,
+                        rootScheduledActionId:
+                          typeof mainPost.rootScheduledActionId === "string" &&
+                          mainPost.rootScheduledActionId
+                            ? mainPost.rootScheduledActionId
+                            : mainPost.id,
+                        targetScheduledActionId: mainPost.id,
+                        dependencyMode: "attached" as const,
+                        targetMode: "scheduled_parent" as const,
+                        followUpTimingMode: "offset_from_parent" as const,
+                        followUpOffsetSeconds:
+                          parentScheduledForUnix != null
+                            ? Math.max(
+                                0,
+                                item.scheduledFor - parentScheduledForUnix
+                              )
+                            : null,
+                        expectedParentEventId:
+                          expectedParentEventId ?? undefined,
+                      }
+                    : {
+                        dependencyMode: "standalone" as const,
+                        targetMode: "direct" as const,
+                      }),
                 },
                 item.scheduledFor,
                 correlationId
