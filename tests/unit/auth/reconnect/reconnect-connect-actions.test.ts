@@ -48,13 +48,43 @@ vi.mock("~/features/auth/reconnect-uri.client", () => ({
 }));
 
 describe("reconnect-connect-actions", () => {
+  type ConnectParams = Parameters<typeof connectWithBunker>[0];
+  type SessionView = ReturnType<ConnectParams["matchOrCreateSession"]>;
+
+  const createSessionView = (): SessionView => ({
+    connection: {
+      id: "conn-1",
+      label: "Label",
+      config: {
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: "nostrconnect://uri",
+        clientSecretKeyHex: "abc",
+        relays: ["wss://one"],
+      },
+      metadata: {
+        status: "active",
+        signerAppName: null,
+        pubkey: null,
+        relays: [],
+        connectedAt: null,
+        lastActivityAt: null,
+        lastError: null,
+        createdAt: 0,
+        updatedAt: 0,
+      },
+      currentSessionId: null,
+    },
+    currentSession: null,
+  });
+
   const setState = vi.fn();
   const setError = vi.fn();
   const setNostrConnectUri = vi.fn();
   const setCancel = vi.fn();
-  const matchOrCreateSession = vi.fn(() => ({
-    connection: { id: "conn-1", metadata: {}, config: {} },
-  }));
+  const matchOrCreateSession = vi.fn<ConnectParams["matchOrCreateSession"]>(
+    () => createSessionView()
+  );
   const setActiveSession = vi.fn();
   const updateSession = vi.fn();
   const recordConnectionEvent = vi.fn();

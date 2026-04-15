@@ -276,10 +276,10 @@ async function createRepostAndQuotePostsFromResume(
               dependencyMode: "attached" as const,
               targetMode: "scheduled_parent" as const,
               followUpTimingMode: "offset_from_parent" as const,
-              followUpOffsetSeconds:
-                parentScheduledForUnix != null
-                  ? Math.max(0, item.scheduledFor - parentScheduledForUnix)
-                  : null,
+              followUpOffsetSeconds: Math.max(
+                0,
+                item.scheduledFor - parentScheduledForUnix
+              ),
               expectedParentEventId: expectedParentEventId ?? undefined,
             }
           : {
@@ -324,10 +324,10 @@ async function createRepostAndQuotePostsFromResume(
               dependencyMode: "attached" as const,
               targetMode: "scheduled_parent" as const,
               followUpTimingMode: "offset_from_parent" as const,
-              followUpOffsetSeconds:
-                parentScheduledForUnix != null
-                  ? Math.max(0, item.scheduledFor - parentScheduledForUnix)
-                  : null,
+              followUpOffsetSeconds: Math.max(
+                0,
+                item.scheduledFor - parentScheduledForUnix
+              ),
               expectedParentEventId: expectedParentEventId ?? undefined,
             }
           : {

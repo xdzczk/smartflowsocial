@@ -11,6 +11,10 @@ import { getUserSubscription } from "~/features/payments/data/payment.queries.se
 import { bulkBlockedMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import {
+  assertScheduleCapacity,
+  ScheduleCapExceededError,
+} from "~/features/payments/entitlements/schedule-cap-policy.server";
+import {
   getUserPlanType,
   type UserSubscription,
 } from "~/features/payments/types";
@@ -60,6 +64,22 @@ function toUnixSeconds(value: unknown): number | null {
       : Math.floor(parsed.getTime() / 1000);
   }
   return null;
+}
+
+function countSerializedScheduleEntries(values: unknown[]): number {
+  let count = 0;
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) continue;
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        count += parsed.length;
+      }
+    } catch {
+      // Ignore malformed follow-up payloads; downstream validation handles them.
+    }
+  }
+  return count;
 }
 
 /**
@@ -209,6 +229,19 @@ export async function handleSignAndSchedule(
       );
     }
 
+    const requestedScheduleCount =
+      signedEvents.length +
+      countSerializedScheduleEntries(repostSchedulesRaw) +
+      countSerializedScheduleEntries(quoteSchedulesRaw);
+    try {
+      await assertScheduleCapacity(userId, requestedScheduleCount);
+    } catch (error) {
+      if (error instanceof ScheduleCapExceededError) {
+        return json({ error: error.message }, { status: 403 });
+      }
+      throw error;
+    }
+
     const createdPosts = await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
         // Parse content assuming format: "caption imageUrl1 imageUrl2 ..."
@@ -282,6 +315,7 @@ export async function handleSignAndSchedule(
             mode === "quote" && originalPostId ? originalPostId : undefined,
           postKind:
             mode === "repost" ? "REPOST" : mode === "quote" ? "QUOTE" : "POST",
+          skipScheduleCapacityCheck: true,
         });
 
         logInfo("Created post", {
@@ -397,13 +431,10 @@ export async function handleSignAndSchedule(
                         dependencyMode: "attached" as const,
                         targetMode: "scheduled_parent" as const,
                         followUpTimingMode: "offset_from_parent" as const,
-                        followUpOffsetSeconds:
-                          parentScheduledForUnix != null
-                            ? Math.max(
-                                0,
-                                item.scheduledFor - parentScheduledForUnix
-                              )
-                            : null,
+                        followUpOffsetSeconds: Math.max(
+                          0,
+                          item.scheduledFor - parentScheduledForUnix
+                        ),
                         expectedParentEventId:
                           expectedParentEventId ?? undefined,
                       }
@@ -490,13 +521,10 @@ export async function handleSignAndSchedule(
                         dependencyMode: "attached" as const,
                         targetMode: "scheduled_parent" as const,
                         followUpTimingMode: "offset_from_parent" as const,
-                        followUpOffsetSeconds:
-                          parentScheduledForUnix != null
-                            ? Math.max(
-                                0,
-                                item.scheduledFor - parentScheduledForUnix
-                              )
-                            : null,
+                        followUpOffsetSeconds: Math.max(
+                          0,
+                          item.scheduledFor - parentScheduledForUnix
+                        ),
                         expectedParentEventId:
                           expectedParentEventId ?? undefined,
                       }

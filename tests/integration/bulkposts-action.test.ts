@@ -78,6 +78,13 @@ const { mockPrisma } = vi.hoisted(() => {
       update: vi.fn(),
       findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
       create: vi.fn(), // For post creation
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    longFormPost: {
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    template: {
+      count: vi.fn(),
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
@@ -144,6 +151,13 @@ describe("Bulk Posts Action Handler", () => {
       }
     );
     (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
+    (mockPrisma.template.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+      0
+    );
     (
       mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
     ).mockResolvedValue({});

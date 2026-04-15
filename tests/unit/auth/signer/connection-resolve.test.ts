@@ -3,7 +3,13 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type {
+  NostrSigner,
+  SignerStatus,
+} from "~/features/auth/nostr-signer.client";
 import { resolveNip46SignerFromConfig } from "~/features/auth/signer/connection-resolve.client";
+import type { RemoteSignerConnection } from "~/features/auth/signer/remote-signer-sessions-types";
+import type { SignedEvent } from "~/features/nostr/types";
 import { RemoteSignerTimeoutError } from "~/lib/errors";
 
 const mocks = vi.hoisted(() => ({
@@ -66,8 +72,28 @@ vi.mock("nostr-tools/nip46", () => ({
 }));
 
 describe("connection-resolve", () => {
+  const createSignedEvent = (): SignedEvent => ({
+    id: "id",
+    pubkey: "pubkey",
+    created_at: 1,
+    kind: 1,
+    tags: [],
+    content: "",
+    sig: "sig",
+  });
+
+  const createBaseSigner = (): NostrSigner => ({
+    type: "nip46",
+    getPublicKey: vi.fn(async () => "a".repeat(64)),
+    signEvent: vi.fn(async () => createSignedEvent()),
+    nip04Encrypt: vi.fn(async () => "encrypted"),
+    nip44Encrypt: vi.fn(async () => "encrypted"),
+    getStatus: vi.fn<() => SignerStatus>(() => "ready"),
+    close: vi.fn(async () => {}),
+  });
+
   const setCachedSigner = vi.fn();
-  const getCachedSigner = vi.fn(() => null);
+  const getCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
   const setConnectionEstablishedAt = vi.fn();
   const setLastActivityTime = vi.fn();
   const setLastVerificationTime = vi.fn();
@@ -78,11 +104,31 @@ describe("connection-resolve", () => {
   const updateSession = vi.fn();
   const recordConnectionEvent = vi.fn();
   const syncRelaysWithRemoteSigner = vi.fn(async () => {});
-  const getActiveConnection = vi.fn(() => ({
-    id: "conn-1",
-    config: { type: "nip46", method: "nostrconnect_uri", relays: ["wss://x"] },
-    metadata: {},
-  }));
+  const getActiveConnection = vi.fn<() => RemoteSignerConnection | null>(
+    () => ({
+      id: "conn-1",
+      label: "Connection",
+      config: {
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: "nostrconnect://uri",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://x"],
+      },
+      metadata: {
+        status: "active",
+        signerAppName: null,
+        pubkey: null,
+        relays: ["wss://x"],
+        connectedAt: null,
+        lastActivityAt: null,
+        lastError: null,
+        createdAt: 0,
+        updatedAt: 0,
+      },
+      currentSessionId: null,
+    })
+  );
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -90,11 +136,7 @@ describe("connection-resolve", () => {
     mocks.verifySignerConnection.mockResolvedValue(true);
     mocks.buildRelayUnion.mockReturnValue(["wss://union"]);
     mocks.relayListsEqual.mockReturnValue(false);
-    getCachedSigner.mockReturnValue({
-      type: "nip46",
-      getPublicKey: vi.fn(async () => "a".repeat(64)),
-      close: vi.fn(async () => {}),
-    });
+    getCachedSigner.mockReturnValue(createBaseSigner());
   });
 
   it("returns null when request becomes stale in bunker flow", async () => {
@@ -192,9 +234,19 @@ describe("connection-resolve", () => {
       close: vi.fn(async () => {}),
       getPublicKey: vi.fn(async () => "b".repeat(64)),
     });
-    const signer = {
+    const signer: NostrSigner & {
+      getBunkerPointer: () => {
+        pubkey: string;
+        relays: string[];
+        secret: null;
+      };
+    } = {
       type: "nip46",
       getPublicKey: vi.fn(async () => "b".repeat(64)),
+      signEvent: vi.fn(async () => createSignedEvent()),
+      nip04Encrypt: vi.fn(async () => "encrypted"),
+      nip44Encrypt: vi.fn(async () => "encrypted"),
+      getStatus: vi.fn<() => SignerStatus>(() => "ready"),
       getBunkerPointer: vi.fn(() => ({
         pubkey: "b".repeat(64),
         relays: ["wss://union"],

@@ -86,7 +86,9 @@ describe("bulk-post-events-fetcher utils", () => {
     document.addEventListener("repostEventsPrepared", eventSpy);
 
     runRepostOrQuotePreparation(
-      [{ files: [] }] as Parameters<typeof runRepostOrQuotePreparation>[0],
+      [{ files: [] }] as unknown as Parameters<
+        typeof runRepostOrQuotePreparation
+      >[0],
       fetcher as never,
       progress
     );
@@ -106,7 +108,7 @@ describe("bulk-post-events-fetcher utils", () => {
     const waitingRef = { current: false };
 
     const ok = await runUploadPreparation({
-      posts: [{ files: [] }] as Parameters<
+      posts: [{ files: [] }] as unknown as Parameters<
         typeof runUploadPreparation
       >[0]["posts"],
       fetcher: { submit } as never,

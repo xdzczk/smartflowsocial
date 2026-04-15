@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-/* eslint-disable @typescript-eslint/consistent-type-assertions -- MediaQueryList test doubles */
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -71,7 +71,7 @@ describe("theme client", () => {
           matches: true,
           addEventListener: vi.fn(),
           removeEventListener: vi.fn(),
-        }) as MediaQueryList
+        }) as unknown as MediaQueryList
     );
     expect(getSystemEffectiveTheme()).toBe("dark");
   });
@@ -87,7 +87,7 @@ describe("theme client", () => {
             handler = cb;
           },
           removeEventListener: vi.fn(),
-        }) as MediaQueryList
+        }) as unknown as MediaQueryList
     );
     const unsub = subscribeToSystemThemeChanges(onChange);
     handler?.();
@@ -123,7 +123,7 @@ describe("theme client", () => {
             listeners.push(cb);
           },
           removeEventListener: vi.fn(),
-        }) as MediaQueryList
+        }) as unknown as MediaQueryList
     );
 
     applyThemePreferenceToDocument("system");
@@ -144,4 +144,3 @@ describe("theme client", () => {
     unsub();
   });
 });
-/* eslint-enable @typescript-eslint/consistent-type-assertions */

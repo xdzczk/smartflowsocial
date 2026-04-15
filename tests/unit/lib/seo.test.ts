@@ -14,6 +14,12 @@ import {
 } from "~/lib/seo-dashboard-routes";
 
 describe("seo", () => {
+  const readStringField = (value: unknown, key: string): string | undefined => {
+    if (!value || typeof value !== "object") return undefined;
+    const record = value as Record<string, unknown>;
+    return typeof record[key] === "string" ? record[key] : undefined;
+  };
+
   it("builds page titles with fallback", () => {
     expect(pageTitle("  Dashboard ")).toContain("Dashboard");
     expect(pageTitle("")).toContain("SmartFlowSocial");
@@ -29,16 +35,23 @@ describe("seo", () => {
       },
       { siteOrigin: "https://smartflow.social" }
     );
-    expect(meta.some((m) => m.name === "author")).toBe(true);
     expect(
       meta.some(
         (m) =>
-          "rel" in m &&
-          m.rel === "canonical" &&
-          m.href === "https://smartflow.social/plans"
+          readStringField(m, "name") === "author" &&
+          readStringField(m, "content") === "SmartFlowSocial"
       )
     ).toBe(true);
-    expect(meta.some((m) => m.property === "og:image")).toBe(true);
+    expect(
+      meta.some(
+        (m) =>
+          readStringField(m, "rel") === "canonical" &&
+          readStringField(m, "href") === "https://smartflow.social/plans"
+      )
+    ).toBe(true);
+    expect(
+      meta.some((m) => readStringField(m, "property") === "og:image")
+    ).toBe(true);
   });
 
   it("builds noindex seo meta without social/canonical blocks", () => {
@@ -52,10 +65,18 @@ describe("seo", () => {
       { siteOrigin: "https://smartflow.social" }
     );
     expect(
-      meta.some((m) => m.name === "robots" && m.content === "noindex, nofollow")
+      meta.some(
+        (m) =>
+          readStringField(m, "name") === "robots" &&
+          readStringField(m, "content") === "noindex, nofollow"
+      )
     ).toBe(true);
-    expect(meta.some((m) => m.property === "og:title")).toBe(false);
-    expect(meta.some((m) => "rel" in m && m.rel === "canonical")).toBe(false);
+    expect(
+      meta.some((m) => readStringField(m, "property") === "og:title")
+    ).toBe(false);
+    expect(meta.some((m) => readStringField(m, "rel") === "canonical")).toBe(
+      false
+    );
   });
 
   it("supports absolute image urls and root defaults", () => {
@@ -69,8 +90,8 @@ describe("seo", () => {
     expect(
       meta.some(
         (m) =>
-          m.property === "og:image" &&
-          m.content === "https://cdn.example/hero.png"
+          readStringField(m, "property") === "og:image" &&
+          readStringField(m, "content") === "https://cdn.example/hero.png"
       )
     ).toBe(true);
     expect(
