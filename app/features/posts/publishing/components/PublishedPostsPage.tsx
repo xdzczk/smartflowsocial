@@ -76,6 +76,7 @@ export default function PublishedPostsPage() {
     user,
     queueTypes,
     stats: initialStats,
+    loadedPages,
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
@@ -147,6 +148,7 @@ export default function PublishedPostsPage() {
       isMobile,
       hasNextPage,
       isFetchingNextPage,
+      loadedPageCount: loadedPages,
       fetchNextPage: () => {
         void fetchNextPage();
       },

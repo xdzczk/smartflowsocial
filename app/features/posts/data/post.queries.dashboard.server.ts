@@ -731,6 +731,7 @@ export async function getLastPostTimeForQueue({
        FROM "Post"
        WHERE "userId" = $1 AND "queueTypeId" = $2
          AND "currentState" = 'SCHEDULED'
+         AND "dependencyMode" = 'standalone'
          AND "scheduledAtUtc" IS NOT NULL
        ORDER BY effective_at DESC
        LIMIT 1`,
@@ -745,6 +746,7 @@ export async function getLastPostTimeForQueue({
      FROM "Post"
      WHERE "userId" = $1 AND "queueTypeId" = $2
        AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+       AND "dependencyMode" = 'standalone'
        AND "scheduledAtUtc" IS NOT NULL
      ORDER BY effective_at DESC
      LIMIT 1`,

@@ -404,6 +404,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     queueTypes: [] satisfies QueueType[],
     pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
     stats: {} satisfies Record<string, PostStats>,
+    loadedPages: 0,
     totalContentCount: 0,
     totalPostsCount: 0,
     totalRepostsCount: 0,
@@ -493,6 +494,7 @@ export function usePublishedPostsInfiniteData() {
   const query = usePublishedPostsInfiniteQuery();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
+  const loadedPages = data.pages.length;
 
   // Memoize the flattened data to prevent unnecessary recalculations
   // Must be called unconditionally (before any early returns) to follow React Hooks rules
@@ -674,6 +676,7 @@ export function usePublishedPostsInfiniteData() {
     queueTypes,
     pagination,
     stats: allStats,
+    loadedPages,
     // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,

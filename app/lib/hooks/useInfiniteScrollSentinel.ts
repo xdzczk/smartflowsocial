@@ -12,6 +12,7 @@ interface UseInfiniteScrollSentinelOptions {
   isMobile: boolean;
   hasNextPage: boolean | undefined;
   isFetchingNextPage: boolean;
+  loadedPageCount?: number;
   fetchNextPage: () => void;
 }
 
@@ -19,11 +20,13 @@ export function useInfiniteScrollSentinel({
   isMobile,
   hasNextPage,
   isFetchingNextPage,
+  loadedPageCount,
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const prefetchTriggeredRef = useRef(false);
   const fetchTriggeredRef = useRef(false);
+  const lastLoadedPageCountRef = useRef<number | undefined>(loadedPageCount);
 
   // On desktop use the viewport (null) so the sentinel is observed when it nears
   // the viewport; on mobile use the listing's scroll container when set.
@@ -49,14 +52,31 @@ export function useInfiniteScrollSentinel({
     });
 
   // After a page finishes loading, allow another fetch while the sentinel still
-  // intersects (otherwise refs only reset when the sentinel leaves the viewport,
-  // which never happens if the list stays short).
+  // intersects only when we can confirm a new page was appended.
+  // This prevents a loop where a canceled/stale fetch keeps requesting the same page.
   useEffect(() => {
-    if (!isFetchingNextPage) {
-      prefetchTriggeredRef.current = false;
-      fetchTriggeredRef.current = false;
+    if (typeof loadedPageCount !== "number") {
+      if (!isFetchingNextPage) {
+        prefetchTriggeredRef.current = false;
+        fetchTriggeredRef.current = false;
+      }
+      return;
     }
-  }, [isFetchingNextPage]);
+
+    if (!isFetchingNextPage) {
+      const previous = lastLoadedPageCountRef.current ?? 0;
+      if (loadedPageCount > previous) {
+        lastLoadedPageCountRef.current = loadedPageCount;
+        prefetchTriggeredRef.current = false;
+        fetchTriggeredRef.current = false;
+      } else if (loadedPageCount < previous) {
+        // Query reset (e.g. tab/filter change): re-arm sentinel for the new list.
+        lastLoadedPageCountRef.current = loadedPageCount;
+        prefetchTriggeredRef.current = false;
+        fetchTriggeredRef.current = false;
+      }
+    }
+  }, [isFetchingNextPage, loadedPageCount]);
 
   // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
   useEffect(() => {

@@ -371,6 +371,7 @@ function emptyScheduledPostsInfiniteResult(
     user: null as UserData | null,
     queueTypes: [] as QueueType[],
     hashTagPresets: [] as HashTagPreset[],
+    loadedPages: 0,
     totalContentCount: 0,
     totalPostsCount: 0,
     totalRepostsCount: 0,
@@ -421,6 +422,7 @@ export function useScheduledPostsInfiniteData() {
   const query = useScheduledPostsInfiniteQuery();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     query;
+  const loadedPages = data.pages.length;
 
   // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
@@ -618,6 +620,7 @@ export function useScheduledPostsInfiniteData() {
     user: userRaw,
     queueTypes,
     hashTagPresets,
+    loadedPages,
     // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,

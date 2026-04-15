@@ -1,0 +1,323 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+
+import { brandLineProofCaption } from "~/lib/brand";
+import { buildContestProofPayload } from "~/lib/proof/adapters/contest";
+import { buildGiveawayProofPayload } from "~/lib/proof/adapters/giveaway";
+import { buildProofCaption } from "~/lib/proof/build-proof-caption";
+import { buildProofSummary } from "~/lib/proof/build-proof-summary";
+import {
+  exportProofCardPng,
+  proofExportFilename,
+  resolveProofPngBackground,
+} from "~/lib/proof/export-proof-card";
+import {
+  proofCardAspectOuterClass,
+  proofCardInnerPadClass,
+  proofCardShellSurfaceClass,
+  proofEyebrowClass,
+  proofFooterTextClass,
+  proofHeroClass,
+  proofSubClass,
+  statusBadgeClass,
+} from "~/lib/proof/themes";
+import type { ProofCardPayload } from "~/lib/proof/types";
+
+vi.mock("html-to-image", () => ({
+  toPng: vi.fn(async () => "data:image/png;base64,fake"),
+}));
+
+describe("W1 proof coverage", () => {
+  const fakeElement = (): HTMLElement => Object.create(null) as HTMLElement;
+  const basePayload: ProofCardPayload = {
+    domain: "giveaway",
+    cardType: "public-summary",
+    ratio: "square",
+    title: "My Title",
+    subtitle: "My Subtitle",
+    heroValue: "10",
+    heroLabel: "items",
+    footer: {
+      productLabel: "SmartFlowSocial",
+      snapshotLabel: "Snapshot",
+      timeRangeLabel: "7d",
+      referenceLabel: "Ref",
+    },
+  };
+
+  describe("buildProofSummary", () => {
+    it("builds metric-first summaries and trims empty lines", () => {
+      const summary = buildProofSummary({
+        ...basePayload,
+        metricFirst: true,
+        eyebrow: "Eyebrow",
+        stats: [{ label: "A", value: "1" }],
+        statusBadge: { label: "Done", tone: "success" },
+      });
+
+      expect(summary).toContain("Eyebrow");
+      expect(summary).toContain("10 — items");
+      expect(summary).toContain("Status: Done");
+      expect(summary).toContain("A: 1");
+      expect(summary).toContain("SmartFlowSocial");
+    });
+
+    it("falls back to title/subtitle when hero is absent", () => {
+      const summary = buildProofSummary({
+        domain: "admin",
+        cardType: "range",
+        ratio: "portrait",
+        title: "Title Only",
+        subtitle: "Subtitle",
+      });
+      expect(summary).toBe("Title Only\nSubtitle");
+    });
+  });
+
+  describe("buildProofCaption", () => {
+    it("creates giveaway public-summary caption", () => {
+      const caption = buildProofCaption({
+        ...basePayload,
+        domain: "giveaway",
+        cardType: "public-summary",
+        winnersCount: 2,
+        satsPlanned: 5000,
+      });
+      expect(caption).toContain("Completed giveaway");
+      expect(caption).toContain("2 winners");
+      expect(caption).toContain("5,000 sats distributed");
+      expect(caption).toContain(brandLineProofCaption);
+    });
+
+    it("creates contest public-summary caption", () => {
+      const caption = buildProofCaption({
+        ...basePayload,
+        domain: "contest",
+        cardType: "public-summary",
+        winnersCount: 1,
+        satsPlanned: 42,
+      });
+      expect(caption).toContain("Contest complete");
+      expect(caption).toContain("1 winner");
+      expect(caption).toContain("42 sats");
+    });
+
+    it("creates admin caption with newline brand line", () => {
+      const caption = buildProofCaption({
+        ...basePayload,
+        domain: "admin",
+        cardType: "milestone",
+      });
+      expect(caption).toContain("\n\n");
+      expect(caption.endsWith(brandLineProofCaption)).toBe(true);
+    });
+
+    it("uses generic fallback caption path", () => {
+      const caption = buildProofCaption({
+        ...basePayload,
+        domain: "contest",
+        cardType: "receipt",
+      });
+      expect(caption).toContain(brandLineProofCaption);
+    });
+  });
+
+  describe("contest/giveaway adapters", () => {
+    const contestDto = {
+      id: "contest-123456789",
+      title: "Contest X",
+      rankingMetric: "REACTIONS",
+      statusLabel: "Completed",
+      winnerCount: 3,
+      satsPlanned: 1000,
+      satsPaid: 800,
+      paidViaWalletCount: 1,
+      paidManuallyCount: 2,
+      unresolvedCount: 0,
+      finalizationFeeSats: 10,
+      planAtFinalization: "pro",
+      payoutWalletMode: "nwc_creator" as const,
+      payoutAutoRunEnabled: true,
+      completedAtLabel: "2026-01-01",
+      tieBreakRule: "earliest",
+      entryType: "REPLY_DIRECT",
+      eligibleEntries: 10,
+      durationLabel: "7d",
+    };
+
+    const giveawayDto = {
+      id: "giveaway-123456789",
+      title: "Giveaway X",
+      scopeSummaryLabel: "last 7 days",
+      statusLabel: "Paid out",
+      winnerCount: 2,
+      satsPlanned: 200,
+      satsPaid: 180,
+      paidViaWalletCount: 1,
+      paidManuallyCount: 1,
+      unresolvedCount: 1,
+      finalizationFeeSats: 3,
+      planAtFinalization: "pro",
+      payoutWalletMode: "manual" as const,
+      payoutAutoRunEnabled: false,
+      completedAtLabel: "2026-01-01",
+      selectionMode: "WEIGHTED_BY_ENGAGEMENT",
+      eligiblePoolSize: 30,
+    };
+
+    it("builds all contest payload card types", () => {
+      const summary = buildContestProofPayload(
+        contestDto,
+        "public-summary",
+        "portrait",
+        { showLogo: false, showReferenceId: true, showTimestamp: false }
+      );
+      expect(summary.domain).toBe("contest");
+      expect(summary.stats?.length).toBeLessThanOrEqual(4);
+      expect(summary.footer?.referenceLabel).toContain("Ref");
+
+      const fairness = buildContestProofPayload(
+        { ...contestDto, unresolvedCount: 2, payoutAutoRunEnabled: false },
+        "fairness-proof",
+        "square"
+      );
+      expect(fairness.statusBadge?.tone).toBe("warning");
+      expect(fairness.selectionSummary).toContain("Tie-break");
+
+      const receipt = buildContestProofPayload(
+        { ...contestDto, finalizationFeeSats: null },
+        "receipt",
+        "landscape"
+      );
+      expect(receipt.statusBadge?.label).toContain("Settlement");
+      expect(receipt.finalizationFeeSats).toBeUndefined();
+    });
+
+    it("builds all giveaway payload card types", () => {
+      const summary = buildGiveawayProofPayload(
+        giveawayDto,
+        "public-summary",
+        "portrait"
+      );
+      expect(summary.domain).toBe("giveaway");
+      expect(summary.stats?.length).toBeLessThanOrEqual(4);
+
+      const fairness = buildGiveawayProofPayload(
+        giveawayDto,
+        "fairness-proof",
+        "square",
+        { showReferenceId: true, showTimestamp: false }
+      );
+      expect(fairness.selectionSummary).toContain("Weighted");
+      expect(fairness.footer?.referenceLabel).toContain("Ref");
+
+      const receipt = buildGiveawayProofPayload(
+        { ...giveawayDto, unresolvedCount: 0, finalizationFeeSats: 0 },
+        "receipt",
+        "landscape"
+      );
+      expect(receipt.statusBadge?.tone).toBe("success");
+      expect(receipt.finalizationFeeSats).toBeUndefined();
+    });
+  });
+
+  describe("themes", () => {
+    it("covers class builders for all ratio/tone branches", () => {
+      expect(proofCardAspectOuterClass("portrait")).toContain("aspect-[4/5]");
+      expect(proofCardAspectOuterClass("square")).toContain("aspect-square");
+      expect(proofCardAspectOuterClass("landscape")).toContain("aspect-video");
+
+      expect(proofCardShellSurfaceClass("campaign")).toContain("from-primary");
+      expect(proofCardShellSurfaceClass("admin")).not.toContain("from-primary");
+
+      expect(proofCardInnerPadClass("portrait")).toContain("p-5");
+      expect(proofCardInnerPadClass("square")).toContain("p-4");
+
+      expect(proofEyebrowClass("square")).toContain("text-[10px]");
+      expect(proofHeroClass("portrait", true)).toContain("text-6xl");
+      expect(proofHeroClass("portrait", false)).toContain("text-[3.25rem]");
+      expect(proofHeroClass("square")).toContain("text-4xl");
+
+      expect(proofSubClass("portrait")).toContain("text-sm");
+      expect(proofSubClass("square")).toContain("line-clamp-3");
+      expect(proofSubClass("landscape")).toContain("max-w-[20rem]");
+
+      expect(proofFooterTextClass("square")).toContain("text-[10px]");
+      expect(proofFooterTextClass("landscape")).toContain("sm:text-[11px]");
+      expect(proofFooterTextClass("portrait")).toContain("sm:text-xs");
+
+      expect(statusBadgeClass("success")).toContain("emerald");
+      expect(statusBadgeClass("warning")).toContain("amber");
+      expect(statusBadgeClass("neutral")).toContain("bg-muted");
+    });
+  });
+
+  describe("export-proof-card", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("uses element background when non-transparent", () => {
+      vi.stubGlobal("window", {
+        getComputedStyle: vi.fn(() => ({ backgroundColor: "rgb(1, 2, 3)" })),
+      });
+      expect(resolveProofPngBackground(fakeElement())).toBe("rgb(1, 2, 3)");
+    });
+
+    it("falls back to --card CSS variable when transparent", () => {
+      const getComputedStyle = vi
+        .fn()
+        .mockReturnValueOnce({ backgroundColor: "rgba(0, 0, 0, 0)" })
+        .mockReturnValueOnce({
+          getPropertyValue: () => "210 10% 50%",
+        });
+      vi.stubGlobal("window", { getComputedStyle });
+      vi.stubGlobal("document", { documentElement: {} });
+      expect(resolveProofPngBackground(fakeElement())).toBe("hsl(210 10% 50%)");
+    });
+
+    it("falls back to white when no element bg and no --card value", () => {
+      const getComputedStyle = vi
+        .fn()
+        .mockReturnValueOnce({ backgroundColor: "transparent" })
+        .mockReturnValueOnce({
+          getPropertyValue: () => "",
+        });
+      vi.stubGlobal("window", { getComputedStyle });
+      vi.stubGlobal("document", { documentElement: {} });
+      expect(resolveProofPngBackground(fakeElement())).toBe("#ffffff");
+    });
+
+    it("formats proof export filenames", () => {
+      expect(
+        proofExportFilename({
+          domain: "contest",
+          cardType: "public_summary",
+          date: new Date("2026-05-20T00:00:00.000Z"),
+        })
+      ).toBe("contest-public-summary-2026-05-20.png");
+    });
+
+    it("exports png using html-to-image and clicks download anchor", async () => {
+      const click = vi.fn();
+      const anchor = { href: "", download: "", click };
+      const getComputedStyle = vi
+        .fn()
+        .mockReturnValueOnce({ backgroundColor: "rgb(20, 20, 20)" });
+      vi.stubGlobal("window", { getComputedStyle });
+      vi.stubGlobal("document", {
+        createElement: vi.fn(() => anchor),
+        documentElement: {},
+      });
+
+      await exportProofCardPng({
+        element: fakeElement(),
+        ratio: "square",
+        filename: "x.png",
+      });
+
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(anchor.download).toBe("x.png");
+      expect(anchor.href).toContain("data:image/png;base64");
+    });
+  });
+});

@@ -77,6 +77,7 @@ export default function ScheduledPostsPage() {
     user,
     queueTypes,
     hashTagPresets,
+    loadedPages,
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
@@ -159,6 +160,7 @@ export default function ScheduledPostsPage() {
       isMobile,
       hasNextPage,
       isFetchingNextPage,
+      loadedPageCount: loadedPages,
       fetchNextPage: () => {
         void fetchNextPage();
       },
