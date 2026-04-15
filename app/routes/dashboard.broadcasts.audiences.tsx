@@ -11,7 +11,7 @@ import { Suspense, useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BroadcastAudiencesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,
@@ -207,15 +207,7 @@ export default function BroadcastAudiencesRoute() {
     audiences: Promise<BroadcastAudiencesLoaderData>;
   }>();
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Audiences"
-          subtitle="Loading saved audience definitions"
-          variant="list"
-        />
-      }
-    >
+    <Suspense fallback={<BroadcastAudiencesPageSkeleton />}>
       <Await
         resolve={audiences}
         errorElement={

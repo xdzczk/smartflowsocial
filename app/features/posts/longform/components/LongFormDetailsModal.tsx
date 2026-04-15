@@ -1,4 +1,5 @@
 import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -22,6 +23,7 @@ import {
   RAIL_PAD_X,
   RAIL_ZONE_PY,
 } from "~/features/posts/components/publishing-rail";
+import { optimisticallyRemovePostIdsFromViews } from "~/features/posts/hooks/post-cache-prune";
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 import type {
@@ -513,6 +515,7 @@ export default function LongFormDetailsModal({
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
   const deleteFetcher = useFetcher();
+  const queryClient = useQueryClient();
   const rootData = useRouteLoaderData("root") as
     | {
         user?: {
@@ -531,20 +534,21 @@ export default function LongFormDetailsModal({
     const data = deleteFetcher.data as { success?: boolean; error?: unknown };
     if (!didDeleteActionSucceed(data)) return;
     const formData = deleteFetcher.formData as FormData | undefined;
-    const submittedPostId = formData?.get("postId");
-    const isOurDelete =
-      formData?.get("_action") === "deleteLongForm" &&
-      (submittedPostId === post.id ||
-        String(submittedPostId) === String(post.id));
-    if (isOurDelete) {
-      onDeleted?.(post.id);
-      onClose();
-    }
+    if (formData?.get("_action") !== "deleteLongForm") return;
+    const submittedPostId = formData.get("postId");
+    const deletedPostId =
+      typeof submittedPostId === "string" && submittedPostId.length > 0
+        ? submittedPostId
+        : String(post.id);
+    optimisticallyRemovePostIdsFromViews(queryClient, [deletedPostId]);
+    onDeleted?.(deletedPostId);
+    onClose();
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
     deleteFetcher.formData,
     post.id,
+    queryClient,
     onDeleted,
     onClose,
   ]);

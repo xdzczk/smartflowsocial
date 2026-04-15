@@ -4,7 +4,7 @@ import { Await, Form, Link, useLoaderData } from "@remix-run/react";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BroadcastReviewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatBroadcastAudienceLabel,
@@ -191,15 +191,7 @@ export default function BroadcastNewReviewRoute() {
     review: Promise<BroadcastReviewLoaderData>;
   }>();
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="Review broadcast"
-          subtitle="Loading audience, quality, and signing details"
-        />
-      }
-    >
+    <Suspense fallback={<BroadcastReviewPageSkeleton />}>
       <Await
         resolve={review}
         errorElement={

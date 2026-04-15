@@ -3,7 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { AdminAnalyticsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AdminChartCard,
   AdminLineChart,
@@ -87,15 +87,7 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="adminDashboard"
-          title="Analytics"
-          subtitle="Loading growth, monetization, and reliability metrics"
-        />
-      }
-    >
+    <Suspense fallback={<AdminAnalyticsPageSkeleton />}>
       <Await
         resolve={raw.analytics}
         errorElement={

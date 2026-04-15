@@ -30,7 +30,10 @@ import { BRAND_NAME } from "~/lib/brand";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { queueTypeClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 import { QUEUE_COLOR_ACCENTS, QUEUE_COLOR_TOKENS } from "../queue-colors";
 import type { QueueType } from "../types";

@@ -4,7 +4,7 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { ContestDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   ContestDetailView,
@@ -293,15 +293,7 @@ export default function ContestDetailRoute() {
     id !== "" ? `/dashboard/contests/detail/${id}` : "/dashboard/contests";
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="Contest"
-          subtitle="Entries, leaderboard, and actions"
-        />
-      }
-    >
+    <Suspense fallback={<ContestDetailPageSkeleton />}>
       <Await
         resolve={contestDetail}
         errorElement={<DeferredRouteAwaitError retryTo={retryTo} />}

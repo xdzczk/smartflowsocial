@@ -11,7 +11,7 @@ import { Suspense } from "react";
 
 import { BroadcastCampaignRowActions } from "~/components/broadcast/BroadcastCampaignRowActions";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BroadcastIndexPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   archiveBroadcastCampaign,
@@ -525,14 +525,7 @@ export default function BroadcastsIndexRoute() {
     useLoaderData() as BroadcastsIndexDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Broadcasts"
-          subtitle="Campaigns and delivery status"
-        />
-      }
-    >
+    <Suspense fallback={<BroadcastIndexPageSkeleton />}>
       <Await
         resolve={broadcastsIndex}
         errorElement={

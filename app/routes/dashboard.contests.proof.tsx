@@ -4,7 +4,7 @@ import { Await, Link, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { ContestProofPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatContestStatusLabel,
@@ -106,15 +106,7 @@ export default function ContestProofPage() {
   const { contests } = useLoaderData<typeof loader>();
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="Contest proof"
-          subtitle="Loading completed contests and payout proofs"
-        />
-      }
-    >
+    <Suspense fallback={<ContestProofPageSkeleton />}>
       <Await
         resolve={contests}
         errorElement={

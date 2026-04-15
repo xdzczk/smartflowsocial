@@ -13,7 +13,7 @@ import { Suspense, useMemo } from "react";
 
 import { BroadcastNewDraftForm } from "~/components/broadcast/BroadcastNewDraftForm";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BroadcastNewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   BroadcastActionError,
@@ -472,15 +472,7 @@ export default function BroadcastNewRoute() {
   }
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="New broadcast"
-          subtitle="Loading composer defaults and saved audiences"
-        />
-      }
-    >
+    <Suspense fallback={<BroadcastNewPageSkeleton />}>
       <Await
         resolve={data}
         errorElement={

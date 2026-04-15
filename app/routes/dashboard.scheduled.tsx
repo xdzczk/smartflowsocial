@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { ScheduledPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { SCHEDULED_DATE_RANGE_QUERY_LIMIT } from "~/features/posts/deferred-loader-limits";
@@ -139,14 +139,7 @@ function ScheduledFeedRoute() {
   const { scheduled } = useLoaderData() as ScheduledDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Scheduled"
-          subtitle="Manage upcoming posts, replies, reposts, articles, and queued publishing."
-        />
-      }
-    >
+    <Suspense fallback={<ScheduledPostsPageSkeleton />}>
       <Await
         resolve={scheduled}
         errorElement={

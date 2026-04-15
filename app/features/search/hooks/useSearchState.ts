@@ -8,7 +8,10 @@ import type {
   SearchLookupResolution,
 } from "~/features/search";
 import { searchFormClientSchema } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface User {
   timezone?: string | null;

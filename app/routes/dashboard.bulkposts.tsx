@@ -3,7 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BulkPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
@@ -51,14 +51,7 @@ function BulkPostsFeedRoute() {
   const { bulkPosts } = useLoaderData() as BulkPostsDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Bulk posts"
-          subtitle="Groups and multi-post scheduling"
-        />
-      }
-    >
+    <Suspense fallback={<BulkPostsPageSkeleton />}>
       <Await
         resolve={bulkPosts}
         errorElement={

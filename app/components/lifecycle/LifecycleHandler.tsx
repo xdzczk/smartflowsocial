@@ -36,6 +36,13 @@ function canRevalidateNow(): boolean {
   return navigator.onLine;
 }
 
+function isInfiniteArchivePath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard/scheduled") ||
+    pathname.startsWith("/dashboard/published")
+  );
+}
+
 export function LifecycleHandler() {
   const revalidator = useRevalidator();
   const queryClient = useQueryClient();
@@ -56,6 +63,9 @@ export function LifecycleHandler() {
     if (!canRevalidateNow()) {
       return;
     }
+    if (isInfiniteArchivePath(location.pathname)) {
+      return;
+    }
     const now = Date.now();
     if (now - lastRevalidateAtRef.current < REVALIDATE_DEBOUNCE_MS) {
       return;
@@ -63,7 +73,7 @@ export function LifecycleHandler() {
     lastRevalidateAtRef.current = now;
     void triggerForegroundSync(queryClient);
     revalidatorRef.current.revalidate();
-  }, [queryClient]);
+  }, [location.pathname, queryClient]);
 
   useEffect(() => {
     setCurrentUserNpub(user?.npub ?? null);

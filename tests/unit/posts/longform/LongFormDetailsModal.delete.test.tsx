@@ -7,6 +7,12 @@ import { render, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    setQueriesData: vi.fn(),
+  }),
+}));
+
 const fetcherFormData = new FormData();
 fetcherFormData.set("_action", "deleteLongForm");
 fetcherFormData.set("postId", "lf-1");

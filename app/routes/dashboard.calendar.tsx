@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { CalendarPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireSession, requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { CalendarPage } from "~/features/posts/calendar";
@@ -81,14 +81,7 @@ function CalendarFeedRoute() {
   const { calendar } = useLoaderData() as CalendarDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Calendar"
-          subtitle="Month view and scheduled slots"
-        />
-      }
-    >
+    <Suspense fallback={<CalendarPageSkeleton />}>
       <Await
         resolve={calendar}
         errorElement={<DeferredRouteAwaitError retryTo="/dashboard/calendar" />}

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions -- minimal fixtures for utility tests */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   runRepostOrQuotePreparation,
@@ -77,6 +77,10 @@ describe("bulk-post-events-fetcher utils", () => {
     mocks.uploadMany.mockResolvedValue([
       { success: true, file: { url: "https://u/1" } },
     ]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("runRepostOrQuotePreparation sets fake fileUrls and dispatches event", () => {

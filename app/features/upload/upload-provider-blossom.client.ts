@@ -14,6 +14,7 @@ import {
   BLOSSOM_UPLOAD_RETRY_DELAYS_MS,
   type QueueTask,
 } from "./upload-progress.client";
+import { isBlossomProvider } from "./upload-provider-blossom";
 import type {
   UploadResultClient,
   MirrorUploadResult,
@@ -28,16 +29,7 @@ const MIRROR_CONCURRENCY_CAP = 3;
 
 function devLog(..._args: unknown[]): void {}
 function devWarn(..._args: unknown[]): void {}
-
-export function isBlossomProvider(provider: string | undefined): boolean {
-  return (
-    provider === "BLOSSOM_PRIMAL" ||
-    provider === "BLOSSOM_BLOSSTR" ||
-    provider === "BLOSSOM_SFS" ||
-    provider === "BLOSSOM_CUSTOM" ||
-    provider === "BLOSSOM"
-  );
-}
+export { isBlossomProvider };
 
 export interface ProviderUploadPolicy {
   provider: string;

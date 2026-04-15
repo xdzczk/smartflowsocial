@@ -14,7 +14,7 @@ import { nowMillis } from "~/lib/temporal";
 import {
   appendMediaUrlsForSigning,
   stripAttachmentTokens,
-} from "../../utils/inline-tokens.client";
+} from "../../utils/inline-tokens";
 import {
   ACTION_POST_TEXT,
   ACTION_SCHEDULE_TEXT,

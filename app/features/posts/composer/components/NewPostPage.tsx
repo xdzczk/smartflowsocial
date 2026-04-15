@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { UnifiedComposer } from "~/features/posts/composer";
 import { PollComposer } from "~/features/posts/composer/components/PollComposer";
-import { useNewPostPublishModalEffect } from "~/features/posts/composer/hooks/useNewPostPublishModalEffect.client";
+import { useNewPostPublishModalEffect } from "~/features/posts/composer/hooks/useNewPostPublishModalEffect";
 import {
   DraftPickerModal,
   type ShortDraftFilter,

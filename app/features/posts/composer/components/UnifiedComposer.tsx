@@ -37,7 +37,7 @@ import {
   type QueueType,
   type ComposerAttachment,
 } from "../../types";
-import { stripAttachmentTokens } from "../../utils/inline-tokens.client";
+import { stripAttachmentTokens } from "../../utils/inline-tokens";
 import type { TextPostFormData } from "../hooks/composer-submit-types";
 import {
   useComposerLocalDraft,

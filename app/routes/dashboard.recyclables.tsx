@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { RecyclablesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { RecyclablesPage } from "~/features/posts/publishing";
@@ -78,14 +78,7 @@ function RecyclablesFeedRoute() {
   const { recyclables } = useLoaderData() as RecyclablesDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Recyclables"
-          subtitle="Reuse high-performing published posts as templates for new content."
-        />
-      }
-    >
+    <Suspense fallback={<RecyclablesPageSkeleton />}>
       <Await
         resolve={recyclables}
         errorElement={

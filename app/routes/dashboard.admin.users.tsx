@@ -9,7 +9,7 @@ import {
 import { Suspense, useMemo, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { AdminUsersPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -95,15 +95,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="adminDashboard"
-          title="Users"
-          subtitle="Loading account directory and lifecycle segments"
-        />
-      }
-    >
+    <Suspense fallback={<AdminUsersPageSkeleton />}>
       <Await
         resolve={raw.usersPage}
         errorElement={

@@ -3,7 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { AdminOperationsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { AdminOperationsPageInner } from "~/features/admin";
 import { adminOperationsAction } from "~/features/admin/admin-operations-action.server";
 import {
@@ -49,15 +49,7 @@ export default function AdminOperationsPage() {
   const { operations } = raw;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="adminDashboard"
-          title="Operations"
-          subtitle="Failures, dead letters, queues, and metrics"
-        />
-      }
-    >
+    <Suspense fallback={<AdminOperationsPageSkeleton />}>
       <Await
         resolve={operations}
         errorElement={

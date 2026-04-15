@@ -28,7 +28,7 @@ import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/use
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 import { useLongFormScheduling } from "~/features/posts/useLongFormScheduling";
-import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate.client";
+import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate-hook";
 import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
@@ -53,6 +53,10 @@ import {
   type LongFormPostProps,
 } from "./longform-post";
 import { LongFormContentEditor } from "./LongFormContentEditor";
+
+function normalizeWatchedText(value: string | undefined): string {
+  return value ?? "";
+}
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
 export default function LongFormPost({
@@ -128,10 +132,10 @@ export default function LongFormPost({
   });
 
   // Watch form values
-  const title = form.watch("title");
-  const summary = form.watch("summary");
-  const content = form.watch("content");
-  const customTags = form.watch("customTags");
+  const title = normalizeWatchedText(form.watch("title"));
+  const summary = normalizeWatchedText(form.watch("summary"));
+  const content = normalizeWatchedText(form.watch("content"));
+  const customTags = normalizeWatchedText(form.watch("customTags"));
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
 
   const titleFieldReg = form.register("title");
@@ -709,7 +713,7 @@ export default function LongFormPost({
 
   const contentSummaryLines = buildArticlePublishSummaryLines({
     hasTitle: title.trim().length > 0,
-    hasSummary: Boolean((summary ?? "").trim()),
+    hasSummary: Boolean(summary.trim()),
     wordCount,
     hasCover: Boolean(image),
     customTags,
@@ -772,8 +776,8 @@ export default function LongFormPost({
       title.trim().length > 0 ||
       content.trim().length > 0 ||
       Boolean(image) ||
-      (customTags ?? "").trim().length > 0 ||
-      (summary ?? "").trim().length > 0
+      customTags.trim().length > 0 ||
+      summary.trim().length > 0
     ) {
       setComposerTouched(true);
     }

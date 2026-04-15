@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { CalendarPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireSession, requireUserId } from "~/features/auth";
 import { CalendarQueuePage } from "~/features/posts/calendar";
 import type {
@@ -79,14 +79,7 @@ function CalendarQueueFeedRoute() {
   const { calendarQueue } = useLoaderData() as CalendarQueueDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Calendar"
-          subtitle="This queue in calendar view"
-        />
-      }
-    >
+    <Suspense fallback={<CalendarPageSkeleton />}>
       <Await
         resolve={calendarQueue}
         errorElement={<DeferredRouteAwaitError retryTo="/dashboard/calendar" />}

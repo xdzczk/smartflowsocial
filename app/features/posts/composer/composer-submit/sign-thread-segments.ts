@@ -4,7 +4,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   appendMediaUrlsForSigning,
   stripAttachmentTokens,
-} from "../../utils/inline-tokens.client";
+} from "../../utils/inline-tokens";
 import { getThreadReplyTags } from "../../utils/repost-quote-events.client";
 import type { ThreadSegment } from "../hooks/composer-submit-types";
 

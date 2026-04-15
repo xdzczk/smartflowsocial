@@ -1,4 +1,5 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -16,6 +17,7 @@ import { useThreadView } from "~/lib/query/hooks/useApiQuery";
 import { cn } from "~/lib/utils";
 
 import type { Post } from "../../data/posts-prisma-types.server";
+import { optimisticallyRemovePostIdsFromViews } from "../../hooks/post-cache-prune";
 import type { CombinedContent, PostData } from "../../types";
 
 import { getPubkeyDisplayName } from "./author-metadata";
@@ -91,6 +93,7 @@ export default function PostDetailsModal({
   scheduledOpenFullEditorHref,
 }: PostDetailsModalProps) {
   const deleteFetcher = useFetcher();
+  const queryClient = useQueryClient();
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
@@ -116,20 +119,21 @@ export default function PostDetailsModal({
     const data = deleteFetcher.data as { success?: boolean; error?: unknown };
     if (!didDeleteActionSucceed(data)) return;
     const formData = deleteFetcher.formData as FormData | undefined;
-    const submittedPostId = formData?.get("postId");
-    const isOurDelete =
-      formData?.get("_action") === "delete" &&
-      (submittedPostId === post.id ||
-        String(submittedPostId) === String(post.id));
-    if (isOurDelete) {
-      onDeleted?.(post.id);
-      onClose();
-    }
+    if (formData?.get("_action") !== "delete") return;
+    const submittedPostId = formData.get("postId");
+    const deletedPostId =
+      typeof submittedPostId === "string" && submittedPostId.length > 0
+        ? submittedPostId
+        : String(post.id);
+    optimisticallyRemovePostIdsFromViews(queryClient, [deletedPostId]);
+    onDeleted?.(deletedPostId);
+    onClose();
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
     deleteFetcher.formData,
     post.id,
+    queryClient,
     onDeleted,
     onClose,
   ]);

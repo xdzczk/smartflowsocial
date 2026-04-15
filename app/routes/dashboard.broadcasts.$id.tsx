@@ -12,7 +12,7 @@ import {
 import { Suspense, useEffect, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BroadcastDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
@@ -251,15 +251,7 @@ export default function BroadcastDetailRoute() {
     detail: Promise<BroadcastDetailLoaderData>;
   }>();
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Broadcast details"
-          subtitle="Loading campaign progress and recipient activity"
-          variant="detail"
-        />
-      }
-    >
+    <Suspense fallback={<BroadcastDetailPageSkeleton />}>
       <Await
         resolve={detail}
         errorElement={

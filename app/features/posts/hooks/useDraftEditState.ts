@@ -6,7 +6,7 @@ import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
-import { useZodForm } from "~/lib/validation/utils.client";
+import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import {
   type UserData,

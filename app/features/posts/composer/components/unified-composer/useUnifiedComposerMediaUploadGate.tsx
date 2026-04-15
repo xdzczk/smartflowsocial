@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
-import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate.client";
-import { isBlossomProvider } from "~/features/upload/upload-provider-blossom.client";
+import { isBlossomMediaUploadBlocked } from "~/features/upload/blossom-upload-gate";
+import { isBlossomProvider } from "~/features/upload/upload-provider-blossom";
 import { useUploadProvider } from "~/lib/query/hooks/useApiQuery";
 
 import { UnifiedComposerBlossomSignerMediaNote } from "./UnifiedComposerBlossomSignerMediaNote";

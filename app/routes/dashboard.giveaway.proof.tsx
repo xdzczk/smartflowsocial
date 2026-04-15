@@ -4,7 +4,7 @@ import { Await, Link, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { GiveawayProofPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import { listGiveawaysByUser } from "~/features/giveaway/giveaway-actions.server";
@@ -110,15 +110,7 @@ export default function GiveawayProofPage() {
   const { giveaways } = useLoaderData<typeof loader>();
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="Giveaway proof"
-          subtitle="Loading completed giveaways and payout proofs"
-        />
-      }
-    >
+    <Suspense fallback={<GiveawayProofPageSkeleton />}>
       <Await
         resolve={giveaways}
         errorElement={

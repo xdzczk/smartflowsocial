@@ -78,8 +78,8 @@ export { useBlossomAwareUpload } from "./useBlossomAwareUpload";
 export {
   BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE,
   isBlossomMediaUploadBlocked,
-  useBlossomUploadGate,
-} from "./blossom-upload-gate.client";
+} from "./blossom-upload-gate";
+export { useBlossomUploadGate } from "./blossom-upload-gate-hook";
 
 // ============================================================================
 // Media metadata (Blossom uploads)
