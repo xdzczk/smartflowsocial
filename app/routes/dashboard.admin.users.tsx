@@ -1,7 +1,15 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import {
+  Await,
+  Form,
+  Link,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
+import { Suspense, useMemo, useState } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -24,6 +32,7 @@ import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -36,13 +45,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const filter = url.searchParams.get("filter") ?? undefined;
   const sort = url.searchParams.get("sort") ?? undefined;
   const search = url.searchParams.get("q") ?? undefined;
-  const data = await getAdminUsersPageData({
+  const usersPagePromise = getAdminUsersPageData({
     page: page ? parseInt(page, 10) : 1,
     filter,
     sort,
     search,
   });
-  return json(data);
+  if (isRemixResourceRequest(request)) {
+    return json(await usersPagePromise);
+  }
+  return defer({ usersPage: usersPagePromise });
 }
 
 const SEGMENTS: Array<{ id: AdminUserSegment | "all"; label: string }> = [
@@ -73,11 +85,46 @@ function segmentBadgeClass(s: AdminUserSegment): string {
 }
 
 type AdminUsersLoaderData =
-  | Awaited<ReturnType<typeof getAdminUsersPageData>>
-  | { error: string };
+  | { error: string }
+  | { usersPage: Promise<Awaited<ReturnType<typeof getAdminUsersPageData>>> };
 
 export default function AdminUsersPage() {
   const raw = useLoaderData<AdminUsersLoaderData>();
+  if ("error" in raw) {
+    return <div className="p-4">Access denied.</div>;
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="adminDashboard"
+          title="Users"
+          subtitle="Loading account directory and lifecycle segments"
+        />
+      }
+    >
+      <Await
+        resolve={raw.usersPage}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/admin/users" />
+        }
+      >
+        {(loaded) => (
+          <AdminUsersPageLoaded
+            data={loaded as Awaited<ReturnType<typeof getAdminUsersPageData>>}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function AdminUsersPageLoaded({
+  data: d,
+}: {
+  data: Awaited<ReturnType<typeof getAdminUsersPageData>>;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sheetUserId, setSheetUserId] = useState<string | null>(null);
   const { formatDate } = useFormattedDate();
@@ -92,24 +139,13 @@ export default function AdminUsersPage() {
         })
       : "—";
 
-  const d = useMemo((): Awaited<
-    ReturnType<typeof getAdminUsersPageData>
-  > | null => {
-    return "error" in raw ? null : raw;
-  }, [raw]);
-
   const segmentFilter =
     (searchParams.get("segment") as AdminUserSegment | "all" | null) ?? "all";
 
   const visibleUsers = useMemo(() => {
-    if (!d) return [];
     if (segmentFilter === "all") return d.users;
     return d.users.filter((u) => u.segment === segmentFilter);
   }, [d, segmentFilter]);
-
-  if (!d) {
-    return <div className="p-4">Access denied.</div>;
-  }
 
   const sheetUser = d.users.find((u) => u.id === sheetUserId) ?? null;
 

@@ -26,6 +26,7 @@ import {
   shouldUseUltraCompactLayout,
 } from "./derive-post-detail-semantics";
 import {
+  didDeleteActionSucceed,
   filterRepliesExcludingThreadSegments,
   formatScheduledDate,
   getDeleteButtonLabel,
@@ -113,7 +114,7 @@ export default function PostDetailsModal({
   useEffect(() => {
     if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
     const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-    if (data.error || !data.success) return;
+    if (!didDeleteActionSucceed(data)) return;
     const formData = deleteFetcher.formData as FormData | undefined;
     const submittedPostId = formData?.get("postId");
     const isOurDelete =

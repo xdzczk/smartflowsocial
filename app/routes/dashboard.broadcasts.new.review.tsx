@@ -1,8 +1,10 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
-import { useCallback, useMemo, useState } from "react";
+import { defer, json, redirect } from "@remix-run/node";
+import { Await, Form, Link, useLoaderData } from "@remix-run/react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   formatBroadcastAudienceLabel,
@@ -26,6 +28,7 @@ import {
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 function audienceResolvedMetadata(
@@ -73,34 +76,33 @@ function parseSnapshotSummary(
   return { summary, sourceTab };
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  const campaignId = url.searchParams.get("campaignId");
-  if (!campaignId) {
-    return redirect("/dashboard/broadcasts/new");
-  }
-
+async function getBroadcastReviewData({
+  campaignId,
+  userId,
+  request,
+}: {
+  campaignId: string;
+  userId: string;
+  request: Request;
+}) {
   const campaign = await getBroadcastCampaignForUser(campaignId, userId);
   if (!campaign) {
-    return redirect("/dashboard/broadcasts/new");
+    throw redirect("/dashboard/broadcasts/new");
   }
 
   if (campaign.status !== "DRAFT" && campaign.status !== "AWAITING_SIGNATURE") {
-    return redirect(`/dashboard/broadcasts/${campaign.id}`);
+    throw redirect(`/dashboard/broadcasts/${campaign.id}`);
   }
 
   if (campaign.totalRecipients === 0) {
-    return redirect(
+    throw redirect(
       `/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}&notice=${encodeURIComponent("Resolve your audience before review.")}`
     );
   }
 
   const pending = campaign.recipients.filter((r) => r.status === "PENDING");
   if (pending.length === 0) {
-    return redirect(`/dashboard/broadcasts/${campaign.id}`);
+    throw redirect(`/dashboard/broadcasts/${campaign.id}`);
   }
 
   const baseUrl = getBroadcastUnsubscribeBaseUrl(request);
@@ -110,7 +112,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     baseUrl
   );
   if (pendingRecipients.length === 0) {
-    return redirect(`/dashboard/broadcasts/${campaign.id}`);
+    throw redirect(`/dashboard/broadcasts/${campaign.id}`);
   }
 
   const { currentSubscription } = await getSubscriptionData(userId);
@@ -143,7 +145,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     campaign.scheduledFor != null &&
     new Date(campaign.scheduledFor).getTime() > Date.now();
 
-  return json({
+  return {
     campaign,
     pendingRecipients,
     limits,
@@ -156,10 +158,69 @@ export async function loader({ request }: LoaderFunctionArgs) {
     excludedPriorBroadcast: resolvedMeta.excludedPriorBroadcast,
     parseSnapshot,
     scheduledIsFuture,
+  };
+}
+
+type BroadcastReviewLoaderData = Awaited<
+  ReturnType<typeof getBroadcastReviewData>
+>;
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+
+  const url = new URL(request.url);
+  const campaignId = url.searchParams.get("campaignId");
+  if (!campaignId) {
+    return redirect("/dashboard/broadcasts/new");
+  }
+
+  const reviewPromise = getBroadcastReviewData({ campaignId, userId, request });
+
+  if (isRemixResourceRequest(request)) {
+    return json(await reviewPromise);
+  }
+
+  return defer<{ review: Promise<BroadcastReviewLoaderData> }>({
+    review: reviewPromise,
   });
 }
 
 export default function BroadcastNewReviewRoute() {
+  const { review } = useLoaderData<{
+    review: Promise<BroadcastReviewLoaderData>;
+  }>();
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          variant="detail"
+          title="Review broadcast"
+          subtitle="Loading audience, quality, and signing details"
+        />
+      }
+    >
+      <Await
+        resolve={review}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/broadcasts/new" />
+        }
+      >
+        {(loaded) => (
+          <BroadcastNewReviewRouteLoaded
+            loaded={loaded as BroadcastReviewLoaderData}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function BroadcastNewReviewRouteLoaded({
+  loaded,
+}: {
+  loaded: BroadcastReviewLoaderData;
+}) {
   const {
     campaign,
     pendingRecipients,
@@ -173,7 +234,7 @@ export default function BroadcastNewReviewRoute() {
     excludedPriorBroadcast,
     parseSnapshot,
     scheduledIsFuture,
-  } = useLoaderData<typeof loader>();
+  } = loaded;
 
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [finalizeProgress, setFinalizeProgress] = useState<string | null>(null);

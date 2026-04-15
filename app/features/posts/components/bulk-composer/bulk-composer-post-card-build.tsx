@@ -43,6 +43,7 @@ function BulkComposerPostAdvancedBlock({
   onIncludeHashtagsInNoteBodyChange,
   onRepostSchedulesChange,
   onQuoteSchedulesChange,
+  scheduleOverlapWarning,
 }: {
   index: number;
   post: BulkPost;
@@ -68,6 +69,7 @@ function BulkComposerPostAdvancedBlock({
       caption?: string;
     }>
   ) => void;
+  scheduleOverlapWarning: string | null;
 }) {
   const scheduleInputId = `bulk-sched-${post.clientId}`;
   const queuePopover = (
@@ -121,15 +123,25 @@ function BulkComposerPostAdvancedBlock({
             labelFor={scheduleInputId}
             label="Schedule"
             control={
-              <Input
-                id={scheduleInputId}
-                type="datetime-local"
-                name="scheduledDates"
-                value={post.scheduledFor}
-                onChange={(e) => onDateChange(index, e.target.value)}
-                min={getNowForDateTimeLocal(userTimezone)}
-                className={cn(railFieldClassNames, "h-9 w-full max-w-[12rem]")}
-              />
+              <div className="w-full max-w-[14rem] space-y-1">
+                <Input
+                  id={scheduleInputId}
+                  type="datetime-local"
+                  name="scheduledDates"
+                  value={post.scheduledFor}
+                  onChange={(e) => onDateChange(index, e.target.value)}
+                  min={getNowForDateTimeLocal(userTimezone)}
+                  className={cn(
+                    railFieldClassNames,
+                    "h-9 w-full max-w-[12rem]"
+                  )}
+                />
+                {scheduleOverlapWarning ? (
+                  <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                    {scheduleOverlapWarning}
+                  </p>
+                ) : null}
+              </div>
             }
           />
         </div>
@@ -219,6 +231,7 @@ export function BulkComposerPostCardBuildBody({
   onRowFileRemove,
   onRepostSchedulesChange,
   onQuoteSchedulesChange,
+  scheduleOverlapWarning,
 }: {
   index: number;
   post: BulkPost;
@@ -252,6 +265,7 @@ export function BulkComposerPostCardBuildBody({
       caption?: string;
     }>
   ) => void;
+  scheduleOverlapWarning: string | null;
 }) {
   return (
     <>
@@ -357,6 +371,7 @@ export function BulkComposerPostCardBuildBody({
           onIncludeHashtagsInNoteBodyChange={onIncludeHashtagsInNoteBodyChange}
           onRepostSchedulesChange={onRepostSchedulesChange}
           onQuoteSchedulesChange={onQuoteSchedulesChange}
+          scheduleOverlapWarning={scheduleOverlapWarning}
         />
       ) : null}
     </>

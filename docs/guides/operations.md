@@ -16,9 +16,13 @@ and maintenance.
 - [Metrics](#metrics)
 - [Alerting](#alerting)
 - [Performance Monitoring](#performance-monitoring)
+- [SLO Budgets and Burn-Rate Alerts](#slo-budgets-and-burn-rate-alerts)
 - [Error Tracking](#error-tracking)
 - [Database Monitoring](#database-monitoring)
+- [Database Query Governance Loop](#database-query-governance-loop)
 - [Queue Monitoring](#queue-monitoring)
+- [Queue SLOs](#queue-slos)
+- [Resilience Drills and Release Readiness](#resilience-drills-and-release-readiness)
 - [Maintenance Tasks](#maintenance-tasks)
 - [Backup & Recovery](#backup--recovery)
 
@@ -467,6 +471,37 @@ GROUP BY state;
 
 ---
 
+## SLO Budgets and Burn-Rate Alerts
+
+SmartFlowSocial uses explicit SLO targets and burn-rate alerts for release readiness.
+
+### SLO targets
+
+- API availability: **99.9%** success (5xx budget: 0.1%)
+- API latency: **p95 < 500ms**, **p99 < 1s**
+- Database query latency: **p95 < 100ms**
+- Scheduled queue lateness: **p95 < 300s**
+- Outbox freshness: oldest ready event age **< 120s**
+
+### Alert rules source
+
+Primary rules are versioned in
+[`docs/monitoring/queue-slo-alerts.yml`](../monitoring/queue-slo-alerts.yml).
+
+### Burn-rate model
+
+- **Fast burn** catches acute incidents and pages immediately.
+- **Slow burn** catches chronic degradation before budget exhaustion.
+- Both must be wired to an incident channel with owner rotation.
+
+### Recommended release policy
+
+- Block deploy if any critical SLO alert is firing.
+- Require a rollback/mitigation note for any warning alert that persists > 1 hour.
+- Track per-release SLO impact in weekly ops review.
+
+---
+
 ## Error Tracking
 
 ### Built-in Error Tracking
@@ -565,6 +600,29 @@ Access at `http://localhost:5555`
 
 ---
 
+## Database Query Governance Loop
+
+Use `prisma_query_duration_ms` and `prisma_slow_query_total` as the canonical query SLI set.
+
+### Weekly loop
+
+1. Identify top offenders:
+   - `histogram_quantile(0.95, sum(rate(prisma_query_duration_ms_bucket[7d])) by (le, model, action))`
+   - `sum(rate(prisma_slow_query_total[7d])) by (model, action)`
+2. Correlate with release changelog and recent migrations.
+3. Apply one of:
+   - Query shape/select minimization
+   - Index addition or adjustment
+   - Read model/backfill strategy
+4. Verify with `scripts/VERIFY_INDEXES.sql` and post-change p95 delta.
+
+### Escalation
+
+- If p95 query latency > 100ms for 24h, treat as release blocker for DB-touching changes.
+- If slow-query rate increases release-over-release, require remediation issue before next cut.
+
+---
+
 ## Queue System
 
 The application uses BullMQ with Redis for background job processing.
@@ -647,6 +705,41 @@ LLEN bull:scheduled-posts:waiting
 # Get job counts
 KEYS bull:*
 ```
+
+## Queue SLOs
+
+Queue and outbox SLOs are enforced by alert rules in
+[`docs/monitoring/queue-slo-alerts.yml`](../monitoring/queue-slo-alerts.yml).
+
+Primary queue SLIs:
+
+- `publish_lateness_seconds`
+- `outbox_oldest_ready_age_seconds`
+- `outbox_events_dead_lettered_total`
+- `queue_oldest_waiting_age_seconds{queue=~"scheduled-posts|scheduled-longform-posts"}`
+
+Operational response expectations:
+
+- Critical queue alerts: triage within 15 minutes.
+- Warning queue alerts: triage within 1 hour.
+- Any queue alert > 4h: create follow-up remediation task with owner/date.
+
+---
+
+## Resilience Drills and Release Readiness
+
+SmartFlowSocial uses scheduled resilience drills as a hard input to release decisions.
+
+Runbook:
+
+- [`docs/runbooks/performance-resilience-drills.md`](../runbooks/performance-resilience-drills.md)
+
+Minimum release gate:
+
+- Latest required drill completed.
+- No unresolved critical findings from latest drill.
+- CI performance and budget checks passing.
+- No active critical SLO burn alerts.
 
 ---
 
@@ -774,3 +867,4 @@ CI is the source of truth for test status.
 - [Posting Guide](./user-guides/posting.md#queue-types) - Queue system documentation
 - [Troubleshooting Guide](../troubleshooting/common-issues.md)
 - [Troubleshooting Errors](../troubleshooting/errors.md)
+- [Performance Resilience Drills](../runbooks/performance-resilience-drills.md)

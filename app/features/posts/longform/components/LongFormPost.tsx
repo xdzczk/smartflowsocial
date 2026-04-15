@@ -24,6 +24,7 @@ import {
 } from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
 import type { LongformQuoteEntry } from "~/features/posts/hooks/useLongFormSubmission";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 import { useLongFormScheduling } from "~/features/posts/useLongFormScheduling";
@@ -465,6 +466,23 @@ export default function LongFormPost({
   }, [longformDraftFingerprint]);
 
   const scheduledFor = schedulingScheduledFor ?? null;
+  const selectedQueueTypeObj = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
+  );
+  const selectedQueueTypeId =
+    selectedQueueTypeObj && typeof selectedQueueTypeObj === "object"
+      ? selectedQueueTypeObj.id
+      : null;
+  const shouldCheckScheduleOverlap =
+    Boolean(scheduledFor?.trim()) &&
+    (publishMode === "schedule" || publishMode === "queue");
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor,
+    queueTypeId: selectedQueueTypeId,
+    enabled: shouldCheckScheduleOverlap,
+    excludeContentId: initialData?.id ?? null,
+  });
+
   const setScheduledFor = (value: string | null) => {
     if (value) {
       form.setValue("scheduledFor", value);
@@ -665,8 +683,10 @@ export default function LongFormPost({
   );
   const displayRedIssues =
     issueDisplayPhase === "blocking" ? [...deferrableBlockers] : [];
-  const displayAmberIssues =
-    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+  const displayAmberIssues = [
+    ...(issueDisplayPhase === "soft" ? [...deferrableBlockers] : []),
+    ...(scheduleOverlapWarning ? [scheduleOverlapWarning] : []),
+  ];
   const pristineHint =
     issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
       ? "Add title, body, and cover. Then choose publish mode on the right."
@@ -704,9 +724,6 @@ export default function LongFormPost({
     selectedQueueType
   );
 
-  const selectedQueueTypeObj = queueTypes.find(
-    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
-  );
   const longformQueueNextSlotLabel =
     publishMode === "queue" &&
     selectedQueueTypeObj &&

@@ -86,7 +86,7 @@ describe("ComposerErrors", () => {
       />
     );
     expect(
-      screen.getByText(/Approve the request in your browser extension/i)
+      screen.getByText(/Approve (this|the) request in your browser extension/i)
     ).toBeInTheDocument();
   });
 

@@ -20,6 +20,10 @@ import type { ReactNode } from "react";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
+import {
+  DeferredListPageSkeleton,
+  type DeferredListPageSkeletonVariant,
+} from "~/components/skeletons/DeferredListPageSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   BillingAlertBanner,
@@ -101,6 +105,46 @@ function isComposePath(pathname: string): boolean {
   );
 }
 
+function pendingSkeletonConfigForPath(pathname: string): {
+  title: string;
+  subtitle: string;
+  variant: DeferredListPageSkeletonVariant;
+} {
+  if (pathname.startsWith("/dashboard/admin")) {
+    return {
+      title: "Loading admin page",
+      subtitle: "Preparing metrics and operational insights",
+      variant: "adminDashboard",
+    };
+  }
+
+  if (pathname.startsWith("/dashboard/settings/media")) {
+    return {
+      title: "Loading media settings",
+      subtitle: "Fetching media providers and gallery state",
+      variant: "mediaGallery",
+    };
+  }
+
+  if (
+    pathname.includes("/detail/") ||
+    pathname.startsWith("/dashboard/contests/detail/") ||
+    pathname.startsWith("/dashboard/giveaway/detail/")
+  ) {
+    return {
+      title: "Loading details",
+      subtitle: "Fetching item details and related actions",
+      variant: "detail",
+    };
+  }
+
+  return {
+    title: "Loading page",
+    subtitle: "Fetching dashboard data",
+    variant: "list",
+  };
+}
+
 function pendingComposeContentType(
   pathname: string,
   search: string
@@ -123,6 +167,64 @@ function composeShellTitle(
   if (contentType === "thread") return "Create thread";
   if (contentType === "article") return "Create article";
   return "Create post";
+}
+
+type DashboardNavigation = ReturnType<typeof useNavigation>;
+type DashboardLocation = ReturnType<typeof useLocation>;
+
+function getNavigationFormValue(
+  formData: FormData | undefined,
+  key: string
+): string | undefined {
+  const value = formData?.get(key);
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getPendingNavigationState(
+  navigation: DashboardNavigation,
+  location: DashboardLocation
+): {
+  navAction: string | undefined;
+  navParentNpub: string | undefined;
+  navDecision: string | undefined;
+  pendingPathname: string;
+  pendingComposeType: "post" | "poll" | "thread" | "article";
+  showPendingComposeSkeleton: boolean;
+  showPendingDashboardSkeleton: boolean;
+} {
+  const formData = navigation.formData;
+  const navAction = getNavigationFormValue(formData, "_action");
+  const navParentNpub = getNavigationFormValue(formData, "parentNpub");
+  const navDecision = getNavigationFormValue(formData, "decision");
+  const pendingPathname = navigation.location?.pathname ?? "";
+  const pendingSearch = navigation.location?.search ?? "";
+  const hasPendingTarget = pendingPathname.length > 0;
+  const pendingRouteChanged =
+    hasPendingTarget &&
+    (pendingPathname !== location.pathname ||
+      pendingSearch !== location.search);
+  const showPendingComposeSkeleton =
+    navigation.state === "loading" &&
+    isComposePath(pendingPathname) &&
+    !isComposePath(location.pathname);
+  const showPendingDashboardSkeleton =
+    navigation.state === "loading" &&
+    pendingRouteChanged &&
+    pendingPathname.startsWith("/dashboard") &&
+    !isComposePath(pendingPathname);
+
+  return {
+    navAction,
+    navParentNpub,
+    navDecision,
+    pendingPathname,
+    pendingComposeType: pendingComposeContentType(
+      pendingPathname,
+      pendingSearch
+    ),
+    showPendingComposeSkeleton,
+    showPendingDashboardSkeleton,
+  };
 }
 
 export function DashboardLayoutPage(): ReactNode {
@@ -159,22 +261,17 @@ export function DashboardLayoutPage(): ReactNode {
     billingContext.bannerVariant !== "none" &&
     !isFreePlan;
   const navigation = useNavigation();
-  const navAction =
-    (navigation.formData?.get("_action") as string) || undefined;
-  const navParentNpub =
-    (navigation.formData?.get("parentNpub") as string) || undefined;
-  const navDecision =
-    (navigation.formData?.get("decision") as string) || undefined;
-  const pendingPathname = navigation.location?.pathname ?? "";
-  const pendingSearch = navigation.location?.search ?? "";
-  const pendingComposeType = pendingComposeContentType(
+  const {
+    navAction,
+    navParentNpub,
+    navDecision,
     pendingPathname,
-    pendingSearch
-  );
-  const showPendingComposeSkeleton =
-    navigation.state === "loading" &&
-    isComposePath(pendingPathname) &&
-    !isComposePath(location.pathname);
+    pendingComposeType,
+    showPendingComposeSkeleton,
+    showPendingDashboardSkeleton,
+  } = getPendingNavigationState(navigation, location);
+  const pendingDashboardSkeleton =
+    pendingSkeletonConfigForPath(pendingPathname);
 
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -416,6 +513,14 @@ export function DashboardLayoutPage(): ReactNode {
                 >
                   <ComposerSkeleton />
                 </CreateComposerShell>
+              </div>
+            ) : showPendingDashboardSkeleton ? (
+              <div className="animate-in fade-in-0 duration-200">
+                <DeferredListPageSkeleton
+                  title={pendingDashboardSkeleton.title}
+                  subtitle={pendingDashboardSkeleton.subtitle}
+                  variant={pendingDashboardSkeleton.variant}
+                />
               </div>
             ) : (
               <div

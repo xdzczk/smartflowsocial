@@ -52,6 +52,7 @@ import {
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
+import { pruneScheduledQueryData } from "../hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "../hooks/useScheduledPostsQuery";
 
 interface ScheduledPostsTableProps {
@@ -159,6 +160,21 @@ export function ScheduledPostsTable({
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
       const data = deleteFetcher.data;
       if (typeof data === "object" && "success" in data && data.success) {
+        const formData = deleteFetcher.formData as FormData | undefined;
+        const action = formData?.get("_action");
+        const submittedPostId = formData?.get("postId");
+        if (
+          (action === "delete" || action === "moveToDraft") &&
+          typeof submittedPostId === "string" &&
+          submittedPostId.length > 0
+        ) {
+          const deletedIds = new Set([submittedPostId]);
+          queryClient.setQueriesData(
+            { queryKey: scheduledPostsKeys.all },
+            (old) => pruneScheduledQueryData(old, deletedIds)
+          );
+        }
+
         // Invalidate both dashboard and scheduled posts queries
         void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
         void queryClient.invalidateQueries({
@@ -166,7 +182,12 @@ export function ScheduledPostsTable({
         });
       }
     }
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    deleteFetcher.formData,
+    queryClient,
+  ]);
 
   const timeFormat = userTimeFormat === "24h" ? "24h" : "12h";
 

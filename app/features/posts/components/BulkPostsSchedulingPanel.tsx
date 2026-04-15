@@ -17,6 +17,7 @@ import {
   railSelectTriggerClassNames,
 } from "~/features/posts/components/publishing-rail";
 import { ComposerScheduleRandomWindowField } from "~/features/posts/composer/components/composer/ComposerScheduleRandomWindowField";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 import {
   addHours,
@@ -28,7 +29,7 @@ import {
   parseDateTimeLocal,
 } from "~/lib/temporal";
 
-import type { BulkPost } from "./BulkPostCard";
+import type { BulkPost, QueueType } from "./BulkPostCard";
 
 type ScheduleRandomWindow = 0 | 5 | 10 | 15;
 
@@ -36,6 +37,7 @@ interface BulkPostsSchedulingPanelProps {
   posts: BulkPost[];
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>;
   scheduleIntervals: number[] | undefined;
+  queueTypes: QueueType[];
   userTimezone: string;
   disabled?: boolean;
   scheduleRandomWindowMinutes: ScheduleRandomWindow;
@@ -48,6 +50,7 @@ export default function BulkPostsSchedulingPanel({
   posts,
   setPosts,
   scheduleIntervals,
+  queueTypes,
   userTimezone,
   disabled = false,
   scheduleRandomWindowMinutes,
@@ -79,6 +82,20 @@ export default function BulkPostsSchedulingPanel({
   const [intervalHours, setIntervalHours] = useState(defaultInterval);
 
   const minDatetime = getNowForDateTimeLocal(userTimezone);
+  const sharedQueueTypeId = useMemo(() => {
+    if (posts.length === 0) return null;
+    const queueName = posts[0]?.queueType ?? null;
+    if (!queueName || queueName === "unassigned") return null;
+    const sameQueue = posts.every((post) => post.queueType === queueName);
+    if (!sameQueue) return;
+    const queueType = queueTypes.find((queue) => queue.name === queueName);
+    return queueType?.id ?? null;
+  }, [posts, queueTypes]);
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor: displayStart,
+    queueTypeId: sharedQueueTypeId,
+    enabled: displayStart.trim().length > 0,
+  });
 
   if (posts.length === 0) return null;
 
@@ -125,6 +142,11 @@ export default function BulkPostsSchedulingPanel({
             disabled={disabled}
             aria-label="Start time for first post"
           />
+          {scheduleOverlapWarning ? (
+            <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+              {scheduleOverlapWarning}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-1">
           <Label

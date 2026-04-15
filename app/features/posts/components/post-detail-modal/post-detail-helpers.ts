@@ -86,6 +86,20 @@ export function getDeleteButtonLabel(
   }
 }
 
+/**
+ * Delete fetchers can return heterogeneous JSON shapes.
+ * Treat a settled response as success unless it explicitly reports an error.
+ */
+export function didDeleteActionSucceed(data: {
+  success?: boolean;
+  error?: unknown;
+}): boolean {
+  if (typeof data.success === "boolean") {
+    return data.success;
+  }
+  return !data.error;
+}
+
 export function hasOpenOnNostrLink(
   post: PostDetailModalPost
 ): post is Post & { signedEvent: { id: string } } {

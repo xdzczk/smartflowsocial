@@ -1,9 +1,17 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
-import { useState } from "react";
+import { defer, json, redirect } from "@remix-run/node";
+import {
+  Await,
+  Form,
+  Link,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
+import { Suspense, useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,
@@ -16,6 +24,7 @@ import {
   updateBroadcastSavedAudience,
 } from "~/features/broadcast";
 import { requireAnySubscription } from "~/features/payments";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
@@ -23,6 +32,14 @@ const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
 const VALID_SAVED_AUDIENCE_TYPES = ["CUSTOM", "MUTUALS"] as const;
 const ERR_INVALID_AUDIENCE = "Invalid audience";
 const ERR_MISSING_ID = "Missing id";
+
+interface BroadcastAudiencesLoaderData {
+  rows: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
+  notice: string | null;
+  editingRow:
+    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
+    | null;
+}
 
 function audienceTypeBadgeClass(t: string): string {
   switch (t) {
@@ -45,13 +62,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const notice = url.searchParams.get("notice");
   const editId = url.searchParams.get("edit");
 
-  const rows = await listBroadcastSavedAudiences(userId);
-  const editingRow =
-    editId && rows.some((r) => r.id === editId)
-      ? (rows.find((r) => r.id === editId) ?? null)
-      : null;
+  const audiencesPromise = (async (): Promise<BroadcastAudiencesLoaderData> => {
+    const rows = await listBroadcastSavedAudiences(userId);
+    const editingRow =
+      editId && rows.some((r) => r.id === editId)
+        ? (rows.find((r) => r.id === editId) ?? null)
+        : null;
+    return { rows, notice, editingRow };
+  })();
 
-  return json({ rows, notice, editingRow });
+  if (isRemixResourceRequest(request)) {
+    return json(await audiencesPromise);
+  }
+
+  return defer<{ audiences: Promise<BroadcastAudiencesLoaderData> }>({
+    audiences: audiencesPromise,
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -177,7 +203,48 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BroadcastAudiencesRoute() {
-  const { rows, notice, editingRow } = useLoaderData<typeof loader>();
+  const { audiences } = useLoaderData<{
+    audiences: Promise<BroadcastAudiencesLoaderData>;
+  }>();
+  return (
+    <Suspense
+      fallback={
+        <DeferredListPageSkeleton
+          title="Audiences"
+          subtitle="Loading saved audience definitions"
+          variant="list"
+        />
+      }
+    >
+      <Await
+        resolve={audiences}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/broadcasts/audiences" />
+        }
+      >
+        {(loaded) => (
+          <BroadcastAudiencesRouteLoaded
+            rows={(loaded as BroadcastAudiencesLoaderData).rows}
+            notice={(loaded as BroadcastAudiencesLoaderData).notice}
+            editingRow={(loaded as BroadcastAudiencesLoaderData).editingRow}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function BroadcastAudiencesRouteLoaded({
+  rows,
+  notice,
+  editingRow,
+}: {
+  rows: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
+  notice: string | null;
+  editingRow:
+    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
+    | null;
+}) {
   const [, setSearchParams] = useSearchParams();
   const [editAudienceType, setEditAudienceType] = useState<
     "CUSTOM" | "MUTUALS"
@@ -285,7 +352,7 @@ export default function BroadcastAudiencesRoute() {
                   name: r.name,
                   audienceType: r.audienceType,
                   lastResolvedSize: r.lastResolvedSize,
-                  updatedAt: r.updatedAt,
+                  updatedAt: r.updatedAt.toISOString(),
                 }))}
                 selectedPubkeys={editSelectedPubkeys}
                 onChangeSelected={setEditSelectedPubkeys}
@@ -364,7 +431,7 @@ export default function BroadcastAudiencesRoute() {
                 name: r.name,
                 audienceType: r.audienceType,
                 lastResolvedSize: r.lastResolvedSize,
-                updatedAt: r.updatedAt,
+                updatedAt: r.updatedAt.toISOString(),
               }))}
               selectedPubkeys={createSelectedPubkeys}
               onChangeSelected={setCreateSelectedPubkeys}

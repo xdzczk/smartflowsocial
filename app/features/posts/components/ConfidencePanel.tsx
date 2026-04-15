@@ -65,6 +65,8 @@ export interface PublishingRecyclableControlProps {
 export interface PublishingSummaryRailProps {
   publishMode: ComposerPublishMode;
   onPublishModeChange: (next: ComposerPublishMode) => void;
+  /** Optional status block (e.g. signer wait/error) rendered in rail body. */
+  statusContent?: ReactNode;
   /** Plain-language outcome; folded into publish summary (valid path). */
   outcomeSentence: string;
   readiness: ReadinessPresentation;
@@ -467,6 +469,7 @@ function PublishOptionsZone({
 function PublishingSummaryRailBody({
   publishMode,
   onPublishModeChange,
+  statusContent,
   outcomeSentence,
   readiness,
   sessionStrip,
@@ -497,6 +500,7 @@ function PublishingSummaryRailBody({
   | "onSecondaryAction"
   | "secondaryActionDisabled"
 >) {
+  const hasStatusContent = statusContent != null;
   const hasModeThread =
     Boolean(
       modeSpecificSection &&
@@ -525,6 +529,9 @@ function PublishingSummaryRailBody({
       </div>
 
       <div className={cn("flex flex-col", RAIL_MAJOR_DIVIDE)}>
+        {hasStatusContent ? (
+          <div className={zoneClass}>{statusContent}</div>
+        ) : null}
         {hasModeThread ? (
           <div className={zoneClass}>
             <ModeAndThreadZones
@@ -571,6 +578,7 @@ export function PublishingSummaryRail(props: PublishingSummaryRailProps) {
   const bodyProps = {
     publishMode: props.publishMode,
     onPublishModeChange: props.onPublishModeChange,
+    statusContent: props.statusContent,
     outcomeSentence: props.outcomeSentence,
     readiness: props.readiness,
     sessionStrip: props.sessionStrip,

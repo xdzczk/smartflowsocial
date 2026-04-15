@@ -16,9 +16,11 @@ const { mockSchedulePostExecute, mockScheduleLongFormExecute } = vi.hoisted(
 const {
   mockCascadeAttachedReschedule,
   mockResyncAttachedChildrenAfterParentMutation,
+  mockCascadeDeleteAttachedFollowups,
 } = vi.hoisted(() => ({
   mockCascadeAttachedReschedule: vi.fn(),
   mockResyncAttachedChildrenAfterParentMutation: vi.fn(),
+  mockCascadeDeleteAttachedFollowups: vi.fn(),
 }));
 
 vi.mock("~/features/posts/scheduling/index.server", () => ({
@@ -26,6 +28,7 @@ vi.mock("~/features/posts/scheduling/index.server", () => ({
     execute = mockSchedulePostExecute;
   },
   cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+  cascadeDeleteAttachedFollowups: mockCascadeDeleteAttachedFollowups,
   resyncAttachedChildrenAfterParentMutation:
     mockResyncAttachedChildrenAfterParentMutation,
 }));
@@ -44,6 +47,8 @@ vi.mock("~/features/posts/server", async (importOriginal) => {
     updateLongFormPost: vi.fn(),
     reschedulePost: vi.fn(),
     getPostById: vi.fn(),
+    deletePost: vi.fn(),
+    deleteLongFormPost: vi.fn(),
   };
 });
 
@@ -58,6 +63,7 @@ vi.mock(
     cascadeAttachedReschedule: mockCascadeAttachedReschedule,
     resyncAttachedChildrenAfterParentMutation:
       mockResyncAttachedChildrenAfterParentMutation,
+    cascadeDeleteAttachedFollowups: mockCascadeDeleteAttachedFollowups,
   })
 );
 
@@ -76,6 +82,7 @@ import {
 import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
 import { reschedulePost } from "~/features/posts/server";
 import { getPostById } from "~/features/posts/server";
+import { deletePost, deleteLongFormPost } from "~/features/posts/server";
 
 const TEST_SESSION_PUBKEY = "pk-123";
 
@@ -84,6 +91,7 @@ describe("Calendar Action Handler", () => {
     vi.clearAllMocks();
     mockCascadeAttachedReschedule.mockResolvedValue([]);
     mockResyncAttachedChildrenAfterParentMutation.mockResolvedValue([]);
+    mockCascadeDeleteAttachedFollowups.mockResolvedValue([]);
   });
 
   describe("handleCalendarAction", () => {
@@ -163,6 +171,82 @@ describe("Calendar Action Handler", () => {
             })
           : {};
       expect(jsonResult.success).toBe(true);
+    });
+
+    it("should route to legacy delete action", async () => {
+      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+      });
+
+      const formData = createFormData({
+        _action: "delete",
+        postId: TEST_POST_ID,
+      });
+
+      const result = await handleCalendarAction(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
+
+      expect(mockCascadeDeleteAttachedFollowups).toHaveBeenCalledWith({
+        rootPostId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
+      expect(deletePost).toHaveBeenCalledWith({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      const jsonResultRaw: unknown = await responseObj.json();
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; deleted?: boolean })
+          : {};
+      expect(jsonResult.success).toBe(true);
+      expect(jsonResult.deleted).toBe(true);
+    });
+
+    it("should route to legacy delete longform action", async () => {
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_LONGFORM_ID,
+      });
+
+      const formData = createFormData({
+        _action: "deleteLongForm",
+        postId: TEST_LONGFORM_ID,
+      });
+
+      const result = await handleCalendarAction(
+        formData,
+        TEST_USER_ID,
+        TEST_SESSION_PUBKEY
+      );
+
+      expect(deleteLongFormPost).toHaveBeenCalledWith({
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+      });
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      const jsonResultRaw: unknown = await responseObj.json();
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; deleted?: boolean })
+          : {};
+      expect(jsonResult.success).toBe(true);
+      expect(jsonResult.deleted).toBe(true);
     });
 
     it("should return error for invalid action", async () => {

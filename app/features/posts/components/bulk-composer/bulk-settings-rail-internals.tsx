@@ -74,6 +74,11 @@ export interface BulkSettingsRailBodyProps {
   randomizationLabel: string;
   reviewSummaryRows: Array<{ label: string; value: string }>;
   postsCount: number;
+  isSigning: boolean;
+  signingProgress: { current: number; total: number } | null;
+  signingError: string | null;
+  onRequestNewSession?: () => void;
+  onCancelSigning?: () => void;
   repostAllOpen: boolean;
   setRepostAllOpen: (open: boolean) => void;
   repostAllValue: number;
@@ -119,6 +124,11 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
     randomizationLabel,
     reviewSummaryRows,
     postsCount,
+    isSigning,
+    signingProgress,
+    signingError,
+    onRequestNewSession,
+    onCancelSigning,
     repostAllOpen,
     setRepostAllOpen,
     repostAllValue,
@@ -129,6 +139,47 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
 
   return (
     <div className="flex flex-col text-xs">
+      {stage === "review" && isSigning ? (
+        <div className="bg-muted/35 text-muted-foreground border-border/70 mx-4 mt-3 mb-1.5 flex flex-col gap-1.5 rounded-lg border p-2.5 text-[11px] leading-snug">
+          <span>
+            Signer approval required.
+            {signingProgress ? (
+              <span className="ml-1">
+                Post {signingProgress.current} of {signingProgress.total}
+              </span>
+            ) : null}
+            {" — "}
+            Approve in your signer to continue scheduling.
+          </span>
+          <span className="flex flex-wrap gap-1">
+            {onRequestNewSession ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRequestNewSession}
+              >
+                New session
+              </Button>
+            ) : null}
+            {onCancelSigning ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onCancelSigning}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
+      {stage === "review" && signingError ? (
+        <div className="border-destructive bg-destructive/10 text-destructive mx-4 mt-3 mb-1.5 rounded-md border px-2.5 py-2 text-[11px] leading-snug">
+          {signingError}
+        </div>
+      ) : null}
       <div className="shrink-0">
         <BulkBatchModeTabs
           value={batchMode}

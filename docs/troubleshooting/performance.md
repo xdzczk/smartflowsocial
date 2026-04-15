@@ -306,6 +306,9 @@ await Promise.all(jobs.map((job) => processJob(job)));
 - [Common Issues](./common-issues.md) - Common problems
 - [Error Troubleshooting](./errors.md) - Error resolution and debugging techniques
 - [Performance Guide](../reference/performance.md) - Performance optimization
+- [Operations Guide](../guides/operations.md) - SLOs and alert operations
+- [Performance Resilience Drills](../runbooks/performance-resilience-drills.md) - Failure-mode
+  testing and release policy
 
 ---
 

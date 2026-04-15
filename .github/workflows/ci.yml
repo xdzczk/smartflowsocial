@@ -111,7 +111,6 @@ jobs:
         with:
           database: smartflow_test
           user: postgres
-          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push
@@ -165,7 +164,6 @@ jobs:
         with:
           database: smartflow_test
           user: postgres
-          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push
@@ -219,7 +217,6 @@ jobs:
         with:
           database: smartflow_test
           user: postgres
-          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push
@@ -308,7 +305,6 @@ jobs:
       - name: Run performance tests
         run: pnpm test:performance
         id: performance-tests
-        continue-on-error: true
 
       - name: Upload performance test results
         if: always()
@@ -320,6 +316,72 @@ jobs:
             test-results/performance-*.json
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Enforce performance budget
+        run: node scripts/check-performance-budgets.mjs --source=vitest
+
+  frontend-performance-budget:
+    name: Frontend Performance Budget
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app assets
+        run: pnpm build
+
+      - name: Enforce frontend bundle budgets
+        run: node scripts/check-performance-budgets.mjs --source=bundle
+
+  db-index-governance:
+    name: DB Index Governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+          user: postgres
+
+      - name: Setup test schema
+        run: pnpm exec prisma db push
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
+      - name: Verify critical indexes
+        run: psql postgresql://postgres:postgres@localhost:5432/smartflow_test -f scripts/VERIFY_INDEXES.sql
 
   # Test summary
   test-summary:
@@ -333,6 +395,8 @@ jobs:
         property-tests,
         security-tests,
         performance-tests,
+        frontend-performance-budget,
+        db-index-governance,
       ]
     if: always()
     steps:
@@ -358,6 +422,8 @@ jobs:
           echo "| Property-Based Tests | ${{ needs.property-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Performance Tests | ${{ needs.performance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Perf Budget | ${{ needs.frontend-performance-budget.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DB Index Governance | ${{ needs.db-index-governance.result }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Check for failures
         run: |
@@ -365,7 +431,10 @@ jobs:
              [ "${{ needs.unit-tests.result }}" != "success" ] || \
              [ "${{ needs.integration-tests.result }}" != "success" ] || \
              [ "${{ needs.property-tests.result }}" != "success" ] || \
-             [ "${{ needs.security-tests.result }}" != "success" ]; then
+             [ "${{ needs.security-tests.result }}" != "success" ] || \
+             [ "${{ needs.performance-tests.result }}" != "success" ] || \
+             [ "${{ needs.frontend-performance-budget.result }}" != "success" ] || \
+             [ "${{ needs.db-index-governance.result }}" != "success" ]; then
             echo "One or more test suites failed"
             exit 1
           fi

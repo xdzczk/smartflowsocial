@@ -8,8 +8,26 @@ Schedule, publish, and operate your Nostr presence with hosted or self-hosted de
 [![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Try Hosted](https://smartflow.social) • [Quick Start](#quick-start) •
-[Documentation](./docs/README.md) • [API Reference](./docs/reference/api.md)
+[Start on Hosted](https://smartflow.social) • [Hosted Setup Guide](./docs/getting-started/hosted.md)
+• [Self-Host Guide](./docs/getting-started/quickstart.md) • [Documentation](./docs/README.md)
+
+![SmartFlowSocial dashboard preview](./public/og/og-default.png)
+
+---
+
+## Start Here (Hosted First)
+
+### Hosted (recommended)
+
+1. Open [smartflow.social](https://smartflow.social)
+2. Sign in with a NIP-07 extension (Alby / nos2x / Amber) or NIP-46 remote signer
+3. Create and schedule your first post
+
+Next:
+
+- [Hosted quick start](./docs/getting-started/hosted.md)
+- [Posting guide](./docs/guides/user-guides/posting.md)
+- [Calendar guide](./docs/guides/user-guides/calendar.md)
 
 ---
 
@@ -21,45 +39,10 @@ SmartFlowSocial is a Nostr-native publishing and operations platform:
 - Run engagement features (broadcast campaigns, contests, giveaways, multi-account operations).
 - Keep signing sovereign (NIP-07 browser extension signing or NIP-46 remote signer flows).
 - Choose deployment posture: managed hosted service or self-hosted open source stack.
+- Automate workflows via API surfaces for publishing, uploads, and queue operations.
 
 For complete feature documentation, see the
 [Feature Coverage Matrix](./docs/reference/feature-coverage-matrix.md).
-
----
-
-## Quick Start
-
-### Hosted (fastest path)
-
-1. Open [smartflow.social](https://smartflow.social)
-2. Sign in with a NIP-07 extension (Alby / nos2x / Amber) or NIP-46 remote signer
-3. Create and schedule your first post
-
-Next: [Hosted quick start](./docs/getting-started/hosted.md)
-
-### Self-hosted (local development)
-
-Prerequisites: Node.js 20+, pnpm, PostgreSQL, Redis, S3-compatible storage.
-
-```bash
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
-pnpm install
-cp example.env .env
-pnpm docker
-pnpm exec prisma generate
-pnpm exec prisma db push
-pnpm db:seed
-pnpm dev
-```
-
-Then open `http://localhost:3000`.
-
-Next:
-
-- [Self-host quickstart](./docs/getting-started/quickstart.md)
-- [Installation guide](./docs/getting-started/installation.md)
-- [Deployment guide](./docs/guides/deployment.md)
 
 ---
 
@@ -80,6 +63,32 @@ Expected outcomes:
 - `/metrics` responds with Prometheus-formatted text
 
 Operational details: [Operations guide](./docs/guides/operations.md)
+
+---
+
+## Self-Hosted Quick Start
+
+Prerequisites: Node.js 20+, pnpm, PostgreSQL, Redis, S3-compatible storage.
+
+```bash
+git clone https://github.com/xdzczk/SmartFlowSocial.git
+cd SmartFlowSocial
+pnpm install
+cp example.env .env
+pnpm docker
+pnpm exec prisma generate
+pnpm exec prisma db push
+pnpm db:seed
+pnpm dev
+```
+
+Then open `http://localhost:3000`.
+
+Self-hosting references:
+
+- [Self-host quickstart](./docs/getting-started/quickstart.md)
+- [Installation guide](./docs/getting-started/installation.md)
+- [Deployment guide](./docs/guides/deployment.md)
 
 ---
 

@@ -8,6 +8,7 @@ import { Separator } from "~/components/ui/separator";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
 import {
+  didDeleteActionSucceed,
   getDeleteButtonLabel,
   getLongFormPublishedEventId,
 } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
@@ -528,7 +529,7 @@ export default function LongFormDetailsModal({
   useEffect(() => {
     if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
     const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-    if (data.error || !data.success) return;
+    if (!didDeleteActionSucceed(data)) return;
     const formData = deleteFetcher.formData as FormData | undefined;
     const submittedPostId = formData?.get("postId");
     const isOurDelete =

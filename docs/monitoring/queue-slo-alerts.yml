@@ -1,4 +1,83 @@
 groups:
+  - name: api_latency_and_errors_slos
+    interval: 30s
+    rules:
+      # API availability SLO: 99.9% success budget (0.1% errors).
+      # Fast burn (5m over 1h) catches acute incidents.
+      - alert: ApiErrorBudgetBurnFast
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > (14.4 * 0.001)
+        for: 10m
+        labels:
+          severity: critical
+          service: api
+          slo: availability
+          runbook: docs/guides/operations.md#slo-budgets-and-burn-rate-alerts
+        annotations:
+          summary: "API error budget burning too fast"
+          description: "5xx error budget burn rate exceeds 14.4x budget over short window."
+
+      # Slow burn (30m over 6h) catches chronic degradations.
+      - alert: ApiErrorBudgetBurnSlow
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[30m]))
+            /
+            sum(rate(http_requests_total[30m]))
+          ) > (6 * 0.001)
+        for: 30m
+        labels:
+          severity: warning
+          service: api
+          slo: availability
+          runbook: docs/guides/operations.md#slo-budgets-and-burn-rate-alerts
+        annotations:
+          summary: "API error budget burning steadily"
+          description: "Sustained 5xx rate exceeds slow-burn error budget threshold."
+
+      - alert: ApiLatencySloViolationP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[10m])) by (le)) > 0.5
+        for: 15m
+        labels:
+          severity: warning
+          service: api
+          slo: latency
+          runbook: docs/guides/operations.md#slo-budgets-and-burn-rate-alerts
+        annotations:
+          summary: "API p95 latency SLO violated"
+          description: "API p95 latency has exceeded 500ms for at least 15 minutes."
+
+  - name: database_query_slos
+    interval: 30s
+    rules:
+      - alert: DatabaseQueryLatencyP95High
+        expr: histogram_quantile(0.95, sum(rate(prisma_query_duration_ms_bucket[10m])) by (le)) > 100
+        for: 15m
+        labels:
+          severity: warning
+          service: database
+          slo: query_latency
+          runbook: docs/guides/operations.md#database-query-governance-loop
+        annotations:
+          summary: "Database query p95 latency above SLO"
+          description: "Prisma query p95 has exceeded 100ms for 15 minutes."
+
+      - alert: DatabaseSlowQueryRateElevated
+        expr: sum(rate(prisma_slow_query_total[15m])) > 1
+        for: 15m
+        labels:
+          severity: warning
+          service: database
+          slo: query_latency
+          runbook: docs/guides/operations.md#database-query-governance-loop
+        annotations:
+          summary: "Slow query rate elevated"
+          description: "Slow query events are sustained above 1/sec over 15 minutes."
+
   - name: queue_scheduling_slos
     interval: 30s
     rules:
@@ -8,6 +87,8 @@ groups:
         labels:
           severity: warning
           service: queue
+          slo: scheduled_lateness
+          runbook: docs/guides/operations.md#queue-slos
         annotations:
           summary: "Scheduled publish latency degraded (p95 > 5m)"
           description: "Scheduled publishing is consistently late for at least 10 minutes."
@@ -18,6 +99,8 @@ groups:
         labels:
           severity: critical
           service: outbox
+          slo: outbox_freshness
+          runbook: docs/guides/operations.md#queue-slos
         annotations:
           summary: "Outbox oldest ready event too old"
           description: "Outbox has ready events older than 2 minutes for 5+ minutes."
@@ -28,6 +111,8 @@ groups:
         labels:
           severity: warning
           service: outbox
+          slo: outbox_reliability
+          runbook: docs/guides/operations.md#queue-slos
         annotations:
           summary: "Outbox dead-letter rate elevated"
           description: "Outbox events are repeatedly exhausting retries."
@@ -38,6 +123,8 @@ groups:
         labels:
           severity: warning
           service: queue
+          slo: queue_backlog
+          runbook: docs/guides/operations.md#queue-slos
         annotations:
           summary: "Scheduled queue backlog stale"
           description: "Oldest queued publish job is older than 5 minutes."

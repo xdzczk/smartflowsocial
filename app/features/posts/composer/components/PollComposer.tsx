@@ -14,6 +14,7 @@ import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
 import { trackComposerEvent } from "~/features/posts/composer/utils/composer-analytics.client";
 import { usePostScheduling } from "~/features/posts/scheduling";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import {
   defaultIncludeHashtagsForQueueSelection,
   type QueueType,
@@ -288,6 +289,13 @@ export function PollComposer({
     trimmedOptions.length >= POLL_COMPOSER_MIN_OPTIONS;
   const canSubmit = trimmedOptions.length >= POLL_COMPOSER_MIN_OPTIONS;
   const hasScheduleTime = scheduledFor.trim().length > 0;
+  const shouldCheckScheduleOverlap =
+    (publishMode === "schedule" || publishMode === "queue") && hasScheduleTime;
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor,
+    queueTypeId,
+    enabled: shouldCheckScheduleOverlap,
+  });
   const isSubmitting = fetcher.state !== "idle";
 
   /** Latest possible `created_at` (unix sec) for validation: nominal + random window when scheduling. */
@@ -549,8 +557,10 @@ export function PollComposer({
   );
   const displayRedIssues =
     issueDisplayPhase === "blocking" ? [...deferrableBlockers] : [];
-  const displayAmberIssues =
-    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+  const displayAmberIssues = [
+    ...(issueDisplayPhase === "soft" ? [...deferrableBlockers] : []),
+    ...(scheduleOverlapWarning ? [scheduleOverlapWarning] : []),
+  ];
 
   const pristineHint =
     issueDisplayPhase === "pristine" &&
@@ -632,6 +642,24 @@ export function PollComposer({
   });
 
   const primaryActionLoading = isSubmitting || isSigning;
+  const signerStatusContent = (
+    <ComposerErrors
+      isSigning={isSigning}
+      signerLabel={null}
+      inRail
+      onCancelSigning={clearSigningState}
+      signingError={signingError}
+      onDismissSigningError={() => {
+        setSigningError(null);
+        setLastPublishFailed(false);
+      }}
+      onRetry={() => {
+        void submitPoll(pollAction);
+      }}
+      disabled={disabled}
+      signerReady={user != null}
+    />
+  );
 
   useEffect(() => {
     if (
@@ -890,41 +918,24 @@ export function PollComposer({
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div className="mb-4 min-w-0 flex-1 lg:mb-0">
         <ComposerLeftCanvas>
-          <div className="flex flex-col gap-4">
-            <ComposerErrors
-              isSigning={isSigning}
-              signerLabel={null}
-              onCancelSigning={clearSigningState}
-              signingError={signingError}
-              onDismissSigningError={() => {
-                setSigningError(null);
-                setLastPublishFailed(false);
-              }}
-              onRetry={() => {
-                void submitPoll(pollAction);
-              }}
-              disabled={disabled}
-              signerReady={user != null}
-            />
-            <div className={composerCanvasFieldStackClass}>
-              <ComposerCanvasSectionLabel
-                as="label"
-                className="mb-0"
-                htmlFor="poll-question"
-              >
-                Question
-              </ComposerCanvasSectionLabel>
-              <div className="focus-within:bg-muted/[0.07] focus-within:ring-border/25 rounded-md transition-colors focus-within:ring-1">
-                <textarea
-                  id="poll-question"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  disabled={disabled}
-                  rows={4}
-                  className="text-foreground placeholder:text-muted-foreground/65 min-h-[7.5rem] w-full resize-y border-0 bg-transparent px-0.5 pt-0.5 pb-1 text-base leading-relaxed shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="What do you want to ask?"
-                />
-              </div>
+          <div className={composerCanvasFieldStackClass}>
+            <ComposerCanvasSectionLabel
+              as="label"
+              className="mb-0"
+              htmlFor="poll-question"
+            >
+              Question
+            </ComposerCanvasSectionLabel>
+            <div className="focus-within:bg-muted/[0.07] focus-within:ring-border/25 rounded-md transition-colors focus-within:ring-1">
+              <textarea
+                id="poll-question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                disabled={disabled}
+                rows={4}
+                className="text-foreground placeholder:text-muted-foreground/65 min-h-[7.5rem] w-full resize-y border-0 bg-transparent px-0.5 pt-0.5 pb-1 text-base leading-relaxed shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="What do you want to ask?"
+              />
             </div>
           </div>
 
@@ -1204,6 +1215,7 @@ export function PollComposer({
       <PublishingSummaryRail
         publishMode={publishMode}
         onPublishModeChange={onPublishModeChange ?? (() => void 0)}
+        statusContent={signerStatusContent}
         outcomeSentence={outcomeSentence}
         readiness={readinessForRail}
         sessionStrip={{

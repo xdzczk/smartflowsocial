@@ -28,9 +28,27 @@ Automatically fixes ESLint errors in the codebase.
 pnpm lint:fix
 ```
 
+### `check-performance-budgets.mjs`
+
+Enforces versioned performance budgets for vitest perf tests, k6 summaries, and built frontend
+assets.
+
+**Usage:**
+
+```bash
+# Validate vitest perf budget
+node scripts/check-performance-budgets.mjs --source=vitest
+
+# Validate k6 summary budgets
+node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
+
+# Validate built bundle budgets
+node scripts/check-performance-budgets.mjs --source=bundle
+```
+
 ### `VERIFY_INDEXES.sql`
 
-SQL queries to verify database indexes are properly created.
+SQL governance check for critical database indexes. Raises exceptions on regressions (CI-safe).
 
 **Usage:**
 

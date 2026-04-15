@@ -2,6 +2,7 @@ import { ChevronDown, Copy, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import type { PreparedEvent, RepostConditions } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -87,6 +88,19 @@ export function BulkComposerPostCard({
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const { dateLocale } = useFormattedDate();
   const status = buildBulkPostStatusLabel(post, validationErrors);
+  const queueTypeIdFromSelection = queueTypes.find((queue) => {
+    if (typeof queue === "string") return false;
+    return queue.name === post.queueType;
+  });
+  const selectedQueueTypeId =
+    queueTypeIdFromSelection && typeof queueTypeIdFromSelection === "object"
+      ? queueTypeIdFromSelection.id
+      : null;
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor: post.scheduledFor,
+    queueTypeId: selectedQueueTypeId,
+    enabled: variant === "build" && post.scheduledFor.trim().length > 0,
+  });
 
   const reviewDisplay = useMemo(() => {
     if (!preparedEvent) return null;
@@ -153,6 +167,11 @@ export function BulkComposerPostCard({
           >
             {variant === "review" && reviewDisplay ? "Locked" : status.label}
           </span>
+          {variant === "build" && scheduleOverlapWarning ? (
+            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-100">
+              Timing warning
+            </span>
+          ) : null}
         </div>
         <div className="flex items-center gap-1">
           {variant === "build" ? (
@@ -251,6 +270,7 @@ export function BulkComposerPostCard({
             onRowFileRemove={onRowFileRemove}
             onRepostSchedulesChange={onRepostSchedulesChange}
             onQuoteSchedulesChange={onQuoteSchedulesChange}
+            scheduleOverlapWarning={scheduleOverlapWarning}
           />
         ) : null}
 

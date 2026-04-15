@@ -227,8 +227,8 @@ export function useScheduledPostsInfiniteQuery() {
     },
     staleTime: 30 * 1000, // 30 seconds
     maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
-    refetchInterval: 15_000, // Live updates when scheduled posts are published
-    refetchIntervalInBackground: true,
+    // Avoid interval refetch for infinite lists: background page-1 refreshes can
+    // collapse accumulated pages and make infinite scroll appear stuck on page 2.
   });
 }
 

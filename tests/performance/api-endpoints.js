@@ -5,32 +5,44 @@
  */
 
 import { check, sleep } from "k6";
-import { authenticatedRequest, createSession, thresholds } from "./k6-setup.js";
+import {
+  authenticatedRequest,
+  createSession,
+  getTestConfig,
+  thresholds,
+} from "./k6-setup.js";
 
 export const options = {
-  stages: [
-    { duration: "30s", target: 10 }, // Ramp up to 10 users
-    { duration: "1m", target: 10 }, // Stay at 10 users
-    { duration: "30s", target: 20 }, // Ramp up to 20 users
-    { duration: "1m", target: 20 }, // Stay at 20 users
-    { duration: "30s", target: 0 }, // Ramp down
-  ],
+  scenarios: {
+    steady_read_write_mix: {
+      executor: "ramping-arrival-rate",
+      startRate: 5,
+      timeUnit: "1s",
+      preAllocatedVUs: 20,
+      maxVUs: 80,
+      stages: [
+        { duration: "1m", target: 10 },
+        { duration: "2m", target: 20 },
+        { duration: "1m", target: 0 },
+      ],
+    },
+  },
   thresholds: {
     ...thresholds,
     "http_req_duration{name:/api\\/effective-hashtags/}": ["p(95)<1000"],
     "http_req_duration{name:/api\\/queue-schedule/}": ["p(95)<500"],
-    "http_req_duration{name:/api\\/upload/}": ["p(95)<5000"],
     "http_req_duration{name:/api\\/publish/}": ["p(95)<3000"],
   },
 };
 
 export default function () {
   const session = createSession();
+  const { queueTypeId, paymentId, sampleEventId } = getTestConfig();
 
-  // Test: Effective Hashtags API
+  // Read-heavy path 1: Effective Hashtags API
   const hashtagsResponse = authenticatedRequest(
     "GET",
-    "/api/effective-hashtags?queueTypeId=test-queue",
+    `/api/effective-hashtags?queueTypeId=${encodeURIComponent(queueTypeId)}`,
     null,
     session
   );
@@ -39,12 +51,12 @@ export default function () {
     "effective-hashtags: response time < 1s": (r) => r.timings.duration < 1000,
   });
 
-  sleep(1);
+  sleep(0.5);
 
-  // Test: Queue Schedule API
+  // Read-heavy path 2: Queue Schedule API
   const scheduleResponse = authenticatedRequest(
     "GET",
-    "/api/queue-schedule?queueTypeId=test-queue&timezone=America/New_York",
+    `/api/queue-schedule?queueTypeId=${encodeURIComponent(queueTypeId)}&timezone=America/New_York`,
     null,
     session
   );
@@ -61,13 +73,13 @@ export default function () {
     },
   });
 
-  sleep(1);
+  sleep(0.5);
 
-  // Test: Payment Status API
+  // Write-like path: Payment Status API
   const paymentResponse = authenticatedRequest(
     "POST",
     "/api/payment-status",
-    { paymentId: "test-payment-123" },
+    { paymentId },
     session
   );
   check(paymentResponse, {
@@ -75,12 +87,12 @@ export default function () {
     "payment-status: response time < 2s": (r) => r.timings.duration < 2000,
   });
 
-  sleep(1);
+  sleep(0.5);
 
-  // Test: Thread View API
+  // Read-heavy path 3: Thread View API
   const threadResponse = authenticatedRequest(
     "GET",
-    "/api/thread-view?eventId=test-event-123",
+    `/api/thread-view?eventId=${sampleEventId}`,
     null,
     session
   );
@@ -89,9 +101,9 @@ export default function () {
     "thread-view: response time < 2s": (r) => r.timings.duration < 2000,
   });
 
-  sleep(1);
+  sleep(0.5);
 
-  // Test: Link Preview API
+  // Read-heavy path 4: Link Preview API
   const linkPreviewResponse = authenticatedRequest(
     "GET",
     "/api/link-preview?url=https://example.com",

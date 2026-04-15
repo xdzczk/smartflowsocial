@@ -80,6 +80,9 @@ export interface BulkSettingsRailProps {
   /** Signing / upload progress in review */
   isSigning: boolean;
   signingProgress: { current: number; total: number } | null;
+  signingError?: string | null;
+  onRequestNewSession?: () => void;
+  onCancelSigning?: () => void;
   bulkExecutionBlocked?: boolean;
 }
 
@@ -121,6 +124,9 @@ export function BulkSettingsRail({
   postsCount,
   isSigning,
   signingProgress,
+  signingError = null,
+  onRequestNewSession,
+  onCancelSigning,
   bulkExecutionBlocked = false,
 }: BulkSettingsRailProps) {
   const { dateLocale } = useFormattedDate();
@@ -221,6 +227,11 @@ export function BulkSettingsRail({
     randomizationLabel,
     reviewSummaryRows,
     postsCount,
+    isSigning,
+    signingProgress,
+    signingError,
+    onRequestNewSession,
+    onCancelSigning,
     repostAllOpen,
     setRepostAllOpen,
     repostAllValue,

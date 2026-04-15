@@ -13,11 +13,25 @@ vi.mock("~/features/payments/data", () => ({
 vi.mock("~/features/user", () => ({
   updateQueueType: vi.fn(),
   deleteQueueType: vi.fn(),
+  getQueueTypeByIdForUser: vi.fn(),
   hashTagPresetExistsForUser: vi.fn(),
 }));
 
 vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateQueueTypesCache: vi.fn(),
+}));
+
+vi.mock("~/features/posts/server", () => ({
+  getScheduledPosts: vi.fn().mockResolvedValue({
+    posts: [],
+    pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+  }),
+  getScheduledLongFormPosts: vi.fn().mockResolvedValue({
+    posts: [],
+    pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+  }),
+  deletePost: vi.fn().mockResolvedValue(null),
+  deleteLongFormPost: vi.fn().mockResolvedValue(null),
 }));
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";

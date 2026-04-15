@@ -51,6 +51,8 @@ interface FetcherData {
   queueType?: QueueTypeSettings;
 }
 
+type QueueDeleteMode = "queue_only" | "queue_and_scheduled";
+
 function normalizeQueueTypeFromAction(
   qt: FetcherData["queueType"]
 ): QueueTypeSettings | null {
@@ -200,11 +202,12 @@ export function QueueTypesSettings({
     setShowDialog(open);
   };
 
-  const confirmDeleteQueue = () => {
+  const confirmDeleteQueue = (deleteMode: QueueDeleteMode) => {
     if (!queuePendingDelete) return;
     const formData = new FormData();
     formData.set("_action", "delete_queue_type");
     formData.set("id", queuePendingDelete.id);
+    formData.set("deleteMode", deleteMode);
     deleteFetcher.submit(formData, { method: "post" });
     setQueuePendingDelete(null);
   };
@@ -274,17 +277,25 @@ export function QueueTypesSettings({
             <AlertDialogTitle>Delete queue type?</AlertDialogTitle>
             <AlertDialogDescription>
               {queuePendingDelete
-                ? `“${queuePendingDelete.name}” will be removed. Posts already assigned stay assigned; new posts can no longer select this queue.`
+                ? `Choose how to remove “${queuePendingDelete.name}”. Delete queue only keeps scheduled content and marks it unassigned. Delete queue + scheduled removes both the queue and all scheduled posts/articles using it.`
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmDeleteQueue}
+              disabled={isDeleting}
+              className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground border"
+              onClick={() => confirmDeleteQueue("queue_only")}
             >
-              Delete
+              Delete queue only
+            </AlertDialogAction>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDeleteQueue("queue_and_scheduled")}
+            >
+              Delete queue + scheduled
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

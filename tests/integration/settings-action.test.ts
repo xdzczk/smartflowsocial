@@ -30,6 +30,7 @@ vi.mock("~/features/user", () => ({
   updateScheduleInterval: vi.fn(),
   updateQueueType: vi.fn(),
   deleteQueueType: vi.fn(),
+  getQueueTypeByIdForUser: vi.fn(),
   createHashTagPreset: vi.fn(),
   updateHashTagPreset: vi.fn(),
   deleteHashTagPreset: vi.fn(),
@@ -41,6 +42,19 @@ vi.mock("~/features/user", () => ({
     parentNpub: null,
   }),
   searchUsersByProfileName: vi.fn(),
+}));
+
+vi.mock("~/features/posts/server", () => ({
+  getScheduledPosts: vi.fn().mockResolvedValue({
+    posts: [],
+    pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+  }),
+  getScheduledLongFormPosts: vi.fn().mockResolvedValue({
+    posts: [],
+    pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+  }),
+  deletePost: vi.fn().mockResolvedValue(null),
+  deleteLongFormPost: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("~/features/payments/data", () => ({
@@ -72,6 +86,12 @@ import {
   getPlanPriceUsd,
   getUserSubscription,
 } from "~/features/payments/data";
+import {
+  deleteLongFormPost,
+  deletePost,
+  getScheduledLongFormPosts,
+  getScheduledPosts,
+} from "~/features/posts/server";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import {
   updateUserTimezone,
@@ -85,6 +105,7 @@ import {
   deleteHashTagPreset,
   hashTagPresetExistsForUser,
   searchUsersByProfileName,
+  getQueueTypeByIdForUser,
 } from "~/features/user";
 
 describe("Settings Action Handler", () => {
@@ -753,6 +774,65 @@ describe("Settings Action Handler", () => {
             ? (dataRaw as { success?: unknown; error?: unknown })
             : {};
 
+        expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
+        expect(data).toMatchObject({ success: true });
+      });
+
+      it("should delete queue and scheduled content when requested", async () => {
+        (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+          {
+            id: "queue-123",
+            name: "Marketing Queue",
+          }
+        );
+        (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+          posts: [{ id: "post-1" }],
+          pagination: { total: 1, pages: 1, currentPage: 1, limit: 100 },
+        });
+        (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+          posts: [],
+          pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+        });
+        (
+          getScheduledLongFormPosts as ReturnType<typeof vi.fn>
+        ).mockResolvedValueOnce({
+          posts: [{ id: "lf-1" }],
+          pagination: { total: 1, pages: 1, currentPage: 1, limit: 100 },
+        });
+        (
+          getScheduledLongFormPosts as ReturnType<typeof vi.fn>
+        ).mockResolvedValueOnce({
+          posts: [],
+          pagination: { total: 0, pages: 0, currentPage: 1, limit: 100 },
+        });
+        (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({
+          id: "post-1",
+        });
+        (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+          id: "lf-1",
+        });
+
+        const formData = createFormData({
+          _action: "delete_queue_type",
+          id: "queue-123",
+          deleteMode: "queue_and_scheduled",
+        });
+
+        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const data = (await result.json()) as { success?: boolean };
+
+        expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
+          TEST_USER_ID,
+          "queue-123"
+        );
+        expect(deletePost).toHaveBeenCalledWith({
+          id: "post-1",
+          userId: TEST_USER_ID,
+        });
+        expect(deleteLongFormPost).toHaveBeenCalledWith({
+          id: "lf-1",
+          userId: TEST_USER_ID,
+        });
         expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
         expect(data).toMatchObject({ success: true });
       });
