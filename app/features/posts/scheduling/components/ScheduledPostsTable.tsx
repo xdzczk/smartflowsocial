@@ -139,6 +139,10 @@ export function ScheduledPostsTable({
   const deleteFetcher = useFetcher<{ success?: boolean }>();
   const queryClient = useQueryClient();
   const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const lastDeleteSubmissionRef = useRef<{
+    action: "delete" | "moveToDraft";
+    postId: string;
+  } | null>(null);
 
   const combinedContent = posts.map((post) => postToCombinedContent(post));
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
@@ -164,7 +168,14 @@ export function ScheduledPostsTable({
     const formData = deleteFetcher.formData;
     const action = formData?.get("_action");
     const submittedPostId = formData?.get("postId");
-    const isDeleteAction = action === "delete" || action === "moveToDraft";
+    if (
+      (action === "delete" || action === "moveToDraft") &&
+      typeof submittedPostId === "string" &&
+      submittedPostId.length > 0
+    ) {
+      lastDeleteSubmissionRef.current = { action, postId: submittedPostId };
+    }
+    const submission = lastDeleteSubmissionRef.current;
     const data = deleteFetcher.data as
       | { success?: boolean; error?: string }
       | undefined;
@@ -174,16 +185,13 @@ export function ScheduledPostsTable({
     if (
       previousState !== "idle" &&
       currentState === "idle" &&
-      isDeleteAction &&
+      submission &&
       didSucceed
     ) {
-      if (typeof submittedPostId === "string" && submittedPostId.length > 0) {
-        const deletedIds = new Set([submittedPostId]);
-        queryClient.setQueriesData(
-          { queryKey: scheduledPostsKeys.all },
-          (old) => pruneScheduledQueryData(old, deletedIds)
-        );
-      }
+      const deletedIds = new Set([submission.postId]);
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(old, deletedIds)
+      );
 
       // Invalidate both dashboard and scheduled posts queries
       void queryClient.invalidateQueries({
@@ -194,6 +202,9 @@ export function ScheduledPostsTable({
         queryKey: scheduledPostsKeys.all,
         predicate: skipInfiniteQueries,
       });
+      lastDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastDeleteSubmissionRef.current = null;
     }
     previousDeleteStateRef.current = currentState;
   }, [

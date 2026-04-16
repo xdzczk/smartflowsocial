@@ -3,12 +3,12 @@
  * observers (prefetch + fetch), and a single effect that calls fetchNextPage.
  * Use on pages with infinite query lists (Drafts, Posted, Scheduled, Templates).
  *
- * Deduplication relies on TanStack Query: calling `fetchNextPage()` while a
- * page fetch is already in-flight is a no-op (returns the existing promise).
- * This avoids fragile ref-based gating that can desync on Remix re-renders.
+ * Page-count gate: fetchNextPage is only called when the loaded page count has
+ * increased since the last fetch.  If a fetch fails to grow the page array (e.g.
+ * the response can't be appended), a cooldown prevents hammering the server.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useIntersectionObserver } from "./useIntersectionObserver";
 
@@ -21,12 +21,14 @@ interface UseInfiniteScrollSentinelOptions {
   fetchNextPage: () => void;
 }
 
+const RETRY_COOLDOWN_MS = 3_000;
+
 export function useInfiniteScrollSentinel({
   isMobile,
   hasNextPage,
   isFetchingNextPage,
   isFetching,
-  loadedPageCount: _loadedPageCount,
+  loadedPageCount,
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
@@ -50,28 +52,63 @@ export function useInfiniteScrollSentinel({
 
   const anyFetching = isFetchingNextPage || (isFetching ?? false);
 
-  // Stable ref so effect closure always calls the latest fetchNextPage.
   const fetchRef = useRef(fetchNextPage);
   useEffect(() => {
     fetchRef.current = fetchNextPage;
   }, [fetchNextPage]);
 
-  // Trigger: when a sentinel is visible, more pages exist, and nothing is
-  // fetching, call fetchNextPage.  TanStack Query deduplicates internally so
-  // an extra call while a page fetch is already in-flight is harmless.
+  // Track the page count at which we last triggered a fetch.
+  // Only allow a new fetch when the page count grows past that mark.
+  const lastTriggeredAtRef = useRef(0);
+  const cooldownUntilRef = useRef(0);
+
+  const pageCount = loadedPageCount ?? 0;
+
+  // Reset the gate whenever the page count increases (successful accumulation).
+  useEffect(() => {
+    if (pageCount > lastTriggeredAtRef.current) {
+      lastTriggeredAtRef.current = pageCount;
+      cooldownUntilRef.current = 0;
+    }
+  }, [pageCount]);
+
+  const triggerFetch = useCallback(() => {
+    // Only trigger if pages have grown since the last trigger.
+    if (pageCount < lastTriggeredAtRef.current) return;
+
+    const now = Date.now();
+    if (now < cooldownUntilRef.current) return;
+
+    lastTriggeredAtRef.current = pageCount + 1;
+    cooldownUntilRef.current = now + RETRY_COOLDOWN_MS;
+
+    console.warn("[inf-scroll] trigger fetchNextPage", {
+      pageCount,
+      hasNextPage,
+    });
+    fetchRef.current();
+  }, [pageCount, hasNextPage]);
+
   useEffect(() => {
     const visible = isIntersecting || isPrefetchIntersecting;
-    if (visible && hasNextPage && !anyFetching) {
-      // Temporary trace: remove once infinite-scroll is stable
-      console.warn("[inf-scroll] trigger fetchNextPage", {
-        hasNextPage,
-        anyFetching,
-        isIntersecting,
-        isPrefetchIntersecting,
-      });
-      fetchRef.current();
+    if (!visible || !hasNextPage || anyFetching) return;
+
+    const now = Date.now();
+    if (now < cooldownUntilRef.current) {
+      // Schedule a retry after cooldown expires.
+      const delay = cooldownUntilRef.current - now;
+      const timer = setTimeout(() => triggerFetch(), delay);
+      return () => clearTimeout(timer);
     }
-  }, [isIntersecting, isPrefetchIntersecting, hasNextPage, anyFetching]);
+
+    triggerFetch();
+  }, [
+    isIntersecting,
+    isPrefetchIntersecting,
+    hasNextPage,
+    anyFetching,
+    triggerFetch,
+  ]);
 
   return {
     sentinelRef,

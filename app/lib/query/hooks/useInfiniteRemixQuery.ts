@@ -153,9 +153,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         }
       }
 
-      // CRITICAL FIX: Use fetch directly instead of fetcher.load()
-      // fetcher.load() doesn't work reliably in Promise contexts - the fetcher state
-      // doesn't update properly when called from within a queryFn Promise
       const response = await fetch(url, {
         method: "GET",
         credentials: "same-origin",
@@ -168,7 +165,33 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return (await response.json()) as TData;
+      const text = await response.text();
+      let parsed: TData;
+      try {
+        parsed = JSON.parse(text) as TData;
+      } catch {
+        console.error("[inf-scroll] queryFn JSON parse failed", {
+          pageParam,
+          status: response.status,
+          contentType: response.headers.get("content-type"),
+          bodyPreview: text.slice(0, 200),
+        });
+        throw new Error(`Invalid JSON from loader (page ${String(pageParam)})`);
+      }
+
+      if (typeof window !== "undefined") {
+        const raw = parsed as Record<string, unknown>;
+        console.warn("[inf-scroll] queryFn resolved", {
+          pageParam,
+          hasPosts: Array.isArray(raw["posts"]),
+          postCount: Array.isArray(raw["posts"])
+            ? (raw["posts"] as unknown[]).length
+            : 0,
+          hasPagination: typeof raw["pagination"] === "object",
+        });
+      }
+
+      return parsed;
     },
     initialPageParam: 1,
     getNextPageParam: wrappedGetNextPageParam,

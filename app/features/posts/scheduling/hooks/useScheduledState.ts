@@ -15,6 +15,7 @@ import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
+import { pruneScheduledQueryData } from "./useScheduledPostsCache";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -65,6 +66,13 @@ export function useScheduledState({
   const deleteFetcher = useFetcher<FetcherData>();
   const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
   const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const lastBulkDeleteSubmissionRef = useRef<{
+    action: "bulkDelete" | "bulkDeleteLongForm" | "bulkDeleteMixed";
+  } | null>(null);
+  const lastDeleteSubmissionRef = useRef<{
+    action: "delete" | "moveToDraft";
+    postId: string;
+  } | null>(null);
 
   // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
   const postIds = useMemo(
@@ -304,14 +312,18 @@ export function useScheduledState({
     const currentState = bulkDeleteFetcher.state;
     const formData = bulkDeleteFetcher.formData;
     const action = formData?.get("_action");
-    const isDeleteAction =
+    if (
       action === "bulkDelete" ||
       action === "bulkDeleteLongForm" ||
-      action === "bulkDeleteMixed";
+      action === "bulkDeleteMixed"
+    ) {
+      lastBulkDeleteSubmissionRef.current = { action };
+    }
+    const submission = lastBulkDeleteSubmissionRef.current;
     if (
       previousState !== "idle" &&
       currentState === "idle" &&
-      isDeleteAction &&
+      submission &&
       didFetcherMutationSucceed(bulkDeleteFetcher.data)
     ) {
       void queryClient.invalidateQueries({
@@ -323,6 +335,9 @@ export function useScheduledState({
         predicate: skipInfiniteQueries,
       });
       setSelectedPosts(new Set());
+      lastBulkDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastBulkDeleteSubmissionRef.current = null;
     }
     previousBulkDeleteStateRef.current = currentState;
   }, [
@@ -339,13 +354,24 @@ export function useScheduledState({
     const currentState = deleteFetcher.state;
     const formData = deleteFetcher.formData;
     const action = formData?.get("_action");
-    const isDeleteAction = action === "delete" || action === "moveToDraft";
+    const submittedPostId = formData?.get("postId");
+    if (
+      (action === "delete" || action === "moveToDraft") &&
+      typeof submittedPostId === "string" &&
+      submittedPostId.length > 0
+    ) {
+      lastDeleteSubmissionRef.current = { action, postId: submittedPostId };
+    }
+    const submission = lastDeleteSubmissionRef.current;
     if (
       previousState !== "idle" &&
       currentState === "idle" &&
-      isDeleteAction &&
+      submission &&
       didFetcherMutationSucceed(deleteFetcher.data)
     ) {
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(old, new Set([submission.postId]))
+      );
       void queryClient.invalidateQueries({
         queryKey: scheduledPostsKeys.all,
         predicate: skipInfiniteQueries,
@@ -362,6 +388,9 @@ export function useScheduledState({
       ) {
         void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
       }
+      lastDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastDeleteSubmissionRef.current = null;
     }
     previousDeleteStateRef.current = currentState;
   }, [
