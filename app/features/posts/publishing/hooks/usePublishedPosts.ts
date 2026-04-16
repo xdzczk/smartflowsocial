@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 import type { ToastMessage } from "~/components/types";
 import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
@@ -99,6 +99,8 @@ export function usePublishedPosts({
 
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
   const repostFetcher = useFetcher<{
     repostData?: PostData[];
     scheduledRepostData?: PostData[];
@@ -157,6 +159,15 @@ export function usePublishedPosts({
       );
     },
     [queryClient]
+  );
+
+  const didFetcherMutationSucceed = useCallback(
+    (data: { success?: boolean; error?: string } | undefined): boolean => {
+      if (!data) return true;
+      if (typeof data.success === "boolean") return data.success;
+      return !data.error;
+    },
+    []
   );
 
   const requestSort = (key: string) => {
@@ -310,40 +321,72 @@ export function usePublishedPosts({
   };
 
   useEffect(() => {
-    if (bulkDeleteFetcher.data?.success) {
-      const formData = bulkDeleteFetcher.formData;
-      if (formData) {
-        optimisticallyRemovePublishedItems(parseBulkDeleteIds(formData));
-      }
+    const previousState = previousBulkDeleteStateRef.current;
+    const currentState = bulkDeleteFetcher.state;
+    const fetcherData = bulkDeleteFetcher.data as
+      | { success?: boolean; error?: string }
+      | undefined;
+    const formData = bulkDeleteFetcher.formData;
+    const action = formData?.get("_action");
+    const isDeleteAction =
+      action === ACTION_BULK_DELETE ||
+      action === ACTION_BULK_DELETE_LONGFORM ||
+      action === ACTION_BULK_DELETE_MIXED;
+
+    if (
+      previousState !== "idle" &&
+      currentState === "idle" &&
+      formData &&
+      isDeleteAction &&
+      didFetcherMutationSucceed(fetcherData)
+    ) {
+      optimisticallyRemovePublishedItems(parseBulkDeleteIds(formData));
       setSelectedPosts(new Set());
+      refreshAllPostViews();
     }
+
+    previousBulkDeleteStateRef.current = currentState;
   }, [
+    bulkDeleteFetcher.state,
     bulkDeleteFetcher.data,
     bulkDeleteFetcher.formData,
+    didFetcherMutationSucceed,
     optimisticallyRemovePublishedItems,
+    refreshAllPostViews,
   ]);
 
   useEffect(() => {
-    const isSuccess =
-      bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data?.success;
-    if (!isSuccess) return;
-    refreshAllPostViews();
-  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, refreshAllPostViews]);
-
-  useEffect(() => {
-    const isSuccess =
-      deleteFetcher.state === "idle" && deleteFetcher.data?.success;
-    if (!isSuccess) return;
-    const formData = deleteFetcher.formData as FormData | undefined;
-    const deletedPostId = formData?.get("postId");
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const deleteFetcherData = deleteFetcher.data as
+      | { success?: boolean; error?: string }
+      | undefined;
+    const formData = deleteFetcher.formData;
+    const action = formData?.get("_action");
+    const isDeleteAction = action === "delete" || action === "deleteLongForm";
+    if (
+      !(
+        previousState !== "idle" &&
+        currentState === "idle" &&
+        formData &&
+        isDeleteAction &&
+        didFetcherMutationSucceed(deleteFetcherData)
+      )
+    ) {
+      previousDeleteStateRef.current = currentState;
+      return;
+    }
+    const deletedPostId = formData.get("postId");
     if (typeof deletedPostId === "string" && deletedPostId.length > 0) {
       optimisticallyRemovePublishedItems([deletedPostId]);
     }
     refreshAllPostViews();
+    previousDeleteStateRef.current = currentState;
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
     deleteFetcher.formData,
+    didFetcherMutationSucceed,
     optimisticallyRemovePublishedItems,
     refreshAllPostViews,
   ]);

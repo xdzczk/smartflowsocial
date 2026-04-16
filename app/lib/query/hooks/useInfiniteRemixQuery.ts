@@ -70,7 +70,32 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     if (capped && allPages.length >= maxPages) {
       return undefined;
     }
-    return getNextPageParam(lastPage, allPages);
+    const next = getNextPageParam(lastPage, allPages);
+    if (typeof window !== "undefined") {
+      const raw = lastPage as Record<string, unknown>;
+      if (typeof raw["pagination"] === "object") {
+        const pg =
+          (raw["pagination"] as {
+            pages?: number;
+            total?: number;
+          } | null) ?? {};
+        const lp =
+          (raw["longformPagination"] as {
+            pages?: number;
+            total?: number;
+          } | null) ?? {};
+        // Temporary trace: remove once infinite-scroll is stable
+        console.warn("[inf-scroll] getNextPageParam", {
+          loadedPages: allPages.length,
+          postPages: pg.pages,
+          postTotal: pg.total,
+          lfPages: lp.pages,
+          lfTotal: lp.total,
+          next,
+        });
+      }
+    }
+    return next;
   };
 
   // Mark initial data as fresh *now* so TanStack Query respects staleTime.

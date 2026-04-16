@@ -1,6 +1,6 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
@@ -58,9 +58,13 @@ export function useScheduledState({
   );
   interface FetcherData {
     success?: boolean;
+    error?: string;
+    moved?: boolean;
   }
   const bulkDeleteFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
+  const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
 
   // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
   const postIds = useMemo(
@@ -211,6 +215,15 @@ export function useScheduledState({
   const queryClient = useQueryClient();
   const refreshAllPostViews = useRefreshPostViews();
 
+  const didFetcherMutationSucceed = useCallback(
+    (data: FetcherData | undefined): boolean => {
+      if (!data) return true;
+      if (typeof data.success === "boolean") return data.success;
+      return !data.error;
+    },
+    []
+  );
+
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
@@ -287,7 +300,20 @@ export function useScheduledState({
 
   // Invalidate queries when delete succeeds
   useEffect(() => {
-    if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
+    const previousState = previousBulkDeleteStateRef.current;
+    const currentState = bulkDeleteFetcher.state;
+    const formData = bulkDeleteFetcher.formData;
+    const action = formData?.get("_action");
+    const isDeleteAction =
+      action === "bulkDelete" ||
+      action === "bulkDeleteLongForm" ||
+      action === "bulkDeleteMixed";
+    if (
+      previousState !== "idle" &&
+      currentState === "idle" &&
+      isDeleteAction &&
+      didFetcherMutationSucceed(bulkDeleteFetcher.data)
+    ) {
       void queryClient.invalidateQueries({
         queryKey: scheduledPostsKeys.all,
         predicate: skipInfiniteQueries,
@@ -298,12 +324,28 @@ export function useScheduledState({
       });
       setSelectedPosts(new Set());
     }
-  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
+    previousBulkDeleteStateRef.current = currentState;
+  }, [
+    bulkDeleteFetcher.state,
+    bulkDeleteFetcher.data,
+    bulkDeleteFetcher.formData,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
 
   // Handle individual delete / move-to-draft fetcher
   useEffect(() => {
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
-    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const formData = deleteFetcher.formData;
+    const action = formData?.get("_action");
+    const isDeleteAction = action === "delete" || action === "moveToDraft";
+    if (
+      previousState !== "idle" &&
+      currentState === "idle" &&
+      isDeleteAction &&
+      didFetcherMutationSucceed(deleteFetcher.data)
+    ) {
       void queryClient.invalidateQueries({
         queryKey: scheduledPostsKeys.all,
         predicate: skipInfiniteQueries,
@@ -313,16 +355,22 @@ export function useScheduledState({
         predicate: skipInfiniteQueries,
       });
       if (
+        deleteFetcher.data &&
         typeof deleteFetcher.data === "object" &&
-        deleteFetcher.data !== null &&
         "moved" in deleteFetcher.data &&
-        (deleteFetcher.data as { moved?: boolean }).moved
+        deleteFetcher.data.moved
       ) {
         void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
       }
     }
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+    previousDeleteStateRef.current = currentState;
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    deleteFetcher.formData,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
 
   const handleMediaClick = (mediaSrc: string) => {
     setSelectedMedia(mediaSrc);

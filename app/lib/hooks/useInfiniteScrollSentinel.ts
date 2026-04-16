@@ -2,6 +2,10 @@
  * Encapsulates infinite scroll sentinel logic: scroll root, two intersection
  * observers (prefetch + fetch), and a single effect that calls fetchNextPage.
  * Use on pages with infinite query lists (Drafts, Posted, Scheduled, Templates).
+ *
+ * Deduplication relies on TanStack Query: calling `fetchNextPage()` while a
+ * page fetch is already in-flight is a no-op (returns the existing promise).
+ * This avoids fragile ref-based gating that can desync on Remix re-renders.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -22,15 +26,10 @@ export function useInfiniteScrollSentinel({
   hasNextPage,
   isFetchingNextPage,
   isFetching,
-  loadedPageCount,
+  loadedPageCount: _loadedPageCount,
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
-
-  // Single flag: set when fetchNextPage is dispatched, cleared only when
-  // loadedPageCount actually changes (new page appended or query reset).
-  const fetchInFlightRef = useRef(false);
-  const lastLoadedPageCountRef = useRef<number | undefined>(loadedPageCount);
 
   const root = isMobile ? (scrollRoot ?? undefined) : undefined;
 
@@ -51,45 +50,28 @@ export function useInfiniteScrollSentinel({
 
   const anyFetching = isFetchingNextPage || (isFetching ?? false);
 
-  // Re-arm after a page is successfully appended (or reset on filter change).
+  // Stable ref so effect closure always calls the latest fetchNextPage.
+  const fetchRef = useRef(fetchNextPage);
   useEffect(() => {
-    if (anyFetching) return;
+    fetchRef.current = fetchNextPage;
+  }, [fetchNextPage]);
 
-    const previous = lastLoadedPageCountRef.current ?? 0;
-    const current =
-      typeof loadedPageCount === "number" ? loadedPageCount : previous;
-
-    if (current !== previous) {
-      lastLoadedPageCountRef.current = current;
-      fetchInFlightRef.current = false;
-    }
-  }, [anyFetching, loadedPageCount]);
-
-  // Reset when both sentinels leave the viewport (user scrolled back up).
+  // Trigger: when a sentinel is visible, more pages exist, and nothing is
+  // fetching, call fetchNextPage.  TanStack Query deduplicates internally so
+  // an extra call while a page fetch is already in-flight is harmless.
   useEffect(() => {
-    if (!isIntersecting && !isPrefetchIntersecting) {
-      fetchInFlightRef.current = false;
-    }
-  }, [isIntersecting, isPrefetchIntersecting]);
-
-  // Consolidated trigger: fires at most once per page transition.
-  // Guard with both isFetchingNextPage AND isFetching to avoid calling
-  // fetchNextPage while a background refetch is resetting pages from page 1.
-  useEffect(() => {
-    if (fetchInFlightRef.current) return;
-
     const visible = isIntersecting || isPrefetchIntersecting;
     if (visible && hasNextPage && !anyFetching) {
-      fetchInFlightRef.current = true;
-      fetchNextPage();
+      // Temporary trace: remove once infinite-scroll is stable
+      console.warn("[inf-scroll] trigger fetchNextPage", {
+        hasNextPage,
+        anyFetching,
+        isIntersecting,
+        isPrefetchIntersecting,
+      });
+      fetchRef.current();
     }
-  }, [
-    isIntersecting,
-    isPrefetchIntersecting,
-    hasNextPage,
-    anyFetching,
-    fetchNextPage,
-  ]);
+  }, [isIntersecting, isPrefetchIntersecting, hasNextPage, anyFetching]);
 
   return {
     sentinelRef,

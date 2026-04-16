@@ -138,6 +138,7 @@ export function ScheduledPostsTable({
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
   const deleteFetcher = useFetcher<{ success?: boolean }>();
   const queryClient = useQueryClient();
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
 
   const combinedContent = posts.map((post) => postToCombinedContent(post));
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
@@ -158,35 +159,43 @@ export function ScheduledPostsTable({
 
   // Invalidate queries when individual delete succeeds
   useEffect(() => {
-    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      const data = deleteFetcher.data;
-      if (typeof data === "object" && "success" in data && data.success) {
-        const formData = deleteFetcher.formData as FormData | undefined;
-        const action = formData?.get("_action");
-        const submittedPostId = formData?.get("postId");
-        if (
-          (action === "delete" || action === "moveToDraft") &&
-          typeof submittedPostId === "string" &&
-          submittedPostId.length > 0
-        ) {
-          const deletedIds = new Set([submittedPostId]);
-          queryClient.setQueriesData(
-            { queryKey: scheduledPostsKeys.all },
-            (old) => pruneScheduledQueryData(old, deletedIds)
-          );
-        }
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const formData = deleteFetcher.formData;
+    const action = formData?.get("_action");
+    const submittedPostId = formData?.get("postId");
+    const isDeleteAction = action === "delete" || action === "moveToDraft";
+    const data = deleteFetcher.data as
+      | { success?: boolean; error?: string }
+      | undefined;
+    const didSucceed =
+      !data || typeof data.success !== "boolean" ? !data?.error : data.success;
 
-        // Invalidate both dashboard and scheduled posts queries
-        void queryClient.invalidateQueries({
-          queryKey: dashboardKeys.all,
-          predicate: skipInfiniteQueries,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: scheduledPostsKeys.all,
-          predicate: skipInfiniteQueries,
-        });
+    if (
+      previousState !== "idle" &&
+      currentState === "idle" &&
+      isDeleteAction &&
+      didSucceed
+    ) {
+      if (typeof submittedPostId === "string" && submittedPostId.length > 0) {
+        const deletedIds = new Set([submittedPostId]);
+        queryClient.setQueriesData(
+          { queryKey: scheduledPostsKeys.all },
+          (old) => pruneScheduledQueryData(old, deletedIds)
+        );
       }
+
+      // Invalidate both dashboard and scheduled posts queries
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: scheduledPostsKeys.all,
+        predicate: skipInfiniteQueries,
+      });
     }
+    previousDeleteStateRef.current = currentState;
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
