@@ -55,6 +55,7 @@ export async function handleScheduledAction(
       deletedCount?: number;
       postId?: string;
       moved?: boolean;
+      cascadeDeletedIds?: string[];
     }
 > {
   const result = validateFormDataOrRespond(formData, scheduledActionSchema);
@@ -85,20 +86,24 @@ export async function handleScheduledAction(
   }
 
   if (_action === "delete") {
-    await cascadeDeleteAttachedFollowups({
+    const attachedIds = await cascadeDeleteAttachedFollowups({
       rootPostId: result.data.postId,
       userId,
     });
-    await cascadeDeleteStandaloneScheduledDependents(
+    const standaloneIds = await cascadeDeleteStandaloneScheduledDependents(
       result.data.postId,
       userId
     );
     const deletedPost = await deletePost({ id: result.data.postId, userId });
-    return { success: true, deleted: deletedPost !== null };
+    return {
+      success: true,
+      deleted: deletedPost !== null,
+      cascadeDeletedIds: [...attachedIds, ...standaloneIds],
+    };
   }
 
   if (_action === "deleteLongForm") {
-    await cascadeDeleteStandaloneScheduledDependents(
+    const standaloneIds = await cascadeDeleteStandaloneScheduledDependents(
       result.data.postId,
       userId
     );
@@ -106,38 +111,58 @@ export async function handleScheduledAction(
       id: result.data.postId,
       userId,
     });
-    return { success: true, deleted: deletedPost !== null };
+    return {
+      success: true,
+      deleted: deletedPost !== null,
+      cascadeDeletedIds: standaloneIds,
+    };
   }
 
   if (_action === "bulkDelete") {
+    const allCascadeIds: string[] = [];
     const results = await Promise.all(
       result.data.postIds.map(async (id: string) => {
-        await cascadeDeleteAttachedFollowups({ rootPostId: id, userId });
-        await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        const a = await cascadeDeleteAttachedFollowups({
+          rootPostId: id,
+          userId,
+        });
+        const s = await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        allCascadeIds.push(...a, ...s);
         return deletePost({ id, userId });
       })
     );
     const deletedCount = results.filter((post) => post !== null).length;
-    return { success: true, deletedCount };
+    return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
   }
 
   if (_action === "bulkDeleteLongForm") {
+    const allCascadeIds: string[] = [];
     const results = await Promise.all(
       result.data.postIds.map(async (id: string) => {
-        await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        const s = await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        allCascadeIds.push(...s);
         return deleteLongFormPost({ id, userId });
       })
     );
     const deletedCount = results.filter((post) => post !== null).length;
-    return { success: true, deletedCount };
+    return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
   }
 
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
+  const allCascadeIds: string[] = [];
   const promises = result.data.itemData.map((item) => {
     return (async () => {
-      await cascadeDeleteStandaloneScheduledDependents(item.id, userId);
+      const s = await cascadeDeleteStandaloneScheduledDependents(
+        item.id,
+        userId
+      );
+      allCascadeIds.push(...s);
       if (item.type === "post") {
-        await cascadeDeleteAttachedFollowups({ rootPostId: item.id, userId });
+        const a = await cascadeDeleteAttachedFollowups({
+          rootPostId: item.id,
+          userId,
+        });
+        allCascadeIds.push(...a);
         return deletePost({ id: item.id, userId });
       } else {
         return deleteLongFormPost({ id: item.id, userId });
@@ -146,7 +171,7 @@ export async function handleScheduledAction(
   });
   const results = await Promise.all(promises);
   const deletedCount = results.filter((post) => post !== null).length;
-  return { success: true, deletedCount };
+  return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
 }
 
 function buildRepostConditionsFromData(data: {

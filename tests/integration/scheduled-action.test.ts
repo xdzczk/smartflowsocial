@@ -72,7 +72,11 @@ describe("Scheduled Action Handler", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(result).toEqual({ success: true, deleted: true });
+      expect(result).toEqual({
+        success: true,
+        deleted: true,
+        cascadeDeletedIds: [],
+      });
     });
   });
 
@@ -92,7 +96,11 @@ describe("Scheduled Action Handler", () => {
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
       });
-      expect(result).toEqual({ success: true, deleted: true });
+      expect(result).toEqual({
+        success: true,
+        deleted: true,
+        cascadeDeletedIds: [],
+      });
     });
   });
 
@@ -114,7 +122,11 @@ describe("Scheduled Action Handler", () => {
           userId: TEST_USER_ID,
         });
       });
-      expect(result).toEqual({ success: true, deletedCount: 5 });
+      expect(result).toEqual({
+        success: true,
+        deletedCount: 5,
+        cascadeDeletedIds: [],
+      });
     });
 
     it("should return error for empty postIds array", async () => {
@@ -155,7 +167,11 @@ describe("Scheduled Action Handler", () => {
           userId: TEST_USER_ID,
         });
       });
-      expect(result).toEqual({ success: true, deletedCount: 3 });
+      expect(result).toEqual({
+        success: true,
+        deletedCount: 3,
+        cascadeDeletedIds: [],
+      });
     });
   });
 
@@ -199,7 +215,11 @@ describe("Scheduled Action Handler", () => {
         userId: TEST_USER_ID,
       });
 
-      expect(result).toEqual({ success: true, deletedCount: 4 });
+      expect(result).toEqual({
+        success: true,
+        deletedCount: 4,
+        cascadeDeletedIds: [],
+      });
     });
 
     it("should handle only posts in mixed delete", async () => {
@@ -218,7 +238,11 @@ describe("Scheduled Action Handler", () => {
 
       expect(deletePost).toHaveBeenCalledTimes(2);
       expect(deleteLongFormPost).not.toHaveBeenCalled();
-      expect(result).toEqual({ success: true, deletedCount: 2 });
+      expect(result).toEqual({
+        success: true,
+        deletedCount: 2,
+        cascadeDeletedIds: [],
+      });
     });
 
     it("should handle only longform posts in mixed delete", async () => {
@@ -239,7 +263,11 @@ describe("Scheduled Action Handler", () => {
 
       expect(deleteLongFormPost).toHaveBeenCalledTimes(2);
       expect(deletePost).not.toHaveBeenCalled();
-      expect(result).toEqual({ success: true, deletedCount: 2 });
+      expect(result).toEqual({
+        success: true,
+        deletedCount: 2,
+        cascadeDeletedIds: [],
+      });
     });
 
     it("should return error for empty itemData array", async () => {

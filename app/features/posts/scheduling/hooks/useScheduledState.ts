@@ -64,6 +64,7 @@ export function useScheduledState({
     success?: boolean;
     error?: string;
     moved?: boolean;
+    cascadeDeletedIds?: string[];
   }
   const bulkDeleteFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
@@ -290,6 +291,14 @@ export function useScheduledState({
       (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(bulkDeleteFetcher.data)
     ) {
+      const cascadeIds: string[] =
+        bulkDeleteFetcher.data?.cascadeDeletedIds ?? [];
+      if (cascadeIds.length > 0) {
+        queryClient.setQueriesData(
+          { queryKey: scheduledPostsKeys.all },
+          (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
+        );
+      }
       invalidateDependentCaches(queryClient);
       void queryClient.invalidateQueries({
         queryKey: dashboardKeys.all,
@@ -331,8 +340,12 @@ export function useScheduledState({
       (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(deleteFetcher.data)
     ) {
+      const cascadeIds: string[] = deleteFetcher.data?.cascadeDeletedIds ?? [];
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
-        pruneScheduledQueryData(old, new Set([submission.postId]))
+        pruneScheduledQueryData(
+          old,
+          new Set([submission.postId, ...cascadeIds])
+        )
       );
       invalidateDependentCaches(queryClient);
       void queryClient.invalidateQueries({

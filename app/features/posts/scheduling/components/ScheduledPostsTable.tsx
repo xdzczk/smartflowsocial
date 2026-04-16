@@ -137,7 +137,10 @@ export function ScheduledPostsTable({
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
-  const deleteFetcher = useFetcher<{ success?: boolean }>();
+  const deleteFetcher = useFetcher<{
+    success?: boolean;
+    cascadeDeletedIds?: string[];
+  }>();
   const queryClient = useQueryClient();
   const previousDeleteStateRef = useRef(deleteFetcher.state);
   const previousDeleteDataRef = useRef(deleteFetcher.data);
@@ -190,7 +193,10 @@ export function ScheduledPostsTable({
       (previousState !== "idle" || dataChanged) &&
       didSucceed
     ) {
-      const deletedIds = new Set([submission.postId]);
+      const cascadeIds: string[] =
+        (data as { cascadeDeletedIds?: string[] } | undefined)
+          ?.cascadeDeletedIds ?? [];
+      const deletedIds = new Set([submission.postId, ...cascadeIds]);
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
         pruneScheduledQueryData(old, deletedIds)
       );

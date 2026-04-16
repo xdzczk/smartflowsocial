@@ -541,11 +541,18 @@ export default function LongFormDetailsModal({
     formData.append("postId", postId);
     void (async () => {
       try {
-        await fetch(window.location.pathname, {
+        const resp = await fetch(window.location.pathname, {
           method: "POST",
           body: formData,
           credentials: "same-origin",
         });
+        const json = (await resp.json().catch(() => null)) as {
+          cascadeDeletedIds?: string[];
+        } | null;
+        const cascadeIds = json?.cascadeDeletedIds;
+        if (cascadeIds && cascadeIds.length > 0) {
+          optimisticallyRemovePostIdsFromViews(queryClient, cascadeIds);
+        }
       } finally {
         invalidateDependentCaches(queryClient);
       }
