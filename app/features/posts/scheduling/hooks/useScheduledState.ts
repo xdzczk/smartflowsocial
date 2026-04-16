@@ -65,7 +65,9 @@ export function useScheduledState({
   const bulkDeleteFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
   const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
+  const previousBulkDeleteDataRef = useRef(bulkDeleteFetcher.data);
   const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const previousDeleteDataRef = useRef(deleteFetcher.data);
   const lastBulkDeleteSubmissionRef = useRef<{
     action: "bulkDelete" | "bulkDeleteLongForm" | "bulkDeleteMixed";
   } | null>(null);
@@ -306,10 +308,11 @@ export function useScheduledState({
     }
   };
 
-  // Invalidate queries when delete succeeds
   useEffect(() => {
     const previousState = previousBulkDeleteStateRef.current;
     const currentState = bulkDeleteFetcher.state;
+    const dataChanged =
+      bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
     const formData = bulkDeleteFetcher.formData;
     const action = formData?.get("_action");
     if (
@@ -321,9 +324,9 @@ export function useScheduledState({
     }
     const submission = lastBulkDeleteSubmissionRef.current;
     if (
-      previousState !== "idle" &&
       currentState === "idle" &&
       submission &&
+      (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(bulkDeleteFetcher.data)
     ) {
       void queryClient.invalidateQueries({
@@ -340,6 +343,7 @@ export function useScheduledState({
       lastBulkDeleteSubmissionRef.current = null;
     }
     previousBulkDeleteStateRef.current = currentState;
+    previousBulkDeleteDataRef.current = bulkDeleteFetcher.data;
   }, [
     bulkDeleteFetcher.state,
     bulkDeleteFetcher.data,
@@ -348,10 +352,10 @@ export function useScheduledState({
     queryClient,
   ]);
 
-  // Handle individual delete / move-to-draft fetcher
   useEffect(() => {
     const previousState = previousDeleteStateRef.current;
     const currentState = deleteFetcher.state;
+    const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
     const formData = deleteFetcher.formData;
     const action = formData?.get("_action");
     const submittedPostId = formData?.get("postId");
@@ -364,9 +368,9 @@ export function useScheduledState({
     }
     const submission = lastDeleteSubmissionRef.current;
     if (
-      previousState !== "idle" &&
       currentState === "idle" &&
       submission &&
+      (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(deleteFetcher.data)
     ) {
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
@@ -393,6 +397,7 @@ export function useScheduledState({
       lastDeleteSubmissionRef.current = null;
     }
     previousDeleteStateRef.current = currentState;
+    previousDeleteDataRef.current = deleteFetcher.data;
   }, [
     deleteFetcher.state,
     deleteFetcher.data,

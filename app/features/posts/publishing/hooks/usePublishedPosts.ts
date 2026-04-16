@@ -100,7 +100,9 @@ export function usePublishedPosts({
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
   const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const previousDeleteDataRef = useRef(deleteFetcher.data);
   const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
+  const previousBulkDeleteDataRef = useRef(bulkDeleteFetcher.data);
   const lastDeleteSubmissionRef = useRef<{
     action: "delete" | "deleteLongForm";
     postId: string;
@@ -334,6 +336,8 @@ export function usePublishedPosts({
   useEffect(() => {
     const previousState = previousBulkDeleteStateRef.current;
     const currentState = bulkDeleteFetcher.state;
+    const dataChanged =
+      bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
     const fetcherData = bulkDeleteFetcher.data as
       | { success?: boolean; error?: string }
       | undefined;
@@ -353,9 +357,9 @@ export function usePublishedPosts({
     const submission = lastBulkDeleteSubmissionRef.current;
 
     if (
-      previousState !== "idle" &&
       currentState === "idle" &&
       submission &&
+      (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(fetcherData)
     ) {
       optimisticallyRemovePublishedItems(submission.postIds);
@@ -367,6 +371,7 @@ export function usePublishedPosts({
     }
 
     previousBulkDeleteStateRef.current = currentState;
+    previousBulkDeleteDataRef.current = bulkDeleteFetcher.data;
   }, [
     bulkDeleteFetcher.state,
     bulkDeleteFetcher.data,
@@ -379,6 +384,7 @@ export function usePublishedPosts({
   useEffect(() => {
     const previousState = previousDeleteStateRef.current;
     const currentState = deleteFetcher.state;
+    const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
     const deleteFetcherData = deleteFetcher.data as
       | { success?: boolean; error?: string }
       | undefined;
@@ -393,24 +399,24 @@ export function usePublishedPosts({
       lastDeleteSubmissionRef.current = { action, postId: submittedPostId };
     }
     const submission = lastDeleteSubmissionRef.current;
-    if (
-      !(
-        previousState !== "idle" &&
-        currentState === "idle" &&
-        submission &&
-        didFetcherMutationSucceed(deleteFetcherData)
-      )
-    ) {
+    const didComplete =
+      currentState === "idle" &&
+      submission &&
+      (previousState !== "idle" || dataChanged) &&
+      didFetcherMutationSucceed(deleteFetcherData);
+    if (!didComplete) {
       if (previousState !== "idle" && currentState === "idle") {
         lastDeleteSubmissionRef.current = null;
       }
       previousDeleteStateRef.current = currentState;
+      previousDeleteDataRef.current = deleteFetcher.data;
       return;
     }
     optimisticallyRemovePublishedItems([submission.postId]);
     refreshAllPostViews();
     lastDeleteSubmissionRef.current = null;
     previousDeleteStateRef.current = currentState;
+    previousDeleteDataRef.current = deleteFetcher.data;
   }, [
     deleteFetcher.state,
     deleteFetcher.data,

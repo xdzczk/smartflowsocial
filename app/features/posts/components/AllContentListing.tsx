@@ -99,6 +99,8 @@ interface AllContentListingProps {
   onResetDraftFilters?: () => void;
   /** Scheduled / Published "all" tab: clear search, date, queue filters */
   onResetListFilters?: () => void;
+  /** Called synchronously before a delete is submitted so the parent can do optimistic cache removal */
+  onBeforeDelete?: (postId: string) => void;
 }
 
 /* eslint-disable sonarjs/cognitive-complexity -- table vs hybrid draft rows, virtualized mobile list, bulk bars, empty states */
@@ -140,6 +142,7 @@ export default function AllContentListing({
   queueTypes = [],
   onResetDraftFilters,
   onResetListFilters,
+  onBeforeDelete,
 }: AllContentListingProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -429,6 +432,7 @@ export default function AllContentListing({
                       longformQuoteFetcher={longformQuoteFetcher}
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
+                      onBeforeDelete={onBeforeDelete}
                     />
                   )
                 )}
@@ -534,6 +538,7 @@ export default function AllContentListing({
                             longformQuoteFetcher={longformQuoteFetcher}
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
+                            onBeforeDelete={onBeforeDelete}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -608,6 +613,7 @@ export default function AllContentListing({
                       longformQuoteFetcher={longformQuoteFetcher}
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
+                      onBeforeDelete={onBeforeDelete}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

@@ -82,12 +82,8 @@ export function useInfiniteScrollSentinel({
     lastTriggeredAtRef.current = pageCount + 1;
     cooldownUntilRef.current = now + RETRY_COOLDOWN_MS;
 
-    console.warn("[inf-scroll] trigger fetchNextPage", {
-      pageCount,
-      hasNextPage,
-    });
     fetchRef.current();
-  }, [pageCount, hasNextPage]);
+  }, [pageCount]);
 
   useEffect(() => {
     const visible = isIntersecting || isPrefetchIntersecting;

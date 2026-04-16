@@ -1,7 +1,7 @@
-import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
@@ -9,7 +9,6 @@ import { Separator } from "~/components/ui/separator";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import { MarkdownPreview } from "~/features/posts/components/MarkdownPreview";
 import {
-  didDeleteActionSucceed,
   getDeleteButtonLabel,
   getLongFormPublishedEventId,
 } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
@@ -514,12 +513,8 @@ export default function LongFormDetailsModal({
 }: LongFormDetailsModalProps) {
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
-  const deleteFetcher = useFetcher();
+  const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
-  const deleteSubmissionRef = useRef<{ action: string; postId: string } | null>(
-    null
-  );
-  const previousDeleteStateRef = useRef(deleteFetcher.state);
   const rootData = useRouteLoaderData("root") as
     | {
         user?: {
@@ -533,44 +528,22 @@ export default function LongFormDetailsModal({
     [rootData?.user]
   );
 
-  useEffect(() => {
-    const previousState = previousDeleteStateRef.current;
-    const currentState = deleteFetcher.state;
-    const fallbackFormData = deleteFetcher.formData;
-    const fallbackAction = fallbackFormData?.get("_action");
-    const fallbackPostId = fallbackFormData?.get("postId");
-    const fallbackSubmission =
-      fallbackAction === "deleteLongForm" && typeof fallbackPostId === "string"
-        ? { action: "deleteLongForm", postId: fallbackPostId }
-        : null;
-    const submission = deleteSubmissionRef.current ?? fallbackSubmission;
+  const handleDelete = useCallback(() => {
+    const postId = post.id;
+    setIsDeleting(true);
+    optimisticallyRemovePostIdsFromViews(queryClient, [postId]);
+    onDeleted?.(postId);
+    onClose();
 
-    if (
-      submission?.action === "deleteLongForm" &&
-      (previousState !== "idle" || fallbackSubmission !== null) &&
-      currentState === "idle"
-    ) {
-      const data = deleteFetcher.data as
-        | { success?: boolean; error?: unknown }
-        | undefined;
-      const didSucceed = data ? didDeleteActionSucceed(data) : true;
-      if (didSucceed) {
-        optimisticallyRemovePostIdsFromViews(queryClient, [submission.postId]);
-        onDeleted?.(submission.postId);
-        onClose();
-      }
-      deleteSubmissionRef.current = null;
-    }
-
-    previousDeleteStateRef.current = currentState;
-  }, [
-    deleteFetcher.state,
-    deleteFetcher.data,
-    deleteFetcher.formData,
-    queryClient,
-    onDeleted,
-    onClose,
-  ]);
+    const formData = new FormData();
+    formData.append("_action", "deleteLongForm");
+    formData.append("postId", postId);
+    void fetch(window.location.pathname, {
+      method: "POST",
+      body: formData,
+      credentials: "same-origin",
+    });
+  }, [post.id, queryClient, onDeleted, onClose]);
 
   const eventId =
     type === "published" ? getLongFormPublishedEventId(post) : null;
@@ -633,45 +606,25 @@ export default function LongFormDetailsModal({
   );
 
   const deleteForm = (
-    <deleteFetcher.Form
-      method="post"
-      onClick={(e) => e.stopPropagation()}
-      onSubmit={(event) => {
-        event.stopPropagation();
-        const formData = new FormData(event.currentTarget);
-        const action = formData.get("_action");
-        const submittedPostId = formData.get("postId");
-        if (
-          action !== "deleteLongForm" ||
-          typeof submittedPostId !== "string"
-        ) {
-          return;
-        }
-        deleteSubmissionRef.current = {
-          action,
-          postId: submittedPostId,
-        };
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={isDeleting}
+      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDelete();
       }}
     >
-      <input type="hidden" name="postId" value={post.id} />
-      <input type="hidden" name="_action" value="deleteLongForm" />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
-      >
-        {deleteFetcher.state !== "idle" &&
-        deleteFetcher.formData?.get("postId") === post.id
-          ? "Deleting..."
-          : type === "scheduled"
-            ? getDeleteButtonLabel("scheduled")
-            : type === "draft"
-              ? "Delete Draft"
-              : "Delete Article"}
-      </Button>
-    </deleteFetcher.Form>
+      {isDeleting
+        ? "Deleting..."
+        : type === "scheduled"
+          ? getDeleteButtonLabel("scheduled")
+          : type === "draft"
+            ? "Delete Draft"
+            : "Delete Article"}
+    </Button>
   );
 
   const statusType: "draft" | "published" | "scheduled" =

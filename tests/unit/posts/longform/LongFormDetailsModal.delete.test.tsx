@@ -3,7 +3,7 @@
  */
 
 import type * as RemixReact from "@remix-run/react";
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,20 +12,6 @@ vi.mock("@tanstack/react-query", () => ({
     setQueriesData: vi.fn(),
   }),
 }));
-
-const fetcherFormData = new FormData();
-fetcherFormData.set("_action", "deleteLongForm");
-fetcherFormData.set("postId", "lf-1");
-
-const fetcherState: {
-  state: "idle";
-  data: Record<string, unknown> | undefined;
-  formData: FormData;
-} = {
-  state: "idle",
-  data: {},
-  formData: fetcherFormData,
-};
 
 vi.mock("@remix-run/react", async () => {
   const actual = await vi.importActual<typeof RemixReact>("@remix-run/react");
@@ -43,18 +29,6 @@ vi.mock("@remix-run/react", async () => {
         {children}
       </a>
     ),
-    useFetcher: () => ({
-      state: fetcherState.state,
-      data: fetcherState.data,
-      formData: fetcherState.formData,
-      submit: vi.fn(),
-      Form: ({
-        children,
-        ...props
-      }: React.FormHTMLAttributes<HTMLFormElement>) => (
-        <form {...props}>{children}</form>
-      ),
-    }),
     useRouteLoaderData: () => undefined,
   };
 });
@@ -146,103 +120,86 @@ vi.mock("~/lib/nostr-client-urls", () => ({
   }),
 }));
 
+const mockFetch = vi.fn().mockResolvedValue(new Response("{}"));
+vi.stubGlobal("fetch", mockFetch);
+
 import LongFormDetailsModal from "~/features/posts/longform/components/LongFormDetailsModal";
 
+function makePost(): React.ComponentProps<typeof LongFormDetailsModal>["post"] {
+  return {
+    id: "lf-1",
+    userId: "user-1",
+    title: "Longform",
+    content: "Body",
+    summary: null,
+    image: null,
+    tags: [],
+    status: "DRAFT",
+    currentState: "DRAFT",
+    queueTypeId: null,
+    hashTagPresetId: null,
+    createdAt: new Date("2026-04-15T10:00:00.000Z"),
+    updatedAt: new Date("2026-04-15T10:00:00.000Z"),
+    publishedAt: new Date("2026-04-15T10:00:00.000Z"),
+    scheduledAtUtc: null,
+    nominalScheduledAtUtc: null,
+    postedAt: null,
+    creationIdempotencyKey: null,
+    enqueueIdempotencyKey: null,
+    publishAttemptId: null,
+    publishingLockId: null,
+    publishingLockExpiresAt: null,
+    publishingStartedAt: null,
+    queueType: null,
+    signedEvent: null,
+    nostrEventId: "event-1",
+  };
+}
+
 describe("LongFormDetailsModal delete behavior", () => {
-  it("invokes onDeleted and onClose for deleteLongForm responses without explicit success flag", async () => {
+  it("invokes onDeleted and onClose immediately when delete button is clicked", () => {
     const onClose = vi.fn();
     const onDeleted = vi.fn();
-    const post: React.ComponentProps<typeof LongFormDetailsModal>["post"] = {
-      id: "lf-1",
-      userId: "user-1",
-      title: "Longform",
-      content: "Body",
-      summary: null,
-      image: null,
-      tags: [],
-      status: "DRAFT",
-      currentState: "DRAFT",
-      queueTypeId: null,
-      hashTagPresetId: null,
-      createdAt: new Date("2026-04-15T10:00:00.000Z"),
-      updatedAt: new Date("2026-04-15T10:00:00.000Z"),
-      publishedAt: new Date("2026-04-15T10:00:00.000Z"),
-      scheduledAtUtc: null,
-      nominalScheduledAtUtc: null,
-      postedAt: null,
-      creationIdempotencyKey: null,
-      enqueueIdempotencyKey: null,
-      publishAttemptId: null,
-      publishingLockId: null,
-      publishingLockExpiresAt: null,
-      publishingStartedAt: null,
-      queueType: null,
-      signedEvent: null,
-      nostrEventId: "event-1",
-    };
 
     render(
       <LongFormDetailsModal
-        post={post}
+        post={makePost()}
         onClose={onClose}
         onDeleted={onDeleted}
         type="published"
       />
     );
 
-    await waitFor(() => {
-      expect(onDeleted).toHaveBeenCalledWith("lf-1");
-      expect(onClose).toHaveBeenCalledTimes(1);
-    });
+    const deleteButton = screen.getByText("Delete Article");
+    fireEvent.click(deleteButton);
+
+    expect(onDeleted).toHaveBeenCalledWith("lf-1");
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("invokes onDeleted and onClose when delete response has no payload", async () => {
-    fetcherState.data = undefined;
+  it("sends a fetch request to the server when delete button is clicked", () => {
+    mockFetch.mockClear();
     const onClose = vi.fn();
     const onDeleted = vi.fn();
-    const post: React.ComponentProps<typeof LongFormDetailsModal>["post"] = {
-      id: "lf-1",
-      userId: "user-1",
-      title: "Longform",
-      content: "Body",
-      summary: null,
-      image: null,
-      tags: [],
-      status: "DRAFT",
-      currentState: "DRAFT",
-      queueTypeId: null,
-      hashTagPresetId: null,
-      createdAt: new Date("2026-04-15T10:00:00.000Z"),
-      updatedAt: new Date("2026-04-15T10:00:00.000Z"),
-      publishedAt: new Date("2026-04-15T10:00:00.000Z"),
-      scheduledAtUtc: null,
-      nominalScheduledAtUtc: null,
-      postedAt: null,
-      creationIdempotencyKey: null,
-      enqueueIdempotencyKey: null,
-      publishAttemptId: null,
-      publishingLockId: null,
-      publishingLockExpiresAt: null,
-      publishingStartedAt: null,
-      queueType: null,
-      signedEvent: null,
-      nostrEventId: "event-1",
-    };
 
     render(
       <LongFormDetailsModal
-        post={post}
+        post={makePost()}
         onClose={onClose}
         onDeleted={onDeleted}
         type="published"
       />
     );
 
-    await waitFor(() => {
-      expect(onDeleted).toHaveBeenCalledWith("lf-1");
-      expect(onClose).toHaveBeenCalledTimes(1);
-    });
+    const deleteButton = screen.getByText("Delete Article");
+    fireEvent.click(deleteButton);
 
-    fetcherState.data = {};
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(window.location.pathname);
+    expect(options.method).toBe("POST");
+    const body = options.body as FormData;
+    expect(body.get("_action")).toBe("deleteLongForm");
+    expect(body.get("postId")).toBe("lf-1");
   });
 });

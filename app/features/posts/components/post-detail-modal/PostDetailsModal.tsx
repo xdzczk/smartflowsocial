@@ -1,6 +1,6 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
@@ -28,7 +28,6 @@ import {
   shouldUseUltraCompactLayout,
 } from "./derive-post-detail-semantics";
 import {
-  didDeleteActionSucceed,
   filterRepliesExcludingThreadSegments,
   formatScheduledDate,
   getDeleteButtonLabel,
@@ -92,12 +91,8 @@ export default function PostDetailsModal({
   scheduledCapabilities: scheduledCapabilitiesProp,
   scheduledOpenFullEditorHref,
 }: PostDetailsModalProps) {
-  const deleteFetcher = useFetcher();
   const queryClient = useQueryClient();
-  const deleteSubmissionRef = useRef<{ action: string; postId: string } | null>(
-    null
-  );
-  const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
@@ -118,44 +113,22 @@ export default function PostDetailsModal({
     [rootData?.user]
   );
 
-  useEffect(() => {
-    const previousState = previousDeleteStateRef.current;
-    const currentState = deleteFetcher.state;
-    const fallbackFormData = deleteFetcher.formData;
-    const fallbackAction = fallbackFormData?.get("_action");
-    const fallbackPostId = fallbackFormData?.get("postId");
-    const fallbackSubmission =
-      fallbackAction === "delete" && typeof fallbackPostId === "string"
-        ? { action: "delete", postId: fallbackPostId }
-        : null;
-    const submission = deleteSubmissionRef.current ?? fallbackSubmission;
+  const handleDelete = useCallback(() => {
+    const postId = post.id;
+    setIsDeleting(true);
+    optimisticallyRemovePostIdsFromViews(queryClient, [postId]);
+    onDeleted?.(postId);
+    onClose();
 
-    if (
-      submission?.action === "delete" &&
-      (previousState !== "idle" || fallbackSubmission !== null) &&
-      currentState === "idle"
-    ) {
-      const data = deleteFetcher.data as
-        | { success?: boolean; error?: unknown }
-        | undefined;
-      const didSucceed = data ? didDeleteActionSucceed(data) : true;
-      if (didSucceed) {
-        optimisticallyRemovePostIdsFromViews(queryClient, [submission.postId]);
-        onDeleted?.(submission.postId);
-        onClose();
-      }
-      deleteSubmissionRef.current = null;
-    }
-
-    previousDeleteStateRef.current = currentState;
-  }, [
-    deleteFetcher.state,
-    deleteFetcher.data,
-    deleteFetcher.formData,
-    queryClient,
-    onDeleted,
-    onClose,
-  ]);
+    const formData = new FormData();
+    formData.append("_action", "delete");
+    formData.append("postId", postId);
+    void fetch(window.location.pathname, {
+      method: "POST",
+      body: formData,
+      credentials: "same-origin",
+    });
+  }, [post.id, queryClient, onDeleted, onClose]);
 
   const hasQueueType = (
     p: Post | PostData | CombinedContent
@@ -555,36 +528,19 @@ export default function PostDetailsModal({
   })();
 
   const deleteForm = (
-    <deleteFetcher.Form
-      method="post"
-      onClick={(e) => e.stopPropagation()}
-      onSubmit={(event) => {
-        event.stopPropagation();
-        const formData = new FormData(event.currentTarget);
-        const action = formData.get("_action");
-        const submittedPostId = formData.get("postId");
-        if (action !== "delete" || typeof submittedPostId !== "string") return;
-        deleteSubmissionRef.current = {
-          action,
-          postId: submittedPostId,
-        };
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={isDeleting}
+      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDelete();
       }}
     >
-      <input type="hidden" name="postId" value={post.id} />
-      <input type="hidden" name="_action" value="delete" />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
-      >
-        {deleteFetcher.state !== "idle" &&
-        deleteFetcher.formData?.get("postId") === post.id
-          ? "Deleting..."
-          : getDeleteButtonLabel(type)}
-      </Button>
-    </deleteFetcher.Form>
+      {isDeleting ? "Deleting..." : getDeleteButtonLabel(type)}
+    </Button>
   );
 
   return (

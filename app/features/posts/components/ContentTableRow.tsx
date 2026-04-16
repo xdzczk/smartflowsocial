@@ -77,6 +77,7 @@ interface ContentTableRowProps {
   longformQuoteFetcher?: PostFetcher;
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
+  onBeforeDelete?: (postId: string) => void;
 }
 
 export function ContentTableRow({
@@ -98,6 +99,7 @@ export function ContentTableRow({
   longformQuoteFetcher,
   onScheduleRepost,
   onScheduleQuote,
+  onBeforeDelete,
 }: ContentTableRowProps) {
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
@@ -295,6 +297,7 @@ export function ContentTableRow({
           longformQuoteFetcher={longformQuoteFetcher}
           onScheduleRepost={onScheduleRepost}
           onScheduleQuote={onScheduleQuote}
+          onBeforeDelete={onBeforeDelete}
         />
       </td>
     </tr>
@@ -314,6 +317,7 @@ export function ContentRowActions({
   longformQuoteFetcher,
   onScheduleRepost,
   onScheduleQuote,
+  onBeforeDelete,
 }: {
   item: CombinedContent;
   type: "scheduled" | "draft" | "published";
@@ -330,6 +334,7 @@ export function ContentRowActions({
   longformQuoteFetcher?: PostFetcher;
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
+  onBeforeDelete?: (postId: string) => void;
 }) {
   const rootData = useRouteLoaderData("root") as
     | {
@@ -573,6 +578,7 @@ export function ContentRowActions({
             <DropdownMenuItem
               disabled={deleteFetcher.state !== "idle"}
               onSelect={() => {
+                onBeforeDelete?.(item.id);
                 const formData = new FormData();
                 formData.set("postId", item.id);
                 formData.set("_action", "moveToDraft");
@@ -653,6 +659,7 @@ export function ContentRowActions({
           disabled={deleteFetcher.state !== "idle"}
           className="text-destructive focus:text-destructive"
           onSelect={() => {
+            onBeforeDelete?.(item.id);
             const formData = new FormData();
             formData.set("postId", item.id);
             formData.set(

@@ -76,6 +76,8 @@ export interface ContentListCardProps {
   }>;
   /** Called when the actions menu opens or closes (e.g. so parent can elevate z-index for virtual lists) */
   onMenuOpenChange?: (open: boolean) => void;
+  /** Called synchronously before a delete is submitted so the parent can do optimistic cache removal */
+  onBeforeDelete?: (postId: string) => void;
 }
 
 // Card and dropdown mirror ContentTableRow actions; refactor into subcomponents in a follow-up
@@ -100,6 +102,7 @@ export function ContentListCard({
   onResumeDraft,
   draftsActionFetcher,
   onMenuOpenChange,
+  onBeforeDelete,
 }: ContentListCardProps) {
   const { dateLocale } = useFormattedDate();
   const rootData = useRouteLoaderData("root") as
@@ -533,6 +536,7 @@ export function ContentListCard({
             disabled={deleteFetcher.state !== "idle"}
             className="text-destructive w-full cursor-pointer disabled:opacity-50"
             onSelect={() => {
+              onBeforeDelete?.(item.id);
               const formData = new FormData();
               formData.set("postId", item.id);
               formData.set(

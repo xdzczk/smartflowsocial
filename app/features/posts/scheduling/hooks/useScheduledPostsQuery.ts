@@ -10,7 +10,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 import { combineContent } from "~/features/posts/combined";
 import type { PostDTO, LongFormPostDTO } from "~/features/posts/dtos";
@@ -424,40 +424,13 @@ export function useScheduledPostsInfiniteData() {
   const query = useScheduledPostsInfiniteQuery();
   const {
     data,
-    fetchNextPage: rawFetchNextPage,
+    fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isFetching,
     isLoading,
-    error,
   } = query;
   const loadedPages = data.pages.length;
-
-  // Temporary: track fetchNextPage results so we can diagnose page-2 loop
-  const fetchNextPage = useCallback(async () => {
-    const before = data.pages.length;
-    try {
-      const result = await rawFetchNextPage();
-      const after = result.data?.pages.length ?? -1;
-      console.warn("[inf-scroll] fetchNextPage settled", {
-        before,
-        after,
-        error: result.error?.message,
-      });
-    } catch (err) {
-      console.error("[inf-scroll] fetchNextPage threw", {
-        before,
-        err: err instanceof Error ? err.message : err,
-      });
-    }
-  }, [rawFetchNextPage, data.pages.length]);
-
-  // Log query-level errors that TanStack Query may surface
-  useEffect(() => {
-    if (error) {
-      console.error("[inf-scroll] infinite query error", error);
-    }
-  }, [error]);
 
   // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {

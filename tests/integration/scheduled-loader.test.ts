@@ -44,9 +44,9 @@ import { loader } from "~/routes/dashboard.scheduled";
 
 /** Remix resource `fetch()` so the loader returns JSON (not deferred). */
 const SCHEDULED_DATA_URL =
-  "http://localhost:3000/dashboard/scheduled?_data=routes/dashboard.scheduled";
+  "http://localhost:3000/dashboard/scheduled?_data=routes/dashboard.scheduled&_loader=json";
 const SCHEDULED_QUEUE_DATA_URL =
-  "http://localhost:3000/dashboard/scheduled/posts?_data=routes/dashboard.scheduled.$queueType";
+  "http://localhost:3000/dashboard/scheduled/posts?_data=routes/dashboard.scheduled.$queueType&_loader=json";
 
 describe("Scheduled Posts Loader Integration", () => {
   beforeEach(() => {

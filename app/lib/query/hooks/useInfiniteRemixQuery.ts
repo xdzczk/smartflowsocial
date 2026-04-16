@@ -70,32 +70,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     if (capped && allPages.length >= maxPages) {
       return undefined;
     }
-    const next = getNextPageParam(lastPage, allPages);
-    if (typeof window !== "undefined") {
-      const raw = lastPage as Record<string, unknown>;
-      if (typeof raw["pagination"] === "object") {
-        const pg =
-          (raw["pagination"] as {
-            pages?: number;
-            total?: number;
-          } | null) ?? {};
-        const lp =
-          (raw["longformPagination"] as {
-            pages?: number;
-            total?: number;
-          } | null) ?? {};
-        // Temporary trace: remove once infinite-scroll is stable
-        console.warn("[inf-scroll] getNextPageParam", {
-          loadedPages: allPages.length,
-          postPages: pg.pages,
-          postTotal: pg.total,
-          lfPages: lp.pages,
-          lfTotal: lp.total,
-          next,
-        });
-      }
-    }
-    return next;
+    return getNextPageParam(lastPage, allPages);
   };
 
   // Mark initial data as fresh *now* so TanStack Query respects staleTime.
@@ -126,29 +101,27 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // CRITICAL: Add _data parameter to get JSON response instead of HTML
-      // Remix returns HTML by default, but _data parameter tells it to return JSON
-      // The route ID format matches the file structure:
-      // /dashboard -> routes/dashboard
-      // /dashboard/scheduled -> routes/dashboard.scheduled
-      // /dashboard/published -> routes/dashboard.published
+      // Two params are needed for Remix to return plain JSON from a loader:
+      //   _data=<routeId>  – tells Remix to call only the loader (not render HTML)
+      //   _loader=json     – our custom flag; the loader checks this via
+      //                      isRemixResourceRequest() and returns json() instead
+      //                      of defer().  Remix strips _data before the loader
+      //                      sees the Request, so _loader is the only reliable
+      //                      signal the loader can inspect.
       if (typeof window !== "undefined") {
         try {
-          // Handle both absolute and relative URLs
           const baseUrl = url.startsWith("http")
             ? url
             : window.location.origin + url;
           const urlObj = new URL(baseUrl);
 
-          // Only add _data if not already present
           if (!urlObj.searchParams.has("_data")) {
             const routeId = pathnameToRemixDataRouteId(urlObj.pathname);
             urlObj.searchParams.set("_data", routeId);
-            // Return relative URL (pathname + search)
-            url = urlObj.pathname + urlObj.search;
           }
+          urlObj.searchParams.set("_loader", "json");
+          url = urlObj.pathname + urlObj.search;
         } catch {
-          // If URL parsing fails, continue (might be a relative URL)
           // Silently continue - URL might still work without _data parameter
         }
       }
@@ -165,33 +138,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const text = await response.text();
-      let parsed: TData;
-      try {
-        parsed = JSON.parse(text) as TData;
-      } catch {
-        console.error("[inf-scroll] queryFn JSON parse failed", {
-          pageParam,
-          status: response.status,
-          contentType: response.headers.get("content-type"),
-          bodyPreview: text.slice(0, 200),
-        });
-        throw new Error(`Invalid JSON from loader (page ${String(pageParam)})`);
-      }
-
-      if (typeof window !== "undefined") {
-        const raw = parsed as Record<string, unknown>;
-        console.warn("[inf-scroll] queryFn resolved", {
-          pageParam,
-          hasPosts: Array.isArray(raw["posts"]),
-          postCount: Array.isArray(raw["posts"])
-            ? (raw["posts"] as unknown[]).length
-            : 0,
-          hasPagination: typeof raw["pagination"] === "object",
-        });
-      }
-
-      return parsed;
+      return (await response.json()) as TData;
     },
     initialPageParam: 1,
     getNextPageParam: wrappedGetNextPageParam,

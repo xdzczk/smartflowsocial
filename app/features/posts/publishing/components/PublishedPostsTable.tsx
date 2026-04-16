@@ -128,6 +128,7 @@ interface PublishedPostsTableProps {
   sentinelRef?: React.Ref<HTMLDivElement | null>;
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
+  onBeforeDelete?: (postId: string) => void;
 }
 
 export default function PublishedPostsTable({
@@ -151,6 +152,7 @@ export default function PublishedPostsTable({
   sentinelRef,
   isFetchingNextPage = false,
   onScrollContainerReady,
+  onBeforeDelete,
 }: PublishedPostsTableProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -532,34 +534,25 @@ export default function PublishedPostsTable({
                             </>
                           ) : null}
                           <DropdownMenuSeparator />
-                          <deleteFetcher.Form method="post">
-                            <input
-                              type="hidden"
-                              name="postId"
-                              value={post.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="_action"
-                              value="delete"
-                            />
-                            <DropdownMenuItem asChild>
-                              <button
-                                type="submit"
-                                disabled={
-                                  deleteFetcher.state !== "idle" ||
-                                  bulkDeleteFetcher.state !== "idle"
-                                }
-                                className="text-destructive focus:text-destructive"
-                              >
-                                {deleteFetcher.state !== "idle" &&
-                                deleteFetcher.formData?.get("postId") ===
-                                  post.id
-                                  ? "Deleting..."
-                                  : "Delete"}
-                              </button>
-                            </DropdownMenuItem>
-                          </deleteFetcher.Form>
+                          <DropdownMenuItem
+                            disabled={
+                              deleteFetcher.state !== "idle" ||
+                              bulkDeleteFetcher.state !== "idle"
+                            }
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() => {
+                              onBeforeDelete?.(post.id);
+                              const fd = new FormData();
+                              fd.set("postId", post.id);
+                              fd.set("_action", "delete");
+                              deleteFetcher.submit(fd, { method: "post" });
+                            }}
+                          >
+                            {deleteFetcher.state !== "idle" &&
+                            deleteFetcher.formData?.get("postId") === post.id
+                              ? "Deleting..."
+                              : "Delete"}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -670,6 +663,7 @@ export default function PublishedPostsTable({
                             individualRepostFetcher={individualRepostFetcher}
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
+                            onBeforeDelete={onBeforeDelete}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -733,6 +727,7 @@ export default function PublishedPostsTable({
                       individualRepostFetcher={individualRepostFetcher}
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
+                      onBeforeDelete={onBeforeDelete}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

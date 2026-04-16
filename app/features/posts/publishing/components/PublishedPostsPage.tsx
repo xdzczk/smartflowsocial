@@ -495,6 +495,9 @@ export default function PublishedPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             onResetListFilters={resetListFilters}
+            onBeforeDelete={(postId) =>
+              optimisticallyRemovePublishedItems([postId])
+            }
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <>
@@ -552,6 +555,9 @@ export default function PublishedPostsPage() {
               sentinelRef={isMobile ? sentinelRef : undefined}
               isFetchingNextPage={isFetchingNextPage}
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+              onBeforeDelete={(postId) =>
+                optimisticallyRemovePublishedItems([postId])
+              }
             />
           </>
         ) : (

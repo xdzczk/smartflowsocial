@@ -556,6 +556,9 @@ export default function ScheduledPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             onResetListFilters={resetListFilters}
+            onBeforeDelete={(postId) =>
+              optimisticallyRemoveScheduledItems([postId])
+            }
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
