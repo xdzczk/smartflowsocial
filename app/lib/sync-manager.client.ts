@@ -5,7 +5,10 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
-import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 type SyncState = "synced" | "syncing" | "needs_attention";
 
@@ -80,10 +83,14 @@ export async function triggerForegroundSync(
         predicate: skipInfiniteQueries,
       }),
       queryClient.invalidateQueries({ queryKey: ["post"] }),
-      // Queue-related queries
       queryClient.invalidateQueries({ queryKey: ["queues"] }),
-      // User-related queries (for signer status)
       queryClient.invalidateQueries({ queryKey: ["user"] }),
+    ]);
+
+    removeStaleInfiniteQueries(queryClient, [
+      [POSTS_QUERY_KEY],
+      [SCHEDULED_POSTS_QUERY_KEY],
+      ["published-posts"],
     ]);
 
     // Check if there are any posts with failures that need attention

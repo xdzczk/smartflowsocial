@@ -8,7 +8,10 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { calendarKeys } from "~/features/posts/calendar";
 import { publishedPostsKeys } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
-import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -35,6 +38,12 @@ export function useInvalidatePostQueries() {
     });
     void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
     void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
+
+    removeStaleInfiniteQueries(queryClient, [
+      publishedPostsKeys.all,
+      dashboardKeys.all,
+      scheduledPostsKeys.all,
+    ]);
   };
 }
 

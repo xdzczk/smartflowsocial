@@ -364,16 +364,28 @@ export default function PublishedPostsPage() {
     );
   }
 
-  // Enhanced bulk delete with optimistic updates
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
     const postIds = Array.from(selectedPosts);
+    const mixedItemData =
+      currentTab === "all"
+        ? allContent
+            .filter((item) => selectedPosts.has(item.id))
+            .map((item) => ({ id: item.id, type: item.type }))
+        : undefined;
 
-    bulkDeleteMutation.mutate(postIds, {
-      onError: () => {
-        originalHandleBulkDelete();
-      },
-    });
+    bulkDeleteMutation.mutate(
+      { postIds, mixedItemData },
+      {
+        onSuccess: () => {
+          setSelectedPosts(new Set());
+          refreshPostViews();
+        },
+        onError: () => {
+          originalHandleBulkDelete();
+        },
+      }
+    );
   };
 
   return (

@@ -238,50 +238,8 @@ export function useScheduledState({
     if (selectedPosts.size === 0) return;
 
     const postIds = Array.from(selectedPosts);
-
-    // Optimistically remove posts from cache
-    queryClient.setQueryData(
-      scheduledPostsKeys.list(undefined, currentTab),
-      (old: unknown) => {
-        if (!old || typeof old !== "object" || !("pages" in old)) return old;
-        const infiniteData = old as { pages: unknown[]; pageParams: unknown[] };
-        return {
-          ...infiniteData,
-          pages: infiniteData.pages.map((page) => {
-            if (!page || typeof page !== "object") return page;
-            const pageObj = page as Record<string, unknown>;
-            const updated: Record<string, unknown> = { ...pageObj };
-
-            // Remove deleted posts from posts array
-            if (Array.isArray(pageObj["posts"])) {
-              updated["posts"] = (pageObj["posts"] as unknown[]).filter(
-                (post) =>
-                  !post ||
-                  typeof post !== "object" ||
-                  !("id" in post) ||
-                  typeof post.id !== "string" ||
-                  !postIds.includes(post.id)
-              );
-            }
-
-            // Remove deleted posts from longformPosts array
-            if (Array.isArray(pageObj["longformPosts"])) {
-              updated["longformPosts"] = (
-                pageObj["longformPosts"] as unknown[]
-              ).filter(
-                (post) =>
-                  !post ||
-                  typeof post !== "object" ||
-                  !("id" in post) ||
-                  typeof post.id !== "string" ||
-                  !postIds.includes(post.id)
-              );
-            }
-
-            return updated;
-          }),
-        };
-      }
+    queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+      pruneScheduledQueryData(old, new Set(postIds))
     );
 
     // For All tab, we need to handle mixed content types

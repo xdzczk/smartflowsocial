@@ -40,6 +40,13 @@ import {
 import type { UserData } from "~/lib/validation/user-data";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { prunePublishedPostsFromAllQueries } from "./usePublishedPostsCache";
+import {
+  ACTION_BULK_DELETE,
+  ACTION_BULK_DELETE_LONGFORM,
+  ACTION_BULK_DELETE_MIXED,
+} from "./usePublishedPostsConstants";
+
 // PublishedPostsLoaderData is now exported from schemas
 
 /**
@@ -701,98 +708,71 @@ export function usePublishedPostsInfiniteData() {
   };
 }
 
+/** Variables for {@link useBulkDeletePostsMutation} (matches `publishedPostsAction` bulk handlers). */
+export interface PublishedBulkDeleteMutationInput {
+  postIds: string[];
+  /**
+   * When the Published "all" tab is active, the server expects `bulkDeleteMixed` with typed rows.
+   */
+  mixedItemData?: ReadonlyArray<{ id: string; type: "post" | "longform" }>;
+}
+
 /**
  * Mutation hook for bulk delete with optimistic updates
  */
 export function useBulkDeletePostsMutation() {
   const queryClient = useQueryClient();
-  const params = useParams();
   const [searchParams] = useSearchParams();
-  const rawQueue =
-    params["queueType"] ?? searchParams.get("queueType") ?? "all";
-  const queueType =
-    typeof rawQueue === "string" && rawQueue.trim() !== "" ? rawQueue : "all";
   const currentTab = searchParams.get("tab") ?? "all";
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   return useMutation({
-    mutationFn: async (postIds: string[]) => {
+    mutationFn: async (input: PublishedBulkDeleteMutationInput) => {
+      const { postIds, mixedItemData } = input;
+      if (postIds.length === 0) {
+        throw new Error("No posts selected");
+      }
+
       const formData = new FormData();
-      formData.append("_action", "bulk-delete");
-      postIds.forEach((id) => {
-        formData.append("postIds", id);
-      });
+      if (mixedItemData && mixedItemData.length > 0) {
+        formData.append("_action", ACTION_BULK_DELETE_MIXED);
+        formData.append("itemData", JSON.stringify(mixedItemData));
+      } else if (currentTab === "longform") {
+        formData.append("_action", ACTION_BULK_DELETE_LONGFORM);
+        formData.append("postIds", JSON.stringify(postIds));
+      } else {
+        formData.append("_action", ACTION_BULK_DELETE);
+        formData.append("postIds", JSON.stringify(postIds));
+      }
 
       const response = await fetch("/dashboard/published", {
         method: "POST",
         body: formData,
+        credentials: "same-origin",
       });
 
       if (!response.ok) {
         throw new Error("Failed to delete posts");
       }
 
-      return response.json();
+      return response.json() as Promise<unknown>;
     },
-    onMutate: async (postIds) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: publishedPostsKeys.list(queueType, currentTab, page),
+    onMutate: async (input) => {
+      const { postIds } = input;
+      await queryClient.cancelQueries({ queryKey: publishedPostsKeys.all });
+      const previousEntries = queryClient.getQueriesData({
+        queryKey: publishedPostsKeys.all,
       });
-
-      // Snapshot previous value
-      const previousData = queryClient.getQueryData<PublishedPostsLoaderData>(
-        publishedPostsKeys.list(queueType, currentTab, page)
-      );
-
-      // Optimistically update
-      if (previousData) {
-        queryClient.setQueryData<PublishedPostsLoaderData>(
-          publishedPostsKeys.list(queueType, currentTab, page),
-          (old) => {
-            if (!old) return old;
-            return {
-              ...old,
-              posts:
-                "posts" in old && Array.isArray(old.posts)
-                  ? old.posts.filter(
-                      (p: unknown) =>
-                        p &&
-                        typeof p === "object" &&
-                        "id" in p &&
-                        typeof p.id === "string" &&
-                        !postIds.includes(p.id)
-                    )
-                  : [],
-              allContent:
-                "allContent" in old && Array.isArray(old.allContent)
-                  ? old.allContent.filter(
-                      (c: unknown) =>
-                        c &&
-                        typeof c === "object" &&
-                        "id" in c &&
-                        typeof c.id === "string" &&
-                        !postIds.includes(c.id)
-                    )
-                  : [],
-            };
-          }
-        );
-      }
-
-      return { previousData };
+      prunePublishedPostsFromAllQueries(queryClient, postIds);
+      return { previousEntries };
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          publishedPostsKeys.list(queueType, currentTab, page),
-          context.previousData
-        );
+    onError: (_err, _variables, context) => {
+      if (context?.previousEntries) {
+        for (const [queryKey, data] of context.previousEntries) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
     },
     onSettled: () => {
-      // Refetch after mutation
       void queryClient.invalidateQueries({
         queryKey: publishedPostsKeys.lists(),
       });

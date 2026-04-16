@@ -28,9 +28,8 @@ import {
 } from "~/lib/temporal";
 
 import {
-  isPublishedPostsCacheObject,
   parseBulkDeleteIds,
-  prunePublishedPageData,
+  prunePublishedPostsFromAllQueries,
 } from "./usePublishedPostsCache";
 import {
   ACTION_BULK_DELETE,
@@ -46,7 +45,6 @@ import {
   STORAGE_KEY_REPOST_DATA,
   STORAGE_KEY_SCHEDULED_REPOST_DATA,
 } from "./usePublishedPostsConstants";
-import { publishedPostsKeys } from "./usePublishedPostsQuery";
 import type {
   FetcherErrorResponse,
   QuotePostData,
@@ -151,25 +149,7 @@ export function usePublishedPosts({
 
   const optimisticallyRemovePublishedItems = useCallback(
     (ids: string[]) => {
-      if (ids.length === 0) return;
-      const deletedIds = new Set(ids);
-      queryClient.setQueriesData(
-        { queryKey: publishedPostsKeys.all },
-        (old) => {
-          if (!isPublishedPostsCacheObject(old)) {
-            return old;
-          }
-          if (Array.isArray(old["pages"])) {
-            return {
-              ...old,
-              pages: (old["pages"] as unknown[]).map((page) =>
-                prunePublishedPageData(page, deletedIds)
-              ),
-            };
-          }
-          return prunePublishedPageData(old, deletedIds);
-        }
-      );
+      prunePublishedPostsFromAllQueries(queryClient, ids);
     },
     [queryClient]
   );
@@ -213,6 +193,8 @@ export function usePublishedPosts({
 
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
+
+    optimisticallyRemovePublishedItems(Array.from(selectedPosts));
 
     // For All tab, we need to handle mixed content types
     if (currentTab === "all") {

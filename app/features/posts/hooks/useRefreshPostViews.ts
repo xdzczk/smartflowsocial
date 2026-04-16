@@ -4,7 +4,10 @@ import { useCallback } from "react";
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
 import { publishedPostsKeys } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
-import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -29,6 +32,8 @@ export function refreshPostViews(queryClient: QueryClient) {
       predicate: skipInfiniteQueries,
     });
   });
+
+  removeStaleInfiniteQueries(queryClient, POST_VIEW_QUERY_KEYS);
 }
 
 /**
