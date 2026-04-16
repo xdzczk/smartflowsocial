@@ -12,6 +12,7 @@ import type {
   PostData,
 } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
@@ -287,10 +288,14 @@ export function useScheduledState({
   // Invalidate queries when delete succeeds
   useEffect(() => {
     if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
-      // Invalidate both scheduled and dashboard queries to ensure consistency
-      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      // Clear selection after successful delete
+      void queryClient.invalidateQueries({
+        queryKey: scheduledPostsKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       setSelectedPosts(new Set());
     }
   }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
@@ -299,9 +304,14 @@ export function useScheduledState({
   useEffect(() => {
     /* eslint-disable @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      // When moving to drafts, refresh drafts list
+      void queryClient.invalidateQueries({
+        queryKey: scheduledPostsKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       if (
         typeof deleteFetcher.data === "object" &&
         deleteFetcher.data !== null &&

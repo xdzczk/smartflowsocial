@@ -12,6 +12,7 @@ interface UseInfiniteScrollSentinelOptions {
   isMobile: boolean;
   hasNextPage: boolean | undefined;
   isFetchingNextPage: boolean;
+  isFetching?: boolean;
   loadedPageCount?: number;
   fetchNextPage: () => void;
 }
@@ -20,6 +21,7 @@ export function useInfiniteScrollSentinel({
   isMobile,
   hasNextPage,
   isFetchingNextPage,
+  isFetching,
   loadedPageCount,
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
@@ -47,9 +49,11 @@ export function useInfiniteScrollSentinel({
       rootMargin,
     });
 
+  const anyFetching = isFetchingNextPage || (isFetching ?? false);
+
   // Re-arm after a page is successfully appended (or reset on filter change).
   useEffect(() => {
-    if (isFetchingNextPage) return;
+    if (anyFetching) return;
 
     const previous = lastLoadedPageCountRef.current ?? 0;
     const current =
@@ -59,7 +63,7 @@ export function useInfiniteScrollSentinel({
       lastLoadedPageCountRef.current = current;
       fetchInFlightRef.current = false;
     }
-  }, [isFetchingNextPage, loadedPageCount]);
+  }, [anyFetching, loadedPageCount]);
 
   // Reset when both sentinels leave the viewport (user scrolled back up).
   useEffect(() => {
@@ -69,11 +73,13 @@ export function useInfiniteScrollSentinel({
   }, [isIntersecting, isPrefetchIntersecting]);
 
   // Consolidated trigger: fires at most once per page transition.
+  // Guard with both isFetchingNextPage AND isFetching to avoid calling
+  // fetchNextPage while a background refetch is resetting pages from page 1.
   useEffect(() => {
     if (fetchInFlightRef.current) return;
 
     const visible = isIntersecting || isPrefetchIntersecting;
-    if (visible && hasNextPage && !isFetchingNextPage) {
+    if (visible && hasNextPage && !anyFetching) {
       fetchInFlightRef.current = true;
       fetchNextPage();
     }
@@ -81,7 +87,7 @@ export function useInfiniteScrollSentinel({
     isIntersecting,
     isPrefetchIntersecting,
     hasNextPage,
-    isFetchingNextPage,
+    anyFetching,
     fetchNextPage,
   ]);
 

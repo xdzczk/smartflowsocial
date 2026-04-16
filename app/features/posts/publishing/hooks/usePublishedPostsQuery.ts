@@ -387,6 +387,7 @@ export function usePublishedPostsData() {
  */
 function createEmptyPublishedPostsData<TFetchNextPage>(
   isLoading: boolean,
+  isFetching: boolean,
   isFetchingNextPage: boolean,
   hasNextPage: boolean,
   fetchNextPage: TFetchNextPage
@@ -396,6 +397,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     longformPosts: [] as LongFormPostData[],
     allContent: [] as CombinedContent[],
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -492,8 +494,14 @@ function processPagination(paginationRaw: unknown) {
  */
 export function usePublishedPostsInfiniteData() {
   const query = usePublishedPostsInfiniteQuery();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isLoading,
+  } = query;
   const loadedPages = data.pages.length;
 
   // Memoize the flattened data to prevent unnecessary recalculations
@@ -597,6 +605,7 @@ export function usePublishedPostsInfiniteData() {
   if (data.pages.length === 0) {
     return createEmptyPublishedPostsData(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       false,
       fetchNextPage
@@ -683,6 +692,7 @@ export function usePublishedPostsInfiniteData() {
     totalLongformCount,
     totalContentCount,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,

@@ -361,6 +361,7 @@ export function useScheduledPostsData() {
 
 function emptyScheduledPostsInfiniteResult(
   isLoading: boolean,
+  isFetching: boolean,
   isFetchingNextPage: boolean,
   fetchNextPage: () => void
 ) {
@@ -385,6 +386,7 @@ function emptyScheduledPostsInfiniteResult(
       contestActivationStatus: string;
     }>,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage: false,
     fetchNextPage,
@@ -420,14 +422,21 @@ function parsePagePosts(pageData: Record<string, unknown>) {
  */
 export function useScheduledPostsInfiniteData() {
   const query = useScheduledPostsInfiniteQuery();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isLoading,
+  } = query;
   const loadedPages = data.pages.length;
 
   // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
     return emptyScheduledPostsInfiniteResult(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       () => {
         void fetchNextPage();
@@ -463,6 +472,7 @@ export function useScheduledPostsInfiniteData() {
   if (!lastPage) {
     return emptyScheduledPostsInfiniteResult(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       () => {
         void fetchNextPage();
@@ -628,6 +638,7 @@ export function useScheduledPostsInfiniteData() {
     totalContentCount,
     scheduledContestLaunches,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,

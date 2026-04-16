@@ -89,6 +89,7 @@ export default function ScheduledPostsPage() {
     totalLongformCount,
     scheduledContestLaunches,
     isLoading: _isDataLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -172,6 +173,7 @@ export default function ScheduledPostsPage() {
       isMobile,
       hasNextPage,
       isFetchingNextPage,
+      isFetching,
       loadedPageCount: loadedPages,
       fetchNextPage: stableFetchNextPage,
     });

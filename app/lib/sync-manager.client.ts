@@ -5,6 +5,8 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+
 type SyncState = "synced" | "syncing" | "needs_attention";
 
 const POSTS_QUERY_KEY = "posts";
@@ -64,32 +66,18 @@ export async function triggerForegroundSync(
   setSyncState("syncing");
 
   try {
-    // Skip infinite queries: invalidating them restarts from page 1 which
-    // races with fetchNextPage and causes duplicate/stuck page requests.
-    const skipInfinite = (query: { state: { data: unknown } }) => {
-      const d = query.state.data;
-      return !(
-        d != null &&
-        typeof d === "object" &&
-        "pages" in d &&
-        Array.isArray((d as { pages?: unknown }).pages)
-      );
-    };
-
-    // Invalidate queries that need refreshing on app resume
     await Promise.all([
-      // Post-related queries
       queryClient.invalidateQueries({
         queryKey: [POSTS_QUERY_KEY],
-        predicate: skipInfinite,
+        predicate: skipInfiniteQueries,
       }),
       queryClient.invalidateQueries({
         queryKey: [SCHEDULED_POSTS_QUERY_KEY],
-        predicate: skipInfinite,
+        predicate: skipInfiniteQueries,
       }),
       queryClient.invalidateQueries({
         queryKey: ["published-posts"],
-        predicate: skipInfinite,
+        predicate: skipInfiniteQueries,
       }),
       queryClient.invalidateQueries({ queryKey: ["post"] }),
       // Queue-related queries

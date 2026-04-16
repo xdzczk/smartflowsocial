@@ -49,6 +49,7 @@ import {
   INLINE_ICON_STROKE,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
@@ -176,9 +177,13 @@ export function ScheduledPostsTable({
         }
 
         // Invalidate both dashboard and scheduled posts queries
-        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        void queryClient.invalidateQueries({
+          queryKey: dashboardKeys.all,
+          predicate: skipInfiniteQueries,
+        });
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
+          predicate: skipInfiniteQueries,
         });
       }
     }

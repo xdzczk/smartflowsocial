@@ -21,6 +21,7 @@ import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { fromISOString } from "~/lib/temporal";
 
 import type {
@@ -185,9 +186,13 @@ export default function AllContentListing({
     if (deleteFetcher.state === "idle" && deleteFetcher.data) {
       const data = deleteFetcher.data;
       if (typeof data === "object" && "success" in data && data.success) {
-        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        void queryClient.invalidateQueries({
+          queryKey: dashboardKeys.all,
+          predicate: skipInfiniteQueries,
+        });
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
+          predicate: skipInfiniteQueries,
         });
         if (type === "draft" || ("moved" in data && data.moved)) {
           void queryClient.invalidateQueries({ queryKey: draftsKeys.all });

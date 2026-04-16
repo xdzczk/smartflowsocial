@@ -82,6 +82,7 @@ export default function PublishedPostsPage() {
     totalRepostsCount,
     totalLongformCount,
     isLoading: _isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -155,6 +156,7 @@ export default function PublishedPostsPage() {
       isMobile,
       hasNextPage,
       isFetchingNextPage,
+      isFetching,
       loadedPageCount: loadedPages,
       fetchNextPage: stableFetchNextPage,
     });

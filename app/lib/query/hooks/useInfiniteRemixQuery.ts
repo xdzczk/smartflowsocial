@@ -44,7 +44,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   staleTime,
   buildUrl,
   maxPages,
-  placeholderData,
   refetchInterval,
   refetchIntervalInBackground,
 }: {
@@ -55,9 +54,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   staleTime?: number;
   buildUrl?: (pageParam: number) => string;
   maxPages?: number;
-  placeholderData?: (
-    previousData: { pages: TData[]; pageParams: number[] } | undefined
-  ) => { pages: TData[]; pageParams: number[] } | undefined;
   refetchInterval?: number | false;
   refetchIntervalInBackground?: boolean;
 }) {
@@ -160,8 +156,8 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     staleTime,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: false,
     ...(capped ? { maxPages } : {}),
-    placeholderData: placeholderData ?? ((previousData) => previousData),
     refetchInterval,
     refetchIntervalInBackground,
   });

@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
 import { publishedPostsKeys } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -16,27 +17,16 @@ const POST_VIEW_QUERY_KEYS = [
   calendarKeys.all,
 ] as const;
 
-function isInfiniteQueryData(data: unknown): boolean {
-  return (
-    data != null &&
-    typeof data === "object" &&
-    "pages" in data &&
-    Array.isArray((data as { pages?: unknown }).pages)
-  );
-}
-
 export function refreshPostViews(queryClient: QueryClient) {
   POST_VIEW_QUERY_KEYS.forEach((queryKey) => {
-    // Skip active infinite queries – invalidating them restarts the page-1
-    // refetch which races with fetchNextPage and causes duplicate requests.
     void queryClient.invalidateQueries({
       queryKey,
-      predicate: (query) => !isInfiniteQueryData(query.state.data),
+      predicate: skipInfiniteQueries,
     });
     void queryClient.refetchQueries({
       queryKey,
       type: "active",
-      predicate: (query) => !isInfiniteQueryData(query.state.data),
+      predicate: skipInfiniteQueries,
     });
   });
 }
