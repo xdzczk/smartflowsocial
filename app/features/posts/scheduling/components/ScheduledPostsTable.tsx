@@ -39,6 +39,7 @@ import {
   PUBLISHING_TABLE_ROW_CLASS,
 } from "~/features/posts/components/publishing-suite/constants";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
@@ -198,10 +199,7 @@ export function ScheduledPostsTable({
         queryKey: dashboardKeys.all,
         predicate: skipInfiniteQueries,
       });
-      void queryClient.invalidateQueries({
-        queryKey: scheduledPostsKeys.all,
-        predicate: skipInfiniteQueries,
-      });
+      invalidateDependentCaches(queryClient);
       lastDeleteSubmissionRef.current = null;
     } else if (previousState !== "idle" && currentState === "idle") {
       lastDeleteSubmissionRef.current = null;

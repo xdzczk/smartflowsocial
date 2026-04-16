@@ -11,6 +11,7 @@ import {
 } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { MoveScheduledLongFormToDraftUseCase } from "~/features/posts/longform/index.server";
 import { findPostByCreationIdempotencyKey } from "~/features/posts/repositories/post-queries-data.server";
+import { cascadeDeleteStandaloneScheduledDependents } from "~/features/posts/repositories/scheduled-standalone-dependents-cascade.server";
 import {
   createPostWithOutbox,
   deleteLongFormPost,
@@ -88,17 +89,23 @@ export async function handleScheduledAction(
       rootPostId: result.data.postId,
       userId,
     });
+    await cascadeDeleteStandaloneScheduledDependents(
+      result.data.postId,
+      userId
+    );
     const deletedPost = await deletePost({ id: result.data.postId, userId });
-    // Return success even if post was already deleted (idempotent operation)
     return { success: true, deleted: deletedPost !== null };
   }
 
   if (_action === "deleteLongForm") {
+    await cascadeDeleteStandaloneScheduledDependents(
+      result.data.postId,
+      userId
+    );
     const deletedPost = await deleteLongFormPost({
       id: result.data.postId,
       userId,
     });
-    // Return success even if post was already deleted (idempotent operation)
     return { success: true, deleted: deletedPost !== null };
   }
 
@@ -106,6 +113,7 @@ export async function handleScheduledAction(
     const results = await Promise.all(
       result.data.postIds.map(async (id: string) => {
         await cascadeDeleteAttachedFollowups({ rootPostId: id, userId });
+        await cascadeDeleteStandaloneScheduledDependents(id, userId);
         return deletePost({ id, userId });
       })
     );
@@ -115,9 +123,10 @@ export async function handleScheduledAction(
 
   if (_action === "bulkDeleteLongForm") {
     const results = await Promise.all(
-      result.data.postIds.map((id: string) =>
-        deleteLongFormPost({ id, userId })
-      )
+      result.data.postIds.map(async (id: string) => {
+        await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        return deleteLongFormPost({ id, userId });
+      })
     );
     const deletedCount = results.filter((post) => post !== null).length;
     return { success: true, deletedCount };
@@ -125,14 +134,15 @@ export async function handleScheduledAction(
 
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
   const promises = result.data.itemData.map((item) => {
-    if (item.type === "post") {
-      return (async () => {
+    return (async () => {
+      await cascadeDeleteStandaloneScheduledDependents(item.id, userId);
+      if (item.type === "post") {
         await cascadeDeleteAttachedFollowups({ rootPostId: item.id, userId });
         return deletePost({ id: item.id, userId });
-      })();
-    } else {
-      return deleteLongFormPost({ id: item.id, userId });
-    }
+      } else {
+        return deleteLongFormPost({ id: item.id, userId });
+      }
+    })();
   });
   const results = await Promise.all(promises);
   const deletedCount = results.filter((post) => post !== null).length;

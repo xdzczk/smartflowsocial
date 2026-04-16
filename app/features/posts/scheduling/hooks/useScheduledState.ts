@@ -5,7 +5,10 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
-import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import {
+  invalidateDependentCaches,
+  useRefreshPostViews,
+} from "~/features/posts/hooks/useRefreshPostViews";
 import type {
   CombinedContent,
   LongFormPostData,
@@ -287,10 +290,7 @@ export function useScheduledState({
       (previousState !== "idle" || dataChanged) &&
       didFetcherMutationSucceed(bulkDeleteFetcher.data)
     ) {
-      void queryClient.invalidateQueries({
-        queryKey: scheduledPostsKeys.all,
-        predicate: skipInfiniteQueries,
-      });
+      invalidateDependentCaches(queryClient);
       void queryClient.invalidateQueries({
         queryKey: dashboardKeys.all,
         predicate: skipInfiniteQueries,
@@ -334,10 +334,7 @@ export function useScheduledState({
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
         pruneScheduledQueryData(old, new Set([submission.postId]))
       );
-      void queryClient.invalidateQueries({
-        queryKey: scheduledPostsKeys.all,
-        predicate: skipInfiniteQueries,
-      });
+      invalidateDependentCaches(queryClient);
       void queryClient.invalidateQueries({
         queryKey: dashboardKeys.all,
         predicate: skipInfiniteQueries,
