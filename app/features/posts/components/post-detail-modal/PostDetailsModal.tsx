@@ -115,11 +115,13 @@ export default function PostDetailsModal({
   );
 
   useEffect(() => {
-    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
-    const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-    if (!didDeleteActionSucceed(data)) return;
+    if (deleteFetcher.state !== "idle") return;
     const formData = deleteFetcher.formData as FormData | undefined;
     if (formData?.get("_action") !== "delete") return;
+    if (deleteFetcher.data) {
+      const data = deleteFetcher.data as { success?: boolean; error?: unknown };
+      if (!didDeleteActionSucceed(data)) return;
+    }
     const submittedPostId = formData.get("postId");
     const deletedPostId =
       typeof submittedPostId === "string" && submittedPostId.length > 0

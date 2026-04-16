@@ -17,7 +17,11 @@ const fetcherFormData = new FormData();
 fetcherFormData.set("_action", "deleteLongForm");
 fetcherFormData.set("postId", "lf-1");
 
-const fetcherState = {
+const fetcherState: {
+  state: "idle";
+  data: Record<string, unknown> | undefined;
+  formData: FormData;
+} = {
   state: "idle",
   data: {},
   formData: fetcherFormData,
@@ -190,5 +194,55 @@ describe("LongFormDetailsModal delete behavior", () => {
       expect(onDeleted).toHaveBeenCalledWith("lf-1");
       expect(onClose).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("invokes onDeleted and onClose when delete response has no payload", async () => {
+    fetcherState.data = undefined;
+    const onClose = vi.fn();
+    const onDeleted = vi.fn();
+    const post: React.ComponentProps<typeof LongFormDetailsModal>["post"] = {
+      id: "lf-1",
+      userId: "user-1",
+      title: "Longform",
+      content: "Body",
+      summary: null,
+      image: null,
+      tags: [],
+      status: "DRAFT",
+      currentState: "DRAFT",
+      queueTypeId: null,
+      hashTagPresetId: null,
+      createdAt: new Date("2026-04-15T10:00:00.000Z"),
+      updatedAt: new Date("2026-04-15T10:00:00.000Z"),
+      publishedAt: new Date("2026-04-15T10:00:00.000Z"),
+      scheduledAtUtc: null,
+      nominalScheduledAtUtc: null,
+      postedAt: null,
+      creationIdempotencyKey: null,
+      enqueueIdempotencyKey: null,
+      publishAttemptId: null,
+      publishingLockId: null,
+      publishingLockExpiresAt: null,
+      publishingStartedAt: null,
+      queueType: null,
+      signedEvent: null,
+      nostrEventId: "event-1",
+    };
+
+    render(
+      <LongFormDetailsModal
+        post={post}
+        onClose={onClose}
+        onDeleted={onDeleted}
+        type="published"
+      />
+    );
+
+    await waitFor(() => {
+      expect(onDeleted).toHaveBeenCalledWith("lf-1");
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    fetcherState.data = {};
   });
 });

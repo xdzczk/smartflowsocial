@@ -21,10 +21,30 @@ import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import {
-  DeferredListPageSkeleton,
-  type DeferredListPageSkeletonVariant,
-} from "~/components/skeletons/DeferredListPageSkeleton";
+  AdminAnalyticsPageSkeleton,
+  AdminOperationsPageSkeleton,
+  AdminUsersPageSkeleton,
+  BroadcastAudiencesPageSkeleton,
+  BroadcastDetailPageSkeleton,
+  BroadcastIndexPageSkeleton,
+  BroadcastNewPageSkeleton,
+  BroadcastReviewPageSkeleton,
+  BulkPostsPageSkeleton,
+  CalendarPageSkeleton,
+  ContestDetailPageSkeleton,
+  ContestProofPageSkeleton,
+  DraftsPageSkeleton,
+  GiveawayBuilderPageSkeleton,
+  GiveawayDetailPageSkeleton,
+  GiveawayProofPageSkeleton,
+  MediaSettingsPageSkeleton,
+  PublishedPostsPageSkeleton,
+  RecyclablesPageSkeleton,
+  ScheduledPostsPageSkeleton,
+  TemplatesPageSkeleton,
+} from "~/components/skeletons/RoutePageSkeletons";
 import { Skeleton } from "~/components/ui/skeleton";
+import { EngagementFeedSkeleton } from "~/features/engagement/components/EngagementFeedSkeleton";
 import {
   BillingAlertBanner,
   getUserPlanType,
@@ -33,6 +53,7 @@ import {
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { CreateComposerShell } from "~/features/posts/composer/components/CreateComposerShell";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
+import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -105,44 +126,77 @@ function isComposePath(pathname: string): boolean {
   );
 }
 
-function pendingSkeletonConfigForPath(pathname: string): {
-  title: string;
-  subtitle: string;
-  variant: DeferredListPageSkeletonVariant;
-} {
-  if (pathname.startsWith("/dashboard/admin")) {
-    return {
-      title: "Loading admin page",
-      subtitle: "Preparing metrics and operational insights",
-      variant: "adminDashboard",
-    };
+function pendingSkeletonForPath(pathname: string): ReactNode {
+  if (pathname.startsWith("/dashboard/admin/analytics")) {
+    return <AdminAnalyticsPageSkeleton />;
   }
-
+  if (pathname.startsWith("/dashboard/admin/users")) {
+    return <AdminUsersPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/admin/operations")) {
+    return <AdminOperationsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/new/review")) {
+    return <BroadcastReviewPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/new")) {
+    return <BroadcastNewPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/audiences")) {
+    return <BroadcastAudiencesPageSkeleton />;
+  }
+  if (/^\/dashboard\/broadcasts\/[^/]+$/.test(pathname)) {
+    return <BroadcastDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts")) {
+    return <BroadcastIndexPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/calendar")) {
+    return <CalendarPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/drafts")) {
+    return <DraftsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/published")) {
+    return <PublishedPostsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/scheduled")) {
+    return <ScheduledPostsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/templates")) {
+    return <TemplatesPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/recyclables")) {
+    return <RecyclablesPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/bulkposts")) {
+    return <BulkPostsPageSkeleton />;
+  }
   if (pathname.startsWith("/dashboard/settings/media")) {
-    return {
-      title: "Loading media settings",
-      subtitle: "Fetching media providers and gallery state",
-      variant: "mediaGallery",
-    };
+    return <MediaSettingsPageSkeleton />;
   }
-
-  if (
-    pathname.includes("/detail/") ||
-    pathname.startsWith("/dashboard/contests/detail/") ||
-    pathname.startsWith("/dashboard/giveaway/detail/")
-  ) {
-    return {
-      title: "Loading details",
-      subtitle: "Fetching item details and related actions",
-      variant: "detail",
-    };
+  if (pathname.startsWith("/dashboard/settings")) {
+    return <SettingsPageSkeleton />;
   }
-
-  return {
-    title: "Loading page",
-    subtitle: "Fetching dashboard data",
-    variant: "list",
-  };
+  if (pathname.startsWith("/dashboard/giveaway/new")) {
+    return <GiveawayBuilderPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/giveaway/detail/")) {
+    return <GiveawayDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/giveaway/proof")) {
+    return <GiveawayProofPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/contests/detail/")) {
+    return <ContestDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/contests/proof")) {
+    return <ContestProofPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/engagement/feed")) {
+    return <EngagementFeedSkeleton />;
+  }
+  return <ScheduledPostsPageSkeleton />;
 }
 
 function pendingComposeContentType(
@@ -270,8 +324,7 @@ export function DashboardLayoutPage(): ReactNode {
     showPendingComposeSkeleton,
     showPendingDashboardSkeleton,
   } = getPendingNavigationState(navigation, location);
-  const pendingDashboardSkeleton =
-    pendingSkeletonConfigForPath(pendingPathname);
+  const pendingDashboardSkeleton = pendingSkeletonForPath(pendingPathname);
 
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -516,11 +569,7 @@ export function DashboardLayoutPage(): ReactNode {
               </div>
             ) : showPendingDashboardSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">
-                <DeferredListPageSkeleton
-                  title={pendingDashboardSkeleton.title}
-                  subtitle={pendingDashboardSkeleton.subtitle}
-                  variant={pendingDashboardSkeleton.variant}
-                />
+                {pendingDashboardSkeleton}
               </div>
             ) : (
               <div

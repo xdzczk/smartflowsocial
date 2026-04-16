@@ -339,7 +339,10 @@ export function useBulkPostsPageState({
             newSearchParams.delete("firstPostId");
             newSearchParams.delete("lastScheduledAt");
             newSearchParams.delete("queueSummary");
-            setSearchParams(newSearchParams, { replace: true });
+            const nextQuery = newSearchParams.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+            // Avoid route revalidation/suspense while showing success modal.
+            window.history.replaceState(window.history.state, "", nextUrl);
           }
         } catch {
           setTimeout(() => setModalPostId(null), 0);

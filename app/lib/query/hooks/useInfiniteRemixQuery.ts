@@ -4,6 +4,7 @@
  */
 
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
 
@@ -75,6 +76,11 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     }
     return getNextPageParam(lastPage, allPages);
   };
+
+  // Mark initial data as fresh *now* so TanStack Query respects staleTime.
+  // Without this, initialData is treated as updated at epoch 0 (always stale),
+  // causing immediate refetches that race with fetchNextPage and reset pages.
+  const [mountedAt] = useState(() => Date.now());
 
   return useInfiniteQuery({
     queryKey,
@@ -149,8 +155,11 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
       pages: [initialData],
       pageParams: [1],
     },
+    initialDataUpdatedAt: mountedAt,
     enabled,
     staleTime,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     ...(capped ? { maxPages } : {}),
     placeholderData: placeholderData ?? ((previousData) => previousData),
     refetchInterval,

@@ -26,7 +26,13 @@ async function loadBulkPostsData(request: Request) {
 
 export async function loader({ request }: { request: Request }) {
   try {
+    const url = new URL(request.url);
+    const shouldAvoidDeferredFallback =
+      url.searchParams.get("bulkScheduled") === "true";
     if (isRemixResourceRequest(request)) {
+      return json(await loadBulkPostsData(request));
+    }
+    if (shouldAvoidDeferredFallback) {
       return json(await loadBulkPostsData(request));
     }
     return defer({
