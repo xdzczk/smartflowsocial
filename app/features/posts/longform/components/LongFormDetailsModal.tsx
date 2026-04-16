@@ -23,6 +23,7 @@ import {
   RAIL_ZONE_PY,
 } from "~/features/posts/components/publishing-rail";
 import { optimisticallyRemovePostIdsFromViews } from "~/features/posts/hooks/post-cache-prune";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 import type {
@@ -538,11 +539,17 @@ export default function LongFormDetailsModal({
     const formData = new FormData();
     formData.append("_action", "deleteLongForm");
     formData.append("postId", postId);
-    void fetch(window.location.pathname, {
-      method: "POST",
-      body: formData,
-      credentials: "same-origin",
-    });
+    void (async () => {
+      try {
+        await fetch(window.location.pathname, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",
+        });
+      } finally {
+        invalidateDependentCaches(queryClient);
+      }
+    })();
   }, [post.id, queryClient, onDeleted, onClose]);
 
   const eventId =

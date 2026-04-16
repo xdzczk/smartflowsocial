@@ -18,6 +18,7 @@ import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "~/features/posts/dtos";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { PostStats } from "~/features/posts/stats.server";
 import type {
@@ -40,6 +41,7 @@ import {
 import type { UserData } from "~/lib/validation/user-data";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { publishedPostsKeys } from "./published-posts-keys";
 import { prunePublishedPostsFromAllQueries } from "./usePublishedPostsCache";
 import {
   ACTION_BULK_DELETE,
@@ -49,29 +51,7 @@ import {
 
 // PublishedPostsLoaderData is now exported from schemas
 
-/**
- * Query key factory for published posts
- */
-export const publishedPostsKeys = {
-  all: ["published-posts"] as const,
-  lists: () => [...publishedPostsKeys.all, "list"] as const,
-  list: (
-    queueType?: string,
-    tab?: string,
-    page?: number,
-    dateFrom?: string,
-    dateTo?: string
-  ) =>
-    [
-      ...publishedPostsKeys.lists(),
-      queueType,
-      tab,
-      page ?? "",
-      dateFrom ?? "",
-      dateTo ?? "",
-    ] as const,
-  detail: (id: string) => [...publishedPostsKeys.all, "detail", id] as const,
-};
+export { publishedPostsKeys };
 
 /**
  * Hook to fetch published posts with TanStack Query
@@ -776,6 +756,7 @@ export function useBulkDeletePostsMutation() {
       void queryClient.invalidateQueries({
         queryKey: publishedPostsKeys.lists(),
       });
+      invalidateDependentCaches(queryClient);
     },
   });
 }

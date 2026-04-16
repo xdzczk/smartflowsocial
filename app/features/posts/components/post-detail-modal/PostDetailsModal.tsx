@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 
 import type { Post } from "../../data/posts-prisma-types.server";
 import { optimisticallyRemovePostIdsFromViews } from "../../hooks/post-cache-prune";
+import { invalidateDependentCaches } from "../../hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "../../types";
 
 import { getPubkeyDisplayName } from "./author-metadata";
@@ -123,11 +124,17 @@ export default function PostDetailsModal({
     const formData = new FormData();
     formData.append("_action", "delete");
     formData.append("postId", postId);
-    void fetch(window.location.pathname, {
-      method: "POST",
-      body: formData,
-      credentials: "same-origin",
-    });
+    void (async () => {
+      try {
+        await fetch(window.location.pathname, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",
+        });
+      } finally {
+        invalidateDependentCaches(queryClient);
+      }
+    })();
   }, [post.id, queryClient, onDeleted, onClose]);
 
   const hasQueueType = (

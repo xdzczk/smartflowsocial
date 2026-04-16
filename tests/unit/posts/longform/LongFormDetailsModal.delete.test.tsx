@@ -10,6 +10,8 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({
     setQueriesData: vi.fn(),
+    invalidateQueries: vi.fn().mockResolvedValue(undefined),
+    refetchQueries: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -94,6 +96,8 @@ vi.mock("~/features/posts/components/publishing-rail", () => ({
   RAIL_MAJOR_DIVIDE: "",
   RAIL_PAD_X: "",
   RAIL_ZONE_PY: "",
+  railFieldClassNames: "",
+  railSelectTriggerClassNames: "",
 }));
 
 vi.mock("~/features/posts/scheduled/components/ScheduledPostActionBar", () => ({

@@ -9,7 +9,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 import type { ToastMessage } from "~/components/types";
-import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import {
+  invalidateDependentCaches,
+  useRefreshPostViews,
+} from "~/features/posts/hooks/useRefreshPostViews";
 import type {
   CombinedContent,
   LongFormPostData,
@@ -347,6 +350,7 @@ export function usePublishedPosts({
       optimisticallyRemovePublishedItems(submission.postIds);
       setSelectedPosts(new Set());
       refreshAllPostViews();
+      invalidateDependentCaches(queryClient);
       lastBulkDeleteSubmissionRef.current = null;
     } else if (previousState !== "idle" && currentState === "idle") {
       lastBulkDeleteSubmissionRef.current = null;
@@ -360,6 +364,7 @@ export function usePublishedPosts({
     bulkDeleteFetcher.formData,
     didFetcherMutationSucceed,
     optimisticallyRemovePublishedItems,
+    queryClient,
     refreshAllPostViews,
   ]);
 
@@ -396,6 +401,7 @@ export function usePublishedPosts({
     }
     optimisticallyRemovePublishedItems([submission.postId]);
     refreshAllPostViews();
+    invalidateDependentCaches(queryClient);
     lastDeleteSubmissionRef.current = null;
     previousDeleteStateRef.current = currentState;
     previousDeleteDataRef.current = deleteFetcher.data;
@@ -405,6 +411,7 @@ export function usePublishedPosts({
     deleteFetcher.formData,
     didFetcherMutationSucceed,
     optimisticallyRemovePublishedItems,
+    queryClient,
     refreshAllPostViews,
   ]);
 
