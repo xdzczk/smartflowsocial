@@ -11,7 +11,7 @@ import { loadDraftEditData } from "~/features/posts/server/drafts";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
-  getTemplates,
+  getTemplateListSummaries,
 } from "~/features/templates/services/template-data.server";
 import {
   getScheduleInterval,
@@ -165,14 +165,14 @@ export async function loadNewPostData(
     queueTypes,
     hashTagPresets,
     composerRelays,
-    templates,
+    templateSummaries,
     user,
   ] = await Promise.all([
     getScheduleInterval(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
     loadComposerRelayLists(userId),
-    getTemplates({ userId }),
+    getTemplateListSummaries({ userId, templateType: "POST" }),
     getUserById(userId),
   ]);
 
@@ -196,9 +196,10 @@ export async function loadNewPostData(
     relaysNip65Profile: composerRelays.nip65Profile,
     publishRelaySource: composerRelays.accountPublishRelaySource,
     nip88PollsEnabled: featureFlags.nip88PollsEnabled,
-    templates: templates.filter(
-      (t) => (t as { templateType?: string }).templateType === "POST"
-    ),
+    templates: templateSummaries.map((template) => ({
+      id: template.id,
+      name: template.name,
+    })),
     composerContext,
     hydrationStatus: "ready" as const,
     hydrationError: null as string | null,

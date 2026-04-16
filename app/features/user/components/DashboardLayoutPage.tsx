@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
+import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import {
   AdminAnalyticsPageSkeleton,
   AdminOperationsPageSkeleton,
@@ -31,6 +32,7 @@ import {
   BroadcastReviewPageSkeleton,
   BulkPostsPageSkeleton,
   CalendarPageSkeleton,
+  CalendarQueuePageSkeleton,
   ContestDetailPageSkeleton,
   ContestProofPageSkeleton,
   DraftsPageSkeleton,
@@ -62,6 +64,7 @@ import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
+const DASHBOARD_INDEX_PATH = "/dashboard";
 const FREE_PLAN_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-free-plan-banner";
 const FREE_PLAN_BANNER_ANALYTICS_EVENT = "smartflow:free-plan-banner-analytics";
@@ -110,7 +113,7 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
 /** Dashboard index is the only route that should not scroll vertically on large screens; other dashboard pages need to scroll. */
 function isDashboardIndexPath(pathname: string): boolean {
   const normalized = pathname.replace(/\/$/, "") || "/";
-  return normalized === "/dashboard";
+  return normalized === DASHBOARD_INDEX_PATH;
 }
 
 /** Calendar route: lock viewport height on desktop so only the time grid scrolls. */
@@ -127,6 +130,12 @@ function isComposePath(pathname: string): boolean {
 }
 
 function pendingSkeletonForPath(pathname: string): ReactNode {
+  if (isDashboardIndexPath(pathname)) {
+    return <DashboardSkeleton />;
+  }
+  if (/^\/dashboard\/calendar\/[^/]+$/.test(pathname)) {
+    return <CalendarQueuePageSkeleton />;
+  }
   if (pathname.startsWith("/dashboard/admin/analytics")) {
     return <AdminAnalyticsPageSkeleton />;
   }

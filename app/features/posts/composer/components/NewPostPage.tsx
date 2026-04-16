@@ -5,11 +5,10 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
+import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Button } from "~/components/ui/button";
-import { UnifiedComposer } from "~/features/posts/composer";
-import { PollComposer } from "~/features/posts/composer/components/PollComposer";
 import { useNewPostPublishModalEffect } from "~/features/posts/composer/hooks/useNewPostPublishModalEffect";
 import {
   DraftPickerModal,
@@ -41,6 +40,17 @@ const LOCAL_DRAFT_KEYS = [
   "composer-newpost-thread-draft",
   "composer-newpost-poll-draft",
 ] as const;
+
+const LazyUnifiedComposer = lazy(async () => {
+  const mod =
+    await import("~/features/posts/composer/components/UnifiedComposer");
+  return { default: mod.UnifiedComposer };
+});
+
+const LazyPollComposer = lazy(async () => {
+  const mod = await import("~/features/posts/composer/components/PollComposer");
+  return { default: mod.PollComposer };
+});
 
 // ============================================================================
 // Loader Data Parsing Helpers (route-safe, no server imports)
@@ -662,75 +672,79 @@ export default function NewPostPage() {
               />
             ) : null}
 
-            {composerTab === "poll" ? (
-              <PollComposer
-                key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-                queueTypes={typedQueueTypes}
-                hashTagPresets={typedHashTagPresets}
-                scheduleIntervals={
-                  scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-                }
-                onQueueTypeChange={handleQueueTypeChange}
-                selectedHashTagPresetId={selectedHashTagPresetId}
-                onHashtagPresetChange={(
-                  presetId: string | null,
-                  _hashtags: string
-                ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-                relayOverride={selectedRelayUrls ?? undefined}
-                relayCount={relayCount}
-                onRelayClick={() => setRelaySelectorOpen(true)}
-                defaultRelays={defaultRelays}
-                initialScheduledFor={composedScheduledAt ?? undefined}
-                publishMode={publishMode}
-                onPublishModeChange={setPublishMode}
-                skipLocalDraftRestore={
-                  Boolean(publishResultToken) ||
-                  Boolean(initialDraftId) ||
-                  isEditMode
-                }
-                initialQueue={initialDraft?.queueType ?? "unassigned"}
-                initialPollRestore={initialPollRestore}
-                initialDraftId={initialDraftId}
-                onDraftStateLabelChange={setSaveStateLabel}
-              />
-            ) : (
-              <UnifiedComposer
-                key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
-                queueTypes={typedQueueTypes}
-                hashTagPresets={typedHashTagPresets}
-                scheduleIntervals={
-                  scheduleIntervals.length > 0 ? scheduleIntervals : undefined
-                }
-                onQueueTypeChange={handleQueueTypeChange}
-                selectedHashTagPresetId={selectedHashTagPresetId}
-                onHashtagPresetChange={(
-                  presetId: string | null,
-                  _hashtags: string
-                ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
-                relayOverride={selectedRelayUrls ?? undefined}
-                relayCount={relayCount}
-                onRelayClick={() => setRelaySelectorOpen(true)}
-                initialDraft={initialDraft}
-                initialDraftId={initialDraftId}
-                initialScheduledFor={composedScheduledAt ?? undefined}
-                composerContext={composerContext}
-                skipLocalDraftRestore={
-                  Boolean(publishResultToken) || isEditMode
-                }
-                localDraftStorageKey={
-                  composerTab === "thread"
-                    ? "composer-newpost-thread-draft"
-                    : "composer-newpost-post-draft"
-                }
-                draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
-                newPostContentTab={composerTab === "thread" ? "thread" : "post"}
-                publishMode={publishMode}
-                onPublishModeChange={setPublishMode}
-                composerTemplates={templates}
-                suppressBuiltInDraftPicker
-                onDraftStateLabelChange={setSaveStateLabel}
-              />
-            )}
+            <Suspense fallback={<ComposerSkeleton />}>
+              {composerTab === "poll" ? (
+                <LazyPollComposer
+                  key={`poll-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+                  queueTypes={typedQueueTypes}
+                  hashTagPresets={typedHashTagPresets}
+                  scheduleIntervals={
+                    scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+                  }
+                  onQueueTypeChange={handleQueueTypeChange}
+                  selectedHashTagPresetId={selectedHashTagPresetId}
+                  onHashtagPresetChange={(
+                    presetId: string | null,
+                    _hashtags: string
+                  ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
+                  relayOverride={selectedRelayUrls ?? undefined}
+                  relayCount={relayCount}
+                  onRelayClick={() => setRelaySelectorOpen(true)}
+                  defaultRelays={defaultRelays}
+                  initialScheduledFor={composedScheduledAt ?? undefined}
+                  publishMode={publishMode}
+                  onPublishModeChange={setPublishMode}
+                  skipLocalDraftRestore={
+                    Boolean(publishResultToken) ||
+                    Boolean(initialDraftId) ||
+                    isEditMode
+                  }
+                  initialQueue={initialDraft?.queueType ?? "unassigned"}
+                  initialPollRestore={initialPollRestore}
+                  initialDraftId={initialDraftId}
+                  onDraftStateLabelChange={setSaveStateLabel}
+                />
+              ) : (
+                <LazyUnifiedComposer
+                  key={`newpost-composer-${composerSessionKey}-${publishResultToken ?? "default"}-${initialDraftId ?? "new"}`}
+                  queueTypes={typedQueueTypes}
+                  hashTagPresets={typedHashTagPresets}
+                  scheduleIntervals={
+                    scheduleIntervals.length > 0 ? scheduleIntervals : undefined
+                  }
+                  onQueueTypeChange={handleQueueTypeChange}
+                  selectedHashTagPresetId={selectedHashTagPresetId}
+                  onHashtagPresetChange={(
+                    presetId: string | null,
+                    _hashtags: string
+                  ) => handleHashtagPresetSelect(presetId ?? "", _hashtags)}
+                  relayOverride={selectedRelayUrls ?? undefined}
+                  relayCount={relayCount}
+                  onRelayClick={() => setRelaySelectorOpen(true)}
+                  initialDraft={initialDraft}
+                  initialDraftId={initialDraftId}
+                  initialScheduledFor={composedScheduledAt ?? undefined}
+                  composerContext={composerContext}
+                  skipLocalDraftRestore={
+                    Boolean(publishResultToken) || isEditMode
+                  }
+                  localDraftStorageKey={
+                    composerTab === "thread"
+                      ? "composer-newpost-thread-draft"
+                      : "composer-newpost-post-draft"
+                  }
+                  draftPickerNavigateBase={`/dashboard/compose?type=${composerTab === "thread" ? "thread" : "post"}`}
+                  newPostContentTab={
+                    composerTab === "thread" ? "thread" : "post"
+                  }
+                  publishMode={publishMode}
+                  onPublishModeChange={setPublishMode}
+                  composerTemplates={templates}
+                  suppressBuiltInDraftPicker
+                  onDraftStateLabelChange={setSaveStateLabel}
+                />
+              )}
+            </Suspense>
 
             <DraftPickerModal
               key={`${composerTab}-${shortDraftPicker.mode}`}

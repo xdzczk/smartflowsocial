@@ -344,25 +344,16 @@ function normalizeGlobalScheduleIntervalHours(raw: string[]): number[] {
 export async function loadSettingsData(
   userId: string
 ): Promise<SettingsLoaderData> {
-  // Get subscription and plan name for gating Accounts tab
-  const currentSub = await getUserSubscription(userId);
-  const planName = currentSub?.Plan?.name ?? "";
-  const planId = (currentSub?.planId ?? "").toLowerCase();
-  const parsedPlanType = parseCommercialPlanType(planId || planName);
-  const commercialPlanType = parsedPlanType ?? "free";
-  if (!parsedPlanType && (planId || planName)) {
-    logWarning("Invalid subscription plan in settings loader", {
-      userId,
-      planId: planId || null,
-      planName: planName || null,
-    });
-  }
-
-  const userRecord = await getUserBasicInfo(userId);
-  const myNpub = userRecord?.npub as string;
-  const isChild = !!userRecord?.isChild;
-  const hasAccountsAccess =
-    isChild || getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
+  const EMPTY_REFERRAL: SettingsLoaderData["referral"] = {
+    referralLink: "",
+    commissionRatePercent: 20,
+    totalEarnedSats: 0,
+    paidSats: 0,
+    pendingSats: 0,
+    failedSats: 0,
+    payoutDestination: null,
+    payoutDestinationType: null,
+  };
 
   // Load all settings data in parallel
   // Use cached versions for rarely-changing data (queue types, hashtag presets)
@@ -391,6 +382,8 @@ export async function loadSettingsData(
     themePreference,
     defaultZapAmountSats,
     scheduleIntervalStrings,
+    subscription,
+    userRecord,
   ] = await Promise.all([
     getUserTimezone(userId),
     loadRelaySettingsLoaderSlice(userId),
@@ -416,7 +409,27 @@ export async function loadSettingsData(
     getUserThemePreference(userId),
     getUserDefaultZapAmountSatsStored(userId),
     getScheduleInterval(userId),
+    getUserSubscription(userId),
+    getUserBasicInfo(userId),
   ]);
+
+  const myNpub = userRecord?.npub ?? "";
+  const isChild = !!userRecord?.isChild;
+
+  // Use the already-fetched subscription for account access gating.
+  const planName = subscription?.Plan?.name ?? "";
+  const planId = (subscription?.planId ?? "").toLowerCase();
+  const parsedPlanType = parseCommercialPlanType(planId || planName);
+  const commercialPlanType = parsedPlanType ?? "free";
+  if (!parsedPlanType && (planId || planName)) {
+    logWarning("Invalid subscription plan in settings loader", {
+      userId,
+      planId: planId || null,
+      planName: planName || null,
+    });
+  }
+  const hasAccountsAccess =
+    isChild || getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
   const globalScheduleIntervalHours = normalizeGlobalScheduleIntervalHours(
     scheduleIntervalStrings
@@ -460,25 +473,57 @@ export async function loadSettingsData(
     ])
   );
 
-  const accounts = await buildAccountsData({
-    userRecord: userRecord ?? { isChild: false, parentNpub: null },
-    myNpub,
-  });
+  const accountsPromise: Promise<SettingsLoaderData["accounts"]> =
+    hasAccountsAccess
+      ? buildAccountsData({
+          userRecord: userRecord ?? { isChild: false, parentNpub: null },
+          myNpub,
+        })
+      : Promise.resolve({
+          isChild: false,
+          parentNpub: myNpub || null,
+          parentUser: null,
+          confirmedChildren: [],
+          pendingChildren: [],
+        });
 
-  // Get subscription and referral information
-  const [
-    subscription,
-    allPlans,
-    paymentHistory,
-    referral,
-    subscriptionSnapshot,
-  ] = await Promise.all([
-    getUserSubscription(userId),
-    getAllPlans(),
-    getUserPaymentHistory(userId),
-    getReferralSettingsData(myNpub),
-    getSubscriptionData(userId),
+  const billingBundlePromise: Promise<{
+    allPlans: Awaited<ReturnType<typeof getAllPlans>>;
+    paymentHistory: Awaited<ReturnType<typeof getUserPaymentHistory>>;
+    referral: SettingsLoaderData["referral"];
+    billingContext: BillingContext | null;
+  }> = (async () => {
+    if (isChild) {
+      return {
+        allPlans: [],
+        paymentHistory: [],
+        referral: EMPTY_REFERRAL,
+        billingContext: null,
+      };
+    }
+
+    const [allPlans, paymentHistory, referral, subscriptionSnapshot] =
+      await Promise.all([
+        getAllPlans(),
+        getUserPaymentHistory(userId),
+        getReferralSettingsData(myNpub),
+        getSubscriptionData(userId),
+      ]);
+
+    return {
+      allPlans,
+      paymentHistory,
+      referral,
+      billingContext: subscriptionSnapshot.billingContext ?? null,
+    };
+  })();
+
+  const [accounts, billingBundle] = await Promise.all([
+    accountsPromise,
+    billingBundlePromise,
   ]);
+
+  const { allPlans, paymentHistory, referral, billingContext } = billingBundle;
 
   const canToggleBlastr = !!(
     subscription?.status === "ACTIVE" && subscription.Plan?.enableRelayBlast
@@ -698,6 +743,6 @@ export async function loadSettingsData(
     blastrSystemRelays,
     referral,
     defaultZapAmountSats,
-    billingContext: subscriptionSnapshot.billingContext ?? null,
+    billingContext,
   };
 }

@@ -480,31 +480,61 @@ export function BulkPostsPageSkeleton() {
 
 export function CalendarPageSkeleton() {
   return (
-    <div className="w-full min-w-0 animate-pulse space-y-6" aria-busy="true">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-36" />
-          <Skeleton className="h-4 w-full max-w-md" />
-        </div>
-        <Skeleton className="h-10 w-36" />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-lg" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:hidden">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="border-border rounded-lg border p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-5 w-12 rounded-full" />
-            </div>
-            <Skeleton className="h-3 w-full max-w-[10rem]" />
+    <div
+      className="flex h-full min-h-0 animate-pulse flex-col"
+      aria-busy="true"
+    >
+      <div className="border-border/60 bg-muted/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-md" />
           </div>
-        ))}
+          <Skeleton className="h-9 w-40 rounded-md" />
+        </div>
       </div>
-      <Skeleton className="hidden h-[420px] w-full rounded-xl md:block" />
+      <div className="bg-muted/20 flex min-h-0 flex-1 flex-col gap-4 p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:hidden">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="border-border rounded-lg border p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-5 w-12 rounded-full" />
+              </div>
+              <Skeleton className="h-3 w-full max-w-[10rem]" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="hidden h-full min-h-[420px] w-full rounded-xl md:block" />
+      </div>
+    </div>
+  );
+}
+
+export function CalendarQueuePageSkeleton() {
+  return (
+    <div className="animate-pulse space-y-6" aria-busy="true">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-56" />
+      </div>
+      <div className="border-border border-b pb-2">
+        <div className="flex flex-wrap gap-3">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-8 w-24 rounded-md" />
+          ))}
+        </div>
+      </div>
+      <div className="border-border/60 bg-muted/30 flex min-h-14 items-center border px-2 py-3 sm:px-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </div>
+          <Skeleton className="h-9 w-40 rounded-md" />
+        </div>
+      </div>
+      <Skeleton className="h-[420px] w-full rounded-xl" />
     </div>
   );
 }

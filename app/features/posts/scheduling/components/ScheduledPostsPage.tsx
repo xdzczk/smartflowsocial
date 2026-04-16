@@ -5,7 +5,7 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -160,15 +160,20 @@ export default function ScheduledPostsPage() {
   });
 
   const isMobile = useIsMobile(768);
+  const fetchNextPageRef = useRef(fetchNextPage);
+  useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+  const stableFetchNextPage = useCallback(() => {
+    void fetchNextPageRef.current();
+  }, []);
   const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
     useInfiniteScrollSentinel({
       isMobile,
       hasNextPage,
       isFetchingNextPage,
       loadedPageCount: loadedPages,
-      fetchNextPage: () => {
-        void fetchNextPage();
-      },
+      fetchNextPage: stableFetchNextPage,
     });
 
   const {

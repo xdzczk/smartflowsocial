@@ -16,10 +16,28 @@ const POST_VIEW_QUERY_KEYS = [
   calendarKeys.all,
 ] as const;
 
+function isInfiniteQueryData(data: unknown): boolean {
+  return (
+    data != null &&
+    typeof data === "object" &&
+    "pages" in data &&
+    Array.isArray((data as { pages?: unknown }).pages)
+  );
+}
+
 export function refreshPostViews(queryClient: QueryClient) {
   POST_VIEW_QUERY_KEYS.forEach((queryKey) => {
-    void queryClient.invalidateQueries({ queryKey });
-    void queryClient.refetchQueries({ queryKey, type: "active" });
+    // Skip active infinite queries – invalidating them restarts the page-1
+    // refetch which races with fetchNextPage and causes duplicate requests.
+    void queryClient.invalidateQueries({
+      queryKey,
+      predicate: (query) => !isInfiniteQueryData(query.state.data),
+    });
+    void queryClient.refetchQueries({
+      queryKey,
+      type: "active",
+      predicate: (query) => !isInfiniteQueryData(query.state.data),
+    });
   });
 }
 

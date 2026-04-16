@@ -2,6 +2,7 @@ import {
   getTemplateById,
   createTemplate,
   getTemplates,
+  getTemplateListSummaries,
   updateTemplate,
   deleteTemplate,
 } from "~/features/templates/repositories/template-data.server";
@@ -9,6 +10,7 @@ import {
 export {
   createTemplate,
   getTemplates,
+  getTemplateListSummaries,
   getTemplateById,
   updateTemplate,
   deleteTemplate,

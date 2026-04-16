@@ -9,6 +9,7 @@ import {
   useNavigate,
   useNavigation,
 } from "@remix-run/react";
+import { lazy, Suspense } from "react";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -17,12 +18,10 @@ import {
   parseComposerContext,
   CreateComposerShell,
   getComposeMode,
-  NewPostPage,
   normalizeComposeType,
   shouldDispatchToLongform,
   type ComposeContentType,
 } from "~/features/posts/composer";
-import { NewLongFormPostPage } from "~/features/posts/longform";
 import {
   handleNewPostAction,
   loadNewPostData,
@@ -141,6 +140,16 @@ function ComposeSkeletonLayout() {
   );
 }
 
+const LazyNewPostPage = lazy(async () => {
+  const mod = await import("~/features/posts/composer");
+  return { default: mod.NewPostPage };
+});
+
+const LazyNewLongFormPostPage = lazy(async () => {
+  const mod = await import("~/features/posts/longform");
+  return { default: mod.NewLongFormPostPage };
+});
+
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -246,9 +255,17 @@ export default function ComposePage() {
   }
 
   if (loaderMode === "article") {
-    return <NewLongFormPostPage />;
+    return (
+      <Suspense fallback={<ComposeSkeletonLayout />}>
+        <LazyNewLongFormPostPage />
+      </Suspense>
+    );
   }
-  return <NewPostPage />;
+  return (
+    <Suspense fallback={<ComposeSkeletonLayout />}>
+      <LazyNewPostPage />
+    </Suspense>
+  );
 }
 
 export function ErrorBoundary() {

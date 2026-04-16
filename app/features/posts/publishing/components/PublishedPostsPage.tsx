@@ -1,5 +1,5 @@
 import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -143,15 +143,20 @@ export default function PublishedPostsPage() {
   });
 
   const isMobile = useIsMobile(768);
+  const fetchNextPageRef = useRef(fetchNextPage);
+  useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+  const stableFetchNextPage = useCallback(() => {
+    void fetchNextPageRef.current();
+  }, []);
   const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
     useInfiniteScrollSentinel({
       isMobile,
       hasNextPage,
       isFetchingNextPage,
       loadedPageCount: loadedPages,
-      fetchNextPage: () => {
-        void fetchNextPage();
-      },
+      fetchNextPage: stableFetchNextPage,
     });
 
   // Fetch stats client-side after page load (non-blocking)

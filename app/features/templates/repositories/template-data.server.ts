@@ -59,6 +59,30 @@ export async function getTemplates({ userId }: { userId: string }) {
   });
 }
 
+export async function getTemplateListSummaries({
+  userId,
+  templateType,
+}: {
+  userId: string;
+  templateType?: TemplateType;
+}) {
+  return prisma.template.findMany({
+    where: {
+      userId,
+      ...(templateType ? { templateType } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      templateType: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+}
+
 export async function getTemplateById({
   id,
   userId,

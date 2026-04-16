@@ -1,6 +1,6 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
@@ -94,6 +94,10 @@ export default function PostDetailsModal({
 }: PostDetailsModalProps) {
   const deleteFetcher = useFetcher();
   const queryClient = useQueryClient();
+  const deleteSubmissionRef = useRef<{ action: string; postId: string } | null>(
+    null
+  );
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
@@ -115,26 +119,39 @@ export default function PostDetailsModal({
   );
 
   useEffect(() => {
-    if (deleteFetcher.state !== "idle") return;
-    const formData = deleteFetcher.formData as FormData | undefined;
-    if (formData?.get("_action") !== "delete") return;
-    if (deleteFetcher.data) {
-      const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-      if (!didDeleteActionSucceed(data)) return;
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const fallbackFormData = deleteFetcher.formData;
+    const fallbackAction = fallbackFormData?.get("_action");
+    const fallbackPostId = fallbackFormData?.get("postId");
+    const fallbackSubmission =
+      fallbackAction === "delete" && typeof fallbackPostId === "string"
+        ? { action: "delete", postId: fallbackPostId }
+        : null;
+    const submission = deleteSubmissionRef.current ?? fallbackSubmission;
+
+    if (
+      submission?.action === "delete" &&
+      (previousState !== "idle" || fallbackSubmission !== null) &&
+      currentState === "idle"
+    ) {
+      const data = deleteFetcher.data as
+        | { success?: boolean; error?: unknown }
+        | undefined;
+      const didSucceed = data ? didDeleteActionSucceed(data) : true;
+      if (didSucceed) {
+        optimisticallyRemovePostIdsFromViews(queryClient, [submission.postId]);
+        onDeleted?.(submission.postId);
+        onClose();
+      }
+      deleteSubmissionRef.current = null;
     }
-    const submittedPostId = formData.get("postId");
-    const deletedPostId =
-      typeof submittedPostId === "string" && submittedPostId.length > 0
-        ? submittedPostId
-        : String(post.id);
-    optimisticallyRemovePostIdsFromViews(queryClient, [deletedPostId]);
-    onDeleted?.(deletedPostId);
-    onClose();
+
+    previousDeleteStateRef.current = currentState;
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
     deleteFetcher.formData,
-    post.id,
     queryClient,
     onDeleted,
     onClose,
@@ -538,7 +555,21 @@ export default function PostDetailsModal({
   })();
 
   const deleteForm = (
-    <deleteFetcher.Form method="post" onClick={(e) => e.stopPropagation()}>
+    <deleteFetcher.Form
+      method="post"
+      onClick={(e) => e.stopPropagation()}
+      onSubmit={(event) => {
+        event.stopPropagation();
+        const formData = new FormData(event.currentTarget);
+        const action = formData.get("_action");
+        const submittedPostId = formData.get("postId");
+        if (action !== "delete" || typeof submittedPostId !== "string") return;
+        deleteSubmissionRef.current = {
+          action,
+          postId: submittedPostId,
+        };
+      }}
+    >
       <input type="hidden" name="postId" value={post.id} />
       <input type="hidden" name="_action" value="delete" />
       <Button

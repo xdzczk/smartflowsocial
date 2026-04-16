@@ -1,6 +1,6 @@
 /**
  * Encapsulates infinite scroll sentinel logic: scroll root, two intersection
- * observers (prefetch + fetch), and effects that call fetchNextPage.
+ * observers (prefetch + fetch), and a single effect that calls fetchNextPage.
  * Use on pages with infinite query lists (Drafts, Posted, Scheduled, Templates).
  */
 
@@ -24,18 +24,14 @@ export function useInfiniteScrollSentinel({
   fetchNextPage,
 }: UseInfiniteScrollSentinelOptions) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
-  const prefetchTriggeredRef = useRef(false);
-  const fetchTriggeredRef = useRef(false);
+
+  // Single flag: set when fetchNextPage is dispatched, cleared only when
+  // loadedPageCount actually changes (new page appended or query reset).
+  const fetchInFlightRef = useRef(false);
   const lastLoadedPageCountRef = useRef<number | undefined>(loadedPageCount);
 
-  // On desktop use the viewport (null) so the sentinel is observed when it nears
-  // the viewport; on mobile use the listing's scroll container when set.
-  // Using null on desktop avoids relying on document.scrollingElement when the
-  // layout scroll container is not the document (e.g. dashboard content wrapper).
   const root = isMobile ? (scrollRoot ?? undefined) : undefined;
 
-  // Trigger when sentinel is within 400px of viewport bottom so "load more" fires
-  // before the user reaches the end (better UX and works with various scroll roots).
   const rootMargin = "0px 0px 400px 0px";
 
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver({
@@ -51,72 +47,43 @@ export function useInfiniteScrollSentinel({
       rootMargin,
     });
 
-  // After a page finishes loading, allow another fetch while the sentinel still
-  // intersects only when we can confirm a new page was appended.
-  // This prevents a loop where a canceled/stale fetch keeps requesting the same page.
+  // Re-arm after a page is successfully appended (or reset on filter change).
   useEffect(() => {
-    if (typeof loadedPageCount !== "number") {
-      if (!isFetchingNextPage) {
-        prefetchTriggeredRef.current = false;
-        fetchTriggeredRef.current = false;
-      }
-      return;
-    }
+    if (isFetchingNextPage) return;
 
-    if (!isFetchingNextPage) {
-      const previous = lastLoadedPageCountRef.current ?? 0;
-      if (loadedPageCount > previous) {
-        lastLoadedPageCountRef.current = loadedPageCount;
-        prefetchTriggeredRef.current = false;
-        fetchTriggeredRef.current = false;
-      } else if (loadedPageCount < previous) {
-        // Query reset (e.g. tab/filter change): re-arm sentinel for the new list.
-        lastLoadedPageCountRef.current = loadedPageCount;
-        prefetchTriggeredRef.current = false;
-        fetchTriggeredRef.current = false;
-      }
+    const previous = lastLoadedPageCountRef.current ?? 0;
+    const current =
+      typeof loadedPageCount === "number" ? loadedPageCount : previous;
+
+    if (current !== previous) {
+      lastLoadedPageCountRef.current = current;
+      fetchInFlightRef.current = false;
     }
   }, [isFetchingNextPage, loadedPageCount]);
 
-  // Prefetch next page when user is 70% down (earlier than actual fetch at 80%)
+  // Reset when both sentinels leave the viewport (user scrolled back up).
   useEffect(() => {
-    if (
-      isPrefetchIntersecting &&
-      hasNextPage &&
-      !isFetchingNextPage &&
-      !isIntersecting
-    ) {
-      if (!prefetchTriggeredRef.current) {
-        prefetchTriggeredRef.current = true;
-        fetchNextPage();
-      }
+    if (!isIntersecting && !isPrefetchIntersecting) {
+      fetchInFlightRef.current = false;
+    }
+  }, [isIntersecting, isPrefetchIntersecting]);
+
+  // Consolidated trigger: fires at most once per page transition.
+  useEffect(() => {
+    if (fetchInFlightRef.current) return;
+
+    const visible = isIntersecting || isPrefetchIntersecting;
+    if (visible && hasNextPage && !isFetchingNextPage) {
+      fetchInFlightRef.current = true;
+      fetchNextPage();
     }
   }, [
+    isIntersecting,
     isPrefetchIntersecting,
     hasNextPage,
     isFetchingNextPage,
-    isIntersecting,
     fetchNextPage,
   ]);
-
-  // Fetch next page when sentinel becomes visible (backup in case prefetch didn't trigger)
-  useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      if (!fetchTriggeredRef.current) {
-        fetchTriggeredRef.current = true;
-        fetchNextPage();
-      }
-    }
-  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // Reset triggers once sentinels leave view so we can load again on further scroll.
-  useEffect(() => {
-    if (!isPrefetchIntersecting) prefetchTriggeredRef.current = false;
-  }, [isPrefetchIntersecting]);
-
-  useEffect(() => {
-    if (!isIntersecting) fetchTriggeredRef.current = false;
-  }, [isIntersecting]);
 
   return {
     sentinelRef,

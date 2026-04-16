@@ -28,6 +28,7 @@ vi.mock("~/features/relays/relay-resolution.server", () => ({
 vi.mock("~/features/templates/services/template-data.server", () => ({
   getTemplates: vi.fn().mockResolvedValue([]),
   getTemplatePrefill: vi.fn().mockResolvedValue(null),
+  getTemplateListSummaries: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("~/features/posts/server", () => ({

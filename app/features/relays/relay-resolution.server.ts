@@ -35,6 +35,22 @@ function normalizeRelays(relays: string[]): string[] {
   return Array.from(new Set(relays.map((r) => r.trim()).filter(Boolean)));
 }
 
+async function fetchNip65WriteRelaysWithTimeout(
+  hex: string,
+  timeoutMs: number
+): Promise<string[]> {
+  try {
+    return await Promise.race<string[]>([
+      fetchAuthorNip65WriteRelays(hex),
+      new Promise<string[]>((resolve) => {
+        setTimeout(() => resolve([]), timeoutMs);
+      }),
+    ]);
+  } catch {
+    return [];
+  }
+}
+
 function resolveAppWriteRelays(persistedAppRelays: string[]): string[] {
   return persistedAppRelays.length > 0
     ? normalizeRelays(persistedAppRelays)
@@ -163,7 +179,11 @@ export async function loadComposerRelayLists(
     writeRelays: resolveAppWriteRelays(row.appRelays),
   };
   const hex = convertToHex(row.npub);
-  const fromProfile = hex ? await fetchAuthorNip65WriteRelays(hex) : [];
+  const shouldResolveProfileRelays = row.publishRelaySource === "nip65_profile";
+  const fromProfile =
+    shouldResolveProfileRelays && hex
+      ? await fetchNip65WriteRelaysWithTimeout(hex, 800)
+      : [];
   const profileIntent: RelayIntent = {
     writeRelays:
       fromProfile.length > 0 ? fromProfile : DEFAULT_USER_WRITE_RELAYS,
