@@ -200,7 +200,8 @@ describe("LongFormDetailsModal delete behavior", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(window.location.pathname);
+    expect(url).toContain(window.location.pathname);
+    expect(url).toContain("_data=");
     expect(options.method).toBe("POST");
     const body = options.body as FormData;
     expect(body.get("_action")).toBe("deleteLongForm");

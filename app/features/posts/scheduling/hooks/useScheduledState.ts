@@ -246,24 +246,23 @@ export function useScheduledState({
       pruneScheduledQueryData(old, new Set(postIds))
     );
 
-    // For All tab, we need to handle mixed content types
     if (currentTab === "all" && allContent) {
       const selectedItems = allContent
         .filter((item) => selectedPosts.has(item.id))
         .map((item) => ({ id: item.id, type: item.type }));
 
+      lastBulkDeleteSubmissionRef.current = { action: "bulkDeleteMixed" };
       const formData = new FormData();
       formData.append("_action", "bulkDeleteMixed");
       formData.append("itemData", JSON.stringify(selectedItems));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
     } else {
-      // For individual tabs, use the original handlers
+      const action =
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete";
+      lastBulkDeleteSubmissionRef.current = { action };
       const formData = new FormData();
-      formData.append(
-        "_action",
-        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
-      );
+      formData.append("_action", action);
       formData.append("postIds", JSON.stringify(postIds));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
@@ -275,15 +274,6 @@ export function useScheduledState({
     const currentState = bulkDeleteFetcher.state;
     const dataChanged =
       bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
-    const formData = bulkDeleteFetcher.formData;
-    const action = formData?.get("_action");
-    if (
-      action === "bulkDelete" ||
-      action === "bulkDeleteLongForm" ||
-      action === "bulkDeleteMixed"
-    ) {
-      lastBulkDeleteSubmissionRef.current = { action };
-    }
     const submission = lastBulkDeleteSubmissionRef.current;
     if (
       currentState === "idle" &&
@@ -314,7 +304,6 @@ export function useScheduledState({
   }, [
     bulkDeleteFetcher.state,
     bulkDeleteFetcher.data,
-    bulkDeleteFetcher.formData,
     didFetcherMutationSucceed,
     queryClient,
   ]);
@@ -323,16 +312,6 @@ export function useScheduledState({
     const previousState = previousDeleteStateRef.current;
     const currentState = deleteFetcher.state;
     const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
-    const formData = deleteFetcher.formData;
-    const action = formData?.get("_action");
-    const submittedPostId = formData?.get("postId");
-    if (
-      (action === "delete" || action === "moveToDraft") &&
-      typeof submittedPostId === "string" &&
-      submittedPostId.length > 0
-    ) {
-      lastDeleteSubmissionRef.current = { action, postId: submittedPostId };
-    }
     const submission = lastDeleteSubmissionRef.current;
     if (
       currentState === "idle" &&
@@ -369,7 +348,6 @@ export function useScheduledState({
   }, [
     deleteFetcher.state,
     deleteFetcher.data,
-    deleteFetcher.formData,
     didFetcherMutationSucceed,
     queryClient,
   ]);

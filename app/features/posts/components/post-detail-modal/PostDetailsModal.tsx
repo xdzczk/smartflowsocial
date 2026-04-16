@@ -20,6 +20,7 @@ import type { Post } from "../../data/posts-prisma-types.server";
 import { optimisticallyRemovePostIdsFromViews } from "../../hooks/post-cache-prune";
 import { invalidateDependentCaches } from "../../hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "../../types";
+import { buildActionUrl } from "../../utils/remix-action-url";
 
 import { getPubkeyDisplayName } from "./author-metadata";
 import {
@@ -126,7 +127,8 @@ export default function PostDetailsModal({
     formData.append("postId", postId);
     void (async () => {
       try {
-        const resp = await fetch(window.location.pathname, {
+        const url = buildActionUrl(window.location.pathname);
+        const resp = await fetch(url, {
           method: "POST",
           body: formData,
           credentials: "same-origin",

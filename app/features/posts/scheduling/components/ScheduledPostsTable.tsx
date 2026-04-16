@@ -170,19 +170,9 @@ export function ScheduledPostsTable({
     const previousState = previousDeleteStateRef.current;
     const currentState = deleteFetcher.state;
     const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
-    const formData = deleteFetcher.formData;
-    const action = formData?.get("_action");
-    const submittedPostId = formData?.get("postId");
-    if (
-      (action === "delete" || action === "moveToDraft") &&
-      typeof submittedPostId === "string" &&
-      submittedPostId.length > 0
-    ) {
-      lastDeleteSubmissionRef.current = { action, postId: submittedPostId };
-    }
     const submission = lastDeleteSubmissionRef.current;
     const data = deleteFetcher.data as
-      | { success?: boolean; error?: string }
+      | { success?: boolean; error?: string; cascadeDeletedIds?: string[] }
       | undefined;
     const didSucceed =
       !data || typeof data.success !== "boolean" ? !data?.error : data.success;
@@ -193,9 +183,7 @@ export function ScheduledPostsTable({
       (previousState !== "idle" || dataChanged) &&
       didSucceed
     ) {
-      const cascadeIds: string[] =
-        (data as { cascadeDeletedIds?: string[] } | undefined)
-          ?.cascadeDeletedIds ?? [];
+      const cascadeIds: string[] = data?.cascadeDeletedIds ?? [];
       const deletedIds = new Set([submission.postId, ...cascadeIds]);
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
         pruneScheduledQueryData(old, deletedIds)
@@ -212,12 +200,7 @@ export function ScheduledPostsTable({
     }
     previousDeleteStateRef.current = currentState;
     previousDeleteDataRef.current = deleteFetcher.data;
-  }, [
-    deleteFetcher.state,
-    deleteFetcher.data,
-    deleteFetcher.formData,
-    queryClient,
-  ]);
+  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
 
   const timeFormat = userTimeFormat === "24h" ? "24h" : "12h";
 
@@ -525,6 +508,10 @@ export function ScheduledPostsTable({
                                     new Set([post.id])
                                   )
                               );
+                              lastDeleteSubmissionRef.current = {
+                                action: "moveToDraft",
+                                postId: post.id,
+                              };
                               const fd = new FormData();
                               fd.set("postId", post.id);
                               fd.set("_action", "moveToDraft");
@@ -555,6 +542,10 @@ export function ScheduledPostsTable({
                                     new Set([post.id])
                                   )
                               );
+                              lastDeleteSubmissionRef.current = {
+                                action: "delete",
+                                postId: post.id,
+                              };
                               const fd = new FormData();
                               fd.set("postId", post.id);
                               fd.set("_action", "delete");
@@ -686,7 +677,11 @@ export function ScheduledPostsTable({
                             }
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
-                            onBeforeDelete={(postId) =>
+                            onBeforeDelete={(postId) => {
+                              lastDeleteSubmissionRef.current = {
+                                action: "delete",
+                                postId,
+                              };
                               queryClient.setQueriesData(
                                 { queryKey: scheduledPostsKeys.all },
                                 (old) =>
@@ -694,8 +689,8 @@ export function ScheduledPostsTable({
                                     old,
                                     new Set([postId])
                                   )
-                              )
-                            }
+                              );
+                            }}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -766,13 +761,17 @@ export function ScheduledPostsTable({
                       }
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
-                      onBeforeDelete={(postId) =>
+                      onBeforeDelete={(postId) => {
+                        lastDeleteSubmissionRef.current = {
+                          action: "delete",
+                          postId,
+                        };
                         queryClient.setQueriesData(
                           { queryKey: scheduledPostsKeys.all },
                           (old) =>
                             pruneScheduledQueryData(old, new Set([postId]))
-                        )
-                      }
+                        );
+                      }}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

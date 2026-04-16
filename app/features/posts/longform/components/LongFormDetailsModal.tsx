@@ -30,6 +30,7 @@ import type {
   LongFormPostType,
   LongFormPostData,
 } from "~/features/posts/server";
+import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
@@ -541,7 +542,8 @@ export default function LongFormDetailsModal({
     formData.append("postId", postId);
     void (async () => {
       try {
-        const resp = await fetch(window.location.pathname, {
+        const url = buildActionUrl(window.location.pathname);
+        const resp = await fetch(url, {
           method: "POST",
           body: formData,
           credentials: "same-origin",
