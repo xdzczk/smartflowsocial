@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
-import { formDataToFormData } from "~/lib/validation/utils.client";
+import { formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface UseFormMutationOptions<
   TData,

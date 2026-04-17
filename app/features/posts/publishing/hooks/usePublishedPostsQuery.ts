@@ -18,6 +18,7 @@ import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "~/features/posts/dtos";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import type { PostStats } from "~/features/posts/stats.server";
 import type {
@@ -40,31 +41,17 @@ import {
 import type { UserData } from "~/lib/validation/user-data";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { publishedPostsKeys } from "./published-posts-keys";
+import { prunePublishedPostsFromAllQueries } from "./usePublishedPostsCache";
+import {
+  ACTION_BULK_DELETE,
+  ACTION_BULK_DELETE_LONGFORM,
+  ACTION_BULK_DELETE_MIXED,
+} from "./usePublishedPostsConstants";
+
 // PublishedPostsLoaderData is now exported from schemas
 
-/**
- * Query key factory for published posts
- */
-export const publishedPostsKeys = {
-  all: ["published-posts"] as const,
-  lists: () => [...publishedPostsKeys.all, "list"] as const,
-  list: (
-    queueType?: string,
-    tab?: string,
-    page?: number,
-    dateFrom?: string,
-    dateTo?: string
-  ) =>
-    [
-      ...publishedPostsKeys.lists(),
-      queueType,
-      tab,
-      page ?? "",
-      dateFrom ?? "",
-      dateTo ?? "",
-    ] as const,
-  detail: (id: string) => [...publishedPostsKeys.all, "detail", id] as const,
-};
+export { publishedPostsKeys };
 
 /**
  * Hook to fetch published posts with TanStack Query
@@ -387,6 +374,7 @@ export function usePublishedPostsData() {
  */
 function createEmptyPublishedPostsData<TFetchNextPage>(
   isLoading: boolean,
+  isFetching: boolean,
   isFetchingNextPage: boolean,
   hasNextPage: boolean,
   fetchNextPage: TFetchNextPage
@@ -396,6 +384,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     longformPosts: [] as LongFormPostData[],
     allContent: [] as CombinedContent[],
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -404,6 +393,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     queueTypes: [] satisfies QueueType[],
     pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
     stats: {} satisfies Record<string, PostStats>,
+    loadedPages: 0,
     totalContentCount: 0,
     totalPostsCount: 0,
     totalRepostsCount: 0,
@@ -491,8 +481,15 @@ function processPagination(paginationRaw: unknown) {
  */
 export function usePublishedPostsInfiniteData() {
   const query = usePublishedPostsInfiniteQuery();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isLoading,
+  } = query;
+  const loadedPages = data.pages.length;
 
   // Memoize the flattened data to prevent unnecessary recalculations
   // Must be called unconditionally (before any early returns) to follow React Hooks rules
@@ -595,6 +592,7 @@ export function usePublishedPostsInfiniteData() {
   if (data.pages.length === 0) {
     return createEmptyPublishedPostsData(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       false,
       fetchNextPage
@@ -674,12 +672,14 @@ export function usePublishedPostsInfiniteData() {
     queueTypes,
     pagination,
     stats: allStats,
+    loadedPages,
     // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,
     totalContentCount,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -688,101 +688,75 @@ export function usePublishedPostsInfiniteData() {
   };
 }
 
+/** Variables for {@link useBulkDeletePostsMutation} (matches `publishedPostsAction` bulk handlers). */
+export interface PublishedBulkDeleteMutationInput {
+  postIds: string[];
+  /**
+   * When the Published "all" tab is active, the server expects `bulkDeleteMixed` with typed rows.
+   */
+  mixedItemData?: ReadonlyArray<{ id: string; type: "post" | "longform" }>;
+}
+
 /**
  * Mutation hook for bulk delete with optimistic updates
  */
 export function useBulkDeletePostsMutation() {
   const queryClient = useQueryClient();
-  const params = useParams();
   const [searchParams] = useSearchParams();
-  const rawQueue =
-    params["queueType"] ?? searchParams.get("queueType") ?? "all";
-  const queueType =
-    typeof rawQueue === "string" && rawQueue.trim() !== "" ? rawQueue : "all";
   const currentTab = searchParams.get("tab") ?? "all";
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   return useMutation({
-    mutationFn: async (postIds: string[]) => {
+    mutationFn: async (input: PublishedBulkDeleteMutationInput) => {
+      const { postIds, mixedItemData } = input;
+      if (postIds.length === 0) {
+        throw new Error("No posts selected");
+      }
+
       const formData = new FormData();
-      formData.append("_action", "bulk-delete");
-      postIds.forEach((id) => {
-        formData.append("postIds", id);
-      });
+      if (mixedItemData && mixedItemData.length > 0) {
+        formData.append("_action", ACTION_BULK_DELETE_MIXED);
+        formData.append("itemData", JSON.stringify(mixedItemData));
+      } else if (currentTab === "longform") {
+        formData.append("_action", ACTION_BULK_DELETE_LONGFORM);
+        formData.append("postIds", JSON.stringify(postIds));
+      } else {
+        formData.append("_action", ACTION_BULK_DELETE);
+        formData.append("postIds", JSON.stringify(postIds));
+      }
 
       const response = await fetch("/dashboard/published", {
         method: "POST",
         body: formData,
+        credentials: "same-origin",
       });
 
       if (!response.ok) {
         throw new Error("Failed to delete posts");
       }
 
-      return response.json();
+      return response.json() as Promise<unknown>;
     },
-    onMutate: async (postIds) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: publishedPostsKeys.list(queueType, currentTab, page),
+    onMutate: async (input) => {
+      const { postIds } = input;
+      await queryClient.cancelQueries({ queryKey: publishedPostsKeys.all });
+      const previousEntries = queryClient.getQueriesData({
+        queryKey: publishedPostsKeys.all,
       });
-
-      // Snapshot previous value
-      const previousData = queryClient.getQueryData<PublishedPostsLoaderData>(
-        publishedPostsKeys.list(queueType, currentTab, page)
-      );
-
-      // Optimistically update
-      if (previousData) {
-        queryClient.setQueryData<PublishedPostsLoaderData>(
-          publishedPostsKeys.list(queueType, currentTab, page),
-          (old) => {
-            if (!old) return old;
-            return {
-              ...old,
-              posts:
-                "posts" in old && Array.isArray(old.posts)
-                  ? old.posts.filter(
-                      (p: unknown) =>
-                        p &&
-                        typeof p === "object" &&
-                        "id" in p &&
-                        typeof p.id === "string" &&
-                        !postIds.includes(p.id)
-                    )
-                  : [],
-              allContent:
-                "allContent" in old && Array.isArray(old.allContent)
-                  ? old.allContent.filter(
-                      (c: unknown) =>
-                        c &&
-                        typeof c === "object" &&
-                        "id" in c &&
-                        typeof c.id === "string" &&
-                        !postIds.includes(c.id)
-                    )
-                  : [],
-            };
-          }
-        );
-      }
-
-      return { previousData };
+      prunePublishedPostsFromAllQueries(queryClient, postIds);
+      return { previousEntries };
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        queryClient.setQueryData(
-          publishedPostsKeys.list(queueType, currentTab, page),
-          context.previousData
-        );
+    onError: (_err, _variables, context) => {
+      if (context?.previousEntries) {
+        for (const [queryKey, data] of context.previousEntries) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
     },
     onSettled: () => {
-      // Refetch after mutation
       void queryClient.invalidateQueries({
         queryKey: publishedPostsKeys.lists(),
       });
+      invalidateDependentCaches(queryClient);
     },
   });
 }

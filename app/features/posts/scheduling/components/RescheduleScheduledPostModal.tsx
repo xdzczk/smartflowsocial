@@ -68,7 +68,7 @@ import {
   rescheduleModalClientSchema,
   rescheduleLongformModalClientSchema,
 } from "~/lib/validation";
-import { useZodForm } from "~/lib/validation/utils.client";
+import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 const TOAST_POST_RESCHEDULED = "Post rescheduled";
 

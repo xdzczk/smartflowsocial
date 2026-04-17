@@ -8,6 +8,7 @@ import { json } from "@remix-run/node";
 import {
   SchedulePostUseCase,
   cascadeAttachedReschedule,
+  cascadeDeleteAttachedFollowups,
   resyncAttachedChildrenAfterParentMutation,
 } from "~/features/posts/scheduling/index.server";
 import {
@@ -15,6 +16,8 @@ import {
   updateLongFormPost,
   reschedulePost,
   getPostById,
+  deletePost,
+  deleteLongFormPost,
 } from "~/features/posts/server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/server/longform";
 import { logWarning } from "~/lib/error-logger.server";
@@ -232,6 +235,7 @@ export async function handleCalendarAction(
   sessionPubkey: string
 ) {
   const actionType = formData.get("action");
+  const legacyActionType = formData.get("_action");
 
   if (actionType === "reschedule") {
     return handleCalendarReschedule(formData, userId, sessionPubkey);
@@ -239,6 +243,25 @@ export async function handleCalendarAction(
 
   if (actionType === "rescheduleLongform") {
     return handleCalendarRescheduleLongform(formData, userId, sessionPubkey);
+  }
+
+  if (legacyActionType === "delete") {
+    const postId = formData.get("postId");
+    if (typeof postId !== "string" || postId.length === 0) {
+      return json({ error: "Missing postId" }, { status: 400 });
+    }
+    await cascadeDeleteAttachedFollowups({ rootPostId: postId, userId });
+    const deletedPost = await deletePost({ id: postId, userId });
+    return json({ success: true, deleted: deletedPost !== null });
+  }
+
+  if (legacyActionType === "deleteLongForm") {
+    const postId = formData.get("postId");
+    if (typeof postId !== "string" || postId.length === 0) {
+      return json({ error: "Missing postId" }, { status: 400 });
+    }
+    const deletedPost = await deleteLongFormPost({ id: postId, userId });
+    return json({ success: true, deleted: deletedPost !== null });
   }
 
   return json({ error: "Invalid action" }, { status: 400 });

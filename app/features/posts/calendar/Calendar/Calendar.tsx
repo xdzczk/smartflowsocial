@@ -846,7 +846,11 @@ export function Calendar({
           }
           stats={detailModalPublishedStats}
           onClose={() => setDetailModalPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={() => {
+            setDetailModalPost(null);
+            setCalendarLiveMessage("Post deleted");
+            refreshPostViews();
+          }}
           onEdit={(post) => {
             setDetailModalPost(null);
             handleContentEditFromCalendar(post as CalendarPost);
@@ -872,7 +876,11 @@ export function Calendar({
           }
           stats={detailModalPublishedStats}
           onClose={() => setDetailModalPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={() => {
+            setDetailModalPost(null);
+            setCalendarLiveMessage("Article deleted");
+            refreshPostViews();
+          }}
           onEdit={(post) => {
             setDetailModalPost(null);
             handleContentEditFromCalendar(post as unknown as CalendarPost);

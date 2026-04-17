@@ -34,6 +34,7 @@ import {
 export interface UnifiedComposerPublishingSummaryRailProps {
   publishMode: ComposerPublishMode;
   onPublishModeChange: (next: ComposerPublishMode) => void;
+  signerStatusContent?: ReactNode;
   outcomeSentence: string;
   readinessForRail: ReadinessPresentation;
   composerStatus: ComposerStatus;
@@ -115,6 +116,7 @@ export interface UnifiedComposerPublishingSummaryRailProps {
 export function UnifiedComposerPublishingSummaryRail({
   publishMode,
   onPublishModeChange,
+  signerStatusContent,
   outcomeSentence,
   readinessForRail,
   composerStatus,
@@ -277,6 +279,7 @@ export function UnifiedComposerPublishingSummaryRail({
     <PublishingSummaryRail
       publishMode={publishMode}
       onPublishModeChange={onPublishModeChange}
+      statusContent={signerStatusContent}
       outcomeSentence={editOutcomeSentence}
       readiness={readinessForRail}
       sessionStrip={{

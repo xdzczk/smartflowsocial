@@ -26,6 +26,15 @@ SmartFlowSocial performance goals:
 - **Frontend Load**: First Contentful Paint < 1.5s
 - **Image Loading**: Optimized and lazy-loaded
 
+World-class guardrails (enforced in CI/ops):
+
+- Performance workflows are blocking on budget regressions.
+- k6 summaries are compared against versioned budgets in
+  `tests/performance/performance-budgets.json`.
+- Release readiness is tied to SLO burn-rate alert state.
+- Frontend bundle budgets are checked via
+  `node scripts/check-performance-budgets.mjs --source=bundle`.
+
 ---
 
 ## Database Optimization
@@ -554,6 +563,18 @@ Monitor these metrics:
    - 5xx errors
    - Timeout errors
 
+### SLO/SLI mapping (production)
+
+| SLO Area         | SLI / Metric                                                                   | Target     |
+| ---------------- | ------------------------------------------------------------------------------ | ---------- |
+| API availability | `rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])` | < 0.1% 5xx |
+| API latency      | `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[10m]))`    | < 500ms    |
+| DB query latency | `histogram_quantile(0.95, rate(prisma_query_duration_ms_bucket[10m]))`         | < 100ms    |
+| Queue lateness   | `histogram_quantile(0.95, rate(publish_lateness_seconds_bucket[10m]))`         | < 300s     |
+| Outbox freshness | `outbox_oldest_ready_age_seconds`                                              | < 120s     |
+
+Alert rules for these SLIs are maintained in `docs/monitoring/queue-slo-alerts.yml`.
+
 ### Monitoring Tools
 
 1. **Prometheus + Grafana**
@@ -570,6 +591,19 @@ Monitor these metrics:
    - ELK Stack
    - Datadog Logs
    - CloudWatch Logs
+
+### Real User Monitoring (RUM)
+
+Client-side Web Vitals are captured in `app/entry.client.tsx` and sent to `POST /api/web-vitals`
+(`app/routes/api.web-vitals.tsx`) using `sendBeacon` with `fetch` fallback.
+
+Current captured vitals:
+
+- LCP
+- INP
+- CLS
+- FCP
+- TTFB
 
 ### Setting Up Monitoring
 

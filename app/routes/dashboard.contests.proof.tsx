@@ -1,7 +1,10 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { defer, json } from "@remix-run/node";
+import { Await, Link, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { ContestProofPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatContestStatusLabel,
@@ -14,6 +17,7 @@ import { requireAnySubscription } from "~/features/payments";
 import { ContestProofStudio } from "~/features/proof/contest/ContestProofStudio";
 import { featureFlags } from "~/lib/feature-flags.server";
 import type { ContestProofStudioDto } from "~/lib/proof/adapters/contest";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 function contestProofTitle(
   name: string | null | undefined,
@@ -43,64 +47,86 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const completed = await listContestsFiltered(userId, {
-    status: "COMPLETED",
-    sort: "completed",
+  const contestsPromise = (async (): Promise<ContestProofStudioDto[]> => {
+    const completed = await listContestsFiltered(userId, {
+      status: "COMPLETED",
+      sort: "completed",
+    });
+
+    return Promise.all(
+      completed.map(async (c) => {
+        const snap = await findLatestContestSnapshot(c.id);
+        const settlement = await summarizeContestProofSettlement(
+          c.id,
+          c.payoutState
+        );
+        const title = contestProofTitle(c.title, c.id);
+        const completedAt = c.completedAt ?? c.updatedAt;
+        const completedAtLabel = new Intl.DateTimeFormat(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(completedAt);
+        const planned = c.plannedPayoutSats ?? 0;
+
+        return {
+          id: c.id,
+          title,
+          rankingMetric: c.rankingMetric,
+          statusLabel: formatContestStatusLabel("COMPLETED"),
+          winnerCount: c.winnerCount,
+          satsPlanned: planned,
+          satsPaid: settlement.satsPaid,
+          paidViaWalletCount: settlement.paidViaWalletCount,
+          paidManuallyCount: settlement.paidManuallyCount,
+          unresolvedCount: settlement.unresolvedCount,
+          finalizationFeeSats: c.finalizationFeeSats ?? null,
+          planAtFinalization: c.planAtFinalization ?? null,
+          payoutWalletMode: c.payoutWalletMode,
+          payoutAutoRunEnabled: c.payoutAutoRunEnabled,
+          completedAtLabel,
+          tieBreakRule: c.tieBreakRule ?? null,
+          entryType: c.entryType,
+          eligibleEntries: snap?.eligibleEntries ?? null,
+          durationLabel: contestDurationLabel(c),
+        };
+      })
+    );
+  })();
+
+  if (isRemixResourceRequest(request)) {
+    return json({ contests: await contestsPromise });
+  }
+
+  return defer<{ contests: Promise<ContestProofStudioDto[]> }>({
+    contests: contestsPromise,
   });
-
-  const rows: ContestProofStudioDto[] = await Promise.all(
-    completed.map(async (c) => {
-      const snap = await findLatestContestSnapshot(c.id);
-      const settlement = await summarizeContestProofSettlement(
-        c.id,
-        c.payoutState
-      );
-      const title = contestProofTitle(c.title, c.id);
-      const completedAt = c.completedAt ?? c.updatedAt;
-      const completedAtLabel = new Intl.DateTimeFormat(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(completedAt);
-      const planned = c.plannedPayoutSats ?? 0;
-
-      return {
-        id: c.id,
-        title,
-        rankingMetric: c.rankingMetric,
-        statusLabel: formatContestStatusLabel("COMPLETED"),
-        winnerCount: c.winnerCount,
-        satsPlanned: planned,
-        satsPaid: settlement.satsPaid,
-        paidViaWalletCount: settlement.paidViaWalletCount,
-        paidManuallyCount: settlement.paidManuallyCount,
-        unresolvedCount: settlement.unresolvedCount,
-        finalizationFeeSats: c.finalizationFeeSats ?? null,
-        planAtFinalization: c.planAtFinalization ?? null,
-        payoutWalletMode: c.payoutWalletMode,
-        payoutAutoRunEnabled: c.payoutAutoRunEnabled,
-        completedAtLabel,
-        tieBreakRule: c.tieBreakRule ?? null,
-        entryType: c.entryType,
-        eligibleEntries: snap?.eligibleEntries ?? null,
-        durationLabel: contestDurationLabel(c),
-      };
-    })
-  );
-
-  return json({ contests: rows });
 }
 
 export default function ContestProofPage() {
   const { contests } = useLoaderData<typeof loader>();
 
   return (
-    <div className="space-y-6">
-      <ContestProofStudio contests={contests} />
-      <p className="text-muted-foreground text-sm">
-        <Link to="/dashboard/contests" className="text-primary hover:underline">
-          ← All contests
-        </Link>
-      </p>
-    </div>
+    <Suspense fallback={<ContestProofPageSkeleton />}>
+      <Await
+        resolve={contests}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/contests/proof" />
+        }
+      >
+        {(loadedContests) => (
+          <div className="space-y-6">
+            <ContestProofStudio contests={loadedContests} />
+            <p className="text-muted-foreground text-sm">
+              <Link
+                to="/dashboard/contests"
+                className="text-primary hover:underline"
+              >
+                ← All contests
+              </Link>
+            </p>
+          </div>
+        )}
+      </Await>
+    </Suspense>
   );
 }

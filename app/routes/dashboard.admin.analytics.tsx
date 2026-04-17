@@ -1,7 +1,9 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { useMemo } from "react";
+import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Await, useLoaderData } from "@remix-run/react";
+import { Suspense, useMemo } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { AdminAnalyticsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AdminChartCard,
   AdminLineChart,
@@ -19,6 +21,7 @@ import { getAdminAnalyticsPageData } from "~/features/admin/repositories/admin-a
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
@@ -30,8 +33,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)
   );
-  const data = await getAdminAnalyticsPageData(preset);
-  return json(data);
+  if (isRemixResourceRequest(request)) {
+    return json(await getAdminAnalyticsPageData(preset));
+  }
+  return defer({
+    analytics: getAdminAnalyticsPageData(preset),
+  });
 }
 
 function mergeSeriesForChart(
@@ -67,8 +74,37 @@ function mergeThreeSeries(
   }));
 }
 
+type AdminAnalyticsLoaderResult =
+  | { error: string }
+  | {
+      analytics: Promise<Awaited<ReturnType<typeof getAdminAnalyticsPageData>>>;
+    };
+
 export default function AdminAnalyticsPage() {
-  const raw = useLoaderData<typeof loader>();
+  const raw = useLoaderData() as AdminAnalyticsLoaderResult;
+  if ("error" in raw) {
+    return <div className="p-4">Access denied.</div>;
+  }
+
+  return (
+    <Suspense fallback={<AdminAnalyticsPageSkeleton />}>
+      <Await
+        resolve={raw.analytics}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/admin/analytics" />
+        }
+      >
+        {(loaded) => <AdminAnalyticsPageLoaded data={loaded} />}
+      </Await>
+    </Suspense>
+  );
+}
+
+function AdminAnalyticsPageLoaded({
+  data: d,
+}: {
+  data: Awaited<ReturnType<typeof getAdminAnalyticsPageData>>;
+}) {
   const { formatDate, dateLocale } = useFormattedDate();
   const { unit, formatSats } = useAdminCurrency();
   const formatChartDay = useMemo(
@@ -78,12 +114,6 @@ export default function AdminAnalyticsPage() {
       }),
     [formatDate]
   );
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- narrow from loose loader type
-  if (typeof raw === "object" && raw !== null && "error" in raw) {
-    return <div className="p-4">Access denied.</div>;
-  }
-  const d = raw as Awaited<ReturnType<typeof getAdminAnalyticsPageData>>;
 
   const growthData = mergeThreeSeries(
     d.series.newUsersPerDay,

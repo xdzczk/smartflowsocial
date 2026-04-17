@@ -1,6 +1,7 @@
-import { useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
@@ -21,12 +22,15 @@ import {
   RAIL_PAD_X,
   RAIL_ZONE_PY,
 } from "~/features/posts/components/publishing-rail";
+import { optimisticallyRemovePostIdsFromViews } from "~/features/posts/hooks/post-cache-prune";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueColor } from "~/features/posts/queue-colors";
 import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 import type {
   LongFormPostType,
   LongFormPostData,
 } from "~/features/posts/server";
+import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
@@ -511,7 +515,8 @@ export default function LongFormDetailsModal({
 }: LongFormDetailsModalProps) {
   const { dateLocale } = useFormattedDate();
   const [showEventData, setShowEventData] = useState(false);
-  const deleteFetcher = useFetcher();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
   const rootData = useRouteLoaderData("root") as
     | {
         user?: {
@@ -525,28 +530,36 @@ export default function LongFormDetailsModal({
     [rootData?.user]
   );
 
-  useEffect(() => {
-    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
-    const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-    if (data.error || !data.success) return;
-    const formData = deleteFetcher.formData as FormData | undefined;
-    const submittedPostId = formData?.get("postId");
-    const isOurDelete =
-      formData?.get("_action") === "deleteLongForm" &&
-      (submittedPostId === post.id ||
-        String(submittedPostId) === String(post.id));
-    if (isOurDelete) {
-      onDeleted?.(post.id);
-      onClose();
-    }
-  }, [
-    deleteFetcher.state,
-    deleteFetcher.data,
-    deleteFetcher.formData,
-    post.id,
-    onDeleted,
-    onClose,
-  ]);
+  const handleDelete = useCallback(() => {
+    const postId = post.id;
+    setIsDeleting(true);
+    optimisticallyRemovePostIdsFromViews(queryClient, [postId]);
+    onDeleted?.(postId);
+    onClose();
+
+    const formData = new FormData();
+    formData.append("_action", "deleteLongForm");
+    formData.append("postId", postId);
+    void (async () => {
+      try {
+        const url = buildActionUrl(window.location.pathname);
+        const resp = await fetch(url, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",
+        });
+        const json = (await resp.json().catch(() => null)) as {
+          cascadeDeletedIds?: string[];
+        } | null;
+        const cascadeIds = json?.cascadeDeletedIds;
+        if (cascadeIds && cascadeIds.length > 0) {
+          optimisticallyRemovePostIdsFromViews(queryClient, cascadeIds);
+        }
+      } finally {
+        invalidateDependentCaches(queryClient);
+      }
+    })();
+  }, [post.id, queryClient, onDeleted, onClose]);
 
   const eventId =
     type === "published" ? getLongFormPublishedEventId(post) : null;
@@ -609,26 +622,25 @@ export default function LongFormDetailsModal({
   );
 
   const deleteForm = (
-    <deleteFetcher.Form method="post" onClick={(e) => e.stopPropagation()}>
-      <input type="hidden" name="postId" value={post.id} />
-      <input type="hidden" name="_action" value="deleteLongForm" />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
-      >
-        {deleteFetcher.state !== "idle" &&
-        deleteFetcher.formData?.get("postId") === post.id
-          ? "Deleting..."
-          : type === "scheduled"
-            ? getDeleteButtonLabel("scheduled")
-            : type === "draft"
-              ? "Delete Draft"
-              : "Delete Article"}
-      </Button>
-    </deleteFetcher.Form>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={isDeleting}
+      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDelete();
+      }}
+    >
+      {isDeleting
+        ? "Deleting..."
+        : type === "scheduled"
+          ? getDeleteButtonLabel("scheduled")
+          : type === "draft"
+            ? "Delete Draft"
+            : "Delete Article"}
+    </Button>
   );
 
   const statusType: "draft" | "published" | "scheduled" =

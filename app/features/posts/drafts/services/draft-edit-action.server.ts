@@ -60,6 +60,28 @@ function parseSignedEvent(raw: string): {
   }
 }
 
+function getSignedEventIdFromUnknown(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!("id" in value)) return null;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+function toUnixSeconds(value: unknown): number | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : Math.floor(value.getTime() / 1000);
+  }
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? null
+      : Math.floor(parsed.getTime() / 1000);
+  }
+  return null;
+}
+
 export async function handleDraftEditAction(
   formData: FormData,
   userId: string,
@@ -222,6 +244,11 @@ async function createRepostAndQuotePostsFromResume(
   userId: string,
   stateMachine: PostStateMachine
 ): Promise<void> {
+  const parentScheduledForUnix = toUnixSeconds(sourcePost.scheduledAtUtc);
+  const expectedParentEventId =
+    (typeof sourcePost.nostrEventId === "string" && sourcePost.nostrEventId) ||
+    getSignedEventIdFromUnknown(sourcePost.signedEvent);
+  const isAttachableParent = parentScheduledForUnix != null;
   const repostList = parseRepostListFromResume(resumeData);
   for (const item of repostList) {
     if (!item.signedEvent) continue;
@@ -241,6 +268,24 @@ async function createRepostAndQuotePostsFromResume(
         repostOfPostId: postId,
         postKind: "REPOST",
         signedEvent: item.signedEvent as SignedEvent,
+        ...(isAttachableParent
+          ? {
+              parentScheduledActionId: postId,
+              rootScheduledActionId: sourcePost.rootScheduledActionId ?? postId,
+              targetScheduledActionId: postId,
+              dependencyMode: "attached" as const,
+              targetMode: "scheduled_parent" as const,
+              followUpTimingMode: "offset_from_parent" as const,
+              followUpOffsetSeconds: Math.max(
+                0,
+                item.scheduledFor - parentScheduledForUnix
+              ),
+              expectedParentEventId: expectedParentEventId ?? undefined,
+            }
+          : {
+              dependencyMode: "standalone" as const,
+              targetMode: "direct" as const,
+            }),
       },
       item.scheduledFor
     );
@@ -271,6 +316,24 @@ async function createRepostAndQuotePostsFromResume(
         quoteOfPostId: postId,
         postKind: "QUOTE",
         signedEvent: item.signedEvent as SignedEvent,
+        ...(isAttachableParent
+          ? {
+              parentScheduledActionId: postId,
+              rootScheduledActionId: sourcePost.rootScheduledActionId ?? postId,
+              targetScheduledActionId: postId,
+              dependencyMode: "attached" as const,
+              targetMode: "scheduled_parent" as const,
+              followUpTimingMode: "offset_from_parent" as const,
+              followUpOffsetSeconds: Math.max(
+                0,
+                item.scheduledFor - parentScheduledForUnix
+              ),
+              expectedParentEventId: expectedParentEventId ?? undefined,
+            }
+          : {
+              dependencyMode: "standalone" as const,
+              targetMode: "direct" as const,
+            }),
       },
       item.scheduledFor
     );

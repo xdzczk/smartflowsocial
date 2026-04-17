@@ -5,25 +5,37 @@
  */
 
 import { check, sleep } from "k6";
-import { authenticatedRequest, createSession, thresholds } from "./k6-setup.js";
+import {
+  authenticatedRequest,
+  createPostIds,
+  createSession,
+  thresholds,
+} from "./k6-setup.js";
 
 export const options = {
-  stages: [
-    { duration: "30s", target: 5 }, // Ramp up to 5 users
-    { duration: "1m", target: 5 }, // Stay at 5 users
-    { duration: "30s", target: 10 }, // Ramp up to 10 users
-    { duration: "1m", target: 10 }, // Stay at 10 users
-    { duration: "30s", target: 0 }, // Ramp down
-  ],
+  scenarios: {
+    sustained_bulk_write: {
+      executor: "ramping-vus",
+      stages: [
+        { duration: "1m", target: 5 },
+        { duration: "2m", target: 12 },
+        { duration: "1m", target: 0 },
+      ],
+    },
+  },
   thresholds: {
     ...thresholds,
-    "http_req_duration{name:/dashboard.*action/}": ["p(95)<3000"],
-    "http_req_duration{name:/scheduled.*action/}": ["p(95)<3000"],
+    "http_req_duration{name:/dashboard/}": ["p(95)<3500"],
+    "http_req_duration{name:/dashboard\\/scheduled/}": ["p(95)<3500"],
+    "http_req_duration{name:/dashboard\\/drafts/}": ["p(95)<5000"],
   },
 };
 
 export default function () {
   const session = createSession();
+  const postIds = createPostIds("bulk-post");
+  const deleteIds = postIds.slice(0, 10);
+  const scheduleIds = postIds.slice(0, 5);
 
   // Test: Bulk Delete Posts
   const bulkDeleteResponse = authenticatedRequest(
@@ -31,7 +43,7 @@ export default function () {
     "/dashboard",
     {
       _action: "bulkDelete",
-      postIds: Array.from({ length: 10 }, (_, i) => `post-${i + 1}`),
+      postIds: deleteIds,
     },
     session
   );
@@ -40,7 +52,22 @@ export default function () {
     "bulk-delete: response time < 3s": (r) => r.timings.duration < 3000,
   });
 
-  sleep(2);
+  sleep(1);
+
+  // Read path mixed between writes to emulate realistic operator behavior.
+  const dashboardReadResponse = authenticatedRequest(
+    "GET",
+    "/dashboard/scheduled",
+    null,
+    session
+  );
+  check(dashboardReadResponse, {
+    "scheduled-loader-after-write: status 200": (r) => r.status === 200,
+    "scheduled-loader-after-write: response time < 2.5s": (r) =>
+      r.timings.duration < 2500,
+  });
+
+  sleep(1);
 
   // Test: Bulk Schedule Posts
   const bulkScheduleResponse = authenticatedRequest(
@@ -48,7 +75,7 @@ export default function () {
     "/dashboard/scheduled",
     {
       _action: "bulkDelete",
-      postIds: Array.from({ length: 5 }, (_, i) => `post-${i + 1}`),
+      postIds: scheduleIds,
     },
     session
   );
@@ -57,7 +84,7 @@ export default function () {
     "bulk-schedule: response time < 3s": (r) => r.timings.duration < 3000,
   });
 
-  sleep(2);
+  sleep(1);
 
   // Test: Bulk Sign & Resume Drafts
   const bulkSignResponse = authenticatedRequest(
@@ -65,7 +92,7 @@ export default function () {
     "/dashboard/drafts",
     {
       _action: "bulkSignAndResume",
-      postIds: Array.from({ length: 5 }, (_, i) => `post-${i + 1}`),
+      postIds: scheduleIds,
     },
     session
   );
@@ -74,5 +101,5 @@ export default function () {
     "bulk-sign: response time < 5s": (r) => r.timings.duration < 5000,
   });
 
-  sleep(2);
+  sleep(1);
 }

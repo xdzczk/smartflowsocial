@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="5.546" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-04-15T14:07:48" tests="0" file="tests/e2e/extended/subscription.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Extended: Subscription" timestamp="2026-04-15T14:07:48" tests="1" time="5.545" failures="0">
+    <testcase name="Extended: Subscription loads plans page for authenticated users" time="4.780" classname="loads plans page for authenticated users">
+    </testcase>
+  </testsuite>
+</testsuites>

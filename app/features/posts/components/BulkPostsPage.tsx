@@ -306,63 +306,6 @@ export default function BulkPostsPage() {
               </div>
             ) : null}
 
-            {signing.isSigning ? (
-              <div className="bg-muted text-muted-foreground mb-3 flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Waiting for signer approval…
-                  {signing.signAttempt ? (
-                    <>
-                      {" "}
-                      Attempt {signing.signAttempt.attempt} of{" "}
-                      {signing.signAttempt.maxAttempts} ·{" "}
-                      {signing.formatAttemptElapsed(
-                        signing.signElapsedSeconds,
-                        signing.signAttempt.timeoutMs
-                      )}
-                    </>
-                  ) : null}
-                  {signing.signingProgress ? (
-                    <span className="ml-1">
-                      (post {signing.signingProgress.current}/
-                      {signing.signingProgress.total})
-                    </span>
-                  ) : null}
-                </span>
-                <span className="flex shrink-0 flex-wrap gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      void signing.requestNewSignerSession(
-                        signing.cancelSigningState
-                      )
-                    }
-                  >
-                    New session
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      signing.cancelSigningState();
-                      void signing.tryBackgroundReconnect();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </span>
-              </div>
-            ) : null}
-
-            {(signing.signingError ?? signing.actionError) &&
-            bulkComposerStage === "review" ? (
-              <div className="border-destructive bg-destructive/10 text-destructive mb-3 rounded-md border p-3 text-sm">
-                {signing.signingError ?? signing.actionError}
-              </div>
-            ) : null}
-
             <Dialog
               open={signing.partialSignState !== null}
               onOpenChange={(open) => {
@@ -504,6 +447,14 @@ export default function BulkPostsPage() {
             postsCount={posts.length}
             isSigning={signing.isSigning}
             signingProgress={signing.signingProgress}
+            signingError={signing.signingError ?? signing.actionError}
+            onRequestNewSession={() => {
+              void signing.requestNewSignerSession(signing.cancelSigningState);
+            }}
+            onCancelSigning={() => {
+              signing.cancelSigningState();
+              void signing.tryBackgroundReconnect();
+            }}
             bulkExecutionBlocked={!canExecuteBulkActions}
           />
         }

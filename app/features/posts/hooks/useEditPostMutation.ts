@@ -11,6 +11,10 @@ import {
   recyclablesKeys,
 } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -219,13 +223,27 @@ export function useEditPostMutation() {
       }
     },
     onSuccess: () => {
-      // Invalidate all post-related queries to refetch fresh data
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: scheduledPostsKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: publishedPostsKeys.all });
+      void queryClient.invalidateQueries({
+        queryKey: publishedPostsKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       void queryClient.invalidateQueries({ queryKey: recyclablesKeys.all });
       void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
+
+      removeStaleInfiniteQueries(queryClient, [
+        dashboardKeys.all,
+        scheduledPostsKeys.all,
+        publishedPostsKeys.all,
+      ]);
     },
   });
 }

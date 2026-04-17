@@ -13,7 +13,14 @@ import {
 } from "~/features/payments/types";
 import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import {
+  deleteLongFormPost,
+  deletePost,
+  getScheduledLongFormPosts,
+  getScheduledPosts,
+} from "~/features/posts/server";
+import {
   deleteQueueType,
+  getQueueTypeByIdForUser,
   hashTagPresetExistsForUser,
   updateQueueType,
 } from "~/features/user";
@@ -312,9 +319,52 @@ async function handleDeleteQueueType(
     return result.response;
   }
   const deletedId = result.data.id;
+  const deleteMode = result.data.deleteMode;
+
+  if (deleteMode === "queue_and_scheduled") {
+    const queueType = await getQueueTypeByIdForUser(userId, deletedId);
+    if (!queueType) {
+      return json({ error: "Queue type not found" }, { status: 404 });
+    }
+    await deleteScheduledContentForQueue(userId, queueType.name);
+  }
+
   await deleteQueueType(userId, deletedId);
   await invalidateQueueTypesCache(userId);
-  return json({ success: true, deletedId });
+  return json({ success: true, deletedId, deleteMode });
+}
+
+async function deleteScheduledContentForQueue(
+  userId: string,
+  queueTypeName: string
+): Promise<void> {
+  const pageSize = 100;
+
+  // Keep fetching page 1 to avoid skip/offset issues as rows are deleted.
+  for (;;) {
+    const { posts } = await getScheduledPosts({
+      userId,
+      queueType: queueTypeName,
+      page: 1,
+      limit: pageSize,
+    });
+    if (posts.length === 0) break;
+    await Promise.all(posts.map((post) => deletePost({ id: post.id, userId })));
+  }
+
+  // Same approach for longform scheduled content.
+  for (;;) {
+    const { posts } = await getScheduledLongFormPosts({
+      userId,
+      queueType: queueTypeName,
+      page: 1,
+      limit: pageSize,
+    });
+    if (posts.length === 0) break;
+    await Promise.all(
+      posts.map((post) => deleteLongFormPost({ id: post.id, userId }))
+    );
+  }
 }
 
 export async function handleQueueTypeAction(

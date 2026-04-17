@@ -4,7 +4,7 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { GiveawayDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
@@ -568,15 +568,7 @@ export default function DashboardGiveawayDetailPage() {
     id !== "" ? `/dashboard/giveaway/detail/${id}` : "/dashboard/giveaway";
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="detail"
-          title="Giveaway"
-          subtitle="Winners, payouts, and activity"
-        />
-      }
-    >
+    <Suspense fallback={<GiveawayDetailPageSkeleton />}>
       <Await
         resolve={giveawayDetail}
         errorElement={<DeferredRouteAwaitError retryTo={retryTo} />}

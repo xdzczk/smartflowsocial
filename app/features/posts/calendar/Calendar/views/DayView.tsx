@@ -165,7 +165,7 @@ export function DayView({
     dayZoned.day === todayZoned.day;
 
   return (
-    <div className="flex h-0 min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <div className="flex min-h-0 min-h-[40vh] flex-1 flex-col overflow-hidden select-none">
           {/* Day strip: same role as week header in Weekly view */}

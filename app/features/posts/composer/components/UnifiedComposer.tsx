@@ -25,6 +25,7 @@ import {
   type ShortDraftFilter,
 } from "~/features/posts/drafts";
 import { usePostScheduling } from "~/features/posts/scheduling";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import { getClientDisplayErrorMessage } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
@@ -36,7 +37,7 @@ import {
   type QueueType,
   type ComposerAttachment,
 } from "../../types";
-import { stripAttachmentTokens } from "../../utils/inline-tokens.client";
+import { stripAttachmentTokens } from "../../utils/inline-tokens";
 import type { TextPostFormData } from "../hooks/composer-submit-types";
 import {
   useComposerLocalDraft,
@@ -966,6 +967,28 @@ export function UnifiedComposer({
     typeof (formScheduledFor ?? schedulingScheduledFor) === "string" &&
     (formScheduledFor ?? schedulingScheduledFor).trim()
   );
+  const submitMode =
+    embedContext === "contest" ? contestSubmitMode : publishMode;
+  const scheduleValueForWarning = formScheduledFor ?? schedulingScheduledFor;
+  const scheduledForForWarning =
+    typeof scheduleValueForWarning === "string"
+      ? scheduleValueForWarning.trim()
+      : "";
+  const shouldCheckScheduleOverlap =
+    (submitMode === "schedule" || submitMode === "queue") &&
+    scheduledForForWarning.length > 0;
+  const scheduleOverlapExcludeContentId =
+    composerContext.mode === "edit_scheduled"
+      ? composerContext.scheduledActionId
+      : composerContext.mode === "edit_follow_up"
+        ? composerContext.followUpActionId
+        : undefined;
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor: scheduledForForWarning,
+    queueTypeId,
+    enabled: shouldCheckScheduleOverlap,
+    excludeContentId: scheduleOverlapExcludeContentId,
+  });
 
   const relayCount =
     relayCountProp > 0
@@ -1012,8 +1035,10 @@ export function UnifiedComposer({
     issueDisplayPhase === "blocking"
       ? [...hardBlockers, ...deferrableBlockers]
       : [...hardBlockers];
-  const displayAmberIssues =
-    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+  const displayAmberIssues = [
+    ...(issueDisplayPhase === "soft" ? [...deferrableBlockers] : []),
+    ...(scheduleOverlapWarning ? [scheduleOverlapWarning] : []),
+  ];
 
   const pristineHint =
     issueDisplayPhase === "pristine" &&
@@ -1028,8 +1053,7 @@ export function UnifiedComposer({
       ? "Draft"
       : undefined;
 
-  const publishModeForRail =
-    embedContext === "contest" ? contestSubmitMode : publishMode;
+  const publishModeForRail = submitMode;
   const readinessForRail =
     displayRedIssues.length > 0
       ? getReadinessPresentation(
@@ -1203,6 +1227,23 @@ export function UnifiedComposer({
         onOpenTemplates={() => openDraftPicker("templates")}
       />
     ) : null;
+  const signerStatusContent =
+    !isTemplateMode && !hidePublishingRail ? (
+      <ComposerErrors
+        isSigning={isSigning}
+        signerLabel={signerLabel}
+        inRail
+        onCancelSigning={cancelSigningState}
+        signingError={signingError}
+        onDismissSigningError={() => {
+          setSigningError(null);
+          setLastPublishFailed(false);
+        }}
+        onRetry={() => primarySubmitRef.current?.click()}
+        disabled={disabled}
+        signerReady={signerReady}
+      />
+    ) : null;
 
   return (
     <div
@@ -1271,7 +1312,7 @@ export function UnifiedComposer({
           disabled={blossomMediaBlocked}
           onChange={onFileChange}
         />
-        {!isTemplateMode ? (
+        {!isTemplateMode && hidePublishingRail ? (
           <ComposerErrors
             isSigning={isSigning}
             signerLabel={signerLabel}
@@ -1481,6 +1522,7 @@ export function UnifiedComposer({
       ) : null}
       {!hidePublishingRail && !isTemplateMode ? (
         <UnifiedComposerPublishingSummaryRail
+          signerStatusContent={signerStatusContent}
           publishMode={publishMode}
           onPublishModeChange={onPublishModeChange ?? (() => void 0)}
           outcomeSentence={outcomeSentence}

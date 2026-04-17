@@ -1,15 +1,18 @@
 import { BroadcastSuppressionReasonCode } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { defer, json, redirect } from "@remix-run/node";
 import {
+  Await,
   Form,
   Link,
   useLoaderData,
   useRevalidator,
   useSearchParams,
 } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { BroadcastDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
@@ -26,22 +29,26 @@ import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-
 import { broadcastStatusBadgeKind } from "~/features/broadcast/broadcast-status";
 import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const id = params["id"];
-  if (!id) throw new Response("Not found", { status: 404 });
-
-  const url = new URL(request.url);
-  const statusFilter = url.searchParams.get("rstatus") ?? "ALL";
-  const search = url.searchParams.get("rq") ?? "";
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
-  const take = 75;
-  const skip = (page - 1) * take;
-
+async function getBroadcastDetailData({
+  id,
+  userId,
+  statusFilter,
+  search,
+  take,
+  skip,
+  page,
+}: {
+  id: string;
+  userId: string;
+  statusFilter: string;
+  search: string;
+  take: number;
+  skip: number;
+  page: number;
+}) {
   const bundle = await getBroadcastCampaignForUserWithRecipientSlice(
     id,
     userId,
@@ -60,7 +67,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     profiles.map((p) => [p.pubkey.toLowerCase(), p])
   );
 
-  return json({ ...bundle, page, take, statusFilter, search, profileMap });
+  return { ...bundle, page, take, statusFilter, search, profileMap };
+}
+
+type BroadcastDetailLoaderData = Awaited<
+  ReturnType<typeof getBroadcastDetailData>
+>;
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+
+  const id = params["id"];
+  if (!id) throw new Response("Not found", { status: 404 });
+
+  const url = new URL(request.url);
+  const statusFilter = url.searchParams.get("rstatus") ?? "ALL";
+  const search = url.searchParams.get("rq") ?? "";
+  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
+  const take = 75;
+  const skip = (page - 1) * take;
+
+  const detailPromise = getBroadcastDetailData({
+    id,
+    userId,
+    statusFilter,
+    search,
+    take,
+    skip,
+    page,
+  });
+
+  if (isRemixResourceRequest(request)) {
+    return json(await detailPromise);
+  }
+
+  return defer<{ detail: Promise<BroadcastDetailLoaderData> }>({
+    detail: detailPromise,
+  });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -203,7 +247,32 @@ function badgeClass(kind: string) {
 }
 
 export default function BroadcastDetailRoute() {
-  const data = useLoaderData<typeof loader>();
+  const { detail } = useLoaderData<{
+    detail: Promise<BroadcastDetailLoaderData>;
+  }>();
+  return (
+    <Suspense fallback={<BroadcastDetailPageSkeleton />}>
+      <Await
+        resolve={detail}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/broadcasts" />
+        }
+      >
+        {(loaded) => (
+          <BroadcastDetailRouteLoaded
+            data={loaded as BroadcastDetailLoaderData}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function BroadcastDetailRouteLoaded({
+  data,
+}: {
+  data: BroadcastDetailLoaderData;
+}) {
   const {
     campaign,
     recipients,

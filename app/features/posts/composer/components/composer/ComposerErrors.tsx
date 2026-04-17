@@ -24,6 +24,8 @@ export interface ComposerErrorsProps {
   onRetry: () => void;
   disabled?: boolean;
   signerReady?: boolean | null;
+  /** Compact rail presentation (no outer margins, tighter copy/spacing). */
+  inRail?: boolean;
 }
 
 export function ComposerErrors({
@@ -35,15 +37,30 @@ export function ComposerErrors({
   onRetry,
   disabled = false,
   signerReady = null,
+  inRail = false,
 }: ComposerErrorsProps) {
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
+  const waitingCopy =
+    signerLabel === "NIP-07 extension"
+      ? "Approve this request in your browser extension."
+      : inRail
+        ? "Approve this request in your remote signer. If you started a fresh session, use New session."
+        : 'If you\'re using a remote signer, open it to approve the request. If you started a new session in the signer app, click "Use new session" below.';
 
   return (
     <>
       {isSigning ? (
-        <div className="bg-muted/30 text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+        <div
+          className={
+            inRail
+              ? "bg-muted/35 text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-2.5 text-xs"
+              : "bg-muted/30 text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm"
+          }
+        >
           <span>
-            Waiting for signer approval…
+            {inRail
+              ? "Signer approval required."
+              : "Waiting for signer approval…"}
             {signAttempt ? (
               <>
                 {" "}
@@ -55,9 +72,7 @@ export function ComposerErrors({
               </>
             ) : null}
             {" — "}
-            {signerLabel === "NIP-07 extension"
-              ? "Approve the request in your browser extension."
-              : 'If you\'re using a remote signer, open it to approve the request. If you started a new session in the signer app, click "Use new session" below.'}
+            {waitingCopy}
           </span>
           <span className="flex shrink-0 items-center gap-1">
             {signerLabel !== "NIP-07 extension" ? (
@@ -68,7 +83,7 @@ export function ComposerErrors({
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => void requestNewSignerSession(onCancelSigning)}
               >
-                Use new session
+                New session
               </Button>
             ) : null}
             <Button
@@ -89,7 +104,11 @@ export function ComposerErrors({
       {signingError ? (
         <Alert
           variant="destructive"
-          className="mb-3 flex flex-row items-center justify-between gap-2"
+          className={
+            inRail
+              ? "flex flex-row items-center justify-between gap-2 py-2.5"
+              : "mb-3 flex flex-row items-center justify-between gap-2"
+          }
         >
           <AlertDescription className="flex-1">{signingError}</AlertDescription>
           <Button

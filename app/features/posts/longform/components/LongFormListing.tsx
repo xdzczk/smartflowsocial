@@ -16,6 +16,7 @@ import type { PostFetcher, LongFormPostData } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 
 import { useLongFormListingState } from "../hooks/useLongFormListingState";
 import {
@@ -124,8 +125,12 @@ export default function LongFormListing({
       if ("success" in data && data.success) {
         void queryClient.invalidateQueries({
           queryKey: scheduledPostsKeys.all,
+          predicate: skipInfiniteQueries,
         });
-        void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        void queryClient.invalidateQueries({
+          queryKey: dashboardKeys.all,
+          predicate: skipInfiniteQueries,
+        });
 
         if (type === "draft" || ("moved" in data && data.moved)) {
           void queryClient.invalidateQueries({ queryKey: draftsKeys.all });

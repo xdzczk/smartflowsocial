@@ -5,16 +5,31 @@
  */
 
 import { check, sleep } from "k6";
-import { authenticatedRequest, createSession, thresholds } from "./k6-setup.js";
+import {
+  authenticatedRequest,
+  createSession,
+  getTestConfig,
+  thresholds,
+} from "./k6-setup.js";
 
 export const options = {
-  stages: [
-    { duration: "30s", target: 10 }, // Ramp up to 10 users
-    { duration: "1m", target: 10 }, // Stay at 10 users
-    { duration: "30s", target: 20 }, // Ramp up to 20 users
-    { duration: "1m", target: 20 }, // Stay at 20 users
-    { duration: "30s", target: 0 }, // Ramp down
-  ],
+  scenarios: {
+    steady_loader_traffic: {
+      executor: "ramping-vus",
+      stages: [
+        { duration: "1m", target: 10 },
+        { duration: "2m", target: 25 },
+        { duration: "1m", target: 0 },
+      ],
+    },
+    burst_loader_spike: {
+      executor: "per-vu-iterations",
+      vus: 20,
+      iterations: 8,
+      startTime: "30s",
+      maxDuration: "2m",
+    },
+  },
   thresholds: {
     ...thresholds,
     "http_req_duration{name:/dashboard/}": ["p(95)<2000"],
@@ -25,6 +40,7 @@ export const options = {
 
 export default function () {
   const session = createSession();
+  const { queueTypeId } = getTestConfig();
 
   // Test: Dashboard Loader
   const dashboardResponse = authenticatedRequest(
@@ -58,7 +74,7 @@ export default function () {
   // Test: Calendar Loader
   const calendarResponse = authenticatedRequest(
     "GET",
-    "/dashboard/calendar/regular",
+    `/dashboard/calendar/${encodeURIComponent(queueTypeId)}`,
     null,
     session
   );

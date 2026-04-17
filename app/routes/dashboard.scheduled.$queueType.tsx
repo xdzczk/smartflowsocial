@@ -1,1 +1,6 @@
-export { default, loader, action } from "./dashboard.scheduled";
+export {
+  default,
+  loader,
+  action,
+  shouldRevalidate,
+} from "./dashboard.scheduled";

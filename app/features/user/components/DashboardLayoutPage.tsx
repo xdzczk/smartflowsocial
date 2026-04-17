@@ -20,7 +20,33 @@ import type { ReactNode } from "react";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
+import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
+import {
+  AdminAnalyticsPageSkeleton,
+  AdminOperationsPageSkeleton,
+  AdminUsersPageSkeleton,
+  BroadcastAudiencesPageSkeleton,
+  BroadcastDetailPageSkeleton,
+  BroadcastIndexPageSkeleton,
+  BroadcastNewPageSkeleton,
+  BroadcastReviewPageSkeleton,
+  BulkPostsPageSkeleton,
+  CalendarPageSkeleton,
+  CalendarQueuePageSkeleton,
+  ContestDetailPageSkeleton,
+  ContestProofPageSkeleton,
+  DraftsPageSkeleton,
+  GiveawayBuilderPageSkeleton,
+  GiveawayDetailPageSkeleton,
+  GiveawayProofPageSkeleton,
+  MediaSettingsPageSkeleton,
+  PublishedPostsPageSkeleton,
+  RecyclablesPageSkeleton,
+  ScheduledPostsPageSkeleton,
+  TemplatesPageSkeleton,
+} from "~/components/skeletons/RoutePageSkeletons";
 import { Skeleton } from "~/components/ui/skeleton";
+import { EngagementFeedSkeleton } from "~/features/engagement/components/EngagementFeedSkeleton";
 import {
   BillingAlertBanner,
   getUserPlanType,
@@ -29,6 +55,7 @@ import {
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { CreateComposerShell } from "~/features/posts/composer/components/CreateComposerShell";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
+import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -37,6 +64,7 @@ import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
+const DASHBOARD_INDEX_PATH = "/dashboard";
 const FREE_PLAN_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-free-plan-banner";
 const FREE_PLAN_BANNER_ANALYTICS_EVENT = "smartflow:free-plan-banner-analytics";
@@ -85,7 +113,7 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
 /** Dashboard index is the only route that should not scroll vertically on large screens; other dashboard pages need to scroll. */
 function isDashboardIndexPath(pathname: string): boolean {
   const normalized = pathname.replace(/\/$/, "") || "/";
-  return normalized === "/dashboard";
+  return normalized === DASHBOARD_INDEX_PATH;
 }
 
 /** Calendar route: lock viewport height on desktop so only the time grid scrolls. */
@@ -99,6 +127,85 @@ function isComposePath(pathname: string): boolean {
     pathname === "/dashboard/newpost" ||
     pathname === "/dashboard/newlongformpost"
   );
+}
+
+function pendingSkeletonForPath(pathname: string): ReactNode {
+  if (isDashboardIndexPath(pathname)) {
+    return <DashboardSkeleton />;
+  }
+  if (/^\/dashboard\/calendar\/[^/]+$/.test(pathname)) {
+    return <CalendarQueuePageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/admin/analytics")) {
+    return <AdminAnalyticsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/admin/users")) {
+    return <AdminUsersPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/admin/operations")) {
+    return <AdminOperationsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/new/review")) {
+    return <BroadcastReviewPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/new")) {
+    return <BroadcastNewPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts/audiences")) {
+    return <BroadcastAudiencesPageSkeleton />;
+  }
+  if (/^\/dashboard\/broadcasts\/[^/]+$/.test(pathname)) {
+    return <BroadcastDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/broadcasts")) {
+    return <BroadcastIndexPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/calendar")) {
+    return <CalendarPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/drafts")) {
+    return <DraftsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/published")) {
+    return <PublishedPostsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/scheduled")) {
+    return <ScheduledPostsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/templates")) {
+    return <TemplatesPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/recyclables")) {
+    return <RecyclablesPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/bulkposts")) {
+    return <BulkPostsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/settings/media")) {
+    return <MediaSettingsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/settings")) {
+    return <SettingsPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/giveaway/new")) {
+    return <GiveawayBuilderPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/giveaway/detail/")) {
+    return <GiveawayDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/giveaway/proof")) {
+    return <GiveawayProofPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/contests/detail/")) {
+    return <ContestDetailPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/contests/proof")) {
+    return <ContestProofPageSkeleton />;
+  }
+  if (pathname.startsWith("/dashboard/engagement/feed")) {
+    return <EngagementFeedSkeleton />;
+  }
+  return <ScheduledPostsPageSkeleton />;
 }
 
 function pendingComposeContentType(
@@ -123,6 +230,64 @@ function composeShellTitle(
   if (contentType === "thread") return "Create thread";
   if (contentType === "article") return "Create article";
   return "Create post";
+}
+
+type DashboardNavigation = ReturnType<typeof useNavigation>;
+type DashboardLocation = ReturnType<typeof useLocation>;
+
+function getNavigationFormValue(
+  formData: FormData | undefined,
+  key: string
+): string | undefined {
+  const value = formData?.get(key);
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getPendingNavigationState(
+  navigation: DashboardNavigation,
+  location: DashboardLocation
+): {
+  navAction: string | undefined;
+  navParentNpub: string | undefined;
+  navDecision: string | undefined;
+  pendingPathname: string;
+  pendingComposeType: "post" | "poll" | "thread" | "article";
+  showPendingComposeSkeleton: boolean;
+  showPendingDashboardSkeleton: boolean;
+} {
+  const formData = navigation.formData;
+  const navAction = getNavigationFormValue(formData, "_action");
+  const navParentNpub = getNavigationFormValue(formData, "parentNpub");
+  const navDecision = getNavigationFormValue(formData, "decision");
+  const pendingPathname = navigation.location?.pathname ?? "";
+  const pendingSearch = navigation.location?.search ?? "";
+  const hasPendingTarget = pendingPathname.length > 0;
+  const pendingRouteChanged =
+    hasPendingTarget &&
+    (pendingPathname !== location.pathname ||
+      pendingSearch !== location.search);
+  const showPendingComposeSkeleton =
+    navigation.state === "loading" &&
+    isComposePath(pendingPathname) &&
+    !isComposePath(location.pathname);
+  const showPendingDashboardSkeleton =
+    navigation.state === "loading" &&
+    pendingRouteChanged &&
+    pendingPathname.startsWith("/dashboard") &&
+    !isComposePath(pendingPathname);
+
+  return {
+    navAction,
+    navParentNpub,
+    navDecision,
+    pendingPathname,
+    pendingComposeType: pendingComposeContentType(
+      pendingPathname,
+      pendingSearch
+    ),
+    showPendingComposeSkeleton,
+    showPendingDashboardSkeleton,
+  };
 }
 
 export function DashboardLayoutPage(): ReactNode {
@@ -159,22 +324,16 @@ export function DashboardLayoutPage(): ReactNode {
     billingContext.bannerVariant !== "none" &&
     !isFreePlan;
   const navigation = useNavigation();
-  const navAction =
-    (navigation.formData?.get("_action") as string) || undefined;
-  const navParentNpub =
-    (navigation.formData?.get("parentNpub") as string) || undefined;
-  const navDecision =
-    (navigation.formData?.get("decision") as string) || undefined;
-  const pendingPathname = navigation.location?.pathname ?? "";
-  const pendingSearch = navigation.location?.search ?? "";
-  const pendingComposeType = pendingComposeContentType(
+  const {
+    navAction,
+    navParentNpub,
+    navDecision,
     pendingPathname,
-    pendingSearch
-  );
-  const showPendingComposeSkeleton =
-    navigation.state === "loading" &&
-    isComposePath(pendingPathname) &&
-    !isComposePath(location.pathname);
+    pendingComposeType,
+    showPendingComposeSkeleton,
+    showPendingDashboardSkeleton,
+  } = getPendingNavigationState(navigation, location);
+  const pendingDashboardSkeleton = pendingSkeletonForPath(pendingPathname);
 
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -256,7 +415,9 @@ export function DashboardLayoutPage(): ReactNode {
         {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders. */}
         <main
           id="page-content"
-          className="flex min-h-0 max-w-full min-w-0 flex-1 flex-col pt-16"
+          className={`flex min-h-0 max-w-full min-w-0 flex-1 flex-col pt-16 ${
+            isCalendar ? "overflow-hidden" : ""
+          }`}
         >
           {referredBy != null ? (
             <ReferredByBanner
@@ -415,8 +576,16 @@ export function DashboardLayoutPage(): ReactNode {
                   <ComposerSkeleton />
                 </CreateComposerShell>
               </div>
-            ) : (
+            ) : showPendingDashboardSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">
+                {pendingDashboardSkeleton}
+              </div>
+            ) : (
+              <div
+                className={`animate-in fade-in-0 duration-200 ${
+                  isCalendar ? "flex min-h-0 flex-1 flex-col" : ""
+                }`}
+              >
                 <Outlet />
               </div>
             )}

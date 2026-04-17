@@ -1,10 +1,7 @@
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom,
-} from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { defer, json, redirect } from "@remix-run/node";
 import {
+  Await,
   Form,
   Link,
   useActionData,
@@ -12,9 +9,11 @@ import {
   useNavigation,
   useOutlet,
 } from "@remix-run/react";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 
 import { BroadcastNewDraftForm } from "~/components/broadcast/BroadcastNewDraftForm";
+import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { BroadcastNewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   BroadcastActionError,
@@ -33,6 +32,34 @@ import {
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+
+interface BroadcastCampaignPreview {
+  id: string;
+  name: string;
+  status: string;
+  audienceType: string;
+  totalRecipients: number;
+  suppressedCount: number;
+  messageBody: string;
+  recipients: Array<{ status: string }>;
+}
+
+interface BroadcastNewLoaderDataShape {
+  campaign: BroadcastCampaignPreview | null;
+  limits: ReturnType<typeof getBroadcastPlanLimits>;
+  planType: ReturnType<typeof getUserPlanType>;
+  notice: string | null;
+  savedAudiences: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
+  savedForNew:
+    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
+    | null;
+  userTimezone: string;
+  recentBroadcastMessageSnippet: Awaited<
+    ReturnType<typeof getLatestBroadcastMessageSnippetForUser>
+  >;
+  unsubscribePreviewBaseUrl: string;
+}
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
@@ -46,51 +73,75 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const limits = getBroadcastPlanLimits(planType);
   const user = await getUserById(userId);
   const userTimezone = user?.timezone ?? "Etc/UTC";
-
-  if (!campaignId) {
-    const unsubscribePreviewBaseUrl =
-      process.env["APP_URL"]?.trim().replace(/\/$/, "") ??
-      new URL(request.url).origin;
-    const [savedAudiences, recentBroadcastMessageSnippet] = await Promise.all([
-      listBroadcastSavedAudiences(userId),
-      getLatestBroadcastMessageSnippetForUser(userId),
-    ]);
-    let savedForNew = savedAudienceId
-      ? (savedAudiences.find((s) => s.id === savedAudienceId) ?? null)
-      : null;
-    const noticeParts = [noticeParam].filter(
-      (s): s is string => typeof s === "string" && s.length > 0
-    );
-    if (
-      savedForNew?.audienceType === "FOLLOWING" ||
-      savedForNew?.audienceType === "FOLLOWERS"
-    ) {
-      savedForNew = null;
-      noticeParts.push(
-        "That saved audience type is no longer available. Choose Mutuals or selected recipients."
-      );
-    }
-    const notice = noticeParts.length > 0 ? noticeParts.join(" ") : null;
-    return json({
-      campaign: null,
-      limits,
-      planType,
-      notice,
-      savedAudiences,
-      savedForNew,
-      userTimezone,
-      recentBroadcastMessageSnippet,
-      unsubscribePreviewBaseUrl,
-    });
-  }
-
   const unsubscribePreviewBaseUrl =
     process.env["APP_URL"]?.trim().replace(/\/$/, "") ??
     new URL(request.url).origin;
-  const campaign = await getBroadcastCampaignForUser(campaignId, userId);
-  if (!campaign) {
-    return json({
-      campaign: null,
+
+  const dataPromise = (async (): Promise<BroadcastNewLoaderDataShape> => {
+    if (!campaignId) {
+      const [savedAudiences, recentBroadcastMessageSnippet] = await Promise.all(
+        [
+          listBroadcastSavedAudiences(userId),
+          getLatestBroadcastMessageSnippetForUser(userId),
+        ]
+      );
+      let savedForNew = savedAudienceId
+        ? (savedAudiences.find((s) => s.id === savedAudienceId) ?? null)
+        : null;
+      const noticeParts = [noticeParam].filter(
+        (s): s is string => typeof s === "string" && s.length > 0
+      );
+      if (
+        savedForNew?.audienceType === "FOLLOWING" ||
+        savedForNew?.audienceType === "FOLLOWERS"
+      ) {
+        savedForNew = null;
+        noticeParts.push(
+          "That saved audience type is no longer available. Choose Mutuals or selected recipients."
+        );
+      }
+      const notice = noticeParts.length > 0 ? noticeParts.join(" ") : null;
+      return {
+        campaign: null,
+        limits,
+        planType,
+        notice,
+        savedAudiences,
+        savedForNew,
+        userTimezone,
+        recentBroadcastMessageSnippet,
+        unsubscribePreviewBaseUrl,
+      };
+    }
+
+    const campaign = await getBroadcastCampaignForUser(campaignId, userId);
+    if (!campaign) {
+      return {
+        campaign: null,
+        limits,
+        planType,
+        notice: noticeParam,
+        savedAudiences: [],
+        savedForNew: null,
+        userTimezone,
+        recentBroadcastMessageSnippet: null,
+        unsubscribePreviewBaseUrl,
+      };
+    }
+
+    const campaignPreview: BroadcastCampaignPreview = {
+      id: campaign.id,
+      name: campaign.name,
+      status: campaign.status,
+      audienceType: campaign.audienceType,
+      totalRecipients: campaign.totalRecipients,
+      suppressedCount: campaign.suppressedCount,
+      messageBody: campaign.messageBody,
+      recipients: campaign.recipients.map((r) => ({ status: r.status })),
+    };
+
+    return {
+      campaign: campaignPreview,
       limits,
       planType,
       notice: noticeParam,
@@ -99,19 +150,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       userTimezone,
       recentBroadcastMessageSnippet: null,
       unsubscribePreviewBaseUrl,
-    });
+    };
+  })();
+
+  if (isRemixResourceRequest(request)) {
+    return json(await dataPromise);
   }
 
-  return json({
-    campaign,
-    limits,
-    planType,
-    notice: noticeParam,
-    savedAudiences: [],
-    savedForNew: null,
-    userTimezone,
-    recentBroadcastMessageSnippet: null,
-    unsubscribePreviewBaseUrl,
+  return defer<{ data: Promise<BroadcastNewLoaderDataShape> }>({
+    data: dataPromise,
   });
 }
 
@@ -305,16 +352,14 @@ export async function action({ request }: ActionFunctionArgs) {
   return json({ error: "Unknown intent" }, { status: 400 });
 }
 
-type BroadcastNewLoaderData = SerializeFrom<typeof loader>;
-
 function BroadcastNewCampaignPhase({
   campaign,
   pendingRecipients,
   busy,
   notice,
 }: {
-  campaign: NonNullable<BroadcastNewLoaderData["campaign"]>;
-  pendingRecipients: Array<{ id: string; recipientPubkey: string }>;
+  campaign: BroadcastCampaignPreview;
+  pendingRecipients: Array<{ status: string }>;
   busy: boolean;
   notice: string | null;
 }) {
@@ -406,17 +451,9 @@ function BroadcastNewCampaignPhase({
 
 export default function BroadcastNewRoute() {
   const outlet = useOutlet();
-  const {
-    campaign,
-    limits,
-    planType,
-    notice,
-    savedAudiences,
-    savedForNew,
-    userTimezone,
-    recentBroadcastMessageSnippet,
-    unsubscribePreviewBaseUrl,
-  } = useLoaderData<typeof loader>();
+  const { data } = useLoaderData<{
+    data: Promise<BroadcastNewLoaderDataShape>;
+  }>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const busy = navigation.state !== "idle";
@@ -428,16 +465,64 @@ export default function BroadcastNewRoute() {
       ? actionData.error
       : null;
 
-  const pendingRecipients = useMemo(
-    () => campaign?.recipients.filter((r) => r.status === "PENDING") ?? [],
-    [campaign]
-  );
-
   // `dashboard.broadcasts.new.review` is a child route; without rendering the
   // outlet, /dashboard/broadcasts/new/review never shows the review UI.
   if (outlet) {
     return outlet;
   }
+
+  return (
+    <Suspense fallback={<BroadcastNewPageSkeleton />}>
+      <Await
+        resolve={data}
+        errorElement={
+          <DeferredRouteAwaitError retryTo="/dashboard/broadcasts" />
+        }
+      >
+        {(loaded) => (
+          <BroadcastNewRouteLoaded
+            loaded={loaded as BroadcastNewLoaderDataShape}
+            busy={busy}
+            actionError={actionError}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function BroadcastNewRouteLoaded({
+  loaded,
+  busy,
+  actionError,
+}: {
+  loaded: BroadcastNewLoaderDataShape;
+  busy: boolean;
+  actionError: string | null;
+}) {
+  const {
+    campaign,
+    limits,
+    planType,
+    notice,
+    savedAudiences,
+    savedForNew,
+    userTimezone,
+    recentBroadcastMessageSnippet,
+    unsubscribePreviewBaseUrl,
+  } = loaded;
+  const pendingRecipients = useMemo(
+    () => campaign?.recipients.filter((r) => r.status === "PENDING") ?? [],
+    [campaign]
+  );
+  const savedAudiencesForDraftForm = useMemo(
+    () =>
+      savedAudiences.map((audience) => ({
+        ...audience,
+        updatedAt: audience.updatedAt.toISOString(),
+      })),
+    [savedAudiences]
+  );
 
   return (
     <div className="w-full min-w-0 space-y-8">
@@ -454,7 +539,7 @@ export default function BroadcastNewRoute() {
           planType={planType}
           busy={busy}
           actionError={actionError}
-          savedAudiences={savedAudiences}
+          savedAudiences={savedAudiencesForDraftForm}
           savedForNew={savedForNew}
           userTimezone={userTimezone}
           recentBroadcastMessageSnippet={recentBroadcastMessageSnippet}

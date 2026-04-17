@@ -2,8 +2,12 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
-import { publishedPostsKeys } from "~/features/posts/publishing";
+import { publishedPostsKeys } from "~/features/posts/publishing/hooks/published-posts-keys";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -18,9 +22,34 @@ const POST_VIEW_QUERY_KEYS = [
 
 export function refreshPostViews(queryClient: QueryClient) {
   POST_VIEW_QUERY_KEYS.forEach((queryKey) => {
+    void queryClient.invalidateQueries({
+      queryKey,
+      predicate: skipInfiniteQueries,
+    });
+    void queryClient.refetchQueries({
+      queryKey,
+      type: "active",
+      predicate: skipInfiniteQueries,
+    });
+  });
+
+  removeStaleInfiniteQueries(queryClient, POST_VIEW_QUERY_KEYS);
+}
+
+/**
+ * Invalidate **all** scheduled and calendar queries, including infinite ones.
+ *
+ * Normal `refreshPostViews` deliberately skips infinite queries to preserve
+ * scroll state.  When deleting a published post triggers a server-side cascade
+ * that also removes scheduled dependents (reposts / quotes), the scheduled
+ * infinite query holds stale data that must be refetched.
+ */
+export function invalidateDependentCaches(queryClient: QueryClient) {
+  const keys = [scheduledPostsKeys.all, calendarKeys.all] as const;
+  for (const queryKey of keys) {
     void queryClient.invalidateQueries({ queryKey });
     void queryClient.refetchQueries({ queryKey, type: "active" });
-  });
+  }
 }
 
 /**

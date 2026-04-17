@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { TemplatesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import {
@@ -76,14 +76,7 @@ function TemplatesFeedRoute() {
   const { templates } = useLoaderData() as TemplatesDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Templates"
-          subtitle="Reusable blueprints for posts, articles, and publishing workflows."
-        />
-      }
-    >
+    <Suspense fallback={<TemplatesPageSkeleton />}>
       <Await
         resolve={templates}
         errorElement={

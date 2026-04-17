@@ -3,7 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { BulkPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
@@ -26,7 +26,13 @@ async function loadBulkPostsData(request: Request) {
 
 export async function loader({ request }: { request: Request }) {
   try {
+    const url = new URL(request.url);
+    const shouldAvoidDeferredFallback =
+      url.searchParams.get("bulkScheduled") === "true";
     if (isRemixResourceRequest(request)) {
+      return json(await loadBulkPostsData(request));
+    }
+    if (shouldAvoidDeferredFallback) {
       return json(await loadBulkPostsData(request));
     }
     return defer({
@@ -51,14 +57,7 @@ function BulkPostsFeedRoute() {
   const { bulkPosts } = useLoaderData() as BulkPostsDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Bulk posts"
-          subtitle="Groups and multi-post scheduling"
-        />
-      }
-    >
+    <Suspense fallback={<BulkPostsPageSkeleton />}>
       <Await
         resolve={bulkPosts}
         errorElement={

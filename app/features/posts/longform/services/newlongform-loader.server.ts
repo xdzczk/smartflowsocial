@@ -7,7 +7,7 @@ import { requireAnySubscription } from "~/features/payments/subscriptions.server
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
-  getTemplates,
+  getTemplateListSummaries,
 } from "~/features/templates/services/template-data.server";
 import {
   getUserById,
@@ -32,7 +32,7 @@ export async function loadNewLongFormData(
     hashTagPresets,
     user,
     uploadProvider,
-    templates,
+    templateSummaries,
     composerRelays,
   ] = await Promise.all([
     getScheduleInterval(userId),
@@ -40,7 +40,7 @@ export async function loadNewLongFormData(
     getUserHashTagPresets(userId),
     getUserById(userId),
     getUserUploadProvider(userId),
-    getTemplates({ userId }),
+    getTemplateListSummaries({ userId, templateType: "LONGFORM" }),
     loadComposerRelayLists(userId),
   ]);
 
@@ -59,9 +59,10 @@ export async function loadNewLongFormData(
     publishRelaySource: composerRelays.accountPublishRelaySource,
     userTimezone: user?.timezone ?? "Etc/GMT",
     uploadProvider,
-    templates: templates.filter(
-      (t) => (t as { templateType?: string }).templateType === "LONGFORM"
-    ),
+    templates: templateSummaries.map((template) => ({
+      id: template.id,
+      name: template.name,
+    })),
   };
 
   if (templateId && templateId.length > 0) {

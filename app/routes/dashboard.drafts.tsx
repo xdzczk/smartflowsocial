@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { DraftsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { DraftsPage } from "~/features/posts/drafts";
@@ -94,14 +94,7 @@ function DraftsFeedRoute() {
   const { drafts } = useLoaderData() as DraftsDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Drafts"
-          subtitle="Resume unfinished posts, threads, polls, articles, and bulk drafts."
-        />
-      }
-    >
+    <Suspense fallback={<DraftsPageSkeleton />}>
       <Await
         resolve={drafts}
         errorElement={<DeferredRouteAwaitError retryTo="/dashboard/drafts" />}

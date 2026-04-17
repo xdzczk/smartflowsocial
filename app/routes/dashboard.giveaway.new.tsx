@@ -4,7 +4,7 @@ import { Await, useActionData, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { GiveawayBuilderPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { GiveawayNewBuilder } from "~/features/giveaway";
 import { createGiveaway } from "~/features/giveaway/giveaway-actions.server";
@@ -432,14 +432,7 @@ export default function DashboardGiveawayNewPage() {
   };
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="New giveaway"
-          subtitle="Scope, engagement rules, and winner count"
-        />
-      }
-    >
+    <Suspense fallback={<GiveawayBuilderPageSkeleton />}>
       <Await
         resolve={giveawayNew}
         errorElement={

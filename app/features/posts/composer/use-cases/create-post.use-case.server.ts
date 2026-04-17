@@ -45,6 +45,14 @@ async function findExistingByIdempotency(
   return findPostByCreationIdempotencyKey(creationIdempotencyKey);
 }
 
+async function enforceScheduleCapacityIfEnabled(
+  input: CreatePostInput,
+  scheduleSlotCount: number
+): Promise<void> {
+  if (input.skipScheduleCapacityCheck) return;
+  await assertScheduleCapacity(input.userId, scheduleSlotCount);
+}
+
 function buildRepostList(input: CreatePostInput) {
   return Array.isArray(input.repostSchedules) &&
     input.repostSchedules.length > 0
@@ -104,7 +112,7 @@ export class CreatePostUseCase {
       (input.scheduledFor ? 1 : 0) +
       repostListEarly.length +
       quoteListEarly.length;
-    await assertScheduleCapacity(input.userId, scheduleSlotCount);
+    await enforceScheduleCapacityIfEnabled(input, scheduleSlotCount);
 
     // Resolve queue type
     const queueTypeId = await resolveQueueTypeId(

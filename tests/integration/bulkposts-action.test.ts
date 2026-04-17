@@ -78,6 +78,13 @@ const { mockPrisma } = vi.hoisted(() => {
       update: vi.fn(),
       findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
       create: vi.fn(), // For post creation
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    longFormPost: {
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    template: {
+      count: vi.fn(),
     },
     subscription: {
       findUnique: vi.fn().mockResolvedValue({
@@ -119,6 +126,7 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+import { createPostWithOutbox } from "~/features/posts/server";
 import { updatePost } from "~/features/posts/server";
 import { getPostsByIds } from "~/features/posts/server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
@@ -143,6 +151,13 @@ describe("Bulk Posts Action Handler", () => {
       }
     );
     (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
+    (mockPrisma.template.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+      0
+    );
     (
       mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
     ).mockResolvedValue({});
@@ -408,6 +423,97 @@ describe("Bulk Posts Action Handler", () => {
       const result = await bulkPostsAction({ request });
 
       expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+
+    it("should create follow-up reposts as attached to parent post", async () => {
+      const parentScheduledFor = Math.floor(Date.now() / 1000) + 3600;
+      const repostScheduledFor = parentScheduledFor + 900;
+      const signedEvent = {
+        id: "event-parent-1",
+        pubkey: "pk-parent",
+        kind: 1,
+        content: "Main post",
+        tags: [],
+        created_at: parentScheduledFor,
+        sig: "sig-parent",
+      };
+      const repostSignedEvent = {
+        id: "event-repost-1",
+        pubkey: "pk-repost",
+        kind: 6,
+        content: "",
+        tags: [],
+        created_at: repostScheduledFor,
+        sig: "sig-repost",
+      };
+      const nostrEvent = {
+        id: signedEvent.id,
+        pubkey: signedEvent.pubkey,
+        created_at: signedEvent.created_at,
+        kind: signedEvent.kind,
+        content: signedEvent.content,
+        tags: signedEvent.tags,
+      };
+
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1"
+      );
+      mockExecute.mockResolvedValue({
+        post: createMockPost({
+          id: "main-post-1",
+          postType: "TEXT",
+          currentState: "SCHEDULED",
+          signedEvent: { id: "parent-signed-event-id" },
+          scheduledAtUtc: new Date(parentScheduledFor * 1000),
+          rootScheduledActionId: null,
+        }),
+        needsScheduling: true,
+      });
+      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "follow-up-1",
+      });
+
+      const formData = new FormData();
+      formData.append("_action", "sign_and_schedule");
+      formData.append("signedEvents", JSON.stringify(signedEvent));
+      formData.append("nostrEvent", JSON.stringify(nostrEvent));
+      formData.append("caption", JSON.stringify("Main caption"));
+      formData.append("fileUrl", JSON.stringify([]));
+      formData.append("queueType", "posts");
+      formData.append("isRecyclable", "false");
+      formData.append("originalPostId", "");
+      formData.append(
+        "repostSchedules",
+        JSON.stringify([
+          {
+            scheduledFor: repostScheduledFor,
+            signedEvent: repostSignedEvent,
+          },
+        ])
+      );
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await bulkPostsAction({ request });
+
+      expect(response.status).toBe(302);
+      expect(createPostWithOutbox).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dependencyMode: "attached",
+          targetMode: "scheduled_parent",
+          parentScheduledActionId: "main-post-1",
+          rootScheduledActionId: "main-post-1",
+          targetScheduledActionId: "main-post-1",
+          expectedParentEventId: "parent-signed-event-id",
+          followUpTimingMode: "offset_from_parent",
+          followUpOffsetSeconds: 900,
+        }),
+        repostScheduledFor,
+        expect.any(String)
+      );
     });
   });
 

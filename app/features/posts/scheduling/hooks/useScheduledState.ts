@@ -1,19 +1,24 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
-import { useRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import {
+  invalidateDependentCaches,
+  useRefreshPostViews,
+} from "~/features/posts/hooks/useRefreshPostViews";
 import type {
   CombinedContent,
   LongFormPostData,
   PostData,
 } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
+import { pruneScheduledQueryData } from "./useScheduledPostsCache";
 import { scheduledPostsKeys } from "./useScheduledPostsQuery";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -57,9 +62,23 @@ export function useScheduledState({
   );
   interface FetcherData {
     success?: boolean;
+    error?: string;
+    moved?: boolean;
+    cascadeDeletedIds?: string[];
   }
   const bulkDeleteFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
+  const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
+  const previousBulkDeleteDataRef = useRef(bulkDeleteFetcher.data);
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const previousDeleteDataRef = useRef(deleteFetcher.data);
+  const lastBulkDeleteSubmissionRef = useRef<{
+    action: "bulkDelete" | "bulkDeleteLongForm" | "bulkDeleteMixed";
+  } | null>(null);
+  const lastDeleteSubmissionRef = useRef<{
+    action: "delete" | "moveToDraft";
+    postId: string;
+  } | null>(null);
 
   // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
   const postIds = useMemo(
@@ -210,109 +229,128 @@ export function useScheduledState({
   const queryClient = useQueryClient();
   const refreshAllPostViews = useRefreshPostViews();
 
+  const didFetcherMutationSucceed = useCallback(
+    (data: FetcherData | undefined): boolean => {
+      if (!data) return true;
+      if (typeof data.success === "boolean") return data.success;
+      return !data.error;
+    },
+    []
+  );
+
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
 
     const postIds = Array.from(selectedPosts);
-
-    // Optimistically remove posts from cache
-    queryClient.setQueryData(
-      scheduledPostsKeys.list(undefined, currentTab),
-      (old: unknown) => {
-        if (!old || typeof old !== "object" || !("pages" in old)) return old;
-        const infiniteData = old as { pages: unknown[]; pageParams: unknown[] };
-        return {
-          ...infiniteData,
-          pages: infiniteData.pages.map((page) => {
-            if (!page || typeof page !== "object") return page;
-            const pageObj = page as Record<string, unknown>;
-            const updated: Record<string, unknown> = { ...pageObj };
-
-            // Remove deleted posts from posts array
-            if (Array.isArray(pageObj["posts"])) {
-              updated["posts"] = (pageObj["posts"] as unknown[]).filter(
-                (post) =>
-                  !post ||
-                  typeof post !== "object" ||
-                  !("id" in post) ||
-                  typeof post.id !== "string" ||
-                  !postIds.includes(post.id)
-              );
-            }
-
-            // Remove deleted posts from longformPosts array
-            if (Array.isArray(pageObj["longformPosts"])) {
-              updated["longformPosts"] = (
-                pageObj["longformPosts"] as unknown[]
-              ).filter(
-                (post) =>
-                  !post ||
-                  typeof post !== "object" ||
-                  !("id" in post) ||
-                  typeof post.id !== "string" ||
-                  !postIds.includes(post.id)
-              );
-            }
-
-            return updated;
-          }),
-        };
-      }
+    queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+      pruneScheduledQueryData(old, new Set(postIds))
     );
 
-    // For All tab, we need to handle mixed content types
     if (currentTab === "all" && allContent) {
       const selectedItems = allContent
         .filter((item) => selectedPosts.has(item.id))
         .map((item) => ({ id: item.id, type: item.type }));
 
+      lastBulkDeleteSubmissionRef.current = { action: "bulkDeleteMixed" };
       const formData = new FormData();
       formData.append("_action", "bulkDeleteMixed");
       formData.append("itemData", JSON.stringify(selectedItems));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
     } else {
-      // For individual tabs, use the original handlers
+      const action =
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete";
+      lastBulkDeleteSubmissionRef.current = { action };
       const formData = new FormData();
-      formData.append(
-        "_action",
-        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
-      );
+      formData.append("_action", action);
       formData.append("postIds", JSON.stringify(postIds));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
     }
   };
 
-  // Invalidate queries when delete succeeds
   useEffect(() => {
-    if (bulkDeleteFetcher.state === "idle" && bulkDeleteFetcher.data) {
-      // Invalidate both scheduled and dashboard queries to ensure consistency
-      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      // Clear selection after successful delete
+    const previousState = previousBulkDeleteStateRef.current;
+    const currentState = bulkDeleteFetcher.state;
+    const dataChanged =
+      bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
+    const submission = lastBulkDeleteSubmissionRef.current;
+    if (
+      currentState === "idle" &&
+      submission &&
+      (previousState !== "idle" || dataChanged) &&
+      didFetcherMutationSucceed(bulkDeleteFetcher.data)
+    ) {
+      const cascadeIds: string[] =
+        bulkDeleteFetcher.data?.cascadeDeletedIds ?? [];
+      if (cascadeIds.length > 0) {
+        queryClient.setQueriesData(
+          { queryKey: scheduledPostsKeys.all },
+          (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
+        );
+      }
+      invalidateDependentCaches(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       setSelectedPosts(new Set());
+      lastBulkDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastBulkDeleteSubmissionRef.current = null;
     }
-  }, [bulkDeleteFetcher.state, bulkDeleteFetcher.data, queryClient]);
+    previousBulkDeleteStateRef.current = currentState;
+    previousBulkDeleteDataRef.current = bulkDeleteFetcher.data;
+  }, [
+    bulkDeleteFetcher.state,
+    bulkDeleteFetcher.data,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
 
-  // Handle individual delete / move-to-draft fetcher
   useEffect(() => {
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- fetcher data type narrows at runtime */
-    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
-      void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      // When moving to drafts, refresh drafts list
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
+    const submission = lastDeleteSubmissionRef.current;
+    if (
+      currentState === "idle" &&
+      submission &&
+      (previousState !== "idle" || dataChanged) &&
+      didFetcherMutationSucceed(deleteFetcher.data)
+    ) {
+      const cascadeIds: string[] = deleteFetcher.data?.cascadeDeletedIds ?? [];
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(
+          old,
+          new Set([submission.postId, ...cascadeIds])
+        )
+      );
+      invalidateDependentCaches(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
       if (
+        deleteFetcher.data &&
         typeof deleteFetcher.data === "object" &&
-        deleteFetcher.data !== null &&
         "moved" in deleteFetcher.data &&
-        (deleteFetcher.data as { moved?: boolean }).moved
+        deleteFetcher.data.moved
       ) {
         void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
       }
+      lastDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastDeleteSubmissionRef.current = null;
     }
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+    previousDeleteStateRef.current = currentState;
+    previousDeleteDataRef.current = deleteFetcher.data;
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
 
   const handleMediaClick = (mediaSrc: string) => {
     setSelectedMedia(mediaSrc);

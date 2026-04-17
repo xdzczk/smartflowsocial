@@ -8,7 +8,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { ScheduledPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { SCHEDULED_DATE_RANGE_QUERY_LIMIT } from "~/features/posts/deferred-loader-limits";
@@ -85,6 +85,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
+export function shouldRevalidate(args: {
+  currentUrl: URL;
+  nextUrl: URL;
+  formAction?: string;
+  defaultShouldRevalidate: boolean;
+}) {
+  const isScheduledAction =
+    typeof args.formAction === "string" &&
+    args.formAction.includes("/dashboard/scheduled");
+
+  if (isScheduledAction) {
+    return true;
+  }
+
+  if (
+    args.currentUrl.pathname === args.nextUrl.pathname &&
+    args.currentUrl.search === args.nextUrl.search
+  ) {
+    return false;
+  }
+
+  return args.defaultShouldRevalidate;
+}
+
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
@@ -115,14 +139,7 @@ function ScheduledFeedRoute() {
   const { scheduled } = useLoaderData() as ScheduledDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Scheduled"
-          subtitle="Manage upcoming posts, replies, reposts, articles, and queued publishing."
-        />
-      }
-    >
+    <Suspense fallback={<ScheduledPostsPageSkeleton />}>
       <Await
         resolve={scheduled}
         errorElement={

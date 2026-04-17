@@ -56,6 +56,17 @@ These tests verify that individual functions meet performance benchmarks:
 
 ### k6 Load Tests
 
+All k6 tests now expect a reproducible authenticated session. Set one of:
+
+- `K6_SESSION_COOKIE_VALUE` (+ optional `K6_SESSION_COOKIE_NAME`, defaults to `session`)
+- `K6_SESSION_COOKIES` as a full cookie header string (`name=value; other=value`)
+- `K6_BEARER_TOKEN` for token-authenticated environments
+
+Optional helpers:
+
+- `K6_AUTH_PROBE_PATH` (default `/dashboard`) to validate session health before scenario traffic
+- `K6_QUEUE_TYPE_ID`, `K6_PAYMENT_ID`, `K6_EVENT_ID`, `K6_POST_IDS_COUNT` to tune data realism
+
 #### API Endpoints Load Test
 
 Test critical API endpoints under load:
@@ -84,6 +95,22 @@ Test Remix loader performance:
 
 ```bash
 k6 run tests/performance/loader-performance.js
+```
+
+#### Spike Load Test
+
+Test sudden bursts and fast recovery:
+
+```bash
+k6 run tests/performance/spike-load.js
+```
+
+#### Soak Load Test
+
+Test sustained traffic for drift/memory issues:
+
+```bash
+k6 run tests/performance/soak-load.js
 ```
 
 ### Running All Performance Tests
@@ -185,6 +212,14 @@ npm run test:performance:all
 - Stay at 20 users for 1m
 - Ramp down to 0 over 30s
 
+### 4. Spike Load Test
+
+**Purpose**: Validate behavior during abrupt traffic spikes and the recovery period.
+
+### 5. Soak Load Test
+
+**Purpose**: Validate latency stability and error rates over sustained load.
+
 ## Interpreting Results
 
 ### k6 Output
@@ -254,8 +289,6 @@ Install k6 using the instructions above.
 ## Future Enhancements
 
 - [ ] Stress testing (find breaking points)
-- [ ] Spike testing (sudden load increases)
-- [ ] Endurance testing (long-running tests)
 - [ ] Database query performance tests
 - [ ] Memory leak detection
 - [ ] CPU profiling during load tests

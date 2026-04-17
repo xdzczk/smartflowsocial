@@ -1,5 +1,6 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouteLoaderData } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
@@ -16,7 +17,10 @@ import { useThreadView } from "~/lib/query/hooks/useApiQuery";
 import { cn } from "~/lib/utils";
 
 import type { Post } from "../../data/posts-prisma-types.server";
+import { optimisticallyRemovePostIdsFromViews } from "../../hooks/post-cache-prune";
+import { invalidateDependentCaches } from "../../hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "../../types";
+import { buildActionUrl } from "../../utils/remix-action-url";
 
 import { getPubkeyDisplayName } from "./author-metadata";
 import {
@@ -89,7 +93,8 @@ export default function PostDetailsModal({
   scheduledCapabilities: scheduledCapabilitiesProp,
   scheduledOpenFullEditorHref,
 }: PostDetailsModalProps) {
-  const deleteFetcher = useFetcher();
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
@@ -110,28 +115,36 @@ export default function PostDetailsModal({
     [rootData?.user]
   );
 
-  useEffect(() => {
-    if (deleteFetcher.state !== "idle" || !deleteFetcher.data) return;
-    const data = deleteFetcher.data as { success?: boolean; error?: unknown };
-    if (data.error || !data.success) return;
-    const formData = deleteFetcher.formData as FormData | undefined;
-    const submittedPostId = formData?.get("postId");
-    const isOurDelete =
-      formData?.get("_action") === "delete" &&
-      (submittedPostId === post.id ||
-        String(submittedPostId) === String(post.id));
-    if (isOurDelete) {
-      onDeleted?.(post.id);
-      onClose();
-    }
-  }, [
-    deleteFetcher.state,
-    deleteFetcher.data,
-    deleteFetcher.formData,
-    post.id,
-    onDeleted,
-    onClose,
-  ]);
+  const handleDelete = useCallback(() => {
+    const postId = post.id;
+    setIsDeleting(true);
+    optimisticallyRemovePostIdsFromViews(queryClient, [postId]);
+    onDeleted?.(postId);
+    onClose();
+
+    const formData = new FormData();
+    formData.append("_action", "delete");
+    formData.append("postId", postId);
+    void (async () => {
+      try {
+        const url = buildActionUrl(window.location.pathname);
+        const resp = await fetch(url, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin",
+        });
+        const json = (await resp.json().catch(() => null)) as {
+          cascadeDeletedIds?: string[];
+        } | null;
+        const cascadeIds = json?.cascadeDeletedIds;
+        if (cascadeIds && cascadeIds.length > 0) {
+          optimisticallyRemovePostIdsFromViews(queryClient, cascadeIds);
+        }
+      } finally {
+        invalidateDependentCaches(queryClient);
+      }
+    })();
+  }, [post.id, queryClient, onDeleted, onClose]);
 
   const hasQueueType = (
     p: Post | PostData | CombinedContent
@@ -531,22 +544,19 @@ export default function PostDetailsModal({
   })();
 
   const deleteForm = (
-    <deleteFetcher.Form method="post" onClick={(e) => e.stopPropagation()}>
-      <input type="hidden" name="postId" value={post.id} />
-      <input type="hidden" name="_action" value="delete" />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        disabled={deleteFetcher.state !== "idle"}
-        className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
-      >
-        {deleteFetcher.state !== "idle" &&
-        deleteFetcher.formData?.get("postId") === post.id
-          ? "Deleting..."
-          : getDeleteButtonLabel(type)}
-      </Button>
-    </deleteFetcher.Form>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={isDeleting}
+      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDelete();
+      }}
+    >
+      {isDeleting ? "Deleting..." : getDeleteButtonLabel(type)}
+    </Button>
   );
 
   return (

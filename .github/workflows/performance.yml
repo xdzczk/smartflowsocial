@@ -37,7 +37,6 @@ jobs:
         with:
           database: smartflow_test
           user: postgres
-          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push
@@ -55,6 +54,11 @@ jobs:
   load-tests:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    strategy:
+      matrix:
+        staging_url_secret_name: [STAGING_URL]
+    env:
+      BASE_URL: ${{ secrets[matrix.staging_url_secret_name] || 'http://localhost:3000' }}
 
     steps:
       - name: Checkout code
@@ -79,23 +83,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install k6
 
+      - name: Prepare performance results directory
+        run: mkdir -p tests/performance/results
+
       - name: Run API endpoints load test
-        run: k6 run tests/performance/api-endpoints.js
-        env:
-          BASE_URL: ${{ secrets.STAGING_URL || 'http://localhost:3000' }}
-        continue-on-error: true
+        run: k6 run --summary-export tests/performance/results/api-endpoints-summary.json tests/performance/api-endpoints.js
 
       - name: Run bulk operations load test
-        run: k6 run tests/performance/bulk-operations.js
-        env:
-          BASE_URL: ${{ secrets.STAGING_URL || 'http://localhost:3000' }}
-        continue-on-error: true
+        run: k6 run --summary-export tests/performance/results/bulk-operations-summary.json tests/performance/bulk-operations.js
 
       - name: Run loader performance test
-        run: k6 run tests/performance/loader-performance.js
-        env:
-          BASE_URL: ${{ secrets.STAGING_URL || 'http://localhost:3000' }}
-        continue-on-error: true
+        run: k6 run --summary-export tests/performance/results/loader-performance-summary.json tests/performance/loader-performance.js
+
+      - name: Run spike load test
+        run: k6 run --summary-export tests/performance/results/spike-load-summary.json tests/performance/spike-load.js
+
+      - name: Run soak load test
+        run: k6 run --summary-export tests/performance/results/soak-load-summary.json tests/performance/soak-load.js
+
+      - name: Enforce performance budget
+        run: node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
 
       - name: Upload performance results
         uses: actions/upload-artifact@v6

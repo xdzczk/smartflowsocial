@@ -1,0 +1,19 @@
+{
+  "vitest": {
+    "resultsPath": "test-results/results.json"
+  },
+  "k6": {
+    "summariesDir": "tests/performance/results",
+    "global": {
+      "maxP95Ms": 2000,
+      "maxP99Ms": 5000,
+      "maxErrorRate": 0.01
+    }
+  },
+  "bundle": {
+    "directory": "public/build",
+    "maxTotalJsMb": 2.5,
+    "maxTotalCssMb": 0.6,
+    "maxLargestJsChunkKb": 350
+  }
+}

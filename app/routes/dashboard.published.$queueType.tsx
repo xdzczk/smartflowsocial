@@ -1,1 +1,6 @@
-export { default, loader, action } from "./dashboard.published";
+export {
+  default,
+  loader,
+  action,
+  shouldRevalidate,
+} from "./dashboard.published";

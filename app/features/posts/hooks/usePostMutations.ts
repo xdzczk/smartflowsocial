@@ -8,6 +8,10 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { calendarKeys } from "~/features/posts/calendar";
 import { publishedPostsKeys } from "~/features/posts/publishing";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
 
 import { dashboardKeys } from "./useDashboardQuery";
 import { draftsKeys } from "./useDraftsQuery";
@@ -20,12 +24,26 @@ export function useInvalidatePostQueries() {
   const queryClient = useQueryClient();
 
   return () => {
-    // Invalidate all post-related queries
-    void queryClient.invalidateQueries({ queryKey: publishedPostsKeys.all });
-    void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-    void queryClient.invalidateQueries({ queryKey: scheduledPostsKeys.all });
+    void queryClient.invalidateQueries({
+      queryKey: publishedPostsKeys.all,
+      predicate: skipInfiniteQueries,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: dashboardKeys.all,
+      predicate: skipInfiniteQueries,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: scheduledPostsKeys.all,
+      predicate: skipInfiniteQueries,
+    });
     void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
     void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
+
+    removeStaleInfiniteQueries(queryClient, [
+      publishedPostsKeys.all,
+      dashboardKeys.all,
+      scheduledPostsKeys.all,
+    ]);
   };
 }
 

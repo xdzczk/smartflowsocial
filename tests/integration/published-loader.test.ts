@@ -57,11 +57,11 @@ import { requireAnySubscription } from "~/features/payments/subscriptions.server
 import { loader } from "~/routes/dashboard.published";
 
 const PUBLISHED_DATA_URL =
-  "http://localhost:3000/dashboard/published?_data=routes/dashboard.published";
+  "http://localhost:3000/dashboard/published?_data=routes/dashboard.published&_loader=json";
 const PUBLISHED_QUEUE_DATA_URL =
-  "http://localhost:3000/dashboard/published/posts?_data=routes/dashboard.published.$queueType";
+  "http://localhost:3000/dashboard/published/posts?_data=routes/dashboard.published.$queueType&_loader=json";
 const PUBLISHED_PAGINATION_URL =
-  "http://localhost:3000/dashboard/published?page=2&limit=10&_data=routes/dashboard.published";
+  "http://localhost:3000/dashboard/published?page=2&limit=10&_data=routes/dashboard.published&_loader=json";
 
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {

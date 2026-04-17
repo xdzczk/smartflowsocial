@@ -70,9 +70,23 @@ export function useBulkPostSigning({
   const actionError =
     fetcher.state === "idle" &&
     fetcher.data != null &&
-    typeof fetcher.data === "object" &&
-    typeof (fetcher.data as { error?: string }).error === "string"
-      ? (fetcher.data as { error: string }).error
+    typeof fetcher.data === "object"
+      ? (() => {
+          const data = fetcher.data as {
+            error?: string | { message?: string };
+          };
+          if (typeof data.error === "string") {
+            return data.error;
+          }
+          if (
+            data.error != null &&
+            typeof data.error === "object" &&
+            typeof data.error.message === "string"
+          ) {
+            return data.error.message;
+          }
+          return null;
+        })()
       : null;
 
   useEffect(() => {

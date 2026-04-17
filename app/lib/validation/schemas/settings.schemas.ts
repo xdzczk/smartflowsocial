@@ -626,6 +626,10 @@ export const updateQueueTypeSchema = z
 
 export const deleteQueueTypeSchema = z.object({
   id: z.string().min(1, ERROR_ID_REQUIRED),
+  deleteMode: z
+    .enum(["queue_only", "queue_and_scheduled"])
+    .optional()
+    .default("queue_only"),
 });
 
 /**

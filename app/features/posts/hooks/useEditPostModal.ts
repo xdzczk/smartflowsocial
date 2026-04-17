@@ -18,7 +18,7 @@ import {
   editPostClientSchema,
   editLongformPostClientSchema,
 } from "~/lib/validation";
-import { useZodForm } from "~/lib/validation/utils.client";
+import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import {
   type PostData,

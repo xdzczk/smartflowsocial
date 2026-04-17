@@ -11,6 +11,7 @@ import {
 } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { MoveScheduledLongFormToDraftUseCase } from "~/features/posts/longform/index.server";
 import { findPostByCreationIdempotencyKey } from "~/features/posts/repositories/post-queries-data.server";
+import { cascadeDeleteStandaloneScheduledDependents } from "~/features/posts/repositories/scheduled-standalone-dependents-cascade.server";
 import {
   createPostWithOutbox,
   deleteLongFormPost,
@@ -54,6 +55,7 @@ export async function handleScheduledAction(
       deletedCount?: number;
       postId?: string;
       moved?: boolean;
+      cascadeDeletedIds?: string[];
     }
 > {
   const result = validateFormDataOrRespond(formData, scheduledActionSchema);
@@ -84,59 +86,92 @@ export async function handleScheduledAction(
   }
 
   if (_action === "delete") {
-    await cascadeDeleteAttachedFollowups({
+    const attachedIds = await cascadeDeleteAttachedFollowups({
       rootPostId: result.data.postId,
       userId,
     });
+    const standaloneIds = await cascadeDeleteStandaloneScheduledDependents(
+      result.data.postId,
+      userId
+    );
     const deletedPost = await deletePost({ id: result.data.postId, userId });
-    // Return success even if post was already deleted (idempotent operation)
-    return { success: true, deleted: deletedPost !== null };
+    return {
+      success: true,
+      deleted: deletedPost !== null,
+      cascadeDeletedIds: [...attachedIds, ...standaloneIds],
+    };
   }
 
   if (_action === "deleteLongForm") {
+    const standaloneIds = await cascadeDeleteStandaloneScheduledDependents(
+      result.data.postId,
+      userId
+    );
     const deletedPost = await deleteLongFormPost({
       id: result.data.postId,
       userId,
     });
-    // Return success even if post was already deleted (idempotent operation)
-    return { success: true, deleted: deletedPost !== null };
+    return {
+      success: true,
+      deleted: deletedPost !== null,
+      cascadeDeletedIds: standaloneIds,
+    };
   }
 
   if (_action === "bulkDelete") {
+    const allCascadeIds: string[] = [];
     const results = await Promise.all(
       result.data.postIds.map(async (id: string) => {
-        await cascadeDeleteAttachedFollowups({ rootPostId: id, userId });
+        const a = await cascadeDeleteAttachedFollowups({
+          rootPostId: id,
+          userId,
+        });
+        const s = await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        allCascadeIds.push(...a, ...s);
         return deletePost({ id, userId });
       })
     );
     const deletedCount = results.filter((post) => post !== null).length;
-    return { success: true, deletedCount };
+    return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
   }
 
   if (_action === "bulkDeleteLongForm") {
+    const allCascadeIds: string[] = [];
     const results = await Promise.all(
-      result.data.postIds.map((id: string) =>
-        deleteLongFormPost({ id, userId })
-      )
+      result.data.postIds.map(async (id: string) => {
+        const s = await cascadeDeleteStandaloneScheduledDependents(id, userId);
+        allCascadeIds.push(...s);
+        return deleteLongFormPost({ id, userId });
+      })
     );
     const deletedCount = results.filter((post) => post !== null).length;
-    return { success: true, deletedCount };
+    return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
   }
 
   // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
+  const allCascadeIds: string[] = [];
   const promises = result.data.itemData.map((item) => {
-    if (item.type === "post") {
-      return (async () => {
-        await cascadeDeleteAttachedFollowups({ rootPostId: item.id, userId });
+    return (async () => {
+      const s = await cascadeDeleteStandaloneScheduledDependents(
+        item.id,
+        userId
+      );
+      allCascadeIds.push(...s);
+      if (item.type === "post") {
+        const a = await cascadeDeleteAttachedFollowups({
+          rootPostId: item.id,
+          userId,
+        });
+        allCascadeIds.push(...a);
         return deletePost({ id: item.id, userId });
-      })();
-    } else {
-      return deleteLongFormPost({ id: item.id, userId });
-    }
+      } else {
+        return deleteLongFormPost({ id: item.id, userId });
+      }
+    })();
   });
   const results = await Promise.all(promises);
   const deletedCount = results.filter((post) => post !== null).length;
-  return { success: true, deletedCount };
+  return { success: true, deletedCount, cascadeDeletedIds: allCascadeIds };
 }
 
 function buildRepostConditionsFromData(data: {

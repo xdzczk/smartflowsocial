@@ -24,6 +24,7 @@ export {
   usePublishedPostsInfiniteData,
   useBulkDeletePostsMutation,
   publishedPostsKeys,
+  type PublishedBulkDeleteMutationInput,
 } from "./hooks/usePublishedPostsQuery";
 export {
   useRecyclablesState,

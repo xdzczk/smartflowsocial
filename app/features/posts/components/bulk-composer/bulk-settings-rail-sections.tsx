@@ -137,6 +137,7 @@ export function BulkSettingsRailBuildDefaultsBlock({
             posts={posts}
             setPosts={setPosts}
             scheduleIntervals={scheduleIntervals}
+            queueTypes={queueTypes}
             userTimezone={userTimezone}
             disabled={isProcessing}
             scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}

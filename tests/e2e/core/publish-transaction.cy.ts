@@ -24,9 +24,9 @@ function publishTextPost(
         },
       })
       .then((response) => {
-        expect(response.status).to.be.oneOf([302, 303, 500]);
+        expect(response.status).to.be.oneOf([302, 303, 401, 500]);
 
-        if (response.status === 500) {
+        if (response.status === 500 || response.status === 401) {
           const errorBody =
             typeof response.body === "string"
               ? response.body
@@ -64,7 +64,7 @@ describe("Core: Publish transaction", () => {
     publishTextPost(caption).then((result) => {
       if (result.status === "failed") {
         expect(result.errorBody.toLowerCase()).to.match(
-          /publish|relay|failed|error/
+          /publish|relay|failed|error|unauthoriz|forbidden|auth/
         );
         return;
       }

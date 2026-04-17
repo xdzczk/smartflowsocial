@@ -4,7 +4,8 @@ import {
   useSearchParams,
   useNavigate,
 } from "@remix-run/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -24,6 +25,7 @@ import {
   ScheduledPostsTable,
   useScheduledState,
   useScheduledPostsInfiniteData,
+  scheduledPostsKeys,
 } from "~/features/posts/scheduling";
 import type { LongFormPostData, PostData } from "~/features/posts/server";
 import type { BulkPost, PostFetcher } from "~/features/posts/types";
@@ -64,11 +66,14 @@ import {
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
 
+import { pruneScheduledQueryData } from "../hooks/useScheduledPostsCache";
+
 import { ScheduleRepostQuoteModal } from "./ScheduleRepostQuoteModal";
 
 /* eslint-disable sonarjs/cognitive-complexity -- Page orchestrator: tabs, queue filters, table/list content, modals */
 export default function ScheduledPostsPage() {
   const refreshPostViews = useRefreshPostViews();
+  const queryClient = useQueryClient();
   // Use infinite query for data fetching with infinite scroll
   const {
     posts,
@@ -77,12 +82,14 @@ export default function ScheduledPostsPage() {
     user,
     queueTypes,
     hashTagPresets,
+    loadedPages,
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,
     scheduledContestLaunches,
     isLoading: _isDataLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -154,14 +161,21 @@ export default function ScheduledPostsPage() {
   });
 
   const isMobile = useIsMobile(768);
+  const fetchNextPageRef = useRef(fetchNextPage);
+  useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+  const stableFetchNextPage = useCallback(() => {
+    void fetchNextPageRef.current();
+  }, []);
   const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
     useInfiniteScrollSentinel({
       isMobile,
       hasNextPage,
       isFetchingNextPage,
-      fetchNextPage: () => {
-        void fetchNextPage();
-      },
+      isFetching,
+      loadedPageCount: loadedPages,
+      fetchNextPage: stableFetchNextPage,
     });
 
   const {
@@ -375,6 +389,17 @@ export default function ScheduledPostsPage() {
     currentTab === "reposts" ||
     currentTab === "longform";
 
+  const optimisticallyRemoveScheduledItems = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const deletedIds = new Set(ids);
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(old, deletedIds)
+      );
+    },
+    [queryClient]
+  );
+
   return (
     <PublishingLibraryShell>
       <div className="pt-2 pb-4">
@@ -531,6 +556,9 @@ export default function ScheduledPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             onResetListFilters={resetListFilters}
+            onBeforeDelete={(postId) =>
+              optimisticallyRemoveScheduledItems([postId])
+            }
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <div className="flex min-h-0 flex-1 flex-col">
@@ -629,7 +657,10 @@ export default function ScheduledPostsPage() {
         <PostDetailsModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={(postId) => {
+            optimisticallyRemoveScheduledItems([postId]);
+            refreshPostViews();
+          }}
           onEdit={(p) => {
             setSelectedPost(null);
             handleEditPost(p as PostData | LongFormPostData);
@@ -660,7 +691,10 @@ export default function ScheduledPostsPage() {
         <LongFormDetailsModal
           post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
-          onDeleted={refreshPostViews}
+          onDeleted={(postId) => {
+            optimisticallyRemoveScheduledItems([postId]);
+            refreshPostViews();
+          }}
           onEdit={(p) => {
             setSelectedLongFormPost(null);
             handleEditPost(p as PostData | LongFormPostData);

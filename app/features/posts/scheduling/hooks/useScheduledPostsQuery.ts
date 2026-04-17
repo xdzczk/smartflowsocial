@@ -227,8 +227,8 @@ export function useScheduledPostsInfiniteQuery() {
     },
     staleTime: 30 * 1000, // 30 seconds
     maxPages: undefined, // No cap – load until server reports no more pages (same as Dashboard Flow)
-    refetchInterval: 15_000, // Live updates when scheduled posts are published
-    refetchIntervalInBackground: true,
+    // Avoid interval refetch for infinite lists: background page-1 refreshes can
+    // collapse accumulated pages and make infinite scroll appear stuck on page 2.
   });
 }
 
@@ -361,6 +361,7 @@ export function useScheduledPostsData() {
 
 function emptyScheduledPostsInfiniteResult(
   isLoading: boolean,
+  isFetching: boolean,
   isFetchingNextPage: boolean,
   fetchNextPage: () => void
 ) {
@@ -371,6 +372,7 @@ function emptyScheduledPostsInfiniteResult(
     user: null as UserData | null,
     queueTypes: [] as QueueType[],
     hashTagPresets: [] as HashTagPreset[],
+    loadedPages: 0,
     totalContentCount: 0,
     totalPostsCount: 0,
     totalRepostsCount: 0,
@@ -384,6 +386,7 @@ function emptyScheduledPostsInfiniteResult(
       contestActivationStatus: string;
     }>,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage: false,
     fetchNextPage,
@@ -419,13 +422,21 @@ function parsePagePosts(pageData: Record<string, unknown>) {
  */
 export function useScheduledPostsInfiniteData() {
   const query = useScheduledPostsInfiniteQuery();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    query;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isLoading,
+  } = query;
+  const loadedPages = data.pages.length;
 
   // data.pages always exists due to initialData, so we process it directly
   if (data.pages.length === 0) {
     return emptyScheduledPostsInfiniteResult(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       () => {
         void fetchNextPage();
@@ -461,6 +472,7 @@ export function useScheduledPostsInfiniteData() {
   if (!lastPage) {
     return emptyScheduledPostsInfiniteResult(
       isLoading,
+      isFetching,
       isFetchingNextPage,
       () => {
         void fetchNextPage();
@@ -618,6 +630,7 @@ export function useScheduledPostsInfiniteData() {
     user: userRaw,
     queueTypes,
     hashTagPresets,
+    loadedPages,
     // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,
@@ -625,6 +638,7 @@ export function useScheduledPostsInfiniteData() {
     totalContentCount,
     scheduledContestLaunches,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,

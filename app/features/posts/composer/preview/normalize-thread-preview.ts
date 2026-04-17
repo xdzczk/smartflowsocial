@@ -1,5 +1,5 @@
 import type { ComposerAttachment } from "~/features/posts/types";
-import { stripAttachmentTokens } from "~/features/posts/utils/inline-tokens.client";
+import { stripAttachmentTokens } from "~/features/posts/utils/inline-tokens";
 
 import type { NormalizedThreadPreview } from "./normalized-composer-preview.types";
 import { orderAttachmentsForPreview } from "./order-attachments-for-preview";

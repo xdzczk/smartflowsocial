@@ -6,6 +6,7 @@ import { json } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
 
 import { requireUserId } from "~/features/auth/session.server";
+import { cascadeDeleteScheduledDependentsForSourcePost } from "~/features/posts/repositories/published-scheduled-dependents-cascade.server";
 import {
   deleteLongFormPost,
   getLongFormPostsByIds,
@@ -45,6 +46,10 @@ async function handleDelete(formData: FormData, userId: string) {
   if (!result.success) {
     return result.response;
   }
+  await cascadeDeleteScheduledDependentsForSourcePost(
+    result.data.postId,
+    userId
+  );
   await deletePost({ id: result.data.postId, userId });
   return json({ success: true });
 }
@@ -57,6 +62,10 @@ async function handleDeleteLongForm(formData: FormData, userId: string) {
   if (!result.success) {
     return result.response;
   }
+  await cascadeDeleteScheduledDependentsForSourcePost(
+    result.data.postId,
+    userId
+  );
   await deleteLongFormPost({ id: result.data.postId, userId });
   return json({ success: true });
 }
@@ -70,7 +79,10 @@ async function handleBulkDelete(formData: FormData, userId: string) {
     return result.response;
   }
   await Promise.all(
-    result.data.postIds.map((id: string) => deletePost({ id, userId }))
+    result.data.postIds.map(async (id: string) => {
+      await cascadeDeleteScheduledDependentsForSourcePost(id, userId);
+      await deletePost({ id, userId });
+    })
   );
   return json({ success: true });
 }
@@ -87,7 +99,10 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
     return result.response;
   }
   await Promise.all(
-    result.data.postIds.map((id: string) => deleteLongFormPost({ id, userId }))
+    result.data.postIds.map(async (id: string) => {
+      await cascadeDeleteScheduledDependentsForSourcePost(id, userId);
+      await deleteLongFormPost({ id, userId });
+    })
   );
   return json({ success: true });
 }
@@ -100,7 +115,8 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
   if (!result.success) {
     return result.response;
   }
-  const promises = result.data.itemData.map((item) => {
+  const promises = result.data.itemData.map(async (item) => {
+    await cascadeDeleteScheduledDependentsForSourcePost(item.id, userId);
     if (item.type === "post") {
       return deletePost({ id: item.id, userId });
     } else {

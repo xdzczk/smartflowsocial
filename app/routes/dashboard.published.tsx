@@ -3,7 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { PublishedPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { PublishedPostsPage } from "~/features/posts/publishing";
@@ -48,6 +48,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
+export function shouldRevalidate(args: {
+  currentUrl: URL;
+  nextUrl: URL;
+  formAction?: string;
+  defaultShouldRevalidate: boolean;
+}) {
+  const isPublishedAction =
+    typeof args.formAction === "string" &&
+    args.formAction.includes("/dashboard/published");
+
+  if (isPublishedAction) {
+    return true;
+  }
+
+  if (
+    args.currentUrl.pathname === args.nextUrl.pathname &&
+    args.currentUrl.search === args.nextUrl.search
+  ) {
+    return false;
+  }
+
+  return args.defaultShouldRevalidate;
+}
+
 interface PublishedDeferredLoaderData {
   published: Promise<PublishedPostsLoaderData>;
 }
@@ -56,14 +80,7 @@ function PublishedFeedRoute() {
   const { published } = useLoaderData() as PublishedDeferredLoaderData;
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          title="Published"
-          subtitle="Review published content, queue history, and recyclable posts."
-        />
-      }
-    >
+    <Suspense fallback={<PublishedPostsPageSkeleton />}>
       <Await
         resolve={published}
         errorElement={

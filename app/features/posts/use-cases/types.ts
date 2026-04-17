@@ -69,6 +69,11 @@ export interface CreatePostInput {
     signedEvent: SignedEvent;
     caption?: string;
   }>;
+  /**
+   * Internal optimization for bulk flows that already checked capacity.
+   * Keeps per-post checks enabled by default for single-item actions.
+   */
+  skipScheduleCapacityCheck?: boolean;
 }
 
 export interface CreatePostResult {

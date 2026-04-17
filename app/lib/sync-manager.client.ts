@@ -5,6 +5,11 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
+import {
+  removeStaleInfiniteQueries,
+  skipInfiniteQueries,
+} from "~/lib/query/is-infinite-query-data";
+
 type SyncState = "synced" | "syncing" | "needs_attention";
 
 const POSTS_QUERY_KEY = "posts";
@@ -64,17 +69,28 @@ export async function triggerForegroundSync(
   setSyncState("syncing");
 
   try {
-    // Invalidate queries that need refreshing on app resume
     await Promise.all([
-      // Post-related queries
-      queryClient.invalidateQueries({ queryKey: [POSTS_QUERY_KEY] }),
-      queryClient.invalidateQueries({ queryKey: [SCHEDULED_POSTS_QUERY_KEY] }),
-      queryClient.invalidateQueries({ queryKey: ["published-posts"] }),
+      queryClient.invalidateQueries({
+        queryKey: [POSTS_QUERY_KEY],
+        predicate: skipInfiniteQueries,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: [SCHEDULED_POSTS_QUERY_KEY],
+        predicate: skipInfiniteQueries,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["published-posts"],
+        predicate: skipInfiniteQueries,
+      }),
       queryClient.invalidateQueries({ queryKey: ["post"] }),
-      // Queue-related queries
       queryClient.invalidateQueries({ queryKey: ["queues"] }),
-      // User-related queries (for signer status)
       queryClient.invalidateQueries({ queryKey: ["user"] }),
+    ]);
+
+    removeStaleInfiniteQueries(queryClient, [
+      [POSTS_QUERY_KEY],
+      [SCHEDULED_POSTS_QUERY_KEY],
+      ["published-posts"],
     ]);
 
     // Check if there are any posts with failures that need attention

@@ -24,10 +24,11 @@ import {
 } from "~/features/posts/composer/components/composer";
 import { useLongFormSubmission } from "~/features/posts/hooks/useLongFormSubmission";
 import type { LongformQuoteEntry } from "~/features/posts/hooks/useLongFormSubmission";
+import { useScheduleOverlapWarning } from "~/features/posts/scheduling/hooks/useScheduleOverlapWarning";
 import { useCoverImageUpload } from "~/features/posts/useCoverImageUpload";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 import { useLongFormScheduling } from "~/features/posts/useLongFormScheduling";
-import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate.client";
+import { useBlossomUploadGate } from "~/features/upload/blossom-upload-gate-hook";
 import { useSignAttemptProgress } from "~/lib/hooks/useSignAttemptProgress";
 import {
   SMALL_ICON_SIZE_CLASS,
@@ -52,6 +53,10 @@ import {
   type LongFormPostProps,
 } from "./longform-post";
 import { LongFormContentEditor } from "./LongFormContentEditor";
+
+function normalizeWatchedText(value: string | undefined): string {
+  return value ?? "";
+}
 
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- Longform composer intentionally composes editor, scheduling, drafts, and publish flows in one orchestrator component. */
 export default function LongFormPost({
@@ -127,10 +132,10 @@ export default function LongFormPost({
   });
 
   // Watch form values
-  const title = form.watch("title");
-  const summary = form.watch("summary");
-  const content = form.watch("content");
-  const customTags = form.watch("customTags");
+  const title = normalizeWatchedText(form.watch("title"));
+  const summary = normalizeWatchedText(form.watch("summary"));
+  const content = normalizeWatchedText(form.watch("content"));
+  const customTags = normalizeWatchedText(form.watch("customTags"));
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
 
   const titleFieldReg = form.register("title");
@@ -465,6 +470,23 @@ export default function LongFormPost({
   }, [longformDraftFingerprint]);
 
   const scheduledFor = schedulingScheduledFor ?? null;
+  const selectedQueueTypeObj = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
+  );
+  const selectedQueueTypeId =
+    selectedQueueTypeObj && typeof selectedQueueTypeObj === "object"
+      ? selectedQueueTypeObj.id
+      : null;
+  const shouldCheckScheduleOverlap =
+    Boolean(scheduledFor?.trim()) &&
+    (publishMode === "schedule" || publishMode === "queue");
+  const { warning: scheduleOverlapWarning } = useScheduleOverlapWarning({
+    scheduledFor,
+    queueTypeId: selectedQueueTypeId,
+    enabled: shouldCheckScheduleOverlap,
+    excludeContentId: initialData?.id ?? null,
+  });
+
   const setScheduledFor = (value: string | null) => {
     if (value) {
       form.setValue("scheduledFor", value);
@@ -665,8 +687,10 @@ export default function LongFormPost({
   );
   const displayRedIssues =
     issueDisplayPhase === "blocking" ? [...deferrableBlockers] : [];
-  const displayAmberIssues =
-    issueDisplayPhase === "soft" ? [...deferrableBlockers] : [];
+  const displayAmberIssues = [
+    ...(issueDisplayPhase === "soft" ? [...deferrableBlockers] : []),
+    ...(scheduleOverlapWarning ? [scheduleOverlapWarning] : []),
+  ];
   const pristineHint =
     issueDisplayPhase === "pristine" && deferrableBlockers.length > 0
       ? "Add title, body, and cover. Then choose publish mode on the right."
@@ -689,7 +713,7 @@ export default function LongFormPost({
 
   const contentSummaryLines = buildArticlePublishSummaryLines({
     hasTitle: title.trim().length > 0,
-    hasSummary: Boolean((summary ?? "").trim()),
+    hasSummary: Boolean(summary.trim()),
     wordCount,
     hasCover: Boolean(image),
     customTags,
@@ -704,9 +728,6 @@ export default function LongFormPost({
     selectedQueueType
   );
 
-  const selectedQueueTypeObj = queueTypes.find(
-    (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
-  );
   const longformQueueNextSlotLabel =
     publishMode === "queue" &&
     selectedQueueTypeObj &&
@@ -755,8 +776,8 @@ export default function LongFormPost({
       title.trim().length > 0 ||
       content.trim().length > 0 ||
       Boolean(image) ||
-      (customTags ?? "").trim().length > 0 ||
-      (summary ?? "").trim().length > 0
+      customTags.trim().length > 0 ||
+      summary.trim().length > 0
     ) {
       setComposerTouched(true);
     }

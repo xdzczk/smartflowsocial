@@ -232,35 +232,6 @@ export function BulkComposerModalContent({
         headerActions={null}
         workspace={
           <>
-            {signing.isSigning ? (
-              <div className="bg-muted text-muted-foreground mb-3 flex flex-col gap-2 rounded-lg border p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Waiting for signer…
-                  {signing.signingProgress ? (
-                    <span className="ml-1">
-                      ({signing.signingProgress.current}/
-                      {signing.signingProgress.total})
-                    </span>
-                  ) : null}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => signing.cancelSigningState()}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ) : null}
-
-            {(signing.signingError ?? signing.actionError) &&
-            bulkComposerStage === "review" ? (
-              <div className="border-destructive bg-destructive/10 text-destructive mb-3 rounded-md border p-2 text-xs">
-                {signing.signingError ?? signing.actionError}
-              </div>
-            ) : null}
-
             <Dialog
               open={signing.partialSignState !== null}
               onOpenChange={(open) => {
@@ -396,6 +367,11 @@ export function BulkComposerModalContent({
             postsCount={posts.length}
             isSigning={signing.isSigning}
             signingProgress={signing.signingProgress}
+            signingError={signing.signingError ?? signing.actionError}
+            onRequestNewSession={() => {
+              void signing.requestNewSignerSession(signing.cancelSigningState);
+            }}
+            onCancelSigning={signing.cancelSigningState}
           />
         }
       />

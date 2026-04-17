@@ -86,4 +86,28 @@ export const action = withCSRFProtection(
   }
 );
 
+export function shouldRevalidate(args: {
+  currentUrl: URL;
+  nextUrl: URL;
+  formAction?: string;
+  defaultShouldRevalidate: boolean;
+}) {
+  const isDashboardAction =
+    typeof args.formAction === "string" &&
+    args.formAction.includes("/dashboard");
+
+  if (isDashboardAction) {
+    return true;
+  }
+
+  if (
+    args.currentUrl.pathname === args.nextUrl.pathname &&
+    args.currentUrl.search === args.nextUrl.search
+  ) {
+    return false;
+  }
+
+  return args.defaultShouldRevalidate;
+}
+
 export default DashboardLayoutPage;

@@ -4,6 +4,7 @@
  */
 
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
 
@@ -43,7 +44,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   staleTime,
   buildUrl,
   maxPages,
-  placeholderData,
   refetchInterval,
   refetchIntervalInBackground,
 }: {
@@ -54,9 +54,6 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
   staleTime?: number;
   buildUrl?: (pageParam: number) => string;
   maxPages?: number;
-  placeholderData?: (
-    previousData: { pages: TData[]; pageParams: number[] } | undefined
-  ) => { pages: TData[]; pageParams: number[] } | undefined;
   refetchInterval?: number | false;
   refetchIntervalInBackground?: boolean;
 }) {
@@ -75,6 +72,11 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
     }
     return getNextPageParam(lastPage, allPages);
   };
+
+  // Mark initial data as fresh *now* so TanStack Query respects staleTime.
+  // Without this, initialData is treated as updated at epoch 0 (always stale),
+  // causing immediate refetches that race with fetchNextPage and reset pages.
+  const [mountedAt] = useState(() => Date.now());
 
   return useInfiniteQuery({
     queryKey,
@@ -99,36 +101,31 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // CRITICAL: Add _data parameter to get JSON response instead of HTML
-      // Remix returns HTML by default, but _data parameter tells it to return JSON
-      // The route ID format matches the file structure:
-      // /dashboard -> routes/dashboard
-      // /dashboard/scheduled -> routes/dashboard.scheduled
-      // /dashboard/published -> routes/dashboard.published
+      // Two params are needed for Remix to return plain JSON from a loader:
+      //   _data=<routeId>  – tells Remix to call only the loader (not render HTML)
+      //   _loader=json     – our custom flag; the loader checks this via
+      //                      isRemixResourceRequest() and returns json() instead
+      //                      of defer().  Remix strips _data before the loader
+      //                      sees the Request, so _loader is the only reliable
+      //                      signal the loader can inspect.
       if (typeof window !== "undefined") {
         try {
-          // Handle both absolute and relative URLs
           const baseUrl = url.startsWith("http")
             ? url
             : window.location.origin + url;
           const urlObj = new URL(baseUrl);
 
-          // Only add _data if not already present
           if (!urlObj.searchParams.has("_data")) {
             const routeId = pathnameToRemixDataRouteId(urlObj.pathname);
             urlObj.searchParams.set("_data", routeId);
-            // Return relative URL (pathname + search)
-            url = urlObj.pathname + urlObj.search;
           }
+          urlObj.searchParams.set("_loader", "json");
+          url = urlObj.pathname + urlObj.search;
         } catch {
-          // If URL parsing fails, continue (might be a relative URL)
           // Silently continue - URL might still work without _data parameter
         }
       }
 
-      // CRITICAL FIX: Use fetch directly instead of fetcher.load()
-      // fetcher.load() doesn't work reliably in Promise contexts - the fetcher state
-      // doesn't update properly when called from within a queryFn Promise
       const response = await fetch(url, {
         method: "GET",
         credentials: "same-origin",
@@ -149,10 +146,13 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
       pages: [initialData],
       pageParams: [1],
     },
+    initialDataUpdatedAt: mountedAt,
     enabled,
     staleTime,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     ...(capped ? { maxPages } : {}),
-    placeholderData: placeholderData ?? ((previousData) => previousData),
     refetchInterval,
     refetchIntervalInBackground,
   });

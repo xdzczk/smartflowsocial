@@ -24,6 +24,10 @@ export {
   parseQueueScheduleRequest,
 } from "./services/queue-schedule.server";
 export {
+  buildScheduleOverlapWarning,
+  getScheduleOverlapWarning,
+} from "./services/schedule-overlap-warning.server";
+export {
   cascadeAttachedReschedule,
   cascadeCancelAttachedFollowups,
   cascadeDeleteAttachedFollowups,

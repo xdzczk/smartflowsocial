@@ -11,7 +11,10 @@ import {
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { updateTagsClientSchema } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface HashtagsSettingsProps {
   tags: string;

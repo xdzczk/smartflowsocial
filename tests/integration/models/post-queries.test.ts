@@ -126,6 +126,38 @@ describe("Post Queries", () => {
       expect(result).toEqual(expectedDate);
     });
 
+    it("should scope raw query to the requested queue type ID", async () => {
+      const mockQueueType = {
+        id: "queue-123",
+        scheduleType: "FIXED_SLOTS" as const,
+        name: "Queue A",
+      };
+      const expectedDate = new Date(1234567890 * 1000);
+
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { effective_at: expectedDate },
+      ]);
+
+      await getLastPostTimeForQueue({
+        userId: TEST_USER_ID,
+        queueTypeId: "queue-123",
+      });
+
+      expect(prisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+      const rawArgs = (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mock
+        .calls[0] as unknown[] | undefined;
+      const sql = rawArgs?.[0] as string | undefined;
+      const passedUserId = rawArgs?.[1] as string | undefined;
+      const passedQueueTypeId = rawArgs?.[2] as string | undefined;
+
+      expect(sql).toContain(`"queueTypeId" = $2`);
+      expect(passedUserId).toBe(TEST_USER_ID);
+      expect(passedQueueTypeId).toBe("queue-123");
+    });
+
     it("should return last post time for queue by name", async () => {
       const mockQueueType = {
         id: "queue-123",
@@ -198,6 +230,7 @@ describe("Post Queries", () => {
       expect(rawCall).toBeDefined();
       expect(rawCall).toContain("SCHEDULED");
       expect(rawCall).not.toContain("PUBLISHED");
+      expect(rawCall).toContain(`"dependencyMode" = 'standalone'`);
     });
 
     it("should include both SCHEDULED and PUBLISHED for FIXED_SLOTS schedule type", async () => {
@@ -223,6 +256,7 @@ describe("Post Queries", () => {
       expect(rawCall).toBeDefined();
       expect(rawCall).toContain("SCHEDULED");
       expect(rawCall).toContain("PUBLISHED");
+      expect(rawCall).toContain(`"dependencyMode" = 'standalone'`);
     });
 
     it("should return null if no post found", async () => {

@@ -29,7 +29,7 @@ import {
 import type { RepostConditions } from "~/features/posts/types";
 import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
-import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate.client";
+import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate";
 import {
   MEDIA_UPLOAD_MAX_IMAGE_BYTES,
   MEDIA_UPLOAD_MAX_VIDEO_BYTES,
@@ -339,7 +339,10 @@ export function useBulkPostsPageState({
             newSearchParams.delete("firstPostId");
             newSearchParams.delete("lastScheduledAt");
             newSearchParams.delete("queueSummary");
-            setSearchParams(newSearchParams, { replace: true });
+            const nextQuery = newSearchParams.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+            // Avoid route revalidation/suspense while showing success modal.
+            window.history.replaceState(window.history.state, "", nextUrl);
           }
         } catch {
           setTimeout(() => setModalPostId(null), 0);

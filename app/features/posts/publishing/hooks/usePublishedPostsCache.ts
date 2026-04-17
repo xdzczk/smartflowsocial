@@ -2,7 +2,11 @@
  * Helpers for optimistic updates to published-posts infinite-query cache after deletes.
  */
 
+import type { QueryClient } from "@tanstack/react-query";
+
 import { ACTION_BULK_DELETE_MIXED } from "./usePublishedPostsConstants";
+
+const PUBLISHED_POSTS_ROOT_KEY = ["published-posts"] as const;
 
 export function isPublishedPostsCacheObject(
   value: unknown
@@ -37,6 +41,29 @@ export function prunePublishedPageData(
     longformPosts: filterPublishedRowsById(page["longformPosts"], deletedIds),
     allContent: filterPublishedRowsById(page["allContent"], deletedIds),
   };
+}
+
+/** Prune deleted ids from every published-posts query (infinite `pages[]` or flat loader data). */
+export function prunePublishedPostsFromAllQueries(
+  queryClient: QueryClient,
+  ids: string[]
+): void {
+  if (ids.length === 0) return;
+  const deletedIds = new Set(ids);
+  queryClient.setQueriesData({ queryKey: PUBLISHED_POSTS_ROOT_KEY }, (old) => {
+    if (!isPublishedPostsCacheObject(old)) {
+      return old;
+    }
+    if (Array.isArray(old["pages"])) {
+      return {
+        ...old,
+        pages: (old["pages"] as unknown[]).map((page) =>
+          prunePublishedPageData(page, deletedIds)
+        ),
+      };
+    }
+    return prunePublishedPageData(old, deletedIds);
+  });
 }
 
 export function parseBulkDeleteIds(formData: FormData): string[] {

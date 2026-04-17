@@ -46,9 +46,9 @@ import { requireAnySubscription } from "~/features/payments/subscriptions.server
 import { loader } from "~/routes/dashboard.drafts";
 
 const DRAFTS_DATA_URL =
-  "http://localhost:3000/dashboard/drafts?_data=routes/dashboard.drafts";
+  "http://localhost:3000/dashboard/drafts?_data=routes/dashboard.drafts&_loader=json";
 const DRAFTS_QUEUE_DATA_URL =
-  "http://localhost:3000/dashboard/drafts/posts?_data=routes/dashboard.drafts.$queueType";
+  "http://localhost:3000/dashboard/drafts/posts?_data=routes/dashboard.drafts.$queueType&_loader=json";
 
 describe("Drafts Loader Integration", () => {
   beforeEach(() => {

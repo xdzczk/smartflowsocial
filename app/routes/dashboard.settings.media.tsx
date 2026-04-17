@@ -11,7 +11,7 @@ import {
 import { Suspense, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DeferredListPageSkeleton } from "~/components/skeletons/DeferredListPageSkeleton";
+import { MediaSettingsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -442,15 +442,7 @@ export default function SettingsMediaPage() {
   };
 
   return (
-    <Suspense
-      fallback={
-        <DeferredListPageSkeleton
-          variant="mediaGallery"
-          title="Media"
-          subtitle={`${BRAND_BLOSSOM_LABEL} usage and your uploads`}
-        />
-      }
-    >
+    <Suspense fallback={<MediaSettingsPageSkeleton />}>
       <Await
         resolve={mediaSettings}
         errorElement={

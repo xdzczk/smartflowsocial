@@ -161,8 +161,6 @@ export function useEngagementInfiniteQuery() {
     buildUrl: (pageParam) => `/dashboard/engagement/feed?page=${pageParam}`,
     staleTime: 15 * 1000, // 15 seconds
     maxPages: 10, // 10 pages × 50 = 500 posts max
-    // Keep previous data visible during refetches for smoother UX
-    placeholderData: (previousData) => previousData,
     // Background refetching to keep engagement feed fresh (light real-time)
     refetchInterval: 15000, // Refetch every 15 seconds
     refetchIntervalInBackground: true, // Continue refetching when tab is inactive

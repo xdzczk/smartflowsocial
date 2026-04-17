@@ -1,5 +1,5 @@
 import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -76,11 +76,13 @@ export default function PublishedPostsPage() {
     user,
     queueTypes,
     stats: initialStats,
+    loadedPages,
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
     totalLongformCount,
     isLoading: _isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -142,14 +144,21 @@ export default function PublishedPostsPage() {
   });
 
   const isMobile = useIsMobile(768);
+  const fetchNextPageRef = useRef(fetchNextPage);
+  useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+  const stableFetchNextPage = useCallback(() => {
+    void fetchNextPageRef.current();
+  }, []);
   const { sentinelRef, prefetchSentinelRef, setScrollRoot } =
     useInfiniteScrollSentinel({
       isMobile,
       hasNextPage,
       isFetchingNextPage,
-      fetchNextPage: () => {
-        void fetchNextPage();
-      },
+      isFetching,
+      loadedPageCount: loadedPages,
+      fetchNextPage: stableFetchNextPage,
     });
 
   // Fetch stats client-side after page load (non-blocking)
@@ -355,16 +364,28 @@ export default function PublishedPostsPage() {
     );
   }
 
-  // Enhanced bulk delete with optimistic updates
   const handleBulkDelete = () => {
     if (selectedPosts.size === 0) return;
     const postIds = Array.from(selectedPosts);
+    const mixedItemData =
+      currentTab === "all"
+        ? allContent
+            .filter((item) => selectedPosts.has(item.id))
+            .map((item) => ({ id: item.id, type: item.type }))
+        : undefined;
 
-    bulkDeleteMutation.mutate(postIds, {
-      onError: () => {
-        originalHandleBulkDelete();
-      },
-    });
+    bulkDeleteMutation.mutate(
+      { postIds, mixedItemData },
+      {
+        onSuccess: () => {
+          setSelectedPosts(new Set());
+          refreshPostViews();
+        },
+        onError: () => {
+          originalHandleBulkDelete();
+        },
+      }
+    );
   };
 
   return (
@@ -486,6 +507,9 @@ export default function PublishedPostsPage() {
             isFetchingNextPage={isFetchingNextPage}
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             onResetListFilters={resetListFilters}
+            onBeforeDelete={(postId) =>
+              optimisticallyRemovePublishedItems([postId])
+            }
           />
         ) : currentTab === "posts" || currentTab === "reposts" ? (
           <>
@@ -543,6 +567,9 @@ export default function PublishedPostsPage() {
               sentinelRef={isMobile ? sentinelRef : undefined}
               isFetchingNextPage={isFetchingNextPage}
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+              onBeforeDelete={(postId) =>
+                optimisticallyRemovePublishedItems([postId])
+              }
             />
           </>
         ) : (

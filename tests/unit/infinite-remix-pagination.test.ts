@@ -20,4 +20,29 @@ describe("getNextPageParamFromPaginationTotals", () => {
     const p = { pagination: { pages: 3 } };
     expect(getNextPageParamFromPaginationTotals(p, [p, p, p])).toBeUndefined();
   });
+
+  it("uses max of pagination and longformPagination pages", () => {
+    const p = {
+      pagination: { pages: 1 },
+      longformPagination: { pages: 3 },
+    };
+    expect(getNextPageParamFromPaginationTotals(p, [p])).toBe(2);
+    expect(getNextPageParamFromPaginationTotals(p, [p, p])).toBe(3);
+    expect(getNextPageParamFromPaginationTotals(p, [p, p, p])).toBeUndefined();
+  });
+
+  it("works when only pagination is present (no longformPagination)", () => {
+    const p = { pagination: { pages: 2 } };
+    expect(getNextPageParamFromPaginationTotals(p, [p])).toBe(2);
+    expect(getNextPageParamFromPaginationTotals(p, [p, p])).toBeUndefined();
+  });
+
+  it("returns undefined when pagination has no valid pages field", () => {
+    expect(getNextPageParamFromPaginationTotals({}, [{}])).toBeUndefined();
+    expect(
+      getNextPageParamFromPaginationTotals({ pagination: {} }, [
+        { pagination: {} },
+      ])
+    ).toBeUndefined();
+  });
 });

@@ -1,5 +1,11 @@
 import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Await, Outlet, useLoaderData, useLocation } from "@remix-run/react";
+import {
+  Await,
+  Outlet,
+  useLoaderData,
+  useLocation,
+  type ShouldRevalidateFunctionArgs,
+} from "@remix-run/react";
 import { Suspense } from "react";
 
 import { requireUserId } from "~/features/auth";
@@ -70,6 +76,35 @@ export async function loader(args: LoaderFunctionArgs) {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
   }
+}
+
+function normalizeSettingsSearchWithoutTab(url: URL): string {
+  const params = new URLSearchParams(url.search);
+  params.delete("tab");
+  params.delete("billing");
+  return params.toString();
+}
+
+export function shouldRevalidate(args: ShouldRevalidateFunctionArgs): boolean {
+  if (
+    args.currentUrl.pathname !== "/dashboard/settings" ||
+    args.nextUrl.pathname !== "/dashboard/settings"
+  ) {
+    return args.defaultShouldRevalidate;
+  }
+
+  if (args.formMethod && args.formMethod !== "GET") {
+    return args.defaultShouldRevalidate;
+  }
+
+  const currentWithoutTab = normalizeSettingsSearchWithoutTab(args.currentUrl);
+  const nextWithoutTab = normalizeSettingsSearchWithoutTab(args.nextUrl);
+
+  if (currentWithoutTab === nextWithoutTab) {
+    return false;
+  }
+
+  return args.defaultShouldRevalidate;
 }
 
 export const action = withCSRFProtection(
