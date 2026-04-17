@@ -78,6 +78,8 @@ interface ContentTableRowProps {
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
   onBeforeDelete?: (postId: string) => void;
+  /** When provided, replaces the default deleteFetcher.submit() so the parent controls the full delete lifecycle (including cascade handling). */
+  onDelete?: (postId: string, postType: "post" | "longform") => void;
 }
 
 export function ContentTableRow({
@@ -100,6 +102,7 @@ export function ContentTableRow({
   onScheduleRepost,
   onScheduleQuote,
   onBeforeDelete,
+  onDelete,
 }: ContentTableRowProps) {
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
@@ -298,6 +301,7 @@ export function ContentTableRow({
           onScheduleRepost={onScheduleRepost}
           onScheduleQuote={onScheduleQuote}
           onBeforeDelete={onBeforeDelete}
+          onDelete={onDelete}
         />
       </td>
     </tr>
@@ -318,6 +322,7 @@ export function ContentRowActions({
   onScheduleRepost,
   onScheduleQuote,
   onBeforeDelete,
+  onDelete,
 }: {
   item: CombinedContent;
   type: "scheduled" | "draft" | "published";
@@ -335,6 +340,7 @@ export function ContentRowActions({
   onScheduleRepost?: (post: PostData) => void;
   onScheduleQuote?: (post: PostData) => void;
   onBeforeDelete?: (postId: string) => void;
+  onDelete?: (postId: string, postType: "post" | "longform") => void;
 }) {
   const rootData = useRouteLoaderData("root") as
     | {
@@ -660,13 +666,19 @@ export function ContentRowActions({
           className="text-destructive focus:text-destructive"
           onSelect={() => {
             onBeforeDelete?.(item.id);
-            const formData = new FormData();
-            formData.set("postId", item.id);
-            formData.set(
-              "_action",
-              item.type === "post" ? "delete" : "deleteLongForm"
-            );
-            deleteFetcher.submit(formData, { method: "post" });
+            const postType =
+              item.type === "post" ? ("post" as const) : ("longform" as const);
+            if (onDelete) {
+              onDelete(item.id, postType);
+            } else {
+              const formData = new FormData();
+              formData.set("postId", item.id);
+              formData.set(
+                "_action",
+                postType === "post" ? "delete" : "deleteLongForm"
+              );
+              deleteFetcher.submit(formData, { method: "post" });
+            }
           }}
         >
           {deleteFetcher.state !== "idle" &&

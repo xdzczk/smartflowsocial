@@ -1,7 +1,7 @@
 import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useRef, useState, type Key } from "react";
+import { useCallback, useEffect, useRef, useState, type Key } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -19,7 +19,10 @@ import {
 import { getShortDraftEditRedirectPath } from "~/features/posts/drafts/utils/draft-editor-navigation";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
+import { pruneScheduledQueryData } from "~/features/posts/scheduling/hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { fromISOString } from "~/lib/temporal";
@@ -203,6 +206,50 @@ export default function AllContentListing({
       }
     }
   }, [deleteFetcher.state, deleteFetcher.data, queryClient, type]);
+
+  const handleDeleteWithCascade = useCallback(
+    (postId: string, postType: "post" | "longform") => {
+      onBeforeDelete?.(postId);
+
+      const formData = new FormData();
+      formData.set("postId", postId);
+      formData.set(
+        "_action",
+        postType === "post" ? "delete" : "deleteLongForm"
+      );
+
+      void (async () => {
+        try {
+          const url = buildActionUrl(window.location.pathname);
+          const resp = await fetch(url, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+          });
+          const json = (await resp.json().catch(() => null)) as {
+            cascadeDeletedIds?: string[];
+          } | null;
+          const cascadeIds = json?.cascadeDeletedIds;
+          if (cascadeIds && cascadeIds.length > 0) {
+            queryClient.setQueriesData(
+              { queryKey: scheduledPostsKeys.all },
+              (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
+            );
+          }
+        } finally {
+          void queryClient.invalidateQueries({
+            queryKey: dashboardKeys.all,
+            predicate: skipInfiniteQueries,
+          });
+          invalidateDependentCaches(queryClient);
+        }
+      })();
+    },
+    [queryClient, onBeforeDelete]
+  );
+
+  const scheduledDeleteHandler =
+    type === "scheduled" ? handleDeleteWithCascade : undefined;
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -433,6 +480,7 @@ export default function AllContentListing({
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onBeforeDelete={onBeforeDelete}
+                      onDelete={scheduledDeleteHandler}
                     />
                   )
                 )}
@@ -539,6 +587,7 @@ export default function AllContentListing({
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
                             onBeforeDelete={onBeforeDelete}
+                            onDelete={scheduledDeleteHandler}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -614,6 +663,7 @@ export default function AllContentListing({
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onBeforeDelete={onBeforeDelete}
+                      onDelete={scheduledDeleteHandler}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }
