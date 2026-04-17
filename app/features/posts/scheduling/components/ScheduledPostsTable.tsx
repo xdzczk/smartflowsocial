@@ -6,7 +6,7 @@ import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Quote, Repeat } from "lucide-react";
-import { useEffect, useRef, useState, type Key } from "react";
+import { useCallback, useEffect, useRef, useState, type Key } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -42,6 +42,7 @@ import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
+import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -137,20 +138,60 @@ export function ScheduledPostsTable({
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
-  const deleteFetcher = useFetcher<{
-    success?: boolean;
-    cascadeDeletedIds?: string[];
-  }>();
+  const moveToDraftFetcher = useFetcher<{ success?: boolean }>();
   const queryClient = useQueryClient();
-  const previousDeleteStateRef = useRef(deleteFetcher.state);
-  const previousDeleteDataRef = useRef(deleteFetcher.data);
-  const lastDeleteSubmissionRef = useRef<{
-    action: "delete" | "moveToDraft";
-    postId: string;
-  } | null>(null);
+  const previousMoveStateRef = useRef(moveToDraftFetcher.state);
+  const previousMoveDataRef = useRef(moveToDraftFetcher.data);
+  const lastMoveSubmissionRef = useRef<{ postId: string } | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  const handleDeleteWithCascade = useCallback(
+    (postId: string, postType: "post" | "longform") => {
+      setDeletingPostId(postId);
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(old, new Set([postId]))
+      );
+
+      const formData = new FormData();
+      formData.set("postId", postId);
+      formData.set(
+        "_action",
+        postType === "post" ? "delete" : "deleteLongForm"
+      );
+
+      void (async () => {
+        try {
+          const url = buildActionUrl(window.location.pathname);
+          const resp = await fetch(url, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+          });
+          const json = (await resp.json().catch(() => null)) as {
+            cascadeDeletedIds?: string[];
+          } | null;
+          const cascadeIds = json?.cascadeDeletedIds;
+          if (cascadeIds && cascadeIds.length > 0) {
+            queryClient.setQueriesData(
+              { queryKey: scheduledPostsKeys.all },
+              (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
+            );
+          }
+        } finally {
+          setDeletingPostId(null);
+          void queryClient.invalidateQueries({
+            queryKey: dashboardKeys.all,
+            predicate: skipInfiniteQueries,
+          });
+          invalidateDependentCaches(queryClient);
+        }
+      })();
+    },
+    [queryClient]
+  );
 
   const combinedContent = posts.map((post) => postToCombinedContent(post));
-  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
+
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>
@@ -167,40 +208,31 @@ export function ScheduledPostsTable({
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
 
   useEffect(() => {
-    const previousState = previousDeleteStateRef.current;
-    const currentState = deleteFetcher.state;
-    const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
-    const submission = lastDeleteSubmissionRef.current;
-    const data = deleteFetcher.data as
-      | { success?: boolean; error?: string; cascadeDeletedIds?: string[] }
-      | undefined;
-    const didSucceed =
-      !data || typeof data.success !== "boolean" ? !data?.error : data.success;
+    const previousState = previousMoveStateRef.current;
+    const currentState = moveToDraftFetcher.state;
+    const dataChanged = moveToDraftFetcher.data !== previousMoveDataRef.current;
+    const submission = lastMoveSubmissionRef.current;
 
     if (
       currentState === "idle" &&
       submission &&
-      (previousState !== "idle" || dataChanged) &&
-      didSucceed
+      (previousState !== "idle" || dataChanged)
     ) {
-      const cascadeIds: string[] = data?.cascadeDeletedIds ?? [];
-      const deletedIds = new Set([submission.postId, ...cascadeIds]);
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
-        pruneScheduledQueryData(old, deletedIds)
+        pruneScheduledQueryData(old, new Set([submission.postId]))
       );
-
       void queryClient.invalidateQueries({
         queryKey: dashboardKeys.all,
         predicate: skipInfiniteQueries,
       });
       invalidateDependentCaches(queryClient);
-      lastDeleteSubmissionRef.current = null;
+      lastMoveSubmissionRef.current = null;
     } else if (previousState !== "idle" && currentState === "idle") {
-      lastDeleteSubmissionRef.current = null;
+      lastMoveSubmissionRef.current = null;
     }
-    previousDeleteStateRef.current = currentState;
-    previousDeleteDataRef.current = deleteFetcher.data;
-  }, [deleteFetcher.state, deleteFetcher.data, queryClient]);
+    previousMoveStateRef.current = currentState;
+    previousMoveDataRef.current = moveToDraftFetcher.data;
+  }, [moveToDraftFetcher.state, moveToDraftFetcher.data, queryClient]);
 
   const timeFormat = userTimeFormat === "24h" ? "24h" : "12h";
 
@@ -496,7 +528,8 @@ export function ScheduledPostsTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             disabled={
-                              deleteFetcher.state !== "idle" ||
+                              moveToDraftFetcher.state !== "idle" ||
+                              deletingPostId != null ||
                               bulkDeleteState !== "idle"
                             }
                             onSelect={() => {
@@ -508,52 +541,37 @@ export function ScheduledPostsTable({
                                     new Set([post.id])
                                   )
                               );
-                              lastDeleteSubmissionRef.current = {
-                                action: "moveToDraft",
+                              lastMoveSubmissionRef.current = {
                                 postId: post.id,
                               };
                               const fd = new FormData();
                               fd.set("postId", post.id);
                               fd.set("_action", "moveToDraft");
                               fd.set("type", "post");
-                              deleteFetcher.submit(fd, { method: "post" });
+                              moveToDraftFetcher.submit(fd, { method: "post" });
                             }}
                           >
-                            {deleteFetcher.state !== "idle" &&
-                            deleteFetcher.formData?.get("_action") ===
+                            {moveToDraftFetcher.state !== "idle" &&
+                            moveToDraftFetcher.formData?.get("_action") ===
                               "moveToDraft" &&
                             /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
-                            deleteFetcher.formData?.get("postId") === post.id
+                            moveToDraftFetcher.formData?.get("postId") ===
+                              post.id
                               ? "Moving..."
                               : "Move to drafts"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={
-                              deleteFetcher.state !== "idle" ||
+                              moveToDraftFetcher.state !== "idle" ||
+                              deletingPostId != null ||
                               bulkDeleteState !== "idle"
                             }
                             className="text-destructive focus:text-destructive"
-                            onSelect={() => {
-                              queryClient.setQueriesData(
-                                { queryKey: scheduledPostsKeys.all },
-                                (old) =>
-                                  pruneScheduledQueryData(
-                                    old,
-                                    new Set([post.id])
-                                  )
-                              );
-                              lastDeleteSubmissionRef.current = {
-                                action: "delete",
-                                postId: post.id,
-                              };
-                              const fd = new FormData();
-                              fd.set("postId", post.id);
-                              fd.set("_action", "delete");
-                              deleteFetcher.submit(fd, { method: "post" });
-                            }}
+                            onSelect={() =>
+                              handleDeleteWithCascade(post.id, "post")
+                            }
                           >
-                            {deleteFetcher.state !== "idle" &&
-                            deleteFetcher.formData?.get("postId") === post.id
+                            {deletingPostId === post.id
                               ? "Deleting..."
                               : "Delete"}
                           </DropdownMenuItem>
@@ -671,26 +689,13 @@ export function ScheduledPostsTable({
                               onReschedulePost(post as PostData)
                             }
                             deleteFetcher={
-                              deleteFetcher as Parameters<
+                              moveToDraftFetcher as Parameters<
                                 typeof ContentListCard
                               >[0]["deleteFetcher"]
                             }
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
-                            onBeforeDelete={(postId) => {
-                              lastDeleteSubmissionRef.current = {
-                                action: "delete",
-                                postId,
-                              };
-                              queryClient.setQueriesData(
-                                { queryKey: scheduledPostsKeys.all },
-                                (old) =>
-                                  pruneScheduledQueryData(
-                                    old,
-                                    new Set([postId])
-                                  )
-                              );
-                            }}
+                            onDelete={handleDeleteWithCascade}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -755,23 +760,13 @@ export function ScheduledPostsTable({
                         onReschedulePost(post as PostData)
                       }
                       deleteFetcher={
-                        deleteFetcher as Parameters<
+                        moveToDraftFetcher as Parameters<
                           typeof ContentListCard
                         >[0]["deleteFetcher"]
                       }
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
-                      onBeforeDelete={(postId) => {
-                        lastDeleteSubmissionRef.current = {
-                          action: "delete",
-                          postId,
-                        };
-                        queryClient.setQueriesData(
-                          { queryKey: scheduledPostsKeys.all },
-                          (old) =>
-                            pruneScheduledQueryData(old, new Set([postId]))
-                        );
-                      }}
+                      onDelete={handleDeleteWithCascade}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }
