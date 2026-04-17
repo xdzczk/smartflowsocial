@@ -147,6 +147,11 @@ export function ScheduledPostsTable({
 
   const handleDeleteWithCascade = useCallback(
     (postId: string, postType: "post" | "longform") => {
+      console.info("[DELETE-DEBUG] handleDeleteWithCascade called", {
+        postId,
+        postType,
+        pathname: window.location.pathname,
+      });
       setDeletingPostId(postId);
       queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
         pruneScheduledQueryData(old, new Set([postId]))
@@ -162,20 +167,26 @@ export function ScheduledPostsTable({
       void (async () => {
         try {
           const url = buildActionUrl(window.location.pathname);
+          console.info("[DELETE-DEBUG] fetching", url);
           const resp = await fetch(url, {
             method: "POST",
             body: formData,
             credentials: "same-origin",
           });
+          console.info("[DELETE-DEBUG] response status", resp.status);
           const json = (await resp.json().catch(() => null)) as {
             cascadeDeletedIds?: string[];
           } | null;
+          console.info("[DELETE-DEBUG] parsed json", json);
           const cascadeIds = json?.cascadeDeletedIds;
           if (cascadeIds && cascadeIds.length > 0) {
+            console.info("[DELETE-DEBUG] pruning cascade IDs", cascadeIds);
             queryClient.setQueriesData(
               { queryKey: scheduledPostsKeys.all },
               (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
             );
+          } else {
+            console.info("[DELETE-DEBUG] no cascade IDs to prune");
           }
         } finally {
           setDeletingPostId(null);

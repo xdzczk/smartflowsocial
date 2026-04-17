@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="sfsHeroTitle sfsHeroDesc">
   <title id="sfsHeroTitle">SmartFlowSocial README hero</title>
-  <desc id="sfsHeroDesc">SmartFlowSocial: Nostr publishing for creators and teams with local or remote signing, Remix stack, and observable operations.</desc>
+  <desc id="sfsHeroDesc">SmartFlowSocial: Nostr publishing where signing stays with the user; one product column and a workflow diagram from signer through app, workers, to relays.</desc>
   <defs>
-    <!-- Logo chevrons from docs/SFSLogoSymbol.svg; ids prefixed for this document. -->
     <linearGradient id="sfsLogoGrad1" x1="166.575" y1="61.3316" x2="48.7875" y2="243.936" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#060065"/>
       <stop offset="1" stop-color="#4408ff"/>
@@ -15,138 +14,111 @@
       <stop offset="0" stop-color="#8b66ff"/>
       <stop offset="1" stop-color="#c7c8ff"/>
     </linearGradient>
-
-    <linearGradient id="sfsPanel" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="sfsPanel" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="45%" stop-color="#f1f5f9"/>
       <stop offset="100%" stop-color="#eef2ff"/>
     </linearGradient>
-    <linearGradient id="sfsPanelSheen" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="sfsSheen" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="50%" stop-color="#ede9fe" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.18"/>
-    </linearGradient>
-    <linearGradient id="sfsFooterAccent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#4408ff"/>
-      <stop offset="50%" stop-color="#6366f1"/>
-      <stop offset="100%" stop-color="#8b66ff"/>
-    </linearGradient>
-    <linearGradient id="sfsCard" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#f8fafc"/>
+      <stop offset="55%" stop-color="#ede9fe" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0.14"/>
     </linearGradient>
     <linearGradient id="sfsAccent" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#4408ff"/>
       <stop offset="100%" stop-color="#8b66ff"/>
     </linearGradient>
-    <linearGradient id="sfsNodeTop" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="100%" stop-color="#e2e8f0"/>
+    <linearGradient id="sfsFooterAccent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4408ff"/>
+      <stop offset="100%" stop-color="#8b66ff"/>
     </linearGradient>
-    <linearGradient id="sfsNodeCore" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="sfsStage" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="sfsNodeHi" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#eef2ff"/>
       <stop offset="100%" stop-color="#e0e7ff"/>
     </linearGradient>
-    <filter id="sfsShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.06"/>
+    <filter id="sfsShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.06"/>
     </filter>
-    <filter id="sfsSoft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.045"/>
+    <filter id="sfsSoft" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.04"/>
     </filter>
-    <filter id="sfsNodeLift" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0f172a" flood-opacity="0.06"/>
-    </filter>
-    <marker id="sfsArrow" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
-      <path d="M0.5 1 L6.5 4 L0.5 7 Z" fill="#64748b"/>
+    <marker id="sfsArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 1 L7 4.5 L0 8 Z" fill="#64748b"/>
     </marker>
     <style>
       .sfsPanel { fill: url(#sfsPanel); stroke: #e2e8f0; stroke-width: 1.5; filter: url(#sfsShadow); }
-      .sfsCard { fill: url(#sfsCard); stroke: #e2e8f0; stroke-width: 1; filter: url(#sfsSoft); }
-      .sfsChip { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1; }
-      .sfsNode { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1; filter: url(#sfsNodeLift); }
-      .sfsNodeHi { fill: url(#sfsNodeCore); stroke: #5b21b6; stroke-width: 1.25; filter: url(#sfsNodeLift); }
-      .sfsEyebrow { font: 700 13px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0.14em; text-transform: uppercase; fill: #64748b; }
-      .sfsTitle { font: 800 52px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -0.03em; fill: #0f172a; }
-      .sfsHook { font: 700 22px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #1e293b; letter-spacing: -0.01em; }
-      .sfsSub { font: 500 18px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #334155; }
-      .sfsBody { font: 500 17px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #475569; }
-      .sfsChipTxt { font: 600 14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #1e293b; }
-      .sfsLbl { font: 700 12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0.1em; text-transform: uppercase; fill: #64748b; }
-      .sfsSupport { font: 500 16px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #334155; }
-      .sfsSec { font: 700 12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0.12em; text-transform: uppercase; fill: #64748b; }
-      .sfsHead { font: 700 21px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: -0.02em; }
-      .sfsSmall { font: 500 14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #64748b; }
-      .sfsNodeTxt { font: 600 15px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #1e293b; }
-      .sfsCoreTxt { font: 700 16px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; fill: #312e81; }
-      .sfsFlow { stroke: #64748b; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+      .sfsEyebrow { font: 700 12px ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; fill: #64748b; }
+      .sfsTitle { font: 800 48px ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.03em; fill: #0f172a; }
+      .sfsLead { font: 600 20px ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.015em; fill: #1e293b; }
+      .sfsBody { font: 500 17px ui-sans-serif, system-ui, sans-serif; fill: #475569; }
+      .sfsMeta { font: 600 13px ui-sans-serif, system-ui, sans-serif; fill: #64748b; letter-spacing: 0.02em; }
+      .sfsDiagLabel { font: 600 15px ui-sans-serif, system-ui, sans-serif; fill: #1e293b; }
+      .sfsDiagLabelHi { font: 700 15px ui-sans-serif, system-ui, sans-serif; fill: #312e81; }
+      .sfsDiagCap { font: 500 11px ui-sans-serif, system-ui, sans-serif; fill: #64748b; letter-spacing: 0.06em; text-transform: uppercase; }
+      .sfsFlow { stroke: #94a3b8; stroke-width: 2.5; fill: none; stroke-linecap: round; }
     </style>
   </defs>
 
-  <rect x="24" y="24" width="1232" height="592" rx="32" class="sfsPanel"/>
-  <rect x="24" y="24" width="1232" height="592" rx="32" fill="url(#sfsPanelSheen)" pointer-events="none"/>
+  <rect x="24" y="24" width="1232" height="592" rx="28" class="sfsPanel"/>
+  <rect x="24" y="24" width="1232" height="592" rx="28" fill="url(#sfsSheen)" pointer-events="none"/>
   <rect x="48" y="608" width="1184" height="3" rx="1.5" fill="url(#sfsFooterAccent)" opacity="0.85"/>
+  <rect x="96" y="72" width="112" height="4" rx="2" fill="url(#sfsAccent)"/>
 
-  <rect x="72" y="80" width="128" height="4" rx="2" fill="url(#sfsAccent)" opacity="0.95"/>
+  <!-- Single text column (~max 620px): one voice, minimal stack -->
+  <g transform="translate(96, 104)">
+    <text x="0" y="12" class="sfsEyebrow">Nostr publishing for teams</text>
 
-  <!-- Left column: 8px grid from (72, 88); copy fits before x&#8776;760 -->
-  <g transform="translate(72, 88)">
-    <text x="0" y="14" class="sfsEyebrow">Publishing ops for Nostr teams</text>
-
-    <g transform="translate(0, 32)" aria-hidden="true">
-      <g transform="translate(0, 0) scale(0.248)">
+    <g transform="translate(0, 28)" aria-hidden="true">
+      <g transform="translate(0, 0) scale(0.24)">
         <path fill="url(#sfsLogoGrad1)" d="M 205.619995 160.100006 L 76.647102 239.25 C 67.252998 245.022003 55.313702 245.807007 49.991901 241.050995 L 2.55855 198.751007 C -2.76324 193.994995 0.476113 185.451996 9.87023 179.725998 L 138.843002 100.575989 C 148.237 94.803802 160.175995 94.018799 165.498001 98.775208 L 212.884995 141.028 C 218.207001 145.785004 214.966995 154.328003 205.572998 160.054001 L 205.619995 160.100006 Z"/>
         <path fill="url(#sfsLogoGrad2)" d="M 205.619995 112.265991 L 76.647102 191.416 C 67.252998 197.188004 55.313702 197.973007 49.991901 193.216995 L 2.55855 150.917007 C -2.76324 146.160995 0.476114 137.617996 9.87023 131.891998 L 138.843002 52.742096 C 148.237 46.969803 160.175995 46.184799 165.498001 50.941193 L 212.884995 93.194305 C 218.207001 97.950699 214.966995 106.494003 205.572998 112.220001 L 205.619995 112.265991 Z"/>
         <path fill="url(#sfsLogoGrad3)" d="M 205.619995 64.432007 L 76.647102 143.582001 C 67.252998 149.354004 55.313702 150.139008 49.991901 145.382996 L 2.55855 103.083008 C -2.76324 98.326904 0.476113 89.783905 9.87023 84.0578 L 138.843002 4.908142 C 148.237 -0.864151 160.175995 -1.649185 165.498001 3.107193 L 212.884995 45.360397 C 218.207001 50.116699 214.966995 58.659698 205.572998 64.385803 L 205.619995 64.432007 Z"/>
       </g>
-      <text x="68" y="56" class="sfsTitle">SmartFlowSocial</text>
+      <text x="64" y="52" class="sfsTitle">SmartFlowSocial</text>
     </g>
 
-    <text x="68" y="120" class="sfsHook">
-      <tspan x="68" dy="0">Ship the calendar. Keys stay in the signer.</tspan>
+    <text x="0" y="128" class="sfsLead">
+      <tspan x="0" dy="0">Your keys stay in the signer; we run the rails.</tspan>
     </text>
 
-    <text x="68" y="160" class="sfsSub">
-      <tspan x="68" dy="0">Drafts, queues, calendars, and campaigns&#8212;with NIP-07 or NIP-46.</tspan>
-      <tspan x="68" dy="26">We orchestrate delivery; we do not custody signing material.</tspan>
+    <text x="0" y="172" class="sfsBody">
+      <tspan x="0" dy="0">Scheduling, drafts, queues, and delivery—Remix, Postgres, Redis, BullMQ,</tspan>
+      <tspan x="0" dy="24">with metrics and health checks whether you use the hosted service or</tspan>
+      <tspan x="0" dy="24">deploy this repository yourself.</tspan>
     </text>
 
-    <text x="68" y="232" class="sfsBody">
-      <tspan x="68" dy="0">Same surface hosted or from this repo: Remix, PostgreSQL,</tspan>
-      <tspan x="68" dy="24">Redis, and BullMQ. Metrics, health checks, and job queues keep</tspan>
-      <tspan x="68" dy="24">publish day observable instead of mysterious.</tspan>
-    </text>
-
-    <rect x="0" y="312" width="156" height="40" rx="20" class="sfsChip"/>
-    <text x="78" y="334" text-anchor="middle" dominant-baseline="middle" class="sfsChipTxt">NIP-07 / NIP-46</text>
-    <rect x="168" y="312" width="176" height="40" rx="20" class="sfsChip"/>
-    <text x="256" y="334" text-anchor="middle" dominant-baseline="middle" class="sfsChipTxt">Hosted or self-host</text>
-
-    <text x="0" y="392" class="sfsLbl">Observable by default</text>
-    <text x="0" y="420" class="sfsSupport">Prometheus metrics, health endpoints, and queue-backed workers</text>
-    <text x="0" y="444" class="sfsSupport">so you see throughput and failures before users do.</text>
+    <text x="0" y="268" class="sfsMeta">NIP-07 &#183; NIP-46 &#183; smartflow.social or self-host</text>
   </g>
 
-  <!-- Right card: aligned to 8px; width 480; center x=240 -->
-  <g transform="translate(760, 88)">
-    <rect x="0" y="0" width="480" height="480" rx="24" class="sfsCard"/>
-    <text x="32" y="40" class="sfsSec">Workflow surface</text>
-    <text x="32" y="72" class="sfsHead">From drafts to the open graph.</text>
-    <text x="32" y="100" class="sfsSmall">Signing at the edge; durable workflow and media state inside.</text>
+  <!-- One diagram: horizontal flow, full width inside panel -->
+  <g transform="translate(96, 340)">
+    <text x="544" y="0" text-anchor="middle" class="sfsDiagCap">One path from intent to relays</text>
+    <rect x="0" y="20" width="1088" height="168" rx="20" fill="url(#sfsStage)" stroke="#e2e8f0" stroke-width="1" filter="url(#sfsSoft)"/>
 
-    <rect x="48" y="132" width="384" height="46" rx="16" class="sfsNode"/>
-    <text x="240" y="160" text-anchor="middle" class="sfsNodeTxt">Signer in the browser or via NIP-46</text>
+    <!-- Four steps: equal visual weight; center box is product core -->
+    <rect x="40" y="48" width="220" height="112" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#sfsSoft)"/>
+    <text x="150" y="92" text-anchor="middle" class="sfsDiagLabel">Signer</text>
+    <text x="150" y="116" text-anchor="middle" class="sfsDiagCap">extension or NIP-46</text>
 
-    <rect x="32" y="200" width="416" height="54" rx="18" class="sfsNodeHi"/>
-    <text x="240" y="232" text-anchor="middle" class="sfsCoreTxt">Remix app + session APIs</text>
+    <path d="M260 104 L318 104" class="sfsFlow" marker-end="url(#sfsArrow)"/>
 
-    <rect x="48" y="270" width="384" height="46" rx="16" class="sfsNode"/>
-    <text x="240" y="298" text-anchor="middle" class="sfsNodeTxt">Redis + BullMQ workers</text>
+    <rect x="318" y="48" width="240" height="112" rx="16" fill="url(#sfsNodeHi)" stroke="#5b21b6" stroke-width="1.25" filter="url(#sfsSoft)"/>
+    <text x="438" y="92" text-anchor="middle" class="sfsDiagLabelHi">Remix app</text>
+    <text x="438" y="116" text-anchor="middle" class="sfsDiagCap">sessions + APIs</text>
 
-    <rect x="56" y="332" width="368" height="44" rx="16" fill="url(#sfsNodeTop)" stroke="#e2e8f0" stroke-width="1" filter="url(#sfsNodeLift)"/>
-    <text x="240" y="358" text-anchor="middle" class="sfsNodeTxt">Notes and replies on relays</text>
+    <path d="M558 104 L616 104" class="sfsFlow" marker-end="url(#sfsArrow)"/>
 
-    <path d="M240 178 L240 188" class="sfsFlow" marker-end="url(#sfsArrow)"/>
-    <path d="M240 254 L240 264" class="sfsFlow" marker-end="url(#sfsArrow)"/>
-    <path d="M240 316 L240 326" class="sfsFlow" marker-end="url(#sfsArrow)"/>
+    <rect x="616" y="48" width="220" height="112" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#sfsSoft)"/>
+    <text x="726" y="92" text-anchor="middle" class="sfsDiagLabel">Redis + BullMQ</text>
+    <text x="726" y="116" text-anchor="middle" class="sfsDiagCap">background jobs</text>
+
+    <path d="M836 104 L884 104" class="sfsFlow" marker-end="url(#sfsArrow)"/>
+
+    <rect x="884" y="48" width="164" height="112" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="url(#sfsSoft)"/>
+    <text x="966" y="92" text-anchor="middle" class="sfsDiagLabel">Relays</text>
+    <text x="966" y="116" text-anchor="middle" class="sfsDiagCap">open graph</text>
   </g>
 </svg>
