@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="40" failures="0" errors="0" time="0.719934084">
+    <testsuite name="tests/unit/nostr-edge-cases.test.ts" timestamp="2026-04-19T04:34:30.120Z" hostname="Ivans-MacBook-Pro.local" tests="16" failures="0" errors="0" skipped="0" time="0.212219959">
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; falls back to window.nostr when configured signer is absent" time="0.179204292">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; throws an extension-not-found error when neither configured signer nor window.nostr is present" time="0.009344125">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should handle string return type from signEvent" time="0.002887375">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should handle object return type with missing fields" time="0.00311275">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should use default kind if not provided" time="0.002158709">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; should use empty tags array if not provided" time="0.002341458">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; recovers via primary signer failover when both initial and reconnect-retry attempts fail" time="0.002846292">
+            <system-out>
+[remote-signer-sign] Configured signer connection-like error { error: &apos;websocket closed&apos;, clearCache: true }
+
+[remote-signer-sign] First sign attempt failed { error: &apos;websocket closed&apos;, isConnectionError: true }
+
+[remote-signer-sign] Reconnect-and-retry result { reconnected: false }
+
+[remote-signer-sign] Configured signer connection-like error { error: &apos;subscription closed&apos;, clearCache: true }
+
+[remote-signer-sign] Reconnect-and-retry sign attempt failed { error: &apos;subscription closed&apos; }
+
+[remote-signer-sign] Configured signer resolved { hasSigner: true }
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signEventFn - Retry Logic &gt; does not invoke primary failover when no NIP-46 signer is configured" time="0.00327225">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should build tags with all optional fields" time="0.001092917">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should build tags without optional fields" time="0.00084125">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should trim and lowercase topic tags" time="0.000691542">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; signLongFormEvent - Tag Building &gt; should skip empty topic tags" time="0.001141834">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should delegate ping to bunker signer" time="0.000446875">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should parse switch_relays response and normalize relay list" time="0.000372375">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should return null for malformed switch_relays payload" time="0.000309375">
+        </testcase>
+        <testcase classname="tests/unit/nostr-edge-cases.test.ts" name="Nostr Edge Cases &gt; NIP-46 ping and switch_relays &gt; should use ping in testConnection when available" time="0.001035917">
+            <system-out>
+[remote-signer-sign] Health check success { method: &apos;ping&apos;, duration: 0 }
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/auth/remote-signer-mock-relay.test.ts" timestamp="2026-04-19T04:34:30.121Z" hostname="Ivans-MacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.349733125">
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (1) connect via createNip46SignerFromStoredConfig returns signer and mock signer pubkey" time="0.06690075">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (2) getPublicKey returns mock signer pubkey" time="0.017085833">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (3) sign_event returns signed event with sig" time="0.032290834">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (4) ping succeeds" time="0.026715167">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (5) reconnect (fromBunker) succeeds when relay is up" time="0.026351792">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (6) fails with SIGNER_TIMEOUT when relay does not respond" time="0.008206334">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (7) tryBackgroundReconnect succeeds when config points to mock relay" time="0.035919916">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (8) getActiveSigner returns signer when config points to mock relay and allowReconnect true" time="0.026821667">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (9) getActiveSigner returns null when config is null" time="0.000206875">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (9b) long break + return: after clearing cache, getActiveSigner(allowReconnect: true) reconnects and returns signer" time="0.048893333">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (9c) Settings reconnect then sign: after runExistingNostrConnectReconnect, getActiveSigner returns signer for composer" time="0.034879167">
+            <system-out>
+[remote-signer-reconnect] Existing-connection reconnect succeeded {
+  connectionId: &apos;1776573265617-sbxyut2hk&apos;,
+  pubkey: &apos;44e13ccab7d35684a7b9cf32728f2c6f84913850636829ea4db8d09896fee6c0&apos;
+}
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (10) tryBackgroundReconnect returns false when no active connection" time="0.000402125">
+        </testcase>
+        <testcase classname="tests/integration/auth/remote-signer-mock-relay.test.ts" name="remote-signer-mock-relay integration &gt; (11) contract: first request is get_public_key" time="0.014694375">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/auth/signer/connection-visibility.test.ts" timestamp="2026-04-19T04:34:30.122Z" hostname="Ivans-MacBook-Pro.local" tests="10" failures="0" errors="0" skipped="0" time="0.006363375">
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; returns noop when document is undefined" time="0.001544875">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; registers visibilitychange, focus, pageshow, online listeners" time="0.001639667">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; does not register freeze or resume listeners" time="0.000261583">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; flips wasHidden=true when document becomes hidden, never tears down" time="0.000405292">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when document becomes visible after was hidden and throttle passed" time="0.000343333">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; cleanup removes the listeners it added" time="0.000523708">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; does not call onResume when throttle has not passed since last visibility reconnect" time="0.000238792">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when focus fires and getWasHidden was true" time="0.000245667">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when pageshow fires and getWasHidden was true" time="0.000196917">
+        </testcase>
+        <testcase classname="tests/unit/auth/signer/connection-visibility.test.ts" name="connection-visibility &gt; calls onResume when online fires" time="0.000204125">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/posts/scheduling/reschedule-scheduled-post-modal.test.tsx" timestamp="2026-04-19T04:34:30.123Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.151617625">
+        <testcase classname="tests/unit/posts/scheduling/reschedule-scheduled-post-modal.test.tsx" name="RescheduleScheduledPostModal &gt; renders premium hierarchy and advanced actions toggle" time="0.150928375">
+        </testcase>
+    </testsuite>
+</testsuites>

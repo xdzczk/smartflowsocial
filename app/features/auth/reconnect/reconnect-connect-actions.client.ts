@@ -3,13 +3,14 @@
  * All dependencies passed as arguments for testability.
  */
 
-import { generateSecretKey, SimplePool } from "nostr-tools";
+import { generateSecretKey } from "nostr-tools";
 
 import type {
   ActiveSignerConfig,
   ConnectionEvent,
   ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import {
   connectNip46WithBunkerInput,
@@ -335,14 +336,11 @@ export async function resumeWithPendingUri(
   setNostrConnectUri(pending.uri);
   setState("waiting");
 
-  const pool = new SimplePool();
-  setCancel(() => {
-    try {
-      pool.close(pending.relays);
-    } catch {
-      // ignore
-    }
-  });
+  const pool = getSharedPool();
+  // Shared pool is owned by the app and never closed mid-flight; cancel is a
+  // noop for the WebSocket layer and the connect call falls back to its own
+  // timeout. Keep the callback so legacy state stays consistent.
+  setCancel(() => {});
 
   try {
     const { pubkey } = await connectNip46WithNostrConnectUri({

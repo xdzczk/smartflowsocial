@@ -43,6 +43,7 @@ vi.mock("~/lib/hooks/useSignAttemptProgress", () => ({
     signAttempt: null,
     signElapsedSeconds: 0,
   }),
+  describeSignerPhase: () => "",
   formatAttemptElapsed: () => "0s",
 }));
 

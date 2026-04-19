@@ -10,11 +10,9 @@ import type {
 import { resolveNip46SignerFromConfig } from "~/features/auth/signer/connection-resolve.client";
 import type { RemoteSignerConnection } from "~/features/auth/signer/remote-signer-sessions-types";
 import type { SignedEvent } from "~/features/nostr/types";
-import { RemoteSignerTimeoutError } from "~/lib/errors";
 
 const mocks = vi.hoisted(() => ({
   createNip46SignerFromStoredConfig: vi.fn(),
-  verifySignerConnection: vi.fn(),
   buildRelayUnion: vi.fn(),
   relayListsEqual: vi.fn(),
   hexToBytes: vi.fn(),
@@ -54,6 +52,10 @@ vi.mock("~/features/auth/nostr-signer.client", () => ({
   },
 }));
 
+vi.mock("~/features/nostr/shared-pool.client", () => ({
+  getSharedPool: () => ({}),
+}));
+
 vi.mock("nostr-tools", () => ({
   SimplePool: class {
     close = vi.fn();
@@ -82,24 +84,10 @@ describe("connection-resolve", () => {
     sig: "sig",
   });
 
-  const createBaseSigner = (): NostrSigner => ({
-    type: "nip46",
-    getPublicKey: vi.fn(async () => "a".repeat(64)),
-    signEvent: vi.fn(async () => createSignedEvent()),
-    nip04Encrypt: vi.fn(async () => "encrypted"),
-    nip44Encrypt: vi.fn(async () => "encrypted"),
-    getStatus: vi.fn<() => SignerStatus>(() => "ready"),
-    close: vi.fn(async () => {}),
-  });
-
   const setCachedSigner = vi.fn();
   const getCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
   const setConnectionEstablishedAt = vi.fn();
   const setLastActivityTime = vi.fn();
-  const setLastVerificationTime = vi.fn();
-  const startHealthCheckMonitoring = vi.fn();
-  const stopHealthCheckMonitoring = vi.fn();
-  const setNeedsReprobe = vi.fn();
   const resetCachedSigner = vi.fn();
   const updateSession = vi.fn();
   const recordConnectionEvent = vi.fn();
@@ -130,13 +118,33 @@ describe("connection-resolve", () => {
     })
   );
 
+  function baseOptions(
+    overrides: Partial<{
+      isRequestCurrent: () => boolean;
+    }> = {}
+  ) {
+    return {
+      isRequestCurrent: overrides.isRequestCurrent ?? (() => true),
+      setCachedSigner,
+      getCachedSigner,
+      setConnectionEstablishedAt,
+      setLastActivityTime,
+      resetCachedSigner,
+      getActiveConnection,
+      updateSession,
+      recordConnectionEvent,
+      syncRelaysWithRemoteSigner,
+      persistActiveSignerConfigWithoutReset:
+        mocks.persistActiveSignerConfigWithoutReset,
+    };
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.hexToBytes.mockReturnValue(new Uint8Array([1, 2, 3]));
-    mocks.verifySignerConnection.mockResolvedValue(true);
     mocks.buildRelayUnion.mockReturnValue(["wss://union"]);
     mocks.relayListsEqual.mockReturnValue(false);
-    getCachedSigner.mockReturnValue(createBaseSigner());
+    getCachedSigner.mockReturnValue(null);
   });
 
   it("returns null when request becomes stale in bunker flow", async () => {
@@ -152,81 +160,42 @@ describe("connection-resolve", () => {
         bunkerInput: "bunker://x",
         clientSecretKeyHex: "ab",
       },
-      {
-        getConnectionCooldownUntil: () => null,
-        isRequestCurrent: () => false,
-        getSignerGeneration: () => 1,
-        setCachedSigner,
-        getCachedSigner,
-        setConnectionEstablishedAt,
-        setLastActivityTime,
-        setLastVerificationTime,
-        startHealthCheckMonitoring,
-        stopHealthCheckMonitoring,
-        getNeedsReprobe: () => false,
-        setNeedsReprobe,
-        verifySignerConnection: (...args: unknown[]) =>
-          mocks.verifySignerConnection(...args),
-        resetCachedSigner,
-        getActiveConnection,
-        updateSession,
-        recordConnectionEvent,
-        syncRelaysWithRemoteSigner,
-        persistActiveSignerConfigWithoutReset:
-          mocks.persistActiveSignerConfigWithoutReset,
-      }
+      baseOptions({ isRequestCurrent: () => false })
     );
 
     expect(result).toBeNull();
     expect(close).toHaveBeenCalled();
   });
 
-  it("throws timeout error when reprobe fails in bunker flow", async () => {
-    mocks.createNip46SignerFromStoredConfig.mockResolvedValue({
-      signer: {
+  it("connects via bunker flow and returns the signer when request is current", async () => {
+    const signer: NostrSigner = {
+      type: "nip46",
+      getPublicKey: vi.fn(async () => "a".repeat(64)),
+      signEvent: vi.fn(async () => createSignedEvent()),
+      nip04Encrypt: vi.fn(async () => "encrypted"),
+      nip44Encrypt: vi.fn(async () => "encrypted"),
+      getStatus: vi.fn<() => SignerStatus>(() => "ready"),
+      close: vi.fn(async () => {}),
+    };
+    mocks.createNip46SignerFromStoredConfig.mockResolvedValue({ signer });
+    getCachedSigner.mockReturnValue(signer);
+
+    const result = await resolveNip46SignerFromConfig(
+      {
         type: "nip46",
-        close: vi.fn(async () => {}),
-        getPublicKey: vi.fn(async () => "a".repeat(64)),
+        method: "bunker_input",
+        bunkerInput: "bunker://x",
+        clientSecretKeyHex: "ab",
       },
-    });
-    mocks.verifySignerConnection.mockResolvedValue(false);
+      baseOptions()
+    );
 
-    await expect(
-      resolveNip46SignerFromConfig(
-        {
-          type: "nip46",
-          method: "bunker_input",
-          bunkerInput: "bunker://x",
-          clientSecretKeyHex: "ab",
-        },
-        {
-          getConnectionCooldownUntil: () => null,
-          isRequestCurrent: () => true,
-          getSignerGeneration: () => 1,
-          setCachedSigner,
-          getCachedSigner,
-          setConnectionEstablishedAt,
-          setLastActivityTime,
-          setLastVerificationTime,
-          startHealthCheckMonitoring,
-          stopHealthCheckMonitoring,
-          getNeedsReprobe: () => true,
-          setNeedsReprobe,
-          verifySignerConnection: (...args: unknown[]) =>
-            mocks.verifySignerConnection(...args),
-          resetCachedSigner,
-          getActiveConnection,
-          updateSession,
-          recordConnectionEvent,
-          syncRelaysWithRemoteSigner,
-          persistActiveSignerConfigWithoutReset:
-            mocks.persistActiveSignerConfigWithoutReset,
-        }
-      )
-    ).rejects.toThrow(RemoteSignerTimeoutError);
-
-    expect(resetCachedSigner).toHaveBeenCalled();
-    expect(recordConnectionEvent).toHaveBeenCalled();
+    expect(result).toBe(signer);
+    expect(setCachedSigner).toHaveBeenCalledWith(signer);
+    expect(recordConnectionEvent).toHaveBeenCalledWith(
+      "conn-1",
+      expect.objectContaining({ type: "connected" })
+    );
   });
 
   it("connects nostrconnect_uri and persists updated relays/pubkey", async () => {
@@ -264,29 +233,7 @@ describe("connection-resolve", () => {
         relays: ["wss://x"],
         clientSecretKeyHex: "ab",
       },
-      {
-        getConnectionCooldownUntil: () => null,
-        isRequestCurrent: () => true,
-        getSignerGeneration: () => 1,
-        setCachedSigner,
-        getCachedSigner,
-        setConnectionEstablishedAt,
-        setLastActivityTime,
-        setLastVerificationTime,
-        startHealthCheckMonitoring,
-        stopHealthCheckMonitoring,
-        getNeedsReprobe: () => false,
-        setNeedsReprobe,
-        verifySignerConnection: (...args: unknown[]) =>
-          mocks.verifySignerConnection(...args),
-        resetCachedSigner,
-        getActiveConnection,
-        updateSession,
-        recordConnectionEvent,
-        syncRelaysWithRemoteSigner,
-        persistActiveSignerConfigWithoutReset:
-          mocks.persistActiveSignerConfigWithoutReset,
-      }
+      baseOptions()
     );
 
     expect(result).toBe(signer);

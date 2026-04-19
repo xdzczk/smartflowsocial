@@ -32,11 +32,13 @@ import {
   setActiveSignerConfig as storageSetActiveSignerConfig,
   type ActiveSignerConfig,
   STORAGE_KEY,
+  LEGACY_STORAGE_KEY,
+  migrateLegacyActiveSignerConfig,
 } from "./nostr-signer-storage.client";
 
-// Re-export types and storage key
+// Re-export types and storage keys
 export type { ActiveSignerConfig };
-export { STORAGE_KEY };
+export { STORAGE_KEY, LEGACY_STORAGE_KEY, migrateLegacyActiveSignerConfig };
 
 /** Fired when remote signer reconnect succeeds so composers clear "Waiting for signer approval". */
 export { NOSTR_CONNECTION_HEALTHY_EVENT };

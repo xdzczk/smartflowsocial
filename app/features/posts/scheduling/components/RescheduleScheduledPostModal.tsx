@@ -44,7 +44,7 @@ import {
 } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
@@ -140,6 +140,11 @@ export function RescheduleScheduledPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const { signAttempt, signElapsedSeconds } =
     useSignAttemptProgress(isSigningEvent);
+  const signPhaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
   const lastRescheduleDataRef = useRef<{
     scheduledFor: Date;
     queueTypeId?: string;
@@ -851,17 +856,7 @@ export function RescheduleScheduledPostModal({
                   <div className="bg-muted text-muted-foreground border-border/70 flex flex-col gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
-                      {signAttempt ? (
-                        <>
-                          {" "}
-                          Attempt {signAttempt.attempt} of{" "}
-                          {signAttempt.maxAttempts} ·{" "}
-                          {formatAttemptElapsed(
-                            signElapsedSeconds,
-                            signAttempt.timeoutMs
-                          )}
-                        </>
-                      ) : null}
+                      {signPhaseStatus ? <> {signPhaseStatus}</> : null}
                     </span>
                     <div className="flex flex-wrap gap-2">
                       <Button

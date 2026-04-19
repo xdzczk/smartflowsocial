@@ -45,28 +45,9 @@ afterEach(() => {
 
 describe("Nostr Edge Cases", () => {
   describe("signEventFn - Retry Logic", () => {
-    it("should retry when window.nostr is not available initially", async () => {
-      // Dynamically import to get fresh function
+    it("falls back to window.nostr when configured signer is absent", async () => {
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
       const signEventFn = nostrAdapter.signEvent;
-
-      // Initially window.nostr is undefined, then becomes available
-      let callCount = 0;
-
-      global.window = {
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-        setTimeout,
-        clearTimeout,
-        get nostr() {
-          callCount++;
-          if (callCount < 3) {
-            return undefined;
-          }
-          return mockWindowNostr;
-        },
-      } as unknown as Window & typeof globalThis;
 
       const mockSignResult = {
         id: "event-123",
@@ -89,7 +70,7 @@ describe("Nostr Edge Cases", () => {
       expect(mockWindowNostr.signEvent).toHaveBeenCalled();
     });
 
-    it("should throw error after max retries", async () => {
+    it("throws an extension-not-found error when neither configured signer nor window.nostr is present", async () => {
       global.window = {
         nostr: undefined,
         addEventListener: vi.fn(),
@@ -109,19 +90,9 @@ describe("Nostr Edge Cases", () => {
         tags: [],
       };
 
-      vi.useFakeTimers();
-      try {
-        // Attach rejection expectation immediately to avoid Vitest unhandled rejection warnings.
-        const rejection = expect(signEventFn(eventData)).rejects.toThrow(
-          "Nostr extension not found after retries"
-        );
-
-        // Flush all pending timers so the retry loop runs to completion.
-        await vi.runAllTimersAsync();
-        await rejection;
-      } finally {
-        vi.useRealTimers();
-      }
+      await expect(signEventFn(eventData)).rejects.toThrow(
+        /Nostr extension not found/
+      );
     });
 
     it("should handle string return type from signEvent", async () => {
@@ -211,9 +182,12 @@ describe("Nostr Edge Cases", () => {
       expect(result.nostrEvent.tags).toEqual([]);
     });
 
-    it("should recover via primary signer fallback on remote connection failure", async () => {
+    it("recovers via primary signer failover when both initial and reconnect-retry attempts fail", async () => {
       vi.resetModules();
-      const mockConfiguredSign = vi.fn().mockResolvedValue({
+      // Both attempts against the configured signer fail with a connection-like
+      // error; the third attempt (after primary-signer failover swaps in a new
+      // signer) succeeds.
+      const mockConfiguredSign = vi.fn().mockResolvedValueOnce({
         id: "event-remote",
         pubkey: "pubkey-remote",
         sig: "sig-remote",
@@ -221,6 +195,7 @@ describe("Nostr Edge Cases", () => {
       const getActiveSigner = vi
         .fn()
         .mockRejectedValueOnce(new Error("websocket closed"))
+        .mockRejectedValueOnce(new Error("subscription closed"))
         .mockResolvedValue({
           type: "nip46",
           signEvent: mockConfiguredSign,
@@ -239,11 +214,14 @@ describe("Nostr Edge Cases", () => {
         }),
         getActiveSigner,
         attemptPrimarySignerFailover: mockPrimaryFailover,
+        tryBackgroundReconnect: vi.fn().mockResolvedValue(false),
         recordSuccessfulSign: vi.fn(),
         getActiveConnection: vi.fn().mockReturnValue(null),
         recordConnectionEvent: vi.fn(),
         emitRemoteSignerTimeoutEvent: vi.fn(),
         resetCachedSigner: vi.fn(),
+        addConnectionLog: vi.fn(),
+        updateSession: vi.fn(),
       }));
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
@@ -254,12 +232,12 @@ describe("Nostr Edge Cases", () => {
         tags: [],
       });
 
-      expect(mockPrimaryFailover).toHaveBeenCalled();
+      expect(mockPrimaryFailover).toHaveBeenCalledTimes(1);
       expect(result.signedEvent.id).toBe("event-remote");
       expect(mockConfiguredSign).toHaveBeenCalled();
     });
 
-    it("should still throw extension error when fallback is unavailable", async () => {
+    it("does not invoke primary failover when no NIP-46 signer is configured", async () => {
       vi.resetModules();
 
       global.window = {
@@ -279,6 +257,14 @@ describe("Nostr Edge Cases", () => {
         getActiveSignerConfig: () => null,
         getActiveSigner: vi.fn().mockResolvedValue(null),
         attemptPrimarySignerFailover: mockPrimaryFailover,
+        tryBackgroundReconnect: vi.fn().mockResolvedValue(false),
+        recordSuccessfulSign: vi.fn(),
+        getActiveConnection: vi.fn().mockReturnValue(null),
+        recordConnectionEvent: vi.fn(),
+        emitRemoteSignerTimeoutEvent: vi.fn(),
+        resetCachedSigner: vi.fn(),
+        addConnectionLog: vi.fn(),
+        updateSession: vi.fn(),
       }));
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
@@ -289,8 +275,8 @@ describe("Nostr Edge Cases", () => {
           kind: 1,
           tags: [],
         })
-      ).rejects.toThrow("Nostr extension not found after retries");
-      expect(mockPrimaryFailover).toHaveBeenCalledTimes(1);
+      ).rejects.toThrow(/Nostr extension not found/);
+      expect(mockPrimaryFailover).not.toHaveBeenCalled();
 
       // Ensure the promise chain fully settles before the test exits.
       await new Promise((resolve) => setTimeout(resolve, 0));

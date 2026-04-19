@@ -21,6 +21,8 @@ export {
   getWindowNostrLikeSigner,
   getActiveSignerPubkeyHint,
   STORAGE_KEY,
+  LEGACY_STORAGE_KEY,
+  migrateLegacyActiveSignerConfig,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   SIGNER_CONFIG_HYDRATED_EVENT,
   isMobile,
@@ -88,6 +90,7 @@ export type { ConnectionEvent } from "./remote-signer-status.client";
 // Remote signer health
 export { testConnection } from "./remote-signer-health.client";
 export type { ConnectionHealthResult } from "./remote-signer-health.client";
+export { isTransportLikelyHealthy } from "./connection-health.client";
 
 // Signing in progress (skip health checks while signing)
 export {

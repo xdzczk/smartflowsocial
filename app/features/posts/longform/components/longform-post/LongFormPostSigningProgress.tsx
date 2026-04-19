@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { requestNewSignerSession } from "~/features/auth/signer";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
   type SignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 
@@ -20,22 +20,18 @@ export function LongFormPostSigningProgress({
   signElapsedSeconds,
   cancelSigning,
 }: LongFormPostSigningProgressProps) {
+  const phaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
   return (
     <>
       {isSigning ? (
         <div className="bg-muted/30 text-muted-foreground flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
           <span>
             Waiting for signer approval…
-            {signAttempt ? (
-              <>
-                {" "}
-                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {formatAttemptElapsed(
-                  signElapsedSeconds,
-                  signAttempt.timeoutMs
-                )}
-              </>
-            ) : null}
+            {phaseStatus ? <> {phaseStatus}</> : null}
             {" — "}
             If you’re using a remote signer, open it to approve the request. To
             use a new session in the signer app, click &quot;Use new

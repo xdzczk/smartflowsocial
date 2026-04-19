@@ -1,7 +1,10 @@
 import { Eye } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { formatAttemptElapsed } from "~/lib/hooks/useSignAttemptProgress";
+import {
+  describeSignerPhase,
+  type SignAttemptProgress,
+} from "~/lib/hooks/useSignAttemptProgress";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -19,12 +22,8 @@ interface LongFormActionButtonsProps {
   /** Shown in panel next to status (e.g. "234 words") */
   wordCount?: number;
   isSigning?: boolean;
-  /** When signing, optional attempt progress for "Attempt X of Y · 12s/40s" in button label */
-  signAttempt?: {
-    attempt: number;
-    maxAttempts: number;
-    timeoutMs?: number;
-  } | null;
+  /** Live signer phase used to extend the button label (e.g. "Still waiting · 12s/60s"). */
+  signAttempt?: SignAttemptProgress | null;
   signElapsedSeconds?: number;
   onPreview: () => void;
   onSchedule: () => void;
@@ -55,23 +54,18 @@ function formatScheduleLabel(scheduledFor: string): string {
 
 function getSigningButtonLabel(
   isSigning: boolean,
-  signAttempt:
-    | {
-        attempt: number;
-        maxAttempts: number;
-        timeoutMs?: number;
-      }
-    | null
-    | undefined,
+  signAttempt: SignAttemptProgress | null | undefined,
   signElapsedSeconds: number,
   idleLabel: string,
   busyLabel: string
 ): string {
   if (!isSigning) return idleLabel;
-  if (signAttempt) {
-    return `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`;
-  }
-  return busyLabel;
+  const phase = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
+  return phase ? `Waiting for signer… ${phase}` : busyLabel;
 }
 
 export function LongFormActionButtons({

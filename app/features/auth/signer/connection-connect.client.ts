@@ -3,13 +3,14 @@
  * Used by getActiveSigner and tryBackgroundReconnect.
  */
 
-import { SimplePool } from "nostr-tools";
+import type { SimplePool } from "nostr-tools";
 
 import {
   connectNip46ReconnectWithStoredNostrConnect,
   connectNip46WithBunkerInput,
   type Nip46Signer,
 } from "~/features/auth/nostr-signer.client";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import { hexToBytes } from "./nostr-signer-keys.client";
 import type { ActiveSignerConfig } from "./nostr-signer-storage.client";
@@ -19,7 +20,7 @@ export async function createNip46SignerFromStoredConfig(
   options: { pool?: SimplePool; timeoutMs?: number } = {}
 ): Promise<{ signer: Nip46Signer; pubkey: string }> {
   const clientSecretKey = hexToBytes(config.clientSecretKeyHex);
-  const pool = options.pool ?? new SimplePool();
+  const pool = options.pool ?? getSharedPool();
   const timeoutMs = options.timeoutMs ?? 90_000;
 
   if (config.method === "bunker_input") {

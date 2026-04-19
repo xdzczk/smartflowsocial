@@ -1,27 +1,26 @@
 /**
  * NIP-46/Bunker connection lifecycle: connect, disconnect, reconnect,
- * visibility handling, health checks, and signer cache.
+ * visibility handling, and signer cache.
+ *
+ * The previous implementation tracked a small army of cooldowns, generations,
+ * "needs reprobe" flags and verify timestamps. Those were all working around
+ * the same root cause: the underlying SimplePool used to disconnect silently.
+ * Now that the shared pool keeps its sockets healthy and `Nip46Signer` RPCs
+ * are bounded, this module can stay tiny: cache a signer, reuse it while the
+ * transport is open, and rebuild it once on demand if the transport drops.
  */
 
 import {
   Nip07Signer,
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
-import { isMobile } from "~/lib/is-mobile";
 
 import {
   cacheNip46SignerFromLogin as cacheNip46SignerFromLoginImpl,
   getCachedSigner,
-  getConnectionEstablishedAt,
   getInFlightSignerConfigJson,
   getInFlightSignerPromise,
   getLastActivityTime,
-  getLastVerificationTime,
-  getNeedsReprobe,
-  getSignerGeneration,
-  getSignerResolutionRequestId,
-  incrementSignerGeneration,
-  incrementSignerResolutionRequestId,
   recordSuccessfulSign as recordSuccessfulSignImpl,
   resetCachedSigner,
   setCachedSigner,
@@ -29,32 +28,20 @@ import {
   setInFlightSignerConfigJson,
   setInFlightSignerPromise,
   setLastActivityTime,
-  setLastVerificationTime,
   setLastVisibilityReconnectAt,
-  setNeedsReprobe,
-  setTeardownInProgress,
   setWasHidden,
   getWasHidden,
   getLastVisibilityReconnectAt,
-  getTeardownInProgress,
-  getConnectionCooldownUntil,
-  setConnectionCooldownUntil,
 } from "./connection-cache.client";
 import { createNip46SignerFromStoredConfig as createNip46SignerFromStoredConfigImpl } from "./connection-connect.client";
 import {
-  CONNECTION_FRESH_MS,
   NIP46_SIGNER_TYPE,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
-  RECENT_ACTIVITY_WINDOW_MS,
-  RECONNECT_GRACE_MS,
-  VERIFY_BEFORE_USE_TIMEOUT_MS,
-  VERIFY_COOLDOWN_MS,
   VISIBILITY_RECONNECT_THROTTLE_MS,
 } from "./connection-constants";
 import {
-  startHealthCheckMonitoring,
-  stopHealthCheckMonitoring,
+  isTransportLikelyHealthy,
   syncRelaysWithRemoteSigner,
   verifySignerConnection,
 } from "./connection-health.client";
@@ -76,14 +63,6 @@ export { NOSTR_CONNECTION_STALE_EVENT, NOSTR_CONNECTION_HEALTHY_EVENT };
 export { syncRelaysWithRemoteSigner };
 
 let visibilityHandlerCleanup: (() => void) | null = null;
-
-function isIOS(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
 
 function debugSignerManagerTrace(
   message: string,
@@ -110,23 +89,15 @@ function clearCachedNip46Signer(): void {
   const cachedSigner = getCachedSigner();
   if (config?.type !== NIP46_SIGNER_TYPE || !cachedSigner) return;
 
-  incrementSignerGeneration();
-  if (!getTeardownInProgress()) {
-    setTeardownInProgress(true);
-    if (cachedSigner.type === NIP46_SIGNER_TYPE && cachedSigner.close) {
-      const closeFn = cachedSigner.close;
-      void (async () => {
-        try {
-          await closeFn();
-        } catch {
-          // ignore
-        } finally {
-          setTeardownInProgress(false);
-        }
-      })();
-    } else {
-      setTeardownInProgress(false);
-    }
+  if (cachedSigner.type === NIP46_SIGNER_TYPE && cachedSigner.close) {
+    const closeFn = cachedSigner.close;
+    void (async () => {
+      try {
+        await closeFn();
+      } catch {
+        // ignore
+      }
+    })();
   }
   const connection = getActiveConnection();
   if (connection?.config.type === NIP46_SIGNER_TYPE) {
@@ -136,20 +107,12 @@ function clearCachedNip46Signer(): void {
     });
   }
   resetCachedSigner();
-  stopHealthCheckMonitoring();
   setConnectionEstablishedAt(null);
   setLastActivityTime(null);
 }
 
 export function teardownActiveNip46Signer(): void {
   clearCachedNip46Signer();
-}
-
-function _teardownNip46SignerAndSetNeedsReprobe(): void {
-  const config = getActiveSignerConfig();
-  if (config?.type !== NIP46_SIGNER_TYPE) return;
-  clearCachedNip46Signer();
-  setNeedsReprobe(true);
 }
 
 export function teardownVisibilityHandler(): void {
@@ -159,15 +122,26 @@ export function teardownVisibilityHandler(): void {
   }
 }
 
+/**
+ * On resume, only nudge a background reconnect when the cached signer's
+ * transport is actually unhealthy. The pool itself auto-reconnects sockets, so
+ * doing nothing here is the right answer in the vast majority of cases.
+ */
+async function maybeReconnectOnResume(): Promise<void> {
+  const cached = getCachedSigner();
+  if (cached?.type !== NIP46_SIGNER_TYPE) return;
+  if (isTransportLikelyHealthy()) return;
+  const ok = await verifySignerConnection(cached, 4_000);
+  if (!ok) {
+    debugSignerManagerTrace("Resume probe failed; reconnecting in background");
+    void tryBackgroundReconnect();
+  }
+}
+
 function setupVisibilityHandler(): void {
   if (typeof window === "undefined") return;
   visibilityHandlerCleanup = initVisibilityHandlerImpl({
-    onResume: () => void tryBackgroundReconnect(),
-    onTeardown: _teardownNip46SignerAndSetNeedsReprobe,
-    getConfig: getActiveSignerConfig,
-    getCachedSigner,
-    getTeardownInProgress,
-    isMobile,
+    onResume: () => void maybeReconnectOnResume(),
     getWasHidden,
     setWasHidden,
     getLastVisibilityReconnectAt,
@@ -179,7 +153,7 @@ function setupVisibilityHandler(): void {
 setupVisibilityHandler();
 
 export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
-  cacheNip46SignerFromLoginImpl(signer, startHealthCheckMonitoring);
+  cacheNip46SignerFromLoginImpl(signer);
 }
 
 export function recordSuccessfulSign(): void {
@@ -188,47 +162,36 @@ export function recordSuccessfulSign(): void {
 
 export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredConfig };
 
-/** Returns the cached signer if still valid (skip verify or verify passed); null otherwise. */
-async function tryGetValidCachedSigner(): Promise<NostrSigner | null> {
+/**
+ * Reuse the cached signer only when the underlying shared-pool transport
+ * still has at least one open WebSocket. We deliberately do not ping the
+ * bunker before every reuse: that ping is what made signing feel laggy and
+ * still couldn't catch a stale connection any sooner than the next real RPC.
+ *
+ * For NIP-07 the cached signer is always reusable - there is no transport
+ * to check.
+ */
+const CACHE_ACTIVITY_REFRESH_MS = 30_000;
+
+function tryGetValidCachedSigner(): NostrSigner | null {
   const cachedSigner = getCachedSigner();
   if (!cachedSigner) return null;
 
+  if (cachedSigner.type !== NIP46_SIGNER_TYPE) {
+    return cachedSigner;
+  }
+
+  if (!isTransportLikelyHealthy()) {
+    clearCachedNip46Signer();
+    return null;
+  }
+
   const now = Date.now();
-  const connectionEstablishedAt = getConnectionEstablishedAt();
-  const connectionAge = connectionEstablishedAt
-    ? now - connectionEstablishedAt
-    : 0;
-  const withinReconnectGrace = connectionAge < RECONNECT_GRACE_MS;
-  const _lastVerificationTime = getLastVerificationTime();
-  const recentlyVerified =
-    _lastVerificationTime != null &&
-    now - _lastVerificationTime <= VERIFY_COOLDOWN_MS;
-  const connectionFresh = connectionAge < CONNECTION_FRESH_MS;
-  const _lastActivityTime = getLastActivityTime();
-  const activityRecent =
-    _lastActivityTime != null &&
-    now - _lastActivityTime <= RECENT_ACTIVITY_WINDOW_MS;
-  const shouldVerify =
-    !withinReconnectGrace &&
-    !activityRecent &&
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive for null
-    (!recentlyVerified || !connectionFresh || _lastVerificationTime == null);
-
-  if (!shouldVerify) {
+  const lastActivity = getLastActivityTime();
+  if (lastActivity == null || now - lastActivity > CACHE_ACTIVITY_REFRESH_MS) {
     setLastActivityTime(now);
-    return cachedSigner;
   }
-
-  const isValid = await verifySignerConnection(
-    cachedSigner,
-    VERIFY_BEFORE_USE_TIMEOUT_MS
-  );
-  if (isValid) {
-    setLastActivityTime(Date.now());
-    return cachedSigner;
-  }
-  clearCachedNip46Signer();
-  return null;
+  return cachedSigner;
 }
 
 function isConnectionRelatedError(err: unknown): boolean {
@@ -248,11 +211,10 @@ function isConnectionRelatedError(err: unknown): boolean {
   return keywords.some((k) => msg.includes(k));
 }
 
-function handleSignerConnectionError(err: unknown, now: number): void {
+function handleSignerConnectionError(err: unknown): void {
   resetCachedSigner();
   setConnectionEstablishedAt(null);
   setLastActivityTime(null);
-  setNeedsReprobe(true);
 
   const activeConnection = getActiveConnection();
   if (activeConnection) {
@@ -266,11 +228,6 @@ function handleSignerConnectionError(err: unknown, now: number): void {
       reason: fullErrorMessage,
     });
   }
-
-  if (isMobile()) {
-    const errorCooldown = isIOS() ? 2000 : 1500;
-    setConnectionCooldownUntil(now + errorCooldown);
-  }
 }
 
 export async function getActiveSigner(
@@ -278,21 +235,13 @@ export async function getActiveSigner(
 ): Promise<NostrSigner | null> {
   const allowReconnect = options?.allowReconnect ?? true;
 
-  if (getNeedsReprobe() && getCachedSigner()) {
-    clearCachedNip46Signer();
-  }
-
-  const fromCache = await tryGetValidCachedSigner();
+  const fromCache = tryGetValidCachedSigner();
   if (fromCache) return fromCache;
 
   const config = getActiveSignerConfig();
   if (!config) return null;
 
   if (config.type === "nip07") {
-    const latest = getActiveSignerConfig();
-    if (!latest || JSON.stringify(latest) !== JSON.stringify(config)) {
-      return null;
-    }
     const nip07 = new Nip07Signer();
     setCachedSigner(nip07);
     return nip07;
@@ -306,29 +255,17 @@ export async function getActiveSigner(
     return await inFlight;
   }
 
-  const requestId = incrementSignerResolutionRequestId();
   const isRequestCurrent = () => {
-    if (requestId !== getSignerResolutionRequestId()) return false;
     const latest = getActiveSignerConfig();
     return latest !== null && JSON.stringify(latest) === configJson;
   };
 
-  const now = Date.now();
   const connectPromise = resolveNip46SignerFromConfig(nip46Config, {
-    getConnectionCooldownUntil,
     isRequestCurrent,
-    getSignerGeneration,
     setCachedSigner,
     getCachedSigner,
     setConnectionEstablishedAt,
     setLastActivityTime,
-    setLastVerificationTime,
-    startHealthCheckMonitoring,
-    stopHealthCheckMonitoring,
-    getNeedsReprobe,
-    setNeedsReprobe,
-    verifySignerConnection,
-    resetCachedSigner,
     getActiveConnection,
     updateSession,
     recordConnectionEvent,
@@ -342,7 +279,7 @@ export async function getActiveSigner(
     return await connectPromise;
   } catch (err: unknown) {
     if (isConnectionRelatedError(err)) {
-      handleSignerConnectionError(err, now);
+      handleSignerConnectionError(err);
     }
     throw err;
   } finally {
@@ -364,6 +301,12 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
   if (!connection) return false;
 
   backgroundReconnectInProgress = true;
+  // Capture the previous cached signer BEFORE we build the new one so we can
+  // close it after the swap. Closing it before the swap would leave a window
+  // where signing calls have nothing to talk to; not capturing it would leak
+  // the old BunkerSigner subscription and listeners. The shared pool stays up
+  // either way.
+  const previousSigner = getCachedSigner();
   try {
     const { signer, pubkey } = await createNip46SignerFromStoredConfigImpl(
       config,
@@ -374,6 +317,21 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
     const detectedAppName = detectSignerAppName(config);
     setActiveSignerConfig(config);
     cacheNip46SignerFromLogin(signer);
+    if (
+      previousSigner &&
+      previousSigner !== (signer as unknown as NostrSigner) &&
+      previousSigner.type === NIP46_SIGNER_TYPE &&
+      typeof previousSigner.close === "function"
+    ) {
+      const closeFn = previousSigner.close;
+      void (async () => {
+        try {
+          await closeFn();
+        } catch {
+          // ignore - swap is already complete, leak of subscription is best-effort cleanup
+        }
+      })();
+    }
     updateSession(connection.id, {
       metadata: {
         ...connection.metadata,

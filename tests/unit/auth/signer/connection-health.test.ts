@@ -1,17 +1,12 @@
 /**
  * @vitest-environment jsdom
- * Unit tests for connection health (verifySignerConnection, startHealthCheckMonitoring).
+ * Unit tests for connection health (verifySignerConnection, isTransportLikelyHealthy, syncRelaysWithRemoteSigner).
  * Tests app/features/auth/signer/connection-health.client.ts
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("~/features/auth/signer/connection-cache.client", () => ({
-  getCachedSigner: vi.fn(),
-  getConnectionEstablishedAt: vi.fn(),
-  getLastActivityTime: vi.fn(),
-  getLastRelaySyncAt: vi.fn(),
-  getLastVerificationTime: vi.fn(),
   setLastActivityTime: vi.fn(),
   setLastRelaySyncAt: vi.fn(),
   setLastVerificationTime: vi.fn(),
@@ -33,21 +28,20 @@ vi.mock("~/features/auth/signer/connection-relay-utils.client", () => ({
   relayListsEqual: vi.fn(() => false),
 }));
 
+const sharedPoolRelays = new Map<string, { connected: boolean }>();
+vi.mock("~/features/nostr/shared-pool.client", () => ({
+  getSharedPool: () => ({ relays: sharedPoolRelays }),
+}));
+
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
-  getCachedSigner,
-  getConnectionEstablishedAt,
-  getLastActivityTime,
-  getLastRelaySyncAt,
-  getLastVerificationTime,
   setLastActivityTime,
   setLastVerificationTime,
 } from "~/features/auth/signer/connection-cache.client";
 import {
-  verifySignerConnection,
-  startHealthCheckMonitoring,
-  stopHealthCheckMonitoring,
+  isTransportLikelyHealthy,
   syncRelaysWithRemoteSigner,
+  verifySignerConnection,
 } from "~/features/auth/signer/connection-health.client";
 import {
   normalizeRelayList,
@@ -66,11 +60,11 @@ import {
 describe("connection-health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sharedPoolRelays.clear();
     vi.spyOn(console, "info").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    stopHealthCheckMonitoring();
     vi.useRealTimers();
   });
 
@@ -118,69 +112,66 @@ describe("connection-health", () => {
     });
   });
 
-  describe("startHealthCheckMonitoring", () => {
-    it("dispatches NOSTR_CONNECTION_STALE_EVENT when verification fails and cache still has same signer", async () => {
-      vi.useFakeTimers();
-      const nip46Config = {
-        type: "nip46" as const,
-        method: "nostrconnect_uri" as const,
-        uri: "nostrconnect://x?relay=wss://x&secret=s",
-        clientSecretKeyHex: "ab",
-        relays: ["wss://x"],
-      };
-      const staleSigner = {
-        type: "nip46" as const,
-        ping: vi.fn().mockRejectedValue(new Error("Ping failed")),
-      };
-      vi.mocked(getActiveSignerConfig).mockReturnValue(nip46Config);
-      vi.mocked(getCachedSigner).mockReturnValue(
-        staleSigner as unknown as NostrSigner
-      );
-      vi.mocked(getConnectionEstablishedAt).mockReturnValue(
-        Date.now() - 30 * 60 * 1000
-      );
-      vi.mocked(getLastVerificationTime).mockReturnValue(
-        Date.now() - 10 * 60 * 1000
-      );
-      vi.mocked(getLastActivityTime).mockReturnValue(
-        Date.now() - 10 * 60 * 1000
-      );
-      vi.mocked(getLastRelaySyncAt).mockReturnValue(null);
-
-      const dispatchSpy = vi.spyOn(window, "dispatchEvent");
-      startHealthCheckMonitoring();
-      await vi.advanceTimersByTimeAsync(2 * 60 * 1000 + 100);
-
-      const staleCalls = dispatchSpy.mock.calls.filter(
-        (c) => (c[0] as CustomEvent).type === "nostr-connection-stale"
-      );
-      expect(staleCalls.length).toBeGreaterThanOrEqual(1);
-      vi.useRealTimers();
-      dispatchSpy.mockRestore();
+  describe("isTransportLikelyHealthy", () => {
+    it("returns false when no active config", () => {
+      vi.mocked(getActiveSignerConfig).mockReturnValue(null);
+      expect(isTransportLikelyHealthy()).toBe(false);
     });
 
-    it("clears interval when no active config", async () => {
-      vi.useFakeTimers();
-      vi.mocked(getActiveSignerConfig).mockReturnValue(null);
-      vi.mocked(getCachedSigner).mockReturnValue(null);
-      startHealthCheckMonitoring();
-      await vi.advanceTimersByTimeAsync(2 * 60 * 1000 + 100);
+    it("returns false for nip07 config", () => {
+      vi.mocked(getActiveSignerConfig).mockReturnValue({ type: "nip07" });
+      expect(isTransportLikelyHealthy()).toBe(false);
+    });
+
+    it("returns false when bunker_input config has no relays", () => {
       vi.mocked(getActiveSignerConfig).mockReturnValue({
         type: "nip46",
         method: "bunker_input",
         bunkerInput: "x",
         clientSecretKeyHex: "ab",
       });
+      expect(isTransportLikelyHealthy()).toBe(false);
+    });
 
-      vi.mocked(getCachedSigner).mockReturnValue({
+    it("returns true when any bunker_input relay is connected in the shared pool", () => {
+      vi.mocked(getActiveSignerConfig).mockReturnValue({
         type: "nip46",
-        ping: vi.fn().mockResolvedValue(undefined),
-      } as unknown as NostrSigner);
-      startHealthCheckMonitoring();
-      const intervalCount = (
-        getActiveSignerConfig as unknown as { mock: { calls: unknown[] } }
-      ).mock.calls.length;
-      expect(intervalCount).toBeGreaterThan(0);
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://relay.example/"],
+      });
+      sharedPoolRelays.set("wss://relay.example/", { connected: true });
+      expect(isTransportLikelyHealthy()).toBe(true);
+    });
+
+    it("returns false when bunker_input relay exists but socket is closed", () => {
+      vi.mocked(getActiveSignerConfig).mockReturnValue({
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://relay.example/"],
+      });
+      sharedPoolRelays.set("wss://relay.example/", { connected: false });
+      expect(isTransportLikelyHealthy()).toBe(false);
+    });
+
+    it("uses bunkerPointer.relays when present for nostrconnect_uri configs", () => {
+      vi.mocked(getActiveSignerConfig).mockReturnValue({
+        type: "nip46",
+        method: "nostrconnect_uri",
+        uri: "nostrconnect://x",
+        clientSecretKeyHex: "ab",
+        relays: ["wss://stale.example/"],
+        bunkerPointer: {
+          pubkey: "p",
+          relays: ["wss://current.example/"],
+          secret: null,
+        },
+      });
+      sharedPoolRelays.set("wss://current.example/", { connected: true });
+      expect(isTransportLikelyHealthy()).toBe(true);
     });
   });
 

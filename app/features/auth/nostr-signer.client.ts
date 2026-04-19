@@ -1,10 +1,12 @@
-import { SimplePool, generateSecretKey, getPublicKey } from "nostr-tools";
+import type { SimplePool } from "nostr-tools";
+import { generateSecretKey, getPublicKey } from "nostr-tools";
 import {
   BunkerSigner,
   createNostrConnectURI,
   parseBunkerInput,
 } from "nostr-tools/nip46";
 
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { BRAND_NAME, brandLoginChallengeTitle } from "~/lib/brand";
 
@@ -93,6 +95,21 @@ export interface Nip46ConnectResult {
 
 export type Nip46ConnectionMethod = "bunker_input" | "nostrconnect_uri";
 
+/**
+ * Per-RPC timeouts for the bunker. `BunkerSigner.sendRequest` itself has no
+ * timeout: a never-arriving reply leaks a listener forever and the next sign
+ * call also hangs. Bounding each call here prevents that and gives the outer
+ * adapter a clean error to act on.
+ */
+const NIP46_RPC_TIMEOUTS = {
+  signEvent: 25_000,
+  getPublicKey: 10_000,
+  nip04Encrypt: 15_000,
+  nip44Encrypt: 15_000,
+  ping: 4_000,
+  switchRelays: 8_000,
+} as const;
+
 export class Nip46Signer implements NostrSigner {
   public readonly type = "nip46" as const;
   private readonly pool: SimplePool;
@@ -112,14 +129,43 @@ export class Nip46Signer implements NostrSigner {
     this.status = next;
   }
 
+  private async rpc<T>(
+    fn: () => Promise<T>,
+    timeoutMs: number,
+    label: string
+  ): Promise<T> {
+    let to: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        fn(),
+        new Promise<never>((_, reject) => {
+          to = setTimeout(
+            () => reject(new Error(`bunker:${label} timeout`)),
+            timeoutMs
+          );
+        }),
+      ]);
+    } finally {
+      if (to) clearTimeout(to);
+    }
+  }
+
   async getPublicKey(): Promise<string> {
     this.status = "ready";
-    return await this.inner.getPublicKey();
+    return await this.rpc(
+      () => this.inner.getPublicKey(),
+      NIP46_RPC_TIMEOUTS.getPublicKey,
+      "get_public_key"
+    );
   }
 
   async signEvent(event: NostrEvent): Promise<SignedEvent> {
     this.status = "ready";
-    return (await this.inner.signEvent(event)) as SignedEvent;
+    return (await this.rpc(
+      () => this.inner.signEvent(event),
+      NIP46_RPC_TIMEOUTS.signEvent,
+      "sign_event"
+    )) as SignedEvent;
   }
 
   async nip04Encrypt(
@@ -127,7 +173,11 @@ export class Nip46Signer implements NostrSigner {
     plaintext: string
   ): Promise<string> {
     this.status = "ready";
-    return await this.inner.nip04Encrypt(thirdPartyPubkeyHex, plaintext);
+    return await this.rpc(
+      () => this.inner.nip04Encrypt(thirdPartyPubkeyHex, plaintext),
+      NIP46_RPC_TIMEOUTS.nip04Encrypt,
+      "nip04_encrypt"
+    );
   }
 
   async nip44Encrypt(
@@ -135,17 +185,25 @@ export class Nip46Signer implements NostrSigner {
     plaintext: string
   ): Promise<string> {
     this.status = "ready";
-    return await this.inner.nip44Encrypt(thirdPartyPubkeyHex, plaintext);
+    return await this.rpc(
+      () => this.inner.nip44Encrypt(thirdPartyPubkeyHex, plaintext),
+      NIP46_RPC_TIMEOUTS.nip44Encrypt,
+      "nip44_encrypt"
+    );
   }
 
   async ping(): Promise<void> {
     this.status = "ready";
-    await this.inner.ping();
+    await this.rpc(() => this.inner.ping(), NIP46_RPC_TIMEOUTS.ping, "ping");
   }
 
   async switchRelays(): Promise<string[] | null> {
     this.status = "ready";
-    const response = await this.inner.sendRequest("switch_relays", []);
+    const response = await this.rpc(
+      () => this.inner.sendRequest("switch_relays", []),
+      NIP46_RPC_TIMEOUTS.switchRelays,
+      "switch_relays"
+    );
     if (response === "null") {
       return null;
     }
@@ -189,12 +247,11 @@ export class Nip46Signer implements NostrSigner {
   }
 
   async close(): Promise<void> {
-    try {
-      await this.inner.close();
-    } finally {
-      // Close relay connections
-      this.pool.close(this.inner.bp.relays);
-    }
+    // Only release the bunker subscription. The pool is shared with the rest
+    // of the app and self-heals its sockets, so closing relays here would
+    // tear down transport for every other component (and force the next
+    // signer to re-open WebSockets before it can RPC).
+    await this.inner.close();
   }
 }
 
@@ -251,7 +308,7 @@ export function createNip46NostrConnectUri(input: {
   relays: string[];
 } {
   const clientSecretKey = generateSecretKey();
-  const pool = new SimplePool();
+  const pool = getSharedPool();
   const clientPubkey = getPublicKey(clientSecretKey);
   const secret =
     Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
@@ -280,7 +337,7 @@ export async function connectNip46WithBunkerInput(input: {
   relays?: string[];
 }): Promise<Nip46ConnectResult> {
   const clientSecretKey = input.clientSecretKey ?? generateSecretKey();
-  const pool = input.pool ?? new SimplePool();
+  const pool = input.pool ?? getSharedPool();
 
   const bp = await parseBunkerInput(input.bunkerInput);
   if (!bp) {
@@ -361,7 +418,7 @@ export async function connectNip46ReconnectWithStoredNostrConnect(input: {
   pool?: SimplePool;
   timeoutMs?: number;
 }): Promise<Nip46ConnectResult> {
-  const pool = input.pool ?? new SimplePool();
+  const pool = input.pool ?? getSharedPool();
   const bp: StoredBunkerPointer = input.bunkerPointer
     ? {
         pubkey: input.bunkerPointer.pubkey,

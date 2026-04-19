@@ -21,20 +21,10 @@ import {
   setLastVerificationTime,
   getLastRelaySyncAt,
   setLastRelaySyncAt,
-  getNeedsReprobe,
-  setNeedsReprobe,
   getInFlightSignerPromise,
   setInFlightSignerPromise,
   getInFlightSignerConfigJson,
   setInFlightSignerConfigJson,
-  getSignerResolutionRequestId,
-  incrementSignerResolutionRequestId,
-  getSignerGeneration,
-  incrementSignerGeneration,
-  getConnectionCooldownUntil,
-  setConnectionCooldownUntil,
-  getTeardownInProgress,
-  setTeardownInProgress,
   getWasHidden,
   setWasHidden,
   getLastVisibilityReconnectAt,
@@ -84,12 +74,6 @@ describe("connection-cache", () => {
       expect(getLastRelaySyncAt()).toBe(4000);
     });
 
-    it("get/set NeedsReprobe", () => {
-      expect(getNeedsReprobe()).toBe(false);
-      setNeedsReprobe(true);
-      expect(getNeedsReprobe()).toBe(true);
-    });
-
     it("get/set in-flight promise and config json", () => {
       expect(getInFlightSignerPromise()).toBeNull();
       expect(getInFlightSignerConfigJson()).toBeNull();
@@ -102,30 +86,6 @@ describe("connection-cache", () => {
       resetCachedSigner();
       expect(getInFlightSignerPromise()).toBeNull();
       expect(getInFlightSignerConfigJson()).toBeNull();
-    });
-
-    it("getSignerResolutionRequestId and incrementSignerResolutionRequestId", () => {
-      const id0 = getSignerResolutionRequestId();
-      expect(incrementSignerResolutionRequestId()).toBe(id0 + 1);
-      expect(getSignerResolutionRequestId()).toBe(id0 + 1);
-    });
-
-    it("getSignerGeneration and incrementSignerGeneration", () => {
-      const g0 = getSignerGeneration();
-      expect(incrementSignerGeneration()).toBe(g0 + 1);
-      expect(getSignerGeneration()).toBe(g0 + 1);
-    });
-
-    it("get/set ConnectionCooldownUntil", () => {
-      expect(getConnectionCooldownUntil()).toBe(0);
-      setConnectionCooldownUntil(5000);
-      expect(getConnectionCooldownUntil()).toBe(5000);
-    });
-
-    it("get/set TeardownInProgress", () => {
-      expect(getTeardownInProgress()).toBe(false);
-      setTeardownInProgress(true);
-      expect(getTeardownInProgress()).toBe(true);
     });
 
     it("get/set WasHidden and LastVisibilityReconnectAt", () => {
@@ -199,7 +159,6 @@ describe("connection-cache", () => {
       expect(getConnectionEstablishedAt()).not.toBeNull();
       expect(getLastActivityTime()).not.toBeNull();
       expect(getLastVerificationTime()).not.toBeNull();
-      expect(getNeedsReprobe()).toBe(false);
       expect(onCached).toHaveBeenCalledTimes(1);
     });
   });

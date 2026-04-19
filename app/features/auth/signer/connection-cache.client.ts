@@ -14,15 +14,10 @@ import {
 let cachedSigner: NostrSigner | null = null;
 let inFlightSignerPromise: Promise<NostrSigner | null> | null = null;
 let inFlightSignerConfigJson: string | null = null;
-let signerResolutionRequestId = 0;
-let signerGeneration = 0;
 let connectionEstablishedAt: number | null = null;
 let _lastActivityTime: number | null = null;
 let _lastVerificationTime: number | null = null;
 let _lastRelaySyncAt: number | null = null;
-let needsReprobe = false;
-let connectionCooldownUntil = 0;
-let teardownInProgress = false;
 let wasHidden = false;
 let lastVisibilityReconnectAt = 0;
 
@@ -45,18 +40,6 @@ export function getInFlightSignerConfigJson(): string | null {
 }
 export function setInFlightSignerConfigJson(s: string | null): void {
   inFlightSignerConfigJson = s;
-}
-export function getSignerResolutionRequestId(): number {
-  return signerResolutionRequestId;
-}
-export function incrementSignerResolutionRequestId(): number {
-  return ++signerResolutionRequestId;
-}
-export function getSignerGeneration(): number {
-  return signerGeneration;
-}
-export function incrementSignerGeneration(): number {
-  return ++signerGeneration;
 }
 export function getConnectionEstablishedAt(): number | null {
   return connectionEstablishedAt;
@@ -81,24 +64,6 @@ export function getLastRelaySyncAt(): number | null {
 }
 export function setLastRelaySyncAt(n: number | null): void {
   _lastRelaySyncAt = n;
-}
-export function getNeedsReprobe(): boolean {
-  return needsReprobe;
-}
-export function setNeedsReprobe(b: boolean): void {
-  needsReprobe = b;
-}
-export function getConnectionCooldownUntil(): number {
-  return connectionCooldownUntil;
-}
-export function setConnectionCooldownUntil(n: number): void {
-  connectionCooldownUntil = n;
-}
-export function getTeardownInProgress(): boolean {
-  return teardownInProgress;
-}
-export function setTeardownInProgress(b: boolean): void {
-  teardownInProgress = b;
 }
 export function getWasHidden(): boolean {
   return wasHidden;
@@ -135,7 +100,7 @@ export function recordSuccessfulSign(): void {
 }
 
 /**
- * Cache a NIP-46 signer after login; caller should run onCached to start health monitoring.
+ * Cache a NIP-46 signer after login; caller can run onCached for any extra side effects.
  */
 export function cacheNip46SignerFromLogin(
   signer: NostrSigner,
@@ -150,6 +115,5 @@ export function cacheNip46SignerFromLogin(
   connectionEstablishedAt = now;
   _lastActivityTime = now;
   _lastVerificationTime = now;
-  needsReprobe = false;
   onCached?.();
 }

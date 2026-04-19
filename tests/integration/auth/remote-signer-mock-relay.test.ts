@@ -88,6 +88,9 @@ beforeEach(async () => {
   const { resetCachedSigner } =
     await import("~/features/auth/signer/nostr-signer-connection.client");
   resetCachedSigner();
+  const { __resetSharedPoolForTests } =
+    await import("~/features/nostr/shared-pool.client");
+  __resetSharedPoolForTests();
 });
 
 function buildMockConfig(): Extract<ActiveSignerConfig, { type: "nip46" }> {

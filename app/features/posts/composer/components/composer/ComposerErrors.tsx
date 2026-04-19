@@ -9,7 +9,7 @@ import {
   tryBackgroundReconnect,
 } from "~/features/auth/signer";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 
@@ -40,6 +40,11 @@ export function ComposerErrors({
   inRail = false,
 }: ComposerErrorsProps) {
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
+  const phaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
   const waitingCopy =
     signerLabel === "NIP-07 extension"
       ? "Approve this request in your browser extension."
@@ -61,16 +66,7 @@ export function ComposerErrors({
             {inRail
               ? "Signer approval required."
               : "Waiting for signer approval…"}
-            {signAttempt ? (
-              <>
-                {" "}
-                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {formatAttemptElapsed(
-                  signElapsedSeconds,
-                  signAttempt.timeoutMs
-                )}
-              </>
-            ) : null}
+            {phaseStatus ? <> {phaseStatus}</> : null}
             {" — "}
             {waitingCopy}
           </span>

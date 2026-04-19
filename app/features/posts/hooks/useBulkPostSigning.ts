@@ -9,6 +9,7 @@ import {
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
+  describeSignerPhase,
   formatAttemptElapsed,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
@@ -426,6 +427,7 @@ export function useBulkPostSigning({
     requestNewSignerSession,
     tryBackgroundReconnect,
     formatAttemptElapsed,
+    describeSignerPhase,
     handleSignAndSubmit,
     handleSaveAsDraft,
     handleScheduleSuccessfulOnly,

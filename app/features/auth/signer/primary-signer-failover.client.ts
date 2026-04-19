@@ -1,9 +1,10 @@
-import { generateSecretKey, nip19, SimplePool } from "nostr-tools";
+import { generateSecretKey, nip19 } from "nostr-tools";
 
 import {
   connectNip46WithBunkerInput,
   connectNip46WithNostrConnectUri,
 } from "~/features/auth/nostr-signer.client";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import {
@@ -93,7 +94,7 @@ async function connectProfile(
     return { pubkey, config };
   }
 
-  const pool = new SimplePool();
+  const pool = getSharedPool();
   try {
     const { signer, pubkey } = await connectNip46WithNostrConnectUri({
       uri: profile.uri,

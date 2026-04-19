@@ -3,8 +3,6 @@
  * No React; callbacks for state and signer/session updates.
  */
 
-import { SimplePool } from "nostr-tools";
-
 import {
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
@@ -18,6 +16,7 @@ import type {
   ActiveSignerConfig,
   ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import {
   EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS,
@@ -75,17 +74,12 @@ export async function runExistingBunkerReconnect(
   setState("reconnecting_existing");
   setError(null);
 
-  let activePool: SimplePool | null = null;
-  setCancel(() => {
-    if (activePool && bp.relays.length) {
-      try {
-        activePool.close(bp.relays);
-      } catch {
-        // ignore
-      }
-    }
-    activePool = null;
-  });
+  // The shared pool is owned by the app and never closed mid-flight, so the
+  // dialog's "cancel" can no longer kill in-flight WebSockets. Connect
+  // attempts are bounded by their timeoutMs; if the user cancels, the awaited
+  // promise still resolves at timeout. Pass a noop so legacy callers are
+  // satisfied.
+  setCancel(() => {});
 
   const tryConnect = async (
     timeoutMs: number
@@ -95,16 +89,7 @@ export async function runExistingBunkerReconnect(
     >["signer"];
     pubkey: string;
   }> => {
-    if (activePool) {
-      try {
-        activePool.close(bp.relays);
-      } catch {
-        // ignore
-      }
-      activePool = null;
-    }
-    const pool = new SimplePool();
-    activePool = pool;
+    const pool = getSharedPool();
     const { signer, pubkey } = await createNip46SignerFromStoredConfig(
       bunkerConfig,
       { pool, timeoutMs }
@@ -144,7 +129,6 @@ export async function runExistingBunkerReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     return;
   }
 
@@ -159,7 +143,6 @@ export async function runExistingBunkerReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     setError(PROFILE_MISMATCH_MESSAGE);
     setState("failed");
     return;
@@ -190,7 +173,6 @@ export async function runExistingBunkerReconnect(
 
   setActiveSignerConfig(config);
   cacheNip46SignerFromLogin(signer);
-  activePool = null;
 
   if (typeof signer.ping === "function") {
     try {

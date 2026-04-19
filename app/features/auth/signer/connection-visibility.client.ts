@@ -1,15 +1,20 @@
 /**
- * Page visibility / freeze handling for NIP-46 signer.
- * Callback-driven; no imports from connection orchestrator.
+ * Page visibility / focus / online handling for NIP-46 signer.
+ *
+ * We deliberately do NOT tear down the signer on `visibilitychange` (hidden) or
+ * `freeze`. Tearing the signer down loses the BunkerSigner subscription and the
+ * underlying SimplePool sockets; the next sign attempt then has to rebuild
+ * everything before it can even talk to the bunker. The pool now uses
+ * `enableReconnect: true` + `enablePing: true`, so the WebSocket layer recovers
+ * by itself when the page is suspended and resumed. Resume callbacks are only
+ * used to nudge a background reconnect when the cached signer's transport is
+ * actually unhealthy.
  */
 
 export interface VisibilityHandlerOptions {
+  /** Called when the page becomes visible/focused/online again. The handler
+   * decides whether a background reconnect is actually needed. */
   onResume: () => void;
-  onTeardown: () => void;
-  getConfig: () => { type?: string } | null;
-  getCachedSigner: () => unknown;
-  getTeardownInProgress: () => boolean;
-  isMobile: () => boolean;
   getWasHidden: () => boolean;
   setWasHidden: (v: boolean) => void;
   getLastVisibilityReconnectAt: () => number;
@@ -27,22 +32,15 @@ export function initVisibilityHandler(
 
   const {
     onResume,
-    onTeardown,
-    getConfig,
-    getCachedSigner,
-    getTeardownInProgress,
-    isMobile,
     getWasHidden,
     setWasHidden,
     getLastVisibilityReconnectAt,
     setLastVisibilityReconnectAt,
     visibilityReconnectThrottleMs,
-    debugTrace = noop,
   } = options;
 
   const handleResume = () => {
     setWasHidden(false);
-    if (getTeardownInProgress()) return;
     const now = Date.now();
     if (now - getLastVisibilityReconnectAt() >= visibilityReconnectThrottleMs) {
       setLastVisibilityReconnectAt(now);
@@ -53,19 +51,9 @@ export function initVisibilityHandler(
   const handleVisibilityChange = () => {
     if (document.hidden) {
       setWasHidden(true);
-      if (isMobile()) {
-        const config = getConfig();
-        const signer = getCachedSigner();
-        if (config?.type === "nip46" && signer) {
-          debugTrace(
-            "NIP-46 signer torn down due to visibility hidden (mobile)"
-          );
-          onTeardown();
-        }
-      }
-    } else if (getWasHidden()) {
-      handleResume();
+      return;
     }
+    if (getWasHidden()) handleResume();
   };
 
   const handleFocus = () => {
@@ -76,35 +64,15 @@ export function initVisibilityHandler(
     if (getWasHidden()) handleResume();
   };
 
-  const handleFreeze = () => {
-    const config = getConfig();
-    const signer = getCachedSigner();
-    if (config?.type === "nip46" && signer) {
-      debugTrace("NIP-46 signer torn down due to page freeze");
-      onTeardown();
-    }
-  };
-
   document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("focus", handleFocus);
   window.addEventListener("pageshow", handlePageShow);
   window.addEventListener("online", handleResume);
-
-  const supportsFreezeResume =
-    typeof document !== "undefined" && "onfreeze" in document;
-  if (supportsFreezeResume) {
-    document.addEventListener("freeze", handleFreeze);
-    document.addEventListener("resume", handleResume);
-  }
 
   return () => {
     document.removeEventListener("visibilitychange", handleVisibilityChange);
     window.removeEventListener("focus", handleFocus);
     window.removeEventListener("pageshow", handlePageShow);
     window.removeEventListener("online", handleResume);
-    if (supportsFreezeResume) {
-      document.removeEventListener("freeze", handleFreeze);
-      document.removeEventListener("resume", handleResume);
-    }
   };
 }

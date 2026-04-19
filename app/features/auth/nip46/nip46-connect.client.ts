@@ -3,10 +3,11 @@
  * Pure async functions; no React. Used by nip46-login hook.
  */
 
-import { generateSecretKey, SimplePool } from "nostr-tools";
+import { generateSecretKey, type SimplePool } from "nostr-tools";
 
 import type { ActiveSignerConfig } from "~/features/auth/signer";
 import { serializeSecretKey } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 import { BRAND_NAME } from "~/lib/brand";
 import { convertToHex } from "~/lib/nostr-conversion";
 
@@ -154,7 +155,7 @@ export interface ConnectNip46WithPendingUriForLoginResult {
 export async function connectNip46WithPendingUriForLogin(
   params: ConnectNip46WithPendingUriForLoginParams
 ): Promise<ConnectNip46WithPendingUriForLoginResult> {
-  const pool = new SimplePool();
+  const pool = getSharedPool();
   params.onPoolCreated?.(pool, params.relays);
   const { signer, pubkey } = await connectNip46WithNostrConnectUri({
     uri: params.uri,

@@ -24,8 +24,9 @@ import {
 } from "~/features/posts/utils/repost-quote-events.client";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
   useSignAttemptProgress,
+  type SignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -177,19 +178,18 @@ async function signAndSubmitQuote(
 
 function getConfirmButtonLabel(
   isSigning: boolean,
-  signAttempt: {
-    attempt: number;
-    maxAttempts: number;
-    timeoutMs?: number;
-  } | null,
+  signAttempt: SignAttemptProgress | null,
   signElapsedSeconds: number,
   isSubmitting: boolean,
   mode: "repost" | "quote"
 ): string {
   if (isSigning) {
-    return signAttempt
-      ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`
-      : "Signing...";
+    const phase = describeSignerPhase(
+      signAttempt?.phase,
+      signElapsedSeconds,
+      signAttempt?.timeoutMs
+    );
+    return phase ? `Waiting for signer… ${phase}` : "Waiting for signer…";
   }
   if (isSubmitting) return "Signing...";
   return mode === "repost" ? "Schedule repost" : "Schedule quote";
@@ -498,17 +498,14 @@ export function ScheduleRepostQuoteModal({
                   <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
-                      {signAttempt ? (
-                        <>
-                          {" "}
-                          Attempt {signAttempt.attempt} of{" "}
-                          {signAttempt.maxAttempts} ·{" "}
-                          {formatAttemptElapsed(
-                            signElapsedSeconds,
-                            signAttempt.timeoutMs
-                          )}
-                        </>
-                      ) : null}
+                      {(() => {
+                        const phase = describeSignerPhase(
+                          signAttempt?.phase,
+                          signElapsedSeconds,
+                          signAttempt?.timeoutMs
+                        );
+                        return phase ? <> {phase}</> : null;
+                      })()}
                       {" — "}
                       If you’re using a remote signer, open it to approve the
                       request. To use a new session in the signer app, click

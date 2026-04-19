@@ -1,26 +1,25 @@
 /**
  * Health check and relay sync for NIP-46 signer connection.
+ *
+ * Health is now derived from the shared SimplePool's WebSocket state instead
+ * of a periodic ping, mirroring what Ditto does. `verifySignerConnection`
+ * stays available for the Settings "Test connection" button. The previous
+ * 60s setInterval that nudged stale events has been removed because it added
+ * noise during normal use without preventing real failures (the pool now
+ * auto-reconnects sockets, so transient disconnects heal themselves).
  */
 
+import { normalizeURL } from "nostr-tools/utils";
+
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import {
-  getCachedSigner,
-  getConnectionEstablishedAt,
-  getLastActivityTime,
-  getLastRelaySyncAt,
-  getLastVerificationTime,
   setLastActivityTime,
   setLastRelaySyncAt,
   setLastVerificationTime,
 } from "./connection-cache.client";
-import {
-  NIP46_SIGNER_TYPE,
-  NOSTR_CONNECTION_STALE_EVENT,
-  RECONNECT_GRACE_MS,
-  RELAY_SYNC_COOLDOWN_MS,
-  VERIFY_BEFORE_USE_TIMEOUT_MS,
-} from "./connection-constants";
+import { NIP46_SIGNER_TYPE } from "./connection-constants";
 import {
   normalizeRelayList,
   relayListsEqual,
@@ -71,90 +70,38 @@ export async function verifySignerConnection(
   }
 }
 
-let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+/**
+ * Cheap, synchronous transport-health check based on the shared pool's
+ * WebSocket state. Returns true if at least one of the bunker's relays has an
+ * open socket. We do not RPC the bunker here — that would add a per-call
+ * ping, which is what the periodic monitor used to do and which we
+ * intentionally removed.
+ */
+export function isTransportLikelyHealthy(): boolean {
+  const cfg = getActiveSignerConfig();
+  if (cfg?.type !== NIP46_SIGNER_TYPE) return false;
 
-export function startHealthCheckMonitoring(): void {
-  if (healthCheckInterval) return;
+  const relays =
+    cfg.method === "bunker_input"
+      ? (cfg.relays ?? [])
+      : (cfg.bunkerPointer?.relays ?? cfg.relays);
+  if (relays.length === 0) return false;
 
-  healthCheckInterval = setInterval(
-    () => {
-      void (async () => {
-        const config = getActiveSignerConfig();
-        const cachedSigner = getCachedSigner();
-        if (config?.type !== NIP46_SIGNER_TYPE || !cachedSigner) {
-          if (healthCheckInterval) {
-            clearInterval(healthCheckInterval);
-            healthCheckInterval = null;
-          }
-          return;
-        }
+  const pool = getSharedPool();
+  const internalRelays = (
+    pool as unknown as {
+      relays: Map<string, { connected?: boolean }>;
+    }
+  ).relays;
 
-        const now = Date.now();
-        const _lastVerificationTime = getLastVerificationTime();
-        const _lastRelaySyncAt = getLastRelaySyncAt();
-        const connectionEstablishedAt = getConnectionEstablishedAt();
-        const _lastActivityTime = getLastActivityTime();
-
-        const timeSinceLastVerification = _lastVerificationTime
-          ? now - _lastVerificationTime
-          : Infinity;
-        const shouldSyncRelays =
-          cachedSigner.type === NIP46_SIGNER_TYPE &&
-          (_lastRelaySyncAt == null ||
-            now - _lastRelaySyncAt > RELAY_SYNC_COOLDOWN_MS);
-
-        const connectionAge = connectionEstablishedAt
-          ? now - connectionEstablishedAt
-          : 0;
-        const idleLongEnough =
-          (_lastActivityTime ? now - _lastActivityTime : Infinity) >
-          5 * 60 * 1000;
-        const verificationStale = timeSinceLastVerification > 5 * 60 * 1000;
-
-        if (
-          connectionEstablishedAt &&
-          connectionAge > RECONNECT_GRACE_MS &&
-          (idleLongEnough || verificationStale)
-        ) {
-          const signerToCheck = cachedSigner;
-          const isValid = await verifySignerConnection(
-            signerToCheck,
-            VERIFY_BEFORE_USE_TIMEOUT_MS
-          );
-          if (!isValid) {
-            if (
-              getCachedSigner() === signerToCheck &&
-              typeof window !== "undefined"
-            ) {
-              window.dispatchEvent(
-                new CustomEvent(NOSTR_CONNECTION_STALE_EVENT, {
-                  detail: { signerType: NIP46_SIGNER_TYPE },
-                })
-              );
-            }
-          } else if (getCachedSigner() === signerToCheck) {
-            setLastActivityTime(Date.now());
-          }
-        }
-
-        if (shouldSyncRelays && getCachedSigner()?.type === NIP46_SIGNER_TYPE) {
-          try {
-            await syncRelaysWithRemoteSigner(getCachedSigner()!);
-          } catch {
-            // best-effort
-          }
-        }
-      })();
-    },
-    1 * 60 * 1000
-  );
-}
-
-export function stopHealthCheckMonitoring(): void {
-  if (healthCheckInterval) {
-    clearInterval(healthCheckInterval);
-    healthCheckInterval = null;
-  }
+  return relays.some((url) => {
+    try {
+      const r = internalRelays.get(normalizeURL(url));
+      return r?.connected === true;
+    } catch {
+      return false;
+    }
+  });
 }
 
 export async function syncRelaysWithRemoteSigner(
