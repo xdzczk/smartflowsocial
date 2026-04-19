@@ -257,7 +257,17 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
       },
     });
     recordConnectionEvent(connection.id, { type: "connected", pubkey });
-    await syncRelaysWithRemoteSigner(signer);
+    // `switch_relays` shares the per-signer rpcLock with the user's next
+    // sign call, so awaiting it here delays the first composer publish on
+    // page restore by up to its 8s timeout. Background it: the new signer
+    // is already swapped in and ready to use.
+    void (async () => {
+      try {
+        await syncRelaysWithRemoteSigner(signer);
+      } catch {
+        // best-effort
+      }
+    })();
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT));
     }

@@ -117,11 +117,21 @@ export async function resolveNip46SignerFromConfig(
       );
     }
 
-    try {
-      await syncRelaysWithRemoteSigner(getCachedSigner()!);
-    } catch {
-      // best-effort
-    }
+    // `switch_relays` is a NIP-46 RPC and goes through the same `rpcLock`
+    // the user's first `signEvent` will use. Awaiting it here adds up to
+    // its 8s timeout to the time before the cached signer is returned and
+    // — much worse on cold reopen — fires an extra request at a Primal
+    // signer that may still be waking up. Run it in the background instead;
+    // the signer is already cached and immediately usable, and if the user
+    // signs first the lock will simply queue the relay sync behind that.
+    void (async () => {
+      try {
+        const cached = getCachedSigner();
+        if (cached) await syncRelaysWithRemoteSigner(cached);
+      } catch {
+        // best-effort
+      }
+    })();
 
     return getCachedSigner();
   }
@@ -161,7 +171,19 @@ export async function resolveNip46SignerFromConfig(
       }
     }
 
-    const pubkey = await signer.getPublicKey();
+    // Reuse the pubkey we already captured at login (or via fromURI's
+    // connection event) instead of doing a fresh `get_public_key` RPC. On
+    // cold reopen the bunker app may be backgrounded/sleeping, and a
+    // network round-trip here races the user's first `signEvent` for the
+    // signer's reply — exactly the bug behind "I logged back in but the
+    // first publish hangs and times out". Mirrors `connectViaBunker` and
+    // matches `@nostrify` `NConnectSigner` which never validates on
+    // construction. The fallback only fires for the truly fresh URI flow
+    // where no pubkey has been captured yet.
+    const activeConnection = getActiveConnection();
+    const knownPubkey =
+      activeConnection?.metadata.pubkey ?? cfg.signerPubkey ?? null;
+    const pubkey = knownPubkey ?? (await signer.getPublicKey());
 
     const configUpdates: Partial<NostrConnectConfig> = {};
     if (!cfg.signerPubkey) {
@@ -174,7 +196,6 @@ export async function resolveNip46SignerFromConfig(
       persistActiveSignerConfigWithoutReset({ ...cfg, ...configUpdates });
     }
 
-    const activeConnection = getActiveConnection();
     if (activeConnection) {
       updateSession(activeConnection.id, {
         metadata: {
@@ -200,11 +221,15 @@ export async function resolveNip46SignerFromConfig(
       );
     }
 
-    try {
-      await syncRelaysWithRemoteSigner(signer);
-    } catch {
-      // best-effort
-    }
+    // Same reasoning as `connectViaBunker`: don't block the cached signer
+    // on a `switch_relays` RPC that races the user's first sign.
+    void (async () => {
+      try {
+        await syncRelaysWithRemoteSigner(signer);
+      } catch {
+        // best-effort
+      }
+    })();
     return true;
   }
 

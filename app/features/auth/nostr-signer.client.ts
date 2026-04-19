@@ -101,13 +101,23 @@ export type Nip46ConnectionMethod = "bunker_input" | "nostrconnect_uri";
  * timeout: a never-arriving reply leaks a listener forever and the next sign
  * call also hangs. Bounding each call here prevents that and gives the outer
  * adapter a clean error to act on.
+ *
+ * `signEvent` and `getPublicKey` are deliberately generous because in real
+ * use a remote signer (Primal, Amber, etc.) often runs on a phone that has
+ * been backgrounded. The first request after the app reopens has to wait for
+ * the OS to wake the signer app, the signer app to reconnect to its relay,
+ * and the user to tap "approve" on a notification. A short timeout here
+ * surfaces as "the post timed out" even though the bunker would have signed
+ * it ten seconds later. Ditto/`@nostrify` `NConnectSigner` defaults to no
+ * timeout at all; we keep one as a safety net but bias it toward the real
+ * mobile-wake-up budget.
  */
 const NIP46_RPC_TIMEOUTS = {
-  signEvent: 25_000,
-  getPublicKey: 10_000,
-  nip04Encrypt: 15_000,
-  nip44Encrypt: 15_000,
-  ping: 4_000,
+  signEvent: 60_000,
+  getPublicKey: 30_000,
+  nip04Encrypt: 30_000,
+  nip44Encrypt: 30_000,
+  ping: 10_000,
   switchRelays: 8_000,
 } as const;
 
