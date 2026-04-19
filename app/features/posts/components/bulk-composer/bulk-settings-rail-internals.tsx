@@ -77,7 +77,6 @@ export interface BulkSettingsRailBodyProps {
   isSigning: boolean;
   signingProgress: { current: number; total: number } | null;
   signingError: string | null;
-  onRequestNewSession?: () => void;
   onCancelSigning?: () => void;
   repostAllOpen: boolean;
   setRepostAllOpen: (open: boolean) => void;
@@ -127,7 +126,6 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
     isSigning,
     signingProgress,
     signingError,
-    onRequestNewSession,
     onCancelSigning,
     repostAllOpen,
     setRepostAllOpen,
@@ -148,21 +146,9 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
                 Post {signingProgress.current} of {signingProgress.total}
               </span>
             ) : null}
-            {" — "}
-            Approve in your signer to continue scheduling.
           </span>
-          <span className="flex flex-wrap gap-1">
-            {onRequestNewSession ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onRequestNewSession}
-              >
-                New session
-              </Button>
-            ) : null}
-            {onCancelSigning ? (
+          {onCancelSigning ? (
+            <span className="flex flex-wrap gap-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -171,8 +157,8 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
               >
                 Cancel
               </Button>
-            ) : null}
-          </span>
+            </span>
+          ) : null}
         </div>
       ) : null}
       {stage === "review" && signingError ? (

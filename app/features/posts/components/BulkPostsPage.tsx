@@ -448,9 +448,6 @@ export default function BulkPostsPage() {
             isSigning={signing.isSigning}
             signingProgress={signing.signingProgress}
             signingError={signing.signingError ?? signing.actionError}
-            onRequestNewSession={() => {
-              void signing.requestNewSignerSession(signing.cancelSigningState);
-            }}
             onCancelSigning={() => {
               signing.cancelSigningState();
               void signing.tryBackgroundReconnect();

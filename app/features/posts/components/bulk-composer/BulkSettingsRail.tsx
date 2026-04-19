@@ -1,15 +1,6 @@
-import { Settings2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ActionRail } from "~/components/action-rail/ActionRail";
-import { Button } from "~/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "~/components/ui/sheet";
 import type {
   BulkBatchMode,
   BulkComposerStage,
@@ -81,7 +72,6 @@ export interface BulkSettingsRailProps {
   isSigning: boolean;
   signingProgress: { current: number; total: number } | null;
   signingError?: string | null;
-  onRequestNewSession?: () => void;
   onCancelSigning?: () => void;
   bulkExecutionBlocked?: boolean;
 }
@@ -125,7 +115,6 @@ export function BulkSettingsRail({
   isSigning,
   signingProgress,
   signingError = null,
-  onRequestNewSession,
   onCancelSigning,
   bulkExecutionBlocked = false,
 }: BulkSettingsRailProps) {
@@ -230,7 +219,6 @@ export function BulkSettingsRail({
     isSigning,
     signingProgress,
     signingError,
-    onRequestNewSession,
     onCancelSigning,
     repostAllOpen,
     setRepostAllOpen,
@@ -262,41 +250,8 @@ export function BulkSettingsRail({
   const footer = <BulkSettingsRailFooter {...footerProps} />;
 
   return (
-    <>
-      <div className="lg:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mb-3 w-full gap-2"
-            >
-              <Settings2 className="size-4" aria-hidden />
-              Batch settings
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[85dvh]">
-            <SheetHeader>
-              <SheetTitle>Batch settings</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto pb-24">
-              {body}
-            </div>
-            <div className="bg-background fixed right-0 bottom-0 left-0 border-t">
-              {footer}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <ActionRail
-        className="hidden lg:flex"
-        ariaLabel="Bulk batch settings"
-        footer={footer}
-      >
-        {body}
-      </ActionRail>
-    </>
+    <ActionRail ariaLabel="Bulk batch settings" footer={footer}>
+      {body}
+    </ActionRail>
   );
 }

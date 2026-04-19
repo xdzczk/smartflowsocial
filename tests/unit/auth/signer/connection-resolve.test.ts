@@ -86,9 +86,6 @@ describe("connection-resolve", () => {
 
   const setCachedSigner = vi.fn();
   const getCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
-  const setConnectionEstablishedAt = vi.fn();
-  const setLastActivityTime = vi.fn();
-  const resetCachedSigner = vi.fn();
   const updateSession = vi.fn();
   const recordConnectionEvent = vi.fn();
   const syncRelaysWithRemoteSigner = vi.fn(async () => {});
@@ -127,9 +124,6 @@ describe("connection-resolve", () => {
       isRequestCurrent: overrides.isRequestCurrent ?? (() => true),
       setCachedSigner,
       getCachedSigner,
-      setConnectionEstablishedAt,
-      setLastActivityTime,
-      resetCachedSigner,
       getActiveConnection,
       updateSession,
       recordConnectionEvent,

@@ -7,10 +7,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
-import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
 import { RescheduleScheduledPostModal } from "~/features/posts/scheduling";
@@ -799,36 +796,20 @@ export function EditPostModal({
                     <span>
                       Waiting for signer approval…
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}
-                      {" — "}
-                      If you’re using a remote signer, open it to approve the
-                      request. To use a new session in the signer app, click
-                      &quot;Use new session&quot;.
+                      {" — Approve this request in your remote signer."}
                     </span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          void requestNewSignerSession(cancelSigningState)
-                        }
-                      >
-                        Use new session
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          cancelSigningState();
-                          void tryBackgroundReconnect();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => {
+                        cancelSigningState();
+                        void tryBackgroundReconnect();
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : null}
 

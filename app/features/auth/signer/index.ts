@@ -11,12 +11,9 @@ export {
   getActiveSigner,
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
-  recordSuccessfulSign,
   resetCachedSigner,
-  requestNewSignerSession,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
   tryBackgroundReconnect,
   getWindowNostrLikeSigner,
   getActiveSignerPubkeyHint,
@@ -24,12 +21,15 @@ export {
   LEGACY_STORAGE_KEY,
   migrateLegacyActiveSignerConfig,
   NOSTR_CONNECTION_HEALTHY_EVENT,
+  NOSTR_CONNECTION_STALE_EVENT,
   SIGNER_CONFIG_HYDRATED_EVENT,
   isMobile,
   parseSecretKeyHex,
   serializeSecretKey,
 } from "./nostr-signer-manager.client";
 export type { ActiveSignerConfig } from "./nostr-signer-manager.client";
+
+export { bootstrapNostrSigner } from "./bootstrap.client";
 
 // Remote signer sessions
 export {

@@ -2,10 +2,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   getQueueAccentHex,
@@ -73,29 +70,17 @@ export default function DraftBulkResume({
               <Loader2 className="h-5 w-5 animate-spin" />
               Signing draft posts...
             </p>
-            <span className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() =>
-                  void requestNewSignerSession(handlers.cancelSigningState)
-                }
-              >
-                Use new session
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  handlers.cancelSigningState();
-                  void tryBackgroundReconnect();
-                }}
-              >
-                Cancel
-              </Button>
-            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                handlers.cancelSigningState();
+                void tryBackgroundReconnect();
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         ) : null}
         {signingError ? (

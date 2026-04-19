@@ -14,6 +14,7 @@ import {
   clearPersistedState,
 } from "~/features/auth/lifecycle-manager.client";
 import {
+  bootstrapNostrSigner,
   migrateLegacyActiveSignerConfig,
   setCurrentUserNpub,
 } from "~/features/auth/signer";
@@ -73,7 +74,11 @@ export function LifecycleHandler() {
   }, [location.pathname, queryClient]);
 
   useEffect(() => {
+    // Order matters: migrate any legacy sessionStorage config into the new
+    // localStorage slot first, then warm the signer. Bootstrap reads the
+    // active config and would miss a freshly-migrated one if we ran it before.
     migrateLegacyActiveSignerConfig();
+    bootstrapNostrSigner();
   }, []);
 
   useEffect(() => {

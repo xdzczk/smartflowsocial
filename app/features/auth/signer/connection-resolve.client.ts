@@ -38,8 +38,6 @@ export interface ResolveNip46SignerOptions {
   isRequestCurrent: () => boolean;
   setCachedSigner: (signer: NostrSigner | null) => void;
   getCachedSigner: () => NostrSigner | null;
-  setConnectionEstablishedAt: (t: number | null) => void;
-  setLastActivityTime: (t: number | null) => void;
   getActiveConnection: () => RemoteSignerConnection | null;
   updateSession: (id: string, updates: Record<string, unknown>) => void;
   recordConnectionEvent: (connectionId: string, event: ConnectionEvent) => void;
@@ -60,8 +58,6 @@ export async function resolveNip46SignerFromConfig(
     isRequestCurrent,
     setCachedSigner,
     getCachedSigner,
-    setConnectionEstablishedAt,
-    setLastActivityTime,
     getActiveConnection,
     updateSession,
     recordConnectionEvent,
@@ -87,9 +83,6 @@ export async function resolveNip46SignerFromConfig(
     }
     const signer = result.signer;
     setCachedSigner(signer);
-    const nowEst = Date.now();
-    setConnectionEstablishedAt(nowEst);
-    setLastActivityTime(nowEst);
 
     const pubkey = await signer.getPublicKey();
     const activeConnection = getActiveConnection();
@@ -136,10 +129,6 @@ export async function resolveNip46SignerFromConfig(
     signer: NostrSigner,
     cfg: NostrConnectConfig
   ): Promise<boolean> {
-    const nowEst = Date.now();
-    setConnectionEstablishedAt(nowEst);
-    setLastActivityTime(nowEst);
-
     const unionRelays = buildRelayUnion(
       cfg.relays,
       DEFAULT_RELAYS_CONNECT,

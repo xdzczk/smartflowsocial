@@ -376,11 +376,7 @@ async function trySignWithConfiguredSigner(
             "Extension did not respond. Please approve the request in your browser extension or try again."
           );
 
-    if (
-      activeSigner.type === "nip46" &&
-      typeof signerManager.recordSuccessfulSign === "function"
-    ) {
-      signerManager.recordSuccessfulSign();
+    if (activeSigner.type === "nip46") {
       const activeConnection = getActiveConnection();
       if (activeConnection) {
         recordConnectionEvent(activeConnection.id, {

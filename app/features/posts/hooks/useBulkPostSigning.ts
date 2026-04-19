@@ -2,7 +2,6 @@ import { type FetcherWithComponents } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  requestNewSignerSession,
   setSigningInProgress,
   tryBackgroundReconnect,
 } from "~/features/auth/signer";
@@ -10,7 +9,6 @@ import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   describeSignerPhase,
-  formatAttemptElapsed,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -424,9 +422,7 @@ export function useBulkPostSigning({
     signElapsedSeconds,
     actionError,
     cancelSigningState,
-    requestNewSignerSession,
     tryBackgroundReconnect,
-    formatAttemptElapsed,
     describeSignerPhase,
     handleSignAndSubmit,
     handleSaveAsDraft,

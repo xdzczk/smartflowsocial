@@ -1,13 +1,16 @@
 /**
- * NIP-46/Bunker connection lifecycle: connect, disconnect, reconnect,
- * visibility handling, and signer cache.
+ * NIP-46/Bunker connection lifecycle: connect, disconnect, reconnect, and
+ * signer cache.
  *
  * The previous implementation tracked a small army of cooldowns, generations,
- * "needs reprobe" flags and verify timestamps. Those were all working around
- * the same root cause: the underlying SimplePool used to disconnect silently.
- * Now that the shared pool keeps its sockets healthy and `Nip46Signer` RPCs
- * are bounded, this module can stay tiny: cache a signer, reuse it while the
- * transport is open, and rebuild it once on demand if the transport drops.
+ * "needs reprobe" flags, verify timestamps, and visibility-resume probes.
+ * Those were all working around the same root cause: the underlying SimplePool
+ * used to disconnect silently. Now that the shared pool keeps its sockets
+ * healthy and `Nip46Signer` RPCs are bounded, this module can stay tiny: cache
+ * a signer, reuse it while the transport is open, and rebuild it once on
+ * demand if the transport drops. We do nothing on visibility change — the pool
+ * auto-reconnects sockets, and the next user sign discovers liveness on its
+ * own.
  */
 
 import {
@@ -20,33 +23,22 @@ import {
   getCachedSigner,
   getInFlightSignerConfigJson,
   getInFlightSignerPromise,
-  getLastActivityTime,
-  recordSuccessfulSign as recordSuccessfulSignImpl,
   resetCachedSigner,
   setCachedSigner,
-  setConnectionEstablishedAt,
   setInFlightSignerConfigJson,
   setInFlightSignerPromise,
-  setLastActivityTime,
-  setLastVisibilityReconnectAt,
-  setWasHidden,
-  getWasHidden,
-  getLastVisibilityReconnectAt,
 } from "./connection-cache.client";
 import { createNip46SignerFromStoredConfig as createNip46SignerFromStoredConfigImpl } from "./connection-connect.client";
 import {
   NIP46_SIGNER_TYPE,
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
-  VISIBILITY_RECONNECT_THROTTLE_MS,
 } from "./connection-constants";
 import {
   isTransportLikelyHealthy,
   syncRelaysWithRemoteSigner,
-  verifySignerConnection,
 } from "./connection-health.client";
 import { resolveNip46SignerFromConfig } from "./connection-resolve.client";
-import { initVisibilityHandler as initVisibilityHandlerImpl } from "./connection-visibility.client";
 import {
   getActiveSignerConfig,
   persistActiveSignerConfigWithoutReset,
@@ -61,19 +53,6 @@ import { recordConnectionEvent } from "./remote-signer-status.client";
 
 export { NOSTR_CONNECTION_STALE_EVENT, NOSTR_CONNECTION_HEALTHY_EVENT };
 export { syncRelaysWithRemoteSigner };
-
-let visibilityHandlerCleanup: (() => void) | null = null;
-
-function debugSignerManagerTrace(
-  message: string,
-  details?: Record<string, unknown>
-): void {
-  if (details) {
-    console.info(`[remote-signer-sign] ${message}`, details);
-    return;
-  }
-  console.info(`[remote-signer-sign] ${message}`);
-}
 
 export interface GetActiveSignerOptions {
   allowReconnect?: boolean;
@@ -107,57 +86,14 @@ function clearCachedNip46Signer(): void {
     });
   }
   resetCachedSigner();
-  setConnectionEstablishedAt(null);
-  setLastActivityTime(null);
 }
 
 export function teardownActiveNip46Signer(): void {
   clearCachedNip46Signer();
 }
 
-export function teardownVisibilityHandler(): void {
-  if (visibilityHandlerCleanup) {
-    visibilityHandlerCleanup();
-    visibilityHandlerCleanup = null;
-  }
-}
-
-/**
- * On resume, only nudge a background reconnect when the cached signer's
- * transport is actually unhealthy. The pool itself auto-reconnects sockets, so
- * doing nothing here is the right answer in the vast majority of cases.
- */
-async function maybeReconnectOnResume(): Promise<void> {
-  const cached = getCachedSigner();
-  if (cached?.type !== NIP46_SIGNER_TYPE) return;
-  if (isTransportLikelyHealthy()) return;
-  const ok = await verifySignerConnection(cached, 4_000);
-  if (!ok) {
-    debugSignerManagerTrace("Resume probe failed; reconnecting in background");
-    void tryBackgroundReconnect();
-  }
-}
-
-function setupVisibilityHandler(): void {
-  if (typeof window === "undefined") return;
-  visibilityHandlerCleanup = initVisibilityHandlerImpl({
-    onResume: () => void maybeReconnectOnResume(),
-    getWasHidden,
-    setWasHidden,
-    getLastVisibilityReconnectAt,
-    setLastVisibilityReconnectAt,
-    visibilityReconnectThrottleMs: VISIBILITY_RECONNECT_THROTTLE_MS,
-    debugTrace: (msg) => debugSignerManagerTrace(msg),
-  });
-}
-setupVisibilityHandler();
-
 export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
   cacheNip46SignerFromLoginImpl(signer);
-}
-
-export function recordSuccessfulSign(): void {
-  recordSuccessfulSignImpl();
 }
 
 export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredConfig };
@@ -171,8 +107,6 @@ export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredCon
  * For NIP-07 the cached signer is always reusable - there is no transport
  * to check.
  */
-const CACHE_ACTIVITY_REFRESH_MS = 30_000;
-
 function tryGetValidCachedSigner(): NostrSigner | null {
   const cachedSigner = getCachedSigner();
   if (!cachedSigner) return null;
@@ -186,11 +120,6 @@ function tryGetValidCachedSigner(): NostrSigner | null {
     return null;
   }
 
-  const now = Date.now();
-  const lastActivity = getLastActivityTime();
-  if (lastActivity == null || now - lastActivity > CACHE_ACTIVITY_REFRESH_MS) {
-    setLastActivityTime(now);
-  }
   return cachedSigner;
 }
 
@@ -213,8 +142,6 @@ function isConnectionRelatedError(err: unknown): boolean {
 
 function handleSignerConnectionError(err: unknown): void {
   resetCachedSigner();
-  setConnectionEstablishedAt(null);
-  setLastActivityTime(null);
 
   const activeConnection = getActiveConnection();
   if (activeConnection) {
@@ -264,8 +191,6 @@ export async function getActiveSigner(
     isRequestCurrent,
     setCachedSigner,
     getCachedSigner,
-    setConnectionEstablishedAt,
-    setLastActivityTime,
     getActiveConnection,
     updateSession,
     recordConnectionEvent,
@@ -375,18 +300,4 @@ export async function tryBackgroundReconnect(): Promise<boolean> {
   } finally {
     backgroundReconnectInProgress = false;
   }
-}
-
-/**
- * Tear down the current NIP-46 session, clear UI signing state, then start a new
- * session for the same connection (same config). Use when the user wants to
- * "use a new session" in the remote signer app without removing the connection.
- * Call from "Use new session" / "Reconnect signer" buttons on "Waiting for signer" banners.
- */
-export async function requestNewSignerSession(
-  clearSigningState?: () => void
-): Promise<boolean> {
-  teardownActiveNip46Signer();
-  clearSigningState?.();
-  return tryBackgroundReconnect();
 }

@@ -12,10 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { tryBackgroundReconnect } from "~/features/auth/signer";
 import {
   canScheduleRepostQuoteForPost,
   type CalendarPost,
@@ -859,16 +856,6 @@ export function RescheduleScheduledPostModal({
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          void requestNewSignerSession(cancelSigningState)
-                        }
-                      >
-                        Use new session
-                      </Button>
                       <Button
                         type="button"
                         variant="ghost"

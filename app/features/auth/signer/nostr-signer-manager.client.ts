@@ -13,12 +13,10 @@ import {
   createNip46SignerFromStoredConfig,
   getActiveSigner,
   NOSTR_CONNECTION_HEALTHY_EVENT,
-  recordSuccessfulSign,
+  NOSTR_CONNECTION_STALE_EVENT,
   resetCachedSigner,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
-  requestNewSignerSession,
   tryBackgroundReconnect,
 } from "./nostr-signer-connection.client";
 import {
@@ -41,7 +39,7 @@ export type { ActiveSignerConfig };
 export { STORAGE_KEY, LEGACY_STORAGE_KEY, migrateLegacyActiveSignerConfig };
 
 /** Fired when remote signer reconnect succeeds so composers clear "Waiting for signer approval". */
-export { NOSTR_CONNECTION_HEALTHY_EVENT };
+export { NOSTR_CONNECTION_HEALTHY_EVENT, NOSTR_CONNECTION_STALE_EVENT };
 
 /** Fired when signer config was missing and we defaulted to NIP-07 so components can re-read. */
 export const SIGNER_CONFIG_HYDRATED_EVENT = "smartflow:signer-config-hydrated";
@@ -64,12 +62,9 @@ export {
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
-  recordSuccessfulSign,
   resetCachedSigner,
-  requestNewSignerSession,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
   tryBackgroundReconnect,
 };
 

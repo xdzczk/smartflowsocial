@@ -19,11 +19,12 @@ the public API stays stable.
   - **NIP-46 login:** `app/features/auth/nip46/` — `nip46-connect.client.ts` (bunker + Nostr Connect
     URI + pending URI), `nip46-persist.client.ts`. Used by `useNip46Login`.
 - **Signer core:** `app/features/auth/signer/` — connection lifecycle split into
-  `connection-constants.ts`, `connection-cache.client.ts`, `connection-visibility.client.ts`,
-  `connection-health.client.ts`, `connection-connect.client.ts`, `connection-relay-utils.client.ts`,
-  with `nostr-signer-connection.client.ts` as the slim orchestrator. Sessions:
-  `remote-signer-sessions-types.ts`, `remote-signer-sessions-storage.client.ts`,
-  `remote-signer-sessions.client.ts` (API).
+  `connection-constants.ts`, `connection-cache.client.ts`, `connection-health.client.ts`,
+  `connection-connect.client.ts`, `connection-relay-utils.client.ts`, with
+  `nostr-signer-connection.client.ts` as the slim orchestrator. Visibility/resume is intentionally
+  unhandled — the shared pool's `enableReconnect` plus the per-sign reconnect-and-retry layer keep
+  things alive without bespoke probes. Sessions: `remote-signer-sessions-types.ts`,
+  `remote-signer-sessions-storage.client.ts`, `remote-signer-sessions.client.ts` (API).
 
 ## Public API
 

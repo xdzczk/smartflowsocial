@@ -14,11 +14,6 @@ import { normalizeURL } from "nostr-tools/utils";
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
-import {
-  setLastActivityTime,
-  setLastRelaySyncAt,
-  setLastVerificationTime,
-} from "./connection-cache.client";
 import { NIP46_SIGNER_TYPE } from "./connection-constants";
 import {
   normalizeRelayList,
@@ -61,9 +56,6 @@ export async function verifySignerConnection(
         setTimeout(() => reject(new Error("Ping check timeout")), timeoutMs)
       ),
     ]);
-    const now = Date.now();
-    setLastActivityTime(now);
-    setLastVerificationTime(now);
     return true;
   } catch {
     return false;
@@ -124,7 +116,6 @@ export async function syncRelaysWithRemoteSigner(
   }
 
   const switched = await signer.switchRelays();
-  setLastRelaySyncAt(Date.now());
   if (!switched) {
     debugTrace("switch_relays returned no updates");
     return { changed: false, reason: "no_change" };

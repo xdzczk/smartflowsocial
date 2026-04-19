@@ -1,5 +1,5 @@
 /**
- * Unit tests for connection-cache (get/set, resetCachedSigner, recordSuccessfulSign, cacheNip46SignerFromLogin).
+ * Unit tests for connection-cache (get/set, resetCachedSigner, cacheNip46SignerFromLogin).
  * Tests app/features/auth/signer/connection-cache.client.ts
  */
 
@@ -13,24 +13,11 @@ vi.mock("~/features/auth/signer/nostr-signer-storage.client", () => ({
 import {
   getCachedSigner,
   setCachedSigner,
-  getConnectionEstablishedAt,
-  setConnectionEstablishedAt,
-  getLastActivityTime,
-  setLastActivityTime,
-  getLastVerificationTime,
-  setLastVerificationTime,
-  getLastRelaySyncAt,
-  setLastRelaySyncAt,
   getInFlightSignerPromise,
   setInFlightSignerPromise,
   getInFlightSignerConfigJson,
   setInFlightSignerConfigJson,
-  getWasHidden,
-  setWasHidden,
-  getLastVisibilityReconnectAt,
-  setLastVisibilityReconnectAt,
   resetCachedSigner,
-  recordSuccessfulSign,
   cacheNip46SignerFromLogin,
 } from "~/features/auth/signer/connection-cache.client";
 import {
@@ -44,7 +31,7 @@ describe("connection-cache", () => {
     resetCachedSigner();
   });
 
-  describe("get/set cached signer and timestamps", () => {
+  describe("get/set cached signer", () => {
     it("getCachedSigner returns null initially", () => {
       expect(getCachedSigner()).toBeNull();
     });
@@ -54,24 +41,6 @@ describe("connection-cache", () => {
       const signer = { type: "nip46" } as never;
       setCachedSigner(signer);
       expect(getCachedSigner()).toBe(signer);
-    });
-
-    it("get/set ConnectionEstablishedAt, LastActivityTime, LastVerificationTime, LastRelaySyncAt", () => {
-      expect(getConnectionEstablishedAt()).toBeNull();
-      setConnectionEstablishedAt(1000);
-      expect(getConnectionEstablishedAt()).toBe(1000);
-
-      expect(getLastActivityTime()).toBeNull();
-      setLastActivityTime(2000);
-      expect(getLastActivityTime()).toBe(2000);
-
-      expect(getLastVerificationTime()).toBeNull();
-      setLastVerificationTime(3000);
-      expect(getLastVerificationTime()).toBe(3000);
-
-      expect(getLastRelaySyncAt()).toBeNull();
-      setLastRelaySyncAt(4000);
-      expect(getLastRelaySyncAt()).toBe(4000);
     });
 
     it("get/set in-flight promise and config json", () => {
@@ -87,41 +56,18 @@ describe("connection-cache", () => {
       expect(getInFlightSignerPromise()).toBeNull();
       expect(getInFlightSignerConfigJson()).toBeNull();
     });
-
-    it("get/set WasHidden and LastVisibilityReconnectAt", () => {
-      expect(getWasHidden()).toBe(false);
-      setWasHidden(true);
-      expect(getWasHidden()).toBe(true);
-
-      expect(getLastVisibilityReconnectAt()).toBe(0);
-      setLastVisibilityReconnectAt(10000);
-      expect(getLastVisibilityReconnectAt()).toBe(10000);
-    });
   });
 
   describe("resetCachedSigner", () => {
-    it("clears cached signer and verification/sync times", () => {
+    it("clears cached signer and in-flight state", () => {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
       setCachedSigner({ type: "nip46" } as never);
-      setConnectionEstablishedAt(1000);
-      setLastActivityTime(1000);
-      setLastVerificationTime(1000);
-      setLastRelaySyncAt(1000);
+      setInFlightSignerPromise(Promise.resolve(null as never));
+      setInFlightSignerConfigJson("x");
       resetCachedSigner();
       expect(getCachedSigner()).toBeNull();
-      expect(getLastVerificationTime()).toBeNull();
-      expect(getLastRelaySyncAt()).toBeNull();
-    });
-  });
-
-  describe("recordSuccessfulSign", () => {
-    it("updates lastActivityTime and lastVerificationTime", () => {
-      recordSuccessfulSign();
-      const t = getLastActivityTime();
-      const v = getLastVerificationTime();
-      expect(t).not.toBeNull();
-      expect(v).not.toBeNull();
-      expect(t).toBe(v);
+      expect(getInFlightSignerPromise()).toBeNull();
+      expect(getInFlightSignerConfigJson()).toBeNull();
     });
   });
 
@@ -142,7 +88,7 @@ describe("connection-cache", () => {
       expect(getCachedSigner()).toBeNull();
     });
 
-    it("caches signer and updates timestamps when signer and config are nip46", () => {
+    it("caches signer and persists config json when both are nip46", () => {
       const config = {
         type: "nip46" as const,
         method: "bunker_input" as const,
@@ -156,9 +102,6 @@ describe("connection-cache", () => {
       cacheNip46SignerFromLogin(signer, onCached);
       expect(getCachedSigner()).toBe(signer);
       expect(setCachedConfigJson).toHaveBeenCalledWith(JSON.stringify(config));
-      expect(getConnectionEstablishedAt()).not.toBeNull();
-      expect(getLastActivityTime()).not.toBeNull();
-      expect(getLastVerificationTime()).not.toBeNull();
       expect(onCached).toHaveBeenCalledTimes(1);
     });
   });

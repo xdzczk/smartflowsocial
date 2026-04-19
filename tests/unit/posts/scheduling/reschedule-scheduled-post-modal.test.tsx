@@ -44,7 +44,7 @@ vi.mock("~/lib/hooks/useSignAttemptProgress", () => ({
     signElapsedSeconds: 0,
   }),
   describeSignerPhase: () => "",
-  formatAttemptElapsed: () => "0s",
+  shouldShowManualRecovery: () => false,
 }));
 
 vi.mock("~/lib/nostr-adapter.client", () => ({

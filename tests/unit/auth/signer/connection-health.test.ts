@@ -6,12 +6,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("~/features/auth/signer/connection-cache.client", () => ({
-  setLastActivityTime: vi.fn(),
-  setLastRelaySyncAt: vi.fn(),
-  setLastVerificationTime: vi.fn(),
-}));
-
 vi.mock("~/features/auth/signer/nostr-signer-storage.client", () => ({
   getActiveSignerConfig: vi.fn(),
   persistActiveSignerConfigWithoutReset: vi.fn(),
@@ -34,10 +28,6 @@ vi.mock("~/features/nostr/shared-pool.client", () => ({
 }));
 
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
-import {
-  setLastActivityTime,
-  setLastVerificationTime,
-} from "~/features/auth/signer/connection-cache.client";
 import {
   isTransportLikelyHealthy,
   syncRelaysWithRemoteSigner,
@@ -81,14 +71,12 @@ describe("connection-health", () => {
       expect(await verifySignerConnection(signer)).toBe(true);
     });
 
-    it("returns true and updates cache when ping resolves", async () => {
+    it("returns true when ping resolves", async () => {
       const signer = {
         type: "nip46",
         ping: vi.fn().mockResolvedValue(undefined),
       } as unknown as NostrSigner;
       expect(await verifySignerConnection(signer)).toBe(true);
-      expect(setLastActivityTime).toHaveBeenCalled();
-      expect(setLastVerificationTime).toHaveBeenCalled();
     });
 
     it("returns false when ping rejects", async () => {

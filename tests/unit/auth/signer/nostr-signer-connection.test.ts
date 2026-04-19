@@ -10,15 +10,10 @@ import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   cacheNip46SignerFromLogin,
   getActiveSigner,
-  recordSuccessfulSign,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
 } from "~/features/auth/signer/nostr-signer-connection.client";
 import type { ActiveSignerConfig } from "~/features/auth/signer/nostr-signer-storage.client";
 
-const { visibilityCleanup } = vi.hoisted(() => ({
-  visibilityCleanup: vi.fn(),
-}));
 const inFlightRefs = vi.hoisted(() => ({
   promise: null as Promise<unknown> | null,
   configJson: null as string | null,
@@ -31,35 +26,20 @@ const mockCachedSigner: NostrSigner = {
   getPublicKey: vi.fn().mockResolvedValue(MOCK_SIGNER_HEX_PUBKEY),
 } as unknown as NostrSigner;
 const mockGetCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
-const mockGetConnectionEstablishedAt = vi.fn<() => number | null>(() => null);
-const mockGetLastActivityTime = vi.fn<() => number | null>(() => null);
-const mockSetLastActivityTime = vi.fn();
 const mockSetCachedSigner = vi.fn();
 const mockResetCachedSigner = vi.fn();
 const mockGetActiveSignerConfig = vi.fn<() => ActiveSignerConfig | null>(
   () => null
 );
 const mockIsTransportLikelyHealthy = vi.fn(() => true);
-const mockVerifySignerConnection = vi.fn();
 const mockCacheNip46SignerFromLoginImpl = vi.fn();
-const mockRecordSuccessfulSignImpl = vi.fn();
 
 vi.mock("~/features/auth/signer/connection-cache.client", () => ({
   getCachedSigner: () => mockGetCachedSigner(),
-  getConnectionEstablishedAt: () => mockGetConnectionEstablishedAt(),
-  getLastActivityTime: () => mockGetLastActivityTime(),
-  setLastActivityTime: (t: number | null) => mockSetLastActivityTime(t),
   setCachedSigner: (s: unknown) => mockSetCachedSigner(s),
   resetCachedSigner: () => mockResetCachedSigner(),
   getInFlightSignerPromise: () => inFlightRefs.promise,
   getInFlightSignerConfigJson: () => inFlightRefs.configJson,
-  setConnectionEstablishedAt: vi.fn(),
-  getLastVisibilityReconnectAt: () => 0,
-  setLastVisibilityReconnectAt: vi.fn(),
-  setWasHidden: vi.fn(),
-  getWasHidden: () => false,
-  recordSuccessfulSign: (...args: unknown[]) =>
-    mockRecordSuccessfulSignImpl(...args),
   cacheNip46SignerFromLogin: (...args: unknown[]) =>
     mockCacheNip46SignerFromLoginImpl(...args),
   setInFlightSignerConfigJson: (s: string | null) => {
@@ -72,8 +52,6 @@ vi.mock("~/features/auth/signer/connection-cache.client", () => ({
 
 vi.mock("~/features/auth/signer/connection-health.client", () => ({
   isTransportLikelyHealthy: () => mockIsTransportLikelyHealthy(),
-  verifySignerConnection: (...args: unknown[]) =>
-    mockVerifySignerConnection(...args),
   syncRelaysWithRemoteSigner: vi.fn(),
 }));
 
@@ -83,10 +61,6 @@ vi.mock("~/features/auth/signer/connection-connect.client", () => ({
 
 vi.mock("~/features/auth/signer/connection-resolve.client", () => ({
   resolveNip46SignerFromConfig: vi.fn(),
-}));
-
-vi.mock("~/features/auth/signer/connection-visibility.client", () => ({
-  initVisibilityHandler: () => visibilityCleanup,
 }));
 
 vi.mock("~/features/auth/signer/nostr-signer-storage.client", () => ({
@@ -126,8 +100,6 @@ describe("nostr-signer-connection", () => {
     inFlightRefs.configJson = null;
     mockGetCachedSigner.mockReturnValue(null);
     mockGetActiveSignerConfig.mockReturnValue(null);
-    mockGetConnectionEstablishedAt.mockReturnValue(null);
-    mockGetLastActivityTime.mockReturnValue(null);
     mockIsTransportLikelyHealthy.mockReturnValue(true);
   });
 
@@ -142,7 +114,6 @@ describe("nostr-signer-connection", () => {
       mockIsTransportLikelyHealthy.mockReturnValue(true);
       const result = await getActiveSigner({ allowReconnect: false });
       expect(result).toBe(mockCachedSigner);
-      expect(mockSetLastActivityTime).toHaveBeenCalled();
     });
 
     it("clears cache and returns null when transport is unhealthy and reconnect disabled", async () => {
@@ -276,26 +247,12 @@ describe("nostr-signer-connection", () => {
     });
   });
 
-  describe("teardownVisibilityHandler", () => {
-    it("calls cleanup when one was set", () => {
-      teardownVisibilityHandler();
-      expect(visibilityCleanup).toHaveBeenCalled();
-    });
-  });
-
   describe("cacheNip46SignerFromLogin", () => {
     it("delegates to the cache impl", () => {
       const signer = { type: "nip46" };
 
       cacheNip46SignerFromLogin(signer as never);
       expect(mockCacheNip46SignerFromLoginImpl).toHaveBeenCalledWith(signer);
-    });
-  });
-
-  describe("recordSuccessfulSign", () => {
-    it("delegates to recordSuccessfulSignImpl", () => {
-      recordSuccessfulSign();
-      expect(mockRecordSuccessfulSignImpl).toHaveBeenCalled();
     });
   });
 });

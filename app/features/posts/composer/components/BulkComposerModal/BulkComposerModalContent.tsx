@@ -368,9 +368,6 @@ export function BulkComposerModalContent({
             isSigning={signing.isSigning}
             signingProgress={signing.signingProgress}
             signingError={signing.signingError ?? signing.actionError}
-            onRequestNewSession={() => {
-              void signing.requestNewSignerSession(signing.cancelSigningState);
-            }}
             onCancelSigning={signing.cancelSigningState}
           />
         }

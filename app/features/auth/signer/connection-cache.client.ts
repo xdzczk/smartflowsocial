@@ -1,6 +1,14 @@
 /**
  * In-memory cache and in-flight dedup state for NIP-46 signer connection.
- * Used by the connection orchestrator and health module.
+ *
+ * Trimmed deliberately. The previous implementation tracked a small army of
+ * timestamps (`connectionEstablishedAt`, `lastVerificationTime`,
+ * `lastRelaySyncAt`, `lastActivityTime`) plus visibility-resume bookkeeping
+ * (`wasHidden`, `lastVisibilityReconnectAt`) so heuristics could decide whether
+ * a cached signer was "fresh enough" to reuse and whether to reprobe on tab
+ * focus. None of those values gate any behavior anymore: reuse is decided
+ * exclusively by `isTransportLikelyHealthy()` against the shared pool's
+ * WebSocket state, and the pool's own auto-reconnect handles tab resume.
  */
 
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
@@ -14,12 +22,6 @@ import {
 let cachedSigner: NostrSigner | null = null;
 let inFlightSignerPromise: Promise<NostrSigner | null> | null = null;
 let inFlightSignerConfigJson: string | null = null;
-let connectionEstablishedAt: number | null = null;
-let _lastActivityTime: number | null = null;
-let _lastVerificationTime: number | null = null;
-let _lastRelaySyncAt: number | null = null;
-let wasHidden = false;
-let lastVisibilityReconnectAt = 0;
 
 export function getCachedSigner(): NostrSigner | null {
   return cachedSigner;
@@ -41,62 +43,14 @@ export function getInFlightSignerConfigJson(): string | null {
 export function setInFlightSignerConfigJson(s: string | null): void {
   inFlightSignerConfigJson = s;
 }
-export function getConnectionEstablishedAt(): number | null {
-  return connectionEstablishedAt;
-}
-export function setConnectionEstablishedAt(n: number | null): void {
-  connectionEstablishedAt = n;
-}
-export function getLastActivityTime(): number | null {
-  return _lastActivityTime;
-}
-export function setLastActivityTime(n: number | null): void {
-  _lastActivityTime = n;
-}
-export function getLastVerificationTime(): number | null {
-  return _lastVerificationTime;
-}
-export function setLastVerificationTime(n: number | null): void {
-  _lastVerificationTime = n;
-}
-export function getLastRelaySyncAt(): number | null {
-  return _lastRelaySyncAt;
-}
-export function setLastRelaySyncAt(n: number | null): void {
-  _lastRelaySyncAt = n;
-}
-export function getWasHidden(): boolean {
-  return wasHidden;
-}
-export function setWasHidden(b: boolean): void {
-  wasHidden = b;
-}
-export function getLastVisibilityReconnectAt(): number {
-  return lastVisibilityReconnectAt;
-}
-export function setLastVisibilityReconnectAt(n: number): void {
-  lastVisibilityReconnectAt = n;
-}
 
 /**
  * Clear in-memory signer cache (no close, no health stop).
  */
 export function resetCachedSigner(): void {
   cachedSigner = null;
-  _lastVerificationTime = null;
-  _lastRelaySyncAt = null;
   inFlightSignerPromise = null;
   inFlightSignerConfigJson = null;
-}
-
-/**
- * Record a successful sign; updates activity and verification timestamps.
- * A successful sign indicates the connection is live, so we update both for consistency with tests and monitoring.
- */
-export function recordSuccessfulSign(): void {
-  const now = Date.now();
-  _lastActivityTime = now;
-  _lastVerificationTime = now;
 }
 
 /**
@@ -111,9 +65,5 @@ export function cacheNip46SignerFromLogin(
   if (config?.type !== NIP46_SIGNER_TYPE) return;
   cachedSigner = signer;
   setCachedConfigJson(JSON.stringify(config));
-  const now = Date.now();
-  connectionEstablishedAt = now;
-  _lastActivityTime = now;
-  _lastVerificationTime = now;
   onCached?.();
 }

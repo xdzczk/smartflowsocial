@@ -6,25 +6,21 @@ import type {
 } from "~/lib/nostr-adapter.client";
 
 /**
- * Stable shape consumed by composer surfaces. `phase` mirrors the underlying
- * `signer-nudge` event from the adapter; `attempt`/`maxAttempts` are kept for
- * backwards compatibility with display strings but are now derived purely from
- * the phase (start/nudge → 1, reconnect → 2).
+ * Live status for the in-flight sign cycle. The composer surfaces this so the
+ * user sees a phase-aware message ("Still waiting · 12s", "Reconnecting to
+ * signer · 16s") instead of a static spinner. Driven entirely by the
+ * `signer-nudge` events emitted by the adapter — there is no per-attempt
+ * counter anymore (the adapter does at most one initial attempt + one
+ * reconnect-and-retry, and the UI describes that via `phase`, not numbers).
  */
 export interface SignAttemptProgress {
-  attempt: number;
-  maxAttempts: number;
   startedAt: number;
   /** Soft target for the whole sign cycle (display only). */
   timeoutMs?: number;
   phase: SignerNudgePhase;
 }
 
-/** Format elapsed and optional max for display, e.g. "12s" or "12s/40s". */
-export function formatAttemptElapsed(
-  elapsedSeconds: number,
-  timeoutMs?: number
-): string {
+function formatElapsed(elapsedSeconds: number, timeoutMs?: number): string {
   if (timeoutMs != null && timeoutMs > 0) {
     const maxSeconds = Math.ceil(timeoutMs / 1000);
     return `${elapsedSeconds}s/${maxSeconds}s`;
@@ -43,7 +39,7 @@ export function describeSignerPhase(
   timeoutMs?: number
 ): string | null {
   if (!phase || phase === "start" || phase === "done") return null;
-  const elapsed = formatAttemptElapsed(elapsedSeconds, timeoutMs);
+  const elapsed = formatElapsed(elapsedSeconds, timeoutMs);
   switch (phase) {
     case "nudge":
       return `Still waiting · ${elapsed}`;
@@ -56,8 +52,17 @@ export function describeSignerPhase(
   }
 }
 
-function attemptForPhase(phase: SignerNudgePhase): number {
-  return phase === "reconnect" ? 2 : 1;
+/**
+ * Returns true once the signer has been waiting long enough that the UI
+ * should hint at manual recovery (e.g. "If your session expired, reconnect
+ * from Settings"). Pre-`reconnect` we keep the banner minimal because the
+ * shared pool + bounded RPC layer usually completes a sign within a couple
+ * of seconds and we don't want to surface scary recovery copy too eagerly.
+ */
+export function shouldShowManualRecovery(
+  phase: SignerNudgePhase | undefined
+): boolean {
+  return phase === "reconnect" || phase === "fail";
 }
 
 /**
@@ -84,8 +89,6 @@ export function useSignAttemptProgress(isSigning: boolean): {
         return;
       }
       setSignAttempt({
-        attempt: attemptForPhase(d.phase),
-        maxAttempts: 2,
         startedAt: d.startedAt,
         timeoutMs: d.timeoutMs,
         phase: d.phase,
