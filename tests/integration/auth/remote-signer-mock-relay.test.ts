@@ -178,7 +178,13 @@ describe("remote-signer-mock-relay integration", () => {
     await result2.signer.close();
   });
 
-  it("(6) fails with SIGNER_TIMEOUT when relay does not respond", async () => {
+  it("(6) lazy cold rebuild defers transport errors until the first RPC", async () => {
+    // Cold rebuild now mirrors `@nostrify`'s `NConnectSigner` and skips the
+    // probe `getPublicKey()` round-trip on construction. So an unreachable
+    // relay no longer throws here — the failure surfaces on the first real
+    // RPC the user makes (which times out via the per-RPC timeout in
+    // `Nip46Signer.rpc`). This keeps boot/cold-reopen cheap and prevents the
+    // bootstrap call from racing the user's first sign for the bunker reply.
     const badUrl = "ws://127.0.0.1:19999";
     const config: Extract<ActiveSignerConfig, { type: "nip46" }> = {
       type: "nip46",
@@ -192,9 +198,16 @@ describe("remote-signer-mock-relay integration", () => {
         secret: null,
       },
     };
-    await expect(
-      createNip46SignerFromStoredConfig(config, { timeoutMs: 2_000 })
-    ).rejects.toThrow(/SIGNER_TIMEOUT|timeout|All promises were rejected/i);
+    const result = await createNip46SignerFromStoredConfig(config, {
+      timeoutMs: 2_000,
+    });
+    expect(result.pubkey).toBe(getMockSignerPubkey());
+    expect(result.signer).toBeDefined();
+
+    await expect(result.signer.getPublicKey()).rejects.toThrow(
+      /timeout|SIGNER_TIMEOUT|signer is not open|All promises were rejected/i
+    );
+    await result.signer.close();
   });
 
   it("(7) tryBackgroundReconnect succeeds when config points to mock relay", async () => {

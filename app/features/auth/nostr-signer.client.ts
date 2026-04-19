@@ -110,11 +110,28 @@ const NIP46_RPC_TIMEOUTS = {
   switchRelays: 8_000,
 } as const;
 
+/**
+ * Internal shape of `nostr-tools` `BunkerSigner` we touch for the per-RPC
+ * subscription refresh. Kept narrow so a future upstream change shows up as a
+ * compile error instead of a silent runtime miss.
+ */
+interface BunkerSignerInternals {
+  subCloser?: { close: (reason?: string) => Promise<void> | void };
+  isOpen: boolean;
+}
+
 export class Nip46Signer implements NostrSigner {
   public readonly type = "nip46" as const;
   private readonly pool: SimplePool;
   private readonly inner: BunkerSigner;
   private status: SignerStatus = "available";
+  /**
+   * Serializes RPCs against the inner `BunkerSigner` so the per-RPC
+   * subscription refresh below cannot drop a reply that belongs to a
+   * concurrent in-flight request. In practice the composer signs one event
+   * at a time, so the lock is uncontended; this is purely defensive.
+   */
+  private rpcLock: Promise<unknown> = Promise.resolve();
 
   constructor(input: { pool: SimplePool; inner: BunkerSigner }) {
     this.pool = input.pool;
@@ -129,24 +146,76 @@ export class Nip46Signer implements NostrSigner {
     this.status = next;
   }
 
+  /**
+   * Open a fresh REQ subscription on the bunker relays before the next RPC.
+   *
+   * `nostr-tools`' `BunkerSigner` calls `setupSubscription()` once at
+   * construction and reuses that single long-lived REQ for every
+   * `sendRequest`. In the wild that subscription drifts: the relay socket
+   * reconnects with a `since` filter that skips backlog, the per-relay sub's
+   * `eosed` flag flips and live events are dropped, the remote signer app's
+   * mirror sub goes idle, etc. When that happens the bunker's reply event
+   * lands on the relay but `BunkerSigner.listeners[id]` is never invoked, so
+   * `signEvent` hangs forever — which is exactly the bug users hit when they
+   * have to "stop and start session" in Primal to unstick a sign.
+   *
+   * `@nostrify/nostrify`'s `NConnectSigner.send` (used by Ditto) avoids this
+   * by opening a new REQ per RPC. We mirror that here by clearing
+   * `subCloser` so the next `sendRequest` invokes `setupSubscription()`
+   * again. `BunkerSigner.listeners` lives on the instance (not the
+   * subscription closure), so any in-flight request still resolves through
+   * the new sub, and `BunkerSigner.cachedPubKey` is preserved across
+   * refreshes.
+   */
+  private async refreshBunkerSubscription(): Promise<void> {
+    const inner = this.inner as unknown as BunkerSignerInternals;
+    if (!inner.isOpen) return;
+    const closer = inner.subCloser;
+    if (!closer) return;
+    inner.subCloser = undefined;
+    try {
+      await closer.close("nip46:per-rpc-refresh");
+    } catch {
+      // Best-effort: even if close fails, clearing subCloser ensures the next
+      // sendRequest opens a fresh subscription, which is what we want.
+    }
+  }
+
   private async rpc<T>(
     fn: () => Promise<T>,
     timeoutMs: number,
     label: string
   ): Promise<T> {
-    let to: ReturnType<typeof setTimeout> | undefined;
+    const previous = this.rpcLock;
+    let release: () => void = () => {
+      // no-op until the lock-arming Promise constructor below assigns the
+      // real resolver; satisfies @typescript-eslint without a useless undefined.
+    };
+    this.rpcLock = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     try {
-      return await Promise.race([
-        fn(),
-        new Promise<never>((_, reject) => {
-          to = setTimeout(
-            () => reject(new Error(`bunker:${label} timeout`)),
-            timeoutMs
-          );
-        }),
-      ]);
+      await previous.catch(() => {
+        // Swallow upstream rejections so one failed RPC doesn't poison the
+        // lock for the next caller.
+      });
+      await this.refreshBunkerSubscription();
+      let to: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          fn(),
+          new Promise<never>((_, reject) => {
+            to = setTimeout(
+              () => reject(new Error(`bunker:${label} timeout`)),
+              timeoutMs
+            );
+          }),
+        ]);
+      } finally {
+        if (to) clearTimeout(to);
+      }
     } finally {
-      if (to) clearTimeout(to);
+      release();
     }
   }
 
@@ -251,7 +320,22 @@ export class Nip46Signer implements NostrSigner {
     // of the app and self-heals its sockets, so closing relays here would
     // tear down transport for every other component (and force the next
     // signer to re-open WebSockets before it can RPC).
-    await this.inner.close();
+    //
+    // `BunkerSigner.close` assumes `subCloser` is defined and crashes
+    // otherwise; our per-RPC refresh leaves it `undefined` between RPCs.
+    // Inline its safe portion (flip `isOpen`, close the sub if any) instead
+    // of letting it throw.
+    const inner = this.inner as unknown as BunkerSignerInternals;
+    inner.isOpen = false;
+    const closer = inner.subCloser;
+    inner.subCloser = undefined;
+    if (closer) {
+      try {
+        await closer.close("nip46:signer-close");
+      } catch {
+        // best-effort
+      }
+    }
   }
 }
 
@@ -333,6 +417,15 @@ export async function connectNip46WithBunkerInput(input: {
   retryCount?: number;
   /** When true, skip connect() (reconnect from stored config per nostr-tools docs). */
   skipConnect?: boolean;
+  /**
+   * When true, skip the `getPublicKey()` validation round-trip and return
+   * the bunker pubkey from `parseBunkerInput`. Use on cold rebuild from
+   * stored config: the original login already validated this bunker, and
+   * doing a second RPC here just races the user's first `signEvent` for the
+   * bunker's reply. Mirrors `@nostrify` `NConnectSigner` which never does a
+   * "validate" call on construction.
+   */
+  skipValidation?: boolean;
   /** Override relays from bunkerInput (e.g. from switch_relays response). */
   relays?: string[];
 }): Promise<Nip46ConnectResult> {
@@ -365,6 +458,9 @@ export async function connectNip46WithBunkerInput(input: {
 
   const signer = new Nip46Signer({ pool, inner });
   signer.setStatus("ready");
+  if (input.skipValidation) {
+    return { signer, pubkey: bp.pubkey };
+  }
   const pubkey = await Promise.race([signer.getPublicKey(), timeout]);
 
   return { signer, pubkey };
@@ -417,6 +513,12 @@ export async function connectNip46ReconnectWithStoredNostrConnect(input: {
   bunkerPointer?: StoredBunkerPointer;
   pool?: SimplePool;
   timeoutMs?: number;
+  /**
+   * When true, skip the `getPublicKey()` validation round-trip and return
+   * the stored signer pubkey instead. See `connectNip46WithBunkerInput` for
+   * the same rationale.
+   */
+  skipValidation?: boolean;
 }): Promise<Nip46ConnectResult> {
   const pool = input.pool ?? getSharedPool();
   const bp: StoredBunkerPointer = input.bunkerPointer
@@ -445,6 +547,9 @@ export async function connectNip46ReconnectWithStoredNostrConnect(input: {
   const inner = BunkerSigner.fromBunker(input.clientSecretKey, bp, { pool });
   const signer = new Nip46Signer({ pool, inner });
   signer.setStatus("ready");
+  if (input.skipValidation) {
+    return { signer, pubkey: bp.pubkey };
+  }
   const timeoutMs = input.timeoutMs ?? 15_000;
   const timeout = new Promise<never>((_resolve, reject) =>
     setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), timeoutMs)

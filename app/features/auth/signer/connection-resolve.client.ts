@@ -84,8 +84,14 @@ export async function resolveNip46SignerFromConfig(
     const signer = result.signer;
     setCachedSigner(signer);
 
-    const pubkey = await signer.getPublicKey();
+    // `createNip46SignerFromStoredConfig` runs in `skipValidation` mode on
+    // cold rebuild and returns the bunker pointer pubkey rather than doing
+    // a second `get_public_key` RPC. For session metadata we prefer the
+    // user pubkey we already captured at login, falling back to the bunker
+    // pubkey only when no metadata exists yet (first reconnect after a
+    // partial setup).
     const activeConnection = getActiveConnection();
+    const pubkey = activeConnection?.metadata.pubkey ?? result.pubkey;
     if (activeConnection) {
       updateSession(activeConnection.id, {
         metadata: {

@@ -29,6 +29,16 @@ the public API stays stable.
   was thrown away because the persisted `cfg.relays` was empty for `bunker_input` configs. Sessions:
   `remote-signer-sessions-types.ts`, `remote-signer-sessions-storage.client.ts`,
   `remote-signer-sessions.client.ts` (API).
+- **NIP-46 RPC layer (`Nip46Signer` in `app/features/auth/nostr-signer.client.ts`):** every RPC
+  serializes through an internal `rpcLock` and refreshes the inner `BunkerSigner`'s REQ subscription
+  before sending the request. `nostr-tools`' `BunkerSigner` keeps a single long-lived REQ that
+  drifts in real use (relay reconnect with `since` filters, idle remote signer, etc.) and silently
+  drops replies; that's the bug behind "I had to stop & restart the Primal session before the post
+  would publish". Mirroring `@nostrify/nostrify`'s `NConnectSigner` pattern (one fresh REQ per RPC)
+  guarantees a live listener for the bunker reply on every call. Cold rebuilds via
+  `createNip46SignerFromStoredConfig` use `skipValidation: true` so reconstruction is RPC-free — the
+  stored bunker pubkey is trusted, the user's first `signEvent` does the only round-trip, and the
+  bootstrap warm-up cannot race the user's click for the bunker's response.
 
 ## Public API
 

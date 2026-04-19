@@ -1,6 +1,13 @@
 /**
  * Create NIP-46 signer from stored config (bunker or Nostr Connect reconnect).
  * Used by getActiveSigner and tryBackgroundReconnect.
+ *
+ * On cold rebuild we deliberately skip the `getPublicKey()` validation
+ * round-trip. The original login already proved this bunker works, the
+ * stored bunker pointer is authoritative, and a probe RPC here just races
+ * the user's first `signEvent` for the bunker's reply over the per-RPC
+ * subscription. `@nostrify`'s `NConnectSigner` (used by Ditto) follows the
+ * same "don't probe on construct" pattern.
  */
 
 import type { SimplePool } from "nostr-tools";
@@ -30,6 +37,7 @@ export async function createNip46SignerFromStoredConfig(
       pool,
       timeoutMs,
       skipConnect: true,
+      skipValidation: true,
       relays: config.relays,
     });
   }
@@ -41,6 +49,7 @@ export async function createNip46SignerFromStoredConfig(
       relays: config.bunkerPointer.relays,
       pool,
       timeoutMs,
+      skipValidation: true,
     });
   }
   if (config.signerPubkey && config.relays.length > 0) {
@@ -50,6 +59,7 @@ export async function createNip46SignerFromStoredConfig(
       relays: config.relays,
       pool,
       timeoutMs,
+      skipValidation: true,
     });
   }
   throw new Error(
