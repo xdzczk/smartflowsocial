@@ -5,7 +5,6 @@
 
 import { parseBunkerInput as nip46ParseBunkerInput } from "nostr-tools/nip46";
 
-import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
 import { BRAND_NAME } from "~/lib/brand";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 
@@ -14,6 +13,11 @@ import {
   getNostrConnectAppMetadata,
 } from "./nostr-signer.client";
 import { parseRelayList } from "./parse-relay-list";
+import {
+  clearPendingNip46Handoff,
+  readPendingNip46Handoff,
+  writePendingNip46Handoff,
+} from "./pending-nip46-storage.client";
 
 export { parseRelayList };
 
@@ -54,6 +58,11 @@ export function createNip46NostrConnectUri(relays: string[]) {
   });
 }
 
+/**
+ * Persisted via the shared `pending-nip46-storage` helper so iOS Safari can't
+ * drop the handoff between Primal and our HTTPS callback when the deep-link
+ * return restores the tab in a fresh browsing context.
+ */
 const PENDING_RECONNECT_STORAGE_KEY = "__smartflow_pending_reconnect_nip46_v1";
 
 export interface PendingReconnect {
@@ -63,25 +72,7 @@ export interface PendingReconnect {
 }
 
 export function getPendingReconnect(): PendingReconnect | null {
-  try {
-    const raw =
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem(PENDING_RECONNECT_STORAGE_KEY)
-        : null;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as {
-      uri: string;
-      clientSecretKeyHex: string;
-      relays: string[];
-    };
-    return {
-      uri: parsed.uri,
-      clientSecretKey: parseSecretKeyHex(parsed.clientSecretKeyHex),
-      relays: parsed.relays,
-    };
-  } catch {
-    return null;
-  }
+  return readPendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY);
 }
 
 export function setPendingReconnect(
@@ -89,29 +80,13 @@ export function setPendingReconnect(
   clientSecretKey: Uint8Array,
   relays: string[]
 ): void {
-  const payload = {
+  writePendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY, {
     uri,
-    clientSecretKeyHex: serializeSecretKey(clientSecretKey),
+    clientSecretKey,
     relays,
-  };
-  try {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(
-        PENDING_RECONNECT_STORAGE_KEY,
-        JSON.stringify(payload)
-      );
-    }
-  } catch {
-    // ignore
-  }
+  });
 }
 
 export function clearPendingReconnectStorage(): void {
-  try {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.removeItem(PENDING_RECONNECT_STORAGE_KEY);
-    }
-  } catch {
-    // ignore
-  }
+  clearPendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY);
 }

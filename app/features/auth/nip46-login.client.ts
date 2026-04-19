@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from "react";
 
-import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
 import { BRAND_NAME } from "~/lib/brand";
 import {
   canAttemptCircuitBreaker,
@@ -20,8 +19,18 @@ import {
 import { persistNip46LoginSession } from "./nip46/nip46-persist.client";
 import type { NostrSigner } from "./nostr-signer.client";
 import { parseRelayList } from "./parse-relay-list";
+import {
+  clearPendingNip46Handoff,
+  readPendingNip46Handoff,
+  writePendingNip46Handoff,
+} from "./pending-nip46-storage.client";
 
 const SUBSCRIPTION_CLOSED_ERROR = "subscription closed";
+/**
+ * Persisted via the shared `pending-nip46-storage` helper so iOS Safari can't
+ * drop the handoff between Primal and our HTTPS callback (see helper comment
+ * for the full root-cause story).
+ */
 const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
 
 export type Nip46LoginStatus = "idle" | "loading" | "error";
@@ -91,31 +100,12 @@ export function useNip46Login({
 
   const getPendingNostrConnect = useCallback(() => {
     if (pendingNostrConnectRef.current) return pendingNostrConnectRef.current;
-    try {
-      const raw = sessionStorage.getItem(PENDING_NIP46_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as {
-        uri: string;
-        clientSecretKeyHex: string;
-        relays: string[];
-      };
-      return {
-        uri: parsed.uri,
-        clientSecretKey: parseSecretKeyHex(parsed.clientSecretKeyHex),
-        relays: parsed.relays,
-      };
-    } catch {
-      return null;
-    }
+    return readPendingNip46Handoff(PENDING_NIP46_STORAGE_KEY);
   }, []);
 
   const clearPendingNostrConnectStorage = useCallback(() => {
     pendingNostrConnectRef.current = null;
-    try {
-      sessionStorage.removeItem(PENDING_NIP46_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    clearPendingNip46Handoff(PENDING_NIP46_STORAGE_KEY);
   }, []);
 
   const setNostrConnectUri = useCallback((uri: string | null) => {
@@ -252,20 +242,7 @@ export function useNip46Login({
               relays: [...relaysToClose],
             };
             pendingNostrConnectRef.current = pending;
-            try {
-              sessionStorage.setItem(
-                PENDING_NIP46_STORAGE_KEY,
-                JSON.stringify({
-                  uri: pending.uri,
-                  clientSecretKeyHex: serializeSecretKey(
-                    pending.clientSecretKey
-                  ),
-                  relays: pending.relays,
-                })
-              );
-            } catch {
-              // ignore
-            }
+            writePendingNip46Handoff(PENDING_NIP46_STORAGE_KEY, pending);
             let didCancel = false;
             cancelRef.current = {
               cancel: () => {
@@ -441,18 +418,7 @@ export function useNip46Login({
     (uri: string, clientSecretKey: Uint8Array, relays: string[]) => {
       const pending = { uri, clientSecretKey, relays };
       pendingNostrConnectRef.current = pending;
-      try {
-        sessionStorage.setItem(
-          PENDING_NIP46_STORAGE_KEY,
-          JSON.stringify({
-            uri: pending.uri,
-            clientSecretKeyHex: serializeSecretKey(pending.clientSecretKey),
-            relays: pending.relays,
-          })
-        );
-      } catch {
-        // ignore
-      }
+      writePendingNip46Handoff(PENDING_NIP46_STORAGE_KEY, pending);
       setNostrConnectUriState(uri);
     },
     []

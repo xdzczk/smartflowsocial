@@ -35,23 +35,30 @@ import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 
 describe("reconnect-uri", () => {
   const sessionStore: Record<string, string> = {};
-  const sessionStorageMock = {
-    getItem: (key: string) => sessionStore[key] ?? null,
+  const localStore: Record<string, string> = {};
+  const makeStorageMock = (store: Record<string, string>) => ({
+    getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => {
-      sessionStore[key] = value;
+      store[key] = value;
     },
     removeItem: (key: string) => {
-      delete sessionStore[key];
+      delete store[key];
     },
-  };
+  });
+  const sessionStorageMock = makeStorageMock(sessionStore);
+  const localStorageMock = makeStorageMock(localStore);
 
   beforeEach(() => {
     vi.mocked(isStandalonePWA).mockReturnValue(false);
     Object.keys(sessionStore).forEach((k) => delete sessionStore[k]);
+    Object.keys(localStore).forEach((k) => delete localStore[k]);
     if (typeof globalThis !== "undefined") {
       (
         globalThis as unknown as { sessionStorage?: typeof sessionStorageMock }
       ).sessionStorage = sessionStorageMock;
+      (
+        globalThis as unknown as { localStorage?: typeof localStorageMock }
+      ).localStorage = localStorageMock;
     }
   });
 
@@ -60,6 +67,7 @@ describe("reconnect-uri", () => {
     if (typeof globalThis !== "undefined") {
       delete (globalThis as unknown as { sessionStorage?: unknown })
         .sessionStorage;
+      delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
     }
   });
 
@@ -185,7 +193,7 @@ describe("reconnect-uri", () => {
   });
 
   describe("getPendingReconnect / setPendingReconnect", () => {
-    it("returns null when sessionStorage has no key", () => {
+    it("returns null when neither storage has the key", () => {
       expect(getPendingReconnect()).toBeNull();
     });
 
@@ -209,17 +217,68 @@ describe("reconnect-uri", () => {
       expect(got!.clientSecretKey).toBeInstanceOf(Uint8Array);
       expect(Array.from(got!.clientSecretKey)).toEqual([0xab]);
     });
+
+    it("writes to localStorage as the durable primary store", () => {
+      const uri = "nostrconnect://primal";
+      const key = new Uint8Array([0x42]);
+      const relays = ["wss://relay.example"];
+      setPendingReconnect(uri, key, relays);
+      const raw = localStorageMock.getItem(
+        "__smartflow_pending_reconnect_nip46_v1"
+      );
+      expect(raw).not.toBeNull();
+      const parsed = JSON.parse(raw!) as { uri: string; expiresAt: number };
+      expect(parsed.uri).toBe(uri);
+      expect(parsed.expiresAt).toBeGreaterThan(Date.now());
+    });
+
+    it("recovers from sessionStorage when localStorage is wiped (iOS Safari deep-link case)", () => {
+      const uri = "nostrconnect://x";
+      const key = new Uint8Array([0xab]);
+      setPendingReconnect(uri, key, ["wss://r.com"]);
+      Object.keys(localStore).forEach((k) => delete localStore[k]);
+      const got = getPendingReconnect();
+      expect(got).not.toBeNull();
+      expect(got!.uri).toBe(uri);
+    });
+
+    it("returns null and clears the entry once past its TTL", () => {
+      setPendingReconnect("nostrconnect://x", new Uint8Array([1]), ["wss://r"]);
+      const stored = JSON.parse(
+        localStorageMock.getItem("__smartflow_pending_reconnect_nip46_v1") ?? ""
+      ) as { expiresAt: number };
+      const expired = JSON.stringify({ ...stored, expiresAt: Date.now() - 1 });
+      localStorageMock.setItem(
+        "__smartflow_pending_reconnect_nip46_v1",
+        expired
+      );
+      sessionStorageMock.setItem(
+        "__smartflow_pending_reconnect_nip46_v1",
+        expired
+      );
+      expect(getPendingReconnect()).toBeNull();
+      expect(
+        localStorageMock.getItem("__smartflow_pending_reconnect_nip46_v1")
+      ).toBeNull();
+      expect(
+        sessionStorageMock.getItem("__smartflow_pending_reconnect_nip46_v1")
+      ).toBeNull();
+    });
   });
 
   describe("clearPendingReconnectStorage", () => {
-    it("removes key from sessionStorage", () => {
+    it("removes key from both storages", () => {
       sessionStorageMock.setItem(
         "__smartflow_pending_reconnect_nip46_v1",
         "{}"
       );
+      localStorageMock.setItem("__smartflow_pending_reconnect_nip46_v1", "{}");
       clearPendingReconnectStorage();
       expect(
         sessionStorageMock.getItem("__smartflow_pending_reconnect_nip46_v1")
+      ).toBeNull();
+      expect(
+        localStorageMock.getItem("__smartflow_pending_reconnect_nip46_v1")
       ).toBeNull();
     });
   });
