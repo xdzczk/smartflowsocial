@@ -11,6 +11,7 @@ export {
   getActiveSigner,
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
+  markNip46TransportStale,
   resetCachedSigner,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,

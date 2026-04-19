@@ -12,6 +12,7 @@
 import { nip19 } from "nostr-tools";
 import { toast } from "react-hot-toast";
 
+import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   addConnectionLog,
   emitRemoteSignerTimeoutEvent,
@@ -351,9 +352,18 @@ async function handleConfiguredSignerError(
   }
 }
 
-/** When false, do not clear the signer cache on error (e.g. during bulk sign so one failure doesn't break other in-flight signs). */
 export interface SignEventOptions {
+  /** When false, do not clear the signer cache on error (e.g. during bulk sign so one failure doesn't break other in-flight signs). */
   clearCacheOnError?: boolean;
+  /**
+   * Pre-resolved signer to use for this call. When provided we skip
+   * `getActiveSigner` entirely and sign against this instance directly.
+   * Use this for bulk loops so a single signer is reused across N events
+   * instead of forcing a cache lookup (and potentially a full rebuild) per
+   * iteration. The caller is responsible for acquiring the signer once and
+   * for re-acquiring after a reconnect.
+   */
+  signer?: NostrSigner;
 }
 
 async function trySignWithConfiguredSigner(
@@ -370,20 +380,29 @@ async function trySignWithConfiguredSigner(
         : null;
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
-    const getSignerPromise = signerManager.getActiveSigner();
-    const activeSigner = await withTimeout(
-      getSignerPromise,
-      GET_ACTIVE_SIGNER_TIMEOUT_MS,
-      "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
-    ).catch(async (err) => {
-      if (clearCacheOnError && err instanceof RemoteSignerTimeoutError) {
-        await resetSignerCacheBestEffort();
-      }
-      throw err;
-    });
+    // Caller-provided signer (e.g. bulk-sign loop) bypasses the cache
+    // lookup so a 50-post loop reuses one BunkerSigner instance instead of
+    // re-entering getActiveSigner per iteration.
+    let activeSigner: NostrSigner | null;
+    if (options?.signer) {
+      activeSigner = options.signer;
+    } else {
+      const getSignerPromise = signerManager.getActiveSigner();
+      activeSigner = await withTimeout(
+        getSignerPromise,
+        GET_ACTIVE_SIGNER_TIMEOUT_MS,
+        "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
+      ).catch(async (err) => {
+        if (clearCacheOnError && err instanceof RemoteSignerTimeoutError) {
+          await resetSignerCacheBestEffort();
+        }
+        throw err;
+      });
+    }
     if (prefersRemoteSigner) {
       debugSignerTrace("Configured signer resolved", {
         hasSigner: Boolean(activeSigner),
+        injected: Boolean(options?.signer),
       });
     }
 

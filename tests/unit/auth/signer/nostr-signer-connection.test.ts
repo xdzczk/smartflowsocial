@@ -9,7 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   cacheNip46SignerFromLogin,
+  cancelSignerInFlight,
   getActiveSigner,
+  markNip46TransportStale,
   teardownActiveNip46Signer,
 } from "~/features/auth/signer/nostr-signer-connection.client";
 import type { ActiveSignerConfig } from "~/features/auth/signer/nostr-signer-storage.client";
@@ -88,8 +90,16 @@ vi.mock("~/features/auth/signer/nostr-signer-keys.client", () => ({
   hexToBytes: (hex: string) => new Uint8Array(hex.length >> 1),
 }));
 
+vi.mock("~/features/nostr/shared-pool.client", () => ({
+  getSharedPool: vi.fn(() => ({})),
+}));
+
 describe("nostr-signer-connection", () => {
   beforeEach(() => {
+    // Reset module-level staleness flag so tests don't bleed state.
+    // Done BEFORE clearAllMocks so the cancel call's interactions with the
+    // mocked cache module don't pollute per-test counters.
+    cancelSignerInFlight();
     vi.clearAllMocks();
     (
       mockCachedSigner.getPublicKey as ReturnType<typeof vi.fn>
@@ -106,11 +116,137 @@ describe("nostr-signer-connection", () => {
       expect(result).toBeNull();
     });
 
-    it("returns the cached signer without consulting transport health", async () => {
+    it("returns the cached signer when allowReconnect is false (probe path)", async () => {
+      const nip46Config: ActiveSignerConfig = {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+      };
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
       mockGetCachedSigner.mockReturnValue(mockCachedSigner);
+      const { resolveNip46SignerFromConfig } =
+        await import("~/features/auth/signer/connection-resolve.client");
       const result = await getActiveSigner({ allowReconnect: false });
       expect(result).toBe(mockCachedSigner);
+      // Probe path must never trigger a rebuild round-trip.
+      expect(resolveNip46SignerFromConfig).not.toHaveBeenCalled();
       expect(mockResetCachedSigner).not.toHaveBeenCalled();
+    });
+
+    it("returns cached nip46 signer without rebuilding when transport is not stale", async () => {
+      const nip46Config: ActiveSignerConfig = {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+      };
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
+      const cached = {
+        ...mockCachedSigner,
+        type: "nip46",
+      } as unknown as NostrSigner;
+      mockGetCachedSigner.mockReturnValue(cached);
+
+      const { createNip46SignerFromStoredConfig } =
+        await import("~/features/auth/signer/connection-connect.client");
+      const { resolveNip46SignerFromConfig } =
+        await import("~/features/auth/signer/connection-resolve.client");
+
+      const result = await getActiveSigner({ allowReconnect: true });
+
+      expect(result).toBe(cached);
+      // Happy path: no rebuild, no full resolve.
+      expect(createNip46SignerFromStoredConfig).not.toHaveBeenCalled();
+      expect(resolveNip46SignerFromConfig).not.toHaveBeenCalled();
+      expect(mockSetCachedSigner).not.toHaveBeenCalled();
+    });
+
+    it("rebuilds via createNip46SignerFromStoredConfig after markNip46TransportStale", async () => {
+      const nip46Config: ActiveSignerConfig = {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+      };
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
+      const previousClose = vi.fn().mockResolvedValue(undefined);
+      const previousSigner = {
+        ...mockCachedSigner,
+        type: "nip46",
+        close: previousClose,
+      } as unknown as NostrSigner;
+      mockGetCachedSigner.mockReturnValue(previousSigner);
+
+      const freshSigner = {
+        type: "nip46",
+        getPublicKey: vi.fn().mockResolvedValue(MOCK_SIGNER_HEX_PUBKEY),
+        close: vi.fn().mockResolvedValue(undefined),
+      } as unknown as NostrSigner;
+      const { createNip46SignerFromStoredConfig } =
+        await import("~/features/auth/signer/connection-connect.client");
+      (
+        createNip46SignerFromStoredConfig as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        signer: freshSigner,
+        pubkey: MOCK_SIGNER_HEX_PUBKEY,
+      });
+      const { resolveNip46SignerFromConfig } =
+        await import("~/features/auth/signer/connection-resolve.client");
+
+      // Simulate bfcache resume / long-hidden / explicit error: flip the
+      // staleness flag, then ask for the signer.
+      markNip46TransportStale("test_bfcache_resume");
+      const result = await getActiveSigner({ allowReconnect: true });
+
+      expect(result).toBe(freshSigner);
+      expect(createNip46SignerFromStoredConfig).toHaveBeenCalledTimes(1);
+      // Silent-rebuild path: the full resolve (with session-metadata side
+      // effects) must NOT run when we already have a NIP-46 cached signer.
+      expect(resolveNip46SignerFromConfig).not.toHaveBeenCalled();
+      expect(mockSetCachedSigner).toHaveBeenCalledWith(freshSigner);
+    });
+
+    it("clears the staleness flag after a successful rebuild so the next call reuses the cache", async () => {
+      const nip46Config: ActiveSignerConfig = {
+        type: "nip46",
+        method: "bunker_input",
+        bunkerInput: "x",
+        clientSecretKeyHex: "ab",
+      };
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
+      const previousSigner = {
+        ...mockCachedSigner,
+        type: "nip46",
+        close: vi.fn().mockResolvedValue(undefined),
+      } as unknown as NostrSigner;
+      const freshSigner = {
+        type: "nip46",
+        getPublicKey: vi.fn().mockResolvedValue(MOCK_SIGNER_HEX_PUBKEY),
+        close: vi.fn().mockResolvedValue(undefined),
+      } as unknown as NostrSigner;
+
+      const { createNip46SignerFromStoredConfig } =
+        await import("~/features/auth/signer/connection-connect.client");
+
+      // First call: stale → rebuild.
+      mockGetCachedSigner.mockReturnValue(previousSigner);
+      (
+        createNip46SignerFromStoredConfig as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        signer: freshSigner,
+        pubkey: MOCK_SIGNER_HEX_PUBKEY,
+      });
+      markNip46TransportStale("test");
+      await getActiveSigner({ allowReconnect: true });
+      expect(createNip46SignerFromStoredConfig).toHaveBeenCalledTimes(1);
+
+      // Second call: cache returns the freshly installed signer; flag is
+      // clear → no further rebuild.
+      mockGetCachedSigner.mockReturnValue(freshSigner);
+      const second = await getActiveSigner({ allowReconnect: true });
+      expect(second).toBe(freshSigner);
+      expect(createNip46SignerFromStoredConfig).toHaveBeenCalledTimes(1);
     });
 
     it("returns nip07 signer when config is nip07 and cache empty", async () => {

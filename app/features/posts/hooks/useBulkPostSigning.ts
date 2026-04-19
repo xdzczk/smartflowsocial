@@ -1,8 +1,10 @@
 import { type FetcherWithComponents } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   cancelSignerInFlight,
+  getActiveSigner,
   setSigningInProgress,
 } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
@@ -207,6 +209,15 @@ export function useBulkPostSigning({
       };
       setSigningProgress({ current: 0, total: preparedEvents.length });
 
+      // Acquire the signer once and reuse it across the loop. Otherwise
+      // every iteration re-enters `getActiveSigner`, which after a bfcache
+      // resume / long-hidden visibility flip would rebuild a fresh
+      // `BunkerSigner` per post (50 posts → 50 extra REQ subscriptions
+      // against the bunker relay, hitting subscription quotas and adding
+      // hundreds of ms per post). Holding the reference here also makes
+      // the loop immune to invalidation that fires mid-loop.
+      const signer = await getActiveSigner();
+
       const signed: SignedEntryWithIndex[] = [];
       let failedIndices: number[] = [];
 
@@ -218,7 +229,7 @@ export function useBulkPostSigning({
         try {
           const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
             eventData.events,
-            { clearCacheOnError: false }
+            { clearCacheOnError: false, signer: signer ?? undefined }
           );
           signed.push({
             originalIndex: index,
@@ -259,6 +270,10 @@ export function useBulkPostSigning({
           total: preparedEvents.length,
         });
         await new Promise((r) => setTimeout(r, 1500));
+        // Re-acquire the signer for the second pass: the first pass may
+        // have hit a transport hiccup, and `getActiveSigner` will pick up
+        // any staleness flag that was raised in the meantime.
+        const retrySigner: NostrSigner | null = await getActiveSigner();
         const stillFailed: number[] = [];
         for (const index of failedIndices) {
           const ev = preparedEvents[index];
@@ -266,7 +281,10 @@ export function useBulkPostSigning({
           try {
             const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
               ev.events,
-              { clearCacheOnError: false }
+              {
+                clearCacheOnError: false,
+                signer: retrySigner ?? undefined,
+              }
             );
             signed.push({
               originalIndex: index,
@@ -337,13 +355,16 @@ export function useBulkPostSigning({
     const total = failedIndices.length;
     setSigningProgress({ current: 0, total });
     let current = 0;
+    // Acquire signer once for the retry batch — same rationale as the
+    // initial pass.
+    const signer = await getActiveSigner();
     for (const index of failedIndices) {
       const eventData = preparedEvents[index];
       if (!eventData) continue;
       try {
         const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
           eventData.events,
-          { clearCacheOnError: false }
+          { clearCacheOnError: false, signer: signer ?? undefined }
         );
         newSigned.push({
           originalIndex: index,
