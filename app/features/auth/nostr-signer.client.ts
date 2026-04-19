@@ -127,6 +127,101 @@ const NOSTR_CONNECT_KIND = 24_133;
 /** Hard cap on how long we'll wait for the relay to acknowledge our REQ. */
 const REQ_READY_TIMEOUT_MS = 5_000;
 
+/* ------------------------------------------------------------------------ */
+/*                       NIP-46 diagnostic logging                          */
+/* ------------------------------------------------------------------------ */
+/*
+ * TEMPORARY: always-on browser-side log of every NIP-46 EVENT, OK ack, REQ
+ * subscription, EOSE, CLOSED, and dispatched event. Used to capture wire-
+ * level evidence for the iOS-Safari cold-reopen sign timeout bug. Open
+ * Safari Web Inspector (Develop → <iPhone> → <SmartFlowSocial>), filter
+ * console for `[nip46`, reproduce the bug, then send the captured log.
+ *
+ * Gated on `typeof window` so vitest (node env) stays silent. Remove the
+ * `nip46log`, `createLoggingPool`, and their call sites once the underlying
+ * bug is identified and fixed. Search for `[nip46-diag]` to find every
+ * touch point.
+ */
+
+/* eslint-disable no-console -- diagnostic logging, see block comment above */
+
+function nip46log(label: string, data?: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  const ts = new Date().toISOString().slice(11, 23);
+  if (data === undefined) {
+    console.log(`[nip46 ${ts}] ${label}`);
+  } else {
+    console.log(`[nip46 ${ts}] ${label}`, data);
+  }
+}
+
+interface PublishableEvent {
+  id: string;
+  kind: number;
+  pubkey: string;
+  created_at: number;
+  tags: string[][];
+  content: string;
+}
+
+/**
+ * [nip46-diag] Wraps a `SimplePool` so every `publish()` call emits a log
+ * line for the EVENT going out plus per-relay OK / FAIL acks. Returns a
+ * Proxy; everything except `publish` is forwarded unchanged. Diagnostic
+ * only — see block comment above `nip46log`.
+ */
+function createLoggingPool(pool: SimplePool, label: string): SimplePool {
+  if (typeof window === "undefined") return pool;
+  return new Proxy(pool, {
+    get(target, prop, receiver) {
+      if (prop === "publish") {
+        return (relays: string[], event: PublishableEvent) => {
+          nip46log(`${label} publish`, {
+            eventId: event.id,
+            kind: event.kind,
+            createdAt: event.created_at,
+            tags: event.tags,
+            contentLen: event.content.length,
+            relays,
+          });
+          const publishFn = (
+            target as unknown as {
+              publish: (
+                r: string[],
+                e: PublishableEvent
+              ) => Array<Promise<string>>;
+            }
+          ).publish;
+          const promises = publishFn.call(target, relays, event);
+          promises.forEach((p, i) => {
+            const relay = relays[i] ?? "?";
+            void (async () => {
+              try {
+                const reason = await p;
+                nip46log(`${label} publish-ok`, {
+                  eventId: event.id,
+                  relay,
+                  reason,
+                });
+              } catch (err: unknown) {
+                nip46log(`${label} publish-fail`, {
+                  eventId: event.id,
+                  relay,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              }
+            })();
+          });
+          return promises;
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+}
+
+/* eslint-enable no-console */
+
 /**
  * Decoded NIP-46 response payload. `result === "auth_url"` is a transient
  * notification (the bunker is asking the user to approve via `error` URL),
@@ -175,9 +270,34 @@ export class Nip46Signer implements NostrSigner {
    */
   private rpcLock: Promise<unknown> = Promise.resolve();
 
+  /** [nip46-diag] short-id label for log lines, see block comment above. */
+  private readonly diagLabel: string;
+
   constructor(input: { pool: SimplePool; inner: BunkerSigner }) {
     this.pool = input.pool;
     this.inner = input.inner;
+
+    // [nip46-diag] Wrap inner.pool so BunkerSigner's own publish calls show
+    // up in the wire log. Our direct subscribe() in refreshBunkerSubscription
+    // is logged inline. Remove with the rest of the diag block.
+    //
+    // The `bp`/`pool` accesses are guarded with optional chaining because
+    // some unit tests construct Nip46Signer with a partial `inner` mock that
+    // doesn't populate the BunkerSigner internals. In production both
+    // fields are always set by the time `Nip46Signer` is constructed
+    // (fromBunker/fromURI sets them before returning).
+    const innerForDiag = this.inner as unknown as Partial<
+      BunkerSignerInternals & { pool: SimplePool }
+    >;
+    const bunkerShortId = innerForDiag.bp?.pubkey.slice(0, 8) ?? "????????";
+    this.diagLabel = `signer:${bunkerShortId}`;
+    nip46log(`${this.diagLabel} created`, {
+      bunkerPubkey: innerForDiag.bp?.pubkey,
+      relays: innerForDiag.bp?.relays,
+    });
+    if (innerForDiag.pool) {
+      innerForDiag.pool = createLoggingPool(innerForDiag.pool, this.diagLabel);
+    }
   }
 
   getStatus(): SignerStatus {
@@ -237,6 +357,7 @@ export class Nip46Signer implements NostrSigner {
     const oldCloser = inner.subCloser;
     inner.subCloser = undefined;
     if (oldCloser) {
+      nip46log(`${this.diagLabel} sub:close-prev`);
       try {
         await oldCloser.close("nip46:per-rpc-refresh");
       } catch {
@@ -250,6 +371,15 @@ export class Nip46Signer implements NostrSigner {
     const listeners = inner.listeners;
     const waitingForAuth = inner.waitingForAuth;
     const onauth = inner.params?.onauth;
+    const diagLabel = this.diagLabel;
+    nip46log(`${diagLabel} sub:open`, {
+      relays: inner.bp.relays,
+      filter: {
+        kinds: [NOSTR_CONNECT_KIND],
+        authors: [inner.bp.pubkey],
+        "#p": [clientPubkey],
+      },
+    });
 
     let resolveReady: () => void = () => {
       // assigned below; placeholder satisfies the no-useless-undefined lint
@@ -266,15 +396,28 @@ export class Nip46Signer implements NostrSigner {
         "#p": [clientPubkey],
       },
       {
-        onevent: (event: { content: string }) => {
+        onevent: (event: { content: string; pubkey?: string; id?: string }) => {
           let decoded: BunkerResponseEnvelope;
           try {
             const plaintext = nip44Decrypt(event.content, convKey);
             decoded = JSON.parse(plaintext) as BunkerResponseEnvelope;
-          } catch {
+          } catch (err) {
+            nip46log(`${diagLabel} sub:event-decrypt-fail`, {
+              eventId: event.id,
+              eventPubkey: event.pubkey,
+              error: err instanceof Error ? err.message : String(err),
+            });
             return;
           }
           const { id, result, error } = decoded;
+          nip46log(`${diagLabel} sub:event`, {
+            relayEventId: event.id,
+            rpcId: id,
+            result:
+              typeof result === "string" ? result.slice(0, 64) : undefined,
+            error: typeof error === "string" ? error.slice(0, 80) : undefined,
+            knownListener: id ? Boolean(listeners[id]) : false,
+          });
           if (!id) return;
 
           if (result === "auth_url" && waitingForAuth[id]) {
@@ -299,9 +442,11 @@ export class Nip46Signer implements NostrSigner {
           delete listeners[id];
         },
         oneose: () => {
+          nip46log(`${diagLabel} sub:eose`);
           resolveReady();
         },
-        onclose: () => {
+        onclose: (reason?: string) => {
+          nip46log(`${diagLabel} sub:close`, { reason });
           // Mirror BunkerSigner's own onclose so it sees the sub is gone
           // (e.g. relay-initiated close) and rebuilds on the next RPC.
           if (inner.subCloser === closer) {
@@ -318,15 +463,23 @@ export class Nip46Signer implements NostrSigner {
     inner.isOpen = true;
 
     let safetyTimer: ReturnType<typeof setTimeout> | undefined;
+    const readyOutcome = (async (): Promise<"ready"> => {
+      await ready;
+      return "ready";
+    })();
+    const timeoutOutcome = new Promise<"timeout">((resolve) => {
+      safetyTimer = setTimeout(() => resolve("timeout"), REQ_READY_TIMEOUT_MS);
+    });
+    let outcome: "ready" | "timeout";
     try {
-      await Promise.race([
-        ready,
-        new Promise<void>((resolve) => {
-          safetyTimer = setTimeout(resolve, REQ_READY_TIMEOUT_MS);
-        }),
-      ]);
+      outcome = await Promise.race([readyOutcome, timeoutOutcome]);
     } finally {
       if (safetyTimer) clearTimeout(safetyTimer);
+    }
+    if (outcome === "timeout") {
+      nip46log(`${diagLabel} sub:eose-timeout`, {
+        waitedMs: REQ_READY_TIMEOUT_MS,
+      });
     }
   }
 
@@ -343,6 +496,8 @@ export class Nip46Signer implements NostrSigner {
     this.rpcLock = new Promise<void>((resolve) => {
       release = resolve;
     });
+    const startedAt = Date.now();
+    nip46log(`${this.diagLabel} rpc:start`, { method: label, timeoutMs });
     try {
       await previous.catch(() => {
         // Swallow upstream rejections so one failed RPC doesn't poison the
@@ -351,7 +506,7 @@ export class Nip46Signer implements NostrSigner {
       await this.refreshBunkerSubscription();
       let to: ReturnType<typeof setTimeout> | undefined;
       try {
-        return await Promise.race([
+        const result = await Promise.race([
           fn(),
           new Promise<never>((_, reject) => {
             to = setTimeout(
@@ -360,6 +515,18 @@ export class Nip46Signer implements NostrSigner {
             );
           }),
         ]);
+        nip46log(`${this.diagLabel} rpc:done`, {
+          method: label,
+          ms: Date.now() - startedAt,
+        });
+        return result;
+      } catch (err) {
+        nip46log(`${this.diagLabel} rpc:error`, {
+          method: label,
+          ms: Date.now() - startedAt,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw err;
       } finally {
         if (to) clearTimeout(to);
       }
@@ -474,6 +641,7 @@ export class Nip46Signer implements NostrSigner {
     // otherwise; our per-RPC refresh leaves it `undefined` between RPCs.
     // Inline its safe portion (flip `isOpen`, close the sub if any) instead
     // of letting it throw.
+    nip46log(`${this.diagLabel} signer:close`);
     const inner = this.inner as unknown as BunkerSignerInternals;
     inner.isOpen = false;
     const closer = inner.subCloser;
