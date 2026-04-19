@@ -1,5 +1,6 @@
 import type { SimplePool } from "nostr-tools";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
+import { decrypt as nip44Decrypt } from "nostr-tools/nip44";
 import {
   BunkerSigner,
   createNostrConnectURI,
@@ -110,14 +111,45 @@ const NIP46_RPC_TIMEOUTS = {
   switchRelays: 8_000,
 } as const;
 
+/** NIP-46 / Nostr Connect kind. */
+const NOSTR_CONNECT_KIND = 24_133;
+
+/** Hard cap on how long we'll wait for the relay to acknowledge our REQ. */
+const REQ_READY_TIMEOUT_MS = 5_000;
+
+/**
+ * Decoded NIP-46 response payload. `result === "auth_url"` is a transient
+ * notification (the bunker is asking the user to approve via `error` URL),
+ * not the final response, so the listener stays in place until the real
+ * `result` or `error` arrives.
+ */
+interface BunkerResponseEnvelope {
+  id: string;
+  result?: string;
+  error?: string;
+}
+
 /**
  * Internal shape of `nostr-tools` `BunkerSigner` we touch for the per-RPC
- * subscription refresh. Kept narrow so a future upstream change shows up as a
- * compile error instead of a silent runtime miss.
+ * subscription pre-warm. Kept narrow so a future upstream change shows up as
+ * a compile error instead of a silent runtime miss.
+ *
+ * `listeners` and `waitingForAuth` are bag objects shared across every
+ * subscription the bunker opens, so swapping `subCloser` for one we
+ * constructed ourselves keeps the bunker's own RPC dispatch working.
  */
 interface BunkerSignerInternals {
   subCloser?: { close: (reason?: string) => Promise<void> | void };
   isOpen: boolean;
+  listeners: Record<
+    string,
+    { resolve: (value: string) => void; reject: (err: unknown) => void }
+  >;
+  waitingForAuth: Record<string, boolean>;
+  conversationKey: Uint8Array;
+  secretKey: Uint8Array;
+  bp: { pubkey: string; relays: string[]; secret: null | string };
+  params?: { onauth?: (url: string) => void };
 }
 
 export class Nip46Signer implements NostrSigner {
@@ -147,37 +179,144 @@ export class Nip46Signer implements NostrSigner {
   }
 
   /**
-   * Open a fresh REQ subscription on the bunker relays before the next RPC.
+   * Open a fresh REQ subscription on the bunker relays AND wait for the
+   * relay to acknowledge it (EOSE) before letting the next RPC publish its
+   * EVENT.
    *
-   * `nostr-tools`' `BunkerSigner` calls `setupSubscription()` once at
-   * construction and reuses that single long-lived REQ for every
-   * `sendRequest`. In the wild that subscription drifts: the relay socket
-   * reconnects with a `since` filter that skips backlog, the per-relay sub's
-   * `eosed` flag flips and live events are dropped, the remote signer app's
-   * mirror sub goes idle, etc. When that happens the bunker's reply event
-   * lands on the relay but `BunkerSigner.listeners[id]` is never invoked, so
-   * `signEvent` hangs forever — which is exactly the bug users hit when they
-   * have to "stop and start session" in Primal to unstick a sign.
+   * Why this exists:
    *
-   * `@nostrify/nostrify`'s `NConnectSigner.send` (used by Ditto) avoids this
-   * by opening a new REQ per RPC. We mirror that here by clearing
-   * `subCloser` so the next `sendRequest` invokes `setupSubscription()`
-   * again. `BunkerSigner.listeners` lives on the instance (not the
-   * subscription closure), so any in-flight request still resolves through
-   * the new sub, and `BunkerSigner.cachedPubKey` is preserved across
-   * refreshes.
+   * - `nostr-tools`' `BunkerSigner.sendRequest` opens its REQ subscription
+   *   and publishes the EVENT in the same tick, with no synchronization
+   *   between them. The REQ and EVENT race through `pool.subscribe` and
+   *   `pool.publish`, both of which await `ensureRelay` before sending. On
+   *   the wire the order is usually REQ-then-EVENT, but the second sign of
+   *   a session is exactly the case where the bunker's reply can come back
+   *   so quickly that we miss it: the relay processes our EVENT, broadcasts
+   *   to the bunker's mirror sub, the bunker auto-approves (it just saw the
+   *   user approve a moment ago) and publishes its reply, and our sub is
+   *   not yet "live" enough to pick the reply out of backlog. Result: the
+   *   listener for that request id is never invoked and the call hangs
+   *   until our 25s timeout fires.
+   *
+   * - Ditto avoids this with `@nostrify/nostrify`'s `NConnectSigner.send`,
+   *   which has the comment "Ensure the REQ is opened before sending the
+   *   EVENT" and structurally opens the REQ first, awaits a relay
+   *   acknowledgement, and only then publishes.
+   *
+   * What we do here:
+   *
+   * 1. Close any existing `subCloser` (the construction-time one or the
+   *    one left over from the previous RPC).
+   * 2. Open our own `pool.subscribe` with the same filter `BunkerSigner`
+   *    uses, but with an `oneose` callback so we know when the relay has
+   *    finished registering it. The `onevent` decrypts and dispatches into
+   *    `BunkerSigner.listeners` exactly the way the bunker's own subscription
+   *    would, so the bunker's RPC dispatch keeps working unchanged.
+   * 3. Hand the resulting closer to the bunker via `inner.subCloser`. When
+   *    `BunkerSigner.sendRequest` runs next, it sees `subCloser` is already
+   *    set and skips its own `setupSubscription()`, so it goes straight to
+   *    publishing the EVENT — and now the REQ is guaranteed to be live on
+   *    the relay first.
+   * 4. Await the EOSE (with a safety timeout so a relay that never sends
+   *    EOSE doesn't deadlock the signer).
    */
   private async refreshBunkerSubscription(): Promise<void> {
     const inner = this.inner as unknown as BunkerSignerInternals;
     if (!inner.isOpen) return;
-    const closer = inner.subCloser;
-    if (!closer) return;
+
+    const oldCloser = inner.subCloser;
     inner.subCloser = undefined;
+    if (oldCloser) {
+      try {
+        await oldCloser.close("nip46:per-rpc-refresh");
+      } catch {
+        // Best-effort: even if close fails, clearing subCloser ensures we
+        // build the fresh subscription below.
+      }
+    }
+
+    const clientPubkey = getPublicKey(inner.secretKey);
+    const convKey = inner.conversationKey;
+    const listeners = inner.listeners;
+    const waitingForAuth = inner.waitingForAuth;
+    const onauth = inner.params?.onauth;
+
+    let resolveReady: () => void = () => {
+      // assigned below; placeholder satisfies the no-useless-undefined lint
+    };
+    const ready = new Promise<void>((resolve) => {
+      resolveReady = resolve;
+    });
+
+    const closer = this.pool.subscribe(
+      inner.bp.relays,
+      {
+        kinds: [NOSTR_CONNECT_KIND],
+        authors: [inner.bp.pubkey],
+        "#p": [clientPubkey],
+      },
+      {
+        onevent: (event: { content: string }) => {
+          let decoded: BunkerResponseEnvelope;
+          try {
+            const plaintext = nip44Decrypt(event.content, convKey);
+            decoded = JSON.parse(plaintext) as BunkerResponseEnvelope;
+          } catch {
+            return;
+          }
+          const { id, result, error } = decoded;
+          if (!id) return;
+
+          if (result === "auth_url" && waitingForAuth[id]) {
+            delete waitingForAuth[id];
+            if (onauth && typeof error === "string") {
+              try {
+                onauth(error);
+              } catch {
+                // ignore: we don't propagate signer-app callback errors
+              }
+            }
+            return;
+          }
+
+          const handler = listeners[id];
+          if (!handler) return;
+          if (error) {
+            handler.reject(error);
+          } else if (typeof result === "string") {
+            handler.resolve(result);
+          }
+          delete listeners[id];
+        },
+        oneose: () => {
+          resolveReady();
+        },
+        onclose: () => {
+          // Mirror BunkerSigner's own onclose so it sees the sub is gone
+          // (e.g. relay-initiated close) and rebuilds on the next RPC.
+          if (inner.subCloser === closer) {
+            inner.subCloser = undefined;
+          }
+          // Unblock anyone still awaiting `ready` — better to fall through
+          // and let the EVENT publish than to hang on a torn-down sub.
+          resolveReady();
+        },
+      }
+    );
+
+    inner.subCloser = closer;
+    inner.isOpen = true;
+
+    let safetyTimer: ReturnType<typeof setTimeout> | undefined;
     try {
-      await closer.close("nip46:per-rpc-refresh");
-    } catch {
-      // Best-effort: even if close fails, clearing subCloser ensures the next
-      // sendRequest opens a fresh subscription, which is what we want.
+      await Promise.race([
+        ready,
+        new Promise<void>((resolve) => {
+          safetyTimer = setTimeout(resolve, REQ_READY_TIMEOUT_MS);
+        }),
+      ]);
+    } finally {
+      if (safetyTimer) clearTimeout(safetyTimer);
     }
   }
 

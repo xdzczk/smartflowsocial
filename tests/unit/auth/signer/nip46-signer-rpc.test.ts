@@ -1,14 +1,25 @@
 /**
- * Unit tests for `Nip46Signer`'s per-RPC subscription refresh behavior.
+ * Unit tests for `Nip46Signer`'s per-RPC subscription pre-warm.
  *
- * The bug we are guarding against: `nostr-tools`' `BunkerSigner` keeps a
- * single long-lived REQ subscription that drifts in real use (relay
- * reconnects, signer-app idle, etc.). When that happens, replies from the
- * remote signer hit the relay but never reach `BunkerSigner.listeners`, and
- * `signEvent` hangs forever. `@nostrify/nostrify`'s `NConnectSigner.send`
- * (used by Ditto) avoids this by opening a new REQ per RPC. `Nip46Signer`
- * mirrors that here by clearing `subCloser` before each RPC so the next
- * `sendRequest` runs `setupSubscription()` again.
+ * Background: `nostr-tools`' `BunkerSigner` keeps a single long-lived REQ
+ * subscription and publishes the EVENT in the same tick the REQ is opened —
+ * so the bunker's reply can race the relay's REQ acknowledgement. In the wild
+ * that means the second `sign_event` of a session can hang forever:
+ * `BunkerSigner.listeners[id]` never fires because our sub wasn't "live" on
+ * the relay before Primal published its reply.
+ *
+ * `@nostrify/nostrify`'s `NConnectSigner.send` (used by Ditto) avoids this by
+ * opening the REQ first, awaiting it being open, and only then publishing the
+ * EVENT. `Nip46Signer` mirrors that here by:
+ *
+ *   1. Closing whatever `subCloser` the bunker had.
+ *   2. Opening a brand new `pool.subscribe` with an EOSE handler.
+ *   3. Awaiting EOSE before the next `BunkerSigner.sendRequest` runs.
+ *   4. Handing the new closer to the bunker via `inner.subCloser` so its own
+ *      RPC dispatch and `setupSubscription()` short-circuit transparently.
+ *
+ * These tests exercise that exact contract with a fake bunker + fake pool so
+ * we don't need a real relay.
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -19,15 +30,43 @@ interface FakeSubCloser {
   close: ReturnType<typeof vi.fn>;
 }
 
+interface SubscribeParams {
+  oneose?: () => void;
+  onevent?: (event: { content: string }) => void;
+  onclose?: (reason?: string) => void;
+}
+
 interface FakeBunkerSignerInternals {
   subCloser?: FakeSubCloser;
   isOpen: boolean;
+  // Real BunkerSigner fields the per-RPC pre-warm reads. We don't actually
+  // exercise the bytes here; the fake pool stubs out `subscribe` and never
+  // calls `nip44Decrypt`, so any 32-byte buffer works.
+  secretKey: Uint8Array;
+  conversationKey: Uint8Array;
+  bp: { pubkey: string; relays: string[]; secret: null | string };
+  listeners: Record<
+    string,
+    { resolve: (value: string) => void; reject: (err: unknown) => void }
+  >;
+  waitingForAuth: Record<string, boolean>;
+  params: { onauth?: (url: string) => void };
+  // RPC surface
   getPublicKey: ReturnType<typeof vi.fn>;
   signEvent: ReturnType<typeof vi.fn>;
   ping: ReturnType<typeof vi.fn>;
 }
 
-type FakeBunker = FakeBunkerSignerInternals & { __subCloseCalls: string[] };
+type FakeBunker = FakeBunkerSignerInternals & {
+  __subCloseCalls: string[];
+  __subscribeCalls: number;
+};
+
+function makeKey(filler: number): Uint8Array {
+  const k = new Uint8Array(32);
+  k.fill(filler);
+  return k;
+}
 
 function makeFakeBunker(
   overrides: Partial<FakeBunkerSignerInternals> = {}
@@ -41,6 +80,12 @@ function makeFakeBunker(
   const fake: FakeBunker = {
     subCloser,
     isOpen: true,
+    secretKey: makeKey(0x11),
+    conversationKey: makeKey(0x22),
+    bp: { pubkey: "bunker-pubkey", relays: ["wss://test"], secret: null },
+    listeners: {},
+    waitingForAuth: {},
+    params: {},
     getPublicKey: vi.fn().mockResolvedValue("pubkey-hex"),
     signEvent: vi
       .fn()
@@ -50,60 +95,88 @@ function makeFakeBunker(
     ping: vi.fn().mockResolvedValue(undefined),
     ...overrides,
     __subCloseCalls: subCloseCalls,
+    __subscribeCalls: 0,
   };
   return fake;
 }
 
 type SignerCtorInput = ConstructorParameters<typeof Nip46Signer>[0];
 
-function makeSigner(fake: FakeBunkerSignerInternals): Nip46Signer {
-  // The real `Nip46Signer` only touches the bunker through the narrow
-  // `BunkerSignerInternals` interface plus the public `BunkerSigner` RPC
-  // methods. The fake covers both, so a double-cast through `unknown` is
-  // safe here.
-  const inner = fake as unknown as SignerCtorInput["inner"];
-  const pool: SignerCtorInput["pool"] = Object.create(
-    null
-  ) as SignerCtorInput["pool"];
-  return new Nip46Signer({ pool, inner });
+interface FakePool {
+  subscribe: ReturnType<typeof vi.fn>;
 }
 
-describe("Nip46Signer per-RPC subscription refresh", () => {
-  it("closes the existing BunkerSigner subscription before each RPC", async () => {
+function makeFakePool(fake: FakeBunker): FakePool {
+  return {
+    subscribe: vi.fn(
+      (
+        _relays: string[],
+        _filter: Record<string, unknown>,
+        params: SubscribeParams
+      ) => {
+        fake.__subscribeCalls++;
+        // Real relays send EOSE asynchronously; mirror that with a microtask
+        // so the pre-warm awaits a real Promise resolution before publishing.
+        queueMicrotask(() => params.oneose?.());
+        return {
+          close: vi.fn(async (_reason?: string) => {
+            params.onclose?.(_reason);
+          }),
+        };
+      }
+    ),
+  };
+}
+
+function makeSigner(fake: FakeBunker): {
+  signer: Nip46Signer;
+  pool: FakePool;
+} {
+  const inner = fake as unknown as SignerCtorInput["inner"];
+  const pool = makeFakePool(fake);
+  return {
+    signer: new Nip46Signer({
+      pool: pool as unknown as SignerCtorInput["pool"],
+      inner,
+    }),
+    pool,
+  };
+}
+
+describe("Nip46Signer per-RPC subscription pre-warm", () => {
+  it("closes the existing BunkerSigner subscription and opens a fresh one before each RPC", async () => {
     const fake = makeFakeBunker();
-    // Capture the closer up front: `Nip46Signer.refreshBunkerSubscription`
-    // sets `inner.subCloser = undefined` to force the next `sendRequest` to
-    // call `setupSubscription()` again, so the fake's field will be cleared
-    // by the time the RPC resolves.
     const initialCloser = fake.subCloser;
-    const signer = makeSigner(fake);
+    const { signer, pool } = makeSigner(fake);
 
     await signer.getPublicKey();
 
+    expect(initialCloser?.close).toHaveBeenCalledWith("nip46:per-rpc-refresh");
     expect(initialCloser?.close).toHaveBeenCalledTimes(1);
+    expect(pool.subscribe).toHaveBeenCalledTimes(1);
     expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
-    expect(fake.subCloser).toBeUndefined();
-    // Order: close happens before the inner RPC fires so the bunker rebuilds
-    // a fresh REQ for the reply.
+    // After pre-warm, subCloser is the closer we just opened (not undefined),
+    // which is exactly what makes BunkerSigner.sendRequest skip its own
+    // setupSubscription and go straight to publishing the EVENT.
+    expect(fake.subCloser).toBeDefined();
+    expect(fake.subCloser).not.toBe(initialCloser);
+
+    // Order: old close + new subscribe must complete before the inner RPC
+    // fires, otherwise the EVENT could race the REQ on the relay.
     const closeOrder = initialCloser?.close.mock.invocationCallOrder[0] ?? 0;
+    const subscribeOrder = pool.subscribe.mock.invocationCallOrder[0] ?? 0;
     const rpcOrder = fake.getPublicKey.mock.invocationCallOrder[0] ?? 0;
-    expect(closeOrder).toBeLessThan(rpcOrder);
+    expect(closeOrder).toBeLessThan(subscribeOrder);
+    expect(subscribeOrder).toBeLessThan(rpcOrder);
   });
 
   it("refreshes the subscription on every RPC, not just the first", async () => {
     const fake = makeFakeBunker();
     const firstCloser = fake.subCloser;
-    const signer = makeSigner(fake);
+    const { signer, pool } = makeSigner(fake);
 
     await signer.getPublicKey();
-    // After the first refresh, BunkerSigner would normally re-set subCloser
-    // inside its own setupSubscription. Simulate that by re-arming it.
-    const secondCloser: FakeSubCloser = {
-      close: vi.fn(async (reason?: string) => {
-        fake.__subCloseCalls.push(reason ?? "");
-      }),
-    };
-    fake.subCloser = secondCloser;
+    const secondCloser = fake.subCloser;
 
     await signer.signEvent({
       kind: 1,
@@ -111,49 +184,54 @@ describe("Nip46Signer per-RPC subscription refresh", () => {
       created_at: 0,
       tags: [],
     });
+    const thirdCloser = fake.subCloser;
 
     expect(firstCloser?.close).toHaveBeenCalledTimes(1);
-    expect(secondCloser.close).toHaveBeenCalledTimes(1);
+    expect(secondCloser?.close).toHaveBeenCalledTimes(1);
+    expect(secondCloser).not.toBe(firstCloser);
+    expect(thirdCloser).not.toBe(secondCloser);
+    expect(pool.subscribe).toHaveBeenCalledTimes(2);
     expect(fake.signEvent).toHaveBeenCalledTimes(1);
-    expect(fake.__subCloseCalls).toEqual([
-      "nip46:per-rpc-refresh",
-      "nip46:per-rpc-refresh",
-    ]);
   });
 
   it("skips the refresh when the BunkerSigner is closed (isOpen=false)", async () => {
     const fake = makeFakeBunker({ isOpen: false });
-    const signer = makeSigner(fake);
+    const initialCloser = fake.subCloser;
+    const { signer, pool } = makeSigner(fake);
 
     await signer.getPublicKey();
 
-    expect(fake.subCloser?.close).not.toHaveBeenCalled();
+    expect(initialCloser?.close).not.toHaveBeenCalled();
+    expect(pool.subscribe).not.toHaveBeenCalled();
     expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
   });
 
-  it("skips the refresh when there is no subCloser yet", async () => {
+  it("opens a fresh subscription even when there is no prior subCloser", async () => {
     const fake = makeFakeBunker({ subCloser: undefined });
-    const signer = makeSigner(fake);
+    const { signer, pool } = makeSigner(fake);
 
     await expect(signer.getPublicKey()).resolves.toBe("pubkey-hex");
+    expect(pool.subscribe).toHaveBeenCalledTimes(1);
+    expect(fake.subCloser).toBeDefined();
     expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
   });
 
-  it("still proceeds with the RPC if the subscription close throws", async () => {
+  it("still proceeds with the RPC if the previous subscription's close throws", async () => {
     const fake = makeFakeBunker();
     const throwingCloser: FakeSubCloser = {
       close: vi.fn().mockRejectedValue(new Error("relay closed")),
     };
     fake.subCloser = throwingCloser;
 
-    const signer = makeSigner(fake);
+    const { signer, pool } = makeSigner(fake);
 
     await expect(signer.getPublicKey()).resolves.toBe("pubkey-hex");
     expect(throwingCloser.close).toHaveBeenCalledTimes(1);
+    expect(pool.subscribe).toHaveBeenCalledTimes(1);
     expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
   });
 
-  it("serializes concurrent RPCs so a refresh cannot drop another's reply", async () => {
+  it("serializes concurrent RPCs so a pre-warm cannot drop another's reply", async () => {
     const fake = makeFakeBunker();
     const order: string[] = [];
 
@@ -172,7 +250,7 @@ describe("Nip46Signer per-RPC subscription refresh", () => {
         return { ...evt, id: "evt-id", sig: "sig-hex" };
       });
 
-    const signer = makeSigner(fake);
+    const { signer } = makeSigner(fake);
 
     await Promise.all([
       signer.getPublicKey(),
@@ -200,7 +278,7 @@ describe("Nip46Signer per-RPC subscription refresh", () => {
       .mockRejectedValueOnce(new Error("boom"))
       .mockResolvedValueOnce("pubkey-hex");
 
-    const signer = makeSigner(fake);
+    const { signer } = makeSigner(fake);
 
     await expect(signer.getPublicKey()).rejects.toThrow("boom");
     await expect(signer.getPublicKey()).resolves.toBe("pubkey-hex");

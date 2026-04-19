@@ -152,6 +152,38 @@ describe("remote-signer-mock-relay integration", () => {
     }
   });
 
+  // Regression: after a successful first sign, the next sign should also
+  // complete. Per-RPC subscription refresh + ensuring REQ is opened before
+  // EVENT is published is exactly what makes this work; without those, the
+  // second `sign_event` hangs waiting for a reply on a subscription whose
+  // REQ was never delivered before the relay broadcast our EVENT.
+  it("(3b) signs two events in a row on the same signer instance", async () => {
+    const config = buildMockConfig();
+    const { signer } = await createNip46SignerFromStoredConfig(config, {
+      timeoutMs: 10_000,
+    });
+    try {
+      const first = await signer.signEvent({
+        kind: 1,
+        content: "first",
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000),
+      });
+      expect((first as { sig: string }).sig.length).toBeGreaterThan(0);
+
+      const second = await signer.signEvent({
+        kind: 1,
+        content: "second",
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000),
+      });
+      expect((second as { sig: string }).sig.length).toBeGreaterThan(0);
+      expect((second as { content: string }).content).toBe("second");
+    } finally {
+      await signer.close();
+    }
+  }, 30_000);
+
   it("(4) ping succeeds", async () => {
     const config = buildMockConfig();
     const { signer } = await createNip46SignerFromStoredConfig(config, {
