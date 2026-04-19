@@ -22,12 +22,25 @@
  * embedded browsers).
  */
 
-import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
+import {
+  parseSecretKeyHex,
+  serializeSecretKey,
+} from "./signer/nostr-signer-manager.client";
 
 /** Pending handoff TTL: long enough for the user to approve in their signer
  *  app and switch back, short enough that abandoned attempts don't linger
  *  past a normal session window. */
 const PENDING_NIP46_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Single source of truth for the localStorage/sessionStorage key under
+ * which the pending NIP-46 handoff is persisted. Used by both the login
+ * panel (to write/read/clear during the deep-link round-trip) and by the
+ * boot-time signer warm-up (to skip itself when a handoff is in flight,
+ * so a stale stored config can't construct a parallel signer with a
+ * client key Primal no longer recognizes).
+ */
+export const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
 
 interface PersistedPendingNip46 {
   uri: string;

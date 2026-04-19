@@ -21,17 +21,12 @@ import type { NostrSigner } from "./nostr-signer.client";
 import { parseRelayList } from "./parse-relay-list";
 import {
   clearPendingNip46Handoff,
+  PENDING_NIP46_STORAGE_KEY,
   readPendingNip46Handoff,
   writePendingNip46Handoff,
 } from "./pending-nip46-storage.client";
 
 const SUBSCRIPTION_CLOSED_ERROR = "subscription closed";
-/**
- * Persisted via the shared `pending-nip46-storage` helper so iOS Safari can't
- * drop the handoff between Primal and our HTTPS callback (see helper comment
- * for the full root-cause story).
- */
-const PENDING_NIP46_STORAGE_KEY = "__smartflow_pending_nip46_uri_v1";
 
 export type Nip46LoginStatus = "idle" | "loading" | "error";
 

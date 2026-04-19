@@ -66,6 +66,15 @@ describe("bootstrapNostrSigner", () => {
     vi.clearAllMocks();
     const { __resetBootstrapForTests } = await importBootstrap();
     __resetBootstrapForTests();
+    // Clear pending-handoff storage so tests that don't write one start
+    // from a clean slate (the new bootstrap short-circuits when one
+    // exists, which would mask the original tests' assertions).
+    try {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    } catch {
+      // ignore
+    }
     originalDispatchEvent = window.dispatchEvent.bind(window);
     dispatchSpy = vi.fn<(event: Event) => boolean>(() => true);
     window.dispatchEvent = dispatchSpy;
@@ -144,4 +153,67 @@ describe("bootstrapNostrSigner", () => {
     expect(mockGetSharedPool).toHaveBeenCalledTimes(1);
     expect(mockGetActiveSigner).toHaveBeenCalledTimes(1);
   });
+
+  it(
+    "skips signer warm-up while a pending NIP-46 handoff is in flight " +
+      "so the stale stored config does not race the fresh login flow",
+    async () => {
+      // Simulate the cold-reopen-after-Primal-callback state: localStorage
+      // still holds the previous session's signer config (different
+      // clientSecretKey from the one Primal just approved), and the login
+      // panel has written a fresh handoff that resume() is about to consume.
+      const { writePendingNip46Handoff, PENDING_NIP46_STORAGE_KEY } =
+        await import("~/features/auth/pending-nip46-storage.client");
+      writePendingNip46Handoff(PENDING_NIP46_STORAGE_KEY, {
+        uri: "nostrconnect://fresh",
+        clientSecretKey: new Uint8Array(32).fill(7),
+        relays: ["wss://relay.primal.net"],
+      });
+
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config());
+      mockGetActiveSigner.mockResolvedValue(fakeNip46Signer());
+
+      const { bootstrapNostrSigner } = await importBootstrap();
+      bootstrapNostrSigner();
+      await new Promise((r) => setTimeout(r, 0));
+
+      // Pool still warmed (cheap, harmless) but no parallel signer is built.
+      expect(mockGetSharedPool).toHaveBeenCalledTimes(1);
+      expect(mockGetActiveSigner).not.toHaveBeenCalled();
+
+      const { clearPendingNip46Handoff } =
+        await import("~/features/auth/pending-nip46-storage.client");
+      clearPendingNip46Handoff(PENDING_NIP46_STORAGE_KEY);
+    }
+  );
+
+  it(
+    "still warms the signer when an expired handoff is the only thing " +
+      "in storage (TTL filter prevents a permanently disabled bootstrap)",
+    async () => {
+      // Write directly with an already-expired record to bypass the helper's
+      // refusal to persist past the TTL.
+      const expired = JSON.stringify({
+        uri: "nostrconnect://stale",
+        clientSecretKeyHex: "11".repeat(32),
+        relays: ["wss://relay.primal.net"],
+        expiresAt: Date.now() - 1000,
+      });
+      window.localStorage.setItem("__smartflow_pending_nip46_uri_v1", expired);
+
+      mockGetActiveSignerConfig.mockReturnValue(nip46Config());
+      mockGetActiveSigner.mockResolvedValue(fakeNip46Signer());
+
+      const { bootstrapNostrSigner } = await importBootstrap();
+      bootstrapNostrSigner();
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(mockGetActiveSigner).toHaveBeenCalledTimes(1);
+      // readPendingNip46Handoff also clears expired entries on read.
+      expect(
+        window.localStorage.getItem("__smartflow_pending_nip46_uri_v1")
+      ).toBeNull();
+    }
+  );
 });

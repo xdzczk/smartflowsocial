@@ -26,6 +26,11 @@
 
 import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
+import {
+  PENDING_NIP46_STORAGE_KEY,
+  readPendingNip46Handoff,
+} from "../pending-nip46-storage.client";
+
 import { getActiveSigner } from "./nostr-signer-connection.client";
 import { getActiveSignerConfig } from "./nostr-signer-storage.client";
 
@@ -54,6 +59,21 @@ export function bootstrapNostrSigner(): void {
   } catch {
     // ignore
   }
+
+  // If a pending NIP-46 handoff is in flight (we just came back from the
+  // signer app's deep-link callback and are about to call `resume()`), do
+  // NOT reconstruct a signer from any leftover stored config. The stored
+  // config's `clientSecretKey` is from a PREVIOUS session and the remote
+  // signer no longer recognizes it (each `createNip46NostrConnectUri` call
+  // mints a fresh key, and the signer binds to the latest one when it
+  // approves the URI). Bootstrapping anyway constructs a parallel
+  // `Nip46Signer` whose RPCs the bunker silently discards (it can't
+  // derive the conversation key) and whose subscription competes with
+  // the fresh login's subscription on the shared pool, corrupting the
+  // listener bag and making the legitimate `get_public_key` time out.
+  // The login flow will install the right signer with the right key and
+  // `persistNip46LoginSession` will overwrite the stale config.
+  if (readPendingNip46Handoff(PENDING_NIP46_STORAGE_KEY) !== null) return;
 
   const config = getActiveSignerConfig();
   if (config?.type !== "nip46") return;

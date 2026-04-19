@@ -289,7 +289,8 @@ export class Nip46Signer implements NostrSigner {
     const innerForDiag = this.inner as unknown as Partial<
       BunkerSignerInternals & { pool: SimplePool }
     >;
-    const bunkerShortId = innerForDiag.bp?.pubkey.slice(0, 8) ?? "????????";
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- BunkerSignerInternals types pubkey as string, but unit-test partial mocks set bp = {} with no pubkey, so the runtime guard is needed.
+    const bunkerShortId = innerForDiag.bp?.pubkey?.slice(0, 8) ?? "????????";
     this.diagLabel = `signer:${bunkerShortId}`;
     nip46log(`${this.diagLabel} created`, {
       bunkerPubkey: innerForDiag.bp?.pubkey,

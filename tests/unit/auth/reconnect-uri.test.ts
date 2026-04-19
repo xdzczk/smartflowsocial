@@ -9,7 +9,26 @@ vi.mock("~/lib/is-standalone-pwa", () => ({
   isStandalonePWA: vi.fn(),
 }));
 
+// Mock both the barrel re-export and the underlying leaf module so the
+// truncating fakes apply no matter which import path consumers use. The
+// pending-NIP-46 storage helper imports directly from the leaf to avoid
+// pulling in the whole signer barrel (which would risk a cycle with
+// bootstrap), so without this second mock the real (full-length) hex
+// codec runs and the round-trip assertion below sees both bytes back.
+//
+// Factories are inlined (not hoisted-out variables) because `vi.mock`
+// is hoisted to the top of the file and any module-scope const refs
+// would not yet be initialised when the factory runs.
 vi.mock("~/features/auth/signer", () => ({
+  parseSecretKeyHex: vi.fn(
+    (hex: string) => new Uint8Array([parseInt(hex.slice(0, 2), 16)])
+  ),
+  serializeSecretKey: vi.fn((bytes: Uint8Array) =>
+    (bytes[0] ?? 0).toString(16).padStart(2, "0")
+  ),
+}));
+
+vi.mock("~/features/auth/signer/nostr-signer-manager.client", () => ({
   parseSecretKeyHex: vi.fn(
     (hex: string) => new Uint8Array([parseInt(hex.slice(0, 2), 16)])
   ),
