@@ -14,7 +14,7 @@ export {
   resetCachedSigner,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  tryBackgroundReconnect,
+  cancelSignerInFlight,
   getWindowNostrLikeSigner,
   getActiveSignerPubkeyHint,
   STORAGE_KEY,

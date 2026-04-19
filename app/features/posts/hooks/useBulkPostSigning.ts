@@ -2,8 +2,8 @@ import { type FetcherWithComponents } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  cancelSignerInFlight,
   setSigningInProgress,
-  tryBackgroundReconnect,
 } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
@@ -422,7 +422,7 @@ export function useBulkPostSigning({
     signElapsedSeconds,
     actionError,
     cancelSigningState,
-    tryBackgroundReconnect,
+    cancelSignerInFlight,
     describeSignerPhase,
     handleSignAndSubmit,
     handleSaveAsDraft,

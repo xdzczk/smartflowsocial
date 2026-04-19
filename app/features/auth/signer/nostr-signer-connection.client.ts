@@ -39,10 +39,8 @@ import { resolveNip46SignerFromConfig } from "./connection-resolve.client";
 import {
   getActiveSignerConfig,
   persistActiveSignerConfigWithoutReset,
-  setActiveSignerConfig,
 } from "./nostr-signer-storage.client";
 import {
-  detectSignerAppName,
   getActiveConnection,
   updateSession,
 } from "./remote-signer-sessions.client";
@@ -89,6 +87,36 @@ export function teardownActiveNip46Signer(): void {
   clearCachedNip46Signer();
 }
 
+/**
+ * Cancel any in-flight NIP-46 RPC and drop the cached signer so the next
+ * `getActiveSigner()` call rebuilds it from stored config. The cached signer
+ * holds an `rpcLock` that serialises all RPCs through one chain; if a `sign_event`
+ * is still pending when the user clicks "Cancel" in the composer, the next sign
+ * would otherwise queue behind that orphaned RPC and wait up to 60s for it to
+ * time out. Closing the bunker subscription also stops the still-pending
+ * RPC's listener from firing into a UI that no longer cares.
+ *
+ * Safe to call when no signer is cached or when the cached signer is NIP-07
+ * (no-op in those cases).
+ */
+export function cancelSignerInFlight(): void {
+  const cached = getCachedSigner();
+  if (
+    cached?.type === NIP46_SIGNER_TYPE &&
+    typeof cached.close === "function"
+  ) {
+    const closeFn = cached.close;
+    void (async () => {
+      try {
+        await closeFn();
+      } catch {
+        // best-effort cleanup; the cache reset below is what matters
+      }
+    })();
+  }
+  resetCachedSigner();
+}
+
 export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
   cacheNip46SignerFromLoginImpl(signer);
 }
@@ -104,8 +132,9 @@ export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredCon
  * bunker_input configs the persisted `relays` field can be empty), forcing
  * the next sign call to rebuild a new BunkerSigner subscription that the
  * remote signer app may not see in time. We now trust the cached signer and
- * let the next real RPC discover liveness on its own — the adapter has a
- * reconnect-and-retry path for the rare case where it does fail.
+ * let the next real RPC discover liveness on its own — if the bunker is
+ * unresponsive the user gets a single error and a "Reconnect signer"
+ * button; we no longer auto-rebuild in the background.
  */
 function tryGetValidCachedSigner(): NostrSigner | null {
   return getCachedSigner();
@@ -200,102 +229,5 @@ export async function getActiveSigner(
       setInFlightSignerPromise(null);
       setInFlightSignerConfigJson(null);
     }
-  }
-}
-
-let backgroundReconnectInProgress = false;
-const BACKGROUND_RECONNECT_TIMEOUT_MS = 20_000;
-
-export async function tryBackgroundReconnect(): Promise<boolean> {
-  if (backgroundReconnectInProgress) return false;
-  const config = getActiveSignerConfig();
-  if (config?.type !== NIP46_SIGNER_TYPE) return false;
-  const connection = getActiveConnection();
-  if (!connection) return false;
-
-  backgroundReconnectInProgress = true;
-  // Capture the previous cached signer BEFORE we build the new one so we can
-  // close it after the swap. Closing it before the swap would leave a window
-  // where signing calls have nothing to talk to; not capturing it would leak
-  // the old BunkerSigner subscription and listeners. The shared pool stays up
-  // either way.
-  const previousSigner = getCachedSigner();
-  try {
-    const { signer, pubkey } = await createNip46SignerFromStoredConfigImpl(
-      config,
-      {
-        timeoutMs: BACKGROUND_RECONNECT_TIMEOUT_MS,
-      }
-    );
-    const detectedAppName = detectSignerAppName(config);
-    setActiveSignerConfig(config);
-    cacheNip46SignerFromLogin(signer);
-    if (
-      previousSigner &&
-      previousSigner !== (signer as unknown as NostrSigner) &&
-      previousSigner.type === NIP46_SIGNER_TYPE &&
-      typeof previousSigner.close === "function"
-    ) {
-      const closeFn = previousSigner.close;
-      void (async () => {
-        try {
-          await closeFn();
-        } catch {
-          // ignore - swap is already complete, leak of subscription is best-effort cleanup
-        }
-      })();
-    }
-    updateSession(connection.id, {
-      metadata: {
-        ...connection.metadata,
-        pubkey,
-        signerAppName: detectedAppName,
-        status: "active",
-        connectedAt: Date.now(),
-        lastActivityAt: Date.now(),
-        lastError: null,
-      },
-    });
-    recordConnectionEvent(connection.id, { type: "connected", pubkey });
-    // `switch_relays` shares the per-signer rpcLock with the user's next
-    // sign call, so awaiting it here delays the first composer publish on
-    // page restore by up to its 8s timeout. Background it: the new signer
-    // is already swapped in and ready to use.
-    void (async () => {
-      try {
-        await syncRelaysWithRemoteSigner(signer);
-      } catch {
-        // best-effort
-      }
-    })();
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent(NOSTR_CONNECTION_HEALTHY_EVENT));
-    }
-    void (async () => {
-      try {
-        const { reportSignerReconnectOutcome } =
-          await import("~/lib/telemetry/signer-reconnect-report.client");
-        reportSignerReconnectOutcome({ success: true });
-      } catch {
-        /* ignore */
-      }
-    })();
-    return true;
-  } catch (err: unknown) {
-    void (async () => {
-      try {
-        const { reportSignerReconnectOutcome, mapReconnectErrorToBucket } =
-          await import("~/lib/telemetry/signer-reconnect-report.client");
-        reportSignerReconnectOutcome({
-          success: false,
-          failureBucket: mapReconnectErrorToBucket(err),
-        });
-      } catch {
-        /* ignore */
-      }
-    })();
-    return false;
-  } finally {
-    backgroundReconnectInProgress = false;
   }
 }

@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
@@ -515,7 +515,7 @@ export function ScheduleRepostQuoteModal({
                       className="text-muted-foreground hover:text-foreground shrink-0"
                       onClick={() => {
                         cancelSigningState();
-                        void tryBackgroundReconnect();
+                        cancelSignerInFlight();
                       }}
                     >
                       Cancel

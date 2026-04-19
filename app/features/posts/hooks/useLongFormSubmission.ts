@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer/publish-mode";
 import {
   delayAfterMainToSeconds,
@@ -274,18 +274,6 @@ export function useLongFormSubmission({
       window.removeEventListener("nostr-connection-healthy", handler);
   }, [retryLastSchedule]);
 
-  // When awaiting signer approval, try background reconnect periodically.
-  useEffect(() => {
-    if (!isSigning) return;
-    let attempts = 0;
-    const interval = setInterval(() => {
-      void tryBackgroundReconnect();
-      attempts++;
-      if (attempts >= 5) clearInterval(interval);
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isSigning]);
-
   const handleSchedule = async (actionType: "schedule" | "publish") => {
     if (!title.trim() || !content.trim()) {
       return;
@@ -419,7 +407,7 @@ export function useLongFormSubmission({
     lastScheduleActionRef.current = null;
     setIsSigning(false);
     setSigningError(null);
-    void tryBackgroundReconnect();
+    cancelSignerInFlight();
   };
 
   return { handleSchedule, isSigning, signingError, cancelSigning };

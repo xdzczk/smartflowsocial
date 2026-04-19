@@ -4,7 +4,7 @@
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import {
   describeSignerPhase,
   shouldShowManualRecovery,
@@ -80,7 +80,7 @@ export function ComposerErrors({
             className="text-muted-foreground hover:text-foreground shrink-0"
             onClick={() => {
               onCancelSigning();
-              void tryBackgroundReconnect();
+              cancelSignerInFlight();
             }}
           >
             Cancel

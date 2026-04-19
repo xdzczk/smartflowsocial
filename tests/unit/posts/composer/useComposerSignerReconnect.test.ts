@@ -1,29 +1,17 @@
 /**
  * @vitest-environment jsdom
- * Tests composer signer reconnect: clear on healthy event, tryBackgroundReconnect interval when isSigning.
+ * Tests composer signer reconnect: clear on healthy event, optional retry callback.
+ *
+ * Background polling was removed: the hook only listens for the
+ * "nostr-connection-healthy" event and never spins up an interval.
  */
 
 import { renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const mockTryBackgroundReconnect = vi.fn();
-vi.mock("~/features/auth/signer", () => ({
-  tryBackgroundReconnect: (...args: unknown[]) =>
-    mockTryBackgroundReconnect(...args),
-}));
+import { describe, expect, it, vi } from "vitest";
 
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 
 describe("useComposerSignerReconnect", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("clears signing state when nostr-connection-healthy is dispatched", () => {
     const clearSigningState = vi.fn();
     renderHook(() => useComposerSignerReconnect(clearSigningState, false));
@@ -67,25 +55,7 @@ describe("useComposerSignerReconnect", () => {
     expect(clearSigningState).toHaveBeenCalledTimes(1);
   });
 
-  it("does not run reconnect interval when isSigning is false", () => {
-    const clearSigningState = vi.fn();
-    renderHook(() => useComposerSignerReconnect(clearSigningState, false));
-
-    vi.advanceTimersByTime(30_000);
-
-    expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
-  });
-
-  it("does not call tryBackgroundReconnect periodically when isSigning is true (reconnect only on healthy event)", () => {
-    const clearSigningState = vi.fn();
-    renderHook(() => useComposerSignerReconnect(clearSigningState, true));
-
-    vi.advanceTimersByTime(60_000);
-
-    expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
-  });
-
-  it("cleans up healthy listener and interval on unmount", () => {
+  it("cleans up the healthy listener on unmount", () => {
     const clearSigningState = vi.fn();
     const { unmount } = renderHook(() =>
       useComposerSignerReconnect(clearSigningState, true)
@@ -95,8 +65,5 @@ describe("useComposerSignerReconnect", () => {
 
     window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
     expect(clearSigningState).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(15_000);
-    expect(mockTryBackgroundReconnect).not.toHaveBeenCalled();
   });
 });

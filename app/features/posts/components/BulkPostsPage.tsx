@@ -450,7 +450,7 @@ export default function BulkPostsPage() {
             signingError={signing.signingError ?? signing.actionError}
             onCancelSigning={() => {
               signing.cancelSigningState();
-              void signing.tryBackgroundReconnect();
+              signing.cancelSignerInFlight();
             }}
             bulkExecutionBlocked={!canExecuteBulkActions}
           />

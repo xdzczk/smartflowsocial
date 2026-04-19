@@ -11,7 +11,6 @@ import {
   setActiveSession,
   setActiveSignerConfig,
   syncRelaysWithRemoteSigner,
-  tryBackgroundReconnect,
   updateSession,
   detectSignerAppName,
   parseSecretKeyHex,
@@ -152,27 +151,6 @@ export function useReconnectDialogState({
     onOpenChange,
     onConnectionHealthy,
   ]);
-
-  const RECONNECT_POLL_MS = 12_000;
-  useEffect(() => {
-    if (!open) return;
-    const id = setInterval(() => {
-      void tryBackgroundReconnect();
-    }, RECONNECT_POLL_MS);
-    return () => clearInterval(id);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || typeof document === "undefined") return;
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void tryBackgroundReconnect();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [open]);
 
   useEffect(() => {
     if (!open) {

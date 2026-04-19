@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import {
   canScheduleRepostQuoteForPost,
   type CalendarPost,
@@ -862,7 +862,7 @@ export function RescheduleScheduledPostModal({
                         size="sm"
                         onClick={() => {
                           cancelSigningState();
-                          void tryBackgroundReconnect();
+                          cancelSignerInFlight();
                         }}
                       >
                         Cancel signing

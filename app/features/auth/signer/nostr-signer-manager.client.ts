@@ -10,6 +10,7 @@ import { isMobile } from "~/lib/is-mobile";
 
 import {
   cacheNip46SignerFromLogin,
+  cancelSignerInFlight,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
   NOSTR_CONNECTION_HEALTHY_EVENT,
@@ -17,7 +18,6 @@ import {
   resetCachedSigner,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  tryBackgroundReconnect,
 } from "./nostr-signer-connection.client";
 import {
   hexToBytes,
@@ -60,12 +60,12 @@ export function clearActiveSignerConfig(): void {
 // Connection lifecycle and cache
 export {
   cacheNip46SignerFromLogin,
+  cancelSignerInFlight,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
   resetCachedSigner,
   syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  tryBackgroundReconnect,
 };
 
 // Keys

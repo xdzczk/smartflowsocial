@@ -182,27 +182,21 @@ describe("Nostr Edge Cases", () => {
       expect(result.nostrEvent.tags).toEqual([]);
     });
 
-    it("recovers via primary signer failover when both initial and reconnect-retry attempts fail", async () => {
+    it("does NOT retry, reconnect, or failover on a sign timeout (Ditto-style: one attempt, surface error)", async () => {
       vi.resetModules();
-      // Both attempts against the configured signer fail with a connection-like
-      // error; the third attempt (after primary-signer failover swaps in a new
-      // signer) succeeds.
-      const mockConfiguredSign = vi.fn().mockResolvedValueOnce({
-        id: "event-remote",
-        pubkey: "pubkey-remote",
-        sig: "sig-remote",
-      });
-      const getActiveSigner = vi
-        .fn()
-        .mockRejectedValueOnce(new Error("websocket closed"))
-        .mockRejectedValueOnce(new Error("subscription closed"))
-        .mockResolvedValue({
-          type: "nip46",
-          signEvent: mockConfiguredSign,
-        });
+      const { RemoteSignerTimeoutError } = await import("~/lib/errors");
 
-      const mockPrimaryFailover = vi.fn().mockResolvedValue({
-        recovered: true,
+      // First sign attempt fails with a sign-timeout: the bunker app didn't
+      // approve in time. We must NOT classify this as a connection error and
+      // must NOT spin up new signers / fire switch_relays / retry — that is
+      // exactly the storm that bombards Primal and rate-limits Damus.
+      const signTimeoutErr = new RemoteSignerTimeoutError(
+        "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
+      );
+      const mockConfiguredSign = vi.fn().mockRejectedValue(signTimeoutErr);
+      const getActiveSigner = vi.fn().mockResolvedValue({
+        type: "nip46",
+        signEvent: mockConfiguredSign,
       });
 
       vi.doMock("~/features/auth/signer", () => ({
@@ -213,8 +207,133 @@ describe("Nostr Edge Cases", () => {
           clientSecretKeyHex: "aa",
         }),
         getActiveSigner,
-        attemptPrimarySignerFailover: mockPrimaryFailover,
-        tryBackgroundReconnect: vi.fn().mockResolvedValue(false),
+        getActiveConnection: vi.fn().mockReturnValue(null),
+        recordConnectionEvent: vi.fn(),
+        emitRemoteSignerTimeoutEvent: vi.fn(),
+        resetCachedSigner: vi.fn(),
+        addConnectionLog: vi.fn(),
+        updateSession: vi.fn(),
+      }));
+
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      await expect(
+        nostrAdapter.signEvent({
+          content: "sign timeout",
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+        })
+      ).rejects.toThrow(/Remote signer did not respond/);
+
+      // Single shot: exactly one attempt against the configured signer.
+      expect(mockConfiguredSign).toHaveBeenCalledTimes(1);
+      expect(getActiveSigner).toHaveBeenCalledTimes(1);
+    });
+
+    it("does NOT retry on a bunker:* RPC timeout from Nip46Signer", async () => {
+      vi.resetModules();
+
+      // Surface a raw `bunker:sign_event timeout` (the inner RPC's own error)
+      // — we must treat it the same as the wrapped sign-timeout: no retry.
+      const bunkerErr = new Error("bunker:sign_event timeout");
+      const mockConfiguredSign = vi.fn().mockRejectedValue(bunkerErr);
+      const getActiveSigner = vi.fn().mockResolvedValue({
+        type: "nip46",
+        signEvent: mockConfiguredSign,
+      });
+
+      vi.doMock("~/features/auth/signer", () => ({
+        getActiveSignerConfig: () => ({
+          type: "nip46",
+          method: "bunker_input",
+          bunkerInput: "bunker://example",
+          clientSecretKeyHex: "aa",
+        }),
+        getActiveSigner,
+        getActiveConnection: vi.fn().mockReturnValue(null),
+        recordConnectionEvent: vi.fn(),
+        emitRemoteSignerTimeoutEvent: vi.fn(),
+        resetCachedSigner: vi.fn(),
+        addConnectionLog: vi.fn(),
+        updateSession: vi.fn(),
+      }));
+
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      await expect(
+        nostrAdapter.signEvent({
+          content: "bunker rpc timeout",
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+        })
+      ).rejects.toThrow(/bunker:sign_event timeout/);
+
+      expect(mockConfiguredSign).toHaveBeenCalledTimes(1);
+      expect(getActiveSigner).toHaveBeenCalledTimes(1);
+    });
+
+    it("does NOT retry on a transport-level error (single-shot signing)", async () => {
+      vi.resetModules();
+
+      // Transport-level error (websocket closed). With single-shot signing
+      // we surface the error rather than rebuilding the signer and retrying.
+      // The user can click "Reconnect signer" if they want to try again.
+      const mockConfiguredSign = vi.fn();
+      const getActiveSigner = vi
+        .fn()
+        .mockRejectedValue(new Error("websocket closed"));
+
+      vi.doMock("~/features/auth/signer", () => ({
+        getActiveSignerConfig: () => ({
+          type: "nip46",
+          method: "bunker_input",
+          bunkerInput: "bunker://example",
+          clientSecretKeyHex: "aa",
+        }),
+        getActiveSigner,
+        getActiveConnection: vi.fn().mockReturnValue(null),
+        recordConnectionEvent: vi.fn(),
+        emitRemoteSignerTimeoutEvent: vi.fn(),
+        resetCachedSigner: vi.fn(),
+        addConnectionLog: vi.fn(),
+        updateSession: vi.fn(),
+      }));
+
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      await expect(
+        nostrAdapter.signEvent({
+          content: "ws closed",
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          tags: [],
+        })
+      ).rejects.toThrow(/websocket closed/);
+
+      expect(getActiveSigner).toHaveBeenCalledTimes(1);
+      expect(mockConfiguredSign).not.toHaveBeenCalled();
+    });
+
+    it("falls back to window.nostr when no signer is configured", async () => {
+      vi.resetModules();
+
+      const mockWindowNostrSign = vi.fn().mockResolvedValue({
+        id: "event-extension",
+        pubkey: "pubkey-extension",
+        sig: "sig-extension",
+      });
+
+      global.window = {
+        nostr: { signEvent: mockWindowNostrSign },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        setTimeout,
+        clearTimeout,
+      } as unknown as Window & typeof globalThis;
+
+      vi.doMock("~/features/auth/signer", () => ({
+        getActiveSignerConfig: () => null,
+        getActiveSigner: vi.fn().mockResolvedValue(null),
         getActiveConnection: vi.fn().mockReturnValue(null),
         recordConnectionEvent: vi.fn(),
         emitRemoteSignerTimeoutEvent: vi.fn(),
@@ -225,18 +344,17 @@ describe("Nostr Edge Cases", () => {
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
       const result = await nostrAdapter.signEvent({
-        content: "test fallback",
+        content: "ext signed",
         created_at: Math.floor(Date.now() / 1000),
         kind: 1,
         tags: [],
       });
 
-      expect(mockPrimaryFailover).toHaveBeenCalledTimes(1);
-      expect(result.signedEvent.id).toBe("event-remote");
-      expect(mockConfiguredSign).toHaveBeenCalled();
+      expect(mockWindowNostrSign).toHaveBeenCalledTimes(1);
+      expect(result.signedEvent.id).toBe("event-extension");
     });
 
-    it("does not invoke primary failover when no NIP-46 signer is configured", async () => {
+    it("throws 'Nostr extension not found' when no signer is configured and window.nostr is unavailable", async () => {
       vi.resetModules();
 
       global.window = {
@@ -248,15 +366,9 @@ describe("Nostr Edge Cases", () => {
         clearTimeout,
       } as unknown as Window & typeof globalThis;
 
-      const mockPrimaryFailover = vi.fn().mockResolvedValue({
-        recovered: false,
-      });
-
       vi.doMock("~/features/auth/signer", () => ({
         getActiveSignerConfig: () => null,
         getActiveSigner: vi.fn().mockResolvedValue(null),
-        attemptPrimarySignerFailover: mockPrimaryFailover,
-        tryBackgroundReconnect: vi.fn().mockResolvedValue(false),
         getActiveConnection: vi.fn().mockReturnValue(null),
         recordConnectionEvent: vi.fn(),
         emitRemoteSignerTimeoutEvent: vi.fn(),
@@ -274,7 +386,6 @@ describe("Nostr Edge Cases", () => {
           tags: [],
         })
       ).rejects.toThrow(/Nostr extension not found/);
-      expect(mockPrimaryFailover).not.toHaveBeenCalled();
 
       // Ensure the promise chain fully settles before the test exits.
       await new Promise((resolve) => setTimeout(resolve, 0));

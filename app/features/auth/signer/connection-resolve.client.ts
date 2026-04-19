@@ -117,21 +117,16 @@ export async function resolveNip46SignerFromConfig(
       );
     }
 
-    // `switch_relays` is a NIP-46 RPC and goes through the same `rpcLock`
-    // the user's first `signEvent` will use. Awaiting it here adds up to
-    // its 8s timeout to the time before the cached signer is returned and
-    // — much worse on cold reopen — fires an extra request at a Primal
-    // signer that may still be waking up. Run it in the background instead;
-    // the signer is already cached and immediately usable, and if the user
-    // signs first the lock will simply queue the relay sync behind that.
-    void (async () => {
-      try {
-        const cached = getCachedSigner();
-        if (cached) await syncRelaysWithRemoteSigner(cached);
-      } catch {
-        // best-effort
-      }
-    })();
+    // We deliberately do NOT proactively call `switch_relays` here. It used
+    // to fire on every cold reopen as a "best-effort" relay refresh, but it
+    // adds an extra NIP-46 publish to all bunker relays and an 8s pending
+    // RPC that competes with the user's first sign for the per-signer
+    // rpcLock. Worse, when Primal is still waking up the publish gets lost
+    // (or rate-limited) and our retry layer used to interpret the timeout
+    // as a transport failure and tear down the signer. Ditto's
+    // `NConnectSigner` never calls `switch_relays`; the relay set captured
+    // at login is sufficient for ongoing use, and explicit reconnect via
+    // the reconnect dialog is the right place to refresh it.
 
     return getCachedSigner();
   }

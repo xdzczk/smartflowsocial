@@ -186,33 +186,43 @@ describe("nostr-signer-connection", () => {
     });
   });
 
-  describe("tryBackgroundReconnect", () => {
-    it("returns false and does not cache signer when no active connection", async () => {
-      const { tryBackgroundReconnect } =
-        await import("~/features/auth/signer/nostr-signer-connection.client");
-      const nip46Config: ActiveSignerConfig = {
+  describe("cancelSignerInFlight", () => {
+    it("closes a cached NIP-46 signer and resets the cache", async () => {
+      const close = vi.fn().mockResolvedValue(undefined);
+      mockGetCachedSigner.mockReturnValue({
+        ...mockCachedSigner,
         type: "nip46",
-        method: "nostrconnect_uri",
-        uri: "nostrconnect://x?relay=wss://x&secret=s",
-        clientSecretKeyHex: "ab",
-        relays: ["wss://x"],
-      };
-      mockGetActiveSignerConfig.mockReturnValue(nip46Config);
-      const { getActiveConnection } =
-        await import("~/features/auth/signer/remote-signer-sessions.client");
-      (getActiveConnection as ReturnType<typeof vi.fn>).mockReturnValue(null);
-      const result = await tryBackgroundReconnect();
-      expect(result).toBe(false);
-      expect(mockSetCachedSigner).not.toHaveBeenCalled();
+        close,
+      });
+      const { cancelSignerInFlight } =
+        await import("~/features/auth/signer/nostr-signer-connection.client");
+      cancelSignerInFlight();
+      // close is fired-and-forgotten; cache reset is the synchronous contract.
+      expect(mockResetCachedSigner).toHaveBeenCalledTimes(1);
+      // Allow the close microtask to run and verify it was invoked.
+      await Promise.resolve();
+      expect(close).toHaveBeenCalledTimes(1);
     });
 
-    it("returns false when getActiveSignerConfig is null", async () => {
-      const { tryBackgroundReconnect } =
+    it("is a no-op when no signer is cached", async () => {
+      mockGetCachedSigner.mockReturnValue(null);
+      const { cancelSignerInFlight } =
         await import("~/features/auth/signer/nostr-signer-connection.client");
-      mockGetActiveSignerConfig.mockReturnValue(null);
-      const result = await tryBackgroundReconnect();
-      expect(result).toBe(false);
-      expect(mockSetCachedSigner).not.toHaveBeenCalled();
+      cancelSignerInFlight();
+      // Cache reset still runs (it's safe even with empty cache).
+      expect(mockResetCachedSigner).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not call close on a NIP-07 cached signer", async () => {
+      mockGetCachedSigner.mockReturnValue({
+        type: "nip07",
+        getPublicKey: vi.fn(),
+        signEvent: vi.fn(),
+      } as unknown as NostrSigner);
+      const { cancelSignerInFlight } =
+        await import("~/features/auth/signer/nostr-signer-connection.client");
+      cancelSignerInFlight();
+      expect(mockResetCachedSigner).toHaveBeenCalledTimes(1);
     });
   });
 

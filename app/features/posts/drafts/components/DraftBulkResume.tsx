@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   getQueueAccentHex,
@@ -76,7 +76,7 @@ export default function DraftBulkResume({
               className="text-muted-foreground hover:text-foreground"
               onClick={() => {
                 handlers.cancelSigningState();
-                void tryBackgroundReconnect();
+                cancelSignerInFlight();
               }}
             >
               Cancel

@@ -8,10 +8,10 @@
  * isSigning or drop the new submit. Previously clearSigningState ran first and wiped the
  * retry ref, so reconnect after a stale NIP-46 session never resubmitted.
  *
- * We do not run periodic tryBackgroundReconnect while awaiting signer: it was interrupting
- * the in-flight sign every 10s (causing a retry and new sign-attempt event), which reset
- * the "Waiting for signer" timer and made the banner flicker. Reconnect still happens on
- * "nostr-connection-healthy" and after sign timeout/failure in the adapter.
+ * We do NOT run any background-reconnect interval here. The signer adapter is single-shot
+ * (one attempt per user click); if the bunker is unresponsive the user sees a single
+ * error and an explicit "Reconnect signer" button. This matches Ditto's behaviour and
+ * stops the periodic-retry storm we used to fire while awaiting signer approval.
  */
 
 import { useEffect } from "react";

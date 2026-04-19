@@ -1,6 +1,6 @@
 /**
  * Create NIP-46 signer from stored config (bunker or Nostr Connect reconnect).
- * Used by getActiveSigner and tryBackgroundReconnect.
+ * Used by getActiveSigner.
  *
  * On cold rebuild we deliberately skip the `getPublicKey()` validation
  * round-trip. The original login already proved this bunker works, the

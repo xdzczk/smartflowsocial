@@ -14,7 +14,6 @@ import { toast } from "react-hot-toast";
 
 import {
   addConnectionLog,
-  attemptPrimarySignerFailover,
   emitRemoteSignerTimeoutEvent,
   getActiveConnection,
   recordConnectionEvent,
@@ -79,14 +78,46 @@ function dispatchSignerNudge(phase: SignerNudgePhase, startedAt: number): void {
   window.dispatchEvent(new CustomEvent("signer-nudge", { detail }));
 }
 
+/**
+ * Sign-timeout messages mean "the bunker did not approve in time" — the
+ * underlying NIP-46 transport (subscription, sockets, signer cache) is fine,
+ * the user just needs to open their signer app and approve. We must NOT
+ * classify these as "connection-like" because doing so triggers
+ * `reconnectAndRetrySign` which builds a fresh `Nip46Signer`, fires another
+ * `switch_relays` + `sign_event` on top of the still-pending one, and the
+ * cycle repeats every ~30s — flooding the relays (Damus rate-limits us)
+ * and overwhelming Primal. Ditto's `signerWithNudge` does the same thing:
+ * one attempt, one error, no auto-retry, no reconnect.
+ */
+const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
+const SIGN_TIMEOUT_KEY_APPROVE_REQUEST = "approve the request";
+
+function isBunkerRpcTimeoutMessage(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.startsWith("bunker:") && m.endsWith(" timeout");
+}
+
+function isSignTimeoutError(error: unknown): boolean {
+  if (!(error instanceof RemoteSignerTimeoutError)) return false;
+  const m = error.message.toLowerCase();
+  return (
+    m.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
+    m.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST) ||
+    isBunkerRpcTimeoutMessage(error.message)
+  );
+}
+
 function isConnectionLikeError(error: unknown): boolean {
   if (error instanceof RemoteSignerTimeoutError) {
-    return true;
+    // Sign timeouts → bunker is unresponsive, NOT a transport failure.
+    // Get-active-signer / connect timeouts → real transport problem, retry.
+    return !isSignTimeoutError(error);
   }
   const message =
     error instanceof Error
       ? error.message.toLowerCase()
       : String(error).toLowerCase();
+  if (isBunkerRpcTimeoutMessage(message)) return false;
   return (
     message.includes("subscription closed") ||
     message.includes("websocket") ||
@@ -100,25 +131,15 @@ function isConnectionLikeError(error: unknown): boolean {
 
 /**
  * True if we should clear the NIP-46 signer cache.
- * - Connection errors (subscription closed, etc.): clear so we reconnect.
- * - Sign timeout ("did not respond" / "approve the request"): always clear so the next attempt
- *   creates a fresh connection. This fixes the case where both app and Primal were closed,
- *   user reopens Primal and "resumes" the connection, but our cached signer's channel is dead
- *   so sign_event never completes; clearing forces a new connection that can work with resumed Primal.
+ *
+ * Only clear on real transport errors (subscription closed, websocket dropped,
+ * connect timeout). Never clear on a sign timeout: the cache is healthy, only
+ * the bunker app failed to approve. Clearing would force a brand-new
+ * `Nip46Signer` next attempt, which fires another `switch_relays` + duplicate
+ * `sign_event` and compounds the problem.
  */
-const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
-const SIGN_TIMEOUT_KEY_APPROVE_REQUEST = "approve the request";
-
 function shouldClearSignerCacheOnError(error: unknown): boolean {
-  if (error instanceof RemoteSignerTimeoutError) {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
-      msg.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST)
-    ) {
-      return true;
-    }
-  }
+  if (isSignTimeoutError(error)) return false;
   return isConnectionLikeError(error);
 }
 
@@ -296,11 +317,17 @@ async function handleConfiguredSignerError(
   clearCacheOnError = true
 ): Promise<void> {
   if (!prefersRemoteSigner) return;
-  if (!isConnectionLikeError(err)) return;
+  const isSignTimeout = isSignTimeoutError(err);
+  const isConnectionLike = isConnectionLikeError(err);
+  // Sign timeouts are surfaced to the user (stale + nudge) but do NOT clear
+  // the cache or trigger reconnect; only true connection-like errors do.
+  if (!isSignTimeout && !isConnectionLike) return;
 
-  const shouldClear = clearCacheOnError && shouldClearSignerCacheOnError(err);
-  debugSignerTrace("Configured signer connection-like error", {
+  const shouldClear =
+    !isSignTimeout && clearCacheOnError && shouldClearSignerCacheOnError(err);
+  debugSignerTrace("Configured signer error", {
     error: err instanceof Error ? err.message : String(err),
+    isSignTimeout,
     clearCache: shouldClear,
   });
   markActiveRemoteConnectionStale(err);
@@ -397,17 +424,6 @@ async function trySignWithConfiguredSigner(
   }
 }
 
-async function tryReconnectInBackground(): Promise<boolean> {
-  try {
-    const { tryBackgroundReconnect } = await import("~/features/auth/signer");
-    const reconnected = await tryBackgroundReconnect();
-    debugSignerTrace("Reconnect-and-retry result", { reconnected });
-    return reconnected;
-  } catch {
-    return false;
-  }
-}
-
 async function tryAttachWindowNostrFallback(
   nostrEvent: NostrEvent
 ): Promise<SignedEvent | null> {
@@ -448,87 +464,21 @@ function ensureNip07ReadyOrThrow(): void {
 }
 
 /**
- * After both the initial sign attempt and the reconnect-and-retry attempt have
- * failed against a NIP-46 signer, try to swap in the user's "primary home"
- * signer and sign one more time. Returns the signed event on success, or
- * throws to surface either the failover error or the original retry error.
- */
-async function tryPrimarySignerFailoverSign(
-  nostrEvent: NostrEvent,
-  options: SignEventOptions | undefined,
-  retryError: unknown,
-  expectedHex: string | null,
-  nudge: NudgeController
-): Promise<SignedEvent> {
-  const failover = await attemptPrimarySignerFailover({
-    expectedPubkey: expectedHex,
-    labelFallback: "Primary Home Signer",
-  });
-  if (failover.recovered) {
-    toast.success("Recovered signer connection via primary home signer.");
-    try {
-      const third = await trySignWithConfiguredSigner(nostrEvent, options);
-      if (third) {
-        dispatchSignerNudge("done", nudge.startedAt);
-        return third;
-      }
-    } catch (failoverError) {
-      dispatchSignerNudge("fail", nudge.startedAt);
-      throw failoverError;
-    }
-  }
-  dispatchSignerNudge("fail", nudge.startedAt);
-  throw retryError;
-}
-
-/**
- * Reconnect-once-and-retry path used only for NIP-46 signers when the initial
- * sign attempt failed with a connection-like error. Returns the signed event
- * on success, `null` to indicate the caller should fall through to the
- * window.nostr fallback path, or throws the (post-failover) error.
- */
-async function reconnectAndRetrySign(
-  nostrEvent: NostrEvent,
-  options: SignEventOptions | undefined,
-  expectedHex: string | null,
-  nudge: NudgeController
-): Promise<SignedEvent | null> {
-  nudge.clear();
-  dispatchSignerNudge("reconnect", nudge.startedAt);
-  await tryReconnectInBackground();
-  nudge.arm();
-  try {
-    const second = await trySignWithConfiguredSigner(nostrEvent, options);
-    if (second) {
-      dispatchSignerNudge("done", nudge.startedAt);
-      return second;
-    }
-    return null;
-  } catch (retryError) {
-    debugSignerTrace("Reconnect-and-retry sign attempt failed", {
-      error:
-        retryError instanceof Error ? retryError.message : String(retryError),
-    });
-    return await tryPrimarySignerFailoverSign(
-      nostrEvent,
-      options,
-      retryError,
-      expectedHex,
-      nudge
-    );
-  }
-}
-
-/**
  * Sign an event with the simplest possible reliability story:
  *   1. One sign attempt against the configured signer.
- *   2. On a connection-like failure, reconnect once and retry exactly once.
- *   3. If that still fails on a NIP-46 signer, try primary signer failover and
- *      sign one more time.
- *   4. Otherwise fall back to window.nostr if available.
+ *   2. If that signer is missing (no NIP-46 config and no NIP-07 extension),
+ *      fall back to `window.nostr` if available.
  *
- * The shared SimplePool already heals its own sockets and Nip46Signer's RPCs
- * are bounded, so we do not need a long retry ladder or progressive timeouts.
+ * Mirrors Ditto's `NConnectSigner` + `signerWithNudge`: one attempt, one
+ * outcome. The shared `SimplePool` heals its own sockets, `Nip46Signer`
+ * refreshes its bunker subscription on every RPC, and the per-RPC timeout
+ * inside `Nip46Signer` already bounds how long a single sign can hang. There
+ * is nothing here for us to recover that the underlying transport can't, so
+ * we don't try — every "auto-recovery" attempt we used to make just piled
+ * another `sign_event` on top of the unresponsive bunker and made the
+ * problem worse (relay rate-limits, duplicate event IDs, and a UI that
+ * never settled). When this single attempt fails, the user gets one error
+ * and one explicit "Reconnect signer" button.
  */
 async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
@@ -539,9 +489,9 @@ async function signEventWithRetryLogic(
     typeof signerManager.getActiveSignerConfig === "function"
       ? signerManager.getActiveSignerConfig()
       : null;
-  const expectedHex = getExpectedPubkeyHexForGuard();
 
   if (config?.type === "nip07") {
+    const expectedHex = getExpectedPubkeyHexForGuard();
     if (expectedHex) await checkNip07Readiness(expectedHex);
     ensureNip07ReadyOrThrow();
   }
@@ -558,27 +508,14 @@ async function signEventWithRetryLogic(
         return first;
       }
     } catch (error) {
-      const isConnectionError = isConnectionLikeError(error);
-      debugSignerTrace("First sign attempt failed", {
+      debugSignerTrace("Sign attempt failed", {
         error: error instanceof Error ? error.message : String(error),
-        isConnectionError,
       });
-
-      if (config?.type !== "nip46" || !isConnectionError) {
-        dispatchSignerNudge("fail", nudge.startedAt);
-        throw error;
-      }
-
-      const retried = await reconnectAndRetrySign(
-        nostrEvent,
-        options,
-        expectedHex,
-        nudge
-      );
-      if (retried) return retried;
-      // null retried → fall through to window.nostr fallback below
+      dispatchSignerNudge("fail", nudge.startedAt);
+      throw error;
     }
 
+    // No configured signer returned a signature → try window.nostr fallback.
     const fallback = await tryAttachWindowNostrFallback(nostrEvent);
     if (fallback) {
       dispatchSignerNudge("done", nudge.startedAt);

@@ -1,6 +1,6 @@
 /**
  * Integration tests for NIP-46 remote signer against a mock Nostr relay.
- * Uses the real createNip46SignerFromStoredConfig, getActiveSigner, tryBackgroundReconnect
+ * Uses the real createNip46SignerFromStoredConfig, getActiveSigner, cancelSignerInFlight
  * with a WebSocket mock relay that implements NIP-46 (no mocks in the connection path).
  *
  * @vitest-environment node
@@ -242,34 +242,34 @@ describe("remote-signer-mock-relay integration", () => {
     await result.signer.close();
   });
 
-  it("(7) tryBackgroundReconnect succeeds when config points to mock relay", async () => {
-    const {
-      tryBackgroundReconnect,
-      createNip46SignerFromStoredConfig: createSigner,
-    } = await import("~/features/auth/signer/nostr-signer-connection.client");
-    const { setActiveSignerConfig, getActiveSignerConfig } =
+  it("(7) cancelSignerInFlight closes a cached NIP-46 signer and clears the cache", async () => {
+    const { cancelSignerInFlight, getActiveSigner, resetCachedSigner } =
+      await import("~/features/auth/signer/nostr-signer-connection.client");
+    const { setActiveSignerConfig } =
       await import("~/features/auth/signer/nostr-signer-storage.client");
-    const { setActiveConnection, createConnection, getActiveConnection } =
+    const { setActiveConnection, createConnection } =
       await import("~/features/auth/signer/remote-signer-sessions.client");
 
     const config = buildMockConfig();
     setActiveSignerConfig(config);
     const conn = createConnection(config, "Test connection");
     setActiveConnection(conn.id);
+    resetCachedSigner();
 
-    expect(getActiveConnection()).not.toBeNull();
-    const storedConfig = getActiveSignerConfig();
-    expect(storedConfig).not.toBeNull();
-    await createSigner(
-      storedConfig! as Extract<ActiveSignerConfig, { type: "nip46" }>,
-      { timeoutMs: 20_000 }
-    ).then((r) => r.signer.close());
+    const signerBefore = await getActiveSigner({ allowReconnect: true });
+    expect(signerBefore).not.toBeNull();
 
-    const result = await tryBackgroundReconnect();
-    expect([true, false]).toContain(result);
+    cancelSignerInFlight();
+
+    // After cancel, the next getActiveSigner call must build a brand-new
+    // signer rather than reuse the (now-closed) one.
+    const signerAfter = await getActiveSigner({ allowReconnect: true });
+    expect(signerAfter).not.toBeNull();
+    expect(signerAfter).not.toBe(signerBefore);
 
     setActiveSignerConfig(null as unknown as ActiveSignerConfig);
     setActiveConnection(null);
+    await signerAfter!.close!();
   });
 
   it("(8) getActiveSigner returns signer when config points to mock relay and allowReconnect true", async () => {
@@ -389,24 +389,6 @@ describe("remote-signer-mock-relay integration", () => {
     setActiveSignerConfig(null as unknown as ActiveSignerConfig);
     setActiveConnection(null);
     await signer!.close!();
-  });
-
-  it("(10) tryBackgroundReconnect returns false when no active connection", async () => {
-    const { tryBackgroundReconnect } =
-      await import("~/features/auth/signer/nostr-signer-connection.client");
-    const { setActiveSignerConfig } =
-      await import("~/features/auth/signer/nostr-signer-storage.client");
-    const { setActiveConnection } =
-      await import("~/features/auth/signer/remote-signer-sessions.client");
-
-    const config = buildMockConfig();
-    setActiveSignerConfig(config);
-    setActiveConnection(null);
-
-    const result = await tryBackgroundReconnect();
-    expect(result).toBe(false);
-
-    setActiveSignerConfig(null as unknown as ActiveSignerConfig);
   });
 
   it("(11) contract: first request is get_public_key", async () => {

@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
-import { tryBackgroundReconnect } from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
 import { RescheduleScheduledPostModal } from "~/features/posts/scheduling";
@@ -805,7 +805,7 @@ export function EditPostModal({
                       className="text-muted-foreground hover:text-foreground shrink-0"
                       onClick={() => {
                         cancelSigningState();
-                        void tryBackgroundReconnect();
+                        cancelSignerInFlight();
                       }}
                     >
                       Cancel
