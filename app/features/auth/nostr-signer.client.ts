@@ -124,7 +124,12 @@ const NIP46_RPC_TIMEOUTS = {
 /** NIP-46 / Nostr Connect kind. */
 const NOSTR_CONNECT_KIND = 24_133;
 
-/** Hard cap on how long we'll wait for the relay to acknowledge our REQ. */
+/**
+ * Upper bound on how long the per-RPC subscription pre-warm will wait for
+ * EOSE before publishing the EVENT anyway. Real relays return EOSE for an
+ * empty filter in ~50–250 ms; this 5 s ceiling exists purely so a stalled
+ * relay can't hang every signing call.
+ */
 const REQ_READY_TIMEOUT_MS = 5_000;
 
 /* ------------------------------------------------------------------------ */
@@ -223,6 +228,76 @@ function createLoggingPool(pool: SimplePool, label: string): SimplePool {
 /* eslint-enable no-console */
 
 /**
+ * Wraps a `SimplePool` so every `publish()` call goes to a SINGLE relay
+ * (the "bunker primary"), instead of fanning the EVENT out to every relay
+ * in `bp.relays`.
+ *
+ * Why this exists:
+ *
+ * - `nostr-tools`' `BunkerSigner.sendRequest` calls `pool.publish(this.bp.relays, evt)`.
+ *   For nostrconnect URIs we generate, `bp.relays` contains 3 default relays
+ *   (`relay.primal.net`, `relay.damus.io`, `nos.lol/`). The bunker app
+ *   (e.g. Primal on iOS) only listens on its own home relay.
+ *
+ * - When we publish the same EVENT to all 3 relays, the bunker can see two
+ *   non-canonical copies (forwarded via cross-relay gossip / shared client
+ *   subscriptions) before its own relay's copy arrives. Some bunker
+ *   implementations dedupe by event id and silently drop subsequent copies,
+ *   which means the EVENT they actually see can be one they choose to
+ *   ignore — and they never reply. The handshake (`connect`) tolerates this
+ *   because the URI's secret-matching window only needs *some* matching
+ *   event; per-RPC `get_public_key` / `sign_event` does not.
+ *
+ * - `@nostrify/nostrify`'s `NConnectSigner` (used by Ditto) takes a single
+ *   `NRelay`, so it never has this fan-out problem. We mirror that here by
+ *   restricting publish to one relay, while keeping subscribe across all
+ *   relays as a safety net for receiving responses.
+ *
+ * Subscribe and every other method are forwarded unchanged.
+ */
+function createBunkerPublishPool(
+  pool: SimplePool,
+  primaryRelay: () => string | undefined,
+  label: string
+): SimplePool {
+  return new Proxy(pool, {
+    get(target, prop, receiver) {
+      if (prop === "publish") {
+        return (relays: string[], event: PublishableEvent) => {
+          const primary = primaryRelay();
+          const targetRelays =
+            primary && relays.includes(primary)
+              ? [primary]
+              : relays.length > 0
+                ? [relays[0]!]
+                : relays;
+          if (
+            typeof window !== "undefined" &&
+            targetRelays.length !== relays.length
+          ) {
+            nip46log(`${label} publish-restricted`, {
+              eventId: event.id,
+              from: relays,
+              to: targetRelays,
+            });
+          }
+          const publishFn = (
+            target as unknown as {
+              publish: (
+                r: string[],
+                e: PublishableEvent
+              ) => Array<Promise<string>>;
+            }
+          ).publish;
+          return publishFn.call(target, targetRelays, event);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+}
+
+/**
  * Decoded NIP-46 response payload. `result === "auth_url"` is a transient
  * notification (the bunker is asking the user to approve via `error` URL),
  * not the final response, so the listener stays in place until the real
@@ -273,14 +348,27 @@ export class Nip46Signer implements NostrSigner {
   /** [nip46-diag] short-id label for log lines, see block comment above. */
   private readonly diagLabel: string;
 
-  constructor(input: { pool: SimplePool; inner: BunkerSigner }) {
+  /**
+   * Explicit override for the relay that NIP-46 EVENTs are published to.
+   * When unset, the wrapper defaults to `bp.relays[0]` (the first relay
+   * declared in the bunker URI / pointer, which by convention is the
+   * bunker app's home relay).
+   */
+  private bunkerPublishRelay: string | undefined;
+
+  constructor(input: {
+    pool: SimplePool;
+    inner: BunkerSigner;
+    /**
+     * Optional explicit override for the relay every NIP-46 EVENT is
+     * published to. See `createBunkerPublishPool` for the rationale.
+     */
+    bunkerPublishRelay?: string;
+  }) {
     this.pool = input.pool;
     this.inner = input.inner;
+    this.bunkerPublishRelay = input.bunkerPublishRelay;
 
-    // [nip46-diag] Wrap inner.pool so BunkerSigner's own publish calls show
-    // up in the wire log. Our direct subscribe() in refreshBunkerSubscription
-    // is logged inline. Remove with the rest of the diag block.
-    //
     // The `bp`/`pool` accesses are guarded with optional chaining because
     // some unit tests construct Nip46Signer with a partial `inner` mock that
     // doesn't populate the BunkerSigner internals. In production both
@@ -295,10 +383,30 @@ export class Nip46Signer implements NostrSigner {
     nip46log(`${this.diagLabel} created`, {
       bunkerPubkey: innerForDiag.bp?.pubkey,
       relays: innerForDiag.bp?.relays,
+      bunkerPublishRelay: this.bunkerPublishRelay,
     });
     if (innerForDiag.pool) {
-      innerForDiag.pool = createLoggingPool(innerForDiag.pool, this.diagLabel);
+      // Order matters: restrict publish FIRST (so the logging wrapper logs
+      // the actually-restricted relay list), then add diagnostic logging.
+      // The publish restriction always runs (it's the actual behaviour
+      // change). The logging wrapper is browser-only.
+      const restricted = createBunkerPublishPool(
+        innerForDiag.pool,
+        () => this.bunkerPublishRelay ?? innerForDiag.bp?.relays[0],
+        this.diagLabel
+      );
+      innerForDiag.pool = createLoggingPool(restricted, this.diagLabel);
     }
+  }
+
+  /**
+   * Override the relay used for publishing NIP-46 EVENTs. Pass `undefined`
+   * to fall back to `bp.relays[0]`. Useful for failover scenarios where the
+   * caller has external evidence that the primary relay is unhealthy.
+   */
+  setBunkerPublishRelay(relay: string | undefined): void {
+    this.bunkerPublishRelay = relay;
+    nip46log(`${this.diagLabel} publish-relay-set`, { relay });
   }
 
   getStatus(): SignerStatus {
@@ -310,46 +418,41 @@ export class Nip46Signer implements NostrSigner {
   }
 
   /**
-   * Open a fresh REQ subscription on the bunker relays AND wait for the
-   * relay to acknowledge it (EOSE) before letting the next RPC publish its
-   * EVENT.
+   * Open a fresh REQ subscription on the bunker relays so that the next RPC's
+   * EVENT publish is guaranteed to be sent AFTER the REQ on the same WebSocket
+   * AND after the relay has acknowledged the REQ with EOSE.
    *
    * Why this exists:
    *
-   * - `nostr-tools`' `BunkerSigner.sendRequest` opens its REQ subscription
-   *   and publishes the EVENT in the same tick, with no synchronization
-   *   between them. The REQ and EVENT race through `pool.subscribe` and
-   *   `pool.publish`, both of which await `ensureRelay` before sending. On
-   *   the wire the order is usually REQ-then-EVENT, but the second sign of
-   *   a session is exactly the case where the bunker's reply can come back
-   *   so quickly that we miss it: the relay processes our EVENT, broadcasts
-   *   to the bunker's mirror sub, the bunker auto-approves (it just saw the
-   *   user approve a moment ago) and publishes its reply, and our sub is
-   *   not yet "live" enough to pick the reply out of backlog. Result: the
-   *   listener for that request id is never invoked and the call hangs
-   *   until our 25s timeout fires.
+   * - `nostr-tools`' `BunkerSigner.sendRequest` calls `pool.subscribe(...)`
+   *   and `pool.publish(...)` in the same tick. Both go through `ensureRelay`
+   *   and then `relay.send(...)`, which is async via `connectionPromise.then`.
+   *   Without an explicit barrier between them, the EVENT microtask can land
+   *   on the wire before the REQ microtask and the relay forwards the bunker
+   *   reply to a subscription that does not exist yet.
    *
-   * - Ditto avoids this with `@nostrify/nostrify`'s `NConnectSigner.send`,
-   *   which has the comment "Ensure the REQ is opened before sending the
-   *   EVENT" and structurally opens the REQ first, awaits a relay
-   *   acknowledgement, and only then publishes.
+   * - We additionally wait for EOSE so the response (which arrives on the
+   *   *original* `subCloser` from `BunkerSigner.setupSubscription`, since
+   *   most relays broadcast to the first matching subscription only) is not
+   *   delivered to a sub the relay considers stale. The cost is ~200 ms per
+   *   RPC, which is negligible compared to the bunker's own round-trip and
+   *   far below any UX-visible threshold.
    *
    * What we do here:
    *
-   * 1. Close any existing `subCloser` (the construction-time one or the
-   *    one left over from the previous RPC).
+   * 1. Close any existing `subCloser` (the construction-time one or the one
+   *    left over from the previous RPC).
    * 2. Open our own `pool.subscribe` with the same filter `BunkerSigner`
-   *    uses, but with an `oneose` callback so we know when the relay has
-   *    finished registering it. The `onevent` decrypts and dispatches into
+   *    uses; the `onevent` decrypts and dispatches into
    *    `BunkerSigner.listeners` exactly the way the bunker's own subscription
    *    would, so the bunker's RPC dispatch keeps working unchanged.
    * 3. Hand the resulting closer to the bunker via `inner.subCloser`. When
    *    `BunkerSigner.sendRequest` runs next, it sees `subCloser` is already
    *    set and skips its own `setupSubscription()`, so it goes straight to
-   *    publishing the EVENT — and now the REQ is guaranteed to be live on
-   *    the relay first.
-   * 4. Await the EOSE (with a safety timeout so a relay that never sends
-   *    EOSE doesn't deadlock the signer).
+   *    publishing the EVENT.
+   * 4. Wait for EOSE (with a short timeout) before returning so the EVENT
+   *    publish that follows is guaranteed to land after the relay has the
+   *    sub registered for real-time forwarding.
    */
   private async refreshBunkerSubscription(): Promise<void> {
     const inner = this.inner as unknown as BunkerSignerInternals;
@@ -362,8 +465,7 @@ export class Nip46Signer implements NostrSigner {
       try {
         await oldCloser.close("nip46:per-rpc-refresh");
       } catch {
-        // Best-effort: even if close fails, clearing subCloser ensures we
-        // build the fresh subscription below.
+        // best-effort close
       }
     }
 
@@ -383,7 +485,7 @@ export class Nip46Signer implements NostrSigner {
     });
 
     let resolveReady: () => void = () => {
-      // assigned below; placeholder satisfies the no-useless-undefined lint
+      // assigned synchronously below
     };
     const ready = new Promise<void>((resolve) => {
       resolveReady = resolve;
@@ -446,15 +548,16 @@ export class Nip46Signer implements NostrSigner {
           nip46log(`${diagLabel} sub:eose`);
           resolveReady();
         },
-        onclose: (reason?: string) => {
-          nip46log(`${diagLabel} sub:close`, { reason });
+        onclose: (reasons: string[]) => {
+          nip46log(`${diagLabel} sub:close`, { reasons });
           // Mirror BunkerSigner's own onclose so it sees the sub is gone
           // (e.g. relay-initiated close) and rebuilds on the next RPC.
           if (inner.subCloser === closer) {
             inner.subCloser = undefined;
           }
-          // Unblock anyone still awaiting `ready` — better to fall through
-          // and let the EVENT publish than to hang on a torn-down sub.
+          // Unblock the EOSE wait below if the sub closed before EOSE arrived
+          // (e.g. relay rejected the REQ); the publish will then proceed and
+          // either succeed against another relay or fail with a useful error.
           resolveReady();
         },
       }
@@ -463,25 +566,14 @@ export class Nip46Signer implements NostrSigner {
     inner.subCloser = closer;
     inner.isOpen = true;
 
-    let safetyTimer: ReturnType<typeof setTimeout> | undefined;
-    const readyOutcome = (async (): Promise<"ready"> => {
-      await ready;
-      return "ready";
-    })();
-    const timeoutOutcome = new Promise<"timeout">((resolve) => {
-      safetyTimer = setTimeout(() => resolve("timeout"), REQ_READY_TIMEOUT_MS);
-    });
-    let outcome: "ready" | "timeout";
-    try {
-      outcome = await Promise.race([readyOutcome, timeoutOutcome]);
-    } finally {
-      if (safetyTimer) clearTimeout(safetyTimer);
-    }
-    if (outcome === "timeout") {
-      nip46log(`${diagLabel} sub:eose-timeout`, {
-        waitedMs: REQ_READY_TIMEOUT_MS,
-      });
-    }
+    // Bound the wait so a slow/dead relay can't stall every RPC. If EOSE
+    // never arrives we still proceed; the publish has its own per-relay
+    // timeout in `nostr-tools` and the bunker subscription stays open in
+    // the background.
+    await Promise.race([
+      ready,
+      new Promise<void>((resolve) => setTimeout(resolve, REQ_READY_TIMEOUT_MS)),
+    ]);
   }
 
   private async rpc<T>(
