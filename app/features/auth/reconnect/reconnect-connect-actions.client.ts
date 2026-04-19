@@ -116,6 +116,15 @@ export async function connectWithBunker(
     return;
   }
 
+  // Persist the bunker URL's relays alongside the input so any caller that
+  // reads `cfg.relays` (Settings UI, transport-health helpers, etc.) sees
+  // them. Without this the field would stay undefined until `switch_relays`
+  // ever overrode it.
+  const bpForRelays = await parseBunkerInput(trimmedBunker).catch(() => null);
+  const bunkerRelays =
+    bpForRelays?.relays
+      .map((r) => r.trim())
+      .filter((r) => r.startsWith("wss://")) ?? [];
   const config: ActiveSignerConfig = {
     type: "nip46",
     method: "bunker_input",
@@ -124,6 +133,7 @@ export async function connectWithBunker(
       isReconnectExisting && reconnectBunkerConfig
         ? reconnectBunkerConfig.clientSecretKeyHex
         : serializeSecretKey(clientSecretKey),
+    ...(bunkerRelays.length > 0 && { relays: bunkerRelays }),
   };
 
   const view = matchOrCreateSession(config, {

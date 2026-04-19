@@ -34,10 +34,7 @@ import {
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
 } from "./connection-constants";
-import {
-  isTransportLikelyHealthy,
-  syncRelaysWithRemoteSigner,
-} from "./connection-health.client";
+import { syncRelaysWithRemoteSigner } from "./connection-health.client";
 import { resolveNip46SignerFromConfig } from "./connection-resolve.client";
 import {
   getActiveSignerConfig,
@@ -99,28 +96,19 @@ export function cacheNip46SignerFromLogin(signer: NostrSigner): void {
 export { createNip46SignerFromStoredConfigImpl as createNip46SignerFromStoredConfig };
 
 /**
- * Reuse the cached signer only when the underlying shared-pool transport
- * still has at least one open WebSocket. We deliberately do not ping the
- * bunker before every reuse: that ping is what made signing feel laggy and
- * still couldn't catch a stale connection any sooner than the next real RPC.
- *
- * For NIP-07 the cached signer is always reusable - there is no transport
- * to check.
+ * Reuse the cached signer if we have one. We deliberately do not ping the
+ * bunker or inspect the shared pool before every reuse: the pool already
+ * auto-reconnects sockets and `BunkerSigner` re-creates its REQ subscription
+ * on `sendRequest` if it was closed. The previous transport-health gate could
+ * also wrongly throw away a freshly-cached login signer (e.g. for
+ * bunker_input configs the persisted `relays` field can be empty), forcing
+ * the next sign call to rebuild a new BunkerSigner subscription that the
+ * remote signer app may not see in time. We now trust the cached signer and
+ * let the next real RPC discover liveness on its own — the adapter has a
+ * reconnect-and-retry path for the rare case where it does fail.
  */
 function tryGetValidCachedSigner(): NostrSigner | null {
-  const cachedSigner = getCachedSigner();
-  if (!cachedSigner) return null;
-
-  if (cachedSigner.type !== NIP46_SIGNER_TYPE) {
-    return cachedSigner;
-  }
-
-  if (!isTransportLikelyHealthy()) {
-    clearCachedNip46Signer();
-    return null;
-  }
-
-  return cachedSigner;
+  return getCachedSigner();
 }
 
 function isConnectionRelatedError(err: unknown): boolean {

@@ -148,11 +148,19 @@ export async function runExistingBunkerReconnect(
     return;
   }
 
+  // Preserve any persisted relay override (from `switch_relays` or a previous
+  // login) and otherwise fall back to the bunker URL's relays. Keeping
+  // `relays` populated avoids helpers that read `cfg.relays` ever seeing an
+  // empty list and treating the transport as dead.
+  const reconnectBunkerRelays =
+    bunkerConfig.relays?.filter((r) => r.startsWith("wss://")) ??
+    bp.relays.map((r) => r.trim()).filter((r) => r.startsWith("wss://"));
   const config: ActiveSignerConfig = {
     type: "nip46",
     method: "bunker_input",
     bunkerInput: storedBunkerInput,
     clientSecretKeyHex: bunkerConfig.clientSecretKeyHex,
+    ...(reconnectBunkerRelays.length > 0 && { relays: reconnectBunkerRelays }),
   };
 
   const connectionId = connectionView.connection.id;

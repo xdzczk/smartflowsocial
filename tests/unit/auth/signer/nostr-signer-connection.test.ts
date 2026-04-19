@@ -31,7 +31,6 @@ const mockResetCachedSigner = vi.fn();
 const mockGetActiveSignerConfig = vi.fn<() => ActiveSignerConfig | null>(
   () => null
 );
-const mockIsTransportLikelyHealthy = vi.fn(() => true);
 const mockCacheNip46SignerFromLoginImpl = vi.fn();
 
 vi.mock("~/features/auth/signer/connection-cache.client", () => ({
@@ -51,7 +50,6 @@ vi.mock("~/features/auth/signer/connection-cache.client", () => ({
 }));
 
 vi.mock("~/features/auth/signer/connection-health.client", () => ({
-  isTransportLikelyHealthy: () => mockIsTransportLikelyHealthy(),
   syncRelaysWithRemoteSigner: vi.fn(),
 }));
 
@@ -100,7 +98,6 @@ describe("nostr-signer-connection", () => {
     inFlightRefs.configJson = null;
     mockGetCachedSigner.mockReturnValue(null);
     mockGetActiveSignerConfig.mockReturnValue(null);
-    mockIsTransportLikelyHealthy.mockReturnValue(true);
   });
 
   describe("getActiveSigner", () => {
@@ -109,25 +106,11 @@ describe("nostr-signer-connection", () => {
       expect(result).toBeNull();
     });
 
-    it("returns cached signer when transport is healthy", async () => {
+    it("returns the cached signer without consulting transport health", async () => {
       mockGetCachedSigner.mockReturnValue(mockCachedSigner);
-      mockIsTransportLikelyHealthy.mockReturnValue(true);
       const result = await getActiveSigner({ allowReconnect: false });
       expect(result).toBe(mockCachedSigner);
-    });
-
-    it("clears cache and returns null when transport is unhealthy and reconnect disabled", async () => {
-      mockGetCachedSigner.mockReturnValue(mockCachedSigner);
-      mockIsTransportLikelyHealthy.mockReturnValue(false);
-      mockGetActiveSignerConfig.mockReturnValue({
-        type: "nip46",
-        method: "bunker_input",
-        bunkerInput: "x",
-        clientSecretKeyHex: "ab",
-      });
-      const result = await getActiveSigner({ allowReconnect: false });
-      expect(result).toBeNull();
-      expect(mockResetCachedSigner).toHaveBeenCalled();
+      expect(mockResetCachedSigner).not.toHaveBeenCalled();
     });
 
     it("returns nip07 signer when config is nip07 and cache empty", async () => {

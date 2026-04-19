@@ -1,6 +1,6 @@
 # Auth / signer architecture
 
-**Last updated:** 2026-03-09
+**Last updated:** 2026-04-19
 
 The auth/signer surface is split into **flow modules**, **composable hooks**, and **signer core** so
 that no single file exceeds ~400 lines (logic) or ~300 (UI), flows are testable without React, and
@@ -23,8 +23,12 @@ the public API stays stable.
   `connection-connect.client.ts`, `connection-relay-utils.client.ts`, with
   `nostr-signer-connection.client.ts` as the slim orchestrator. Visibility/resume is intentionally
   unhandled — the shared pool's `enableReconnect` plus the per-sign reconnect-and-retry layer keep
-  things alive without bespoke probes. Sessions: `remote-signer-sessions-types.ts`,
-  `remote-signer-sessions-storage.client.ts`, `remote-signer-sessions.client.ts` (API).
+  things alive without bespoke probes. The cached signer is reused as-is on every `getActiveSigner`
+  call (no preflight transport check); the next real RPC discovers liveness and the adapter handles
+  failures via reconnect-and-retry. This avoids the prior bug where a freshly-cached login signer
+  was thrown away because the persisted `cfg.relays` was empty for `bunker_input` configs. Sessions:
+  `remote-signer-sessions-types.ts`, `remote-signer-sessions-storage.client.ts`,
+  `remote-signer-sessions.client.ts` (API).
 
 ## Public API
 
