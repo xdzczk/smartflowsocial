@@ -285,20 +285,25 @@ describe("Nip46Signer per-RPC subscription pre-warm", () => {
 });
 
 /**
- * Tests for the publish-restriction wrapper installed by `Nip46Signer`'s
- * constructor on `inner.pool`. The contract:
+ * Tests for the (intentional) ABSENCE of any publish-relay restriction on
+ * `inner.pool`. The contract:
  *
- *   - `inner.pool.publish(bp.relays, evt)` must end up calling the underlying
- *     pool with EXACTLY ONE relay (the bunker primary), not the full list.
- *   - The chosen relay defaults to `bp.relays[0]`.
- *   - An explicit `bunkerPublishRelay` constructor option overrides the default.
- *   - `setBunkerPublishRelay()` updates the choice for subsequent publishes.
- *   - `inner.pool.subscribe(...)` is forwarded with the original relay list
- *     intact (so we keep the multi-relay safety net for receiving responses).
+ *   - `Nip46Signer` must NOT collapse multi-relay publish targets down to a
+ *     single relay. Both `publish` and `subscribe` calls must reach the
+ *     underlying pool with the EVENT/REQ fanned out to every relay the
+ *     caller (i.e. `nostr-tools`' `BunkerSigner.sendRequest`) asked for.
  *
- * See `createBunkerPublishPool` in `nostr-signer.client.ts` for the rationale.
+ *   - This mirrors `@nostrify/nostrify`'s `NConnectSigner` — used by Ditto
+ *     via `pool.group(login.data.relays)` — which fans NIP-46 EVENTs across
+ *     every advertised bunker relay. Our previous single-relay restriction
+ *     broke Primal cold-reopen sign because Primal's iOS bunker can wake up
+ *     subscribed to whichever of its 3 advertised relays its push pipeline
+ *     chooses; restricting to one relay can land the EVENT in the void.
+ *
+ *   - The diagnostic logging wrapper IS allowed to wrap the pool, but it
+ *     must not change the relay list passed through to the underlying pool.
  */
-describe("Nip46Signer bunker-publish-relay restriction", () => {
+describe("Nip46Signer bunker pool wrapping", () => {
   type PublishFn = (relays: string[], event: unknown) => Array<Promise<string>>;
   type SubscribeFn = (
     relays: string[],
@@ -334,131 +339,41 @@ describe("Nip46Signer bunker-publish-relay restriction", () => {
     return { fake, innerPoolPublish, innerPoolSubscribe };
   }
 
-  it("restricts publish to bp.relays[0] when no override is provided", () => {
-    const { fake, innerPoolPublish } = makeBunkerWithPool([
+  it("publish fans out to every relay in bp.relays — no single-relay restriction", () => {
+    const relays = [
       "wss://relay.primal.net",
       "wss://relay.damus.io",
       "wss://nos.lol/",
-    ]);
+    ];
+    const { fake, innerPoolPublish } = makeBunkerWithPool(relays);
     new Nip46Signer({
       pool: makeFakePool(fake) as unknown as SignerCtorInput["pool"],
       inner: fake as unknown as SignerCtorInput["inner"],
     });
 
     const wrappedPool = (fake as unknown as InnerWithPool).pool;
-    const evt = { id: "evt", kind: 24133 };
-    void wrappedPool.publish(
-      ["wss://relay.primal.net", "wss://relay.damus.io", "wss://nos.lol/"],
-      evt
-    );
+    void wrappedPool.publish(relays, { id: "evt", kind: 24133 });
 
     expect(innerPoolPublish).toHaveBeenCalledTimes(1);
-    expect(innerPoolPublish.mock.calls[0]?.[0]).toEqual([
-      "wss://relay.primal.net",
-    ]);
+    expect(innerPoolPublish.mock.calls[0]?.[0]).toEqual(relays);
   });
 
-  it("respects the explicit bunkerPublishRelay constructor override", () => {
-    const { fake, innerPoolPublish } = makeBunkerWithPool([
+  it("subscribe is forwarded with the full relay list intact", () => {
+    const relays = [
       "wss://relay.primal.net",
       "wss://relay.damus.io",
       "wss://nos.lol/",
-    ]);
-    new Nip46Signer({
-      pool: makeFakePool(fake) as unknown as SignerCtorInput["pool"],
-      inner: fake as unknown as SignerCtorInput["inner"],
-      bunkerPublishRelay: "wss://relay.damus.io",
-    });
-
-    const wrappedPool = (fake as unknown as InnerWithPool).pool;
-    void wrappedPool.publish(
-      ["wss://relay.primal.net", "wss://relay.damus.io", "wss://nos.lol/"],
-      { id: "evt", kind: 24133 }
-    );
-
-    expect(innerPoolPublish.mock.calls[0]?.[0]).toEqual([
-      "wss://relay.damus.io",
-    ]);
-  });
-
-  it("falls back to relays[0] if the override isn't in the relay list", () => {
-    const { fake, innerPoolPublish } = makeBunkerWithPool([
-      "wss://relay.primal.net",
-      "wss://relay.damus.io",
-    ]);
-    new Nip46Signer({
-      pool: makeFakePool(fake) as unknown as SignerCtorInput["pool"],
-      inner: fake as unknown as SignerCtorInput["inner"],
-      bunkerPublishRelay: "wss://not-in-list.example",
-    });
-
-    const wrappedPool = (fake as unknown as InnerWithPool).pool;
-    void wrappedPool.publish(
-      ["wss://relay.primal.net", "wss://relay.damus.io"],
-      { id: "evt", kind: 24133 }
-    );
-
-    // Override didn't match any relay we were going to publish to, so the
-    // wrapper falls back to the first of the actually-passed relays.
-    expect(innerPoolPublish.mock.calls[0]?.[0]).toEqual([
-      "wss://relay.primal.net",
-    ]);
-  });
-
-  it("setBunkerPublishRelay redirects subsequent publishes", () => {
-    const { fake, innerPoolPublish } = makeBunkerWithPool([
-      "wss://relay.primal.net",
-      "wss://relay.damus.io",
-    ]);
-    const signer = new Nip46Signer({
-      pool: makeFakePool(fake) as unknown as SignerCtorInput["pool"],
-      inner: fake as unknown as SignerCtorInput["inner"],
-    });
-
-    const wrappedPool = (fake as unknown as InnerWithPool).pool;
-    const evt = { id: "evt", kind: 24133 };
-
-    void wrappedPool.publish(
-      ["wss://relay.primal.net", "wss://relay.damus.io"],
-      evt
-    );
-    signer.setBunkerPublishRelay("wss://relay.damus.io");
-    void wrappedPool.publish(
-      ["wss://relay.primal.net", "wss://relay.damus.io"],
-      evt
-    );
-
-    expect(innerPoolPublish.mock.calls[0]?.[0]).toEqual([
-      "wss://relay.primal.net",
-    ]);
-    expect(innerPoolPublish.mock.calls[1]?.[0]).toEqual([
-      "wss://relay.damus.io",
-    ]);
-  });
-
-  it("does NOT restrict subscribe — the multi-relay safety net stays intact", () => {
-    const { fake, innerPoolSubscribe } = makeBunkerWithPool([
-      "wss://relay.primal.net",
-      "wss://relay.damus.io",
-      "wss://nos.lol/",
-    ]);
+    ];
+    const { fake, innerPoolSubscribe } = makeBunkerWithPool(relays);
     new Nip46Signer({
       pool: makeFakePool(fake) as unknown as SignerCtorInput["pool"],
       inner: fake as unknown as SignerCtorInput["inner"],
     });
 
     const wrappedPool = (fake as unknown as InnerWithPool).pool;
-    wrappedPool.subscribe(
-      ["wss://relay.primal.net", "wss://relay.damus.io", "wss://nos.lol/"],
-      { kinds: [24133] },
-      {}
-    );
+    wrappedPool.subscribe(relays, { kinds: [24133] }, {});
 
     expect(innerPoolSubscribe).toHaveBeenCalledTimes(1);
-    expect(innerPoolSubscribe.mock.calls[0]?.[0]).toEqual([
-      "wss://relay.primal.net",
-      "wss://relay.damus.io",
-      "wss://nos.lol/",
-    ]);
+    expect(innerPoolSubscribe.mock.calls[0]?.[0]).toEqual(relays);
   });
 });

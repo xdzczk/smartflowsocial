@@ -228,76 +228,6 @@ function createLoggingPool(pool: SimplePool, label: string): SimplePool {
 /* eslint-enable no-console */
 
 /**
- * Wraps a `SimplePool` so every `publish()` call goes to a SINGLE relay
- * (the "bunker primary"), instead of fanning the EVENT out to every relay
- * in `bp.relays`.
- *
- * Why this exists:
- *
- * - `nostr-tools`' `BunkerSigner.sendRequest` calls `pool.publish(this.bp.relays, evt)`.
- *   For nostrconnect URIs we generate, `bp.relays` contains 3 default relays
- *   (`relay.primal.net`, `relay.damus.io`, `nos.lol/`). The bunker app
- *   (e.g. Primal on iOS) only listens on its own home relay.
- *
- * - When we publish the same EVENT to all 3 relays, the bunker can see two
- *   non-canonical copies (forwarded via cross-relay gossip / shared client
- *   subscriptions) before its own relay's copy arrives. Some bunker
- *   implementations dedupe by event id and silently drop subsequent copies,
- *   which means the EVENT they actually see can be one they choose to
- *   ignore — and they never reply. The handshake (`connect`) tolerates this
- *   because the URI's secret-matching window only needs *some* matching
- *   event; per-RPC `get_public_key` / `sign_event` does not.
- *
- * - `@nostrify/nostrify`'s `NConnectSigner` (used by Ditto) takes a single
- *   `NRelay`, so it never has this fan-out problem. We mirror that here by
- *   restricting publish to one relay, while keeping subscribe across all
- *   relays as a safety net for receiving responses.
- *
- * Subscribe and every other method are forwarded unchanged.
- */
-function createBunkerPublishPool(
-  pool: SimplePool,
-  primaryRelay: () => string | undefined,
-  label: string
-): SimplePool {
-  return new Proxy(pool, {
-    get(target, prop, receiver) {
-      if (prop === "publish") {
-        return (relays: string[], event: PublishableEvent) => {
-          const primary = primaryRelay();
-          const targetRelays =
-            primary && relays.includes(primary)
-              ? [primary]
-              : relays.length > 0
-                ? [relays[0]!]
-                : relays;
-          if (
-            typeof window !== "undefined" &&
-            targetRelays.length !== relays.length
-          ) {
-            nip46log(`${label} publish-restricted`, {
-              eventId: event.id,
-              from: relays,
-              to: targetRelays,
-            });
-          }
-          const publishFn = (
-            target as unknown as {
-              publish: (
-                r: string[],
-                e: PublishableEvent
-              ) => Array<Promise<string>>;
-            }
-          ).publish;
-          return publishFn.call(target, targetRelays, event);
-        };
-      }
-      return Reflect.get(target, prop, receiver);
-    },
-  });
-}
-
-/**
  * Decoded NIP-46 response payload. `result === "auth_url"` is a transient
  * notification (the bunker is asking the user to approve via `error` URL),
  * not the final response, so the listener stays in place until the real
@@ -348,26 +278,9 @@ export class Nip46Signer implements NostrSigner {
   /** [nip46-diag] short-id label for log lines, see block comment above. */
   private readonly diagLabel: string;
 
-  /**
-   * Explicit override for the relay that NIP-46 EVENTs are published to.
-   * When unset, the wrapper defaults to `bp.relays[0]` (the first relay
-   * declared in the bunker URI / pointer, which by convention is the
-   * bunker app's home relay).
-   */
-  private bunkerPublishRelay: string | undefined;
-
-  constructor(input: {
-    pool: SimplePool;
-    inner: BunkerSigner;
-    /**
-     * Optional explicit override for the relay every NIP-46 EVENT is
-     * published to. See `createBunkerPublishPool` for the rationale.
-     */
-    bunkerPublishRelay?: string;
-  }) {
+  constructor(input: { pool: SimplePool; inner: BunkerSigner }) {
     this.pool = input.pool;
     this.inner = input.inner;
-    this.bunkerPublishRelay = input.bunkerPublishRelay;
 
     // The `bp`/`pool` accesses are guarded with optional chaining because
     // some unit tests construct Nip46Signer with a partial `inner` mock that
@@ -383,30 +296,17 @@ export class Nip46Signer implements NostrSigner {
     nip46log(`${this.diagLabel} created`, {
       bunkerPubkey: innerForDiag.bp?.pubkey,
       relays: innerForDiag.bp?.relays,
-      bunkerPublishRelay: this.bunkerPublishRelay,
     });
     if (innerForDiag.pool) {
-      // Order matters: restrict publish FIRST (so the logging wrapper logs
-      // the actually-restricted relay list), then add diagnostic logging.
-      // The publish restriction always runs (it's the actual behaviour
-      // change). The logging wrapper is browser-only.
-      const restricted = createBunkerPublishPool(
-        innerForDiag.pool,
-        () => this.bunkerPublishRelay ?? innerForDiag.bp?.relays[0],
-        this.diagLabel
-      );
-      innerForDiag.pool = createLoggingPool(restricted, this.diagLabel);
+      // Diagnostic logging only; we let `nostr-tools`' BunkerSigner publish
+      // the EVENT to every relay in `bp.relays` exactly the way Ditto's
+      // NConnectSigner does (`pool.group(login.data.relays)`). Single-relay
+      // publish was tried and demonstrably broken Primal cold-reopen sign
+      // because Primal's iOS bunker wakes up subscribed to whichever of
+      // its 3 advertised relays its push pipeline picks; restricting our
+      // EVENT to one relay can land it in the void from the bunker's POV.
+      innerForDiag.pool = createLoggingPool(innerForDiag.pool, this.diagLabel);
     }
-  }
-
-  /**
-   * Override the relay used for publishing NIP-46 EVENTs. Pass `undefined`
-   * to fall back to `bp.relays[0]`. Useful for failover scenarios where the
-   * caller has external evidence that the primary relay is unhealthy.
-   */
-  setBunkerPublishRelay(relay: string | undefined): void {
-    this.bunkerPublishRelay = relay;
-    nip46log(`${this.diagLabel} publish-relay-set`, { relay });
   }
 
   getStatus(): SignerStatus {
