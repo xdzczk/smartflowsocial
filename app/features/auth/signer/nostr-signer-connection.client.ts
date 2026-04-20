@@ -401,7 +401,6 @@ export async function getActiveSigner(
         getActiveConnection,
         updateSession,
         recordConnectionEvent,
-        syncRelaysWithRemoteSigner,
         persistActiveSignerConfigWithoutReset,
       })
     : (async () => {

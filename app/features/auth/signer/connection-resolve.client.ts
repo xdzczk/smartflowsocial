@@ -41,7 +41,6 @@ export interface ResolveNip46SignerOptions {
   getActiveConnection: () => RemoteSignerConnection | null;
   updateSession: (id: string, updates: Record<string, unknown>) => void;
   recordConnectionEvent: (connectionId: string, event: ConnectionEvent) => void;
-  syncRelaysWithRemoteSigner: (signer: NostrSigner) => Promise<unknown>;
   persistActiveSignerConfigWithoutReset: (config: ActiveSignerConfig) => void;
 }
 
@@ -61,7 +60,6 @@ export async function resolveNip46SignerFromConfig(
     getActiveConnection,
     updateSession,
     recordConnectionEvent,
-    syncRelaysWithRemoteSigner,
     persistActiveSignerConfigWithoutReset,
   } = options;
 
@@ -216,15 +214,24 @@ export async function resolveNip46SignerFromConfig(
       );
     }
 
-    // Same reasoning as `connectViaBunker`: don't block the cached signer
-    // on a `switch_relays` RPC that races the user's first sign.
-    void (async () => {
-      try {
-        await syncRelaysWithRemoteSigner(signer);
-      } catch {
-        // best-effort
-      }
-    })();
+    // Same reasoning as `connectViaBunker`: we deliberately do NOT fire a
+    // background `switch_relays` here. This used to run as a fire-and-forget
+    // immediately after the QR/nostrconnect handoff completed, on the
+    // theory that "if the user changed their relays in Primal, sync them
+    // now". In practice Primal Signer never replies to `switch_relays` (or
+    // replies on a relay we've already moved off), so the call sits open
+    // for the full 8 s budget, publishes the same RPC EVENT to all 3
+    // bunker relays, and contributes to damus.io's per-client rate limit
+    // (`"rate-limited: you are noting too much"`). Worse, it appears to
+    // put Primal's session into a state where the NEXT sign-in's
+    // `get_public_key` is silently ignored — the failure log of two
+    // consecutive sign-ins shows the perfect alternation that pattern
+    // implies (success → auto switch_relays runs and fails → next sign-in
+    // dies → no auto switch_relays runs → next sign-in works → repeat).
+    // If the user really did change relays in their signer, the explicit
+    // "Reconnect" dialog still calls `syncRelaysWithRemoteSigner` from
+    // `useReconnectDialogState`. Auto-syncing on every sign-in costs more
+    // than it ever saved.
     return true;
   }
 

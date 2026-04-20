@@ -88,7 +88,6 @@ describe("connection-resolve", () => {
   const getCachedSigner = vi.fn<() => NostrSigner | null>(() => null);
   const updateSession = vi.fn();
   const recordConnectionEvent = vi.fn();
-  const syncRelaysWithRemoteSigner = vi.fn(async () => {});
   const getActiveConnection = vi.fn<() => RemoteSignerConnection | null>(
     () => ({
       id: "conn-1",
@@ -127,7 +126,6 @@ describe("connection-resolve", () => {
       getActiveConnection,
       updateSession,
       recordConnectionEvent,
-      syncRelaysWithRemoteSigner,
       persistActiveSignerConfigWithoutReset:
         mocks.persistActiveSignerConfigWithoutReset,
     };

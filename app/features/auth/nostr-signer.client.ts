@@ -345,8 +345,10 @@ export class Nip46Signer implements NostrSigner {
   private async rpc<T>(
     fn: () => Promise<T>,
     timeoutMs: number,
-    label: string
+    label: string,
+    options: { retry?: boolean } = {}
   ): Promise<T> {
+    const { retry = true } = options;
     const previous = this.rpcLock;
     let release: () => void = () => {
       // no-op until the lock-arming Promise constructor below assigns the
@@ -362,7 +364,9 @@ export class Nip46Signer implements NostrSigner {
         // Swallow upstream rejections so one failed RPC doesn't poison the
         // lock for the next caller.
       });
-      return await this.runRpcWithRetries(fn, timeoutMs, label, startedAt);
+      return await this.runRpcWithRetries(fn, timeoutMs, label, startedAt, {
+        retry,
+      });
     } finally {
       release();
     }
@@ -380,12 +384,20 @@ export class Nip46Signer implements NostrSigner {
    * `BunkerSigner.listeners`: a late reply from Primal to an old EVENT
    * id will resolve a promise no one awaits and is GC'd when bunker is
    * closed. Cleaner than mutating bunker's private map from out here.
+   *
+   * `retry: false` collapses the loop to a single attempt with the full
+   * `timeoutMs` budget. Used for opportunistic RPCs like `switch_relays`
+   * where Primal Signer simply doesn't reply: a second publish is just
+   * extra noise on the bunker relays (and contributes to per-client rate
+   * limits like damus.io's `"you are noting too much"`) without any
+   * realistic chance of changing the outcome.
    */
   private async runRpcWithRetries<T>(
     fn: () => Promise<T>,
     timeoutMs: number,
     label: string,
-    startedAt: number
+    startedAt: number,
+    options: { retry: boolean }
   ): Promise<T> {
     let attempt = 0;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- retry loop exits via return on success or throw on error/timeout; the unbounded `while (true)` is the intent.
@@ -402,10 +414,9 @@ export class Nip46Signer implements NostrSigner {
         });
         throw err;
       }
-      const attemptTimeout = Math.min(
-        NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS,
-        remaining
-      );
+      const attemptTimeout = options.retry
+        ? Math.min(NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS, remaining)
+        : remaining;
       if (attempt > 0) {
         nip46log(`${this.diagLabel} rpc:retry`, {
           method: label,
@@ -443,7 +454,7 @@ export class Nip46Signer implements NostrSigner {
         const isTimeout =
           err instanceof Error && err.message === `bunker:${label} timeout`;
         const totalElapsed = Date.now() - startedAt;
-        if (!isTimeout || totalElapsed >= timeoutMs) {
+        if (!isTimeout || !options.retry || totalElapsed >= timeoutMs) {
           nip46log(`${this.diagLabel} rpc:error`, {
             method: label,
             ms: totalElapsed,
@@ -634,10 +645,17 @@ export class Nip46Signer implements NostrSigner {
 
   async switchRelays(): Promise<string[] | null> {
     this.status = "ready";
+    // Opportunistic call: Primal Signer doesn't reply to `switch_relays`,
+    // and most other signer apps return a fixed list that the user rarely
+    // changes. A second publish wouldn't change the outcome and just adds
+    // noise on the bunker relays — it can also tip damus.io into
+    // rate-limiting subsequent RPCs from the same client. Single attempt,
+    // single publish, fail silently is the right shape here.
     const response = await this.rpc(
       () => this.inner.sendRequest("switch_relays", []),
       NIP46_RPC_TIMEOUTS.switchRelays,
-      "switch_relays"
+      "switch_relays",
+      { retry: false }
     );
     if (response === "null") {
       return null;
