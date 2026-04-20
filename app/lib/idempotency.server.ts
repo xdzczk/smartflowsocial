@@ -11,6 +11,14 @@ import { createHash } from "crypto";
  * Generate a deterministic idempotency key for post creation.
  * Include mediaKey when the post has media (e.g. image URLs) so that different
  * media with the same caption produce different posts (e.g. multiple image-only posts with no caption).
+ *
+ * NOTE: This content-hash form has no time component for immediate publishes
+ * (`scheduledFor` undefined collapses to the literal "now"), so two unrelated
+ * publish attempts of the same exact content will collide forever — across
+ * sessions, cold restarts, etc. Prefer {@link generateSubmissionIdempotencyKey}
+ * when the client can supply a per-attempt submission id; fall back to this
+ * helper only for legacy clients that do not yet send `submissionId`.
+ *
  * @param userId - The user ID
  * @param content - The post content (caption for media posts)
  * @param scheduledFor - Optional scheduled timestamp (Unix seconds)
@@ -25,6 +33,28 @@ export function generateCreationIdempotencyKey(
   const media = mediaKey != null && mediaKey !== "" ? mediaKey : "";
   const input = `${userId}:${content}:${scheduledFor ?? "now"}:${media}`;
   return createHash("sha256").update(input).digest("hex");
+}
+
+/**
+ * Generate a deterministic idempotency key from a client-generated submission
+ * id. Each composer publish attempt gets a stable uuid (kept across retries
+ * and signer-reconnect resumes). Two separate user clicks always have distinct
+ * submission ids, so re-publishing the same content from a new session creates
+ * a fresh Post instead of silently matching a historical one.
+ *
+ * The "submission:" prefix isolates this key namespace from the legacy
+ * content-hash keys, so the two schemes can coexist on the same column during
+ * rollout without ever colliding by accident.
+ */
+export function generateSubmissionIdempotencyKey(submissionId: string): string {
+  if (!submissionId || typeof submissionId !== "string") {
+    throw new Error(
+      "generateSubmissionIdempotencyKey requires a non-empty submissionId"
+    );
+  }
+  return createHash("sha256")
+    .update(`submission:${submissionId}`)
+    .digest("hex");
 }
 
 /**

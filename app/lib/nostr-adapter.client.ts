@@ -38,6 +38,10 @@ import {
   getExpectedPubkeyHexForGuard,
   getNip07Readiness,
 } from "~/lib/nip07-readiness.client";
+import {
+  isConnectionLikeError,
+  isSignTimeoutError,
+} from "~/lib/signer-error-classification";
 
 // ============================================================================
 // Helper Functions
@@ -93,42 +97,9 @@ function dispatchSignerNudge(phase: SignerNudgePhase, startedAt: number): void {
 const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
 const SIGN_TIMEOUT_KEY_APPROVE_REQUEST = "approve the request";
 
-function isBunkerRpcTimeoutMessage(message: string): boolean {
-  const m = message.toLowerCase();
-  return m.startsWith("bunker:") && m.endsWith(" timeout");
-}
-
-function isSignTimeoutError(error: unknown): boolean {
-  if (!(error instanceof RemoteSignerTimeoutError)) return false;
-  const m = error.message.toLowerCase();
-  return (
-    m.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
-    m.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST) ||
-    isBunkerRpcTimeoutMessage(error.message)
-  );
-}
-
-function isConnectionLikeError(error: unknown): boolean {
-  if (error instanceof RemoteSignerTimeoutError) {
-    // Sign timeouts → bunker is unresponsive, NOT a transport failure.
-    // Get-active-signer / connect timeouts → real transport problem, retry.
-    return !isSignTimeoutError(error);
-  }
-  const message =
-    error instanceof Error
-      ? error.message.toLowerCase()
-      : String(error).toLowerCase();
-  if (isBunkerRpcTimeoutMessage(message)) return false;
-  return (
-    message.includes("subscription closed") ||
-    message.includes("websocket") ||
-    message.includes("closed") ||
-    message.includes("connection") ||
-    message.includes("connecting") ||
-    message.includes("timeout") ||
-    message.includes("too long")
-  );
-}
+// Predicate implementations live in ~/lib/signer-error-classification so the
+// composer pending-publish state machine can share the same definitions. The
+// constants above are kept for documentation context only.
 
 /**
  * True if we should clear the NIP-46 signer cache.

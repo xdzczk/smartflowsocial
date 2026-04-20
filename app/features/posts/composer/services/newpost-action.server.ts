@@ -19,10 +19,11 @@ import {
   SchedulePostUseCase,
 } from "~/features/posts/scheduling/index.server";
 import { getPostById, updatePost } from "~/features/posts/server";
-import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { PublishEventMismatchError } from "~/features/posts/server/publishing";
+import { resolveExecutionRelaysFromFormDetailed } from "~/features/relays/relay-resolution.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
-import { logWarning } from "~/lib/error-logger.server";
+import { logInfo, logWarning } from "~/lib/error-logger.server";
 import { fromUnixTimestamp } from "~/lib/temporal";
 import {
   newPostActionSchema,
@@ -260,6 +261,17 @@ export async function handleNewPostAction(
     if (e instanceof ScheduleCapExceededError) {
       return json({ error: e.message }, { status: 403 });
     }
+    if (e instanceof PublishEventMismatchError) {
+      return json(
+        {
+          error:
+            "This post id is already published with a different signed event. Please try publishing again as a new post.",
+          code: "PUBLISH_EVENT_MISMATCH",
+          postId: e.postId,
+        },
+        { status: 409 }
+      );
+    }
     throw e;
   }
 }
@@ -289,32 +301,29 @@ async function handleNewPostActionImpl(
     formData = await request.formData();
   }
 
-  // Optional per-post relay override (from composer relay selector)
-  let sanitizedRelays: string[];
-  const relayOverrideRaw = formData.get("relays");
-  if (relayOverrideRaw && typeof relayOverrideRaw === "string") {
-    try {
-      const parsed = JSON.parse(relayOverrideRaw) as unknown;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const urls = parsed.filter((r): r is string => typeof r === "string");
-        if (urls.length > 0) {
-          sanitizedRelays = urls;
-        } else {
-          sanitizedRelays = await resolveExecutionRelays(userId);
-        }
-      } else {
-        sanitizedRelays = await resolveExecutionRelays(userId);
-      }
-    } catch {
-      sanitizedRelays = await resolveExecutionRelays(userId);
-    }
-  } else {
-    sanitizedRelays = await resolveExecutionRelays(userId);
-  }
+  // Centralized per-post relay resolution. Uses the canonical
+  // resolveExecutionRelaysFromForm helper so fresh-click and resume-click
+  // submissions always traverse the same code path; the {source, relays}
+  // structured log lets us *prove* in production that the resumed path is
+  // not silently using a smaller relay subset (the "3 relays" perception
+  // bug from the user report).
+  const relayResolution = await resolveExecutionRelaysFromFormDetailed(
+    userId,
+    formData
+  );
+  const sanitizedRelays = relayResolution.relays;
 
   // Check for upload preview actions first (they don't need full validation)
   const _actionValue = formData.get("_action");
   const _action = _actionValue ? String(_actionValue) : "";
+
+  logInfo("publish.relays.resolved", {
+    userId,
+    action: _action || "unknown",
+    source: relayResolution.source,
+    relayCount: sanitizedRelays.length,
+    relays: sanitizedRelays,
+  });
 
   const hasBinaryFile = Array.from(formData.values()).some(
     (value) => value instanceof File

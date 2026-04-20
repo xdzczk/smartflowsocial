@@ -12,6 +12,7 @@ import type {
   TextPostFormData,
   ThreadSegment,
 } from "../hooks/composer-submit-types";
+import { appendRelayOverride } from "../services/build-publish-formdata.client";
 
 export type BuildThreadSubmitFormDataResult =
   | { ok: true; formData: FormData }
@@ -91,8 +92,7 @@ export function buildThreadSubmitFormData(params: {
       );
     }
   }
-  if (relayOverride && relayOverride.length > 0)
-    threadPayload.set("relays", JSON.stringify(relayOverride));
+  appendRelayOverride(threadPayload, relayOverride);
   if (embedContext) threadPayload.set("_embedContext", embedContext);
   threadPayload.set(
     "includeHashtagsInNoteBody",

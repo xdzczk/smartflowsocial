@@ -224,19 +224,42 @@ export async function resolveExecutionRelaysFromForm(
   userId: string,
   formData: FormData
 ): Promise<string[]> {
+  const result = await resolveExecutionRelaysFromFormDetailed(userId, formData);
+  return result.relays;
+}
+
+/**
+ * Same as {@link resolveExecutionRelaysFromForm} but also reports which
+ * branch the relay list came from. Callers that need to log
+ * `publish.relays.resolved` for diagnostic purposes should use this variant
+ * so we can prove (in CloudWatch / Datadog) that fresh and resumed publishes
+ * always travel through the same canonical relay path.
+ */
+export async function resolveExecutionRelaysFromFormDetailed(
+  userId: string,
+  formData: FormData
+): Promise<{
+  relays: string[];
+  source: "form-override" | "resolveExecutionRelays";
+}> {
   const relayOverrideRaw = formData.get("relays");
   if (relayOverrideRaw && typeof relayOverrideRaw === "string") {
     try {
       const parsed = JSON.parse(relayOverrideRaw) as unknown;
       if (Array.isArray(parsed) && parsed.length > 0) {
         const urls = parsed.filter((r): r is string => typeof r === "string");
-        if (urls.length > 0) return normalizeRelays(urls);
+        if (urls.length > 0) {
+          return { relays: normalizeRelays(urls), source: "form-override" };
+        }
       }
     } catch {
       // fall through to server defaults
     }
   }
-  return resolveExecutionRelays(userId);
+  return {
+    relays: await resolveExecutionRelays(userId),
+    source: "resolveExecutionRelays",
+  };
 }
 
 /**

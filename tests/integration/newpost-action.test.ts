@@ -40,13 +40,38 @@ vi.mock(
   })
 );
 
-// Handlers import PublishNowUseCase from server (which re-exports from publishing); mock at source
+// Handlers import PublishNowUseCase from server (which re-exports from publishing); mock at source.
+// IMPORTANT: re-export PublishEventMismatchError so the action handler's
+// `e instanceof PublishEventMismatchError` translation in newpost-action.server.ts
+// keeps working under the mock; otherwise it becomes `undefined` and trips
+// "Right-hand side of 'instanceof' is not an object".
+const { MockPublishEventMismatchError } = vi.hoisted(() => {
+  class MockPublishEventMismatchError extends Error {
+    postId: string;
+    existingEventId: string | null;
+    attemptedEventId: string;
+    constructor(input: {
+      postId: string;
+      existingEventId: string | null;
+      attemptedEventId: string;
+    }) {
+      super("publish event mismatch");
+      this.name = "PublishEventMismatchError";
+      this.postId = input.postId;
+      this.existingEventId = input.existingEventId;
+      this.attemptedEventId = input.attemptedEventId;
+    }
+  }
+  return { MockPublishEventMismatchError };
+});
+
 vi.mock(
   "~/features/posts/publishing/use-cases/publish-now.use-case.server",
   () => ({
     PublishNowUseCase: class {
       execute = mockPublishNowExecute;
     },
+    PublishEventMismatchError: MockPublishEventMismatchError,
   })
 );
 
@@ -59,6 +84,18 @@ vi.mock("~/features/posts/server", async (importOriginal) => {
     PublishNowUseCase: class {
       execute = mockPublishNowExecute;
     },
+    PublishEventMismatchError: MockPublishEventMismatchError,
+  };
+});
+
+vi.mock("~/features/posts/server/publishing", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, unknown>),
+    PublishNowUseCase: class {
+      execute = mockPublishNowExecute;
+    },
+    PublishEventMismatchError: MockPublishEventMismatchError,
   };
 });
 

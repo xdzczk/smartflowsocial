@@ -32,7 +32,11 @@ const MIN_RELAY_RESULTS_REVEAL_MS = 1000;
 
 interface RelayAck {
   relayUrl: string;
-  status: "ACCEPTED" | "FAILED" | "TIMEOUT";
+  // PENDING = the relay is in the canonical intended set but the publisher
+  // has not yet returned a result for it (or never did). The modal renders
+  // PENDING rows so the user can see the full intended fanout target list,
+  // not just the relays that already responded.
+  status: "PENDING" | "ACCEPTED" | "FAILED" | "TIMEOUT";
   receivedAt: string | null;
   createdAt: string;
 }
@@ -215,10 +219,17 @@ function RelayStatusBadge({ status }: { status: RelayAck["status"] }) {
       </span>
     );
   }
-  // status must be "TIMEOUT" at this point
+  if (status === "TIMEOUT") {
+    return (
+      <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+        Timeout
+      </span>
+    );
+  }
+  // status must be "PENDING" at this point
   return (
-    <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-      Timeout
+    <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-xs font-medium">
+      Pending
     </span>
   );
 }
@@ -231,8 +242,11 @@ function RelayStatusIcon({ status }: { status: RelayAck["status"] }) {
   if (status === "FAILED") {
     return <XCircle className="h-5 w-5 text-red-500" />;
   }
-  // status must be "TIMEOUT" at this point
-  return <Clock className="h-5 w-5 text-yellow-500" />;
+  if (status === "TIMEOUT") {
+    return <Clock className="h-5 w-5 text-yellow-500" />;
+  }
+  // status must be "PENDING" at this point
+  return <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />;
 }
 
 interface PublishResultModalProps {
@@ -307,9 +321,22 @@ export default function PublishResultModal({
       const timeoutCount = acks.filter(
         (ack) => ack.status === "TIMEOUT"
       ).length;
+      const pendingCount = acks.filter(
+        (ack) => ack.status === "PENDING"
+      ).length;
+
+      // Any PENDING row means at least one intended relay has not yet
+      // returned a result; keep the modal in a publishing state until the
+      // poller fills those in (or the receivedAt+TIMEOUT path catches up).
+      if (pendingCount > 0 && acceptedCount === 0 && failedCount === 0) {
+        return "publishing";
+      }
 
       if (acceptedCount > 0 && failedCount === 0 && timeoutCount === 0) {
-        return "success";
+        // Treat "all responded relays accepted, some still pending" as a
+        // partial success rather than full success so the user sees that
+        // not every intended relay has confirmed yet.
+        return pendingCount > 0 ? "partial" : "success";
       }
       if (acceptedCount > 0) {
         return "partial";
@@ -577,7 +604,10 @@ export default function PublishResultModal({
     const timeoutCount = relayAcksForUi.filter(
       (ack) => ack.status === "TIMEOUT"
     ).length;
-    return { acceptedCount, failedCount, timeoutCount };
+    const pendingCount = relayAcksForUi.filter(
+      (ack) => ack.status === "PENDING"
+    ).length;
+    return { acceptedCount, failedCount, timeoutCount, pendingCount };
   }, [relayAcksForUi]);
 
   // Determine overall status
@@ -595,10 +625,18 @@ export default function PublishResultModal({
       return "publishing";
     }
 
-    const { acceptedCount, failedCount, timeoutCount } = relayStatusCounts;
+    const { acceptedCount, failedCount, timeoutCount, pendingCount } =
+      relayStatusCounts;
+
+    // Mirror the early-return ack-poll logic: if every responded relay
+    // accepted but some intended relays are still PENDING, treat as
+    // partial so the user knows fanout isn't complete yet.
+    if (pendingCount > 0 && acceptedCount === 0 && failedCount === 0) {
+      return "publishing";
+    }
 
     if (acceptedCount > 0 && failedCount === 0 && timeoutCount === 0) {
-      return "success";
+      return pendingCount > 0 ? "partial" : "success";
     }
     if (acceptedCount > 0) {
       return "partial";

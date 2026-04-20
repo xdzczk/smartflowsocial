@@ -18,6 +18,7 @@ import {
 } from "../contest-embed-response.server";
 import { applyHashtags } from "../hashtag-utils.server";
 import { isVideoFile } from "../media-utils.server";
+import { readSubmissionId } from "../submission-id.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
@@ -229,6 +230,7 @@ export async function handlePostImages({
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
+    submissionId: readSubmissionId(formData),
   });
 
   // Publish immediately using PublishNowUseCase
@@ -360,6 +362,7 @@ export async function handleScheduleImages({
     correlationId,
     repostSchedules,
     quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
+    submissionId: readSubmissionId(formData),
   });
 
   if (isContestEmbedRequest(formData)) {
@@ -414,6 +417,7 @@ export async function handleDraftImages({
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
+    submissionId: readSubmissionId(formData),
     // No scheduledFor = draft
   });
 

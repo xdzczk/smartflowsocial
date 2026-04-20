@@ -3,10 +3,15 @@
  * Extracts the complex submission logic from LongFormPost component
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer/publish-mode";
+import {
+  appendRelayOverride,
+  appendSubmissionId,
+} from "~/features/posts/composer/services/build-publish-formdata.client";
+import { pendingPublish } from "~/features/posts/composer/state/pending-publish.client";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -252,159 +257,176 @@ export function useLongFormSubmission({
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
-  const lastScheduleActionRef = useRef<"schedule" | "publish" | null>(null);
-  const handleScheduleRef =
-    useRef<(actionType: "schedule" | "publish") => Promise<void>>(null);
 
-  // After successful remote signer reconnect, clear stuck signing state and retry in-flight sign.
-  const retryLastSchedule = useCallback(() => {
-    const action = lastScheduleActionRef.current;
-    lastScheduleActionRef.current = null;
-    if (action) void handleScheduleRef.current?.(action);
-  }, []);
-
-  useEffect(() => {
-    const handler = () => {
-      setIsSigning(false);
-      setSigningError(null);
-      retryLastSchedule();
-    };
-    window.addEventListener("nostr-connection-healthy", handler);
-    return () =>
-      window.removeEventListener("nostr-connection-healthy", handler);
-  }, [retryLastSchedule]);
-
+  /**
+   * Long-form publish/schedule click. Routes through the pending-publish
+   * state machine so an interrupted bunker sign autocompletes when the
+   * remote signer comes back (within the 5-minute recovery window) and
+   * uses the same client-generated submissionId across the original and
+   * resumed attempts. That submissionId becomes the server-side
+   * creationIdempotencyKey, collapsing both attempts onto a single Post
+   * row instead of double-publishing or content-hash colliding with a
+   * prior cold-restart attempt.
+   */
   const handleSchedule = async (actionType: "schedule" | "publish") => {
     if (!title.trim() || !content.trim()) {
       return;
     }
 
-    try {
-      setSigningError(null);
-      const markdownContent = content;
-      const finalSummary = summary || generateSummaryFromMarkdown(content);
-      const identifier = generateArticleIdentifier(title);
+    const isAttemptStale = (attemptId: string): boolean =>
+      pendingPublish.getSnapshot()?.id !== attemptId;
 
-      const effectiveScheduled = await resolveEffectiveScheduledForLongform({
-        actionType,
-        publishMode,
-        selectedQueueType,
-        scheduledFor,
-        calculateQueueScheduleTime,
-      });
+    const performSignAndSubmit = async (
+      submissionId: string
+    ): Promise<void> => {
+      try {
+        setSigningError(null);
+        const markdownContent = content;
+        const finalSummary = summary || generateSummaryFromMarkdown(content);
+        const identifier = generateArticleIdentifier(title);
 
-      const scheduledTimestamp =
-        actionType === "schedule" && effectiveScheduled
-          ? await parseScheduledTimestamp(effectiveScheduled)
-          : undefined;
+        const effectiveScheduled = await resolveEffectiveScheduledForLongform({
+          actionType,
+          publishMode,
+          selectedQueueType,
+          scheduledFor,
+          calculateQueueScheduleTime,
+        });
 
-      if (
-        actionType === "schedule" &&
-        scheduledTimestamp !== undefined &&
-        scheduledTimestamp * 1000 < getMinScheduleTimestampMs(userTimezone)
-      ) {
-        setSigningError("Schedule time must be in the future.");
-        return;
+        const scheduledTimestamp =
+          actionType === "schedule" && effectiveScheduled
+            ? await parseScheduledTimestamp(effectiveScheduled)
+            : undefined;
+
+        if (
+          actionType === "schedule" &&
+          scheduledTimestamp !== undefined &&
+          scheduledTimestamp * 1000 < getMinScheduleTimestampMs(userTimezone)
+        ) {
+          setSigningError("Schedule time must be in the future.");
+          return;
+        }
+
+        const uniqueTags = getEffectiveHashtagsAndUniqueTags(
+          useHashtagPresets,
+          selectedHashtags,
+          displayedHashtags,
+          customTags
+        );
+
+        const eventData = {
+          title,
+          content: markdownContent,
+          summary: finalSummary,
+          image,
+          tags: uniqueTags,
+          identifier,
+          publishedAt:
+            actionType === "publish" ? nowSeconds() : scheduledTimestamp,
+        };
+
+        setIsSigning(true);
+        const { nostrEvent, signedEvent } =
+          await nostrAdapter.signLongFormEventWithOneRetry(eventData);
+
+        // Cancellation guard: if the user discarded this attempt or a
+        // fresher click overrode it while the bunker was busy, bail out
+        // before we mutate UI state or build the submission form.
+        if (isAttemptStale(submissionId)) {
+          return;
+        }
+
+        const mainScheduledUnix =
+          actionType === "publish"
+            ? nowSeconds()
+            : (scheduledTimestamp ?? nowSeconds());
+
+        const quoteResult = await buildSignedLongformQuoteSchedules(
+          alsoScheduleQuote,
+          quoteEntries,
+          uniqueTags,
+          mainScheduledUnix,
+          signedEvent
+        );
+        if (!quoteResult.ok) {
+          setSigningError(quoteResult.error);
+          return;
+        }
+        const quoteSchedules = quoteResult.schedules;
+
+        if (isAttemptStale(submissionId)) {
+          return;
+        }
+
+        const fields: Array<[string, string]> = [
+          [
+            "_action",
+            actionType === "schedule" ? "schedule-longform" : "publish",
+          ],
+          ["title", title],
+          ["content", content],
+          ["summary", finalSummary],
+          ["image", image],
+          ["tags", uniqueTags.join(",")],
+          ["queueType", selectedQueueType],
+          [
+            "scheduledFor",
+            scheduledTimestamp ? scheduledTimestamp.toString() : "",
+          ],
+          ["signedEvent", JSON.stringify(signedEvent)],
+          ["nostrEvent", JSON.stringify(nostrEvent)],
+          ["includeHashtagsInNoteBody", String(includeHashtagsInNoteBody)],
+        ];
+
+        if (quoteSchedules.length > 0) {
+          fields.push(["quoteSchedules", JSON.stringify(quoteSchedules)]);
+          fields.push(["alsoScheduleQuote", "on"]);
+        }
+
+        // Funnel through the shared helpers (Record adapter) so the
+        // encoding and "non-empty" guard match every other publish
+        // surface — and so resumed attempts ship the *same*
+        // submissionId the store handed us.
+        const sidecar: Record<string, string> = {};
+        appendRelayOverride(sidecar, relayOverride);
+        appendSubmissionId(sidecar, submissionId);
+        for (const [key, value] of Object.entries(sidecar)) {
+          fields.push([key, value]);
+        }
+
+        submitDocumentPostForm(fields);
+      } catch (error) {
+        if (isAttemptStale(submissionId)) {
+          // Stale attempts must not surface their late errors as a UI
+          // banner — the user already moved on.
+          return;
+        }
+        const { handleAsyncError } = await import("~/lib/error-handler.client");
+        handleAsyncError(
+          error,
+          { component: "LongFormPost", action: "handleSubmit" },
+          false
+        );
+        setSigningError(
+          error instanceof Error
+            ? error.message
+            : "Failed to sign article. Please try again."
+        );
+        // Re-throw so the pending-publish state machine can classify
+        // signer-unavailable (resumable) vs terminal failure.
+        throw error;
+      } finally {
+        if (!isAttemptStale(submissionId)) {
+          setIsSigning(false);
+        }
       }
+    };
 
-      const uniqueTags = getEffectiveHashtagsAndUniqueTags(
-        useHashtagPresets,
-        selectedHashtags,
-        displayedHashtags,
-        customTags
-      );
-
-      const eventData = {
-        title,
-        content: markdownContent,
-        summary: finalSummary,
-        image,
-        tags: uniqueTags,
-        identifier,
-        publishedAt:
-          actionType === "publish" ? nowSeconds() : scheduledTimestamp,
-      };
-
-      lastScheduleActionRef.current = actionType;
-      setIsSigning(true);
-      const { nostrEvent, signedEvent } =
-        await nostrAdapter.signLongFormEventWithOneRetry(eventData);
-
-      const mainScheduledUnix =
-        actionType === "publish"
-          ? nowSeconds()
-          : (scheduledTimestamp ?? nowSeconds());
-
-      const quoteResult = await buildSignedLongformQuoteSchedules(
-        alsoScheduleQuote,
-        quoteEntries,
-        uniqueTags,
-        mainScheduledUnix,
-        signedEvent
-      );
-      if (!quoteResult.ok) {
-        setSigningError(quoteResult.error);
-        return;
-      }
-      const quoteSchedules = quoteResult.schedules;
-
-      const fields: Array<[string, string]> = [
-        [
-          "_action",
-          actionType === "schedule" ? "schedule-longform" : "publish",
-        ],
-        ["title", title],
-        ["content", content],
-        ["summary", finalSummary],
-        ["image", image],
-        ["tags", uniqueTags.join(",")],
-        ["queueType", selectedQueueType],
-        [
-          "scheduledFor",
-          scheduledTimestamp ? scheduledTimestamp.toString() : "",
-        ],
-        ["signedEvent", JSON.stringify(signedEvent)],
-        ["nostrEvent", JSON.stringify(nostrEvent)],
-        ["includeHashtagsInNoteBody", String(includeHashtagsInNoteBody)],
-      ];
-
-      if (quoteSchedules.length > 0) {
-        fields.push(["quoteSchedules", JSON.stringify(quoteSchedules)]);
-        fields.push(["alsoScheduleQuote", "on"]);
-      }
-
-      if (relayOverride && relayOverride.length > 0) {
-        fields.push(["relays", JSON.stringify(relayOverride)]);
-      }
-
-      submitDocumentPostForm(fields);
-    } catch (error) {
-      const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(
-        error,
-        {
-          component: "LongFormPost",
-          action: "handleSubmit",
-        },
-        false
-      ); // Don't show toast, let component handle it
-      setSigningError(
-        error instanceof Error
-          ? error.message
-          : "Failed to sign article. Please try again."
-      );
-    } finally {
-      lastScheduleActionRef.current = null;
-      setIsSigning(false);
-    }
+    pendingPublish.start({ performSignAndSubmit });
   };
 
-  useEffect(() => {
-    handleScheduleRef.current = handleSchedule;
-  });
-
   const cancelSigning = () => {
-    lastScheduleActionRef.current = null;
+    pendingPublish.cancel();
     setIsSigning(false);
     setSigningError(null);
     cancelSignerInFlight();

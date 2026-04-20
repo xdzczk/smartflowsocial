@@ -49,11 +49,14 @@ import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 import { UnifiedComposerPreviewBlock } from "../preview/UnifiedComposerPreviewBlock";
 import type { ComposerContext } from "../services/compose-route-contract";
+import { pendingPublish } from "../state/pending-publish.client";
+import { usePendingPublishAttempt } from "../state/use-pending-publish-attempt";
 
 import {
   ComposerCanvasDivider,
   ComposerErrors,
   ComposerLeftCanvas,
+  PendingPublishBanner,
   type ComposerPublishMode,
   getTextSubmitActionForMode,
   getReadinessPresentation,
@@ -866,6 +869,11 @@ export function UnifiedComposer({
 
   useComposerSignerReconnect(cancelSigningState, isSigning, retryLastSubmit);
 
+  // Subscribe to the pending-publish state machine so banners + retry/cancel
+  // controls reflect the live attempt without prop drilling through every
+  // composer surface.
+  const pendingAttempt = usePendingPublishAttempt();
+
   const handleSubmit = form.handleSubmit((data, event) => {
     void runSubmit(data, event);
   });
@@ -909,10 +917,21 @@ export function UnifiedComposer({
   React.useEffect(() => {
     if (fetcher.state === "idle") {
       const data = fetcher.data as { error?: unknown } | undefined;
+      const pendingId = pendingPublish.getSnapshot()?.id ?? null;
       if (publishSubmitInFlight && data?.error) {
         setLastPublishFailed(true);
         setSigningError(getClientDisplayErrorMessage(data.error));
         trackComposerEvent("composer_publish_failed", { source: "unified" });
+        if (pendingId) {
+          pendingPublish.markFailed(
+            pendingId,
+            getClientDisplayErrorMessage(data.error)
+          );
+        }
+      } else if (publishSubmitInFlight && !data?.error && pendingId) {
+        // Successful round-trip — collapse the state machine so the next
+        // user click starts a fresh attempt with a brand-new submissionId.
+        pendingPublish.markCompleted(pendingId);
       }
       setPublishSubmitInFlight(false);
     }
@@ -1229,20 +1248,27 @@ export function UnifiedComposer({
     ) : null;
   const signerStatusContent =
     !isTemplateMode && !hidePublishingRail ? (
-      <ComposerErrors
-        isSigning={isSigning}
-        signerLabel={signerLabel}
-        inRail
-        onCancelSigning={cancelSigningState}
-        signingError={signingError}
-        onDismissSigningError={() => {
-          setSigningError(null);
-          setLastPublishFailed(false);
-        }}
-        onRetry={() => primarySubmitRef.current?.click()}
-        disabled={disabled}
-        signerReady={signerReady}
-      />
+      <>
+        <PendingPublishBanner
+          attempt={pendingAttempt}
+          onRetryClick={() => primarySubmitRef.current?.click()}
+          inRail
+        />
+        <ComposerErrors
+          isSigning={isSigning}
+          signerLabel={signerLabel}
+          inRail
+          onCancelSigning={cancelSigningState}
+          signingError={signingError}
+          onDismissSigningError={() => {
+            setSigningError(null);
+            setLastPublishFailed(false);
+          }}
+          onRetry={() => primarySubmitRef.current?.click()}
+          disabled={disabled}
+          signerReady={signerReady}
+        />
+      </>
     ) : null;
 
   return (
@@ -1313,19 +1339,25 @@ export function UnifiedComposer({
           onChange={onFileChange}
         />
         {!isTemplateMode && hidePublishingRail ? (
-          <ComposerErrors
-            isSigning={isSigning}
-            signerLabel={signerLabel}
-            onCancelSigning={cancelSigningState}
-            signingError={signingError}
-            onDismissSigningError={() => {
-              setSigningError(null);
-              setLastPublishFailed(false);
-            }}
-            onRetry={() => primarySubmitRef.current?.click()}
-            disabled={disabled}
-            signerReady={signerReady}
-          />
+          <>
+            <PendingPublishBanner
+              attempt={pendingAttempt}
+              onRetryClick={() => primarySubmitRef.current?.click()}
+            />
+            <ComposerErrors
+              isSigning={isSigning}
+              signerLabel={signerLabel}
+              onCancelSigning={cancelSigningState}
+              signingError={signingError}
+              onDismissSigningError={() => {
+                setSigningError(null);
+                setLastPublishFailed(false);
+              }}
+              onRetry={() => primarySubmitRef.current?.click()}
+              disabled={disabled}
+              signerReady={signerReady}
+            />
+          </>
         ) : null}
         <UnifiedComposerThreadPartialSignDialog
           open={partialThreadState !== null}

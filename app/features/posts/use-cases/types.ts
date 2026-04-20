@@ -74,6 +74,15 @@ export interface CreatePostInput {
    * Keeps per-post checks enabled by default for single-item actions.
    */
   skipScheduleCapacityCheck?: boolean;
+  /**
+   * Stable client-generated id (uuid) for this user-initiated publish attempt.
+   * When present, used as the basis for the creation idempotency key so that
+   * two unrelated publish clicks of the same content never collide. The same
+   * id MUST be reused across signer-reconnect resumes of the same attempt so
+   * that resumed retries dedupe onto the same Post row.
+   * Absent for legacy clients; falls back to content-hash idempotency.
+   */
+  submissionId?: string;
 }
 
 export interface CreatePostResult {

@@ -7,6 +7,7 @@ export {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
   PostStateMachine,
+  PublishEventMismatchError,
   PublishNowUseCase,
   RecyclePostUseCase,
 } from "../publishing/index.server";
