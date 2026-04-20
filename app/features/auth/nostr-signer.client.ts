@@ -220,6 +220,123 @@ function createLoggingPool(pool: SimplePool, label: string): SimplePool {
 
 /* eslint-enable no-console */
 
+/* ------------------------------------------------------------------------ */
+/*                Bunker subscription EOSE barrier                          */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Hard cap on how long we wait for relays to acknowledge our barrier REQ
+ * before publishing the first NIP-46 EVENT anyway. Empty-filter EOSE
+ * normally returns in ~50–250 ms. Five seconds is a generous ceiling that
+ * still beats every per-RPC timeout above; if a relay can't EOSE in 5 s
+ * the publish is going to fail with a useful error either way.
+ */
+const BUNKER_SUB_READY_TIMEOUT_MS = 5_000;
+
+/**
+ * Wait for the bunker subscription that `BunkerSigner.fromURI` /
+ * `fromBunker` just opened to be fully registered on every relay before
+ * the first NIP-46 RPC publishes its EVENT.
+ *
+ * Why this exists:
+ *
+ * `BunkerSigner.setupSubscription` calls `pool.subscribe(...)` and returns
+ * synchronously. The actual REQ frame goes out via WebSocket on a
+ * microtask (`relay.send` queues through `connectionPromise.then(...)`),
+ * with NO guarantee that the relay has acknowledged the subscription
+ * before we publish the first NIP-46 EVENT. NIP-46 events are ephemeral
+ * (kind 24133) — if the bunker's reply arrives at the relay before the
+ * relay has registered our REQ, the response is dropped, no replay, and
+ * we time out 30 s later with `bunker:get_public_key timeout`. That's the
+ * 50/50 iOS Safari sign-in failure we kept chasing.
+ *
+ * `fromURI` is even worse than `fromBunker`: it closes its connect-ACK
+ * subscription and immediately opens a new (more restrictive) one inside
+ * its `onevent` handler, then resolves the signer promise. The CLOSE,
+ * the new REQ, and our EVENT all hit the wire in the same handful of ms.
+ *
+ * The fix: open a tiny dummy REQ on the same relays and await its EOSE.
+ * WebSocket frames on a single connection are strictly ordered, and
+ * `relay.send()` queues writes through `connectionPromise.then(...)` in
+ * registration order, so the dummy REQ is guaranteed to land AFTER the
+ * bunker REQ. EOSE on the dummy proves the bunker REQ has also been
+ * processed by the relay and is forwarding matching events to us.
+ *
+ * Bounded by `BUNKER_SUB_READY_TIMEOUT_MS`; if a relay is too slow we
+ * give up and let the publish proceed.
+ *
+ * Modeled on Ditto's `@nostrify` `NConnectSigner` which sidesteps this
+ * race by registering its async-iterator listener BEFORE publishing every
+ * RPC, on a single relay. We can't restructure `nostr-tools`'
+ * `BunkerSigner.sendRequest` the same way without forking, but the EOSE
+ * barrier achieves the same guarantee at the cost of one tiny extra REQ
+ * during the very first signer construction.
+ */
+export async function awaitBunkerSubscriptionReady(
+  pool: SimplePool,
+  relays: string[],
+  diagLabel = "signer:??"
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (relays.length === 0) return;
+
+  const startedAt = Date.now();
+  nip46log(`${diagLabel} sub-ready:start`, { relays });
+
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = (reason: string) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      nip46log(`${diagLabel} sub-ready:done`, {
+        ms: Date.now() - startedAt,
+        reason,
+      });
+      resolve();
+    };
+
+    let closer: { close: (reason?: string) => Promise<void> | void };
+    try {
+      // Filter on a single all-zeroes id with limit:0 makes the relay
+      // EOSE immediately without ever forwarding events to us. Cheapest
+      // possible "is the previous REQ I sent now registered?" probe.
+      closer = pool.subscribe(
+        relays,
+        { ids: ["0".repeat(64)], limit: 0 },
+        {
+          oneose: () => {
+            try {
+              void closer.close("nip46:sub-ready");
+            } catch {
+              // best-effort
+            }
+            finish("eose");
+          },
+          onclose: () => finish("closed"),
+          maxWait: BUNKER_SUB_READY_TIMEOUT_MS,
+        }
+      );
+    } catch (err) {
+      nip46log(`${diagLabel} sub-ready:subscribe-throw`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      finish("subscribe-throw");
+      return;
+    }
+
+    timer = setTimeout(() => {
+      try {
+        void closer.close("nip46:sub-ready-timeout");
+      } catch {
+        // best-effort
+      }
+      finish("timeout");
+    }, BUNKER_SUB_READY_TIMEOUT_MS);
+  });
+}
+
 /**
  * Narrow view of `nostr-tools` `BunkerSigner` internals we touch from this
  * wrapper. Kept narrow so a future upstream change shows up as a compile
@@ -586,12 +703,22 @@ export async function connectNip46WithBunkerInput(input: {
     setTimeout(() => reject(new Error("SIGNER_TIMEOUT")), timeoutMs)
   );
 
+  const signer = new Nip46Signer({ pool, inner });
+  signer.setStatus("ready");
+
+  // EOSE-barrier the bunker subscription that fromBunker just opened
+  // before any RPC publishes its EVENT. See `awaitBunkerSubscriptionReady`
+  // for why this is mandatory on iOS Safari.
+  await awaitBunkerSubscriptionReady(
+    pool,
+    bpToUse.relays,
+    `signer:${bpToUse.pubkey.slice(0, 8)}`
+  );
+
   if (!input.skipConnect) {
     await Promise.race([inner.connect(), timeout]);
   }
 
-  const signer = new Nip46Signer({ pool, inner });
-  signer.setStatus("ready");
   if (input.skipValidation) {
     return { signer, pubkey: bp.pubkey };
   }
@@ -623,6 +750,24 @@ export async function connectNip46WithNostrConnectUri(input: {
 
   const signer = new Nip46Signer({ pool: input.pool, inner });
   signer.setStatus("ready");
+
+  // fromURI closes its connect-ACK sub and opens a fresh, more restrictive
+  // sub via setupSubscription IN THE SAME TICK as it resolves the signer
+  // promise, then we publish get_public_key within ~2 ms. Without this
+  // barrier the relay can forward Primal's reply before our REQ is
+  // registered, and the ephemeral kind-24133 response is dropped. Optional
+  // chaining covers test mocks that don't populate `bp`.
+  const innerBp = (
+    inner as unknown as { bp?: { relays?: string[]; pubkey?: string } }
+  ).bp;
+  if (innerBp?.relays?.length) {
+    await awaitBunkerSubscriptionReady(
+      input.pool,
+      innerBp.relays,
+      `signer:${innerBp.pubkey?.slice(0, 8) ?? "????????"}`
+    );
+  }
+
   const pubkey = await signer.getPublicKey();
   return { signer, pubkey };
 }
@@ -681,6 +826,17 @@ export async function connectNip46ReconnectWithStoredNostrConnect(input: {
   const inner = BunkerSigner.fromBunker(input.clientSecretKey, bp, { pool });
   const signer = new Nip46Signer({ pool, inner });
   signer.setStatus("ready");
+
+  // EOSE-barrier the bunker subscription before any RPC. See
+  // `awaitBunkerSubscriptionReady`. Without this, the first
+  // `getPublicKey()` after a cold rebuild can race the relay registering
+  // our REQ and time out 30 s later with a dropped ephemeral response.
+  await awaitBunkerSubscriptionReady(
+    pool,
+    bp.relays,
+    `signer:${bp.pubkey.slice(0, 8)}`
+  );
+
   if (input.skipValidation) {
     return { signer, pubkey: bp.pubkey };
   }

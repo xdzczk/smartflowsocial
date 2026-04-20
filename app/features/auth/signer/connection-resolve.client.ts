@@ -10,6 +10,7 @@ import {
 } from "nostr-tools/nip46";
 
 import {
+  awaitBunkerSubscriptionReady,
   Nip46Signer,
   type NostrSigner,
 } from "~/features/auth/nostr-signer.client";
@@ -272,6 +273,23 @@ export async function resolveNip46SignerFromConfig(
       if (!isRequestCurrent()) {
         await inner.close();
         return null;
+      }
+      // Barrier the bunker subscription before any RPC. fromURI's onevent
+      // closes its connect-ACK sub and opens a new one in the same tick;
+      // without this wait the first publish races the new REQ landing on
+      // the relay and we drop the ephemeral kind-24133 reply. Optional
+      // chaining covers test mocks that don't populate `bp`.
+      const innerBp = (
+        inner as unknown as {
+          bp?: { relays?: string[]; pubkey?: string };
+        }
+      ).bp;
+      if (innerBp?.relays?.length) {
+        await awaitBunkerSubscriptionReady(
+          pool,
+          innerBp.relays,
+          `signer:${innerBp.pubkey?.slice(0, 8) ?? "????????"}`
+        );
       }
       setCachedSigner(new Nip46Signer({ pool, inner }));
     }

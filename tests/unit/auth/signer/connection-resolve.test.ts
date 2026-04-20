@@ -50,6 +50,10 @@ vi.mock("~/features/auth/nostr-signer.client", () => ({
       inner: this.inner,
     };
   },
+  // Keep this a no-op in unit tests; the real implementation opens an
+  // EOSE-barrier subscription against the bunker relays, which would
+  // require a live relay or full pool mock here.
+  awaitBunkerSubscriptionReady: vi.fn(async () => {}),
 }));
 
 vi.mock("~/features/nostr/shared-pool.client", () => ({
