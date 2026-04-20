@@ -97,6 +97,10 @@ describe("Property-Based Tests: Encryption", () => {
   });
 
   describe("Data Integrity Property", () => {
+    // PBKDF2 with 100k iterations runs twice per assertion (encrypt + decrypt),
+    // so 50 fast-check runs comfortably exceed the default 10s test timeout
+    // on slower CI machines. Mirror the explicit 60s budget the round-trip
+    // tests above already use.
     it("should detect tampered ciphertext", () => {
       fc.assert(
         fc.property(
@@ -125,9 +129,9 @@ describe("Property-Based Tests: Encryption", () => {
             return true;
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 50, timeout: 30000 }
       );
-    });
+    }, 60000);
   });
 
   describe("Format Properties", () => {

@@ -1,10 +1,18 @@
 /**
  * Repost/quote scheduling after edit-post submit.
  * Extracted from EditPostModal; aligns with editPostSubmit.client.ts.
+ *
+ * The follow-up repost/quote sign loop is wrapped in
+ * {@link signBatchWithRecovery} so a stalled bunker mid-batch parks the
+ * remaining items under the foreground recovery banner instead of leaving
+ * the user with an unscheduled tail.
  */
 
 import { toast } from "react-hot-toast";
 
+import { signBatchWithRecovery } from "~/features/auth/signing/sign-batch-with-recovery.client";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import { durableIntent } from "~/features/auth/signing/use-recoverable-sign.client";
 import {
   handleErrorSafely,
   showErrorToastFromUnknown,
@@ -56,66 +64,96 @@ export function appendRepostConditionsToForm(
     fd.set("minSats", String(repostConditions.minSats));
 }
 
-export async function scheduleOneRepost(
-  mainScheduledUnix: number,
-  mainEv: MainEv,
-  postId: string,
-  item: { value: number; unit: DelayAfterMain["unit"] },
-  repostConditions: RepostConditionsForm
-): Promise<void> {
-  const delay: DelayAfterMain = { value: item.value, unit: item.unit };
-  if (!isValidDelayAfterMain(delay)) return;
-  const offsetSeconds = delayAfterMainToSeconds(delay);
-  const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
-  const repostEvent = buildKind6RepostEvent(mainEv, repostScheduledForUnix);
-  const { signedEvent: repostSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
-      content: repostEvent.content,
-      created_at: repostEvent.created_at,
-      kind: repostEvent.kind,
-      tags: repostEvent.tags,
-    });
-  const fd = new FormData();
-  fd.set("_action", "scheduleRepost");
-  fd.set("postId", postId);
-  fd.set("scheduledFor", repostScheduledForUnix.toString());
-  fd.set("signedEvent", JSON.stringify(repostSignedEvent));
-  appendRepostConditionsToForm(fd, repostConditions);
-  const res = await fetch("/dashboard/scheduled", { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Failed to schedule repost");
+interface PreparedRepostItem {
+  kind: "repost";
+  scheduledForUnix: number;
 }
 
-export async function scheduleOneQuote(
+interface PreparedQuoteItem {
+  kind: "quote";
+  scheduledForUnix: number;
+  caption: string;
+}
+
+type PreparedItem = PreparedRepostItem | PreparedQuoteItem;
+
+interface SignedItem {
+  kind: "repost" | "quote";
+  signedEvent: { id: string };
+  scheduledForUnix: number;
+  caption?: string;
+}
+
+function prepareRepostItems(
   mainScheduledUnix: number,
-  mainEv: MainEv,
-  postId: string,
-  entry: { value: number; unit: DelayAfterMain["unit"]; caption: string }
-): Promise<void> {
-  const delay: DelayAfterMain = { value: entry.value, unit: entry.unit };
-  if (!isValidDelayAfterMain(delay)) return;
-  const offsetSeconds = delayAfterMainToSeconds(delay);
-  const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
-  const quoteEvent = buildQuoteEvent(
-    mainEv,
-    entry.caption,
-    quoteScheduledForUnix,
-    []
-  );
-  const { signedEvent: quoteSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
-      content: quoteEvent.content,
-      created_at: quoteEvent.created_at,
-      kind: quoteEvent.kind,
-      tags: quoteEvent.tags,
+  repostDelayList: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+  }>
+): PreparedRepostItem[] {
+  const out: PreparedRepostItem[] = [];
+  for (const item of repostDelayList) {
+    const delay: DelayAfterMain = { value: item.value, unit: item.unit };
+    if (!isValidDelayAfterMain(delay)) continue;
+    out.push({
+      kind: "repost",
+      scheduledForUnix: mainScheduledUnix + delayAfterMainToSeconds(delay),
     });
+  }
+  return out;
+}
+
+function prepareQuoteItems(
+  mainScheduledUnix: number,
+  quoteEntries: Array<{
+    id: string;
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption: string;
+  }>
+): PreparedQuoteItem[] {
+  const out: PreparedQuoteItem[] = [];
+  for (const entry of quoteEntries) {
+    const delay: DelayAfterMain = { value: entry.value, unit: entry.unit };
+    if (!isValidDelayAfterMain(delay)) continue;
+    out.push({
+      kind: "quote",
+      scheduledForUnix: mainScheduledUnix + delayAfterMainToSeconds(delay),
+      caption: entry.caption,
+    });
+  }
+  return out;
+}
+
+async function postSignedItem(
+  signed: SignedItem,
+  postId: string,
+  repostConditions: RepostConditionsForm
+): Promise<void> {
   const fd = new FormData();
-  fd.set("_action", "scheduleQuote");
-  fd.set("postId", postId);
-  fd.set("scheduledFor", quoteScheduledForUnix.toString());
-  fd.set("signedEvent", JSON.stringify(quoteSignedEvent));
-  if (entry.caption) fd.set("quoteCaption", entry.caption);
-  const res = await fetch("/dashboard/scheduled", { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Failed to schedule quote");
+  if (signed.kind === "repost") {
+    fd.set("_action", "scheduleRepost");
+    fd.set("postId", postId);
+    fd.set("scheduledFor", signed.scheduledForUnix.toString());
+    fd.set("signedEvent", JSON.stringify(signed.signedEvent));
+    appendRepostConditionsToForm(fd, repostConditions);
+  } else {
+    fd.set("_action", "scheduleQuote");
+    fd.set("postId", postId);
+    fd.set("scheduledFor", signed.scheduledForUnix.toString());
+    fd.set("signedEvent", JSON.stringify(signed.signedEvent));
+    if (signed.caption) fd.set("quoteCaption", signed.caption);
+  }
+  const res = await fetch("/dashboard/scheduled", {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to schedule ${signed.kind === "repost" ? "repost" : "quote"}`
+    );
+  }
 }
 
 export async function scheduleRepostsAndQuotesAfterSubmit(
@@ -137,21 +175,98 @@ export async function scheduleRepostsAndQuotesAfterSubmit(
   alsoScheduleQuote: boolean,
   repostConditions?: RepostConditionsForm
 ): Promise<void> {
-  if (alsoScheduleRepost && repostDelayList.length > 0) {
-    for (const item of repostDelayList) {
-      await scheduleOneRepost(
-        mainScheduledUnix,
+  const items: PreparedItem[] = [
+    ...(alsoScheduleRepost
+      ? prepareRepostItems(mainScheduledUnix, repostDelayList)
+      : []),
+    ...(alsoScheduleQuote
+      ? prepareQuoteItems(mainScheduledUnix, quoteEntries)
+      : []),
+  ];
+  if (items.length === 0) return;
+
+  const idempotencyKey = `edit_post_repost_quote:${mainEv.id}:${String(
+    mainScheduledUnix
+  )}`;
+
+  const result = await signBatchWithRecovery<PreparedItem, SignedItem>({
+    items,
+    intent: durableIntent(
+      "schedule_repost_quote",
+      idempotencyKey,
+      "Schedule repost/quote"
+    ),
+    surface: `edit_post:${postId}:repost_quote`,
+    signItem: async (item) => {
+      if (item.kind === "repost") {
+        const repostEvent = buildKind6RepostEvent(
+          mainEv,
+          item.scheduledForUnix
+        );
+        const { signedEvent } = await nostrAdapter.signEvent(
+          {
+            content: repostEvent.content,
+            created_at: repostEvent.created_at,
+            kind: repostEvent.kind,
+            tags: repostEvent.tags,
+          },
+          { clearCacheOnError: false }
+        );
+        return {
+          kind: "repost",
+          signedEvent,
+          scheduledForUnix: item.scheduledForUnix,
+        };
+      }
+      const quoteEvent = buildQuoteEvent(
         mainEv,
-        postId,
-        item,
-        repostConditions ?? null
+        item.caption,
+        item.scheduledForUnix,
+        []
       );
+      const { signedEvent } = await nostrAdapter.signEvent(
+        {
+          content: quoteEvent.content,
+          created_at: quoteEvent.created_at,
+          kind: quoteEvent.kind,
+          tags: quoteEvent.tags,
+        },
+        { clearCacheOnError: false }
+      );
+      return {
+        kind: "quote",
+        signedEvent,
+        scheduledForUnix: item.scheduledForUnix,
+        caption: item.caption,
+      };
+    },
+  });
+
+  if (!result.ok) {
+    // Helper auto-cancels partial outcomes; we only need to surface the
+    // failure to the caller for any remaining UI handling.
+    if (result.reason !== "partial") {
+      signingAttempts.cancelAttempt(result.attemptId);
     }
+    throw new Error(
+      result.lastError ??
+        (result.reason === "expired"
+          ? "Recovery window expired before your signer reconnected."
+          : `Failed to schedule ${String(result.failedIndices.length)} repost/quote item(s)`)
+    );
   }
-  if (alsoScheduleQuote && quoteEntries.length > 0) {
-    for (const entry of quoteEntries) {
-      await scheduleOneQuote(mainScheduledUnix, mainEv, postId, entry);
+
+  try {
+    for (const entry of result.signed) {
+      await postSignedItem(entry.signed, postId, repostConditions ?? null);
     }
+    signingAttempts.markCompleted(result.attemptId);
+  } catch (err) {
+    signingAttempts.markFailed(
+      result.attemptId,
+      err instanceof Error ? err.message : "Failed to schedule repost/quote"
+    );
+    throw err;
   }
 }
 

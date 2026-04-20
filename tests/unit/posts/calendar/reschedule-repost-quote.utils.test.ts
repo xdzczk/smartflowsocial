@@ -15,7 +15,7 @@ import {
 const mocks = vi.hoisted(() => ({
   buildKind6RepostEvent: vi.fn(),
   buildQuoteEvent: vi.fn(),
-  signEventWithOneRetry: vi.fn(),
+  signEvent: vi.fn(),
 }));
 
 vi.mock("~/features/posts/utils/repost-quote-events.client", () => ({
@@ -26,8 +26,7 @@ vi.mock("~/features/posts/utils/repost-quote-events.client", () => ({
 
 vi.mock("~/lib/nostr-adapter.client", () => ({
   nostrAdapter: {
-    signEventWithOneRetry: (...args: unknown[]) =>
-      mocks.signEventWithOneRetry(...args),
+    signEvent: (...args: unknown[]) => mocks.signEvent(...args),
   },
 }));
 
@@ -90,7 +89,7 @@ describe("reschedule-repost-quote.utils", () => {
         kind: 6,
         tags: [["e", "abc"]],
       });
-      mocks.signEventWithOneRetry.mockResolvedValue({
+      mocks.signEvent.mockResolvedValue({
         signedEvent: { id: "signed-1", kind: 6 },
       });
       const submit = vi.fn();
@@ -117,7 +116,7 @@ describe("reschedule-repost-quote.utils", () => {
         }
       );
 
-      expect(mocks.signEventWithOneRetry).toHaveBeenCalled();
+      expect(mocks.signEvent).toHaveBeenCalled();
       const formData = submit.mock.calls[0]?.[0] as FormData;
       expect(formData.get("_action")).toBe("scheduleRepost");
       expect(formData.get("postId")).toBe("post-1");
@@ -134,7 +133,7 @@ describe("reschedule-repost-quote.utils", () => {
         kind: 1,
         tags: [["e", "abc"]],
       });
-      mocks.signEventWithOneRetry.mockResolvedValue({
+      mocks.signEvent.mockResolvedValue({
         signedEvent: { id: "signed-2", kind: 1 },
       });
       const submit = vi.fn();

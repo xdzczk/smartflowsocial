@@ -1,5 +1,10 @@
 import { useCallback, useState } from "react";
 
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  ephemeralIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 const PUBLISH_API_ENDPOINT = "/api/publish";
@@ -19,6 +24,13 @@ export interface UseLookupNoteEngagementResult {
   isLikeSending: boolean;
   likeError: string | null;
   likeNote: () => Promise<void>;
+  /**
+   * Ephemeral signing attempt id for the most recent `likeNote()` call,
+   * or `null` when no like attempt is in flight. Pipe into
+   * `useSigningAttemptById` + `SubtleSignPending` / `CompactSignStatus`
+   * to render the per-row escalation tier.
+   */
+  likeAttemptId: string | null;
   sendReply: (content: string) => Promise<void>;
   isReplySending: boolean;
   replyError: string | null;
@@ -33,6 +45,7 @@ export function useLookupNoteEngagement({
   const [isLiked, setIsLiked] = useState(false);
   const [isLikeSending, setIsLikeSending] = useState(false);
   const [likeError, setLikeError] = useState<string | null>(null);
+  const [likeAttemptId, setLikeAttemptId] = useState<string | null>(null);
   const [isReplySending, setIsReplySending] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
 
@@ -42,37 +55,63 @@ export function useLookupNoteEngagement({
   const likeNote = useCallback(async () => {
     if (isLikeSending || isLiked) return;
     setLikeError(null);
+    setLikeAttemptId(null);
     setIsLiked(true);
     setIsLikeSending(true);
-    try {
-      const kind7EventData = {
-        kind: 7,
-        content: "+",
-        tags: [
-          ["e", eventId],
-          ["p", authorPubkey],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      };
 
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(kind7EventData);
+    const kind7EventData = {
+      kind: 7,
+      content: "+",
+      tags: [
+        ["e", eventId],
+        ["p", authorPubkey],
+      ],
+      created_at: Math.floor(Date.now() / 1000),
+    };
 
-      const response = await fetch(PUBLISH_API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: publishRelays,
-          event: signedEvent,
-        }),
-      });
+    let trackedAttemptId: string | null = null;
 
-      if (!response.ok) throw new Error("Failed to publish like");
-    } catch {
+    const result = await startRecoverableSign({
+      intent: ephemeralIntent("search_engagement_lookup", "Like"),
+      surface: `lookup:note:${eventId}`,
+      performSignAndSubmit: async (submissionId) => {
+        if (trackedAttemptId !== submissionId) {
+          trackedAttemptId = submissionId;
+          setLikeAttemptId(submissionId);
+        }
+        const { signedEvent } = await nostrAdapter.signEvent(kind7EventData, {
+          clearCacheOnError: false,
+        });
+
+        const response = await fetch(PUBLISH_API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            relays: publishRelays,
+            event: signedEvent,
+          }),
+        });
+
+        if (!response.ok) {
+          const message = `Failed to publish like (${response.status})`;
+          signingAttempts.markFailed(submissionId, message);
+          throw new Error(message);
+        }
+        signingAttempts.markCompleted(submissionId);
+      },
+    });
+
+    setIsLikeSending(false);
+
+    if (!result.ok) {
       setIsLiked(false);
-      setLikeError("Couldn’t send like. Try again.");
-    } finally {
-      setIsLikeSending(false);
+      // While the attempt is parked in `awaiting_signer`, the per-row
+      // CompactSignStatus owns the recovery affordance — only surface a
+      // textual error for the terminal failure modes the pill can't
+      // recover from.
+      if (result.reason === "fatal" || result.reason === "expired") {
+        setLikeError("Couldn’t send like. Try again.");
+      }
     }
   }, [authorPubkey, eventId, isLiked, isLikeSending, publishRelays]);
 
@@ -94,8 +133,9 @@ export function useLookupNoteEngagement({
           created_at: Math.floor(Date.now() / 1000),
         };
 
-        const { signedEvent } =
-          await nostrAdapter.signEventWithOneRetry(kind1EventData);
+        const { signedEvent } = await nostrAdapter.signEvent(kind1EventData, {
+          clearCacheOnError: false,
+        });
 
         const response = await fetch(PUBLISH_API_ENDPOINT, {
           method: "POST",
@@ -127,6 +167,7 @@ export function useLookupNoteEngagement({
     isLikeSending,
     likeError,
     likeNote,
+    likeAttemptId,
     sendReply,
     isReplySending,
     replyError,

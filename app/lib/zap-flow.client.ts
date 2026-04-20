@@ -200,12 +200,15 @@ export async function zapRecipient(
     eventIdHex,
   });
 
-  const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
-    kind: 9734,
-    content: "",
-    tags,
-    created_at,
-  });
+  const { signedEvent } = await nostrAdapter.signEvent(
+    {
+      kind: 9734,
+      content: "",
+      tags,
+      created_at,
+    },
+    { clearCacheOnError: false }
+  );
 
   const callbackUrl = new URL(metadata.callback);
   callbackUrl.searchParams.set("amount", String(millisats));

@@ -49,7 +49,7 @@ vi.mock("~/lib/hooks/useSignAttemptProgress", () => ({
 
 vi.mock("~/lib/nostr-adapter.client", () => ({
   nostrAdapter: {
-    signEventWithOneRetry: vi.fn(),
+    signEvent: vi.fn(),
   },
 }));
 

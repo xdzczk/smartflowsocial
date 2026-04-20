@@ -46,7 +46,7 @@
 
 import { useEffect } from "react";
 
-import { pendingPublish } from "../state/pending-publish.client";
+import { pendingPublish } from "~/features/auth/signing/signing-attempts.client";
 
 export function useComposerSignerReconnect(
   clearSigningState: () => void,

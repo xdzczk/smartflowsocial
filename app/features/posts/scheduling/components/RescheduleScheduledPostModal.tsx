@@ -13,6 +13,11 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { cancelSignerInFlight } from "~/features/auth/signer";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import {
   canScheduleRepostQuoteForPost,
   type CalendarPost,
@@ -142,10 +147,13 @@ export function RescheduleScheduledPostModal({
     signElapsedSeconds,
     signAttempt?.timeoutMs
   );
-  const lastRescheduleDataRef = useRef<{
-    scheduledFor: Date;
-    queueTypeId?: string;
-  } | null>(null);
+  // Tracks the in-flight signing attempt so the fetcher.data effect can
+  // mark it completed/failed once the server response lands. We can't rely
+  // on `signingAttempts.start`'s closure to know about Remix's fetcher
+  // lifecycle, so the modal owns the success/failure handoff.
+  const inFlightAttemptIdRef = useRef<string | null>(null);
+  // Same pattern for the secondary repost/quote scheduling fetcher.
+  const inFlightRepostQuoteAttemptIdRef = useRef<string | null>(null);
 
   const [scheduleRepostQuoteMode, setScheduleRepostQuoteMode] = useState<
     null | "repost" | "quote"
@@ -166,17 +174,16 @@ export function RescheduleScheduledPostModal({
     setSigningError(null);
   };
   const cancelSigningState = () => {
-    lastRescheduleDataRef.current = null;
+    inFlightAttemptIdRef.current = null;
     clearSigningState();
   };
-  const retryLastSign = (): boolean => {
-    const data = lastRescheduleDataRef.current;
-    if (!data) return false;
-    lastRescheduleDataRef.current = null;
-    void runRescheduleWithData(data);
-    return true;
-  };
-  useComposerSignerReconnect(cancelSigningState, isSigningEvent, retryLastSign);
+  // Resume is now handled inside `signing-attempts.client.ts` — the new
+  // recoverable wrapper registers a `performSignAndSubmit` closure that
+  // the store re-invokes on the next `nostr-connection-healthy` event,
+  // with the same `attemptId`. The legacy `retryLastSign` callback is
+  // gone; the store's `maybeResume` runs first inside
+  // `useComposerSignerReconnect` and short-circuits the legacy path.
+  useComposerSignerReconnect(cancelSigningState, isSigningEvent);
 
   const schema = isLongform
     ? rescheduleLongformModalClientSchema
@@ -227,31 +234,61 @@ export function RescheduleScheduledPostModal({
     if (fetcher.state !== "idle") return;
     const d = fetcher.data;
     if (!d) return;
+    const attemptId = inFlightAttemptIdRef.current;
     if (d.success) {
       if (d.needsSigning) return;
+      if (attemptId) {
+        // Server accepted the resigned event — collapse the recovery
+        // attempt onto the success branch so any portal banner
+        // dismisses itself, and so a late healthy-reconnect never tries
+        // to re-resume a completed attempt.
+        signingAttempts.markCompleted(attemptId);
+        inFlightAttemptIdRef.current = null;
+      }
       setIsSigningEvent(false);
       toast.success(TOAST_POST_RESCHEDULED);
       onSuccess();
       return;
     }
     if (d.error) {
+      const message = getClientDisplayErrorMessage(d.error);
+      if (attemptId) {
+        signingAttempts.markFailed(attemptId, message);
+        inFlightAttemptIdRef.current = null;
+      }
       setIsSigningEvent(false);
-      setSigningError(getClientDisplayErrorMessage(d.error));
+      setSigningError(message);
     }
   }, [fetcher.state, fetcher.data, onSuccess]);
 
   useEffect(() => {
-    if (scheduleRepostQuoteFetcher.data?.success) {
+    if (scheduleRepostQuoteFetcher.state !== "idle") return;
+    const data = scheduleRepostQuoteFetcher.data;
+    if (!data) return;
+    const attemptId = inFlightRepostQuoteAttemptIdRef.current;
+    if (data.success) {
+      if (attemptId) {
+        signingAttempts.markCompleted(attemptId);
+        inFlightRepostQuoteAttemptIdRef.current = null;
+      }
       toast.success(TOAST_POST_RESCHEDULED);
       setScheduleRepostQuoteMode(null);
       onSuccess();
     }
-    if (scheduleRepostQuoteFetcher.data?.error) {
-      toast.error(
-        getClientDisplayErrorMessage(scheduleRepostQuoteFetcher.data.error)
-      );
+    if (data.error) {
+      const message = getClientDisplayErrorMessage(data.error);
+      if (attemptId) {
+        signingAttempts.markFailed(attemptId, message);
+        inFlightRepostQuoteAttemptIdRef.current = null;
+      }
+      toast.error(message);
     }
-  }, [scheduleRepostQuoteFetcher.data, scheduleRepostQuoteMode, onSuccess]);
+  }, [
+    scheduleRepostQuoteFetcher.state,
+    scheduleRepostQuoteFetcher.data,
+    scheduleRepostQuoteMode,
+    onSuccess,
+  ]);
 
   const formatDateTimeForInput = (date: Date) => {
     const zonedDateTime = fromDate(date, userTimezone);
@@ -279,57 +316,90 @@ export function RescheduleScheduledPostModal({
     scheduledFor: Date;
     queueTypeId?: string;
   }) => {
-    try {
-      setIsSigningEvent(true);
-      setSigningError(null);
+    setIsSigningEvent(true);
+    setSigningError(null);
 
-      const scheduledZoned = fromDate(data.scheduledFor, "UTC");
-      const newTimeUnix = toUnixTimestamp(scheduledZoned);
+    const scheduledZoned = fromDate(data.scheduledFor, "UTC");
+    const newTimeUnix = toUnixTimestamp(scheduledZoned);
 
-      const originalSignedEvent = post.signedEvent;
-      const originalNostrEvent = post.nostrEvent;
+    const originalSignedEvent = post.signedEvent;
+    const originalNostrEvent = post.nostrEvent;
 
-      if (!originalSignedEvent || !originalNostrEvent) {
-        throw new Error(
-          "Original event not found. Cannot reschedule unsigned posts."
-        );
-      }
-
-      const { nostrEvent, signedEvent } =
-        await nostrAdapter.signEventWithOneRetry({
-          content: originalSignedEvent.content,
-          created_at: newTimeUnix,
-          kind: originalSignedEvent.kind,
-          tags: originalSignedEvent.tags,
-        });
-
-      lastRescheduleDataRef.current = null;
-      const formData = new FormData();
-      formData.append(
-        "action",
-        isLongform ? "rescheduleLongform" : "reschedule"
+    if (!originalSignedEvent || !originalNostrEvent) {
+      setIsSigningEvent(false);
+      setSigningError(
+        "Original event not found. Cannot reschedule unsigned posts."
       );
-      formData.append("postId", post.id);
-      formData.append("newTime", newTimeUnix.toString());
-      formData.append("signedEvent", JSON.stringify(signedEvent));
-      formData.append("nostrEvent", JSON.stringify(nostrEvent));
+      return;
+    }
 
-      if (!isLongform) {
-        formData.append("overrideQueue", String(wasAutoScheduled));
-        if (data.queueTypeId) {
-          formData.append("queueTypeId", data.queueTypeId);
+    // Idempotency key collapses a resumed retry onto the same server-side
+    // dedupe slot: same post + same target time => same attempt, even if
+    // the user reopens the modal after the bunker drops mid-sign.
+    const idempotencyKey = `reschedule:${post.id}:${newTimeUnix}`;
+
+    const result = await startRecoverableSign({
+      intent: durableIntent("reschedule_post", idempotencyKey),
+      surface: `reschedule:${post.id}`,
+      // The post still exists for the lifetime of this modal; if the user
+      // navigates away the host unmounts, but the attempt itself stays
+      // resumable in the store and is allowed to complete in the
+      // background. No `isResourceAlive` guard needed.
+      performSignAndSubmit: async (submissionId) => {
+        const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+          {
+            content: originalSignedEvent.content,
+            created_at: newTimeUnix,
+            kind: originalSignedEvent.kind,
+            tags: originalSignedEvent.tags,
+          },
+          { clearCacheOnError: false }
+        );
+
+        const formData = new FormData();
+        formData.append(
+          "action",
+          isLongform ? "rescheduleLongform" : "reschedule"
+        );
+        formData.append("postId", post.id);
+        formData.append("newTime", newTimeUnix.toString());
+        formData.append("signedEvent", JSON.stringify(signedEvent));
+        formData.append("nostrEvent", JSON.stringify(nostrEvent));
+        // Forward the per-attempt id so the server-side `/api/publish`
+        // dedupe (PR 0) and any future calendar-route dedupe collapse
+        // resumed retries onto the original side-effect.
+        formData.append("attemptId", submissionId);
+
+        if (!isLongform) {
+          formData.append("overrideQueue", String(wasAutoScheduled));
+          if (data.queueTypeId) {
+            formData.append("queueTypeId", data.queueTypeId);
+          }
         }
-      }
 
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/dashboard/calendar",
-      });
-    } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage, getErrorMessage } =
+        inFlightAttemptIdRef.current = submissionId;
+        fetcher.submit(formData, {
+          method: "post",
+          action: "/dashboard/calendar",
+        });
+        // Mark the sign half done; the fetcher.data effect promotes the
+        // attempt to `completed` (or `failed`) once the server response
+        // settles. Returning here puts the store state into `submitting`.
+      },
+    });
+
+    if (result.ok) return;
+
+    // Recoverable failure: render an inline error so the user can Retry.
+    // The recovery banner (PR 1/2 single-slot) will also show for the
+    // `expired` branch — both representations are intentional during the
+    // PR-3 multi-slot flag-off period.
+    setIsSigningEvent(false);
+    if (result.reason === "fatal") {
+      const { handleAsyncErrorWithMessage } =
         await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
-        error,
+        result.lastError ?? new Error("Failed to sign event"),
         "Failed to sign event. Please try again.",
         {
           component: "RescheduleScheduledPostModal",
@@ -337,16 +407,18 @@ export function RescheduleScheduledPostModal({
         },
         false
       );
-      lastRescheduleDataRef.current = null;
-      setIsSigningEvent(false);
       setSigningError(
-        getErrorMessage(error) || "Failed to sign event. Please try again."
+        result.lastError ?? "Failed to sign event. Please try again."
+      );
+    } else if (result.reason === "expired") {
+      setSigningError(
+        "Recovery window expired before your signer reconnected."
       );
     }
+    inFlightAttemptIdRef.current = null;
   };
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    lastRescheduleDataRef.current = data;
     await runRescheduleWithData(data);
   });
 
@@ -369,62 +441,100 @@ export function RescheduleScheduledPostModal({
       toast.error("Original event not found. Cannot schedule repost/quote.");
       return;
     }
-    try {
-      setIsSigningEvent(true);
-      setSigningError(null);
-      const zoned = parseDateTimeLocal(repostQuoteScheduledFor, userTimezone);
-      const utcZoned = zoned.withTimeZone("UTC");
-      const scheduledForUnix = toUnixTimestamp(utcZoned);
+    setIsSigningEvent(true);
+    setSigningError(null);
+    const zoned = parseDateTimeLocal(repostQuoteScheduledFor, userTimezone);
+    const utcZoned = zoned.withTimeZone("UTC");
+    const scheduledForUnix = toUnixTimestamp(utcZoned);
 
-      const minMs = getMinScheduleTimestampMs(
-        userTimezone,
-        post.scheduledAtUtc ?? undefined
+    const minMs = getMinScheduleTimestampMs(
+      userTimezone,
+      post.scheduledAtUtc ?? undefined
+    );
+    if (utcZoned.epochMilliseconds < minMs) {
+      setIsSigningEvent(false);
+      toast.error(
+        post.scheduledAtUtc
+          ? "Repost/quote must be scheduled at or after the original post's scheduled time."
+          : "Please select a date and time in the future."
       );
-      if (utcZoned.epochMilliseconds < minMs) {
-        toast.error(
-          post.scheduledAtUtc
-            ? "Repost/quote must be scheduled at or after the original post's scheduled time."
-            : "Please select a date and time in the future."
-        );
-        return;
-      }
+      return;
+    }
 
-      const ev = originalSignedEvent as SignedEventForRepost & {
-        created_at: number;
-        kind: number;
-        tags: string[][];
-        content: string;
-        sig: string;
-      };
-      if (scheduleRepostQuoteMode === "repost") {
-        await submitRepostSchedule(
-          post.id,
-          ev,
-          scheduledForUnix,
-          submitRepostQuote,
-          repostQuoteConditions
-        );
-      } else if (scheduleRepostQuoteMode === "quote") {
-        await submitQuoteSchedule(
-          post.id,
-          ev,
-          scheduledForUnix,
-          repostQuoteCaption,
-          submitRepostQuote
-        );
-      }
-    } catch (error) {
-      handleErrorSafely(error, {
-        component: "RescheduleScheduledPostModal",
-        action: "handleScheduleRepostQuoteConfirm",
-      });
+    const ev = originalSignedEvent as SignedEventForRepost & {
+      created_at: number;
+      kind: number;
+      tags: string[][];
+      content: string;
+      sig: string;
+    };
+
+    const mode = scheduleRepostQuoteMode;
+    if (mode !== "repost" && mode !== "quote") {
+      setIsSigningEvent(false);
+      return;
+    }
+
+    // Same idempotency convention as ScheduleRepostQuoteModal: same source
+    // event + same target time + same mode collapses a resumed retry onto
+    // a single server-side dedupe slot.
+    const idempotencyKey = `schedule_${mode}:${ev.id}:${String(scheduledForUnix)}`;
+
+    const result = await startRecoverableSign({
+      intent: durableIntent(
+        "schedule_repost_quote",
+        idempotencyKey,
+        mode === "repost" ? "Schedule repost" : "Schedule quote"
+      ),
+      surface: `reschedule_${mode}:${post.id}`,
+      performSignAndSubmit: async (submissionId) => {
+        if (mode === "repost") {
+          await submitRepostSchedule(
+            post.id,
+            ev,
+            scheduledForUnix,
+            submitRepostQuote,
+            repostQuoteConditions,
+            submissionId
+          );
+        } else {
+          await submitQuoteSchedule(
+            post.id,
+            ev,
+            scheduledForUnix,
+            repostQuoteCaption,
+            submitRepostQuote,
+            submissionId
+          );
+        }
+        inFlightRepostQuoteAttemptIdRef.current = submissionId;
+      },
+    });
+
+    if (result.ok) {
+      setIsSigningEvent(false);
+      return;
+    }
+
+    setIsSigningEvent(false);
+    inFlightRepostQuoteAttemptIdRef.current = null;
+    if (result.reason === "fatal") {
+      handleErrorSafely(
+        new Error(result.lastError ?? "Failed to schedule repost/quote"),
+        {
+          component: "RescheduleScheduledPostModal",
+          action: "handleScheduleRepostQuoteConfirm",
+        }
+      );
       const msg = getClientDisplayErrorMessage(
-        error instanceof Error ? error.message : String(error)
+        result.lastError ?? "Failed to schedule repost/quote"
       );
       setSigningError(msg);
       toast.error(msg);
-    } finally {
-      setIsSigningEvent(false);
+    } else if (result.reason === "expired") {
+      const msg = "Recovery window expired before your signer reconnected.";
+      setSigningError(msg);
+      toast.error(msg);
     }
   };
 

@@ -19,6 +19,10 @@ import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
+import {
+  claimPublishAttempt,
+  readAttemptIdFromBody,
+} from "~/lib/publish-attempt-dedupe.server";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 type AssertFunction = (
@@ -183,6 +187,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
           relays?: unknown;
           event?: unknown;
           pollEvent?: unknown;
+          attemptId?: unknown;
           recordAsReply?: {
             replyToEventId: string;
             replyToPostId?: string | null;
@@ -190,6 +195,9 @@ async function runPublishApiAction(request: Request): Promise<Response> {
         })
       : {};
   const { relays, event, pollEvent: pollEventRaw, recordAsReply } = body;
+  const attemptId = readAttemptIdFromBody(
+    body as Record<string, unknown> | undefined
+  );
 
   assert(event !== null && event !== undefined, "Event is required", {
     hasEvent: event !== null && event !== undefined,
@@ -223,14 +231,37 @@ async function runPublishApiAction(request: Request): Promise<Response> {
     relays: publishRelays,
   });
 
-  await runPublishApiPostPublishSideEffects({
-    userId: session.userId,
-    validatedEvent,
-    publishResult,
-    recordAsReply,
-  });
+  // Per-attemptId once-only guard: replays of the same signed publish (e.g.
+  // signer-recovery resumes) must not double-run side effects like
+  // recordReplyPost. Relays themselves dedupe by event id, so re-publishing
+  // is safe; only the side effects need the guard. Legacy clients that omit
+  // attemptId keep the pre-PR behavior (always run side effects).
+  let deduped = false;
+  if (attemptId) {
+    const claim = await claimPublishAttempt({
+      attemptId,
+      userId: session.userId,
+    });
+    if (claim.claimed) {
+      await runPublishApiPostPublishSideEffects({
+        userId: session.userId,
+        validatedEvent,
+        publishResult,
+        recordAsReply,
+      });
+    } else {
+      deduped = true;
+    }
+  } else {
+    await runPublishApiPostPublishSideEffects({
+      userId: session.userId,
+      validatedEvent,
+      publishResult,
+      recordAsReply,
+    });
+  }
 
-  return json({ success: true });
+  return json({ success: true, ...(deduped ? { deduped: true } : {}) });
 }
 
 export const action = withCSRFProtection(

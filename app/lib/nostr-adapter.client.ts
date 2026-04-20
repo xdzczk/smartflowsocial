@@ -470,7 +470,7 @@ function ensureNip07ReadyOrThrow(): void {
  * never settled). When this single attempt fails, the user gets one error
  * and one explicit "Reconnect signer" button.
  */
-async function signEventWithRetryLogic(
+async function performNostrSignAttempt(
   nostrEvent: NostrEvent,
   options?: SignEventOptions
 ): Promise<SignedEvent> {
@@ -582,7 +582,7 @@ export const nostrAdapter = {
         tags: eventData.tags ?? [],
       };
 
-      const signedEvent = await signEventWithRetryLogic(nostrEvent, options);
+      const signedEvent = await performNostrSignAttempt(nostrEvent, options);
       return { nostrEvent, signedEvent };
     } catch (error) {
       await logErrorIfClient(error, "signEvent");
@@ -598,46 +598,14 @@ export const nostrAdapter = {
   },
 
   /**
-   * Sign event with retry logic
-   * @param options.clearCacheOnError - If false, do not clear the signer cache on error. Default true.
-   */
-  async signEventWithRetry(
-    nostrEvent: NostrEvent,
-    options?: SignEventOptions
-  ): Promise<SignedEvent> {
-    return signEventWithRetryLogic(nostrEvent, options);
-  },
-
-  /**
-   * Sign once with clearCacheOnError: false; on failure wait 1.5s and retry once.
-   * Use for single-sign flows so a timeout doesn't tear down the connection and transient failures get one retry.
+   * Sign a long-form event (NIP-23) using the configured signer.
    *
-   * Signer-timeout errors (we already burned the full 30s waiting for the
-   * bunker / window.nostr to respond) skip the in-band retry and surface
-   * immediately. Otherwise the caller is stuck for a second 30s window
-   * before the pending-publish state machine can park the attempt and
-   * show the recovery UI — and during that gap a `nostr-connection-healthy`
-   * event arriving after a Primal restart can't trigger `maybeResume`
-   * (state is still `signing`), which is what previously caused the UI
-   * to look idle while a sign was still in flight → duplicate publishes.
-   */
-  async signEventWithOneRetry(
-    eventData: NostrEventData,
-    options?: SignEventOptions
-  ): Promise<SignEventResult> {
-    const opts = { clearCacheOnError: false, ...options };
-    try {
-      return await this.signEvent(eventData, opts);
-    } catch (err) {
-      if (isSignTimeoutError(err)) throw err;
-      await new Promise((r) => setTimeout(r, 1500));
-      return await this.signEvent(eventData, opts);
-    }
-  },
-
-  /**
-   * Sign a long-form event (NIP-23) using NIP-07
-   * @param options.clearCacheOnError - If false, do not clear the signer cache on error. Default true.
+   * Single-attempt by design: callers run this inside the
+   * `signing-attempts` state machine, which parks bunker timeouts onto
+   * `awaiting_signer` and re-invokes `performSignAndSubmit` when the
+   * connection comes back. Adding an in-band retry here would just stack
+   * a second `sign_event` RPC on the same unresponsive bunker before the
+   * machine can park the attempt and show the recovery UI.
    */
   async signLongFormEvent(
     eventData: LongFormEventData,
@@ -645,7 +613,7 @@ export const nostrAdapter = {
   ): Promise<SignEventResult> {
     try {
       const nostrEvent = this.buildLongFormEvent(eventData);
-      const signedEvent = await this.signEventWithRetry(nostrEvent, options);
+      const signedEvent = await performNostrSignAttempt(nostrEvent, options);
       return { nostrEvent, signedEvent };
     } catch (error) {
       await logErrorIfClient(error, "signLongFormEvent");
@@ -654,30 +622,11 @@ export const nostrAdapter = {
   },
 
   /**
-   * Sign long-form once with clearCacheOnError: false; on failure wait 1.5s and retry once.
-   *
-   * Signer timeouts skip the retry — see `signEventWithOneRetry` for the
-   * full rationale (the second 30s wait blocks the pending-publish state
-   * machine from parking the attempt promptly, which lets the composer UI
-   * look idle mid-sign and lets the user double-publish).
+   * NIP-88 kind 1068 poll — builds tags via `buildPollTags`, then signs
+   * like a normal event. Single-attempt; recovery is handled by the
+   * `signing-attempts` state machine (see `signLongFormEvent`).
    */
-  async signLongFormEventWithOneRetry(
-    eventData: LongFormEventData
-  ): Promise<SignEventResult> {
-    const opts = { clearCacheOnError: false };
-    try {
-      return await this.signLongFormEvent(eventData, opts);
-    } catch (err) {
-      if (isSignTimeoutError(err)) throw err;
-      await new Promise((r) => setTimeout(r, 1500));
-      return await this.signLongFormEvent(eventData, opts);
-    }
-  },
-
-  /**
-   * NIP-88 kind 1068 poll — builds tags via `buildPollTags`, then signs like a normal event.
-   */
-  async signPollEventWithOneRetry(
+  async signPollEvent(
     input: SignPollEventInput,
     options?: SignEventOptions
   ): Promise<SignEventResult> {
@@ -692,7 +641,7 @@ export const nostrAdapter = {
       endsAt: input.endsAt,
       extraTags: hashtagTags,
     });
-    return this.signEventWithOneRetry(
+    return this.signEvent(
       {
         content: input.question.trim(),
         created_at: input.created_at,

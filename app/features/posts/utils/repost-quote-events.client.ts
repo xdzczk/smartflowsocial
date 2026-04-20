@@ -5,6 +5,12 @@
 
 import { nip19 } from "nostr-tools";
 
+import { signBatchWithRecovery } from "~/features/auth/signing/sign-batch-with-recovery.client";
+import {
+  signingAttempts,
+  type SigningAttempt,
+} from "~/features/auth/signing/signing-attempts.client";
+import { durableIntent } from "~/features/auth/signing/use-recoverable-sign.client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
@@ -139,36 +145,120 @@ export function buildLongformQuoteEvent(
   };
 }
 
-/**
- * Build and sign repost schedules for bulk: given main scheduled time and delay list,
- * returns array of { scheduledFor, signedEvent } for server.
- */
-export async function buildAndSignRepostSchedules(
+interface PreparedRepost {
+  scheduledForUnix: number;
+  unsigned: ReturnType<typeof buildKind6RepostEvent>;
+}
+
+function prepareRepostBatch(
   mainScheduledUnix: number,
   delayList: Array<{ value: number; unit: DelayAfterMain["unit"] }>,
   mainSignedEvent: SignedEvent
-): Promise<Array<{ scheduledFor: number; signedEvent: SignedEvent }>> {
-  const out: Array<{ scheduledFor: number; signedEvent: SignedEvent }> = [];
+): PreparedRepost[] {
+  const out: PreparedRepost[] = [];
   for (const delay of delayList) {
     const d: DelayAfterMain = { value: delay.value, unit: delay.unit };
     if (!isValidDelayAfterMain(d)) continue;
     const offsetSeconds = delayAfterMainToSeconds(d);
     const scheduledForUnix = mainScheduledUnix + offsetSeconds;
     if (scheduledForUnix <= mainScheduledUnix) continue;
-    const repostEvent = buildKind6RepostEvent(
-      mainSignedEvent,
-      scheduledForUnix
-    );
-    const { signedEvent } = await nostrAdapter.signEvent(
-      {
-        content: repostEvent.content,
-        created_at: repostEvent.created_at,
-        kind: repostEvent.kind,
-        tags: repostEvent.tags,
-      },
-      { clearCacheOnError: false }
-    );
-    out.push({ scheduledFor: scheduledForUnix, signedEvent: signedEvent });
+    out.push({
+      scheduledForUnix,
+      unsigned: buildKind6RepostEvent(mainSignedEvent, scheduledForUnix),
+    });
+  }
+  return out;
+}
+
+/**
+ * Build and sign repost schedules for bulk: given main scheduled time and delay list,
+ * returns array of { scheduledFor, signedEvent } for server.
+ *
+ * Uses the shared signing-attempts batch helper so a stalled signer
+ * mid-batch parks the foreground recovery banner (instead of silently
+ * dropping the remaining schedules). On resume the loop picks up only
+ * the still-unsigned indices.
+ */
+export async function buildAndSignRepostSchedules(
+  mainScheduledUnix: number,
+  delayList: Array<{ value: number; unit: DelayAfterMain["unit"] }>,
+  mainSignedEvent: SignedEvent
+): Promise<Array<{ scheduledFor: number; signedEvent: SignedEvent }>> {
+  const prepared = prepareRepostBatch(
+    mainScheduledUnix,
+    delayList,
+    mainSignedEvent
+  );
+  if (prepared.length === 0) return [];
+  const eventId =
+    typeof mainSignedEvent.id === "string"
+      ? mainSignedEvent.id
+      : String(mainSignedEvent.id);
+  const idempotencyKey = `repost-schedules:${eventId}:${mainScheduledUnix}:${signingAttempts.createSubmissionId()}`;
+  const result = await signBatchWithRecovery<
+    PreparedRepost,
+    { scheduledFor: number; signedEvent: SignedEvent }
+  >({
+    items: prepared,
+    intent: durableIntent(
+      "schedule_repost_quote",
+      idempotencyKey,
+      "Schedule reposts"
+    ),
+    surface: "bulkposts:repost-schedules",
+    signItem: async (entry, _index, signer) => {
+      const { signedEvent } = await nostrAdapter.signEvent(
+        {
+          content: entry.unsigned.content,
+          created_at: entry.unsigned.created_at,
+          kind: entry.unsigned.kind,
+          tags: entry.unsigned.tags,
+        },
+        { clearCacheOnError: false, signer: signer ?? undefined }
+      );
+      return {
+        scheduledFor: entry.scheduledForUnix,
+        signedEvent,
+      };
+    },
+  });
+  finalizeBatchAttempt(result);
+  return result.signed.map((entry) => entry.signed);
+}
+
+interface PreparedQuote {
+  scheduledForUnix: number;
+  caption?: string;
+  unsigned: ReturnType<typeof buildQuoteEvent>;
+}
+
+function prepareQuoteBatch(
+  mainScheduledUnix: number,
+  entries: Array<{
+    value: number;
+    unit: DelayAfterMain["unit"];
+    caption?: string;
+  }>,
+  mainSignedEvent: SignedEvent,
+  tagArray: string[][]
+): PreparedQuote[] {
+  const out: PreparedQuote[] = [];
+  for (const e of entries) {
+    const d: DelayAfterMain = { value: e.value, unit: e.unit };
+    if (!isValidDelayAfterMain(d)) continue;
+    const offsetSeconds = delayAfterMainToSeconds(d);
+    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
+    if (scheduledForUnix <= mainScheduledUnix) continue;
+    out.push({
+      scheduledForUnix,
+      caption: e.caption ?? undefined,
+      unsigned: buildQuoteEvent(
+        mainSignedEvent,
+        e.caption ?? "",
+        scheduledForUnix,
+        tagArray
+      ),
+    });
   }
   return out;
 }
@@ -176,6 +266,9 @@ export async function buildAndSignRepostSchedules(
 /**
  * Build and sign quote schedules for bulk: given main scheduled time and entries,
  * returns array of { scheduledFor, signedEvent, caption } for server.
+ *
+ * Driven through the shared signing-attempts batch helper for the same
+ * park/resume semantics as {@link buildAndSignRepostSchedules}.
  */
 export async function buildAndSignQuoteSchedules(
   mainScheduledUnix: number,
@@ -189,39 +282,82 @@ export async function buildAndSignQuoteSchedules(
 ): Promise<
   Array<{ scheduledFor: number; signedEvent: SignedEvent; caption?: string }>
 > {
-  const out: Array<{
-    scheduledFor: number;
-    signedEvent: SignedEvent;
-    caption?: string;
-  }> = [];
-  for (const e of entries) {
-    const d: DelayAfterMain = { value: e.value, unit: e.unit };
-    if (!isValidDelayAfterMain(d)) continue;
-    const offsetSeconds = delayAfterMainToSeconds(d);
-    const scheduledForUnix = mainScheduledUnix + offsetSeconds;
-    if (scheduledForUnix <= mainScheduledUnix) continue;
-    const quoteEvent = buildQuoteEvent(
-      mainSignedEvent,
-      e.caption ?? "",
-      scheduledForUnix,
-      tagArray
-    );
-    const { signedEvent } = await nostrAdapter.signEvent(
-      {
-        content: quoteEvent.content,
-        created_at: quoteEvent.created_at,
-        kind: quoteEvent.kind,
-        tags: quoteEvent.tags,
-      },
-      { clearCacheOnError: false }
-    );
-    out.push({
-      scheduledFor: scheduledForUnix,
-      signedEvent: signedEvent,
-      caption: e.caption ?? undefined,
-    });
+  const prepared = prepareQuoteBatch(
+    mainScheduledUnix,
+    entries,
+    mainSignedEvent,
+    tagArray
+  );
+  if (prepared.length === 0) return [];
+  const eventId =
+    typeof mainSignedEvent.id === "string"
+      ? mainSignedEvent.id
+      : String(mainSignedEvent.id);
+  const idempotencyKey = `quote-schedules:${eventId}:${mainScheduledUnix}:${signingAttempts.createSubmissionId()}`;
+  const result = await signBatchWithRecovery<
+    PreparedQuote,
+    { scheduledFor: number; signedEvent: SignedEvent; caption?: string }
+  >({
+    items: prepared,
+    intent: durableIntent(
+      "schedule_repost_quote",
+      idempotencyKey,
+      "Schedule quotes"
+    ),
+    surface: "bulkposts:quote-schedules",
+    signItem: async (entry, _index, signer) => {
+      const { signedEvent } = await nostrAdapter.signEvent(
+        {
+          content: entry.unsigned.content,
+          created_at: entry.unsigned.created_at,
+          kind: entry.unsigned.kind,
+          tags: entry.unsigned.tags,
+        },
+        { clearCacheOnError: false, signer: signer ?? undefined }
+      );
+      return {
+        scheduledFor: entry.scheduledForUnix,
+        signedEvent,
+        caption: entry.caption,
+      };
+    },
+  });
+  finalizeBatchAttempt(result);
+  return result.signed.map((entry) => entry.signed);
+}
+
+/**
+ * Settle the foreground attempt left in `submitting` by the batch
+ * helper. These inner-bulk loops have no separate submit phase — the
+ * caller embeds the signed entries in the outer bulk fetcher submit —
+ * so we mark the attempt completed (or failed for partial outcomes) so
+ * the recovery banner clears once all signatures are in hand.
+ */
+function finalizeBatchAttempt<T>(result: {
+  ok: boolean;
+  attemptId: string;
+  reason?: string;
+  lastError?: string | null;
+  signed: T[];
+}): void {
+  const inStore = signingAttempts
+    .getAllAttempts()
+    .find((a: SigningAttempt) => a.attemptId === result.attemptId);
+  if (!inStore) return;
+  if (result.ok) {
+    signingAttempts.markCompleted(result.attemptId);
+    return;
   }
-  return out;
+  if (
+    inStore.state === "submitting" ||
+    inStore.state === "signing" ||
+    inStore.state === "resuming"
+  ) {
+    signingAttempts.markFailed(
+      result.attemptId,
+      result.lastError ?? `bulk_${result.reason ?? "fail"}`
+    );
+  }
 }
 
 /**

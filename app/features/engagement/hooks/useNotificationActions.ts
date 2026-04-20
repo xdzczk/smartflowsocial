@@ -2,6 +2,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useState } from "react";
 
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  ephemeralIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
@@ -59,6 +65,13 @@ export function useNotificationActions({
   const [isQuoting, setIsQuoting] = useState(false);
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
 
+  // PR 4 — ephemeral intents expose their attemptId so callers can render
+  // the SubtleSignPending / CompactSignStatus tier in-row. `null` when no
+  // attempt is in flight or the most recent attempt has been cancelled
+  // out of the store.
+  const [likeAttemptId, setLikeAttemptId] = useState<string | null>(null);
+  const [repostAttemptId, setRepostAttemptId] = useState<string | null>(null);
+
   // Child replies data
   const [childReplies, setChildReplies] = useState<ChildReply[]>([]);
   const [childMetadata, setChildMetadata] = useState<Record<string, unknown>>(
@@ -104,52 +117,77 @@ export function useNotificationActions({
     if (!replyContent.trim()) return false;
 
     setIsReplying(true);
+    const replySnapshot = replyContent;
+    // Idempotency key collapses a resumed retry onto the same server-side
+    // dedupe slot. Includes a wall-clock seed so multiple distinct reply
+    // attempts to the same event (typo-fix, follow-up reply minutes
+    // later) don't accidentally collide.
+    const idempotencyKey = `reply:${notification.eventId}:${Date.now()}`;
     try {
-      const kind1EventData = {
-        kind: 1,
-        content: replyContent,
-        tags: [
-          ["e", notification.eventId, DEFAULT_RELAY, "reply"],
-          ["p", notification.pubkey],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      };
+      const result = await startRecoverableSign({
+        intent: durableIntent("publish_reply", idempotencyKey, "Reply"),
+        surface: `notifications:row:${notification.eventId}`,
+        performSignAndSubmit: async (submissionId) => {
+          const { signedEvent } = await nostrAdapter.signEvent(
+            {
+              kind: 1,
+              content: replySnapshot,
+              tags: [
+                ["e", notification.eventId, DEFAULT_RELAY, "reply"],
+                ["p", notification.pubkey],
+              ],
+              created_at: Math.floor(Date.now() / 1000),
+            },
+            { clearCacheOnError: false }
+          );
 
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(kind1EventData);
+          const response = await fetch(PUBLISH_API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relays: userRelays,
+              event: signedEvent,
+              attemptId: submissionId,
+              recordAsReply: {
+                replyToEventId: notification.eventId,
+              },
+            }),
+          });
 
-      const response = await fetch(PUBLISH_API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: userRelays,
-          event: signedEvent,
-          recordAsReply: {
-            replyToEventId: notification.eventId,
-          },
-        }),
+          if (!response.ok) {
+            const message = `Failed to publish reply (${response.status})`;
+            signingAttempts.markFailed(submissionId, message);
+            throw new Error(message);
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
       });
 
-      if (!response.ok) throw new Error("Failed to publish reply");
-
-      if (!suppressSuccessToast) {
-        showToast("success", "Reply posted successfully!");
+      if (result.ok) {
+        if (!suppressSuccessToast) {
+          showToast("success", "Reply posted successfully!");
+        }
+        setReplyContent("");
+        setShowReplyInput(false);
+        return true;
       }
-      setReplyContent("");
-      setShowReplyInput(false);
-      return true;
-    } catch (error) {
-      const { handleAsyncError, getErrorMessage } =
-        await import("~/lib/error-handler.client");
+
+      // Recoverable failure (fatal / expired / cancelled). Surface a
+      // toast so the user knows to try again — the recovery banner is
+      // already showing for `awaiting_signer`/`expired`, so the toast
+      // here is the secondary signal for the non-banner branches.
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
-        error,
-        {
-          component: "useNotificationActions",
-          action: "handleReply",
-        },
+        new Error(
+          result.lastError ?? `Failed to post reply (${result.reason})`
+        ),
+        { component: "useNotificationActions", action: "handleReply" },
         false
-      ); // Don't show toast, we call showToast instead
-      showToast("error", getErrorMessage(error) || "Failed to post reply");
+      );
+      showToast(
+        "error",
+        result.lastError ?? "Failed to post reply. Please try again."
+      );
       return false;
     } finally {
       setIsReplying(false);
@@ -158,6 +196,7 @@ export function useNotificationActions({
 
   const handleRepost = async (): Promise<boolean> => {
     setIsReposting(true);
+    setRepostAttemptId(null);
     try {
       const kind6EventData = {
         kind: 6,
@@ -169,36 +208,57 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(kind6EventData);
+      let trackedAttemptId: string | null = null;
 
-      const response = await fetch(PUBLISH_API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: userRelays,
-          event: signedEvent,
-        }),
+      const result = await startRecoverableSign({
+        intent: ephemeralIntent("reaction", "Repost"),
+        surface: `notifications:row:${notification.eventId}`,
+        performSignAndSubmit: async (submissionId) => {
+          if (trackedAttemptId !== submissionId) {
+            trackedAttemptId = submissionId;
+            setRepostAttemptId(submissionId);
+          }
+          const { signedEvent } = await nostrAdapter.signEvent(kind6EventData, {
+            clearCacheOnError: false,
+          });
+
+          const response = await fetch(PUBLISH_API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relays: userRelays,
+              event: signedEvent,
+            }),
+          });
+
+          if (!response.ok) {
+            const message = `Failed to publish repost (${response.status})`;
+            signingAttempts.markFailed(submissionId, message);
+            throw new Error(message);
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
       });
 
-      if (!response.ok) throw new Error("Failed to publish repost");
-
-      if (!suppressSuccessToast) {
-        showToast("success", "Reposted successfully!");
+      if (result.ok) {
+        if (!suppressSuccessToast) {
+          showToast("success", "Reposted successfully!");
+        }
+        return true;
       }
-      return true;
-    } catch (error) {
-      const { handleAsyncError, getErrorMessage } =
-        await import("~/lib/error-handler.client");
-      handleAsyncError(
-        error,
-        {
-          component: "useNotificationActions",
-          action: "handleRepost",
-        },
-        false
-      ); // Don't show toast, we call showToast instead
-      showToast("error", getErrorMessage(error) || "Failed to repost");
+
+      // For ephemeral intents, the per-row CompactSignStatus owns the
+      // recovery affordance — only surface a toast for fatal/expired so
+      // we don't double up while the in-row pill is still visible.
+      if (result.reason === "fatal" || result.reason === "expired") {
+        const { handleAsyncError } = await import("~/lib/error-handler.client");
+        handleAsyncError(
+          new Error(result.lastError ?? "Failed to repost"),
+          { component: "useNotificationActions", action: "handleRepost" },
+          false
+        );
+        showToast("error", result.lastError ?? "Failed to repost");
+      }
       return false;
     } finally {
       setIsReposting(false);
@@ -206,109 +266,145 @@ export function useNotificationActions({
   };
 
   const handleLike = async (): Promise<boolean> => {
-    try {
-      const kind7EventData = {
-        kind: 7,
-        content: "+",
-        tags: [
-          ["e", notification.eventId],
-          ["p", notification.pubkey],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      };
+    setLikeAttemptId(null);
+    const kind7EventData = {
+      kind: 7,
+      content: "+",
+      tags: [
+        ["e", notification.eventId],
+        ["p", notification.pubkey],
+      ],
+      created_at: Math.floor(Date.now() / 1000),
+    };
 
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(kind7EventData);
+    let trackedAttemptId: string | null = null;
 
-      const response = await fetch(PUBLISH_API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: userRelays,
-          event: signedEvent,
-        }),
-      });
+    const result = await startRecoverableSign({
+      intent: ephemeralIntent("reaction", "Like"),
+      surface: `notifications:row:${notification.eventId}`,
+      performSignAndSubmit: async (submissionId) => {
+        if (trackedAttemptId !== submissionId) {
+          trackedAttemptId = submissionId;
+          setLikeAttemptId(submissionId);
+        }
+        const { signedEvent } = await nostrAdapter.signEvent(kind7EventData, {
+          clearCacheOnError: false,
+        });
 
-      if (!response.ok) throw new Error("Failed to publish like");
+        const response = await fetch(PUBLISH_API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            relays: userRelays,
+            event: signedEvent,
+          }),
+        });
 
+        if (!response.ok) {
+          const message = `Failed to publish like (${response.status})`;
+          signingAttempts.markFailed(submissionId, message);
+          throw new Error(message);
+        }
+        signingAttempts.markCompleted(submissionId);
+      },
+    });
+
+    if (result.ok) {
       if (!suppressSuccessToast) {
         showToast("success", "Liked!", 2000);
       }
       return true;
-    } catch (error) {
-      const { handleAsyncError, getErrorMessage } =
-        await import("~/lib/error-handler.client");
-      handleAsyncError(
-        error,
-        {
-          component: "useNotificationActions",
-          action: "handleLike",
-        },
-        false
-      ); // Don't show toast, we call showToast instead
-      showToast("error", getErrorMessage(error) || "Failed to like");
-      return false;
     }
+
+    // Per the ephemeral tier: leave `awaiting_signer` recovery to the
+    // in-row CompactSignStatus pill; only escalate to a toast on
+    // fatal/expired so the user isn't double-notified.
+    if (result.reason === "fatal" || result.reason === "expired") {
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(
+        new Error(result.lastError ?? "Failed to like"),
+        { component: "useNotificationActions", action: "handleLike" },
+        false
+      );
+      showToast("error", result.lastError ?? "Failed to like");
+    }
+    return false;
   };
 
   const handleQuote = async (): Promise<boolean> => {
     if (!quoteContent.trim()) return false;
 
     setIsQuoting(true);
+    const quoteSnapshot = quoteContent;
+    const idempotencyKey = `quote:${notification.eventId}:${Date.now()}`;
     try {
       const neventEncoded = nip19.neventEncode({
         id: notification.eventId,
         relays: [DEFAULT_RELAY],
         author: notification.pubkey,
       });
-
-      const quotePostContent = [quoteContent, `nostr:${neventEncoded}`]
+      const quotePostContent = [quoteSnapshot, `nostr:${neventEncoded}`]
         .filter(Boolean)
         .join("\n\n");
 
-      const kind1EventData = {
-        kind: 1,
-        content: quotePostContent,
-        tags: [
-          ["e", notification.eventId, DEFAULT_RELAY, "mention"],
-          ["p", notification.pubkey, "", "mention"],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      };
+      const result = await startRecoverableSign({
+        intent: durableIntent("publish_quote", idempotencyKey, "Quote"),
+        surface: `notifications:row:${notification.eventId}`,
+        performSignAndSubmit: async (submissionId) => {
+          const { signedEvent } = await nostrAdapter.signEvent(
+            {
+              kind: 1,
+              content: quotePostContent,
+              tags: [
+                ["e", notification.eventId, DEFAULT_RELAY, "mention"],
+                ["p", notification.pubkey, "", "mention"],
+              ],
+              created_at: Math.floor(Date.now() / 1000),
+            },
+            { clearCacheOnError: false }
+          );
 
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(kind1EventData);
+          const response = await fetch(PUBLISH_API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relays: userRelays,
+              event: signedEvent,
+              attemptId: submissionId,
+            }),
+          });
 
-      const response = await fetch(PUBLISH_API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: userRelays,
-          event: signedEvent,
-        }),
+          if (!response.ok) {
+            const message = `Failed to publish quote (${response.status})`;
+            signingAttempts.markFailed(submissionId, message);
+            throw new Error(message);
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
       });
 
-      if (!response.ok) throw new Error("Failed to publish quote post");
-
-      if (!suppressSuccessToast) {
-        showToast("success", "Quote posted successfully!");
+      if (result.ok) {
+        if (!suppressSuccessToast) {
+          showToast("success", "Quote posted successfully!");
+        }
+        setQuoteContent("");
+        setShowQuoteInput(false);
+        setShowReplyInput(false);
+        return true;
       }
-      setQuoteContent("");
-      setShowQuoteInput(false);
-      setShowReplyInput(false);
-      return true;
-    } catch (error) {
-      const { handleAsyncError, getErrorMessage } =
-        await import("~/lib/error-handler.client");
+
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
-        error,
-        {
-          component: "useNotificationActions",
-          action: "handleQuote",
-        },
+        new Error(
+          result.lastError ?? `Failed to post quote (${result.reason})`
+        ),
+        { component: "useNotificationActions", action: "handleQuote" },
         false
-      ); // Don't show toast, we call showToast instead
-      showToast("error", getErrorMessage(error) || "Failed to post quote");
+      );
+      showToast(
+        "error",
+        result.lastError ?? "Failed to post quote. Please try again."
+      );
       return false;
     } finally {
       setIsQuoting(false);
@@ -333,8 +429,8 @@ export function useNotificationActions({
         const relay = userRelays[0] ?? DEFAULT_RELAY;
         if (!signedEvent) {
           if (params.actionType === "reply") {
-            const { signedEvent: se } =
-              await nostrAdapter.signEventWithOneRetry({
+            const { signedEvent: se } = await nostrAdapter.signEvent(
+              {
                 kind: 1,
                 content: params.content,
                 tags: [
@@ -342,7 +438,9 @@ export function useNotificationActions({
                   ["p", notification.pubkey],
                 ],
                 created_at: unix,
-              });
+              },
+              { clearCacheOnError: false }
+            );
             signedEvent = se;
           } else if (params.actionType === "quote") {
             const neventEncoded = nip19.neventEncode({
@@ -353,8 +451,8 @@ export function useNotificationActions({
             const quotePostContent = [params.content, `nostr:${neventEncoded}`]
               .filter(Boolean)
               .join("\n\n");
-            const { signedEvent: se } =
-              await nostrAdapter.signEventWithOneRetry({
+            const { signedEvent: se } = await nostrAdapter.signEvent(
+              {
                 kind: 1,
                 content: quotePostContent,
                 tags: [
@@ -362,11 +460,13 @@ export function useNotificationActions({
                   ["p", notification.pubkey, "", "mention"],
                 ],
                 created_at: unix,
-              });
+              },
+              { clearCacheOnError: false }
+            );
             signedEvent = se;
           } else {
-            const { signedEvent: se } =
-              await nostrAdapter.signEventWithOneRetry({
+            const { signedEvent: se } = await nostrAdapter.signEvent(
+              {
                 kind: 6,
                 content: "",
                 tags: [
@@ -374,7 +474,9 @@ export function useNotificationActions({
                   ["p", notification.pubkey],
                 ],
                 created_at: unix,
-              });
+              },
+              { clearCacheOnError: false }
+            );
             signedEvent = se;
           }
         }
@@ -487,6 +589,11 @@ export function useNotificationActions({
     isReposting,
     isQuoting,
     isLoadingReplies,
+
+    // Ephemeral attempt ids (PR 4) — feed into useSigningAttemptById
+    // + SubtleSignPending / CompactSignStatus to render in-row recovery.
+    likeAttemptId,
+    repostAttemptId,
 
     // Setters
     setShowReplyInput,

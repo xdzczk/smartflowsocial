@@ -23,6 +23,7 @@ import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { getUser, refreshUserProfileIfChanged } from "~/features/auth";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
+import { GlobalSignRecoveryBanner } from "~/features/auth/signing/components/GlobalSignRecoveryBanner";
 import { BtcpayConfirmationWatchBar } from "~/features/payments/components/BtcpayConfirmationWatchBar";
 // Import migration to run on app load
 import "~/features/auth/signer/remote-signer-sessions-migration.client";
@@ -239,6 +240,7 @@ export default function App() {
             <LifecycleHandler />
             <PrefetchManager />
             <RemoteSignerReconnectController />
+            <GlobalSignRecoveryBanner />
             <Outlet />
             <ScrollRestoration />
             <Scripts />

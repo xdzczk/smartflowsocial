@@ -21,13 +21,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  pendingPublish,
+  _resetForTests as resetPendingPublish,
+} from "~/features/auth/signing/signing-attempts.client";
+import {
   appendRelayOverride,
   appendSubmissionId,
 } from "~/features/posts/composer/services/build-publish-formdata.client";
-import {
-  pendingPublish,
-  _resetForTests as resetPendingPublish,
-} from "~/features/posts/composer/state/pending-publish.client";
 import { RemoteSignerTimeoutError } from "~/lib/errors";
 
 async function flushMicrotasks(): Promise<void> {

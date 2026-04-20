@@ -14,6 +14,11 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   buildAndSignFeedbackKind4,
@@ -26,6 +31,8 @@ import type { loader as dashboardLoader } from "~/routes/dashboard";
 /** Slightly smaller than main nav (`DashboardHeader` uses 18px + `text-sm`) so this row reads as the same pattern at a smaller scale. */
 const FEEDBACK_NAV_ICON_CLASS = "inline-block size-4 shrink-0";
 const NAV_ICON_STROKE = 2.25;
+
+const FEEDBACK_SEND_FALLBACK_ERROR = "Could not send feedback.";
 
 interface ProductFeedbackSidebarProps {
   collapsed: boolean;
@@ -109,53 +116,83 @@ export function ProductFeedbackSidebar({
         userNpub,
         userId,
       });
-      const signedEvent = await buildAndSignFeedbackKind4({
-        recipientPubkeyHex: inboxHex,
-        plaintext,
-      });
 
-      const nip17Eligible = feedbackClientNip17Eligible({
-        nostrDmNip17Enabled,
-        feedbackInboxKind10050Relays,
-      });
+      // Per-attempt key so a resumed retry collapses onto the same
+      // server dedupe slot. Includes a fresh submission id so reopening
+      // the dialog after a successful send is a fresh intent.
+      const idempotencyKey = `feedback:${userId}:${signingAttempts.createSubmissionId()}`;
 
-      let giftWraps: Awaited<
-        ReturnType<typeof buildUserSignedFeedbackNip17GiftWraps>
-      > | null = null;
-      if (nip17Eligible && feedbackClientMayAttemptNip17Seals()) {
-        const preferredRelay = feedbackInboxKind10050Relays[0]?.trim();
-        const senderHex = nostrAdapter.decodeNpub(userNpub);
-        if (preferredRelay && senderHex && /^[0-9a-f]{64}$/i.test(senderHex)) {
-          try {
-            giftWraps = await buildUserSignedFeedbackNip17GiftWraps({
-              plaintext,
-              senderPubkeyHex: senderHex.toLowerCase(),
-              inboxPubkeyHex: inboxHex,
-              preferredInboxRelayUrl: preferredRelay,
-            });
-          } catch {
-            giftWraps = null;
+      const result = await startRecoverableSign({
+        intent: durableIntent("publish_dm", idempotencyKey, "Send feedback"),
+        surface: "product-feedback",
+        performSignAndSubmit: async (submissionId) => {
+          const signedEvent = await buildAndSignFeedbackKind4({
+            recipientPubkeyHex: inboxHex,
+            plaintext,
+          });
+
+          const nip17Eligible = feedbackClientNip17Eligible({
+            nostrDmNip17Enabled,
+            feedbackInboxKind10050Relays,
+          });
+
+          let giftWraps: Awaited<
+            ReturnType<typeof buildUserSignedFeedbackNip17GiftWraps>
+          > | null = null;
+          if (nip17Eligible && feedbackClientMayAttemptNip17Seals()) {
+            const preferredRelay = feedbackInboxKind10050Relays[0]?.trim();
+            const senderHex = nostrAdapter.decodeNpub(userNpub);
+            if (
+              preferredRelay &&
+              senderHex &&
+              /^[0-9a-f]{64}$/i.test(senderHex)
+            ) {
+              try {
+                giftWraps = await buildUserSignedFeedbackNip17GiftWraps({
+                  plaintext,
+                  senderPubkeyHex: senderHex.toLowerCase(),
+                  inboxPubkeyHex: inboxHex,
+                  preferredInboxRelayUrl: preferredRelay,
+                });
+              } catch {
+                // Gift-wrap signing is best-effort; falling back to the
+                // kind-4 keeps the user's feedback flowing even when the
+                // signer can't produce NIP-44 seals.
+                giftWraps = null;
+              }
+            }
           }
-        }
-      }
 
-      const response = await fetch("/api/feedback-dm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          giftWraps?.length === 2
-            ? { event: signedEvent, giftWraps }
-            : { event: signedEvent }
-        ),
+          const response = await fetch("/api/feedback-dm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              giftWraps?.length === 2
+                ? { event: signedEvent, giftWraps, attemptId: submissionId }
+                : { event: signedEvent, attemptId: submissionId }
+            ),
+          });
+
+          const payload = (await response.json().catch(() => ({}))) as {
+            error?: string;
+            success?: boolean;
+          };
+
+          if (!response.ok) {
+            const msg = payload.error ?? FEEDBACK_SEND_FALLBACK_ERROR;
+            signingAttempts.markFailed(submissionId, msg);
+            throw new Error(msg);
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
       });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        success?: boolean;
-      };
-
-      if (!response.ok) {
-        toast.error(payload.error ?? "Could not send feedback.");
+      if (!result.ok) {
+        const fallback =
+          result.reason === "expired"
+            ? "Recovery window expired before your signer reconnected."
+            : FEEDBACK_SEND_FALLBACK_ERROR;
+        toast.error(result.lastError ?? fallback);
         return;
       }
 
@@ -164,7 +201,7 @@ export function ProductFeedbackSidebar({
       setFormNonce((n) => n + 1);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Could not send feedback.";
+        err instanceof Error ? err.message : FEEDBACK_SEND_FALLBACK_ERROR;
       toast.error(msg);
     } finally {
       setSubmitting(false);

@@ -6,7 +6,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("~/lib/nostr-adapter.client", () => ({
   nostrAdapter: {
-    signEventWithOneRetry: vi.fn().mockResolvedValue({
+    signEvent: vi.fn().mockResolvedValue({
       signedEvent: { id: "evt1", kind: 7, pubkey: "p1" },
     }),
   },
@@ -39,7 +39,7 @@ describe("useLookupNoteEngagement", () => {
       await result.current.likeNote();
     });
 
-    expect(nostrAdapter.signEventWithOneRetry).toHaveBeenCalledWith(
+    expect(nostrAdapter.signEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 7,
         content: "+",
@@ -47,7 +47,8 @@ describe("useLookupNoteEngagement", () => {
           ["e", "e".repeat(64)],
           ["p", "a".repeat(64)],
         ],
-      })
+      }),
+      expect.objectContaining({ clearCacheOnError: false })
     );
 
     const publishCall = fetchMock.mock.calls.find(
@@ -82,7 +83,7 @@ describe("useLookupNoteEngagement", () => {
       await result.current.sendReply("hello");
     });
 
-    expect(nostrAdapter.signEventWithOneRetry).toHaveBeenCalledWith(
+    expect(nostrAdapter.signEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 1,
         content: "hello",
@@ -90,7 +91,8 @@ describe("useLookupNoteEngagement", () => {
           ["e", "e".repeat(64), "wss://relay.test", "reply"],
           ["p", "a".repeat(64)],
         ],
-      })
+      }),
+      expect.objectContaining({ clearCacheOnError: false })
     );
 
     const publishCall = fetchMock.mock.calls.find(

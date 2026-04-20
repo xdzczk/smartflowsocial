@@ -1,8 +1,16 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import { signDraftForScheduling } from "~/features/posts/drafts";
-import { logClientError } from "~/lib/error-handler.client";
+import {
+  getClientDisplayErrorMessage,
+  logClientError,
+} from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
@@ -114,6 +122,26 @@ export function useDraftEditState({
 
   const isSubmitting = fetcher.state !== "idle";
 
+  // Tracks the in-flight signing attempt so the fetcher.data effect can
+  // mark it completed/failed once the server response lands.
+  const inFlightAttemptIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    const attemptId = inFlightAttemptIdRef.current;
+    if (!attemptId) return;
+    const data = fetcher.data as { error?: unknown } | undefined;
+    if (data?.error) {
+      signingAttempts.markFailed(
+        attemptId,
+        getClientDisplayErrorMessage(data.error)
+      );
+    } else {
+      signingAttempts.markCompleted(attemptId);
+    }
+    inFlightAttemptIdRef.current = null;
+  }, [fetcher.state, fetcher.data]);
+
   const handleResumeClick = () => {
     if (!scheduledFor) {
       alert("Please set a schedule time first");
@@ -163,148 +191,172 @@ export function useDraftEditState({
   );
 
   const handleSignAndResume = async () => {
-    try {
-      // Convert currentUser (User | null | undefined) to UserData | null
-      const currentUserData: UserData | null = currentUser
-        ? {
-            id: currentUser.id,
-            npub: currentUser.npub,
-            timezone: currentUser.timezone ?? null,
-            scheduleInterval: currentUser.scheduleInterval
-              .map(Number)
-              .filter((n) => !isNaN(n)),
-            userRelays: currentUser.userRelays,
-            isEnabled: currentUser.isEnabled,
+    // Convert currentUser (User | null | undefined) to UserData | null
+    const currentUserData: UserData | null = currentUser
+      ? {
+          id: currentUser.id,
+          npub: currentUser.npub,
+          timezone: currentUser.timezone ?? null,
+          scheduleInterval: currentUser.scheduleInterval
+            .map(Number)
+            .filter((n) => !isNaN(n)),
+          userRelays: currentUser.userRelays,
+          isEnabled: currentUser.isEnabled,
+        }
+      : null;
+
+    // Stable across resumes for the same intent: same draft post + same
+    // target time => same dedupe slot. The user reopening the modal with
+    // a different time is a fresh intent.
+    const idempotencyKey = `draft_resume:${(post as { id?: string }).id ?? "draft"}:${scheduledFor ?? ""}`;
+
+    const recoveryResult = await startRecoverableSign({
+      intent: durableIntent("composer_publish", idempotencyKey, "Resume draft"),
+      surface: `draft_resume:${(post as { id?: string }).id ?? "draft"}`,
+      performSignAndSubmit: async (submissionId) => {
+        const result = await signDraftForScheduling({
+          content,
+          caption,
+          scheduledFor: scheduledFor ?? "",
+          selectedQueue,
+          useHashtagPresets,
+          selectedHashtags,
+          user,
+          currentUser: currentUserData,
+          post: post as unknown as PostData,
+          scheduleRandomWindowMinutes: 0, // TODO: pass from queue default when draft edit has queue types
+          includeHashtagsInNoteBody,
+        });
+
+        const formData = new FormData();
+        formData.append("_action", "resume");
+        formData.append("content", content);
+        formData.append("caption", caption || content);
+        formData.append("queueType", selectedQueue);
+        formData.append("scheduledFor", result.scheduledForUnix.toString());
+        formData.append("attemptId", submissionId);
+        if (result.nominalScheduledForUnix != null) {
+          formData.append(
+            "nominalScheduledFor",
+            result.nominalScheduledForUnix.toString()
+          );
+        }
+        formData.append("signedEvent", JSON.stringify(result.signedEvent));
+        formData.append("nostrEvent", JSON.stringify(result.nostrEvent));
+
+        if (useHashtagPresets && selectedHashtagPresetId) {
+          formData.append("hashTagPresetId", selectedHashtagPresetId);
+          formData.append("useHashtagPresets", "on");
+        }
+
+        const mainSigned = result.signedEvent as {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          tags: string[][];
+          content: string;
+          sig: string;
+        };
+
+        const mainScheduledUnix = result.scheduledForUnix;
+        if (alsoScheduleRepost && repostDelayList.length > 0) {
+          const repostSchedules: Array<{
+            scheduledFor: number;
+            signedEvent: unknown;
+          }> = [];
+          for (const item of repostDelayList) {
+            const delay = { value: item.value, unit: item.unit };
+            if (!isValidDelayAfterMain(delay)) continue;
+            const offsetSeconds = delayAfterMainToSeconds(delay);
+            const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
+            const repostEvent = buildKind6RepostEvent(
+              mainSigned,
+              repostScheduledForUnix
+            );
+            const { signedEvent: repostSignedEvent } =
+              await nostrAdapter.signEvent(
+                {
+                  content: repostEvent.content,
+                  created_at: repostEvent.created_at,
+                  kind: repostEvent.kind,
+                  tags: repostEvent.tags,
+                },
+                { clearCacheOnError: false }
+              );
+            repostSchedules.push({
+              scheduledFor: repostScheduledForUnix,
+              signedEvent: repostSignedEvent,
+            });
           }
-        : null;
+          if (repostSchedules.length > 0) {
+            const withConditions =
+              repostConditions && Object.keys(repostConditions).length > 0
+                ? repostSchedules.map((s) => ({ ...s, ...repostConditions }))
+                : repostSchedules;
+            formData.append("repostSchedules", JSON.stringify(withConditions));
+          }
+        }
 
-      const result = await signDraftForScheduling({
-        content,
-        caption,
-        scheduledFor: scheduledFor ?? "",
-        selectedQueue,
-        useHashtagPresets,
-        selectedHashtags,
-        user,
-        currentUser: currentUserData,
-        post: post as unknown as PostData,
-        scheduleRandomWindowMinutes: 0, // TODO: pass from queue default when draft edit has queue types
-        includeHashtagsInNoteBody,
+        if (alsoScheduleQuote && quoteEntries.length > 0) {
+          const quoteSchedules: Array<{
+            scheduledFor: number;
+            signedEvent: unknown;
+            caption?: string;
+          }> = [];
+          for (const entry of quoteEntries) {
+            const delay = { value: entry.value, unit: entry.unit };
+            if (!isValidDelayAfterMain(delay)) continue;
+            const offsetSeconds = delayAfterMainToSeconds(delay);
+            const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
+            const quoteEvent = buildQuoteEvent(
+              mainSigned,
+              entry.caption,
+              quoteScheduledForUnix,
+              []
+            );
+            const { signedEvent: quoteSignedEvent } =
+              await nostrAdapter.signEvent(
+                {
+                  content: quoteEvent.content,
+                  created_at: quoteEvent.created_at,
+                  kind: quoteEvent.kind,
+                  tags: quoteEvent.tags,
+                },
+                { clearCacheOnError: false }
+              );
+            quoteSchedules.push({
+              scheduledFor: quoteScheduledForUnix,
+              signedEvent: quoteSignedEvent,
+              caption: entry.caption || undefined,
+            });
+          }
+          if (quoteSchedules.length > 0) {
+            formData.append("quoteSchedules", JSON.stringify(quoteSchedules));
+          }
+        }
+
+        inFlightAttemptIdRef.current = submissionId;
+        fetcher.submit(formData, { method: "post" });
+        setShowResumeModal(false);
+        // The fetcher.data effect promotes the attempt to `completed` /
+        // `failed` once the server response settles.
+      },
+    });
+
+    if (recoveryResult.ok) return;
+
+    inFlightAttemptIdRef.current = null;
+    if (recoveryResult.reason === "fatal") {
+      logClientError(new Error(recoveryResult.lastError ?? "draft sign fail"), {
+        component: "useDraftEditState",
+        action: "signDraftForScheduling",
       });
-
-      const formData = new FormData();
-      formData.append("_action", "resume");
-      formData.append("content", content);
-      formData.append("caption", caption || content);
-      formData.append("queueType", selectedQueue);
-      formData.append("scheduledFor", result.scheduledForUnix.toString());
-      if (result.nominalScheduledForUnix != null) {
-        formData.append(
-          "nominalScheduledFor",
-          result.nominalScheduledForUnix.toString()
-        );
-      }
-      formData.append("signedEvent", JSON.stringify(result.signedEvent));
-      formData.append("nostrEvent", JSON.stringify(result.nostrEvent));
-
-      // Add hashtag preset data
-      if (useHashtagPresets && selectedHashtagPresetId) {
-        formData.append("hashTagPresetId", selectedHashtagPresetId);
-        formData.append("useHashtagPresets", "on");
-      }
-
-      const mainSigned = result.signedEvent as {
-        id: string;
-        pubkey: string;
-        created_at: number;
-        kind: number;
-        tags: string[][];
-        content: string;
-        sig: string;
-      };
-
-      const mainScheduledUnix = result.scheduledForUnix;
-      if (alsoScheduleRepost && repostDelayList.length > 0) {
-        const repostSchedules: Array<{
-          scheduledFor: number;
-          signedEvent: unknown;
-        }> = [];
-        for (const item of repostDelayList) {
-          const delay = { value: item.value, unit: item.unit };
-          if (!isValidDelayAfterMain(delay)) continue;
-          const offsetSeconds = delayAfterMainToSeconds(delay);
-          const repostScheduledForUnix = mainScheduledUnix + offsetSeconds;
-          const repostEvent = buildKind6RepostEvent(
-            mainSigned,
-            repostScheduledForUnix
-          );
-          const { signedEvent: repostSignedEvent } =
-            await nostrAdapter.signEventWithOneRetry({
-              content: repostEvent.content,
-              created_at: repostEvent.created_at,
-              kind: repostEvent.kind,
-              tags: repostEvent.tags,
-            });
-          repostSchedules.push({
-            scheduledFor: repostScheduledForUnix,
-            signedEvent: repostSignedEvent,
-          });
-        }
-        if (repostSchedules.length > 0) {
-          const withConditions =
-            repostConditions && Object.keys(repostConditions).length > 0
-              ? repostSchedules.map((s) => ({ ...s, ...repostConditions }))
-              : repostSchedules;
-          formData.append("repostSchedules", JSON.stringify(withConditions));
-        }
-      }
-
-      if (alsoScheduleQuote && quoteEntries.length > 0) {
-        const quoteSchedules: Array<{
-          scheduledFor: number;
-          signedEvent: unknown;
-          caption?: string;
-        }> = [];
-        for (const entry of quoteEntries) {
-          const delay = { value: entry.value, unit: entry.unit };
-          if (!isValidDelayAfterMain(delay)) continue;
-          const offsetSeconds = delayAfterMainToSeconds(delay);
-          const quoteScheduledForUnix = mainScheduledUnix + offsetSeconds;
-          const quoteEvent = buildQuoteEvent(
-            mainSigned,
-            entry.caption,
-            quoteScheduledForUnix,
-            []
-          );
-          const { signedEvent: quoteSignedEvent } =
-            await nostrAdapter.signEventWithOneRetry({
-              content: quoteEvent.content,
-              created_at: quoteEvent.created_at,
-              kind: quoteEvent.kind,
-              tags: quoteEvent.tags,
-            });
-          quoteSchedules.push({
-            scheduledFor: quoteScheduledForUnix,
-            signedEvent: quoteSignedEvent,
-            caption: entry.caption || undefined,
-          });
-        }
-        if (quoteSchedules.length > 0) {
-          formData.append("quoteSchedules", JSON.stringify(quoteSchedules));
-        }
-      }
-
-      fetcher.submit(formData, { method: "post" });
-      setShowResumeModal(false);
-    } catch (error) {
-      logClientError(
-        error instanceof Error ? error : new Error(String(error)),
-        {
-          component: "useDraftEditState",
-          action: "signDraftForScheduling",
-        }
+      alert(
+        recoveryResult.lastError ?? "Error signing the post. Please try again."
       );
-      alert("Error signing the post. Please try again.");
+    } else if (recoveryResult.reason === "expired") {
+      alert("Recovery window expired before your signer reconnected.");
     }
   };
 

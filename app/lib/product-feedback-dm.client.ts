@@ -116,12 +116,17 @@ export async function buildUserSignedFeedbackNip17GiftWraps(params: {
       JSON.stringify(rumor)
     );
 
-    const { signedEvent: signedSeal } = await nostrAdapter.signEvent({
-      kind: Seal,
-      content: sealContent,
-      tags: [],
-      created_at: randomGiftWrapCreatedAt(),
-    });
+    const { signedEvent: signedSeal } = await nostrAdapter.signEvent(
+      {
+        kind: Seal,
+        content: sealContent,
+        tags: [],
+        created_at: randomGiftWrapCreatedAt(),
+      },
+      // Surfaceable recoverable errors so the caller's
+      // `startRecoverableSign` boundary can park the attempt.
+      { clearCacheOnError: false }
+    );
 
     const randomKey = generateSecretKey();
     const conversationKey = getConversationKey(randomKey, recipient.publicKey);
@@ -153,12 +158,15 @@ export async function buildAndSignFeedbackKind4(params: {
   const peer = params.recipientPubkeyHex.toLowerCase();
   const encrypted = await encryptNip04WithActiveSigner(peer, params.plaintext);
 
-  const { signedEvent } = await nostrAdapter.signEvent({
-    kind: 4,
-    tags: [["p", peer]],
-    content: encrypted,
-    created_at: Math.floor(Date.now() / 1000),
-  });
+  const { signedEvent } = await nostrAdapter.signEvent(
+    {
+      kind: 4,
+      tags: [["p", peer]],
+      content: encrypted,
+      created_at: Math.floor(Date.now() / 1000),
+    },
+    { clearCacheOnError: false }
+  );
 
   return signedEvent;
 }

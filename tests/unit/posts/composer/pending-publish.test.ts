@@ -20,7 +20,7 @@ import {
   pendingPublish,
   RECOVERY_WINDOW_MS,
   _resetForTests as resetPendingPublish,
-} from "~/features/posts/composer/state/pending-publish.client";
+} from "~/features/auth/signing/signing-attempts.client";
 import { RemoteSignerTimeoutError } from "~/lib/errors";
 
 async function flushMicrotasks(): Promise<void> {
