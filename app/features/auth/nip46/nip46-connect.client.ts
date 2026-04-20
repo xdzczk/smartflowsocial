@@ -3,10 +3,12 @@
  * Pure async functions; no React. Used by nip46-login hook.
  */
 
-import { generateSecretKey, SimplePool } from "nostr-tools";
+import { generateSecretKey, type SimplePool } from "nostr-tools";
+import { parseBunkerInput } from "nostr-tools/nip46";
 
 import type { ActiveSignerConfig } from "~/features/auth/signer";
 import { serializeSecretKey } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 import { BRAND_NAME } from "~/lib/brand";
 import { convertToHex } from "~/lib/nostr-conversion";
 
@@ -38,17 +40,27 @@ export async function connectNip46WithBunkerInputForLogin(
   params: ConnectNip46WithBunkerInputForLoginParams
 ): Promise<ConnectNip46WithBunkerInputForLoginResult> {
   const clientSecretKey = generateSecretKey();
+  const trimmed = params.bunkerInput.trim();
   const { signer, pubkey } = await connectNip46WithBunkerInput({
-    bunkerInput: params.bunkerInput.trim(),
+    bunkerInput: trimmed,
     clientSecretKey,
     timeoutMs: params.timeoutMs,
     retryCount: params.retryCount,
   });
+  // Persist the bunker's relays alongside the input so any caller that reads
+  // `cfg.relays` (Settings UI, transport-health helpers, etc.) sees them
+  // without re-parsing the bunker URL on every read. Helpers that treat
+  // empty relays as "transport dead" would otherwise wrongly throw away the
+  // freshly-cached signer.
+  const bp = await parseBunkerInput(trimmed).catch(() => null);
+  const relays =
+    bp?.relays.map((r) => r.trim()).filter((r) => r.startsWith("wss://")) ?? [];
   const config: ConnectNip46WithBunkerInputForLoginResult["config"] = {
     type: "nip46",
     method: "bunker_input",
-    bunkerInput: params.bunkerInput.trim(),
+    bunkerInput: trimmed,
     clientSecretKeyHex: serializeSecretKey(clientSecretKey),
+    ...(relays.length > 0 && { relays }),
   };
   return { signer, pubkey, config };
 }
@@ -154,7 +166,7 @@ export interface ConnectNip46WithPendingUriForLoginResult {
 export async function connectNip46WithPendingUriForLogin(
   params: ConnectNip46WithPendingUriForLoginParams
 ): Promise<ConnectNip46WithPendingUriForLoginResult> {
-  const pool = new SimplePool();
+  const pool = getSharedPool();
   params.onPoolCreated?.(pool, params.relays);
   const { signer, pubkey } = await connectNip46WithNostrConnectUri({
     uri: params.uri,

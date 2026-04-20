@@ -19,6 +19,14 @@ vi.mock("nostr-tools", () => ({
   },
 }));
 
+vi.mock("nostr-tools/nip46", () => ({
+  parseBunkerInput: vi.fn().mockResolvedValue({
+    pubkey: "bunker-pubkey",
+    relays: ["wss://relay.example.com"],
+    secret: null,
+  }),
+}));
+
 vi.mock("~/features/auth/signer", () => ({
   serializeSecretKey: vi.fn().mockReturnValue("secret-hex-abc"),
 }));
@@ -71,6 +79,15 @@ describe("NIP-46 connect (login)", () => {
       expect(result.config.bunkerInput).toBe("bunker+nostr://...");
       expect(result.config.clientSecretKeyHex).toBe("secret-hex-abc");
       expect(result.pubkey).toBe("pubkey-hex-123");
+    });
+
+    it("populates config.relays from the parsed bunker URL", async () => {
+      const result = await connectNip46WithBunkerInputForLogin({
+        bunkerInput: "bunker+nostr://...",
+        timeoutMs: 5000,
+      });
+
+      expect(result.config.relays).toEqual(["wss://relay.example.com"]);
     });
 
     it("passes retryCount to connectNip46WithBunkerInput when provided", async () => {

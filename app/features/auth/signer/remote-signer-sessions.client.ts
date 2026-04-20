@@ -3,6 +3,7 @@
  * Re-exports CRUD, matching, and detect; implements session/event wiring.
  */
 
+import { STORAGE_KEY as ACTIVE_SIGNER_CONFIG_STORAGE_KEY } from "./nostr-signer-storage.client";
 import {
   getAllConnections,
   getConnectionById,
@@ -140,10 +141,10 @@ export function setActiveSession(id: string): void {
     }
   }
   setActiveConnection(id);
-  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+  if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
     try {
-      sessionStorage.setItem(
-        "__smartflow_active_nostr_signer_v1",
+      localStorage.setItem(
+        ACTIVE_SIGNER_CONFIG_STORAGE_KEY,
         JSON.stringify(conn.config)
       );
     } catch {
@@ -174,9 +175,9 @@ export function setActiveSession(id: string): void {
 
 export function clearActiveSession(): void {
   clearActiveConnection();
-  if (typeof window !== "undefined" && typeof sessionStorage !== "undefined") {
+  if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
     try {
-      sessionStorage.removeItem("__smartflow_active_nostr_signer_v1");
+      localStorage.removeItem(ACTIVE_SIGNER_CONFIG_STORAGE_KEY);
     } catch {
       // ignore
     }
@@ -194,12 +195,9 @@ export function removeSession(id: string): void {
   const wasActive = getActiveConnectionId() === id;
   removeConnection(id);
   if (wasActive) {
-    if (
-      typeof window !== "undefined" &&
-      typeof sessionStorage !== "undefined"
-    ) {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
       try {
-        sessionStorage.removeItem("__smartflow_active_nostr_signer_v1");
+        localStorage.removeItem(ACTIVE_SIGNER_CONFIG_STORAGE_KEY);
       } catch {
         // ignore
       }

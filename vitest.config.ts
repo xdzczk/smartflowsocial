@@ -79,7 +79,6 @@ export default defineConfig({
         "app/lib/error-handler.client.ts",
         "app/lib/sync-manager.client.ts",
         "app/lib/correlation-id.client.ts",
-        "app/lib/nostr-timeout-utils.client.ts",
         "app/lib/nip07-readiness.client.ts",
         "app/features/referral/**/*.client.ts",
         "app/features/posts/**/*.client.ts",

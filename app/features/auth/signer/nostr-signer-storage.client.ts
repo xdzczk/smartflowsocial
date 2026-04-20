@@ -1,6 +1,10 @@
 /**
  * Storage and in-memory cache for active Nostr signer config.
- * Handles sessionStorage read/write and cache key constants.
+ *
+ * Stored in `localStorage` so the config survives tab close/reopen and is
+ * shared across tabs of the same origin. The previous v1 key lived in
+ * `sessionStorage`, which forced new tabs to re-bootstrap the signer; we
+ * migrate any leftover v1 value into v2 once at startup.
  */
 
 export type ActiveSignerConfig =
@@ -10,7 +14,15 @@ export type ActiveSignerConfig =
       method: "bunker_input";
       bunkerInput: string;
       clientSecretKeyHex: string;
-      /** Relays from switch_relays; overrides bunkerInput relays when reconnecting. */
+      /**
+       * Bunker relays captured at connection time (parsed from `bunkerInput`).
+       * Persisted alongside the input so callers reading `cfg.relays`
+       * (Settings UI, transport-health helpers, etc.) don't have to re-parse
+       * the bunker URL on every read. Historically this field could also be
+       * overwritten by a `switch_relays` response; that path was removed
+       * because Primal Signer never replied to it and it broke the next RPC
+       * — see `connection-health.client.ts` for the full rationale.
+       */
       relays?: string[];
     }
   | {
@@ -29,14 +41,16 @@ export type ActiveSignerConfig =
       };
     };
 
-/** Cache key for active signer config in sessionStorage. */
-export const STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
+/** Cache key for active signer config in localStorage. */
+export const STORAGE_KEY = "__smartflow_active_nostr_signer_v2";
+/** Legacy sessionStorage key from before the localStorage migration. */
+export const LEGACY_STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
 
 let cachedConfigJson: string | null = null;
 
 export function getActiveSignerConfig(): ActiveSignerConfig | null {
   try {
-    const json = sessionStorage.getItem(STORAGE_KEY);
+    const json = localStorage.getItem(STORAGE_KEY);
     if (!json) return null;
     return JSON.parse(json) as ActiveSignerConfig;
   } catch {
@@ -47,7 +61,7 @@ export function getActiveSignerConfig(): ActiveSignerConfig | null {
 export function setActiveSignerConfig(config: ActiveSignerConfig): void {
   try {
     const json = JSON.stringify(config);
-    sessionStorage.setItem(STORAGE_KEY, json);
+    localStorage.setItem(STORAGE_KEY, json);
     cachedConfigJson = json;
   } catch {
     // ignore
@@ -56,11 +70,29 @@ export function setActiveSignerConfig(config: ActiveSignerConfig): void {
 
 export function clearActiveSignerConfig(): void {
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
     // ignore
   }
   cachedConfigJson = null;
+}
+
+/**
+ * One-shot migration from legacy sessionStorage v1 to localStorage v2.
+ * Idempotent: only copies when v2 is missing, then drops the v1 entry.
+ * Safe to call before any other storage usage.
+ */
+export function migrateLegacyActiveSignerConfig(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const legacy = sessionStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+    }
+    sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 /**
@@ -77,13 +109,13 @@ export function persistActiveSignerConfigWithoutReset(
 export function getCachedConfigJson(): string | null {
   if (cachedConfigJson) return cachedConfigJson;
   try {
-    return sessionStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
 }
 
-/** Set cached config JSON after caching a signer from login (no sessionStorage write). */
+/** Set cached config JSON after caching a signer from login (no localStorage write). */
 export function setCachedConfigJson(json: string): void {
   cachedConfigJson = json;
 }

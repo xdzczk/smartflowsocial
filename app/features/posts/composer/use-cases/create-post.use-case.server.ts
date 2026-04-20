@@ -8,7 +8,10 @@ import { assertScheduleCapacity } from "~/features/payments/entitlements/schedul
 import { createPostWithOutbox } from "~/features/posts/server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
-import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
+import {
+  generateCreationIdempotencyKey,
+  generateSubmissionIdempotencyKey,
+} from "~/lib/idempotency.server";
 import {
   recordPostCreated,
   recordPostScheduled,
@@ -92,6 +95,43 @@ function getSignedEventId(value: unknown): string | null {
   return typeof id === "string" && id.length > 0 ? id : null;
 }
 
+/**
+ * Compute the canonical creationIdempotencyKey for a create-post call.
+ *
+ * Prefers the client-supplied `submissionId` (UUID minted at the publish
+ * click) because it is the only key with cross-session uniqueness for two
+ * unrelated publish clicks of the same content — fixing the cold-restart
+ * "duplicate idempotency collision" that silently dropped fresh signed
+ * events into a historic PUBLISHED row.
+ *
+ * Falls back to the legacy content-hash key for older clients that
+ * haven't been redeployed yet (transitional safety).
+ */
+function resolveCreationIdempotencyKey(
+  input: CreatePostInput,
+  content: string
+): string {
+  const mediaKey =
+    input.fileUrl.length > 0 ? [...input.fileUrl].sort().join("\0") : undefined;
+  return input.submissionId
+    ? generateSubmissionIdempotencyKey(input.submissionId)
+    : generateCreationIdempotencyKey(
+        input.userId,
+        content,
+        input.scheduledFor,
+        mediaKey
+      );
+}
+
+interface CreateAttachableContext {
+  input: CreatePostInput;
+  parentPostId: string;
+  parentSignedEvent: unknown;
+  queueTypeId: string | null | undefined;
+  isAttachableParent: boolean;
+  correlationId: string | undefined;
+}
+
 export class CreatePostUseCase {
   private readonly stateMachine = new PostStateMachine();
 
@@ -131,16 +171,9 @@ export class CreatePostUseCase {
           )
         : input.content;
 
-    // Generate idempotency key. Include media (fileUrl) so different images with same caption are distinct posts.
-    const mediaKey =
-      input.fileUrl.length > 0
-        ? [...input.fileUrl].sort().join("\0")
-        : undefined;
-    const creationIdempotencyKey = generateCreationIdempotencyKey(
-      input.userId,
-      content,
-      input.scheduledFor,
-      mediaKey
+    const creationIdempotencyKey = resolveCreationIdempotencyKey(
+      input,
+      content
     );
 
     const { existing, columnExists } = await findExistingByIdempotency(
@@ -224,135 +257,17 @@ export class CreatePostUseCase {
       recordPostCreated(input.postType, false);
     }
 
-    const repostList = repostListEarly;
-    const quoteList = quoteListEarly;
-    const isAttachableParent = input.scheduledFor != null;
+    const ctx: CreateAttachableContext = {
+      input,
+      parentPostId: post.id,
+      parentSignedEvent: post.signedEvent,
+      queueTypeId,
+      isAttachableParent: input.scheduledFor != null,
+      correlationId,
+    };
 
-    for (const item of repostList) {
-      const repostScheduledForDate = toPrismaDate(
-        fromUnixTimestamp(item.scheduledFor, "UTC")
-      );
-
-      const repostSignedEv = item.signedEvent;
-      const repostConditions =
-        item.repostConditions && Object.keys(item.repostConditions).length > 0
-          ? item.repostConditions
-          : null;
-      const repostPost = await createPostWithOutbox(
-        {
-          userId: input.userId,
-          content: "",
-          caption: "",
-          fileUrl: [],
-          postType: input.postType,
-          queueTypeId,
-          hashTagPresetId: input.hashTagPresetId,
-          isRecyclable: input.isRecyclable,
-
-          signedEvent: repostSignedEv,
-          nostrEvent: undefined,
-          scheduledAtUtc:
-            repostScheduledForDate ?? new Date(item.scheduledFor * 1000),
-          tags: [],
-          repost: true,
-          isQuotedPost: false,
-          repostOfPostId: post.id,
-          postKind: "REPOST",
-          ...(isAttachableParent
-            ? {
-                parentScheduledActionId: post.id,
-                rootScheduledActionId: post.id,
-                targetScheduledActionId: post.id,
-                dependencyMode: "attached" as const,
-                targetMode: "scheduled_parent" as const,
-                followUpTimingMode: "offset_from_parent" as const,
-                followUpOffsetSeconds:
-                  input.scheduledFor != null
-                    ? Math.max(0, item.scheduledFor - input.scheduledFor)
-                    : null,
-                expectedParentEventId:
-                  getSignedEventId(post.signedEvent) ?? undefined,
-              }
-            : {
-                dependencyMode: "standalone" as const,
-                targetMode: "direct" as const,
-              }),
-          signedChildEventId: getSignedEventId(repostSignedEv) ?? undefined,
-          signingState: "signed",
-          ...(repostConditions && { repostConditions }),
-        },
-        item.scheduledFor,
-        correlationId
-      );
-      await this.stateMachine.transition(
-        repostPost.id,
-        input.userId,
-        "SCHEDULED",
-        "Repost created with schedule"
-      );
-      recordPostScheduled(input.postType);
-    }
-
-    for (const item of quoteList) {
-      const quoteScheduledForDate = toPrismaDate(
-        fromUnixTimestamp(item.scheduledFor, "UTC")
-      );
-      const quoteCaption = item.caption ?? "";
-
-      const quoteSignedEv = item.signedEvent;
-      const quotePost = await createPostWithOutbox(
-        {
-          userId: input.userId,
-          content: quoteCaption,
-          caption: quoteCaption,
-          fileUrl: [],
-          postType: input.postType,
-          queueTypeId,
-          hashTagPresetId: input.hashTagPresetId,
-          isRecyclable: input.isRecyclable,
-
-          signedEvent: quoteSignedEv,
-          nostrEvent: undefined,
-          scheduledAtUtc:
-            quoteScheduledForDate ?? new Date(item.scheduledFor * 1000),
-          tags: [],
-          repost: false,
-          isQuotedPost: true,
-          quoteOfPostId: post.id,
-          postKind: "QUOTE",
-          ...(isAttachableParent
-            ? {
-                parentScheduledActionId: post.id,
-                rootScheduledActionId: post.id,
-                targetScheduledActionId: post.id,
-                dependencyMode: "attached" as const,
-                targetMode: "scheduled_parent" as const,
-                followUpTimingMode: "offset_from_parent" as const,
-                followUpOffsetSeconds:
-                  input.scheduledFor != null
-                    ? Math.max(0, item.scheduledFor - input.scheduledFor)
-                    : null,
-                expectedParentEventId:
-                  getSignedEventId(post.signedEvent) ?? undefined,
-              }
-            : {
-                dependencyMode: "standalone" as const,
-                targetMode: "direct" as const,
-              }),
-          signedChildEventId: getSignedEventId(quoteSignedEv) ?? undefined,
-          signingState: "signed",
-        },
-        item.scheduledFor,
-        correlationId
-      );
-      await this.stateMachine.transition(
-        quotePost.id,
-        input.userId,
-        "SCHEDULED",
-        "Quote post created with schedule"
-      );
-      recordPostScheduled(input.postType);
-    }
+    await this.createReposts(repostListEarly, ctx);
+    await this.createQuotes(quoteListEarly, ctx);
 
     logInfo("CreatePostUseCase: Post created successfully", {
       postId: post.id,
@@ -364,5 +279,123 @@ export class CreatePostUseCase {
       post,
       needsScheduling: !!input.scheduledFor,
     };
+  }
+
+  private buildAttachableExtras(
+    item: { scheduledFor: number },
+    ctx: CreateAttachableContext
+  ) {
+    if (!ctx.isAttachableParent) {
+      return {
+        dependencyMode: "standalone" as const,
+        targetMode: "direct" as const,
+      };
+    }
+    return {
+      parentScheduledActionId: ctx.parentPostId,
+      rootScheduledActionId: ctx.parentPostId,
+      targetScheduledActionId: ctx.parentPostId,
+      dependencyMode: "attached" as const,
+      targetMode: "scheduled_parent" as const,
+      followUpTimingMode: "offset_from_parent" as const,
+      followUpOffsetSeconds:
+        ctx.input.scheduledFor != null
+          ? Math.max(0, item.scheduledFor - ctx.input.scheduledFor)
+          : null,
+      expectedParentEventId:
+        getSignedEventId(ctx.parentSignedEvent) ?? undefined,
+    };
+  }
+
+  private async createReposts(
+    repostList: ReturnType<typeof buildRepostList>,
+    ctx: CreateAttachableContext
+  ): Promise<void> {
+    for (const item of repostList) {
+      const scheduledAtUtc =
+        toPrismaDate(fromUnixTimestamp(item.scheduledFor, "UTC")) ??
+        new Date(item.scheduledFor * 1000);
+      const repostConditions =
+        item.repostConditions && Object.keys(item.repostConditions).length > 0
+          ? item.repostConditions
+          : null;
+      const repostPost = await createPostWithOutbox(
+        {
+          userId: ctx.input.userId,
+          content: "",
+          caption: "",
+          fileUrl: [],
+          postType: ctx.input.postType,
+          queueTypeId: ctx.queueTypeId,
+          hashTagPresetId: ctx.input.hashTagPresetId,
+          isRecyclable: ctx.input.isRecyclable,
+          signedEvent: item.signedEvent,
+          nostrEvent: undefined,
+          scheduledAtUtc,
+          tags: [],
+          repost: true,
+          isQuotedPost: false,
+          repostOfPostId: ctx.parentPostId,
+          postKind: "REPOST",
+          ...this.buildAttachableExtras(item, ctx),
+          signedChildEventId: getSignedEventId(item.signedEvent) ?? undefined,
+          signingState: "signed",
+          ...(repostConditions && { repostConditions }),
+        },
+        item.scheduledFor,
+        ctx.correlationId
+      );
+      await this.stateMachine.transition(
+        repostPost.id,
+        ctx.input.userId,
+        "SCHEDULED",
+        "Repost created with schedule"
+      );
+      recordPostScheduled(ctx.input.postType);
+    }
+  }
+
+  private async createQuotes(
+    quoteList: ReturnType<typeof buildQuoteList>,
+    ctx: CreateAttachableContext
+  ): Promise<void> {
+    for (const item of quoteList) {
+      const scheduledAtUtc =
+        toPrismaDate(fromUnixTimestamp(item.scheduledFor, "UTC")) ??
+        new Date(item.scheduledFor * 1000);
+      const quoteCaption = item.caption ?? "";
+      const quotePost = await createPostWithOutbox(
+        {
+          userId: ctx.input.userId,
+          content: quoteCaption,
+          caption: quoteCaption,
+          fileUrl: [],
+          postType: ctx.input.postType,
+          queueTypeId: ctx.queueTypeId,
+          hashTagPresetId: ctx.input.hashTagPresetId,
+          isRecyclable: ctx.input.isRecyclable,
+          signedEvent: item.signedEvent,
+          nostrEvent: undefined,
+          scheduledAtUtc,
+          tags: [],
+          repost: false,
+          isQuotedPost: true,
+          quoteOfPostId: ctx.parentPostId,
+          postKind: "QUOTE",
+          ...this.buildAttachableExtras(item, ctx),
+          signedChildEventId: getSignedEventId(item.signedEvent) ?? undefined,
+          signingState: "signed",
+        },
+        item.scheduledFor,
+        ctx.correlationId
+      );
+      await this.stateMachine.transition(
+        quotePost.id,
+        ctx.input.userId,
+        "SCHEDULED",
+        "Quote post created with schedule"
+      );
+      recordPostScheduled(ctx.input.postType);
+    }
   }
 }

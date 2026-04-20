@@ -14,10 +14,8 @@ import {
   clearPersistedState,
 } from "~/features/auth/lifecycle-manager.client";
 import {
-  getActiveSignerConfig,
-  setActiveSignerConfig,
-  SIGNER_CONFIG_HYDRATED_EVENT,
-  getActiveConnection,
+  bootstrapNostrSigner,
+  migrateLegacyActiveSignerConfig,
   setCurrentUserNpub,
 } from "~/features/auth/signer";
 import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
@@ -76,6 +74,14 @@ export function LifecycleHandler() {
   }, [location.pathname, queryClient]);
 
   useEffect(() => {
+    // Order matters: migrate any legacy sessionStorage config into the new
+    // localStorage slot first, then warm the signer. Bootstrap reads the
+    // active config and would miss a freshly-migrated one if we ran it before.
+    migrateLegacyActiveSignerConfig();
+    bootstrapNostrSigner();
+  }, []);
+
+  useEffect(() => {
     setCurrentUserNpub(user?.npub ?? null);
   }, [user?.npub]);
 
@@ -122,22 +128,10 @@ export function LifecycleHandler() {
     }
   }, [localeDefaultsFetcher.state, localeDefaultsFetcher.data]);
 
-  // When user is logged in but sessionStorage has no signer config (e.g. new tab),
-  // restore from active remote-signer connection first; otherwise default to NIP-07.
-  useEffect(() => {
-    if (!user?.npub || typeof window === "undefined") return;
-    if (getActiveSignerConfig() != null) return;
-
-    const activeConnection = getActiveConnection();
-    if (activeConnection?.config.type === "nip46") {
-      setActiveSignerConfig(activeConnection.config);
-    } else {
-      // Keep extension-only users unblocked when no remote signer connection exists.
-      setActiveSignerConfig({ type: "nip07" });
-    }
-
-    window.dispatchEvent(new CustomEvent(SIGNER_CONFIG_HYDRATED_EVENT));
-  }, [user?.npub]);
+  // Active signer config now lives in localStorage and is shared across tabs,
+  // so the previous "copy from connection list on new tab" bridge is no longer
+  // needed. The NIP-07 fallback path in nostr-adapter handles extension-only
+  // users when no config is persisted.
 
   // Use stable identity (npub string) so revalidation doesn't re-run this effect and cause a loop.
   // Root loader returns a new user object on every load; we only care when the actual user changes.

@@ -11,23 +11,25 @@ export {
   getActiveSigner,
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
-  recordSuccessfulSign,
+  markNip46TransportStale,
   resetCachedSigner,
-  requestNewSignerSession,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
-  tryBackgroundReconnect,
+  cancelSignerInFlight,
   getWindowNostrLikeSigner,
   getActiveSignerPubkeyHint,
   STORAGE_KEY,
+  LEGACY_STORAGE_KEY,
+  migrateLegacyActiveSignerConfig,
   NOSTR_CONNECTION_HEALTHY_EVENT,
+  NOSTR_CONNECTION_STALE_EVENT,
   SIGNER_CONFIG_HYDRATED_EVENT,
   isMobile,
   parseSecretKeyHex,
   serializeSecretKey,
 } from "./nostr-signer-manager.client";
 export type { ActiveSignerConfig } from "./nostr-signer-manager.client";
+
+export { bootstrapNostrSigner } from "./bootstrap.client";
 
 // Remote signer sessions
 export {
@@ -88,6 +90,7 @@ export type { ConnectionEvent } from "./remote-signer-status.client";
 // Remote signer health
 export { testConnection } from "./remote-signer-health.client";
 export type { ConnectionHealthResult } from "./remote-signer-health.client";
+export { isTransportLikelyHealthy } from "./connection-health.client";
 
 // Signing in progress (skip health checks while signing)
 export {

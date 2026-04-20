@@ -7,10 +7,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
-import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
 import { RescheduleScheduledPostModal } from "~/features/posts/scheduling";
@@ -21,7 +18,7 @@ import {
 } from "~/lib/error-handler.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
@@ -101,6 +98,11 @@ export function EditPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const { signAttempt, signElapsedSeconds } =
     useSignAttemptProgress(isSigningEvent);
+  const signPhaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
   const pendingRetryRef = useRef<(() => void) | null>(null);
 
   const clearSigningState = () => {
@@ -793,47 +795,21 @@ export function EditPostModal({
                   <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
-                      {signAttempt ? (
-                        <>
-                          {" "}
-                          Attempt {signAttempt.attempt} of{" "}
-                          {signAttempt.maxAttempts} ·{" "}
-                          {formatAttemptElapsed(
-                            signElapsedSeconds,
-                            signAttempt.timeoutMs
-                          )}
-                        </>
-                      ) : null}
-                      {" — "}
-                      If you’re using a remote signer, open it to approve the
-                      request. To use a new session in the signer app, click
-                      &quot;Use new session&quot;.
+                      {signPhaseStatus ? <> {signPhaseStatus}</> : null}
+                      {" — Approve this request in your remote signer."}
                     </span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          void requestNewSignerSession(cancelSigningState)
-                        }
-                      >
-                        Use new session
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          cancelSigningState();
-                          void tryBackgroundReconnect();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => {
+                        cancelSigningState();
+                        cancelSignerInFlight();
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : null}
 

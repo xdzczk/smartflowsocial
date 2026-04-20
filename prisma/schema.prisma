@@ -1388,6 +1388,7 @@ enum SubscriptionStatus {
 }
 
 enum PublishRelayAckStatus {
+  PENDING
   ACCEPTED
   FAILED
   TIMEOUT

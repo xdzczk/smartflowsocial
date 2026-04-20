@@ -5,7 +5,6 @@
 
 import { parseBunkerInput as nip46ParseBunkerInput } from "nostr-tools/nip46";
 
-import { parseSecretKeyHex, serializeSecretKey } from "~/features/auth/signer";
 import { BRAND_NAME } from "~/lib/brand";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 
@@ -14,6 +13,11 @@ import {
   getNostrConnectAppMetadata,
 } from "./nostr-signer.client";
 import { parseRelayList } from "./parse-relay-list";
+import {
+  clearPendingNip46Handoff,
+  readPendingNip46Handoff,
+  writePendingNip46Handoff,
+} from "./pending-nip46-storage.client";
 
 export { parseRelayList };
 
@@ -33,14 +37,33 @@ export function bunkerCanonicalKey(bp: {
   return `${bp.pubkey}\n${sorted.join(",")}\n${bp.secret ?? ""}`;
 }
 
-/** Append callback so Primal redirects back to app (skip in standalone PWA). */
+/**
+ * Append callback so Primal redirects back to the same sign-in page after
+ * the user approves in the signer app (skip in standalone PWA, where there
+ * is no separate browser tab to return to and the URL handoff would just
+ * relaunch us).
+ *
+ * We deliberately point the callback at the current sign-in page
+ * (`origin + pathname + search`) rather than a dedicated landing route.
+ * An earlier iteration used a separate `/auth/signer-callback` page on
+ * the theory that returning to the same URL would trigger an iOS Safari
+ * bfcache race that drops queued WebSocket frames. Empirically that
+ * theory was wrong: the actual cause of the 50/50 alternating
+ * `bunker:get_public_key timeout` was an automatic `switch_relays` RPC
+ * we used to fire after every successful sign-in, which left Primal's
+ * session in a state where the next sign-in's `get_public_key` was
+ * silently ignored. Once we removed the auto `switch_relays`, sign-in
+ * became fully reliable on the same-tab callback, so the dedicated
+ * landing route was reverted in favor of the simpler "Primal returns
+ * you to the page you started on" UX.
+ */
 export function appendPrimalCallback(uri: string): string {
   if (isStandalonePWA()) return uri;
   if (typeof window === "undefined") return uri;
   if (uri.includes("callback=")) return uri;
 
-  const callbackUrl =
-    window.location.origin + window.location.pathname + window.location.search;
+  const { origin, pathname, search } = window.location;
+  const callbackUrl = `${origin}${pathname}${search}`;
   const separator = uri.includes("?") ? "&" : "?";
   return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
 }
@@ -54,6 +77,11 @@ export function createNip46NostrConnectUri(relays: string[]) {
   });
 }
 
+/**
+ * Persisted via the shared `pending-nip46-storage` helper so iOS Safari can't
+ * drop the handoff between Primal and our HTTPS callback when the deep-link
+ * return restores the tab in a fresh browsing context.
+ */
 const PENDING_RECONNECT_STORAGE_KEY = "__smartflow_pending_reconnect_nip46_v1";
 
 export interface PendingReconnect {
@@ -63,25 +91,7 @@ export interface PendingReconnect {
 }
 
 export function getPendingReconnect(): PendingReconnect | null {
-  try {
-    const raw =
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem(PENDING_RECONNECT_STORAGE_KEY)
-        : null;
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as {
-      uri: string;
-      clientSecretKeyHex: string;
-      relays: string[];
-    };
-    return {
-      uri: parsed.uri,
-      clientSecretKey: parseSecretKeyHex(parsed.clientSecretKeyHex),
-      relays: parsed.relays,
-    };
-  } catch {
-    return null;
-  }
+  return readPendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY);
 }
 
 export function setPendingReconnect(
@@ -89,29 +99,13 @@ export function setPendingReconnect(
   clientSecretKey: Uint8Array,
   relays: string[]
 ): void {
-  const payload = {
+  writePendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY, {
     uri,
-    clientSecretKeyHex: serializeSecretKey(clientSecretKey),
+    clientSecretKey,
     relays,
-  };
-  try {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(
-        PENDING_RECONNECT_STORAGE_KEY,
-        JSON.stringify(payload)
-      );
-    }
-  } catch {
-    // ignore
-  }
+  });
 }
 
 export function clearPendingReconnectStorage(): void {
-  try {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.removeItem(PENDING_RECONNECT_STORAGE_KEY);
-    }
-  } catch {
-    // ignore
-  }
+  clearPendingNip46Handoff(PENDING_RECONNECT_STORAGE_KEY);
 }

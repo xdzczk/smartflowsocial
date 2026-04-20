@@ -299,6 +299,17 @@ export function startMockNip46Relay(
         const subId = arr[1] as string;
         const filters = arr.slice(2) as Array<Record<string, unknown>>;
         subs.push({ subId, filters: filters.length ? filters : [{}] });
+        // NIP-01: send EOSE so the client knows the relay finished registering
+        // the subscription. `Nip46Signer`'s per-RPC pre-warm uses this as the
+        // "REQ is open, safe to publish EVENT" signal (mirrors Ditto / nostrify
+        // NConnectSigner.send).
+        try {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify(["EOSE", subId]));
+          }
+        } catch {
+          // ignore
+        }
         return;
       }
       if (cmd === "CLOSE") {

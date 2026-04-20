@@ -3,8 +3,6 @@
  * No React; callbacks for state and signer/session updates.
  */
 
-import { SimplePool } from "nostr-tools";
-
 import {
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
@@ -18,6 +16,7 @@ import type {
   ActiveSignerConfig,
   ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import {
   EXISTING_SESSION_RECONNECT_RETRY_DELAY_MS,
@@ -42,7 +41,6 @@ export interface RunExistingBunkerReconnectOptions {
   ) => void;
   setError: (e: string | null) => void;
   setExistingReconnectAttempt: (n: number) => void;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onSuccess: (connectionId: string) => void;
 }
 
@@ -58,7 +56,6 @@ export async function runExistingBunkerReconnect(
     setState,
     setError,
     setExistingReconnectAttempt,
-    syncRelaysAfterReconnect,
     onSuccess,
   } = options;
 
@@ -75,17 +72,12 @@ export async function runExistingBunkerReconnect(
   setState("reconnecting_existing");
   setError(null);
 
-  let activePool: SimplePool | null = null;
-  setCancel(() => {
-    if (activePool && bp.relays.length) {
-      try {
-        activePool.close(bp.relays);
-      } catch {
-        // ignore
-      }
-    }
-    activePool = null;
-  });
+  // The shared pool is owned by the app and never closed mid-flight, so the
+  // dialog's "cancel" can no longer kill in-flight WebSockets. Connect
+  // attempts are bounded by their timeoutMs; if the user cancels, the awaited
+  // promise still resolves at timeout. Pass a noop so legacy callers are
+  // satisfied.
+  setCancel(() => {});
 
   const tryConnect = async (
     timeoutMs: number
@@ -95,16 +87,7 @@ export async function runExistingBunkerReconnect(
     >["signer"];
     pubkey: string;
   }> => {
-    if (activePool) {
-      try {
-        activePool.close(bp.relays);
-      } catch {
-        // ignore
-      }
-      activePool = null;
-    }
-    const pool = new SimplePool();
-    activePool = pool;
+    const pool = getSharedPool();
     const { signer, pubkey } = await createNip46SignerFromStoredConfig(
       bunkerConfig,
       { pool, timeoutMs }
@@ -144,7 +127,6 @@ export async function runExistingBunkerReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     return;
   }
 
@@ -159,17 +141,24 @@ export async function runExistingBunkerReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     setError(PROFILE_MISMATCH_MESSAGE);
     setState("failed");
     return;
   }
 
+  // Preserve any persisted relay set captured at a previous login and
+  // otherwise fall back to the bunker URL's relays. Keeping `relays`
+  // populated avoids helpers that read `cfg.relays` ever seeing an empty
+  // list and treating the transport as dead.
+  const reconnectBunkerRelays =
+    bunkerConfig.relays?.filter((r) => r.startsWith("wss://")) ??
+    bp.relays.map((r) => r.trim()).filter((r) => r.startsWith("wss://"));
   const config: ActiveSignerConfig = {
     type: "nip46",
     method: "bunker_input",
     bunkerInput: storedBunkerInput,
     clientSecretKeyHex: bunkerConfig.clientSecretKeyHex,
+    ...(reconnectBunkerRelays.length > 0 && { relays: reconnectBunkerRelays }),
   };
 
   const connectionId = connectionView.connection.id;
@@ -190,7 +179,6 @@ export async function runExistingBunkerReconnect(
 
   setActiveSignerConfig(config);
   cacheNip46SignerFromLogin(signer);
-  activePool = null;
 
   if (typeof signer.ping === "function") {
     try {
@@ -210,7 +198,6 @@ export async function runExistingBunkerReconnect(
     }
   }
 
-  await syncRelaysAfterReconnect();
   if (getIsRunStale()) return;
 
   debugReconnectTrace("Existing-connection bunker reconnect succeeded", {

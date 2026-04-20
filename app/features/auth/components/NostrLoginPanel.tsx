@@ -436,11 +436,29 @@ export default function NostrLoginPanel() {
   useEffect(() => {
     const pending = nip46Ref.current.getPendingNostrConnect();
     if (!pending) return;
+    // Surface the awaiting-approval panel immediately. Without this the
+    // parent panel sits on the initial `signer_selection` Welcome screen for
+    // the entire ~60s `resume()` window, so the user has no signal that we
+    // even noticed the deep-link callback. The existing UI already handles
+    // URI + countdown + cancel, we just need to flip the state machine
+    // before kicking off `resume()`.
+    nip46Ref.current.setNostrConnectUri(pending.uri);
+    setActiveSignerFlow("nip46");
+    setNip46Tab("nostrconnect");
+    setConnectionStartTime(Date.now());
+    setConnectionTimeout(120_000);
+    setState("awaiting_profile_selection");
     const t = setTimeout(() => {
       void nip46Ref.current.resume();
     }, getResumeDelayMs());
     return () => clearTimeout(t);
-  }, []);
+  }, [
+    setActiveSignerFlow,
+    setConnectionStartTime,
+    setConnectionTimeout,
+    setNip46Tab,
+    setState,
+  ]);
 
   const performLogin = useCallback(async () => {
     if (!signer || !pubkey) return;

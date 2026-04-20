@@ -3,8 +3,6 @@
  * No React; callbacks for state and signer/session updates.
  */
 
-import { SimplePool } from "nostr-tools";
-
 import {
   cacheNip46SignerFromLogin,
   createNip46SignerFromStoredConfig,
@@ -19,6 +17,7 @@ import type {
   ActiveSignerConfig,
   ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import { connectNip46WithNostrConnectUri } from "../nostr-signer.client";
@@ -47,7 +46,6 @@ export interface RunExistingNostrConnectReconnectOptions {
   ) => void;
   setError: (e: string | null) => void;
   setExistingReconnectAttempt: (n: number) => void;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onSuccess: (connectionId: string) => void;
 }
 
@@ -64,7 +62,6 @@ export async function runExistingNostrConnectReconnect(
     setState,
     setError,
     setExistingReconnectAttempt,
-    syncRelaysAfterReconnect,
     onSuccess,
   } = options;
 
@@ -84,19 +81,9 @@ export async function runExistingNostrConnectReconnect(
   setState("reconnecting_existing");
   setError(null);
 
-  let activePool: SimplePool | null = null;
-  const closePool = (pool: SimplePool | null) => {
-    if (!pool) return;
-    try {
-      pool.close(relays);
-    } catch {
-      // ignore
-    }
-  };
-  setCancel(() => {
-    closePool(activePool);
-    activePool = null;
-  });
+  // Shared pool stays open for the app lifetime. The dialog's cancel can no
+  // longer abort an in-flight WebSocket; attempts are bounded by timeoutMs.
+  setCancel(() => {});
 
   const clientSecretKey = parseSecretKeyHex(clientSecretKeyHex);
 
@@ -109,9 +96,7 @@ export async function runExistingNostrConnectReconnect(
     >["signer"];
     pubkey: string;
   }> => {
-    closePool(activePool);
-    const attemptPool = new SimplePool();
-    activePool = attemptPool;
+    const pool = getSharedPool();
     if (signerPubkeyHex || ncConfig.bunkerPointer) {
       const config: Nip46NostrConnectConfig = {
         ...ncConfig,
@@ -123,14 +108,14 @@ export async function runExistingNostrConnectReconnect(
       };
       const { signer, pubkey } = await createNip46SignerFromStoredConfig(
         config,
-        { pool: attemptPool, timeoutMs }
+        { pool, timeoutMs }
       );
       return { signer, pubkey };
     }
     const { signer, pubkey } = await connectNip46WithNostrConnectUri({
       uri,
       clientSecretKey,
-      pool: attemptPool,
+      pool,
       timeoutMs,
       relaysToCloseOnCancel: relaysToUse,
     });
@@ -185,7 +170,6 @@ export async function runExistingNostrConnectReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     return;
   }
 
@@ -200,7 +184,6 @@ export async function runExistingNostrConnectReconnect(
     } catch {
       // ignore
     }
-    activePool = null;
     setError(PROFILE_MISMATCH_MESSAGE);
     setState("failed");
     return;
@@ -240,7 +223,6 @@ export async function runExistingNostrConnectReconnect(
 
   setActiveSignerConfig(config);
   cacheNip46SignerFromLogin(signer);
-  activePool = null;
 
   if (typeof signer.ping === "function") {
     try {
@@ -260,7 +242,6 @@ export async function runExistingNostrConnectReconnect(
     }
   }
 
-  await syncRelaysAfterReconnect();
   if (getIsRunStale()) return;
 
   debugReconnectTrace("Existing-connection reconnect succeeded", {

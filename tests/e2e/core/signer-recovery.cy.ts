@@ -1,7 +1,7 @@
 /* eslint-disable testing-library/prefer-screen-queries -- Cypress specs use cy commands, not RTL render queries. */
 import { TEST_NPUB } from "../support/nostr-test-keys";
 
-const SIGNER_STORAGE_KEY = "__smartflow_active_nostr_signer_v1";
+const SIGNER_STORAGE_KEY = "__smartflow_active_nostr_signer_v2";
 
 describe("Core: Signer recovery", () => {
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe("Core: Signer recovery", () => {
   it("keeps signers recovery path reachable from compose", () => {
     cy.visitAndCheck("/");
     cy.window().then((win) => {
-      win.sessionStorage.removeItem(SIGNER_STORAGE_KEY);
+      win.localStorage.removeItem(SIGNER_STORAGE_KEY);
     });
 
     cy.visitAndCheck("/dashboard/compose?type=post");

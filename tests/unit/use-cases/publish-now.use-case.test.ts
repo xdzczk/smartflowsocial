@@ -196,12 +196,14 @@ describe("PublishNowUseCase", () => {
       );
     });
 
-    it("should return without throwing when post already published (idempotent)", async () => {
+    it("should return without throwing when post already published with the same signed event id (idempotent)", async () => {
+      const sameEventId = "event-123";
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
         currentState: "PUBLISHED",
+        nostrEventId: sameEventId,
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -211,7 +213,7 @@ describe("PublishNowUseCase", () => {
           postId: TEST_POST_ID,
           userId: TEST_USER_ID,
           signedEvent: {
-            id: "event-123",
+            id: sameEventId,
             pubkey: "test-pubkey",
             created_at: Math.floor(Date.now() / 1000),
             kind: 1,
@@ -222,6 +224,45 @@ describe("PublishNowUseCase", () => {
           relays: ["wss://relay1.com"],
         })
       ).resolves.toBeUndefined();
+
+      expect(mockPublish).not.toHaveBeenCalled();
+    });
+
+    it("should throw PublishEventMismatchError when an already-PUBLISHED post receives a different signed event", async () => {
+      // Regression test for the cold-restart silent-success bug: creation
+      // idempotency matched a historic Post and the caller's brand-new signed
+      // event would otherwise be dropped without ever reaching the publisher.
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        postType: "TEXT",
+        currentState: "PUBLISHED",
+        nostrEventId: "event-historic",
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+
+      await expect(
+        useCase.execute({
+          postId: TEST_POST_ID,
+          userId: TEST_USER_ID,
+          signedEvent: {
+            id: "event-fresh",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          relays: ["wss://relay1.com"],
+        })
+      ).rejects.toMatchObject({
+        name: "PublishEventMismatchError",
+        postId: TEST_POST_ID,
+        existingEventId: "event-historic",
+        attemptedEventId: "event-fresh",
+      });
 
       expect(mockPublish).not.toHaveBeenCalled();
     });

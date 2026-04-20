@@ -10,16 +10,14 @@ import { isMobile } from "~/lib/is-mobile";
 
 import {
   cacheNip46SignerFromLogin,
+  cancelSignerInFlight,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
+  markNip46TransportStale,
   NOSTR_CONNECTION_HEALTHY_EVENT,
-  recordSuccessfulSign,
+  NOSTR_CONNECTION_STALE_EVENT,
   resetCachedSigner,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
-  requestNewSignerSession,
-  tryBackgroundReconnect,
 } from "./nostr-signer-connection.client";
 import {
   hexToBytes,
@@ -32,14 +30,16 @@ import {
   setActiveSignerConfig as storageSetActiveSignerConfig,
   type ActiveSignerConfig,
   STORAGE_KEY,
+  LEGACY_STORAGE_KEY,
+  migrateLegacyActiveSignerConfig,
 } from "./nostr-signer-storage.client";
 
-// Re-export types and storage key
+// Re-export types and storage keys
 export type { ActiveSignerConfig };
-export { STORAGE_KEY };
+export { STORAGE_KEY, LEGACY_STORAGE_KEY, migrateLegacyActiveSignerConfig };
 
 /** Fired when remote signer reconnect succeeds so composers clear "Waiting for signer approval". */
-export { NOSTR_CONNECTION_HEALTHY_EVENT };
+export { NOSTR_CONNECTION_HEALTHY_EVENT, NOSTR_CONNECTION_STALE_EVENT };
 
 /** Fired when signer config was missing and we defaulted to NIP-07 so components can re-read. */
 export const SIGNER_CONFIG_HYDRATED_EVENT = "smartflow:signer-config-hydrated";
@@ -60,15 +60,12 @@ export function clearActiveSignerConfig(): void {
 // Connection lifecycle and cache
 export {
   cacheNip46SignerFromLogin,
+  cancelSignerInFlight,
   createNip46SignerFromStoredConfig,
   getActiveSigner,
-  recordSuccessfulSign,
+  markNip46TransportStale,
   resetCachedSigner,
-  requestNewSignerSession,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
-  teardownVisibilityHandler,
-  tryBackgroundReconnect,
 };
 
 // Keys

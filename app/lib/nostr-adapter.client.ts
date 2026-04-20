@@ -12,9 +12,9 @@
 import { nip19 } from "nostr-tools";
 import { toast } from "react-hot-toast";
 
+import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   addConnectionLog,
-  attemptPrimarySignerFailover,
   emitRemoteSignerTimeoutEvent,
   getActiveConnection,
   recordConnectionEvent,
@@ -38,61 +38,80 @@ import {
   getExpectedPubkeyHexForGuard,
   getNip07Readiness,
 } from "~/lib/nip07-readiness.client";
-
-import { getProgressiveTimeout } from "./nostr-timeout-utils.client";
+import {
+  isConnectionLikeError,
+  isSignTimeoutError,
+} from "~/lib/signer-error-classification";
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 const ACTIVE_SIGNER_SIGN_TIMEOUT_MS = 30_000;
-/** Max time to wait for signer resolution (getActiveSigner). Prevents hanging on "Attempt 1" when connection is slow after reopen. */
-const GET_ACTIVE_SIGNER_TIMEOUT_MS = 40_000;
+/** Max time to wait for signer resolution (getActiveSigner). */
+const GET_ACTIVE_SIGNER_TIMEOUT_MS = 30_000;
+/**
+ * After this many ms of waiting on the signer with no response, dispatch a
+ * "nudge" so the UI can prompt the user to check their signer app. This
+ * replaces the old "Attempt N of 5" event stream.
+ */
+const SIGNER_NUDGE_AFTER_MS = 4_000;
 
-// Track retry counts for progressive timeouts
-let connectionRetryCount = 0;
-let signRetryCount = 0;
+export type SignerNudgePhase =
+  | "start"
+  | "nudge"
+  | "reconnect"
+  | "fail"
+  | "done";
 
-function isConnectionLikeError(error: unknown): boolean {
-  if (error instanceof RemoteSignerTimeoutError) {
-    return true;
-  }
-  const message =
-    error instanceof Error
-      ? error.message.toLowerCase()
-      : String(error).toLowerCase();
-  return (
-    message.includes("subscription closed") ||
-    message.includes("websocket") ||
-    message.includes("closed") ||
-    message.includes("connection") ||
-    message.includes("connecting") ||
-    message.includes("timeout") ||
-    message.includes("too long")
-  );
+export interface SignerNudgeDetail {
+  phase: SignerNudgePhase;
+  startedAt: number;
+  elapsedMs: number;
+  /** Soft target after which the next phase typically takes over (display only). */
+  timeoutMs: number;
+}
+
+function dispatchSignerNudge(phase: SignerNudgePhase, startedAt: number): void {
+  if (typeof window === "undefined") return;
+  const detail: SignerNudgeDetail = {
+    phase,
+    startedAt,
+    elapsedMs: Date.now() - startedAt,
+    timeoutMs: GET_ACTIVE_SIGNER_TIMEOUT_MS + ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
+  };
+  window.dispatchEvent(new CustomEvent("signer-nudge", { detail }));
 }
 
 /**
- * True if we should clear the NIP-46 signer cache.
- * - Connection errors (subscription closed, etc.): clear so we reconnect.
- * - Sign timeout ("did not respond" / "approve the request"): always clear so the next attempt
- *   creates a fresh connection. This fixes the case where both app and Primal were closed,
- *   user reopens Primal and "resumes" the connection, but our cached signer's channel is dead
- *   so sign_event never completes; clearing forces a new connection that can work with resumed Primal.
+ * Sign-timeout messages mean "the bunker did not approve in time" — the
+ * underlying NIP-46 transport (subscription, sockets, signer cache) is fine,
+ * the user just needs to open their signer app and approve. We must NOT
+ * classify these as "connection-like" because doing so triggers
+ * `reconnectAndRetrySign` which builds a fresh `Nip46Signer` and fires
+ * another `sign_event` on top of the still-pending one, and the cycle
+ * repeats every ~30s — flooding the relays (Damus rate-limits us) and
+ * overwhelming Primal. Ditto's `signerWithNudge` does the same thing:
+ * one attempt, one error, no auto-retry, no reconnect.
  */
 const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
 const SIGN_TIMEOUT_KEY_APPROVE_REQUEST = "approve the request";
 
+// Predicate implementations live in ~/lib/signer-error-classification so the
+// composer pending-publish state machine can share the same definitions. The
+// constants above are kept for documentation context only.
+
+/**
+ * True if we should clear the NIP-46 signer cache.
+ *
+ * Only clear on real transport errors (subscription closed, websocket dropped,
+ * connect timeout). Never clear on a sign timeout: the cache is healthy, only
+ * the bunker app failed to approve. Clearing would force a brand-new
+ * `Nip46Signer` next attempt, which fires another duplicate `sign_event`
+ * and compounds the problem.
+ */
 function shouldClearSignerCacheOnError(error: unknown): boolean {
-  if (error instanceof RemoteSignerTimeoutError) {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
-      msg.includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST)
-    ) {
-      return true;
-    }
-  }
+  if (isSignTimeoutError(error)) return false;
   return isConnectionLikeError(error);
 }
 
@@ -105,42 +124,6 @@ function debugSignerTrace(
     return;
   }
   console.info(`[remote-signer-sign] ${message}`);
-}
-
-/**
- * Reset retry counts (call after successful operation)
- */
-export function resetNostrRetryCounts(): void {
-  connectionRetryCount = 0;
-  signRetryCount = 0;
-}
-
-/**
- * Increment and get connection retry count
- */
-export function getConnectionRetryCount(): number {
-  return connectionRetryCount;
-}
-
-/**
- * Increment connection retry count
- */
-export function incrementConnectionRetryCount(): void {
-  connectionRetryCount++;
-}
-
-/**
- * Increment and get sign retry count
- */
-export function getSignRetryCount(): number {
-  return signRetryCount;
-}
-
-/**
- * Increment sign retry count
- */
-export function incrementSignRetryCount(): void {
-  signRetryCount++;
 }
 
 async function withTimeout<T>(
@@ -305,55 +288,53 @@ async function handleConfiguredSignerError(
   prefersRemoteSigner: boolean,
   clearCacheOnError = true
 ): Promise<void> {
-  if (!prefersRemoteSigner) {
-    incrementSignRetryCount();
-    return;
-  }
-  const isConnectionError = isConnectionLikeError(err);
-  if (isConnectionError) {
-    const isSignTimeout =
-      err instanceof RemoteSignerTimeoutError &&
-      (err.message.toLowerCase().includes(SIGN_TIMEOUT_KEY_DID_NOT_RESPOND) ||
-        err.message.toLowerCase().includes(SIGN_TIMEOUT_KEY_APPROVE_REQUEST));
-    if (isSignTimeout) {
-      incrementSignRetryCount();
-    } else {
-      incrementConnectionRetryCount();
-    }
-    const shouldClear = clearCacheOnError && shouldClearSignerCacheOnError(err);
-    debugSignerTrace("Configured signer connection-like error", {
-      error: err instanceof Error ? err.message : String(err),
-      connectionRetryCount,
-      signRetryCount,
-      clearCache: shouldClear,
-    });
-    markActiveRemoteConnectionStale(err);
-    if (shouldClear) {
-      const activeConnection = getActiveConnection();
-      await resetSignerCacheBestEffort();
-      if (activeConnection) {
-        recordConnectionEvent(activeConnection.id, {
-          type: "disconnected",
-          reason: "Connection lost or sign failed",
-        });
-      }
-    }
-    if (err instanceof RemoteSignerTimeoutError) {
-      emitRemoteSignerTimeoutEvent({ message: err.message });
-    } else {
-      emitRemoteSignerTimeoutEvent({
-        message:
-          "Connection to remote signer failed. Please try again or reconnect your signer.",
+  if (!prefersRemoteSigner) return;
+  const isSignTimeout = isSignTimeoutError(err);
+  const isConnectionLike = isConnectionLikeError(err);
+  // Sign timeouts are surfaced to the user (stale + nudge) but do NOT clear
+  // the cache or trigger reconnect; only true connection-like errors do.
+  if (!isSignTimeout && !isConnectionLike) return;
+
+  const shouldClear =
+    !isSignTimeout && clearCacheOnError && shouldClearSignerCacheOnError(err);
+  debugSignerTrace("Configured signer error", {
+    error: err instanceof Error ? err.message : String(err),
+    isSignTimeout,
+    clearCache: shouldClear,
+  });
+  markActiveRemoteConnectionStale(err);
+  if (shouldClear) {
+    const activeConnection = getActiveConnection();
+    await resetSignerCacheBestEffort();
+    if (activeConnection) {
+      recordConnectionEvent(activeConnection.id, {
+        type: "disconnected",
+        reason: "Connection lost or sign failed",
       });
     }
+  }
+  if (err instanceof RemoteSignerTimeoutError) {
+    emitRemoteSignerTimeoutEvent({ message: err.message });
   } else {
-    incrementSignRetryCount();
+    emitRemoteSignerTimeoutEvent({
+      message:
+        "Connection to remote signer failed. Please try again or reconnect your signer.",
+    });
   }
 }
 
-/** When false, do not clear the signer cache on error (e.g. during bulk sign so one failure doesn't break other in-flight signs). */
 export interface SignEventOptions {
+  /** When false, do not clear the signer cache on error (e.g. during bulk sign so one failure doesn't break other in-flight signs). */
   clearCacheOnError?: boolean;
+  /**
+   * Pre-resolved signer to use for this call. When provided we skip
+   * `getActiveSigner` entirely and sign against this instance directly.
+   * Use this for bulk loops so a single signer is reused across N events
+   * instead of forcing a cache lookup (and potentially a full rebuild) per
+   * iteration. The caller is responsible for acquiring the signer once and
+   * for re-acquiring after a reconnect.
+   */
+  signer?: NostrSigner;
 }
 
 async function trySignWithConfiguredSigner(
@@ -370,52 +351,49 @@ async function trySignWithConfiguredSigner(
         : null;
     prefersRemoteSigner = !!cfg && cfg.type === "nip46";
 
-    const getSignerPromise = signerManager.getActiveSigner();
-    const activeSigner = await withTimeout(
-      getSignerPromise,
-      GET_ACTIVE_SIGNER_TIMEOUT_MS,
-      "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
-    ).catch(async (err) => {
-      if (clearCacheOnError && err instanceof RemoteSignerTimeoutError) {
-        await resetSignerCacheBestEffort();
-      }
-      throw err;
-    });
+    // Caller-provided signer (e.g. bulk-sign loop) bypasses the cache
+    // lookup so a 50-post loop reuses one BunkerSigner instance instead of
+    // re-entering getActiveSigner per iteration.
+    let activeSigner: NostrSigner | null;
+    if (options?.signer) {
+      activeSigner = options.signer;
+    } else {
+      const getSignerPromise = signerManager.getActiveSigner();
+      activeSigner = await withTimeout(
+        getSignerPromise,
+        GET_ACTIVE_SIGNER_TIMEOUT_MS,
+        "Signer connection is taking too long. Please ensure your signer app (e.g. Primal) is open and try again."
+      ).catch(async (err) => {
+        if (clearCacheOnError && err instanceof RemoteSignerTimeoutError) {
+          await resetSignerCacheBestEffort();
+        }
+        throw err;
+      });
+    }
     if (prefersRemoteSigner) {
       debugSignerTrace("Configured signer resolved", {
         hasSigner: Boolean(activeSigner),
-        connectionRetryCount,
-        signRetryCount,
+        injected: Boolean(options?.signer),
       });
     }
 
     if (!activeSigner) return null;
 
     const signPromise = Promise.resolve(activeSigner.signEvent(nostrEvent));
-    const signTimeout =
-      activeSigner.type === "nip46"
-        ? getProgressiveTimeout(signRetryCount, ACTIVE_SIGNER_SIGN_TIMEOUT_MS)
-        : ACTIVE_SIGNER_SIGN_TIMEOUT_MS;
-
     const signResult =
       activeSigner.type === "nip46"
         ? await withTimeout(
             signPromise,
-            signTimeout,
+            ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
             "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
           )
         : await withTimeout(
             signPromise,
-            signTimeout,
+            ACTIVE_SIGNER_SIGN_TIMEOUT_MS,
             "Extension did not respond. Please approve the request in your browser extension or try again."
           );
 
-    resetNostrRetryCounts();
-    if (
-      activeSigner.type === "nip46" &&
-      typeof signerManager.recordSuccessfulSign === "function"
-    ) {
-      signerManager.recordSuccessfulSign();
+    if (activeSigner.type === "nip46") {
       const activeConnection = getActiveConnection();
       if (activeConnection) {
         recordConnectionEvent(activeConnection.id, {
@@ -436,87 +414,64 @@ async function trySignWithConfiguredSigner(
   }
 }
 
-function dispatchSignAttemptEvent(
-  attemptNum: number,
-  maxRetries: number
-): void {
-  if (typeof window === "undefined") return;
-  const signPhaseTimeoutMs = getProgressiveTimeout(
-    signRetryCount,
-    ACTIVE_SIGNER_SIGN_TIMEOUT_MS
-  );
-  const totalAttemptTimeoutMs =
-    GET_ACTIVE_SIGNER_TIMEOUT_MS + signPhaseTimeoutMs;
-  window.dispatchEvent(
-    new CustomEvent("nostr-sign-attempt", {
-      detail: {
-        attempt: attemptNum,
-        maxAttempts: maxRetries,
-        startedAt: Date.now(),
-        timeoutMs: totalAttemptTimeoutMs,
-      },
-    })
-  );
+async function tryAttachWindowNostrFallback(
+  nostrEvent: NostrEvent
+): Promise<SignedEvent | null> {
+  if (typeof window === "undefined" || !window.nostr) return null;
+  const signResult = await window.nostr.signEvent(nostrEvent);
+  return normalizeSignResult(signResult, nostrEvent);
 }
 
-/** Max retries for remote signer timeouts. Fail fast so UI clears "Waiting for signer approval" instead of hanging for minutes. */
-const REMOTE_SIGNER_TIMEOUT_MAX_RETRIES = 1;
+interface NudgeController {
+  startedAt: number;
+  arm: () => void;
+  clear: () => void;
+}
 
-async function handleSignAttemptFailure(options: {
-  error: unknown;
-  retries: number;
-  maxRetries: number;
-  config: { type?: string } | null;
-  tryPrimaryFailover: () => Promise<boolean>;
-}): Promise<{ action: "throw" | "retry"; nextRetries: number }> {
-  const { error, retries, maxRetries, config, tryPrimaryFailover } = options;
-  const isConnectionError = isConnectionLikeError(error);
-  debugSignerTrace("Configured signer attempt failed", {
-    error: error instanceof Error ? error.message : String(error),
-    isConnectionError,
-    retries,
-  });
-  if (isConnectionError && (await tryPrimaryFailover())) {
-    debugSignerTrace("Recovered via primary failover in retry loop");
-    return { action: "retry", nextRetries: retries };
-  }
-  if (
-    config?.type === "nip46" &&
-    error instanceof RemoteSignerTimeoutError &&
-    retries >= REMOTE_SIGNER_TIMEOUT_MAX_RETRIES
-  ) {
-    debugSignerTrace(
-      "Remote signer timeout: stop retrying so UI can clear signing state"
-    );
-    return { action: "throw", nextRetries: retries };
-  }
-  if (isConnectionError && retries < maxRetries - 1) {
-    const nextRetries = retries + 1;
-    if (config?.type === "nip46") {
-      try {
-        const { tryBackgroundReconnect } =
-          await import("~/features/auth/signer");
-        const reconnected = await tryBackgroundReconnect();
-        debugSignerTrace("After sign failure, tryBackgroundReconnect result", {
-          reconnected,
-          nextRetry: nextRetries,
-        });
-      } catch {
-        // ignore
-      }
+function createNudgeController(): NudgeController {
+  const startedAt = Date.now();
+  let nudgeTimer: ReturnType<typeof setTimeout> | undefined;
+  const arm = (): void => {
+    nudgeTimer = setTimeout(() => {
+      dispatchSignerNudge("nudge", startedAt);
+    }, SIGNER_NUDGE_AFTER_MS);
+  };
+  const clear = (): void => {
+    if (nudgeTimer) {
+      clearTimeout(nudgeTimer);
+      nudgeTimer = undefined;
     }
-    debugSignerTrace("Retrying configured signer after short delay", {
-      nextRetry: nextRetries,
-    });
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return { action: "retry", nextRetries };
-  }
-  return { action: "throw", nextRetries: retries };
+  };
+  return { startedAt, arm, clear };
 }
 
+function ensureNip07ReadyOrThrow(): void {
+  if (getNip07Readiness() !== "account_mismatch") return;
+  const message =
+    "Extension account does not match. Switch back to the correct account in your extension or re-login.";
+  toast.error(message);
+  throw new Nip07AccountMismatchError(message);
+}
+
+/**
+ * Sign an event with the simplest possible reliability story:
+ *   1. One sign attempt against the configured signer.
+ *   2. If that signer is missing (no NIP-46 config and no NIP-07 extension),
+ *      fall back to `window.nostr` if available.
+ *
+ * Mirrors Ditto's `NConnectSigner` + `signerWithNudge`: one attempt, one
+ * outcome. The shared `SimplePool` heals its own sockets, `Nip46Signer`
+ * refreshes its bunker subscription on every RPC, and the per-RPC timeout
+ * inside `Nip46Signer` already bounds how long a single sign can hang. There
+ * is nothing here for us to recover that the underlying transport can't, so
+ * we don't try — every "auto-recovery" attempt we used to make just piled
+ * another `sign_event` on top of the unresponsive bunker and made the
+ * problem worse (relay rate-limits, duplicate event IDs, and a UI that
+ * never settled). When this single attempt fails, the user gets one error
+ * and one explicit "Reconnect signer" button.
+ */
 async function signEventWithRetryLogic(
   nostrEvent: NostrEvent,
-  maxRetries = 5,
   options?: SignEventOptions
 ): Promise<SignedEvent> {
   const signerManager = await import("~/features/auth/signer");
@@ -524,74 +479,46 @@ async function signEventWithRetryLogic(
     typeof signerManager.getActiveSignerConfig === "function"
       ? signerManager.getActiveSignerConfig()
       : null;
-  const expectedHex = getExpectedPubkeyHexForGuard();
+
   if (config?.type === "nip07") {
+    const expectedHex = getExpectedPubkeyHexForGuard();
     if (expectedHex) await checkNip07Readiness(expectedHex);
-    if (getNip07Readiness() === "account_mismatch") {
-      const message =
-        "Extension account does not match. Switch back to the correct account in your extension or re-login.";
-      toast.error(message);
-      throw new Nip07AccountMismatchError(message);
-    }
+    ensureNip07ReadyOrThrow();
   }
 
-  let retries = 0;
-  let triedPrimaryFailover = false;
-  const tryPrimaryFailoverFn = async (): Promise<boolean> => {
-    if (triedPrimaryFailover) return false;
-    const recovered = await attemptPrimarySignerFailover({
-      expectedPubkey: expectedHex,
-      labelFallback: "Primary Home Signer",
-    });
-    triedPrimaryFailover = true;
-    if (recovered.recovered) {
-      toast.success("Recovered signer connection via primary home signer.");
-      return true;
-    }
-    return false;
-  };
+  const nudge = createNudgeController();
+  dispatchSignerNudge("start", nudge.startedAt);
+  nudge.arm();
 
-  while (retries < maxRetries) {
-    const attemptNum = retries + 1;
-    dispatchSignAttemptEvent(attemptNum, maxRetries);
-    debugSignerTrace("Retry loop iteration", {
-      retries,
-      maxRetries,
-      triedPrimaryFailover,
-      signerType: config?.type ?? "none",
-    });
-
-    let configured: SignedEvent | null = null;
+  try {
     try {
-      configured = await trySignWithConfiguredSigner(nostrEvent, options);
+      const first = await trySignWithConfiguredSigner(nostrEvent, options);
+      if (first) {
+        dispatchSignerNudge("done", nudge.startedAt);
+        return first;
+      }
     } catch (error) {
-      const result = await handleSignAttemptFailure({
-        error,
-        retries,
-        maxRetries,
-        config,
-        tryPrimaryFailover: tryPrimaryFailoverFn,
+      debugSignerTrace("Sign attempt failed", {
+        error: error instanceof Error ? error.message : String(error),
       });
-      if (result.action === "throw") throw error;
-      retries = result.nextRetries;
-      continue;
+      dispatchSignerNudge("fail", nudge.startedAt);
+      throw error;
     }
 
-    if (configured) return configured;
-    if (await tryPrimaryFailoverFn()) continue;
-
-    if (typeof window !== "undefined" && window.nostr) {
-      const signResult = await window.nostr.signEvent(nostrEvent);
-      return normalizeSignResult(signResult, nostrEvent);
+    // No configured signer returned a signature → try window.nostr fallback.
+    const fallback = await tryAttachWindowNostrFallback(nostrEvent);
+    if (fallback) {
+      dispatchSignerNudge("done", nudge.startedAt);
+      return fallback;
     }
 
-    retries++;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    dispatchSignerNudge("fail", nudge.startedAt);
+    throw new Error(
+      "Nostr extension not found. Please install a Nostr extension or connect a remote signer."
+    );
+  } finally {
+    nudge.clear();
   }
-
-  throw new Error(
-    "Nostr extension not found after retries. Please install a Nostr extension."
-  );
 }
 
 async function logErrorIfClient(error: unknown, action: string): Promise<void> {
@@ -655,7 +582,7 @@ export const nostrAdapter = {
         tags: eventData.tags ?? [],
       };
 
-      const signedEvent = await signEventWithRetryLogic(nostrEvent, 5, options);
+      const signedEvent = await signEventWithRetryLogic(nostrEvent, options);
       return { nostrEvent, signedEvent };
     } catch (error) {
       await logErrorIfClient(error, "signEvent");
@@ -678,12 +605,21 @@ export const nostrAdapter = {
     nostrEvent: NostrEvent,
     options?: SignEventOptions
   ): Promise<SignedEvent> {
-    return signEventWithRetryLogic(nostrEvent, 5, options);
+    return signEventWithRetryLogic(nostrEvent, options);
   },
 
   /**
    * Sign once with clearCacheOnError: false; on failure wait 1.5s and retry once.
    * Use for single-sign flows so a timeout doesn't tear down the connection and transient failures get one retry.
+   *
+   * Signer-timeout errors (we already burned the full 30s waiting for the
+   * bunker / window.nostr to respond) skip the in-band retry and surface
+   * immediately. Otherwise the caller is stuck for a second 30s window
+   * before the pending-publish state machine can park the attempt and
+   * show the recovery UI — and during that gap a `nostr-connection-healthy`
+   * event arriving after a Primal restart can't trigger `maybeResume`
+   * (state is still `signing`), which is what previously caused the UI
+   * to look idle while a sign was still in flight → duplicate publishes.
    */
   async signEventWithOneRetry(
     eventData: NostrEventData,
@@ -692,7 +628,8 @@ export const nostrAdapter = {
     const opts = { clearCacheOnError: false, ...options };
     try {
       return await this.signEvent(eventData, opts);
-    } catch {
+    } catch (err) {
+      if (isSignTimeoutError(err)) throw err;
       await new Promise((r) => setTimeout(r, 1500));
       return await this.signEvent(eventData, opts);
     }
@@ -718,6 +655,11 @@ export const nostrAdapter = {
 
   /**
    * Sign long-form once with clearCacheOnError: false; on failure wait 1.5s and retry once.
+   *
+   * Signer timeouts skip the retry — see `signEventWithOneRetry` for the
+   * full rationale (the second 30s wait blocks the pending-publish state
+   * machine from parking the attempt promptly, which lets the composer UI
+   * look idle mid-sign and lets the user double-publish).
    */
   async signLongFormEventWithOneRetry(
     eventData: LongFormEventData
@@ -725,7 +667,8 @@ export const nostrAdapter = {
     const opts = { clearCacheOnError: false };
     try {
       return await this.signLongFormEvent(eventData, opts);
-    } catch {
+    } catch (err) {
+      if (isSignTimeoutError(err)) throw err;
       await new Promise((r) => setTimeout(r, 1500));
       return await this.signLongFormEvent(eventData, opts);
     }

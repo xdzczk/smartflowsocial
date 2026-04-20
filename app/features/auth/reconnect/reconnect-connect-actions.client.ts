@@ -3,13 +3,14 @@
  * All dependencies passed as arguments for testability.
  */
 
-import { generateSecretKey, SimplePool } from "nostr-tools";
+import { generateSecretKey } from "nostr-tools";
 
 import type {
   ActiveSignerConfig,
   ConnectionEvent,
   ConnectionWithCurrentSession,
 } from "~/features/auth/signer";
+import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import {
   connectNip46WithBunkerInput,
@@ -47,7 +48,6 @@ export interface ConnectWithBunkerParams {
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   parseSecretKeyHex: (hex: string) => Uint8Array;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -71,7 +71,6 @@ export async function connectWithBunker(
     detectSignerAppName,
     parseSecretKeyHex,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -115,6 +114,14 @@ export async function connectWithBunker(
     return;
   }
 
+  // Persist the bunker URL's relays alongside the input so any caller that
+  // reads `cfg.relays` (Settings UI, transport-health helpers, etc.) sees
+  // them without re-parsing the bunker URL on every read.
+  const bpForRelays = await parseBunkerInput(trimmedBunker).catch(() => null);
+  const bunkerRelays =
+    bpForRelays?.relays
+      .map((r) => r.trim())
+      .filter((r) => r.startsWith("wss://")) ?? [];
   const config: ActiveSignerConfig = {
     type: "nip46",
     method: "bunker_input",
@@ -123,6 +130,7 @@ export async function connectWithBunker(
       isReconnectExisting && reconnectBunkerConfig
         ? reconnectBunkerConfig.clientSecretKeyHex
         : serializeSecretKey(clientSecretKey),
+    ...(bunkerRelays.length > 0 && { relays: bunkerRelays }),
   };
 
   const view = matchOrCreateSession(config, {
@@ -147,7 +155,6 @@ export async function connectWithBunker(
   recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
-  await syncRelaysAfterReconnect();
   setState("connected");
   toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);
   onReconnectSuccess?.(connectionId);
@@ -174,7 +181,6 @@ export interface ConnectWithNostrConnectUriParams {
   setActiveSignerConfig: (config: ActiveSignerConfig) => void;
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -200,7 +206,6 @@ export async function connectWithNostrConnectUri(
     setActiveSignerConfig,
     detectSignerAppName,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -265,7 +270,6 @@ export async function connectWithNostrConnectUri(
   recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
-  await syncRelaysAfterReconnect();
   clearPendingReconnectStorage();
   setState("connected");
   toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);
@@ -297,7 +301,6 @@ export interface ResumeWithPendingUriParams {
   setActiveSignerConfig: (config: ActiveSignerConfig) => void;
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -325,7 +328,6 @@ export async function resumeWithPendingUri(
     setActiveSignerConfig,
     detectSignerAppName,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -335,14 +337,11 @@ export async function resumeWithPendingUri(
   setNostrConnectUri(pending.uri);
   setState("waiting");
 
-  const pool = new SimplePool();
-  setCancel(() => {
-    try {
-      pool.close(pending.relays);
-    } catch {
-      // ignore
-    }
-  });
+  const pool = getSharedPool();
+  // Shared pool is owned by the app and never closed mid-flight; cancel is a
+  // noop for the WebSocket layer and the connect call falls back to its own
+  // timeout. Keep the callback so legacy state stays consistent.
+  setCancel(() => {});
 
   try {
     const { pubkey } = await connectNip46WithNostrConnectUri({
@@ -389,7 +388,6 @@ export async function resumeWithPendingUri(
     recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
     setActiveSignerConfig(config);
-    await syncRelaysAfterReconnect();
     clearPendingReconnectStorage();
     setState("connected");
     toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);

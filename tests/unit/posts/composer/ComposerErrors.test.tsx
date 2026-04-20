@@ -1,16 +1,16 @@
 /**
  * @vitest-environment jsdom
- * Tests ComposerErrors: "Waiting for signer approval" banner and Cancel calling tryBackgroundReconnect.
+ * Tests ComposerErrors: "Waiting for signer approval" banner and Cancel calling cancelSignerInFlight.
  */
 /// <reference types="@testing-library/jest-dom" />
 
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockTryBackgroundReconnect = vi.fn();
+const mockCancelSignerInFlight = vi.fn();
 vi.mock("~/features/auth/signer", () => ({
-  tryBackgroundReconnect: (...args: unknown[]) =>
-    mockTryBackgroundReconnect(...args),
+  cancelSignerInFlight: (...args: unknown[]) =>
+    mockCancelSignerInFlight(...args),
 }));
 
 import { ComposerErrors } from "~/features/posts/composer/components/composer/ComposerErrors";
@@ -53,7 +53,7 @@ describe("ComposerErrors", () => {
     expect(container).not.toHaveTextContent(/Waiting for signer approval/i);
   });
 
-  it("calls onCancelSigning and tryBackgroundReconnect when Cancel is clicked", () => {
+  it("calls onCancelSigning and cancelSignerInFlight when Cancel is clicked", () => {
     const onCancelSigning = vi.fn();
     const { container } = render(
       <ComposerErrors
@@ -71,7 +71,7 @@ describe("ComposerErrors", () => {
     fireEvent.click(cancelButton);
 
     expect(onCancelSigning).toHaveBeenCalledTimes(1);
-    expect(mockTryBackgroundReconnect).toHaveBeenCalledTimes(1);
+    expect(mockCancelSignerInFlight).toHaveBeenCalledTimes(1);
   });
 
   it("shows NIP-07 message when signerLabel is NIP-07 extension", () => {

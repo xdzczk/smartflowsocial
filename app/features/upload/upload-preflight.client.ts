@@ -1,4 +1,4 @@
-import { getActiveSignerConfig, testConnection } from "~/features/auth/signer";
+import { getActiveSignerConfig } from "~/features/auth/signer";
 import { getUploadProvider } from "~/lib/query";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -44,8 +44,7 @@ function isAcceptedMediaType(file: File): boolean {
 
 /** Provider-agnostic checks before starting an upload (Blossom vs S3). */
 export async function preflightMediaUpload(
-  file: File,
-  options?: { skipSignerProbe?: boolean }
+  file: File
 ): Promise<PreflightResult> {
   if (!isAcceptedMediaType(file)) {
     return {
@@ -108,30 +107,10 @@ export async function preflightMediaUpload(
     };
   }
 
-  if (options?.skipSignerProbe) {
-    return { ok: true };
-  }
-
-  if (cfg?.type === "nip46") {
-    const health = await testConnection(5000, {
-      tryReconnectIfDisconnected: true,
-    });
-    if (!health.healthy) {
-      const msg = health.error ?? "";
-      const timeoutLike =
-        msg.toLowerCase().includes("timeout") ||
-        msg.toLowerCase().includes("too long");
-      return {
-        ok: false,
-        code: timeoutLike
-          ? UploadErrorCodes.SIGNER_TIMEOUT
-          : UploadErrorCodes.SIGNER_NOT_READY,
-        message:
-          health.error ??
-          defaultMessageForUploadError(UploadErrorCodes.SIGNER_NOT_READY),
-      };
-    }
-  }
-
+  // Intentionally no proactive signer probe here. The Blossom auth event sign
+  // that follows this preflight will discover liveness on its own; pinging the
+  // bunker first just doubles the round-trips for every upload and trains the
+  // bunker app's session timers in odd ways. If the signer is dead, the sign
+  // call fails with the same error we'd surface from a probe.
   return { ok: true };
 }

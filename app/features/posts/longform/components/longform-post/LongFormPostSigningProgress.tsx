@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button";
-import { requestNewSignerSession } from "~/features/auth/signer";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
+  shouldShowManualRecovery,
   type SignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 
@@ -20,47 +20,32 @@ export function LongFormPostSigningProgress({
   signElapsedSeconds,
   cancelSigning,
 }: LongFormPostSigningProgressProps) {
+  const phaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
+  const showRecovery = shouldShowManualRecovery(signAttempt?.phase);
   return (
     <>
       {isSigning ? (
         <div className="bg-muted/30 text-muted-foreground flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
           <span>
             Waiting for signer approval…
-            {signAttempt ? (
-              <>
-                {" "}
-                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {formatAttemptElapsed(
-                  signElapsedSeconds,
-                  signAttempt.timeoutMs
-                )}
-              </>
-            ) : null}
-            {" — "}
-            If you’re using a remote signer, open it to approve the request. To
-            use a new session in the signer app, click &quot;Use new
-            session&quot;.
+            {phaseStatus ? <> {phaseStatus}</> : null}
+            {showRecovery
+              ? " — Open your remote signer to approve. If your session expired, reconnect from Settings."
+              : null}
           </span>
-          <span className="flex shrink-0 items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => void requestNewSignerSession(cancelSigning)}
-            >
-              Use new session
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={cancelSigning}
-            >
-              Cancel
-            </Button>
-          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            onClick={cancelSigning}
+          >
+            Cancel
+          </Button>
         </div>
       ) : null}
       {signingError ? (

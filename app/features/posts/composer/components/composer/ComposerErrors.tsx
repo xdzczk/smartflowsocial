@@ -4,12 +4,10 @@
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
-import {
-  formatAttemptElapsed,
+  describeSignerPhase,
+  shouldShowManualRecovery,
   useSignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 
@@ -40,12 +38,22 @@ export function ComposerErrors({
   inRail = false,
 }: ComposerErrorsProps) {
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
+  const phaseStatus = describeSignerPhase(
+    signAttempt?.phase,
+    signElapsedSeconds,
+    signAttempt?.timeoutMs
+  );
+  // Only point users at Settings → Reconnect once we've actually had to
+  // reconnect or have failed. Pre-reconnect the auto-recovery layer almost
+  // always succeeds within ~2 s, so showing recovery copy up-front trains
+  // users to abort and reconnect instead of just approving in the bunker app.
+  const showRecovery = shouldShowManualRecovery(signAttempt?.phase);
   const waitingCopy =
     signerLabel === "NIP-07 extension"
       ? "Approve this request in your browser extension."
-      : inRail
-        ? "Approve this request in your remote signer. If you started a fresh session, use New session."
-        : 'If you\'re using a remote signer, open it to approve the request. If you started a new session in the signer app, click "Use new session" below.';
+      : showRecovery
+        ? "Open your remote signer to approve. If your session expired, reconnect from Settings."
+        : "Approve this request in your remote signer.";
 
   return (
     <>
@@ -61,44 +69,22 @@ export function ComposerErrors({
             {inRail
               ? "Signer approval required."
               : "Waiting for signer approval…"}
-            {signAttempt ? (
-              <>
-                {" "}
-                Attempt {signAttempt.attempt} of {signAttempt.maxAttempts} ·{" "}
-                {formatAttemptElapsed(
-                  signElapsedSeconds,
-                  signAttempt.timeoutMs
-                )}
-              </>
-            ) : null}
+            {phaseStatus ? <> {phaseStatus}</> : null}
             {" — "}
             {waitingCopy}
           </span>
-          <span className="flex shrink-0 items-center gap-1">
-            {signerLabel !== "NIP-07 extension" ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => void requestNewSignerSession(onCancelSigning)}
-              >
-                New session
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                onCancelSigning();
-                void tryBackgroundReconnect();
-              }}
-            >
-              Cancel
-            </Button>
-          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            onClick={() => {
+              onCancelSigning();
+              cancelSignerInFlight();
+            }}
+          >
+            Cancel
+          </Button>
         </div>
       ) : null}
       {signingError ? (

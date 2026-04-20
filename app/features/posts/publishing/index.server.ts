@@ -9,7 +9,10 @@ export {
   handleRecyclablePostAction,
 } from "./services/recyclable-posts.server";
 export { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
-export { PublishNowUseCase } from "./use-cases/publish-now.use-case.server";
+export {
+  PublishNowUseCase,
+  PublishEventMismatchError,
+} from "./use-cases/publish-now.use-case.server";
 export {
   RecyclePostUseCase,
   type RecyclePostInput,

@@ -17,6 +17,7 @@ import {
   jsonContestEmbedPost,
 } from "../contest-embed-response.server";
 import { applyHashtags } from "../hashtag-utils.server";
+import { readSubmissionId } from "../submission-id.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
@@ -230,6 +231,7 @@ export async function handleDraftText({
     hashTagPresetTags,
     showHashTagsinPosts,
     correlationId,
+    submissionId: readSubmissionId(formData),
   });
 
   return redirect("/dashboard/drafts");
@@ -359,6 +361,7 @@ export async function handlePostOrScheduleText({
     showHashTagsinPosts,
     repostSchedules,
     quoteSchedules: quoteSchedules.length > 0 ? quoteSchedules : undefined,
+    submissionId: readSubmissionId(formData),
   });
 
   if (action === "post-text") {

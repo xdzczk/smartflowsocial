@@ -17,6 +17,7 @@ import {
   jsonContestEmbedPost,
 } from "./contest-embed-response.server";
 import { getHashtagPresetTags } from "./hashtag-preset-utils.server";
+import { readSubmissionId } from "./submission-id.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
@@ -125,6 +126,7 @@ export async function handlePostOrSchedulePoll(
     nominalScheduledFor,
     /** Client merges preset/tag line into signed poll question; do not append again server-side. */
     showHashTagsinPosts: false,
+    submissionId: readSubmissionId(formData),
   });
 
   if (action === "post-poll") {

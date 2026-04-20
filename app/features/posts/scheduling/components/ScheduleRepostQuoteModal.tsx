@@ -10,10 +10,7 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
-import {
-  requestNewSignerSession,
-  tryBackgroundReconnect,
-} from "~/features/auth/signer";
+import { cancelSignerInFlight } from "~/features/auth/signer";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
@@ -24,8 +21,10 @@ import {
 } from "~/features/posts/utils/repost-quote-events.client";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import {
-  formatAttemptElapsed,
+  describeSignerPhase,
+  shouldShowManualRecovery,
   useSignAttemptProgress,
+  type SignAttemptProgress,
 } from "~/lib/hooks/useSignAttemptProgress";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -177,19 +176,18 @@ async function signAndSubmitQuote(
 
 function getConfirmButtonLabel(
   isSigning: boolean,
-  signAttempt: {
-    attempt: number;
-    maxAttempts: number;
-    timeoutMs?: number;
-  } | null,
+  signAttempt: SignAttemptProgress | null,
   signElapsedSeconds: number,
   isSubmitting: boolean,
   mode: "repost" | "quote"
 ): string {
   if (isSigning) {
-    return signAttempt
-      ? `Waiting for signer… Attempt ${signAttempt.attempt} of ${signAttempt.maxAttempts} · ${formatAttemptElapsed(signElapsedSeconds, signAttempt.timeoutMs)}`
-      : "Signing...";
+    const phase = describeSignerPhase(
+      signAttempt?.phase,
+      signElapsedSeconds,
+      signAttempt?.timeoutMs
+    );
+    return phase ? `Waiting for signer… ${phase}` : "Waiting for signer…";
   }
   if (isSubmitting) return "Signing...";
   return mode === "repost" ? "Schedule repost" : "Schedule quote";
@@ -498,47 +496,30 @@ export function ScheduleRepostQuoteModal({
                   <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
-                      {signAttempt ? (
-                        <>
-                          {" "}
-                          Attempt {signAttempt.attempt} of{" "}
-                          {signAttempt.maxAttempts} ·{" "}
-                          {formatAttemptElapsed(
-                            signElapsedSeconds,
-                            signAttempt.timeoutMs
-                          )}
-                        </>
-                      ) : null}
-                      {" — "}
-                      If you’re using a remote signer, open it to approve the
-                      request. To use a new session in the signer app, click
-                      &quot;Use new session&quot;.
+                      {(() => {
+                        const phase = describeSignerPhase(
+                          signAttempt?.phase,
+                          signElapsedSeconds,
+                          signAttempt?.timeoutMs
+                        );
+                        return phase ? <> {phase}</> : null;
+                      })()}
+                      {shouldShowManualRecovery(signAttempt?.phase)
+                        ? " — Open your remote signer to approve. If your session expired, reconnect from Settings."
+                        : null}
                     </span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          void requestNewSignerSession(cancelSigningState)
-                        }
-                      >
-                        Use new session
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          cancelSigningState();
-                          void tryBackgroundReconnect();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => {
+                        cancelSigningState();
+                        cancelSignerInFlight();
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : null}
                 {(fetcher.data?.error ?? signingError) ? (

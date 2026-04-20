@@ -1,16 +1,18 @@
 /**
  * @vitest-environment jsdom
- * Unit tests for nostr signer storage (sessionStorage and in-memory cache).
+ * Unit tests for nostr signer storage (localStorage and in-memory cache).
  * Tests app/features/auth/signer/nostr-signer-storage.client.ts
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  LEGACY_STORAGE_KEY,
   STORAGE_KEY,
   clearActiveSignerConfig,
   getActiveSignerConfig,
   getCachedConfigJson,
+  migrateLegacyActiveSignerConfig,
   persistActiveSignerConfigWithoutReset,
   setActiveSignerConfig,
   setCachedConfigJson,
@@ -19,6 +21,7 @@ import {
 
 describe("nostr-signer-storage", () => {
   beforeEach(() => {
+    localStorage.clear();
     sessionStorage.clear();
     clearActiveSignerConfig();
   });
@@ -62,7 +65,7 @@ describe("nostr-signer-storage", () => {
     });
 
     it("returns null when stored JSON is invalid", () => {
-      sessionStorage.setItem(STORAGE_KEY, "not json");
+      localStorage.setItem(STORAGE_KEY, "not json");
       expect(getActiveSignerConfig()).toBeNull();
     });
 
@@ -112,14 +115,14 @@ describe("nostr-signer-storage", () => {
       expect(getCachedConfigJson()).toBe(JSON.stringify(config));
     });
 
-    it("falls back to sessionStorage when cache is null", () => {
+    it("falls back to localStorage when cache is null", () => {
       clearActiveSignerConfig();
       const config: ActiveSignerConfig = { type: "nip07" };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
       expect(getCachedConfigJson()).toBe(JSON.stringify(config));
     });
 
-    it("returns null when sessionStorage getItem throws and cache is null", () => {
+    it("returns null when localStorage getItem throws and cache is null", () => {
       clearActiveSignerConfig();
       vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
         throw new Error("storage error");
@@ -133,7 +136,7 @@ describe("nostr-signer-storage", () => {
       const json = '{"type":"nip07"}';
       setCachedConfigJson(json);
       expect(getCachedConfigJson()).toBe(json);
-      expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
   });
 
@@ -142,6 +145,35 @@ describe("nostr-signer-storage", () => {
       const config: ActiveSignerConfig = { type: "nip07" };
       persistActiveSignerConfigWithoutReset(config);
       expect(getActiveSignerConfig()).toEqual(config);
+    });
+  });
+
+  describe("migrateLegacyActiveSignerConfig", () => {
+    it("copies legacy v1 sessionStorage value into v2 localStorage when v2 missing", () => {
+      const legacy = JSON.stringify({ type: "nip07" });
+      sessionStorage.setItem(LEGACY_STORAGE_KEY, legacy);
+
+      migrateLegacyActiveSignerConfig();
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(legacy);
+      expect(sessionStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
+    });
+
+    it("does not overwrite an existing v2 value", () => {
+      const v2 = JSON.stringify({ type: "nip07" });
+      const legacy = JSON.stringify({ type: "nip46" });
+      localStorage.setItem(STORAGE_KEY, v2);
+      sessionStorage.setItem(LEGACY_STORAGE_KEY, legacy);
+
+      migrateLegacyActiveSignerConfig();
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(v2);
+      expect(sessionStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
+    });
+
+    it("is a noop when no legacy value exists", () => {
+      expect(() => migrateLegacyActiveSignerConfig()).not.toThrow();
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
   });
 });

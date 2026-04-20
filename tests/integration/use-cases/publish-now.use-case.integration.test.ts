@@ -155,7 +155,7 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       ).rejects.toThrow("not found for user");
     });
 
-    it("should throw error if post already published", async () => {
+    it("should be idempotent when republished with the same signed event", async () => {
       // Create and publish a post
       const createUseCase = new CreatePostUseCase();
       const createResult = await createUseCase.execute({
@@ -168,7 +168,41 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
 
       const postId = createResult.post.id;
 
-      // Publish first time
+      const signedEvent = createValidSignedEvent({ content: "test" });
+      await useCase.execute({
+        postId,
+        userId,
+        signedEvent,
+        relays: ["wss://relay.example.com"],
+      });
+
+      // Republishing with the SAME signed event must be a no-op (handles
+      // duplicate clicks / form resubmissions).
+      await expect(
+        useCase.execute({
+          postId,
+          userId,
+          signedEvent,
+          relays: ["wss://relay.example.com"],
+        })
+      ).resolves.toBeUndefined();
+    });
+
+    it("should refuse to silently swap events when an already-PUBLISHED post receives a different signed event", async () => {
+      // Regression test for the cold-restart silent-success bug. The fix
+      // (PublishEventMismatchError) ensures that brand-new signed events are
+      // never silently dropped on the floor when creation idempotency matched
+      // a historical post.
+      const createUseCase = new CreatePostUseCase();
+      const createResult = await createUseCase.execute({
+        userId,
+        content: "Test post",
+        fileUrl: [],
+        postType: "TEXT",
+        isRecyclable: false,
+      });
+
+      const postId = createResult.post.id;
       const firstSignedEvent = createValidSignedEvent({ content: "test" });
       await useCase.execute({
         postId,
@@ -177,7 +211,6 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         relays: ["wss://relay.example.com"],
       });
 
-      // Try to publish again (idempotent: should resolve without throwing)
       const secondSignedEvent = createValidSignedEvent({ content: "test-2" });
       await expect(
         useCase.execute({
@@ -186,7 +219,11 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
           signedEvent: secondSignedEvent,
           relays: ["wss://relay.example.com"],
         })
-      ).resolves.toBeUndefined();
+      ).rejects.toMatchObject({
+        name: "PublishEventMismatchError",
+        postId,
+        attemptedEventId: secondSignedEvent.id,
+      });
     });
   }
 );

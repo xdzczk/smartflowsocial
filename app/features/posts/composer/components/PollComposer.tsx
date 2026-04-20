@@ -34,6 +34,11 @@ import { useLocalDraft } from "../hooks/useComposerLocalDraft";
 import { useComposerSignerReconnect } from "../hooks/useComposerSignerReconnect";
 import { useComposerState } from "../hooks/useComposerState";
 import { PollComposerPreviewBlock } from "../preview/PollComposerPreviewBlock";
+import {
+  appendRelayOverride,
+  appendSubmissionId,
+} from "../services/build-publish-formdata.client";
+import { createSubmissionId } from "../state/pending-publish.client";
 import type { InitialPollRestore } from "../types/initial-poll-restore";
 
 import {
@@ -473,9 +478,8 @@ export function PollComposer({
       }
       fd.set("signedEvent", JSON.stringify(signedEvent));
       fd.set("nostrEvent", JSON.stringify(nostrEvent));
-      if (relayOverride && relayOverride.length > 0) {
-        fd.set("relays", JSON.stringify(relayOverride));
-      }
+      appendRelayOverride(fd, relayOverride);
+      appendSubmissionId(fd, createSubmissionId());
       if (actionType === ACTION_SCHEDULE_POLL && effectiveRandomMinutes > 0) {
         fd.set("nominalScheduledFor", String(nominalUnix));
       }

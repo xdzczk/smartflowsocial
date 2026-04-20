@@ -23,6 +23,7 @@ import {
   parseIncludeHashtagsInNoteBodyFromForm,
 } from "./hashtag-utils.server";
 import { prepareComposerTextAndFileUrls } from "./inline-tokens.server";
+import { readSubmissionId } from "./submission-id.server";
 
 const DEFAULT_DELAY_SECONDS = 60; // 1 minute
 const MIN_THREAD_SEGMENTS = 2;
@@ -231,6 +232,11 @@ export async function handleThreadAction(
   const createPostUseCase = new CreatePostUseCase();
   const publishUseCase = new PublishNowUseCase();
   const postIds: string[] = [];
+  // Each thread segment becomes its own Post row, so it needs its own
+  // creation idempotency key. Derive per-segment ids from the single
+  // attempt-level submissionId so a resumed thread submit still dedupes
+  // across the whole thread (same suffixes line up with the same segments).
+  const baseSubmissionId = readSubmissionId(formData);
 
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
@@ -280,6 +286,9 @@ export async function handleThreadAction(
       showHashTagsinPosts: showHashTagsinPostsEffective,
       postKind: "THREAD",
       threadGroupId,
+      submissionId: baseSubmissionId
+        ? `${baseSubmissionId}:thread-segment-${i}`
+        : undefined,
     });
 
     postIds.push(result.post.id);

@@ -24,7 +24,6 @@ describe("reconnect-existing-failure", () => {
   const setError = vi.fn();
   const setExistingReconnectAttempt = vi.fn();
   const setForegroundResumeAttemptFailed = vi.fn();
-  const syncRelaysAfterReconnect = vi.fn().mockResolvedValue(undefined);
   const onReconnectSuccess = vi.fn();
   const onOpenChange = vi.fn();
   const toastSuccess = vi.fn();
@@ -47,7 +46,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,
@@ -72,7 +70,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,
@@ -98,7 +95,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,
@@ -131,7 +127,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,
@@ -140,7 +135,6 @@ describe("reconnect-existing-failure", () => {
     });
 
     expect(mockAttemptPrimarySignerFailover).toHaveBeenCalled();
-    expect(syncRelaysAfterReconnect).toHaveBeenCalled();
     expect(setExistingReconnectAttempt).toHaveBeenCalledWith(0);
     expect(setState).toHaveBeenCalledWith("connected");
     expect(toastSuccess).toHaveBeenCalled();
@@ -166,7 +160,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,
@@ -201,7 +194,6 @@ describe("reconnect-existing-failure", () => {
       setError,
       setExistingReconnectAttempt,
       setForegroundResumeAttemptFailed,
-      syncRelaysAfterReconnect,
       expectedPubkeyHex: null,
       onReconnectSuccess,
       onOpenChange,

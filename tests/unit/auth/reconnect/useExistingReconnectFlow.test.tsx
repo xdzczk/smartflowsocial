@@ -44,7 +44,6 @@ describe("useExistingReconnectFlow", () => {
   const setState = vi.fn();
   const setError = vi.fn();
   const setExistingReconnectAttempt = vi.fn();
-  const syncRelaysAfterReconnect = vi.fn(async () => {});
   const onReconnectSuccess = vi.fn();
   const onOpenChange = vi.fn();
   const cancelRef = { current: null as { cancel: () => void } | null };
@@ -78,7 +77,6 @@ describe("useExistingReconnectFlow", () => {
         setState,
         setError,
         setExistingReconnectAttempt,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         cancelRef,
@@ -101,7 +99,6 @@ describe("useExistingReconnectFlow", () => {
         setState,
         setError,
         setExistingReconnectAttempt,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         cancelRef,
@@ -128,7 +125,6 @@ describe("useExistingReconnectFlow", () => {
         setState,
         setError,
         setExistingReconnectAttempt,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         cancelRef,
@@ -153,7 +149,6 @@ describe("useExistingReconnectFlow", () => {
         setState,
         setError,
         setExistingReconnectAttempt,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         cancelRef,
@@ -191,7 +186,6 @@ describe("useExistingReconnectFlow", () => {
         setState,
         setError,
         setExistingReconnectAttempt,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         cancelRef,

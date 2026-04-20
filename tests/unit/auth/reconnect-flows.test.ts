@@ -119,7 +119,6 @@ const baseNostrConnectOptions: RunExistingNostrConnectReconnectOptions = {
   setState: vi.fn(),
   setError: vi.fn(),
   setExistingReconnectAttempt: vi.fn(),
-  syncRelaysAfterReconnect: vi.fn().mockResolvedValue(undefined),
   onSuccess: vi.fn(),
 };
 
@@ -157,7 +156,6 @@ const baseBunkerOptions: RunExistingBunkerReconnectOptions = {
   setState: vi.fn(),
   setError: vi.fn(),
   setExistingReconnectAttempt: vi.fn(),
-  syncRelaysAfterReconnect: vi.fn().mockResolvedValue(undefined),
   onSuccess: vi.fn(),
 };
 
@@ -444,7 +442,6 @@ describe("reconnect flows", () => {
         setError,
         setExistingReconnectAttempt,
         setForegroundResumeAttemptFailed: vi.fn(),
-        syncRelaysAfterReconnect: vi.fn().mockResolvedValue(undefined),
         expectedPubkeyHex: null,
         onOpenChange: vi.fn(),
         toastSuccess: vi.fn(),
@@ -482,7 +479,6 @@ describe("reconnect flows", () => {
         setError: vi.fn(),
         setExistingReconnectAttempt: vi.fn(),
         setForegroundResumeAttemptFailed: vi.fn(),
-        syncRelaysAfterReconnect: vi.fn().mockResolvedValue(undefined),
         expectedPubkeyHex: null,
         onReconnectSuccess,
         onOpenChange,
@@ -511,7 +507,6 @@ describe("reconnect flows", () => {
         setError: vi.fn(),
         setExistingReconnectAttempt: vi.fn(),
         setForegroundResumeAttemptFailed: vi.fn(),
-        syncRelaysAfterReconnect: vi.fn(),
         expectedPubkeyHex: null,
         onOpenChange: vi.fn(),
         toastSuccess: vi.fn(),

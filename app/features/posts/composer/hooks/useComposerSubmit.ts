@@ -32,6 +32,14 @@ import {
   COMPOSER_REMOVE_FAILED_ATTACHMENTS,
 } from "../components/composer/composer-validation";
 import { MIN_THREAD_SEGMENTS } from "../components/composer/thread-constants";
+import {
+  appendRelayOverride,
+  appendSubmissionId,
+} from "../services/build-publish-formdata.client";
+import {
+  createSubmissionId,
+  pendingPublish,
+} from "../state/pending-publish.client";
 
 import type {
   TextPostFormData,
@@ -96,12 +104,15 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     data: TextPostFormData;
     submitType: string;
   } | null>(null);
-  const lastSubmitForRetryRef = React.useRef<{
-    data: TextPostFormData;
-    event: React.BaseSyntheticEvent | undefined;
-  } | null>(null);
-  /** Bumped on cancel/reconnect-without-retry or new submit so stale sign completions do not submit twice. */
-  const submitGenerationRef = React.useRef(0);
+
+  // Stale-attempt cancellation now lives entirely in `pendingPublish`. We
+  // staleness-check by asking the store whether the attempt id we started
+  // with is still the current one; on `pendingPublish.cancel()` (or a fresh
+  // `start()` overwriting us) the snapshot id changes and the in-flight
+  // sign aborts cleanly without ever calling `fetcher.submit`.
+  const isAttemptStale = React.useCallback((attemptId: string): boolean => {
+    return pendingPublish.getSnapshot()?.id !== attemptId;
+  }, []);
 
   const appendComposerContextFormData = React.useCallback(
     (target: FormData | Record<string, string>) => {
@@ -166,6 +177,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
   const runSubmit = React.useCallback(
     async (data: TextPostFormData, event?: React.BaseSyntheticEvent) => {
+      // The active submissionId is owned by the pending-publish store and
+      // adopted in `dispatch` below. We seed it here only as a defensive
+      // default so the inner builders that close over it never see an
+      // uninitialised string before `pendingPublish.start` calls back.
+      let submissionId = createSubmissionId();
       const submitter = event?.nativeEvent
         ? ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement)
         : undefined;
@@ -222,9 +238,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         if (data.hashTagPresetId)
           formData.set("hashTagPresetId", data.hashTagPresetId);
         if (initialDraftId) formData.set("draftId", initialDraftId);
-        if (relayOverride && relayOverride.length > 0) {
-          formData.set("relays", JSON.stringify(relayOverride));
-        }
+        appendRelayOverride(formData, relayOverride);
         const draftAttachmentMeta = buildAttachmentMetaForSubmit();
         if (draftAttachmentMeta.length > 0) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
@@ -281,7 +295,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
 
       async function runThreadSubmit(): Promise<void> {
-        let generation: number | null = null;
         try {
           setSigningError(null);
           const hasUploading = threadSegments.some((s) =>
@@ -363,8 +376,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             .filter((tag) => tag.length > 0)
             .map((tag) => ["t", tag.replace("#", "")]);
 
-          generation = ++submitGenerationRef.current;
-          lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { signedByIndex, failedIndices } =
             await signThreadSegmentsWithRetry({
@@ -376,10 +387,12 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               includeHashtagsInNoteBody:
                 data.includeHashtagsInNoteBody !== false,
             });
-          if (generation !== submitGenerationRef.current) {
+          // Cancellation guard: if the user discarded this attempt or a
+          // fresher publish click overrode it while the bunker was busy,
+          // bail out before we mutate UI state or hit the fetcher.
+          if (isAttemptStale(submissionId)) {
             return;
           }
-          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
           const firstFailedIndex = signedByIndex.findIndex((e) => e == null);
@@ -425,22 +438,21 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           }
           const threadPayload = builtThread.formData;
           appendComposerContextFormData(threadPayload);
+          appendSubmissionId(threadPayload, submissionId);
 
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
           fetcher.submit(threadPayload, fetcherSubmitOptions);
         } catch (err) {
-          if (
-            generation != null &&
-            generation === submitGenerationRef.current
-          ) {
-            lastSubmitForRetryRef.current = null;
+          // The pending-publish state machine owns whether this is a
+          // resumable signer-unavailable error or a terminal failure;
+          // we just clear the local UI flag and re-throw so the store can
+          // classify and transition.
+          if (!isAttemptStale(submissionId)) {
             setIsSigning(false);
-          }
-          if (
-            generation != null &&
-            generation !== submitGenerationRef.current
-          ) {
+          } else {
+            // Stale attempts must not surface their late errors as a UI
+            // banner — the user already moved on.
             return;
           }
           const { handleAsyncError } =
@@ -453,6 +465,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           setSigningError(
             err instanceof Error ? err.message : "Failed to sign thread."
           );
+          throw err;
         }
       }
 
@@ -482,7 +495,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       }
 
       async function runSinglePostSubmit(): Promise<void> {
-        let generation: number | null = null;
         try {
           setSigningError(null);
           if (applySinglePostValidationError(getSinglePostValidationError())) {
@@ -548,8 +560,6 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             mediaUrlsForSign
           );
 
-          generation = ++submitGenerationRef.current;
-          lastSubmitForRetryRef.current = { data, event };
           setIsSigning(true);
           const { nostrEvent, signedEvent } =
             await nostrAdapter.signEventWithOneRetry({
@@ -558,10 +568,11 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               kind: 1,
               tags: tagArray,
             });
-          if (generation !== submitGenerationRef.current) {
+          // Cancellation guard: see runThreadSubmit. The pending-publish
+          // store is the source of truth for "is this attempt still live?"
+          if (isAttemptStale(submissionId)) {
             return;
           }
-          lastSubmitForRetryRef.current = null;
           setIsSigning(false);
 
           const payload: Record<string, string> = {
@@ -586,9 +597,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           payload["includeHashtagsInNoteBody"] = String(
             Boolean(data.includeHashtagsInNoteBody)
           );
-          if (relayOverride && relayOverride.length > 0) {
-            payload["relays"] = JSON.stringify(relayOverride);
-          }
+          appendRelayOverride(payload, relayOverride);
+          appendSubmissionId(payload, submissionId);
           const attachmentMeta = buildAttachmentMetaForSubmit();
           if (attachmentMeta.length > 0) {
             payload["attachmentMeta"] = JSON.stringify(attachmentMeta);
@@ -647,10 +657,9 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           setPublishSubmitInFlight(true);
           fetcher.submit(payload, fetcherSubmitOptions);
         } catch (error) {
-          if (
-            generation != null &&
-            generation !== submitGenerationRef.current
-          ) {
+          if (isAttemptStale(submissionId)) {
+            // Stale attempts must not surface their late errors as a UI
+            // banner — the user already moved on.
             return;
           }
           const { handleAsyncError } =
@@ -668,28 +677,38 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               ? error.message
               : "Failed to sign post. Please try again."
           );
+          throw error;
         } finally {
-          if (
-            generation != null &&
-            generation === submitGenerationRef.current
-          ) {
-            lastSubmitForRetryRef.current = null;
+          if (!isAttemptStale(submissionId)) {
             setIsSigning(false);
           }
         }
       }
 
-      if (
-        isThreadMode &&
-        (submitType === ACTION_POST_TEXT ||
-          submitType === ACTION_SCHEDULE_TEXT ||
-          submitType === ACTION_UPDATE_SCHEDULED ||
-          submitType === ACTION_UPDATE_FOLLOW_UP)
-      ) {
-        await runThreadSubmit();
-        return;
-      }
-      await runSinglePostSubmit();
+      const dispatch = async (storeSubmissionId: string): Promise<void> => {
+        // Adopt the store-managed submissionId so the same id is embedded
+        // in both the original payload and any resume-driven re-submit.
+        submissionId = storeSubmissionId;
+        if (
+          isThreadMode &&
+          (submitType === ACTION_POST_TEXT ||
+            submitType === ACTION_SCHEDULE_TEXT ||
+            submitType === ACTION_UPDATE_SCHEDULED ||
+            submitType === ACTION_UPDATE_FOLLOW_UP)
+        ) {
+          await runThreadSubmit();
+          return;
+        }
+        await runSinglePostSubmit();
+      };
+
+      // Single entry point: every publish click — fresh or partial-thread
+      // retry — hands off to the pending-publish state machine. The store
+      // owns the resumable-attempt lifecycle (awaiting_signer / resuming /
+      // expired) and re-invokes `dispatch` on `nostr-connection-healthy`
+      // with the same submissionId so the server-side
+      // creationIdempotencyKey collapses both attempts onto one Post row.
+      pendingPublish.start({ performSignAndSubmit: dispatch });
     },
     [
       form,
@@ -727,6 +746,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       buildAttachmentMetaForSubmit,
       buildAttachmentDiffJson,
       composerContext.mode,
+      isAttemptStale,
     ]
   );
 
@@ -736,20 +756,26 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     setPartialThreadState(null);
   }, []);
 
-  /** Clears pending auto-retry ref (e.g. user cancelled or reconnect without resubmit). */
+  /**
+   * User-initiated cancel: tear down the in-flight pending-publish attempt
+   * (so a late `nostr-connection-healthy` event can't autocomplete a
+   * publish the user has discarded) and clear the local UI banner.
+   */
   const cancelSigningState = React.useCallback(() => {
-    submitGenerationRef.current += 1;
-    lastSubmitForRetryRef.current = null;
+    pendingPublish.cancel();
     clearSigningState();
   }, [clearSigningState]);
 
+  /**
+   * Adapter for `useComposerSignerReconnect.onHealthyWhileSigning`. Returns
+   * true iff the pending-publish store actually started a resume — in
+   * which case the reconnect hook skips its `clearSigningState` fallback.
+   * No legacy ref-based retry remains; the state machine is now the
+   * single source of truth for "is there a publish click to autocomplete?"
+   */
   const retryLastSubmit = React.useCallback((): boolean => {
-    const pending = lastSubmitForRetryRef.current;
-    if (!pending) return false;
-    lastSubmitForRetryRef.current = null;
-    void runSubmit(pending.data, pending.event);
-    return true;
-  }, [runSubmit]);
+    return pendingPublish.maybeResume();
+  }, []);
 
   const submitThreadSuccessfulOnly = React.useCallback(async () => {
     const state = partialThreadState;
@@ -799,14 +825,17 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         }
       }
     }
-    if (relayOverride && relayOverride.length > 0)
-      threadPayload.set("relays", JSON.stringify(relayOverride));
+    appendRelayOverride(threadPayload, relayOverride);
     if (embedContext) threadPayload.set("_embedContext", embedContext);
     appendComposerContextFormData(threadPayload);
     threadPayload.set(
       "includeHashtagsInNoteBody",
       String(Boolean(state.data.includeHashtagsInNoteBody))
     );
+    // Partial-thread retry is a fresh user-initiated attempt (after they chose
+    // to submit only the successfully-signed segments), so mint a new
+    // submissionId rather than reusing the original thread's id.
+    appendSubmissionId(threadPayload, createSubmissionId());
     setPartialThreadState(null);
     setLastPublishFailed(false);
     setPublishSubmitInFlight(true);
