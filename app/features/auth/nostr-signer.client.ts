@@ -121,6 +121,27 @@ const NIP46_RPC_TIMEOUTS = {
   switchRelays: 8_000,
 } as const;
 
+/**
+ * Per-attempt timeout inside `Nip46Signer.rpc`'s retry loop. The outer
+ * `NIP46_RPC_TIMEOUTS` value bounds total wall-clock; this bounds a
+ * single send/wait cycle before we re-publish the RPC with a fresh id.
+ *
+ * Why retry at all: Primal Signer on iOS replies to roughly every other
+ * `get_public_key` we publish (alternating success/failure with ~60 s
+ * gaps, both subs catch nothing in failure runs even though all 3 relays
+ * `OK` our event). The bunker app is alive and approving — its iOS
+ * push/wakeup state machine just silently swallows individual events on
+ * a cooldown. We can't fix Primal, but a fresh EVENT id + fresh per-RPC
+ * REQ a few seconds later usually punches through. Inspired by the way
+ * any HTTP client treats a timed-out request to a flaky upstream.
+ *
+ * 7 s is short enough that the user notices the recovery as a single
+ * brief delay (4 attempts within `getPublicKey`'s 30 s budget) and long
+ * enough that a healthy reply (~400-900 ms in our logs) lands inside
+ * attempt #1.
+ */
+const NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS = 7_000;
+
 /* ------------------------------------------------------------------------ */
 /*                       NIP-46 diagnostic logging                          */
 /* ------------------------------------------------------------------------ */
@@ -137,6 +158,11 @@ const NIP46_RPC_TIMEOUTS = {
  * matching method+id tells us the bunker never replied to either
  * subscription on that attempt — i.e. the failure is on Primal's side or
  * upstream of the relay, not in our subscription handling.
+ *
+ * `rpc:retry` shows the per-attempt retry loop (see
+ * `NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS`) firing after Primal silently
+ * dropped a previous attempt's EVENT. `rpc:done` includes an `attempts`
+ * field so a "took 2 attempts" recovery is visible in the log.
  *
  * Gated on `typeof window` so vitest (node env) stays silent.
  */
@@ -336,6 +362,59 @@ export class Nip46Signer implements NostrSigner {
         // Swallow upstream rejections so one failed RPC doesn't poison the
         // lock for the next caller.
       });
+      return await this.runRpcWithRetries(fn, timeoutMs, label, startedAt);
+    } finally {
+      release();
+    }
+  }
+
+  /**
+   * Retry loop sitting inside the rpcLock. Each attempt publishes a
+   * fresh EVENT (new bunker request id) on a fresh per-RPC subscription;
+   * if the per-attempt timer fires before any sub delivers a reply we
+   * abandon that attempt and try again, until the outer `timeoutMs`
+   * deadline is reached. See `NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS` for the
+   * Primal-side rationale.
+   *
+   * Abandoned attempts intentionally leak their listener entry in
+   * `BunkerSigner.listeners`: a late reply from Primal to an old EVENT
+   * id will resolve a promise no one awaits and is GC'd when bunker is
+   * closed. Cleaner than mutating bunker's private map from out here.
+   */
+  private async runRpcWithRetries<T>(
+    fn: () => Promise<T>,
+    timeoutMs: number,
+    label: string,
+    startedAt: number
+  ): Promise<T> {
+    let attempt = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- retry loop exits via return on success or throw on error/timeout; the unbounded `while (true)` is the intent.
+    while (true) {
+      const elapsed = Date.now() - startedAt;
+      const remaining = timeoutMs - elapsed;
+      if (remaining <= 0) {
+        const err = new Error(`bunker:${label} timeout`);
+        nip46log(`${this.diagLabel} rpc:error`, {
+          method: label,
+          ms: elapsed,
+          error: err.message,
+          attempts: attempt,
+        });
+        throw err;
+      }
+      const attemptTimeout = Math.min(
+        NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS,
+        remaining
+      );
+      if (attempt > 0) {
+        nip46log(`${this.diagLabel} rpc:retry`, {
+          method: label,
+          attempt,
+          elapsed,
+          remaining,
+        });
+      }
+
       // Open the per-RPC fresh subscription SYNCHRONOUSLY before invoking
       // fn(). `pool.subscribe` is sync from the caller's POV (returns a
       // closer immediately and queues REQ via `connectionPromise.then`),
@@ -350,22 +429,31 @@ export class Nip46Signer implements NostrSigner {
           new Promise<never>((_, reject) => {
             to = setTimeout(
               () => reject(new Error(`bunker:${label} timeout`)),
-              timeoutMs
+              attemptTimeout
             );
           }),
         ]);
         nip46log(`${this.diagLabel} rpc:done`, {
           method: label,
           ms: Date.now() - startedAt,
+          attempts: attempt + 1,
         });
         return result;
       } catch (err) {
-        nip46log(`${this.diagLabel} rpc:error`, {
-          method: label,
-          ms: Date.now() - startedAt,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw err;
+        const isTimeout =
+          err instanceof Error && err.message === `bunker:${label} timeout`;
+        const totalElapsed = Date.now() - startedAt;
+        if (!isTimeout || totalElapsed >= timeoutMs) {
+          nip46log(`${this.diagLabel} rpc:error`, {
+            method: label,
+            ms: totalElapsed,
+            error: err instanceof Error ? err.message : String(err),
+            attempts: attempt + 1,
+          });
+          throw err;
+        }
+        // Per-attempt timeout, still inside the outer budget: retry.
+        attempt++;
       } finally {
         if (to) clearTimeout(to);
         if (freshSub) {
@@ -377,8 +465,6 @@ export class Nip46Signer implements NostrSigner {
           }
         }
       }
-    } finally {
-      release();
     }
   }
 

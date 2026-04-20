@@ -315,11 +315,11 @@ describe("Nip46Signer RPC dispatch", () => {
     expect(fake.getPublicKey).toHaveBeenCalledTimes(2);
   });
 
-  it("rejects with `bunker:<method> timeout` when the inner RPC stalls", async () => {
+  it("rejects with `bunker:<method> timeout` when every retry attempt stalls", async () => {
     vi.useFakeTimers();
     try {
       const fake = makeFakeBunker();
-      // Never resolves — simulates a wedged signer-app.
+      // Never resolves on any attempt — simulates a wedged signer app.
       fake.getPublicKey = vi.fn().mockImplementation(
         () =>
           new Promise(() => {
@@ -327,20 +327,82 @@ describe("Nip46Signer RPC dispatch", () => {
           })
       );
 
-      const { signer } = makeSigner(fake);
+      const { signer, pool } = makeSigner(fake);
 
       const pending = signer.getPublicKey();
       // Attach a catch handler so vitest doesn't flag the rejection as
       // unhandled while we advance fake timers.
       const settled = pending.catch((err: unknown) => err);
-      // NIP46_RPC_TIMEOUTS.getPublicKey is 30 s; advance past it.
+      // NIP46_RPC_TIMEOUTS.getPublicKey is 30 s; advance past it. The
+      // retry loop will fire ~4 attempts inside that budget.
       await vi.advanceTimersByTimeAsync(30_000);
       const result = await settled;
       expect(result).toBeInstanceOf(Error);
       expect((result as Error).message).toBe("bunker:get_public_key timeout");
+      // Per-attempt is 7 s; in a 30 s budget we expect at least 4 attempts.
+      expect(fake.getPublicKey.mock.calls.length).toBeGreaterThanOrEqual(4);
+      // Each retry opens a fresh per-RPC sub.
+      expect(pool.subscribe.mock.calls.length).toBeGreaterThanOrEqual(4);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("retries on per-attempt timeout and succeeds on a later attempt", async () => {
+    vi.useFakeTimers();
+    try {
+      const fake = makeFakeBunker();
+      // First attempt hangs (silent Primal drop), second attempt resolves.
+      fake.getPublicKey = vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise(() => {
+              // intentionally never resolves — the per-attempt timer fires
+              // and the wrapper publishes a fresh EVENT id for attempt #2.
+            })
+        )
+        .mockResolvedValueOnce("pubkey-hex");
+
+      const { signer, pool } = makeSigner(fake);
+
+      const pending = signer.getPublicKey();
+      const settled = pending.then(
+        (v) => v,
+        (err: unknown) => err
+      );
+      // Advance past the per-attempt budget (7 s) so attempt #1 times out
+      // and attempt #2 fires.
+      await vi.advanceTimersByTimeAsync(7_500);
+      const result = await settled;
+      expect(result).toBe("pubkey-hex");
+      expect(fake.getPublicKey).toHaveBeenCalledTimes(2);
+      // One fresh sub per attempt — both opened, both closed.
+      expect(pool.subscribe).toHaveBeenCalledTimes(2);
+      const closer1 = pool.subscribe.mock.results[0]?.value as
+        | { close: ReturnType<typeof vi.fn> }
+        | undefined;
+      const closer2 = pool.subscribe.mock.results[1]?.value as
+        | { close: ReturnType<typeof vi.fn> }
+        | undefined;
+      expect(closer1?.close).toHaveBeenCalledTimes(1);
+      expect(closer2?.close).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not retry on non-timeout errors", async () => {
+    const fake = makeFakeBunker();
+    fake.getPublicKey = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("permission_denied"));
+    const { signer, pool } = makeSigner(fake);
+
+    await expect(signer.getPublicKey()).rejects.toThrow("permission_denied");
+    // No retry on application errors — surfaces immediately.
+    expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
+    expect(pool.subscribe).toHaveBeenCalledTimes(1);
   });
 });
 

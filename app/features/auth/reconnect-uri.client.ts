@@ -37,14 +37,31 @@ export function bunkerCanonicalKey(bp: {
   return `${bp.pubkey}\n${sorted.join(",")}\n${bp.secret ?? ""}`;
 }
 
+/**
+ * Path of the dedicated signer-callback page (see
+ * `app/routes/auth.signer-callback.tsx`). Pinned to a constant — and
+ * pinned to a URL that does NOT match the sign-in page — because the
+ * whole point of using a dedicated route is to make iOS Safari open
+ * the callback in a NEW tab instead of refocusing the existing
+ * sign-in tab. A URL match against the sign-in tab triggers a
+ * page-lifecycle transition (hidden -> visible via inter-app handoff
+ * with bfcache eligibility) under which WebKit can drop the queued
+ * NIP-46 reply frame on the WebSocket; Ditto avoids this by pointing
+ * its callback at a separate page, and we mirror that here. Diagnosed
+ * against the strict 50/50 alternating `bunker:get_public_key timeout`
+ * we saw on Primal Signer + iPhone.
+ */
+export const SIGNER_CALLBACK_PATH = "/auth/signer-callback";
+
 /** Append callback so Primal redirects back to app (skip in standalone PWA). */
 export function appendPrimalCallback(uri: string): string {
   if (isStandalonePWA()) return uri;
   if (typeof window === "undefined") return uri;
   if (uri.includes("callback=")) return uri;
 
-  const callbackUrl =
-    window.location.origin + window.location.pathname + window.location.search;
+  // Intentionally a different URL from `window.location.{pathname,search}` —
+  // see `SIGNER_CALLBACK_PATH` for the iOS Safari rationale.
+  const callbackUrl = window.location.origin + SIGNER_CALLBACK_PATH;
   const separator = uri.includes("?") ? "&" : "?";
   return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
 }
