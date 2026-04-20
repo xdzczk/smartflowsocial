@@ -611,6 +611,15 @@ export const nostrAdapter = {
   /**
    * Sign once with clearCacheOnError: false; on failure wait 1.5s and retry once.
    * Use for single-sign flows so a timeout doesn't tear down the connection and transient failures get one retry.
+   *
+   * Signer-timeout errors (we already burned the full 30s waiting for the
+   * bunker / window.nostr to respond) skip the in-band retry and surface
+   * immediately. Otherwise the caller is stuck for a second 30s window
+   * before the pending-publish state machine can park the attempt and
+   * show the recovery UI — and during that gap a `nostr-connection-healthy`
+   * event arriving after a Primal restart can't trigger `maybeResume`
+   * (state is still `signing`), which is what previously caused the UI
+   * to look idle while a sign was still in flight → duplicate publishes.
    */
   async signEventWithOneRetry(
     eventData: NostrEventData,
@@ -619,7 +628,8 @@ export const nostrAdapter = {
     const opts = { clearCacheOnError: false, ...options };
     try {
       return await this.signEvent(eventData, opts);
-    } catch {
+    } catch (err) {
+      if (isSignTimeoutError(err)) throw err;
       await new Promise((r) => setTimeout(r, 1500));
       return await this.signEvent(eventData, opts);
     }
@@ -645,6 +655,11 @@ export const nostrAdapter = {
 
   /**
    * Sign long-form once with clearCacheOnError: false; on failure wait 1.5s and retry once.
+   *
+   * Signer timeouts skip the retry — see `signEventWithOneRetry` for the
+   * full rationale (the second 30s wait blocks the pending-publish state
+   * machine from parking the attempt promptly, which lets the composer UI
+   * look idle mid-sign and lets the user double-publish).
    */
   async signLongFormEventWithOneRetry(
     eventData: LongFormEventData
@@ -652,7 +667,8 @@ export const nostrAdapter = {
     const opts = { clearCacheOnError: false };
     try {
       return await this.signLongFormEvent(eventData, opts);
-    } catch {
+    } catch (err) {
+      if (isSignTimeoutError(err)) throw err;
       await new Promise((r) => setTimeout(r, 1500));
       return await this.signLongFormEvent(eventData, opts);
     }

@@ -17,13 +17,25 @@
  *     vs Scenario B fix — both flows now collapse onto a single autocomplete
  *     path).
  *
- *  2. **Caller-supplied retry callback** (legacy). For surfaces that haven't
+ *  2. **Active-attempt guard.** Even when `maybeResume` is a no-op (e.g. the
+ *     original sign call hasn't actually timed out yet, so the state machine
+ *     is still in `signing` rather than `awaiting_signer`), we must NOT
+ *     clear the local signing UI. Doing so exposes the Publish button while
+ *     the original sign+submit is still in flight, and the user's "retry"
+ *     click then races a brand-new `submissionId` against the original —
+ *     which the server can't dedupe, producing duplicate publishes. The
+ *     state machine owns the lifecycle until the in-flight sign settles
+ *     (success → `submitting`/`completed`, transient failure → `awaiting_signer`,
+ *     fatal failure → `failed`); the UI must stay parked until then.
+ *
+ *  3. **Caller-supplied retry callback** (legacy). For surfaces that haven't
  *     migrated to the store yet (e.g. RescheduleScheduledPostModal), we fall
  *     back to the existing behaviour: run the retry first, and only call
  *     `clearSigningState` if it didn't take.
  *
- *  3. **Fall through to `clearSigningState`** so the stuck "Waiting for
- *     signer approval" banner is cleared once the bunker is healthy again.
+ *  4. **Fall through to `clearSigningState`** so the stuck "Waiting for
+ *     signer approval" banner is cleared once the bunker is healthy again
+ *     and there's nothing in flight to protect.
  *
  * We do NOT run any background-reconnect interval here. The signer adapter is
  * single-shot (one attempt per user click); if the bunker is unresponsive the
@@ -47,10 +59,20 @@ export function useComposerSignerReconnect(
       // 1. Pending-publish store takes precedence whenever it has an
       //    awaiting attempt inside its recovery window.
       if (pendingPublish.maybeResume()) return;
-      // 2. Legacy ref-based retry path (kept for unmigrated surfaces).
+      // 2. If the store still owns an in-flight attempt that hasn't reached
+      //    `awaiting_signer` yet (typically `signing` while the original
+      //    30s timeout is still pending), the UI must stay parked. The
+      //    in-flight sign will settle on its own and either submit
+      //    successfully or transition the store to `awaiting_signer` /
+      //    `failed`. Clearing the UI here is what previously caused the
+      //    duplicate-publish bug after a stop-then-restart of the bunker.
+      if (pendingPublish.isActiveAttempt()) return;
+      // 3. Legacy ref-based retry path (kept for unmigrated surfaces).
       const retried = onHealthyWhileSigning?.() === true;
       if (retried) return;
-      // 3. No resume happened — clear any stuck local signing UI.
+      // 4. No active attempt and no legacy retry — clear any stuck local
+      //    signing UI so the user isn't stranded on an awaiting banner
+      //    after the bunker is healthy again.
       clearSigningState();
     };
     window.addEventListener("nostr-connection-healthy", handler);

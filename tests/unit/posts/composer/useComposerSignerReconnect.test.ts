@@ -18,7 +18,10 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
-import { _resetForTests as resetPendingPublish } from "~/features/posts/composer/state/pending-publish.client";
+import {
+  _resetForTests as resetPendingPublish,
+  pendingPublish,
+} from "~/features/posts/composer/state/pending-publish.client";
 
 describe("useComposerSignerReconnect", () => {
   beforeEach(() => {
@@ -80,5 +83,37 @@ describe("useComposerSignerReconnect", () => {
 
     window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
     expect(clearSigningState).not.toHaveBeenCalled();
+  });
+
+  // Regression: stop-then-restart-bunker mid-sign used to clear the UI
+  // (because state was still `signing`, so `maybeResume` returned false),
+  // exposing the Publish button while the original sign was in flight and
+  // letting the user double-publish. With the active-attempt guard the
+  // reconnect handler must leave the UI alone until the in-flight sign
+  // settles.
+  it("does NOT clear signing state while pendingPublish has an active in-flight attempt", () => {
+    const clearSigningState = vi.fn();
+    const onHealthyWhileSigning = vi.fn(() => false);
+
+    // Hanging sign — state machine parks at `signing` and stays there.
+    pendingPublish.start({
+      performSignAndSubmit: () =>
+        new Promise<void>(() => {
+          /* never resolves */
+        }),
+    });
+    expect(pendingPublish.getSnapshot()?.state).toBe("signing");
+
+    renderHook(() =>
+      useComposerSignerReconnect(clearSigningState, true, onHealthyWhileSigning)
+    );
+
+    window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
+
+    expect(clearSigningState).not.toHaveBeenCalled();
+    // Active-attempt guard short-circuits before the legacy retry too — the
+    // store owns the lifecycle until the in-flight sign settles, and the
+    // legacy retry callback would have nothing useful to do here anyway.
+    expect(onHealthyWhileSigning).not.toHaveBeenCalled();
   });
 });

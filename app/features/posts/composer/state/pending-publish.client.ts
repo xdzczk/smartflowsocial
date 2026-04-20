@@ -284,6 +284,28 @@ export function markFailed(submissionId: string, message: string): void {
   emit();
 }
 
+/**
+ * True when the store currently owns an in-flight publish attempt that the
+ * UI must keep visible — either we're still signing, parked awaiting a
+ * signer reconnect, resuming after a healthy event, or already handed off
+ * to the server.
+ *
+ * Reconnect / "looks-idle" code paths MUST consult this before they tear
+ * down composer UI state. Clearing the UI while an active attempt is still
+ * in flight tempts the user into a second click whose own sign+submit
+ * races against the original — which causes duplicate publishes when the
+ * bunker comes back mid-attempt.
+ */
+export function isActiveAttempt(): boolean {
+  const state = current?.state;
+  return (
+    state === "signing" ||
+    state === "awaiting_signer" ||
+    state === "resuming" ||
+    state === "submitting"
+  );
+}
+
 /** Convenience helpers for tests and consumers that prefer namespaced access. */
 export const pendingPublish = {
   start,
@@ -294,6 +316,7 @@ export const pendingPublish = {
   getSnapshot,
   subscribe,
   createSubmissionId,
+  isActiveAttempt,
 };
 
 /**

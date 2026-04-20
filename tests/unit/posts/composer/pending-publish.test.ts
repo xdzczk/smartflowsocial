@@ -167,4 +167,57 @@ describe("pending-publish state machine", () => {
     const b = pendingPublish.getSnapshot();
     expect(a).toBe(b);
   });
+
+  // Guards the "duplicate publish on stop-then-restart-bunker" regression:
+  // the reconnect hook checks `isActiveAttempt()` to decide whether the UI
+  // can be cleared. Anything that means "a publish is still in flight or
+  // waiting on the user's signer" must report active so the Publish button
+  // never reappears mid-attempt.
+  describe("isActiveAttempt", () => {
+    it("is false when there's no current attempt", () => {
+      expect(pendingPublish.isActiveAttempt()).toBe(false);
+    });
+
+    it("is true while signing (sign call still hanging)", () => {
+      pendingPublish.start({
+        performSignAndSubmit: () =>
+          new Promise<void>(() => {
+            /* never resolves */
+          }),
+      });
+      expect(pendingPublish.getSnapshot()?.state).toBe("signing");
+      expect(pendingPublish.isActiveAttempt()).toBe(true);
+    });
+
+    it("is true while parked in awaiting_signer", async () => {
+      pendingPublish.start({
+        performSignAndSubmit: vi
+          .fn()
+          .mockRejectedValue(
+            new RemoteSignerTimeoutError("Bunker did not respond")
+          ),
+      });
+      await flushMicrotasks();
+      expect(pendingPublish.getSnapshot()?.state).toBe("awaiting_signer");
+      expect(pendingPublish.isActiveAttempt()).toBe(true);
+    });
+
+    it("is false once the attempt has expired, completed, failed, or been cancelled", async () => {
+      pendingPublish.start({
+        performSignAndSubmit: vi
+          .fn()
+          .mockRejectedValue(
+            new RemoteSignerTimeoutError("Bunker did not respond")
+          ),
+      });
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(RECOVERY_WINDOW_MS + 1000);
+      await flushMicrotasks();
+      expect(pendingPublish.getSnapshot()?.state).toBe("expired");
+      expect(pendingPublish.isActiveAttempt()).toBe(false);
+
+      pendingPublish.cancel();
+      expect(pendingPublish.isActiveAttempt()).toBe(false);
+    });
+  });
 });
