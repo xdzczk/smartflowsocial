@@ -24,7 +24,6 @@ vi.mock("~/features/auth/signer/nostr-signer-connection.client", () => ({
   cancelSignerInFlight: vi.fn(),
   createNip46SignerFromStoredConfig: vi.fn(),
   teardownActiveNip46Signer: vi.fn(),
-  syncRelaysWithRemoteSigner: vi.fn(),
   NOSTR_CONNECTION_HEALTHY_EVENT: "nostr-connection-healthy",
   NOSTR_CONNECTION_STALE_EVENT: "nostr-connection-stale",
 }));

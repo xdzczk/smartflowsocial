@@ -30,7 +30,6 @@ export interface UseExistingReconnectFlowParams {
   setState: (s: ReconnectState) => void;
   setError: (e: string | null) => void;
   setExistingReconnectAttempt: (n: number) => void;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   cancelRef: React.MutableRefObject<{ cancel: () => void } | null>;
@@ -60,7 +59,6 @@ export function useExistingReconnectFlow({
   setState,
   setError,
   setExistingReconnectAttempt,
-  syncRelaysAfterReconnect,
   onReconnectSuccess,
   onOpenChange,
   cancelRef,
@@ -91,7 +89,6 @@ export function useExistingReconnectFlow({
         setForegroundResumeAttemptFailed: (v) => {
           existingReconnectForegroundAttemptFailedRef.current = v;
         },
-        syncRelaysAfterReconnect,
         expectedPubkeyHex,
         onReconnectSuccess,
         onOpenChange,
@@ -106,7 +103,6 @@ export function useExistingReconnectFlow({
       setState,
       setError,
       setExistingReconnectAttempt,
-      syncRelaysAfterReconnect,
       getClosedByExternalReconnect,
     ]
   );
@@ -152,7 +148,6 @@ export function useExistingReconnectFlow({
           setState,
           setError,
           setExistingReconnectAttempt,
-          syncRelaysAfterReconnect,
           onSuccess: (connectionId) => {
             toast.success(TOAST_RECONNECT_SUCCESS);
             onReconnectSuccess?.(connectionId);
@@ -177,7 +172,6 @@ export function useExistingReconnectFlow({
       setState,
       setError,
       setExistingReconnectAttempt,
-      syncRelaysAfterReconnect,
       cancelRef,
     ]
   );
@@ -223,7 +217,6 @@ export function useExistingReconnectFlow({
           setState,
           setError,
           setExistingReconnectAttempt,
-          syncRelaysAfterReconnect,
           onSuccess: (connectionId) => {
             toast.success(TOAST_RECONNECT_SUCCESS);
             onReconnectSuccess?.(connectionId);
@@ -248,7 +241,6 @@ export function useExistingReconnectFlow({
       setState,
       setError,
       setExistingReconnectAttempt,
-      syncRelaysAfterReconnect,
       cancelRef,
     ]
   );

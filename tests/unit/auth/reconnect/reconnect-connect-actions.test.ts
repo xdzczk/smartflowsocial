@@ -90,7 +90,6 @@ describe("reconnect-connect-actions", () => {
   const recordConnectionEvent = vi.fn();
   const setActiveSignerConfig = vi.fn();
   const detectSignerAppName = vi.fn(() => "Signer");
-  const syncRelaysAfterReconnect = vi.fn(async () => {});
   const onReconnectSuccess = vi.fn();
   const onOpenChange = vi.fn();
   const toastSuccess = vi.fn();
@@ -136,7 +135,6 @@ describe("reconnect-connect-actions", () => {
       detectSignerAppName,
       parseSecretKeyHex,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -163,7 +161,6 @@ describe("reconnect-connect-actions", () => {
       detectSignerAppName,
       parseSecretKeyHex,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -212,7 +209,6 @@ describe("reconnect-connect-actions", () => {
       detectSignerAppName,
       parseSecretKeyHex,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -245,7 +241,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -274,7 +269,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -302,7 +296,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -337,7 +330,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -379,7 +371,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,
@@ -420,7 +411,6 @@ describe("reconnect-connect-actions", () => {
       setActiveSignerConfig,
       detectSignerAppName,
       serializeSecretKey,
-      syncRelaysAfterReconnect,
       onReconnectSuccess,
       onOpenChange,
       toastSuccess,

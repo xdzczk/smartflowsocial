@@ -14,7 +14,15 @@ export type ActiveSignerConfig =
       method: "bunker_input";
       bunkerInput: string;
       clientSecretKeyHex: string;
-      /** Relays from switch_relays; overrides bunkerInput relays when reconnecting. */
+      /**
+       * Bunker relays captured at connection time (parsed from `bunkerInput`).
+       * Persisted alongside the input so callers reading `cfg.relays`
+       * (Settings UI, transport-health helpers, etc.) don't have to re-parse
+       * the bunker URL on every read. Historically this field could also be
+       * overwritten by a `switch_relays` response; that path was removed
+       * because Primal Signer never replied to it and it broke the next RPC
+       * — see `connection-health.client.ts` for the full rationale.
+       */
       relays?: string[];
     }
   | {

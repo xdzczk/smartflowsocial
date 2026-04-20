@@ -1,12 +1,21 @@
 /**
- * Health check and relay sync for NIP-46 signer connection.
+ * Health check and transport-state probe for NIP-46 signer connection.
  *
- * Health is now derived from the shared SimplePool's WebSocket state instead
+ * Health is derived from the shared SimplePool's WebSocket state instead
  * of a periodic ping, mirroring what Ditto does. `verifySignerConnection`
  * stays available for the Settings "Test connection" button. The previous
  * 60s setInterval that nudged stale events has been removed because it added
  * noise during normal use without preventing real failures (the pool now
  * auto-reconnects sockets, so transient disconnects heal themselves).
+ *
+ * Relay sync via `switch_relays` used to live here as well. It was removed
+ * after we discovered that Primal Signer never replies to it, so every
+ * call timed out 8s, contributed to per-client rate limits on damus.io,
+ * and — most importantly — left Primal's session in a state where the
+ * NEXT NIP-46 RPC was silently dropped. The relay set captured at login
+ * is sufficient for ongoing use; if the user changes relays inside their
+ * signer app to a non-overlapping set, they re-pair. Mirrors Nostrify's
+ * `NConnectSigner`, which also has no relay-sync path.
  */
 
 import { normalizeURL } from "nostr-tools/utils";
@@ -15,19 +24,7 @@ import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import { getSharedPool } from "~/features/nostr/shared-pool.client";
 
 import { NIP46_SIGNER_TYPE } from "./connection-constants";
-import {
-  normalizeRelayList,
-  relayListsEqual,
-} from "./connection-relay-utils.client";
-import {
-  getActiveSignerConfig,
-  persistActiveSignerConfigWithoutReset,
-} from "./nostr-signer-storage.client";
-import {
-  addConnectionLog,
-  getActiveConnection,
-  updateSession,
-} from "./remote-signer-sessions.client";
+import { getActiveSignerConfig } from "./nostr-signer-storage.client";
 
 function debugTrace(message: string, details?: Record<string, unknown>): void {
   if (details) {
@@ -94,69 +91,4 @@ export function isTransportLikelyHealthy(): boolean {
       return false;
     }
   });
-}
-
-export async function syncRelaysWithRemoteSigner(
-  signer: NostrSigner
-): Promise<{ changed: boolean; relays?: string[]; reason?: string }> {
-  if (
-    signer.type !== NIP46_SIGNER_TYPE ||
-    typeof signer.switchRelays !== "function"
-  ) {
-    return { changed: false, reason: "unsupported" };
-  }
-
-  const config = getActiveSignerConfig();
-  if (config?.type !== NIP46_SIGNER_TYPE) {
-    return { changed: false, reason: "not_nip46" };
-  }
-
-  if (config.method !== "nostrconnect_uri") {
-    return { changed: false, reason: "not_nostrconnect_uri" };
-  }
-
-  const switched = await signer.switchRelays();
-  if (!switched) {
-    debugTrace("switch_relays returned no updates");
-    return { changed: false, reason: "no_change" };
-  }
-
-  const normalized = normalizeRelayList(switched);
-  const currentRelays = config.relays;
-  if (normalized.length === 0 || relayListsEqual(normalized, currentRelays)) {
-    debugTrace("switch_relays result unchanged/invalid", {
-      relayCount: normalized.length,
-    });
-    return { changed: false, reason: "unchanged" };
-  }
-
-  persistActiveSignerConfigWithoutReset({ ...config, relays: normalized });
-
-  const activeConnection = getActiveConnection();
-  if (activeConnection?.config.type === NIP46_SIGNER_TYPE) {
-    const updatedConfig =
-      activeConnection.config.method === "nostrconnect_uri"
-        ? { ...activeConnection.config, relays: normalized }
-        : activeConnection.config;
-    updateSession(activeConnection.id, {
-      config: updatedConfig,
-      metadata: {
-        ...activeConnection.metadata,
-        relays: normalized,
-        lastActivityAt: Date.now(),
-      },
-    });
-    addConnectionLog(activeConnection.id, {
-      type: "health_check",
-      status: "success",
-      message: "Relays updated via switch_relays",
-      details: { relayCount: normalized.length },
-    });
-  }
-
-  debugTrace("switch_relays updated relay set", {
-    relayCount: normalized.length,
-  });
-
-  return { changed: true, relays: normalized };
 }

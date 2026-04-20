@@ -17,7 +17,6 @@ import {
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
   resetCachedSigner,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
 } from "./nostr-signer-connection.client";
 import {
@@ -66,7 +65,6 @@ export {
   getActiveSigner,
   markNip46TransportStale,
   resetCachedSigner,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
 };
 

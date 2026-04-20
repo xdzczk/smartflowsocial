@@ -51,10 +51,6 @@ vi.mock("~/features/auth/signer/connection-cache.client", () => ({
   },
 }));
 
-vi.mock("~/features/auth/signer/connection-health.client", () => ({
-  syncRelaysWithRemoteSigner: vi.fn(),
-}));
-
 vi.mock("~/features/auth/signer/connection-connect.client", () => ({
   createNip46SignerFromStoredConfig: vi.fn(),
 }));

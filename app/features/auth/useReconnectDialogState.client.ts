@@ -4,13 +4,11 @@ import { toast } from "react-hot-toast";
 import {
   clearActiveSignerConfig,
   getActiveConnection,
-  getActiveSigner,
   getActiveSession,
   matchOrCreateSession,
   recordConnectionEvent,
   setActiveSession,
   setActiveSignerConfig,
-  syncRelaysWithRemoteSigner,
   updateSession,
   detectSignerAppName,
   parseSecretKeyHex,
@@ -32,7 +30,6 @@ import { useExistingReconnectFlow } from "./reconnect/useExistingReconnectFlow.c
 import { useReconnectVisibilityEffect } from "./reconnect/useReconnectVisibilityEffect.client";
 import {
   DEFAULT_RELAYS,
-  debugReconnectTrace,
   EXISTING_SESSION_RECONNECT_TIMEOUTS_MS,
   TOAST_RECONNECT_SUCCESS,
 } from "./reconnect-dialog-utils.client";
@@ -75,29 +72,11 @@ export function useReconnectDialogState({
   const triedExistingRef = useRef(false);
   const closedByExternalReconnectRef = useRef(false);
 
-  const syncRelaysAfterReconnect = useCallback(async () => {
-    try {
-      const signer = await getActiveSigner();
-      if (signer?.type !== "nip46") return;
-      const result = await syncRelaysWithRemoteSigner(signer);
-      debugReconnectTrace("Relay sync after reconnect", {
-        changed: result.changed,
-        relayCount: result.relays?.length ?? null,
-        reason: result.reason ?? null,
-      });
-    } catch (err) {
-      debugReconnectTrace("Relay sync after reconnect failed", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }, []);
-
   const existingFlow = useExistingReconnectFlow({
     expectedPubkeyHex,
     setState,
     setError,
     setExistingReconnectAttempt,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     cancelRef,
@@ -200,7 +179,6 @@ export function useReconnectDialogState({
         setActiveSignerConfig,
         detectSignerAppName,
         serializeSecretKey,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         toastSuccess: toast.success,
@@ -215,7 +193,6 @@ export function useReconnectDialogState({
     state,
     onReconnectSuccess,
     onOpenChange,
-    syncRelaysAfterReconnect,
   ]);
 
   const resumeRef = useRef(resumeReconnectWithPendingUri);
@@ -263,7 +240,6 @@ export function useReconnectDialogState({
           detectSignerAppName,
           parseSecretKeyHex,
           serializeSecretKey,
-          syncRelaysAfterReconnect,
           onReconnectSuccess,
           onOpenChange,
           toastSuccess: toast.success,
@@ -291,7 +267,6 @@ export function useReconnectDialogState({
         setActiveSignerConfig,
         detectSignerAppName,
         serializeSecretKey,
-        syncRelaysAfterReconnect,
         onReconnectSuccess,
         onOpenChange,
         toastSuccess: toast.success,
@@ -328,7 +303,6 @@ export function useReconnectDialogState({
     state,
     onReconnectSuccess,
     onOpenChange,
-    syncRelaysAfterReconnect,
   ]);
 
   const copyUri = useCallback(async () => {

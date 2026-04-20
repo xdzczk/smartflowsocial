@@ -374,7 +374,6 @@ describe("remote-signer-mock-relay integration", () => {
       setState: () => {},
       setError: () => {},
       setExistingReconnectAttempt: () => {},
-      syncRelaysAfterReconnect: async () => {},
       onSuccess: (id) => {
         successConnectionId = id;
       },

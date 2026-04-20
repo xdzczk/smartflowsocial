@@ -13,7 +13,6 @@ export {
   createNip46SignerFromStoredConfig,
   markNip46TransportStale,
   resetCachedSigner,
-  syncRelaysWithRemoteSigner,
   teardownActiveNip46Signer,
   cancelSignerInFlight,
   getWindowNostrLikeSigner,

@@ -55,7 +55,6 @@ interface FakeBunkerSignerInternals {
   getPublicKey: ReturnType<typeof vi.fn>;
   signEvent: ReturnType<typeof vi.fn>;
   ping: ReturnType<typeof vi.fn>;
-  sendRequest: ReturnType<typeof vi.fn>;
 }
 
 type FakeBunker = FakeBunkerSignerInternals;
@@ -89,7 +88,6 @@ function makeFakeBunker(
         Promise.resolve({ ...evt, id: "evt-id", sig: "sig-hex" })
       ),
     ping: vi.fn().mockResolvedValue(undefined),
-    sendRequest: vi.fn().mockResolvedValue("null"),
     ...overrides,
   };
   return fake;
@@ -389,42 +387,6 @@ describe("Nip46Signer RPC dispatch", () => {
         | undefined;
       expect(closer1?.close).toHaveBeenCalledTimes(1);
       expect(closer2?.close).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("does not retry switch_relays on per-attempt timeout (single publish, opportunistic)", async () => {
-    vi.useFakeTimers();
-    try {
-      const fake = makeFakeBunker();
-      // Primal Signer never replies to switch_relays — simulate that.
-      fake.sendRequest = vi.fn().mockImplementation(
-        () =>
-          new Promise(() => {
-            // intentionally never resolves
-          })
-      );
-
-      const { signer, pool } = makeSigner(fake);
-
-      const pending = signer.switchRelays();
-      const settled = pending.then(
-        (v) => v,
-        (err: unknown) => err
-      );
-      // NIP46_RPC_TIMEOUTS.switchRelays is 8 s. With retry disabled the
-      // wrapper should fire exactly one publish and one fresh sub, then
-      // surface `bunker:switch_relays timeout` at the 8 s mark — not
-      // re-publish a second event into Primal's session (which is what
-      // the retry path would do, contributing to damus.io's per-client
-      // rate limit).
-      await vi.advanceTimersByTimeAsync(8_500);
-      const result = await settled;
-      expect(result).toBeInstanceOf(Error);
-      expect((result as Error).message).toBe("bunker:switch_relays timeout");
-      expect(fake.sendRequest).toHaveBeenCalledTimes(1);
-      expect(pool.subscribe).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
     }

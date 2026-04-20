@@ -7,8 +7,8 @@
  * "visibility-visible triggers tryBackgroundReconnect" behaviours were
  * removed: the reconnect dialog is now click-driven only (the user clicks
  * "Reconnect" or "Try again"), matching Ditto's UX. Polling caused contention
- * with the user's first sign attempt and added redundant `switch_relays`
- * + `sign_event` publishes that overwhelmed the bunker.
+ * with the user's first sign attempt and added redundant `sign_event`
+ * publishes that overwhelmed the bunker.
  */
 
 import { act, renderHook } from "@testing-library/react";
@@ -29,7 +29,6 @@ vi.mock("~/features/auth/signer", () => ({
   serializeSecretKey: vi.fn(),
   setActiveSession: vi.fn(),
   setActiveSignerConfig: vi.fn(),
-  syncRelaysWithRemoteSigner: vi.fn(),
   updateSession: vi.fn(),
 }));
 

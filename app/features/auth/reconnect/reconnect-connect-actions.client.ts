@@ -48,7 +48,6 @@ export interface ConnectWithBunkerParams {
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   parseSecretKeyHex: (hex: string) => Uint8Array;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -72,7 +71,6 @@ export async function connectWithBunker(
     detectSignerAppName,
     parseSecretKeyHex,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -118,8 +116,7 @@ export async function connectWithBunker(
 
   // Persist the bunker URL's relays alongside the input so any caller that
   // reads `cfg.relays` (Settings UI, transport-health helpers, etc.) sees
-  // them. Without this the field would stay undefined until `switch_relays`
-  // ever overrode it.
+  // them without re-parsing the bunker URL on every read.
   const bpForRelays = await parseBunkerInput(trimmedBunker).catch(() => null);
   const bunkerRelays =
     bpForRelays?.relays
@@ -158,7 +155,6 @@ export async function connectWithBunker(
   recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
-  await syncRelaysAfterReconnect();
   setState("connected");
   toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);
   onReconnectSuccess?.(connectionId);
@@ -185,7 +181,6 @@ export interface ConnectWithNostrConnectUriParams {
   setActiveSignerConfig: (config: ActiveSignerConfig) => void;
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -211,7 +206,6 @@ export async function connectWithNostrConnectUri(
     setActiveSignerConfig,
     detectSignerAppName,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -276,7 +270,6 @@ export async function connectWithNostrConnectUri(
   recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
   setActiveSignerConfig(config);
-  await syncRelaysAfterReconnect();
   clearPendingReconnectStorage();
   setState("connected");
   toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);
@@ -308,7 +301,6 @@ export interface ResumeWithPendingUriParams {
   setActiveSignerConfig: (config: ActiveSignerConfig) => void;
   detectSignerAppName: (config: ActiveSignerConfig) => string | null;
   serializeSecretKey: (key: Uint8Array) => string;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
   toastSuccess: (msg: string) => void;
@@ -336,7 +328,6 @@ export async function resumeWithPendingUri(
     setActiveSignerConfig,
     detectSignerAppName,
     serializeSecretKey,
-    syncRelaysAfterReconnect,
     onReconnectSuccess,
     onOpenChange,
     toastSuccess,
@@ -397,7 +388,6 @@ export async function resumeWithPendingUri(
     recordConnectionEvent(connectionId, { type: "connected", pubkey });
 
     setActiveSignerConfig(config);
-    await syncRelaysAfterReconnect();
     clearPendingReconnectStorage();
     setState("connected");
     toastSuccess(RECONNECT_SUCCESS_TOAST_RETRY);

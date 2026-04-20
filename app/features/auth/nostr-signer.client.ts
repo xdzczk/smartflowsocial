@@ -36,7 +36,6 @@ export interface NostrSigner {
   nip44Encrypt(thirdPartyPubkeyHex: string, plaintext: string): Promise<string>;
   getStatus(): SignerStatus;
   ping?(): Promise<void>;
-  switchRelays?(): Promise<string[] | null>;
   close?(): Promise<void>;
 }
 
@@ -118,7 +117,6 @@ const NIP46_RPC_TIMEOUTS = {
   nip04Encrypt: 30_000,
   nip44Encrypt: 30_000,
   ping: 10_000,
-  switchRelays: 8_000,
 } as const;
 
 /**
@@ -345,10 +343,8 @@ export class Nip46Signer implements NostrSigner {
   private async rpc<T>(
     fn: () => Promise<T>,
     timeoutMs: number,
-    label: string,
-    options: { retry?: boolean } = {}
+    label: string
   ): Promise<T> {
-    const { retry = true } = options;
     const previous = this.rpcLock;
     let release: () => void = () => {
       // no-op until the lock-arming Promise constructor below assigns the
@@ -364,9 +360,7 @@ export class Nip46Signer implements NostrSigner {
         // Swallow upstream rejections so one failed RPC doesn't poison the
         // lock for the next caller.
       });
-      return await this.runRpcWithRetries(fn, timeoutMs, label, startedAt, {
-        retry,
-      });
+      return await this.runRpcWithRetries(fn, timeoutMs, label, startedAt);
     } finally {
       release();
     }
@@ -384,20 +378,12 @@ export class Nip46Signer implements NostrSigner {
    * `BunkerSigner.listeners`: a late reply from Primal to an old EVENT
    * id will resolve a promise no one awaits and is GC'd when bunker is
    * closed. Cleaner than mutating bunker's private map from out here.
-   *
-   * `retry: false` collapses the loop to a single attempt with the full
-   * `timeoutMs` budget. Used for opportunistic RPCs like `switch_relays`
-   * where Primal Signer simply doesn't reply: a second publish is just
-   * extra noise on the bunker relays (and contributes to per-client rate
-   * limits like damus.io's `"you are noting too much"`) without any
-   * realistic chance of changing the outcome.
    */
   private async runRpcWithRetries<T>(
     fn: () => Promise<T>,
     timeoutMs: number,
     label: string,
-    startedAt: number,
-    options: { retry: boolean }
+    startedAt: number
   ): Promise<T> {
     let attempt = 0;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- retry loop exits via return on success or throw on error/timeout; the unbounded `while (true)` is the intent.
@@ -414,9 +400,10 @@ export class Nip46Signer implements NostrSigner {
         });
         throw err;
       }
-      const attemptTimeout = options.retry
-        ? Math.min(NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS, remaining)
-        : remaining;
+      const attemptTimeout = Math.min(
+        NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS,
+        remaining
+      );
       if (attempt > 0) {
         nip46log(`${this.diagLabel} rpc:retry`, {
           method: label,
@@ -454,7 +441,7 @@ export class Nip46Signer implements NostrSigner {
         const isTimeout =
           err instanceof Error && err.message === `bunker:${label} timeout`;
         const totalElapsed = Date.now() - startedAt;
-        if (!isTimeout || !options.retry || totalElapsed >= timeoutMs) {
+        if (!isTimeout || totalElapsed >= timeoutMs) {
           nip46log(`${this.diagLabel} rpc:error`, {
             method: label,
             ms: totalElapsed,
@@ -643,45 +630,6 @@ export class Nip46Signer implements NostrSigner {
     await this.rpc(() => this.inner.ping(), NIP46_RPC_TIMEOUTS.ping, "ping");
   }
 
-  async switchRelays(): Promise<string[] | null> {
-    this.status = "ready";
-    // Opportunistic call: Primal Signer doesn't reply to `switch_relays`,
-    // and most other signer apps return a fixed list that the user rarely
-    // changes. A second publish wouldn't change the outcome and just adds
-    // noise on the bunker relays — it can also tip damus.io into
-    // rate-limiting subsequent RPCs from the same client. Single attempt,
-    // single publish, fail silently is the right shape here.
-    const response = await this.rpc(
-      () => this.inner.sendRequest("switch_relays", []),
-      NIP46_RPC_TIMEOUTS.switchRelays,
-      "switch_relays",
-      { retry: false }
-    );
-    if (response === "null") {
-      return null;
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(response) as unknown;
-    } catch {
-      return null;
-    }
-    if (!Array.isArray(parsed)) {
-      return null;
-    }
-
-    const normalized = parsed
-      .map((value) => (typeof value === "string" ? value.trim() : ""))
-      .filter((relay) => relay.startsWith("wss://"));
-
-    if (normalized.length === 0) {
-      return null;
-    }
-
-    return Array.from(new Set(normalized));
-  }
-
   /**
    * Returns the stored BunkerPointer (pubkey, relays, secret) for persisting
    * so reconnects can use Method 1 (fromBunker) with the exact pointer shape.
@@ -812,7 +760,7 @@ export async function connectNip46WithBunkerInput(input: {
    * "validate" call on construction.
    */
   skipValidation?: boolean;
-  /** Override relays from bunkerInput (e.g. from switch_relays response). */
+  /** Override relays from bunkerInput (e.g. caller-supplied set). */
   relays?: string[];
 }): Promise<Nip46ConnectResult> {
   const clientSecretKey = input.clientSecretKey ?? generateSecretKey();

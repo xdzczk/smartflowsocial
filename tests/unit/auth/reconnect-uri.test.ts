@@ -49,7 +49,6 @@ import {
   getPendingReconnect,
   setPendingReconnect,
   clearPendingReconnectStorage,
-  SIGNER_CALLBACK_PATH,
 } from "~/features/auth/reconnect-uri.client";
 import { isStandalonePWA } from "~/lib/is-standalone-pwa";
 
@@ -173,12 +172,7 @@ describe("reconnect-uri", () => {
       expect(appendPrimalCallback(uri)).toBe(uri);
     });
 
-    it("appends callback pinned to the dedicated signer-callback route — never the current page URL — so iOS Safari opens a new tab instead of refocusing the sign-in tab", () => {
-      // The current page URL deliberately includes pathname + search to
-      // catch any regression that interpolates `window.location.{pathname,
-      // search}` back into the callback. The callback URL must NOT match
-      // the originating tab's URL — see SIGNER_CALLBACK_PATH for the
-      // WebKit / NIP-46 reply-frame race rationale.
+    it("appends callback with origin + pathname + search of the current page so Primal returns the user to the sign-in tab", () => {
       (
         globalThis as unknown as {
           window?: {
@@ -194,14 +188,10 @@ describe("reconnect-uri", () => {
       };
       const uri = "nostrconnect://relay";
       const out = appendPrimalCallback(uri);
-      const expectedCallback = `https://app.com${SIGNER_CALLBACK_PATH}`;
+      const expectedCallback = "https://app.com/login?foo=1";
       expect(out).toBe(
         `nostrconnect://relay?callback=${encodeURIComponent(expectedCallback)}`
       );
-      // Defense-in-depth: the originating URL must not appear in the
-      // callback at all, even URI-encoded.
-      expect(out).not.toContain(encodeURIComponent("/login"));
-      expect(out).not.toContain(encodeURIComponent("?foo=1"));
     });
 
     it("uses & when uri already has ?", () => {
@@ -217,9 +207,7 @@ describe("reconnect-uri", () => {
       const uri = "nostrconnect://x?relay=wss://r.com";
       const out = appendPrimalCallback(uri);
       expect(out).toContain("&callback=");
-      expect(out).toContain(
-        encodeURIComponent(`https://a.com${SIGNER_CALLBACK_PATH}`)
-      );
+      expect(out).toContain(encodeURIComponent("https://a.com/"));
     });
   });
 

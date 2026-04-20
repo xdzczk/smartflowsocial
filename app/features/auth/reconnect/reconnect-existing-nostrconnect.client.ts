@@ -46,7 +46,6 @@ export interface RunExistingNostrConnectReconnectOptions {
   ) => void;
   setError: (e: string | null) => void;
   setExistingReconnectAttempt: (n: number) => void;
-  syncRelaysAfterReconnect: () => Promise<void>;
   onSuccess: (connectionId: string) => void;
 }
 
@@ -63,7 +62,6 @@ export async function runExistingNostrConnectReconnect(
     setState,
     setError,
     setExistingReconnectAttempt,
-    syncRelaysAfterReconnect,
     onSuccess,
   } = options;
 
@@ -244,7 +242,6 @@ export async function runExistingNostrConnectReconnect(
     }
   }
 
-  await syncRelaysAfterReconnect();
   if (getIsRunStale()) return;
 
   debugReconnectTrace("Existing-connection reconnect succeeded", {

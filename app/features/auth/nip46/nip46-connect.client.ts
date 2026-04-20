@@ -48,10 +48,10 @@ export async function connectNip46WithBunkerInputForLogin(
     retryCount: params.retryCount,
   });
   // Persist the bunker's relays alongside the input so any caller that reads
-  // `cfg.relays` (Settings UI, transport-health helpers, etc.) sees them.
-  // Without this the field would stay undefined until `switch_relays` ever
-  // overrode it, and helpers that treat empty relays as "transport dead"
-  // would wrongly throw away the freshly-cached signer.
+  // `cfg.relays` (Settings UI, transport-health helpers, etc.) sees them
+  // without re-parsing the bunker URL on every read. Helpers that treat
+  // empty relays as "transport dead" would otherwise wrongly throw away the
+  // freshly-cached signer.
   const bp = await parseBunkerInput(trimmed).catch(() => null);
   const relays =
     bp?.relays.map((r) => r.trim()).filter((r) => r.startsWith("wss://")) ?? [];

@@ -84,10 +84,10 @@ function dispatchSignerNudge(phase: SignerNudgePhase, startedAt: number): void {
  * underlying NIP-46 transport (subscription, sockets, signer cache) is fine,
  * the user just needs to open their signer app and approve. We must NOT
  * classify these as "connection-like" because doing so triggers
- * `reconnectAndRetrySign` which builds a fresh `Nip46Signer`, fires another
- * `switch_relays` + `sign_event` on top of the still-pending one, and the
- * cycle repeats every ~30s — flooding the relays (Damus rate-limits us)
- * and overwhelming Primal. Ditto's `signerWithNudge` does the same thing:
+ * `reconnectAndRetrySign` which builds a fresh `Nip46Signer` and fires
+ * another `sign_event` on top of the still-pending one, and the cycle
+ * repeats every ~30s — flooding the relays (Damus rate-limits us) and
+ * overwhelming Primal. Ditto's `signerWithNudge` does the same thing:
  * one attempt, one error, no auto-retry, no reconnect.
  */
 const SIGN_TIMEOUT_KEY_DID_NOT_RESPOND = "did not respond";
@@ -136,8 +136,8 @@ function isConnectionLikeError(error: unknown): boolean {
  * Only clear on real transport errors (subscription closed, websocket dropped,
  * connect timeout). Never clear on a sign timeout: the cache is healthy, only
  * the bunker app failed to approve. Clearing would force a brand-new
- * `Nip46Signer` next attempt, which fires another `switch_relays` + duplicate
- * `sign_event` and compounds the problem.
+ * `Nip46Signer` next attempt, which fires another duplicate `sign_event`
+ * and compounds the problem.
  */
 function shouldClearSignerCacheOnError(error: unknown): boolean {
   if (isSignTimeoutError(error)) return false;

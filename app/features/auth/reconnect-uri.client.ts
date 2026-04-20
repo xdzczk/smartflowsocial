@@ -38,30 +38,32 @@ export function bunkerCanonicalKey(bp: {
 }
 
 /**
- * Path of the dedicated signer-callback page (see
- * `app/routes/auth.signer-callback.tsx`). Pinned to a constant — and
- * pinned to a URL that does NOT match the sign-in page — because the
- * whole point of using a dedicated route is to make iOS Safari open
- * the callback in a NEW tab instead of refocusing the existing
- * sign-in tab. A URL match against the sign-in tab triggers a
- * page-lifecycle transition (hidden -> visible via inter-app handoff
- * with bfcache eligibility) under which WebKit can drop the queued
- * NIP-46 reply frame on the WebSocket; Ditto avoids this by pointing
- * its callback at a separate page, and we mirror that here. Diagnosed
- * against the strict 50/50 alternating `bunker:get_public_key timeout`
- * we saw on Primal Signer + iPhone.
+ * Append callback so Primal redirects back to the same sign-in page after
+ * the user approves in the signer app (skip in standalone PWA, where there
+ * is no separate browser tab to return to and the URL handoff would just
+ * relaunch us).
+ *
+ * We deliberately point the callback at the current sign-in page
+ * (`origin + pathname + search`) rather than a dedicated landing route.
+ * An earlier iteration used a separate `/auth/signer-callback` page on
+ * the theory that returning to the same URL would trigger an iOS Safari
+ * bfcache race that drops queued WebSocket frames. Empirically that
+ * theory was wrong: the actual cause of the 50/50 alternating
+ * `bunker:get_public_key timeout` was an automatic `switch_relays` RPC
+ * we used to fire after every successful sign-in, which left Primal's
+ * session in a state where the next sign-in's `get_public_key` was
+ * silently ignored. Once we removed the auto `switch_relays`, sign-in
+ * became fully reliable on the same-tab callback, so the dedicated
+ * landing route was reverted in favor of the simpler "Primal returns
+ * you to the page you started on" UX.
  */
-export const SIGNER_CALLBACK_PATH = "/auth/signer-callback";
-
-/** Append callback so Primal redirects back to app (skip in standalone PWA). */
 export function appendPrimalCallback(uri: string): string {
   if (isStandalonePWA()) return uri;
   if (typeof window === "undefined") return uri;
   if (uri.includes("callback=")) return uri;
 
-  // Intentionally a different URL from `window.location.{pathname,search}` —
-  // see `SIGNER_CALLBACK_PATH` for the iOS Safari rationale.
-  const callbackUrl = window.location.origin + SIGNER_CALLBACK_PATH;
+  const { origin, pathname, search } = window.location;
+  const callbackUrl = `${origin}${pathname}${search}`;
   const separator = uri.includes("?") ? "&" : "?";
   return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
 }

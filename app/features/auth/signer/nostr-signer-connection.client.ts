@@ -24,11 +24,11 @@
  * rebuild to the events that actually correlate with a torn-down transport
  * gives us the same fix without the per-call cost.
  *
- * Side-effects (session metadata update, "healthy" event dispatch,
- * `switch_relays` sync) only fire on the **first** rebuild after a fresh
- * login or a hard cache reset. Subsequent rebuilds are silent: just
- * construct a fresh `BunkerSigner` from stored config, install it as the
- * cached signer, and close the previous one in the background.
+ * Side-effects (session metadata update, "healthy" event dispatch) only
+ * fire on the **first** rebuild after a fresh login or a hard cache reset.
+ * Subsequent rebuilds are silent: just construct a fresh `BunkerSigner`
+ * from stored config, install it as the cached signer, and close the
+ * previous one in the background.
  */
 
 import {
@@ -53,7 +53,6 @@ import {
   NOSTR_CONNECTION_HEALTHY_EVENT,
   NOSTR_CONNECTION_STALE_EVENT,
 } from "./connection-constants";
-import { syncRelaysWithRemoteSigner } from "./connection-health.client";
 import { resolveNip46SignerFromConfig } from "./connection-resolve.client";
 import {
   getActiveSignerConfig,
@@ -96,7 +95,6 @@ const PREVIOUS_SIGNER_CLOSE_DELAY_MS = 65_000;
 const STALE_AFTER_HIDDEN_MS = 60_000;
 
 export { NOSTR_CONNECTION_STALE_EVENT, NOSTR_CONNECTION_HEALTHY_EVENT };
-export { syncRelaysWithRemoteSigner };
 
 export interface GetActiveSignerOptions {
   allowReconnect?: boolean;
@@ -301,14 +299,14 @@ function closePreviousNip46Signer(previous: NostrSigner | null): void {
 
 /**
  * Lightweight rebuild path: construct a fresh `BunkerSigner` from the stored
- * config without re-running session-metadata updates, "healthy" event
- * dispatches, or `switch_relays` sync. The first rebuild after a hard cache
- * reset goes through `resolveNip46SignerFromConfig` (which does run those
- * side-effects); every subsequent rebuild stays silent. The result is that
- * each user-initiated sign click gets a brand-new `BunkerSigner` with fresh
- * `listeners`, `serial`, `idPrefix`, and `subCloser`, eliminating the
+ * config without re-running session-metadata updates or "healthy" event
+ * dispatches. The first rebuild after a hard cache reset goes through
+ * `resolveNip46SignerFromConfig` (which does run those side-effects); every
+ * subsequent rebuild stays silent. The result is that each user-initiated
+ * sign click gets a brand-new `BunkerSigner` with fresh `listeners`,
+ * `serial`, `idPrefix`, and `subCloser`, eliminating the
  * stale-internal-state class of bug that bites bfcache-restored tabs on iOS
- * Safari without spamming session metadata or relay sync events.
+ * Safari without spamming session metadata events.
  */
 async function rebuildCachedNip46Signer(
   config: Extract<ActiveSignerConfig, { type: "nip46" }>

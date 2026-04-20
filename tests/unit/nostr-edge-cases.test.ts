@@ -188,8 +188,8 @@ describe("Nostr Edge Cases", () => {
 
       // First sign attempt fails with a sign-timeout: the bunker app didn't
       // approve in time. We must NOT classify this as a connection error and
-      // must NOT spin up new signers / fire switch_relays / retry — that is
-      // exactly the storm that bombards Primal and rate-limits Damus.
+      // must NOT spin up new signers / retry — that is exactly the storm that
+      // bombards Primal and rate-limits Damus.
       const signTimeoutErr = new RemoteSignerTimeoutError(
         "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
       );
@@ -509,7 +509,7 @@ describe("Nostr Edge Cases", () => {
     });
   });
 
-  describe("NIP-46 ping and switch_relays", () => {
+  describe("NIP-46 ping", () => {
     it("should delegate ping to bunker signer", async () => {
       const mockInner = {
         ping: vi.fn().mockResolvedValue(undefined),
@@ -531,64 +531,6 @@ describe("Nostr Edge Cases", () => {
       await signer.ping();
 
       expect(mockInner.ping).toHaveBeenCalledTimes(1);
-    });
-
-    it("should parse switch_relays response and normalize relay list", async () => {
-      const mockInner = {
-        ping: vi.fn(),
-        sendRequest: vi
-          .fn()
-          .mockResolvedValue(
-            JSON.stringify([
-              "wss://relay.primal.net",
-              " wss://relay.damus.io ",
-              "ws://not-secure",
-              "wss://relay.primal.net",
-            ])
-          ),
-        close: vi.fn(),
-        bp: { relays: ["wss://relay.primal.net"] },
-      };
-      const mockPool = {
-        close: vi.fn(),
-      };
-
-      const { Nip46Signer } =
-        await import("~/features/auth/nostr-signer.client");
-      const signer = new Nip46Signer({
-        pool: mockPool as never,
-        inner: mockInner as never,
-      });
-
-      const relays = await signer.switchRelays();
-
-      expect(relays).toEqual([
-        "wss://relay.primal.net",
-        "wss://relay.damus.io",
-      ]);
-    });
-
-    it("should return null for malformed switch_relays payload", async () => {
-      const mockInner = {
-        ping: vi.fn(),
-        sendRequest: vi.fn().mockResolvedValue("not-json"),
-        close: vi.fn(),
-        bp: { relays: ["wss://relay.primal.net"] },
-      };
-      const mockPool = {
-        close: vi.fn(),
-      };
-
-      const { Nip46Signer } =
-        await import("~/features/auth/nostr-signer.client");
-      const signer = new Nip46Signer({
-        pool: mockPool as never,
-        inner: mockInner as never,
-      });
-
-      const relays = await signer.switchRelays();
-
-      expect(relays).toBeNull();
     });
 
     it("should use ping in testConnection when available", async () => {

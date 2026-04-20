@@ -29,7 +29,6 @@ export interface HandleExistingReconnectFailureOptions {
   setError: (e: string | null) => void;
   setExistingReconnectAttempt: (n: number) => void;
   setForegroundResumeAttemptFailed: (v: boolean) => void;
-  syncRelaysAfterReconnect: () => Promise<void>;
   expectedPubkeyHex: string | null;
   onReconnectSuccess?: (connectionId: string) => void;
   onOpenChange: (open: boolean) => void;
@@ -52,7 +51,6 @@ export async function handleExistingReconnectFailure(
     setError,
     setExistingReconnectAttempt,
     setForegroundResumeAttemptFailed,
-    syncRelaysAfterReconnect,
     expectedPubkeyHex,
     onReconnectSuccess,
     onOpenChange,
@@ -115,7 +113,6 @@ export async function handleExistingReconnectFailure(
   }
   if (fallback.recovered) {
     debugTrace("Primary failover recovered reconnect");
-    await syncRelaysAfterReconnect();
     setExistingReconnectAttempt(0);
     setState("connected");
     toastSuccess(TOAST_RECONNECT_SUCCESS);
