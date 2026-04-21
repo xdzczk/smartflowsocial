@@ -501,6 +501,18 @@ async function runAttempt(
   try {
     await performSignAndSubmit(attempt.id);
     if (attempts.get(attempt.attemptId) !== attempt) return;
+    // The callback may have already driven the attempt into a terminal
+    // state via `markCompleted` / `markFailed` (the `startRecoverableSign`
+    // pattern bundles sign + submit + mark inside `performSignAndSubmit`).
+    // If so, do NOT downgrade back to `submitting` — that would leave the
+    // ephemeral row spinner / global banner visible forever and prevent
+    // `startRecoverableSign`'s subscriber from observing the terminal
+    // transition (it already saw `completed` and unsubscribed; we'd be
+    // emitting state changes nobody is listening for).
+    if (isTerminalState(attempt.state)) {
+      clearExpiryTimer(attempt);
+      return;
+    }
     attempt.state = "submitting";
     clearExpiryTimer(attempt);
     emitTelemetry(attempt, "attempt:signed");

@@ -1,99 +1,101 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="42" failures="0" errors="0" time="0.15892475">
-    <testsuite name="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" timestamp="2026-04-21T03:43:11.836Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.009443375">
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; signs every item, leaves the attempt in submitting, and reports ok:true" time="0.004200708">
+<testsuites name="vitest tests" tests="43" failures="0" errors="0" time="0.150297876">
+    <testsuite name="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" timestamp="2026-04-21T03:56:42.599Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.009125792">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; signs every item, leaves the attempt in submitting, and reports ok:true" time="0.004276208">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; collects fatal per-item errors into failedIndices and resolves ok:false reason:partial" time="0.000969584">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; collects fatal per-item errors into failedIndices and resolves ok:false reason:partial" time="0.000981">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; parks the attempt as awaiting_signer on a sign-timeout error mid-batch and never re-signs already-signed items on resume" time="0.0013295">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; parks the attempt as awaiting_signer on a sign-timeout error mid-batch and never re-signs already-signed items on resume" time="0.001104667">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; does not run a retry pass when the main pass succeeds for every item" time="0.000507917">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; does not run a retry pass when the main pass succeeds for every item" time="0.000315292">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; resolves ok:false reason:expired when the recovery window elapses while parked" time="0.000672959">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; resolves ok:false reason:expired when the recovery window elapses while parked" time="0.000653167">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; never rejects even when signItem throws synchronously" time="0.000633708">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; never rejects even when signItem throws synchronously" time="0.000595959">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; forwards the cached signer to signItem and accepts null when no signer is available" time="0.0002995">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signing/sign-status-components.test.tsx" timestamp="2026-04-21T03:43:11.837Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.101502">
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders an accessible spinner for an ephemeral attempt in &apos;signing&apos;" time="0.0211145">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders nothing for a durable attempt" time="0.001218083">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders nothing when the attempt is null" time="0.0008055">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders Resume/Cancel for awaiting_signer" time="0.071347958">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders the timed-out pill with Dismiss for expired" time="0.005629541">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders nothing for terminal completed/failed states" time="0.000549916">
+        <testcase classname="tests/unit/auth/signing/sign-batch-with-recovery.test.ts" name="signBatchWithRecovery &gt; forwards the cached signer to signItem and accepts null when no signer is available" time="0.000322792">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" timestamp="2026-04-21T03:43:11.837Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.010828">
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; keeps multiple coexisting attempts with distinct attemptIds and surfaces" time="0.004542042">
+    <testsuite name="tests/unit/auth/signing/sign-status-components.test.tsx" timestamp="2026-04-21T03:56:42.600Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.093333625">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders an accessible spinner for an ephemeral attempt in &apos;signing&apos;" time="0.019343375">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; evicts the oldest non-foreground attempt when MAX_ATTEMPTS is exceeded" time="0.001977375">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders nothing for a durable attempt" time="0.001136375">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; cancelAttempt removes only the targeted attempt" time="0.000569833">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="SubtleSignPending &gt; renders nothing when the attempt is null" time="0.000730792">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; auto-cancels on resume when isResourceAlive returns false" time="0.001041083">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders Resume/Cancel for awaiting_signer" time="0.06528975">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; resumes parked attempts in createdAt order on a single healthy event" time="0.0008685">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders the timed-out pill with Dismiss for expired" time="0.005497375">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; emits attempt:started, attempt:signed, attempt:submit_ok with timing metadata" time="0.0005605">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (single-slot mode, flag OFF) &gt; a fresh start cancels every prior attempt" time="0.000397125">
+        <testcase classname="tests/unit/auth/signing/sign-status-components.test.tsx" name="CompactSignStatus &gt; renders nothing for terminal completed/failed states" time="0.000530417">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" timestamp="2026-04-21T03:43:11.838Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.02136375">
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns &apos;subtle&apos; while an ephemeral attempt is signing" time="0.010486292">
+    <testsuite name="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" timestamp="2026-04-21T03:56:42.601Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.010196417">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; keeps multiple coexisting attempts with distinct attemptIds and surfaces" time="0.004446417">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; stays &apos;subtle&apos; for the first EPHEMERAL_ESCALATION_MS in awaiting_signer, then escalates to &apos;compact&apos;" time="0.003826834">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; evicts the oldest non-foreground attempt when MAX_ATTEMPTS is exceeded" time="0.001803542">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns &apos;compact&apos; for an expired attempt regardless of intent kind" time="0.001650292">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; cancelAttempt removes only the targeted attempt" time="0.000607875">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns null for terminal states (completed) so the pill disappears" time="0.001351041">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; auto-cancels on resume when isResourceAlive returns false" time="0.001038458">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; ephemeral attempts coexist with a foreground durable attempt under the single-slot flag" time="0.001196416">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; resumes parked attempts in createdAt order on a single healthy event" time="0.000664375">
         </testcase>
-        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; clears awaitingSince on resume so the tier reverts to subtle" time="0.002016542">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (multi-slot mode) &gt; emits attempt:started, attempt:signed, attempt:submit_ok with timing metadata" time="0.0004435">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/auth/signing/use-recoverable-sign.test.ts" timestamp="2026-04-21T03:43:11.838Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.006413167">
-        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:true once the caller marks the attempt completed" time="0.002760833">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:false reason:fatal when the closure throws a non-recoverable error" time="0.000589791">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; parks the attempt as awaiting_signer on a signer timeout, then resolves expired after the recovery window" time="0.001422167">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:false reason:cancelled when the attempt is removed mid-flight" time="0.000299584">
-        </testcase>
-        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; never rejects even when the closure throws synchronously" time="0.000557292">
+        <testcase classname="tests/unit/auth/signing/signing-attempts-multi-slot.test.ts" name="signing-attempts (single-slot mode, flag OFF) &gt; a fresh start cancels every prior attempt" time="0.000364917">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/posts/composer/pending-publish.test.ts" timestamp="2026-04-21T03:43:11.839Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.009374458">
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; parks in awaiting_signer when signer is unavailable and exposes a recovery window" time="0.003523333">
+    <testsuite name="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" timestamp="2026-04-21T03:56:42.601Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.020727167">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns &apos;subtle&apos; while an ephemeral attempt is signing" time="0.010614291">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; re-runs the original sign+submit on maybeResume when still inside the window" time="0.000805875">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; stays &apos;subtle&apos; for the first EPHEMERAL_ESCALATION_MS in awaiting_signer, then escalates to &apos;compact&apos;" time="0.003591375">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; expires the attempt after the recovery window and refuses silent resume" time="0.000775917">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns &apos;compact&apos; for an expired attempt regardless of intent kind" time="0.001255292">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; classifies non-signer errors as fatal and marks the attempt failed" time="0.000524042">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; returns null for terminal states (completed) so the pill disappears" time="0.001250166">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; ignores stale callbacks after cancel()" time="0.000416375">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; ephemeral attempts coexist with a foreground durable attempt under the single-slot flag" time="0.001146875">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; markCompleted only acts on the matching submissionId" time="0.000650041">
+        <testcase classname="tests/unit/auth/signing/use-ephemeral-sign-tier.test.ts" name="useEphemeralSignTier &gt; clears awaitingSince on resume so the tier reverts to subtle" time="0.001908541">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; returns a referentially-stable snapshot when nothing observable changed" time="0.00024075">
+    </testsuite>
+    <testsuite name="tests/unit/auth/signing/use-recoverable-sign.test.ts" timestamp="2026-04-21T03:56:42.602Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.007106875">
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:true once the caller marks the attempt completed" time="0.002957833">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is false when there&apos;s no current attempt" time="0.000168583">
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; leaves the attempt state at completed (not submitting) when the callback marks completion inline" time="0.000450042">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is true while signing (sign call still hanging)" time="0.000207">
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:false reason:fatal when the closure throws a non-recoverable error" time="0.000599875">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is true while parked in awaiting_signer" time="0.000331667">
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; parks the attempt as awaiting_signer on a signer timeout, then resolves expired after the recovery window" time="0.00142625">
         </testcase>
-        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is false once the attempt has expired, completed, failed, or been cancelled" time="0.000779875">
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; resolves ok:false reason:cancelled when the attempt is removed mid-flight" time="0.000314125">
+        </testcase>
+        <testcase classname="tests/unit/auth/signing/use-recoverable-sign.test.ts" name="startRecoverableSign &gt; never rejects even when the closure throws synchronously" time="0.000533625">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/posts/composer/pending-publish.test.ts" timestamp="2026-04-21T03:56:42.602Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.009808">
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; parks in awaiting_signer when signer is unavailable and exposes a recovery window" time="0.003737542">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; re-runs the original sign+submit on maybeResume when still inside the window" time="0.000889">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; expires the attempt after the recovery window and refuses silent resume" time="0.0008375">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; classifies non-signer errors as fatal and marks the attempt failed" time="0.000564833">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; ignores stale callbacks after cancel()" time="0.000496125">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; markCompleted only acts on the matching submissionId" time="0.00075">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; returns a referentially-stable snapshot when nothing observable changed" time="0.000258042">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is false when there&apos;s no current attempt" time="0.000174084">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is true while signing (sign call still hanging)" time="0.000212917">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is true while parked in awaiting_signer" time="0.000344334">
+        </testcase>
+        <testcase classname="tests/unit/posts/composer/pending-publish.test.ts" name="pending-publish state machine &gt; isActiveAttempt &gt; is false once the attempt has expired, completed, failed, or been cancelled" time="0.000549334">
         </testcase>
     </testsuite>
 </testsuites>

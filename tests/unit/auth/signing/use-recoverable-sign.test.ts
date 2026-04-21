@@ -74,6 +74,32 @@ describe("startRecoverableSign", () => {
     }
   });
 
+  it("leaves the attempt state at completed (not submitting) when the callback marks completion inline", async () => {
+    // Regression: after the callback returned, `runAttempt` used to
+    // unconditionally overwrite the attempt state with `"submitting"` —
+    // clobbering the terminal `"completed"` set by `markCompleted` inside
+    // the callback. That left the in-row ephemeral spinner
+    // (SubtleSignPending) and the reaction toast bound to the attempt
+    // visible forever after a successful Like / Repost.
+    const promise = startRecoverableSign({
+      intent: ephemeralIntent("reaction", "Like"),
+      surface: "test:like",
+      performSignAndSubmit: async (submissionId) => {
+        markCompleted(submissionId);
+      },
+    });
+
+    await flushMicrotasks();
+    const result = await promise;
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const stored = signingAttempts
+      .getAllAttempts()
+      .find((a) => a.attemptId === result.attemptId);
+    expect(stored?.state).toBe("completed");
+  });
+
   it("resolves ok:false reason:fatal when the closure throws a non-recoverable error", async () => {
     const promise = startRecoverableSign({
       intent: durableIntent("publish_quote", "idem-2", "Quote"),
