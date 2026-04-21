@@ -24,6 +24,23 @@ import {
   type PendingPublishAttempt,
 } from "./signing-attempts.client";
 
+// `signing-attempts.client.ts` is stripped from the server bundle by
+// Remix's `.client.ts` convention, which means `subscribe` and
+// `getSnapshot` are `undefined` during SSR. Calling
+// `useSyncExternalStore` with undefined args throws
+// "Missing getServerSnapshot, which is required for server-rendered
+// content." — so we provide stable no-op fallbacks for the SSR pass and
+// only wire the real client store after hydration.
+const noopSubscribe = (): (() => void) => () => {
+  /* server-side: store has no events */
+};
+const serverSnapshot = (): PendingPublishAttempt | null => null;
+
 export function usePendingPublishAttempt(): PendingPublishAttempt | null {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const isClient = typeof window !== "undefined";
+  return useSyncExternalStore(
+    isClient ? subscribe : noopSubscribe,
+    isClient ? getSnapshot : serverSnapshot,
+    serverSnapshot
+  );
 }
