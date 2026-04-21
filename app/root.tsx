@@ -90,10 +90,15 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       {
         user,
         siteOrigin,
-        // Expose Sentry DSN to client (safe - it's a public key)
+        // Values exposed to the browser bundle via `window.ENV`. Anything
+        // here MUST be safe to ship to clients (no secrets). Add new flags
+        // alongside SENTRY_DSN / NODE_ENV; `feature-flags.client.ts` reads
+        // them at runtime instead of `process.env` (which is undefined in
+        // the browser and crashes hydration).
         ENV: {
           SENTRY_DSN: env.SENTRY_DSN ?? null,
           NODE_ENV: env.NODE_ENV ?? "development",
+          SIGNING_MULTI_SLOT: env.SIGNING_MULTI_SLOT ?? null,
         },
         // Pass CSP nonce to client for inline scripts
         nonce:
@@ -120,6 +125,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       ENV: {
         SENTRY_DSN: null,
         NODE_ENV: "development",
+        SIGNING_MULTI_SLOT: null,
       },
       nonce: undefined,
     });
@@ -153,8 +159,16 @@ export default function App() {
     "ENV" in loaderData &&
     loaderData.ENV &&
     typeof loaderData.ENV === "object"
-      ? (loaderData.ENV as { SENTRY_DSN: string | null; NODE_ENV: string })
-      : { SENTRY_DSN: null, NODE_ENV: "development" };
+      ? (loaderData.ENV as {
+          SENTRY_DSN: string | null;
+          NODE_ENV: string;
+          SIGNING_MULTI_SLOT: string | null;
+        })
+      : {
+          SENTRY_DSN: null,
+          NODE_ENV: "development",
+          SIGNING_MULTI_SLOT: null,
+        };
 
   const nonce =
     typeof loaderData === "object" &&

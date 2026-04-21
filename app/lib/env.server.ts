@@ -78,6 +78,13 @@ interface EnvConfig {
   CONTESTS_V1_ENABLED?: string;
   /** When true, use dual-lane subscription checkout (auto-renew + one-time). */
   SUBSCRIPTION_CHECKOUT_V2_ENABLED?: string;
+  /**
+   * When true, the client-side signing-attempts store keeps multiple
+   * in-flight attempts coexisting (PR 2 of the unified-signing-recovery
+   * plan). Default off; surfaced to the browser via `window.ENV` from the
+   * root loader so the bundle never reads `process.env` at runtime.
+   */
+  SIGNING_MULTI_SLOT?: string;
 
   /** BTCPay Greenfield (Founder on-chain); all three required to enable checkout. */
   BTCPAY_URL?: string;
@@ -231,6 +238,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "NIP88_POLLS_ENABLED",
     "CONTESTS_V1_ENABLED",
     "SUBSCRIPTION_CHECKOUT_V2_ENABLED",
+    "SIGNING_MULTI_SLOT",
     "BTCPAY_URL",
     "BTCPAY_API_KEY",
     "BTCPAY_STORE_ID",
