@@ -13,9 +13,11 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
-  useRouteError,
   useLoaderData,
+  useLocation,
+  useRouteError,
 } from "@remix-run/react";
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
@@ -34,7 +36,18 @@ import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
 import { getSiteOrigin } from "~/lib/site-url.server";
+import { THEME_COLOR_HEX } from "~/lib/theme-color";
+import { syncThemeColorMetaFromDocument } from "~/lib/theme.client";
 import stylesheet from "~/tailwind.css";
+
+/** Re-apply `theme-color` after SPA navigations (Remix may re-inject media-based metas). */
+function ThemeColorMetaSync() {
+  const location = useLocation();
+  useEffect(() => {
+    syncThemeColorMetaFromDocument();
+  }, [location.pathname, location.search, location.hash]);
+  return null;
+}
 
 /** Serialized for inline script: valid theme string or `null` when logged out. */
 function accountThemeScriptLiteral(user: unknown): string {
@@ -147,7 +160,18 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { name: "mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-status-bar-style", content: "default" },
     { name: "apple-mobile-web-app-title", content: BRAND_NAME },
-    { name: "theme-color", content: "#4408FF" },
+    // Match browser/PWA chrome to page canvas (not brand purple — Android paints a strip from theme-color).
+    // Client overrides via `syncThemeColorMeta` for in-app theme vs OS mismatch.
+    {
+      name: "theme-color",
+      content: THEME_COLOR_HEX.light,
+      media: "(prefers-color-scheme: light)",
+    },
+    {
+      name: "theme-color",
+      content: THEME_COLOR_HEX.dark,
+      media: "(prefers-color-scheme: dark)",
+    },
   ];
 };
 
@@ -200,6 +224,9 @@ export default function App() {
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                var C_LIGHT = '${THEME_COLOR_HEX.light}';
+                var C_DARK = '${THEME_COLOR_HEX.dark}';
+
                 function parseStoredTheme(raw) {
                   if (!raw) return null;
                   var v = raw;
@@ -212,9 +239,25 @@ export default function App() {
                   return (mql && mql.matches) ? 'dark' : 'light';
                 }
 
+                function syncThemeColorMeta(effective) {
+                  var content = effective === 'dark' ? C_DARK : C_LIGHT;
+                  var meta = document.getElementById('sfs-theme-color');
+                  if (!meta) {
+                    meta = document.createElement('meta');
+                    meta.id = 'sfs-theme-color';
+                    meta.name = 'theme-color';
+                    document.head.appendChild(meta);
+                  }
+                  meta.setAttribute('content', content);
+                  document.querySelectorAll('meta[name="theme-color"][media]').forEach(function(el) {
+                    el.remove();
+                  });
+                }
+
                 function applyEffectiveTheme(effective) {
                   if (effective === 'dark') document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
+                  syncThemeColorMeta(effective);
                 }
 
                 var accountPref = window.__SFS_ACCOUNT_THEME__;
@@ -253,6 +296,7 @@ export default function App() {
             <Toaster position="top-right" />
             <BtcpayConfirmationWatchBar />
             <LifecycleHandler />
+            <ThemeColorMetaSync />
             <PrefetchManager />
             <RemoteSignerReconnectController />
             <GlobalSigningResumeController />
@@ -341,7 +385,7 @@ export function ErrorBoundary() {
               <div className="mt-10 flex justify-center">
                 <a
                   href="/"
-                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring shadow-1 rounded-md px-6 py-3 text-base font-semibold focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 shadow-1 rounded-md px-6 py-3 text-base font-semibold"
                 >
                   Go back home
                 </a>

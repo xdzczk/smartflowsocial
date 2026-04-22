@@ -29,10 +29,10 @@ export function GiveawayFilters({
       <div>
         <h3 className="mb-1 font-semibold">Top posts</h3>
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="stack-tight sm:flex-row sm:items-center">
         {/* Date range filters */}
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="flex items-center gap-2">
+        <div className="stack-tight sm:flex-row">
+          <div className="cluster">
             <label htmlFor="from-date" className="text-sm whitespace-nowrap">
               From:
             </label>
@@ -47,7 +47,7 @@ export function GiveawayFilters({
               className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="cluster">
             <label htmlFor="to-date" className="text-sm whitespace-nowrap">
               To:
             </label>

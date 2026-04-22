@@ -73,7 +73,7 @@ export function DateRangeFilter({
       role="group"
       aria-label="Filter by date range"
     >
-      <div className="flex items-center gap-2">
+      <div className="cluster">
         <Label
           htmlFor={`${idPrefix}-from`}
           className={`text-text-secondary text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
@@ -90,7 +90,7 @@ export function DateRangeFilter({
           max={maxDate}
         />
       </div>
-      <div className="flex items-center gap-2">
+      <div className="cluster">
         <Label
           htmlFor={`${idPrefix}-to`}
           className={`text-text-secondary text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
@@ -116,7 +116,7 @@ export function DateRangeFilter({
         <button
           type="button"
           onClick={() => onDateRangeChange({ from: "", to: "" })}
-          className="text-brand hover:text-brand/80 focus-visible:ring-focus-ring rounded-xs text-sm underline focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-ring text-brand hover:text-brand/80 rounded-xs text-sm underline"
         >
           Clear dates
         </button>

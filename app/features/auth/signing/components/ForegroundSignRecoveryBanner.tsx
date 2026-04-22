@@ -136,7 +136,7 @@ export function ForegroundSignRecoveryBanner({
       <div
         role="status"
         aria-live="polite"
-        className={`${containerBaseClass} bg-surface-hover/30 text-text-secondary flex items-center gap-2`}
+        className={`${containerBaseClass} bg-surface-hover/30 text-text-secondary cluster`}
       >
         <span>Reconnected — completing your publish…</span>
       </div>

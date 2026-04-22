@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
+import { StatusIcon } from "~/components/ui/status-icon";
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -548,7 +549,7 @@ export function EditPostModal({
                           setScheduledFor(null);
                         }
                       }}
-                      className="bg-surface border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
+                      className="focus-ring bg-surface border-border text-text focus:border-brand w-full rounded-md border px-3 py-2"
                     />
                   </div>
                 ) : null}
@@ -561,7 +562,7 @@ export function EditPostModal({
                     </div>
                     <label
                       htmlFor="edit-modal-also-schedule-repost"
-                      className="flex items-center gap-2"
+                      className="cluster"
                     >
                       <Checkbox
                         id="edit-modal-also-schedule-repost"
@@ -668,10 +669,7 @@ export function EditPostModal({
                               { key: "minReposts" as const, label: "Reposts" },
                               { key: "minSats" as const, label: "Sats" },
                             ].map(({ key, label }) => (
-                              <div
-                                key={key}
-                                className="flex items-center gap-1.5"
-                              >
+                              <div key={key} className="cluster-tight.5">
                                 <label className="text-text-secondary text-xs whitespace-nowrap">
                                   {label}
                                 </label>
@@ -708,7 +706,7 @@ export function EditPostModal({
                     ) : null}
                     <label
                       htmlFor="edit-modal-also-schedule-quote"
-                      className="flex items-center gap-2"
+                      className="cluster"
                     >
                       <Checkbox
                         id="edit-modal-also-schedule-quote"
@@ -847,10 +845,11 @@ export function EditPostModal({
                 ) : (
                   <div className="border-border bg-surface-hover dark:border-border dark:bg-surface-hover/20 rounded-lg border p-4">
                     <div className="flex items-start space-x-2">
-                      <Info
-                        className="text-text-secondary mt-0.5 h-5 w-5 flex-shrink-0"
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden
+                      <StatusIcon
+                        tone="neutral"
+                        icon={Info}
+                        size="lg"
+                        className="text-text-secondary mt-0.5"
                       />
                       <div>
                         <div className="text-text text-sm font-medium">
@@ -959,7 +958,7 @@ export function EditPostModal({
                     Reschedule…
                   </Button>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="stack-tight">
                   <Button
                     type="button"
                     variant="ghost"

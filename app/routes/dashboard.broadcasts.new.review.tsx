@@ -3,8 +3,8 @@ import { defer, json, redirect } from "@remix-run/node";
 import { Await, Form, Link, useLoaderData } from "@remix-run/react";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
+import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastReviewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatBroadcastAudienceLabel,
@@ -456,7 +456,7 @@ function BroadcastNewReviewRouteLoaded({
             <Form
               method="post"
               action="/dashboard/broadcasts/audiences"
-              className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+              className="stack-tight mt-3 sm:flex-row sm:flex-wrap sm:items-end"
             >
               <input type="hidden" name="intent" value="save_from_review" />
               <input type="hidden" name="campaignId" value={campaign.id} />
@@ -530,7 +530,7 @@ function BroadcastNewReviewRouteLoaded({
               Use broadcasts for relevant updates. Repeated unsolicited DMs can
               damage sender reputation on the network.
             </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <div className="stack-tight mt-4 sm:flex-row sm:flex-wrap">
               <Link
                 to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}
                 className="border-border bg-canvas hover:bg-surface-hover inline-flex justify-center rounded-md border px-4 py-2 text-sm font-medium"

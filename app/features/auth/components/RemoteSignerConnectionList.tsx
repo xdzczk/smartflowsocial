@@ -1,6 +1,7 @@
-import { Search, Plus, X } from "lucide-react";
+import { Search, Plus, X, KeyRound } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import type {
   PrimarySignerProfile,
@@ -59,8 +60,8 @@ export function RemoteSignerConnectionList({
         <div
           className={
             showAddButton
-              ? "flex flex-col gap-2 sm:flex-row sm:items-center"
-              : "flex flex-col gap-2"
+              ? "stack-tight sm:flex-row sm:items-center"
+              : "stack-tight"
           }
         >
           {showSearch ? (
@@ -97,31 +98,30 @@ export function RemoteSignerConnectionList({
 
       {filteredConnections.length === 0 ? (
         connections.length === 0 ? (
-          <div className="border-border/80 bg-surface-hover/20 rounded-lg border border-dashed px-6 py-10 text-center">
-            <h3 className="text-text text-base font-semibold">
-              No remote signer connections yet
-            </h3>
-            <p className="text-text-secondary mx-auto mt-2 max-w-md text-sm">
-              Connect a signer app to publish securely without exposing your key
-              to {BRAND_NAME}.
-            </p>
-            <Button
-              type="button"
-              className="mt-6"
-              onClick={onAddClick}
-              size="sm"
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add connection
-            </Button>
-            <p className="text-text-secondary mt-4 text-xs">
-              You can add more than one signer and switch between them later.
-            </p>
-          </div>
+          <EmptyState
+            className="border-border/80 bg-surface-hover/20 rounded-lg border border-dashed"
+            icon={<KeyRound />}
+            title="No remote signer connections yet"
+            description={
+              <>
+                Connect a signer app to publish securely without exposing your
+                key to {BRAND_NAME}. You can add more than one signer and switch
+                between them later.
+              </>
+            }
+            action={
+              <Button type="button" onClick={onAddClick} size="sm">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add connection
+              </Button>
+            }
+          />
         ) : (
-          <div className="text-text-secondary rounded-md border p-8 text-center text-sm">
-            No connections match your search
-          </div>
+          <EmptyState
+            className="rounded-md border"
+            size="sm"
+            title="No connections match your search"
+          />
         )
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

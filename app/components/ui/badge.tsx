@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 
 const badgeVariants = cva(
   // Pill shape via --radius-full (ladder), tighter padding for premium density.
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-0",
+  "focus-ring inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium motion-fast",
   {
     variants: {
       variant: {

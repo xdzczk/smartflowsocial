@@ -11,8 +11,8 @@ import {
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 
+import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
@@ -560,7 +560,7 @@ function BroadcastDetailRouteLoaded({
                       const label =
                         p?.name ?? formatNpubShort(r.recipientPubkey);
                       return (
-                        <div className="flex items-center gap-2">
+                        <div className="cluster">
                           <Avatar className="h-6 w-6">
                             <AvatarImage
                               src={p?.picture ?? undefined}

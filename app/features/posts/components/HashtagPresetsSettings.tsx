@@ -328,7 +328,7 @@ export function HashtagPresetsSettings({
               return (
                 <div
                   key={preset.id}
-                  className="border-border/80 hover:bg-surface-hover/40 flex flex-col gap-3 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                  className="border-border/80 hover:bg-surface-hover/40 motion-fast flex flex-col gap-3 rounded-lg border px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                 >
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">

@@ -269,7 +269,7 @@ export function BulkComposerPostCardBuildBody({
 }) {
   return (
     <>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+      <div className="stack-tight sm:flex-row sm:items-start">
         <div className="flex min-w-0 flex-1 flex-wrap gap-2">
           {previewList.map((previewInfo, fileIndex) => (
             <div key={previewInfo.url} className="group relative">

@@ -8,10 +8,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { CalendarPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireSession, requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { CalendarPage } from "~/features/posts/calendar";
+import { CalendarPageSkeleton } from "~/features/posts/calendar/CalendarPageSkeleton";
 import {
   handleCalendarAction,
   loadCalendarData,

@@ -82,7 +82,7 @@ export default function QueueHealth({
 
   return (
     <div
-      className={`group focus-visible:ring-focus-ring flex min-w-0 flex-1 flex-col focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
+      className={`focus-ring group flex min-w-0 flex-1 flex-col focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
       role="button"
       aria-label="Queue Health"
@@ -130,7 +130,7 @@ export default function QueueHealth({
               {isPostActivationEmpty ? (
                 <Link
                   to="/dashboard/compose?type=post"
-                  className="text-brand hover:text-brand/90 focus-visible:ring-focus-ring w-fit rounded-xs text-xs font-medium underline focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-ring text-brand hover:text-brand/90 w-fit rounded-xs text-xs font-medium underline"
                 >
                   Schedule first post
                 </Link>
@@ -161,7 +161,7 @@ export default function QueueHealth({
                   <li key={queueName} className="flex min-h-[2.75rem] flex-col">
                     <Link
                       to={scheduledUrl}
-                      className={`focus-visible:ring-focus-ring card-lift bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus-visible:ring-2 focus-visible:outline-none ${bundle ? "queue-health-row" : ""}`}
+                      className={`focus-ring card-lift bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow ${bundle ? "queue-health-row" : ""}`}
                       style={linkStyle}
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-2">

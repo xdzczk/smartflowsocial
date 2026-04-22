@@ -297,7 +297,7 @@ export function RecyclablesTable({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="font-montserrat bg-brand text-brand-on hover:bg-brand/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
+                      className="font-montserrat bg-brand text-brand-on hover:bg-brand/90 motion-base inline-block rounded-full px-4 py-1 text-sm"
                     >
                       Open on Nostr
                     </Link>
@@ -314,7 +314,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={recycleFetcher.state !== "idle"}
-                        className="border-border bg-surface text-text hover:border-border hover:bg-surface-hover focus-visible:ring-focus-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus-visible:ring-2 active:shadow-none disabled:opacity-50"
+                        className="focus-ring border-border bg-surface text-text hover:border-border hover:bg-surface-hover active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold active:shadow-none disabled:opacity-50"
                       >
                         {recycleFetcher.state !== "idle"
                           ? "Recycling..."

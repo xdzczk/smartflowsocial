@@ -37,7 +37,7 @@ export default function Footer({
           {marketingHome ? (
             <a
               href={BRAND_MARKETING_URL}
-              className="text-text-secondary hover:text-text transition-colors"
+              className="text-text-secondary hover:text-text motion-fast"
               rel="noopener noreferrer"
             >
               Home
@@ -45,14 +45,14 @@ export default function Footer({
           ) : (
             <Link
               to="/"
-              className="text-text-secondary hover:text-text transition-colors"
+              className="text-text-secondary hover:text-text motion-fast"
             >
               Home
             </Link>
           )}
           <Link
             to="/plans"
-            className="text-text-secondary hover:text-text transition-colors"
+            className="text-text-secondary hover:text-text motion-fast"
           >
             Plans
           </Link>
@@ -60,7 +60,7 @@ export default function Footer({
             href={PRIMAL_NOSTR_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-text-secondary hover:text-text transition-colors"
+            className="text-text-secondary hover:text-text motion-fast"
           >
             Nostr
           </a>

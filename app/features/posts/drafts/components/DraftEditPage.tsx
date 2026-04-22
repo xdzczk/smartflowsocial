@@ -241,7 +241,7 @@ export default function DraftEditPage() {
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-text text-2xl font-bold">Edit Draft</h1>
-        <div className="flex items-center gap-2">
+        <div className="cluster">
           <DraftVersionHistory
             versions={versions}
             actionUrl={`/dashboard/drafts/edit/${typedPost.id}`}

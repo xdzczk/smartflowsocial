@@ -10,6 +10,14 @@ import {
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { BroadcastCreationRail } from "~/components/broadcast/BroadcastCreationRail";
 import type { BroadcastCommitMode } from "~/components/broadcast/BroadcastRailModeTabs";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormLabel,
+} from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
 import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
@@ -437,7 +445,7 @@ export function BroadcastNewDraftForm({
             </div>
 
             {canSaveAudience ? (
-              <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
+              <div className="stack-tight border-t pt-4 sm:flex-row sm:flex-wrap">
                 <button
                   type="submit"
                   name="intent"
@@ -458,46 +466,37 @@ export function BroadcastNewDraftForm({
           purpose="Write what recipients will read in their DMs."
         >
           <div className="space-y-5">
-            <div>
-              <label
-                htmlFor="broadcast-internal-name"
-                className="mb-1 block text-sm font-medium"
-              >
-                Internal name
-              </label>
-              <input
-                id="broadcast-internal-name"
-                name="name"
-                required
-                defaultValue={savedForNew?.name ?? ""}
-                className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
-                placeholder="March update · Beta list · Team note"
-              />
-              <p className="text-text-secondary mt-1 text-xs">
+            <FormField id="broadcast-internal-name" required>
+              <FormLabel>Internal name</FormLabel>
+              <FormControl>
+                <Input
+                  name="name"
+                  required
+                  defaultValue={savedForNew?.name ?? ""}
+                  placeholder="March update · Beta list · Team note"
+                />
+              </FormControl>
+              <FormDescription>
                 For your workspace only. Recipients won’t see this.
-              </p>
-            </div>
+              </FormDescription>
+            </FormField>
 
-            <div>
-              <label
-                htmlFor="broadcast-message-body"
-                className="mb-1 block text-sm font-medium"
-              >
-                Message
-              </label>
-              <textarea
-                id="broadcast-message-body"
-                name="messageBody"
-                required
-                rows={10}
-                maxLength={8000}
-                value={messageBody}
-                onChange={(e) => {
-                  setMessageBody(e.target.value);
-                  setMessageLen(e.target.value.length);
-                }}
-                className="border-border bg-canvas focus-visible:ring-focus-ring min-h-[220px] w-full rounded-md border px-3 py-3 text-sm leading-relaxed shadow-inner focus-visible:ring-2 focus-visible:outline-none"
-              />
+            <FormField id="broadcast-message-body" required>
+              <FormLabel>Message</FormLabel>
+              <FormControl>
+                <Textarea
+                  name="messageBody"
+                  required
+                  rows={10}
+                  maxLength={8000}
+                  value={messageBody}
+                  onChange={(e) => {
+                    setMessageBody(e.target.value);
+                    setMessageLen(e.target.value.length);
+                  }}
+                  className="min-h-[220px] py-3 leading-relaxed shadow-inner"
+                />
+              </FormControl>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-text-secondary text-xs tabular-nums">
                   {messageLen} / 8000 characters ·{" "}
@@ -536,7 +535,7 @@ export function BroadcastNewDraftForm({
                   ))}
                 </ul>
               ) : null}
-            </div>
+            </FormField>
           </div>
         </FormSection>
       </div>

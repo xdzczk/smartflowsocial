@@ -1,0 +1,86 @@
+{
+  // Reduce Cursor/VSCode memory by not watching, searching, or indexing
+  // large generated/vendored directories in this repo.
+
+  // File watcher: biggest memory/CPU win. The watcher holds an OS handle
+  // per file, so excluding heavy trees here matters most.
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/build/**": true,
+    "**/public/build/**": true,
+    "**/dist/**": true,
+    "**/out/**": true,
+    "**/.next/**": true,
+    "**/.turbo/**": true,
+    "**/.cache/**": true,
+    "**/coverage/**": true,
+    "**/.nyc_output/**": true,
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/tests/e2e/screenshots/**": true,
+    "**/tests/e2e/videos/**": true,
+    "**/tests/performance/results/**": true,
+    "**/postgres-data/**": true,
+    "**/redis-data/**": true,
+    "**/*.tsbuildinfo": true,
+    "**/.tsbuildinfo": true,
+    "**/eslint-report.json": true,
+    "**/pnpm-lock.yaml": true
+  },
+
+  // Search: keeps Cmd+Shift+F fast and avoids loading huge files into memory.
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.pnpm-store": true,
+    "**/build": true,
+    "**/public/build": true,
+    "**/dist": true,
+    "**/out": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/.cache": true,
+    "**/coverage": true,
+    "**/.nyc_output": true,
+    "**/test-results": true,
+    "**/playwright-report": true,
+    "**/tests/e2e/screenshots": true,
+    "**/tests/e2e/videos": true,
+    "**/tests/performance/results": true,
+    "**/postgres-data": true,
+    "**/redis-data": true,
+    "**/*.tsbuildinfo": true,
+    "**/eslint-report.json": true,
+    "**/pnpm-lock.yaml": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": true,
+  "search.followSymlinks": false,
+
+  // Explorer: optional. Hides clutter without deleting anything.
+  // Toggle any of these to false if you want to see them in the tree.
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/postgres-data": true,
+    "**/redis-data": true,
+    "**/*.tsbuildinfo": true,
+    "**/eslint-report.json": true
+  },
+
+  // TypeScript can hold a lot of memory; cap it and disable surprise work.
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEventsOnParentDirectory",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority"
+  },
+  "typescript.disableAutomaticTypeAcquisition": true,
+
+  // Misc memory savers.
+  "git.autoRepositoryDetection": "openEditors",
+  "git.autorefresh": false,
+  "git.decorations.enabled": false,
+  "scm.diffDecorationsGutterVisibility": "hover"
+}

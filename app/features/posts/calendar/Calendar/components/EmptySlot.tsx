@@ -87,7 +87,7 @@ export function EmptySlotCreateMenu({
       }}
     >
       <DropdownMenuTrigger
-        className="text-text-secondary hover:text-text hover:bg-surface-hover/50 inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] transition-colors"
+        className="text-text-secondary hover:text-text hover:bg-surface-hover/50 motion-fast inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)]"
         onClick={(e) => e.stopPropagation()}
         aria-label="Create in this slot"
       >
@@ -100,14 +100,14 @@ export function EmptySlotCreateMenu({
       <DropdownMenuContent align="start" side="right" sideOffset={4}>
         <DropdownMenuItem
           onSelect={() => navigate(q("/dashboard/compose?type=post"))}
-          className="flex items-center gap-2"
+          className="cluster"
         >
           <MessageSquare className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
           Composer (Post)
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => navigate(q("/dashboard/compose?type=article"))}
-          className="flex items-center gap-2"
+          className="cluster"
         >
           <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
           Composer (Article)

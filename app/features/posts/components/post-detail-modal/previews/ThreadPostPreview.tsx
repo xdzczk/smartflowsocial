@@ -172,7 +172,7 @@ export function ThreadPostPreview({
   return (
     <div className="space-y-3 py-0.5">
       {groupId && isPending ? (
-        <div className="text-text-secondary flex items-center gap-2 text-xs">
+        <div className="text-text-secondary cluster text-xs">
           <Loader2
             className={`${INLINE_ICON_SIZE_CLASS} animate-spin`}
             aria-hidden

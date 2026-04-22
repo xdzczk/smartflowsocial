@@ -52,7 +52,7 @@ export function ThumbnailPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "article" : "post"}: ${postPreview}, ${isPast ? "published" : isLongform ? "published" : "scheduled"} for ${formattedTime}`}
-      className={`focus-visible:ring-focus-ring relative overflow-hidden rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity focus-visible:ring-2 focus-visible:outline-none ${
+      className={`focus-ring relative overflow-hidden rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""

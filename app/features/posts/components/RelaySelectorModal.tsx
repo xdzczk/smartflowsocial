@@ -196,10 +196,7 @@ export function RelaySelectorModal({
             relayList.map((url, index) => {
               const inputId = `${fieldIdPrefix}-relay-${index}`;
               return (
-                <div
-                  key={url}
-                  className="flex items-center gap-2 rounded-xs border p-2"
-                >
+                <div key={url} className="cluster rounded-xs border p-2">
                   <Checkbox
                     id={inputId}
                     checked={urls.includes(url)}

@@ -315,11 +315,11 @@ function renderSettingsPanel(
     case "engagement":
       return (
         <div className="flex min-w-0 flex-col gap-8">
-          <div className="flex flex-col gap-4">
+          <div className="stack">
             <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Engagement defaults
             </p>
-            <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="stack sm:gap-6">
               <DefaultZapAmountSettings
                 defaultZapAmountSats={defaultZapAmountSats}
               />
@@ -331,7 +331,7 @@ function renderSettingsPanel(
             filterMuted={filterMutedValue}
             hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
           />
-          <div className="flex flex-col gap-4">
+          <div className="stack">
             <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Participation safety
             </p>

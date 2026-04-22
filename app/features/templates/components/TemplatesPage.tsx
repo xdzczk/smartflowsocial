@@ -396,14 +396,14 @@ export default function TemplatesPage() {
                   return (
                     <li key={id}>
                       <div
-                        className="border-border bg-surface hover:border-border/80 hover:bg-surface-hover/30 focus-visible:ring-focus-ring cursor-pointer rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        className="focus-ring-offset border-border bg-surface hover:border-border/80 hover:bg-surface-hover/30 motion-fast cursor-pointer rounded-xl border p-4"
                         role="button"
                         tabIndex={0}
                         aria-label={`Template: ${displayName}`}
                         onClick={() => setSheetTemplate(template)}
                         onKeyDown={handleCardKeyDown}
                       >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-5">
+                        <div className="stack sm:flex-row sm:items-stretch sm:gap-5">
                           <div className="shrink-0">
                             {thumb ? (
                               <img
@@ -602,7 +602,7 @@ export default function TemplatesPage() {
                         No body text yet.
                       </p>
                     )}
-                    <div className="mt-auto flex flex-col gap-2 border-t pt-4">
+                    <div className="stack-tight mt-auto border-t pt-4">
                       <Button className="w-full gap-2" asChild>
                         <Link
                           to={useHref ?? "#"}

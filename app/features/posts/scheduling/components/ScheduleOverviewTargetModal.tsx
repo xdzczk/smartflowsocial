@@ -88,7 +88,7 @@ export function ScheduleOverviewTargetModal({
               id="schedule-overview-target"
               value={value}
               onChange={(e) => setValue(Number(e.target.value))}
-              className="border-border bg-canvas ring-offset-canvas focus-visible:ring-focus-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              className="focus-ring-offset border-border bg-canvas flex h-9 w-full rounded-md border px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               aria-describedby="schedule-overview-target-hint"
             >
               {Array.from({ length: MAX_TARGET - MIN_TARGET + 1 }, (_, i) => {

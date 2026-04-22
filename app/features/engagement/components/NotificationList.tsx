@@ -2,6 +2,7 @@ import { Link, useRouteLoaderData } from "@remix-run/react";
 import { Bell, MessageCircle, Zap } from "lucide-react";
 import { useMemo } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -47,21 +48,12 @@ export default function NotificationList({
 
   if (notifications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="text-text mb-4">
-          <Bell
-            className="h-16 w-16"
-            strokeWidth={INLINE_ICON_STROKE}
-            aria-hidden
-          />
-        </div>
-        <p className="dark:text-text text-text-secondary text-lg font-medium">
-          No notifications yet
-        </p>
-        <p className="dark:text-text-secondary text-text-secondary text-sm">
-          When you get replies, mentions, or zaps, they&apos;ll show up here
-        </p>
-      </div>
+      <EmptyState
+        size="lg"
+        icon={<Bell strokeWidth={INLINE_ICON_STROKE} />}
+        title="No notifications yet"
+        description="When you get replies, mentions, or zaps, they'll show up here"
+      />
     );
   }
 
@@ -120,7 +112,7 @@ function ReplyNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="bg-surface hover:bg-surface-hover p-4 transition-colors">
+    <div className="bg-surface hover:bg-surface-hover motion-fast p-4">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -135,7 +127,7 @@ function ReplyNotification({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="cluster mb-1">
             {notification.authorPicture ? (
               <img
                 src={notification.authorPicture}
@@ -201,7 +193,7 @@ function ZapNotification({
       notification.senderPubkey.slice(-4);
 
   return (
-    <div className="bg-surface hover:bg-surface-hover p-4 transition-colors">
+    <div className="bg-surface hover:bg-surface-hover motion-fast p-4">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -216,7 +208,7 @@ function ZapNotification({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="cluster mb-1">
             {notification.senderPicture ? (
               <img
                 src={notification.senderPicture}
@@ -285,7 +277,7 @@ function MentionNotification({
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
-    <div className="bg-surface hover:bg-surface-hover p-4 transition-colors">
+    <div className="bg-surface hover:bg-surface-hover motion-fast p-4">
       <div className="flex gap-3">
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -300,7 +292,7 @@ function MentionNotification({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="cluster mb-1">
             {notification.authorPicture ? (
               <img
                 src={notification.authorPicture}

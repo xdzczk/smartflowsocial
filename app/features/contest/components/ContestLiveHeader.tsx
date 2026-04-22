@@ -46,7 +46,7 @@ export function ContestLiveHeader({
       <div className="relative space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="ring-brand/30 bg-info/20 text-info-text dark:text-info inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-wide ring-2">
+            <span className="ring-brand/30 bg-info/20 text-info-text dark:text-info inline-cluster-tight.5 rounded-full px-3 py-1 text-xs font-bold tracking-wide ring-2">
               <span
                 className="bg-brand inline-block size-2 animate-pulse rounded-full"
                 aria-hidden

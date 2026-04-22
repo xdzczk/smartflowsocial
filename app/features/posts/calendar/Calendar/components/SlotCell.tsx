@@ -78,7 +78,7 @@ export function SlotCell({
         dateLocale
       )}
       aria-dropeffect="move"
-      className={`border-border/30 relative overflow-visible border-r px-1.5 py-1 transition-colors duration-200 last:border-r-0 ${
+      className={`border-border/30 motion-base relative overflow-visible border-r px-1.5 py-1 last:border-r-0 ${
         isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
       } ${
         slotState.isDragOver

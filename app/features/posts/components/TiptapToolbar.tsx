@@ -51,7 +51,7 @@ function ToolbarButton({
       title={title}
       aria-label={ariaLabel}
       className={cn(
-        "transition-colors",
+        "motion-fast",
         editorial
           ? "text-text-secondary hover:bg-surface-hover/50 hover:text-text rounded-md px-1.5 py-1 text-xs"
           : "rounded-md px-2 py-1.5 text-sm",

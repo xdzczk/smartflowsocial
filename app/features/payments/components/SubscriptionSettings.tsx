@@ -79,7 +79,7 @@ function NoSubscriptionMessage() {
       </p>
       <Link
         to="/plans"
-        className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        className="bg-brand text-brand-on hover:bg-brand/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
       >
         View plans
         <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -130,7 +130,7 @@ function UpgradePlanSection() {
         <li>Drafts, templates, and bulk tools</li>
         <li>Higher limits and premium features</li>
       </ul>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="stack-tight sm:flex-row sm:flex-wrap sm:items-center">
         <Link
           to="/plans"
           className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
@@ -140,7 +140,7 @@ function UpgradePlanSection() {
         </Link>
         <Link
           to="/plans"
-          className="text-brand hover:text-brand/90 inline-flex items-center gap-2 text-sm font-medium"
+          className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
         >
           View all plans and features
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -363,7 +363,7 @@ export function SubscriptionSettings({
           {/* Subscription details — paid price */}
           {subscription.plan?.price && Number(subscription.plan.price) > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-lg border p-4">
+              <div className="cluster-loose rounded-lg border p-4">
                 <Calendar className="text-success h-5 w-5" />
                 <div>
                   <p className="font-medium">Subscription started</p>
@@ -375,7 +375,7 @@ export function SubscriptionSettings({
 
               {(subscription.currentPeriodEnd ?? subscription.nextPaymentDue) &&
               !subscription.plan.enableLifetimeAccess ? (
-                <div className="flex items-center gap-3 rounded-lg border p-4">
+                <div className="cluster-loose rounded-lg border p-4">
                   <CreditCard className="text-brand h-5 w-5" />
                   <div>
                     <p className="font-medium">Next renewal</p>
@@ -390,7 +390,7 @@ export function SubscriptionSettings({
               ) : null}
 
               {!subscription.plan.enableLifetimeAccess ? (
-                <div className="flex items-center gap-3 rounded-lg border p-4 md:col-span-2">
+                <div className="cluster-loose rounded-lg border p-4 md:col-span-2">
                   <CreditCard className="text-text-secondary h-5 w-5" />
                   <div>
                     <p className="font-medium">Billing</p>
@@ -417,7 +417,7 @@ export function SubscriptionSettings({
           {subscription.status === "PAST_DUE" ||
           subscription.status === "UNPAID" ? (
             <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <AlertCircle className="dark:text-text text-warning h-5 w-5" />
                 <div className="space-y-1">
                   <p className="dark:text-text text-warning-text text-sm font-medium">
@@ -457,7 +457,7 @@ export function SubscriptionSettings({
 
           {subscription.cancelAtPeriodEnd ? (
             <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <AlertCircle className="dark:text-text text-warning-text h-5 w-5" />
                 <p className="dark:text-text text-warning-text text-sm font-medium">
                   Your subscription is set to cancel at the end of the current
@@ -472,7 +472,7 @@ export function SubscriptionSettings({
           !subscription.plan.enableLifetimeAccess &&
           getDisplaySubscriptionStatus(subscription) === "EXPIRED" ? (
             <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <AlertCircle className="dark:text-text text-warning h-5 w-5" />
                 <p className="dark:text-text text-warning-text text-sm font-medium">
                   Your access to {subscription.plan.name} expired on{" "}
@@ -715,7 +715,7 @@ export function SubscriptionSettings({
                         if (!invoice || !paymentId) return;
                         void copyToClipboard(invoice, paymentId);
                       }}
-                      className="border-border bg-canvas hover:bg-surface-hover inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+                      className="border-border bg-canvas hover:bg-surface-hover inline-cluster rounded-md border px-3 py-1.5 text-sm"
                     >
                       <Copy className={SMALL_ICON_SIZE_CLASS} />
                       Copy invoice
@@ -735,7 +735,7 @@ export function SubscriptionSettings({
 
               <Link
                 to="/plans"
-                className="text-brand hover:text-brand/90 inline-flex items-center gap-2 text-sm font-medium"
+                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
               >
                 Compare plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -749,7 +749,7 @@ export function SubscriptionSettings({
             <div className="text-center">
               <Link
                 to="/plans"
-                className="text-brand hover:text-brand/90 inline-flex items-center gap-2 text-sm font-medium"
+                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
               >
                 View plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />

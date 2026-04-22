@@ -48,7 +48,7 @@ export function ComposerLeftCanvas({
           </div>
         ) : null}
         {/* Direct children should be major blocks (composition vs utilities); use gap-6 for clear rhythm. */}
-        <div className="flex flex-col gap-6 sm:gap-7">{children}</div>
+        <div className="stack-loose sm:gap-7">{children}</div>
       </div>
     </div>
   );

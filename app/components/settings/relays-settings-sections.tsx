@@ -120,7 +120,7 @@ export function RelayDeliverySection({
               ) : null}
               {canToggleBlastr ? (
                 <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:gap-4">
-                  <div className="flex items-center gap-2">
+                  <div className="cluster">
                     <Switch
                       id="blastr-relay-enabled"
                       checked={blastrRelayEnabled}
@@ -195,13 +195,13 @@ export function RelaySourceSection({
           aria-checked={tabValue === "profile"}
           onClick={onSelectProfile}
           className={cn(
-            "flex flex-col rounded-lg border p-4 text-left transition-colors",
+            "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "profile"
               ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
               : "border-border/80 hover:bg-surface-hover/40"
           )}
         >
-          <span className="flex items-center gap-2 font-medium">
+          <span className="cluster font-medium">
             {tabValue === "profile" ? (
               <Check className="text-brand size-4 shrink-0" />
             ) : null}
@@ -217,13 +217,13 @@ export function RelaySourceSection({
           aria-checked={tabValue === "app"}
           onClick={onSelectApp}
           className={cn(
-            "flex flex-col rounded-lg border p-4 text-left transition-colors",
+            "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "app"
               ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
               : "border-border/80 hover:bg-surface-hover/40"
           )}
         >
-          <span className="flex items-center gap-2 font-medium">
+          <span className="cluster font-medium">
             {tabValue === "app" ? (
               <Check className="text-brand size-4 shrink-0" />
             ) : null}
@@ -504,7 +504,7 @@ export function RelayListSection({
             </span>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
+        <div className="stack-tight sm:flex-row sm:justify-end sm:gap-2">
           {tabValue === "profile" ? (
             <>
               <Button

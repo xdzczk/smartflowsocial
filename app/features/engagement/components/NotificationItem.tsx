@@ -486,7 +486,7 @@ export function NotificationItem({
   return (
     <div
       data-testid="engagement-item"
-      className={`border-l-4 transition-colors ${
+      className={`motion-fast border-l-4 ${
         contentVariant === "mention" ? "px-2.5 py-2 sm:px-3" : "p-2.5 sm:p-3"
       } ${
         isInteractionActive
@@ -674,7 +674,7 @@ export function NotificationItem({
           ) : null}
 
           {actions.likeAttemptId || actions.repostAttemptId ? (
-            <div className="mt-1.5 flex items-center gap-2">
+            <div className="cluster mt-1.5">
               <EphemeralActionRecovery
                 attemptId={actions.likeAttemptId}
                 actionLabel="Like"

@@ -7,11 +7,14 @@ import {
   useLoaderData,
   useSearchParams,
 } from "@remix-run/react";
+import { Megaphone } from "lucide-react";
 import { Suspense } from "react";
 
 import { BroadcastCampaignRowActions } from "~/components/broadcast/BroadcastCampaignRowActions";
+import { BroadcastIndexPageSkeleton } from "~/components/broadcast/BroadcastIndexPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastIndexPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { requireUserId } from "~/features/auth";
 import {
   archiveBroadcastCampaign,
@@ -183,7 +186,7 @@ function SummaryCard(props: {
     <Link
       to={props.href}
       className={cn(
-        "border-border bg-surface hover:bg-surface-hover/40 rounded-lg border p-4 transition-colors",
+        "border-border bg-surface hover:bg-surface-hover/40 motion-fast rounded-lg border p-4",
         props.active && "ring-brand ring-2"
       )}
     >
@@ -361,7 +364,7 @@ function BroadcastsIndexPage() {
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-text-secondary flex items-center gap-2 text-sm">
+          <label className="text-text-secondary cluster text-sm">
             <span>Updated from</span>
             <input
               type="date"
@@ -374,7 +377,7 @@ function BroadcastsIndexPage() {
               className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
             />
           </label>
-          <label className="text-text-secondary flex items-center gap-2 text-sm">
+          <label className="text-text-secondary cluster text-sm">
             <span>to</span>
             <input
               type="date"
@@ -411,19 +414,17 @@ function BroadcastsIndexPage() {
       </Form>
 
       {campaigns.length === 0 ? (
-        <div className="border-border bg-surface-hover/30 rounded-lg border border-dashed p-10 text-center">
-          <p className="text-text-secondary mb-4 text-sm">
-            No broadcasts match these filters. Create a campaign to reach your
-            audience with signed direct messages—use meaningful updates, not
-            noise.
-          </p>
-          <Link
-            to="/dashboard/broadcasts/new"
-            className="bg-brand text-brand-on inline-flex rounded-md px-4 py-2 text-sm font-medium"
-          >
-            New broadcast
-          </Link>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/30 rounded-lg border border-dashed"
+          icon={<Megaphone />}
+          title="No broadcasts match these filters"
+          description="Create a campaign to reach your audience with signed direct messages—use meaningful updates, not noise."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/broadcasts/new">New broadcast</Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[960px] text-left text-sm">

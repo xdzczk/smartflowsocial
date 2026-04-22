@@ -81,7 +81,7 @@ export function ComposerScheduleField<T extends FieldValues = FieldValues>({
 
   if (layout === "minimal") {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="stack-tight">
         <Label htmlFor="scheduledFor">Publish time</Label>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Input

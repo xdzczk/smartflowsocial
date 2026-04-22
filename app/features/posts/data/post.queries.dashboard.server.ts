@@ -640,7 +640,7 @@ export async function getRecyclablePosts({
   const dateRange = tz
     ? parseDateRangeInTimezone(dateFrom, dateTo, tz)
     : parseDateRangeUtc(dateFrom, dateTo);
-  if (dateRange?.fromUtc || dateRange?.toUtc) {
+  if (dateRange?.fromUtc ?? dateRange?.toUtc) {
     whereClause.publishedAt = {
       ...(whereClause.publishedAt as Prisma.DateTimeFilter | undefined),
     };

@@ -60,7 +60,7 @@ export function LoginAwaitingProfileSelection({
             className="bg-canvas text-text hover:bg-surface-hover border-border border"
             onClick={onLoginWithPrimal}
           >
-            <span className="flex items-center gap-2">
+            <span className="cluster">
               <PrimalLogoIcon className="size-5 shrink-0" />
               Login with Primal
             </span>

@@ -23,7 +23,7 @@ interface CreateComposerShellProps {
 }
 
 function tabButtonClass(active: boolean): string {
-  return `rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+  return `rounded-md px-2.5 py-1 text-xs font-medium motion-fast ${
     active
       ? "bg-brand-strong text-brand-on shadow-1"
       : "text-text-secondary hover:bg-surface-hover hover:text-text"

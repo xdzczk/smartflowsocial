@@ -3,9 +3,10 @@
  * Avoids hydration mismatch by applying client-only state after mount.
  */
 
-import { CheckCircle, TriangleAlert, Ban } from "lucide-react";
+import { Ban } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { StatusIcon } from "~/components/ui/status-icon";
 import {
   getActiveConnection,
   getActiveSignerConfig,
@@ -32,33 +33,28 @@ function getDisplayStatus(
 function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "active") {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <CheckCircle className="text-success h-3 w-3" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="success" size="xs" />
         <span className="hidden sm:inline">Active</span>
       </div>
     );
   }
   if (status === "stale") {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <TriangleAlert className="text-warning h-3 w-3" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="warning" size="xs" />
         <span className="hidden sm:inline">Stale</span>
       </div>
     );
   }
-  if (status === "disconnected") {
-    return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <Ban className="h-3 w-3 opacity-60" />
-        <span className="hidden sm:inline">Disconnected</span>
-      </div>
-    );
-  }
-  // status is "inactive" (only remaining ConnectionStatus after active, stale, disconnected)
+  // status is "disconnected" or "inactive" — visually neutral, both rendered the
+  // same way; the label distinguishes them.
   return (
-    <div className="text-text-secondary flex items-center gap-1 text-xs">
-      <Ban className="h-3 w-3 opacity-60" />
-      <span className="hidden sm:inline">Inactive</span>
+    <div className="text-text-secondary cluster-tight text-xs">
+      <StatusIcon tone="neutral" size="xs" icon={Ban} className="opacity-60" />
+      <span className="hidden sm:inline">
+        {status === "disconnected" ? "Disconnected" : "Inactive"}
+      </span>
     </div>
   );
 }
@@ -66,31 +62,30 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
 function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
   if (readiness === "ready") {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <CheckCircle className="text-success h-3 w-3" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="success" size="xs" />
         <span className="hidden sm:inline">Extension ready</span>
       </div>
     );
   }
   if (readiness === "unresponsive") {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <TriangleAlert className="text-warning h-3 w-3" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="warning" size="xs" />
         <span className="hidden sm:inline">Extension unresponsive</span>
       </div>
     );
   }
   if (readiness === "account_mismatch") {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <TriangleAlert className="text-warning h-3 w-3" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="warning" size="xs" />
         <span className="hidden sm:inline">Wrong account</span>
       </div>
     );
   }
-  // unknown or any other state
   return (
-    <div className="text-text-secondary flex items-center gap-1 text-xs">
+    <div className="text-text-secondary cluster-tight text-xs">
       <div className="bg-surface-hover-foreground/40 h-3 w-3 rounded-full" />
       <span className="hidden sm:inline">Extension…</span>
     </div>
@@ -116,7 +111,7 @@ export function SignerStatusIndicator() {
 
   if (!mounted) {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
+      <div className="text-text-secondary cluster-tight text-xs">
         <div className="bg-surface-hover-foreground/40 h-3 w-3 rounded-full" />
       </div>
     );
@@ -125,8 +120,13 @@ export function SignerStatusIndicator() {
   const config = getActiveSignerConfig();
   if (!config) {
     return (
-      <div className="text-text-secondary flex items-center gap-1 text-xs">
-        <Ban className="h-3 w-3 opacity-50" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon
+          tone="neutral"
+          size="xs"
+          icon={Ban}
+          className="opacity-50"
+        />
         <span className="hidden sm:inline">No signer</span>
       </div>
     );

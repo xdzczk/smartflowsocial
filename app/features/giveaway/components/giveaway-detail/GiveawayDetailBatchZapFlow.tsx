@@ -332,7 +332,7 @@ export function GiveawayDetailBatchZapFlow({
           );
         })}
       </ul>
-      <div className="flex flex-col gap-2">
+      <div className="stack-tight">
         <Button
           type="button"
           disabled={paidFetcher.state !== "idle"}

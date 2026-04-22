@@ -70,7 +70,7 @@ export function ReconnectNostrConnectTab({
                 </Button>
                 {isMobile() ? (
                   <Button type="button" onClick={onLoginWithPrimal}>
-                    <span className="flex items-center gap-2">
+                    <span className="cluster">
                       <PrimalLogoIcon className="size-5 shrink-0" />
                       Login with Primal
                     </span>

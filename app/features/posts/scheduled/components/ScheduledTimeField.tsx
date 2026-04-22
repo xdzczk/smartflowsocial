@@ -42,7 +42,7 @@ export function ScheduledTimeField({
       >
         {label}
       </label>
-      <div className="flex items-center gap-2">
+      <div className="cluster">
         <CalendarDays
           className="text-text-secondary h-4 w-4 shrink-0"
           strokeWidth={INLINE_ICON_STROKE}
@@ -54,7 +54,7 @@ export function ScheduledTimeField({
           value={valueDatetimeLocal}
           min={minDatetimeLocal}
           onChange={onChange}
-          className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring flex-1 rounded-md border px-3 py-2 text-sm focus-visible:ring-2"
+          className="focus-ring border-border bg-canvas text-text focus:border-brand flex-1 rounded-md border px-3 py-2 text-sm"
         />
       </div>
       {humanReadableLine ? (

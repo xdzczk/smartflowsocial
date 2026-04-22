@@ -112,7 +112,7 @@ export function Nip46QrUri({
           {helperText ? (
             <div className="text-text-secondary text-xs">{helperText}</div>
           ) : null}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="stack-tight sm:flex-row sm:items-center">
             <Button
               type="button"
               variant="outline"
@@ -151,7 +151,7 @@ export function Nip46QrUri({
           {helperText ? (
             <div className="text-text-secondary text-xs">{helperText}</div>
           ) : null}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="stack-tight sm:flex-row sm:items-center">
             <Button
               type="button"
               variant="outline"

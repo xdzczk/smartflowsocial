@@ -82,7 +82,7 @@ export function ProductFeedbackSidebar({
     dashLoader?.feedbackInboxKind10050Relays ?? [];
 
   // Match inactive `NavigationItem` / `OperatorAdminNavItem` in DashboardHeader; `text-xs` scales the row down.
-  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
   const iconSpanClass =
@@ -294,7 +294,7 @@ export function ProductFeedbackSidebar({
               id={categoryId}
               name="category"
               required
-              className="border-border bg-canvas ring-offset-canvas focus-visible:ring-focus-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+              className="focus-ring border-border bg-canvas flex h-10 w-full rounded-md border px-3 py-2 text-sm"
               defaultValue="bug"
             >
               <option value="bug">Bug report</option>

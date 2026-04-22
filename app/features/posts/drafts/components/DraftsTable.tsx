@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Select,
   SelectContent,
@@ -261,27 +262,25 @@ export function DraftsTable({
 
   if (posts.length === 0) {
     return (
-      <div
-        className={`${PUBLISHING_LIST_SURFACE_CLASS} px-6 py-12 text-center`}
-      >
-        <h3 className="text-text mb-2 text-lg font-semibold">No drafts yet</h3>
-        <p className="text-text-secondary mx-auto mb-6 max-w-md text-sm">
-          Anything saved from the composer will appear here.
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button asChild variant="default" size="sm">
-            <Link to="/dashboard/compose">New post</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/compose?type=article">New article</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/bulkposts">Bulk posts</Link>
-          </Button>
-        </div>
-        <p className="text-text-secondary mt-6 text-xs">
-          Use templates to speed up repetitive content workflows.
-        </p>
+      <div className={PUBLISHING_LIST_SURFACE_CLASS}>
+        <EmptyState
+          size="lg"
+          title="No drafts yet"
+          description="Anything saved from the composer will appear here. Use templates to speed up repetitive content workflows."
+          action={
+            <>
+              <Button asChild variant="default" size="sm">
+                <Link to="/dashboard/compose">New post</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/dashboard/compose?type=article">New article</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/dashboard/bulkposts">Bulk posts</Link>
+              </Button>
+            </>
+          }
+        />
       </div>
     );
   }
@@ -366,7 +365,7 @@ export function DraftsTable({
                     role="button"
                     tabIndex={0}
                     aria-label={`Open draft: ${preview.title}`}
-                    className={`${PUBLISHING_TABLE_ROW_CLASS} border-border hover:border-border/80 hover:bg-surface-hover/40 cursor-pointer border-b transition-colors last:border-b-0`}
+                    className={`${PUBLISHING_TABLE_ROW_CLASS} border-border hover:border-border/80 hover:bg-surface-hover/40 motion-fast cursor-pointer border-b last:border-b-0`}
                     onClick={() => onResume(post)}
                     onKeyDown={handleRowKeyDown}
                   >
@@ -461,7 +460,7 @@ export function DraftsTable({
                             type="button"
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
-                            className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
+                            className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                             aria-label="Actions"
                           >
                             <MoreHorizontal
@@ -554,7 +553,7 @@ export function DraftsTable({
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {showMobileSortControl && onSortChange ? (
-            <div className="mb-3 flex items-center gap-2">
+            <div className="cluster mb-3">
               <span
                 className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
               >

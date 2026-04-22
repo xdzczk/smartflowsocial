@@ -174,7 +174,7 @@ export function ContentListCard({
           onPostSelect?.(item);
         }
       }}
-      className="group border-border bg-surface hover:bg-surface-hover/50 shadow-1 flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left transition-colors"
+      className="group border-border bg-surface hover:bg-surface-hover/50 shadow-1 motion-fast flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left"
       style={{
         height: CONTENT_LIST_CARD_HEIGHT_PX,
         minHeight: CONTENT_LIST_CARD_HEIGHT_PX,
@@ -263,7 +263,7 @@ export function ContentListCard({
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="text-text-secondary hover:text-text focus-visible:ring-focus-ring flex h-8 w-8 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+            className="focus-ring text-text-secondary hover:text-text flex h-8 w-8 items-center justify-center rounded-md"
             aria-label="Actions"
           >
             <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />

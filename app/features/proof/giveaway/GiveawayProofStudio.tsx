@@ -109,7 +109,7 @@ export function GiveawayProofStudio({
                     setSelectedId(g.id);
                   }}
                   className={cn(
-                    "hover:bg-surface-hover/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    "hover:bg-surface-hover/80 motion-fast w-full rounded-lg border px-3 py-2.5 text-left",
                     selected?.id === g.id
                       ? "border-brand bg-surface-hover/40"
                       : "border-border bg-surface/50"

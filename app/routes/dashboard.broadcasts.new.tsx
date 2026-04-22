@@ -12,8 +12,8 @@ import {
 import { Suspense, useMemo } from "react";
 
 import { BroadcastNewDraftForm } from "~/components/broadcast/BroadcastNewDraftForm";
+import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastNewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   BroadcastActionError,

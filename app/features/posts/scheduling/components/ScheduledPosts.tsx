@@ -32,7 +32,7 @@ export default function ScheduledPosts() {
               </span>
             </h4>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="cluster">
             <div className="relative w-full">
               <div className="text-text-secondary pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
                 <Search

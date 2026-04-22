@@ -54,7 +54,7 @@ export function DeferredListPageSkeleton({
         aria-busy="true"
         aria-label={label}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="stack sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="bg-surface-hover h-8 w-40 rounded-md sm:h-9" />
             {subtitle ? (

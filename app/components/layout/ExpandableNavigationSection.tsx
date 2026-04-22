@@ -69,7 +69,7 @@ function NavigationChildItemComponent({
 
   const title = !hasAccess ? "Subscription required" : child.label;
 
-  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+  const childLinkClass = `focus-ring group flex items-center rounded-lg border border-transparent text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
@@ -89,7 +89,7 @@ function NavigationChildItemComponent({
       tabIndex={sectionExpanded ? undefined : -1}
     >
       <span
-        className={`flex flex-none shrink-0 items-center ${isActive ? "text-brand" : TEXT_NAV_ICON_INACTIVE}`}
+        className={`flex flex-none shrink-0 items-center ${isActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE}`}
       >
         {child.icon}
       </span>
@@ -200,7 +200,7 @@ export function ExpandableNavigationSection({
     }, 0);
   };
 
-  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+  const parentClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
       ? "bg-surface-selected text-text border-border-subtle"
       : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
@@ -222,12 +222,12 @@ export function ExpandableNavigationSection({
         aria-controls={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}
       >
         <span
-          className={`flex flex-none items-center ${isAnyChildActive ? "text-brand" : TEXT_NAV_ICON_INACTIVE}`}
+          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE}`}
         >
           {icon}
         </span>
         <span className="grow py-2 text-left">
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-cluster-tight.5">
             <span>{title}</span>
             {showSubtleHint ? (
               <span

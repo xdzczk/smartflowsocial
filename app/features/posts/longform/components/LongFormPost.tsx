@@ -823,7 +823,7 @@ export default function LongFormPost({
       <button
         type="button"
         className={cn(
-          "pb-1 text-[10px] font-medium tracking-wide transition-colors",
+          "motion-fast pb-1 text-[10px] font-medium tracking-wide",
           bodyView === "edit"
             ? "text-text/90 border-foreground/35 -mb-px border-b-2"
             : "text-text-secondary/55 hover:text-text-secondary/85 border-b-2 border-transparent"
@@ -836,7 +836,7 @@ export default function LongFormPost({
       <button
         type="button"
         className={cn(
-          "pb-1 text-[10px] font-medium tracking-wide transition-colors",
+          "motion-fast pb-1 text-[10px] font-medium tracking-wide",
           bodyView === "preview"
             ? "text-text/90 border-foreground/35 -mb-px border-b-2"
             : "text-text-secondary/55 hover:text-text-secondary/85 border-b-2 border-transparent"
@@ -919,7 +919,7 @@ export default function LongFormPost({
               </div>
 
               {!isTemplateMode && displayedHashtags ? (
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   <Badge variant="secondary" className="text-xs">
                     <Hash
                       className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}

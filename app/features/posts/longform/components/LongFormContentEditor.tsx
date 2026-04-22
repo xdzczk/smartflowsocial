@@ -210,7 +210,7 @@ function LegacyLongFormContentEditor({
               Content *
             </span>
             {uploadProvider ? (
-              <div className="text-text-secondary flex items-center gap-1 text-xs">
+              <div className="text-text-secondary cluster-tight text-xs">
                 <span>Images upload via:</span>
                 <span className="bg-surface-hover text-text rounded-xs px-2 py-1 text-xs font-medium">
                   {blossomOrS3BadgeLabel(uploadProvider)}

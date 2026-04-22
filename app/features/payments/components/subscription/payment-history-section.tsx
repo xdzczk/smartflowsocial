@@ -1,6 +1,7 @@
 import { Copy, Check, Receipt } from "lucide-react";
 import React from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { PreferenceSection } from "~/features/settings/components/patterns";
 import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
@@ -47,13 +48,12 @@ function usePaymentHashCopy(): [
 
 function PaymentHistoryEmptyState() {
   return (
-    <div className="border-border/60 bg-surface-hover/20 rounded-lg border border-dashed py-10 text-center">
-      <Receipt className="text-text-secondary mx-auto mb-3 h-10 w-10" />
-      <h3 className="mb-1 text-sm font-medium">No payments yet</h3>
-      <p className="text-text-secondary mx-auto max-w-md text-sm">
-        Invoices, renewals, and successful subscription payments will appear
-        here.
-      </p>
+    <div className="border-border/60 bg-surface-hover/20 rounded-lg border border-dashed">
+      <EmptyState
+        icon={<Receipt />}
+        title="No payments yet"
+        description="Invoices, renewals, and successful subscription payments will appear here."
+      />
     </div>
   );
 }
@@ -78,7 +78,7 @@ export function PaymentHistorySection({
             <div key={payment.id} className="rounded-lg border p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
-                  <div className="mb-1 flex items-center gap-2">
+                  <div className="cluster mb-1">
                     <Receipt className="text-success h-4 w-4" />
                     <p className="text-sm font-medium">
                       {payment.description ??
@@ -100,7 +100,7 @@ export function PaymentHistorySection({
                       onClick={() =>
                         void copyToClipboard(payment.paymentHash, payment.id)
                       }
-                      className="hover:bg-surface-hover dark:hover:bg-surface-hover inline-flex items-center justify-center rounded-xs p-1 transition-colors"
+                      className="hover:bg-surface-hover dark:hover:bg-surface-hover motion-fast inline-flex items-center justify-center rounded-xs p-1"
                       title="Copy payment hash"
                     >
                       {copiedHash === payment.id ? (

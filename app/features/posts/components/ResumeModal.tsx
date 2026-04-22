@@ -2,10 +2,8 @@
  * Resume draft confirmation modal
  */
 
-import { AlertTriangle } from "lucide-react";
-
+import { StatusIcon } from "~/components/ui/status-icon";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { formatForDisplay, fromISOString } from "~/lib/temporal";
 
 import type { UserData } from "../types";
@@ -64,11 +62,7 @@ export function ResumeModal({
           <div className="dark:bg-surface-hover bg-warning/12 rounded-lg p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <AlertTriangle
-                  className="text-warning h-5 w-5"
-                  strokeWidth={INLINE_ICON_STROKE}
-                  aria-hidden
-                />
+                <StatusIcon tone="warning" size="lg" />
               </div>
               <div className="ml-3">
                 <h3 className="dark:text-text text-warning-text text-sm font-medium">

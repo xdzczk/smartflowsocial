@@ -103,7 +103,7 @@ export function ComposerMediaField({
         tabIndex={-1}
         aria-label={dropZoneLabel}
         className={cn(
-          "relative rounded-lg transition-colors",
+          "motion-fast relative rounded-lg",
           empty && !isDraggingOver && "min-h-0",
           !empty && "bg-surface-hover/40 rounded-md px-1 py-1.5 sm:px-1.5",
           isDraggingOver &&

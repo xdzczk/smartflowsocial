@@ -171,7 +171,7 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -228,7 +228,7 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -395,7 +395,7 @@ function SidebarHeader({
       <Link
         prefetch="intent"
         to={DASHBOARD_ROOT_PATH}
-        className={`group text-text hover:text-brand focus-visible:ring-focus-ring inline-flex items-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+        className={`focus-ring group text-text hover:text-brand motion-fast inline-flex items-center rounded-lg ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
         title={BRAND_NAME}

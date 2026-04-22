@@ -8,6 +8,12 @@ import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
 import {
+  FormControl,
+  FormField,
+  FormMessage,
+} from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
@@ -25,21 +31,22 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
   return (
     <div className="mb-6">
       <fetcher.Form onSubmit={onSubmit} className="flex gap-2">
-        <div className="flex-1">
-          <input
-            id="eventInput"
-            type="text"
-            {...form.register("eventInput")}
-            placeholder="Enter event ID (hex), note1, or nevent1..."
-            className="dark:border-border dark:bg-surface dark:focus:border-brand border-border placeholder-muted-foreground focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border px-4 py-3 text-sm leading-6 focus-visible:ring-2"
-            disabled={isSearching}
-          />
-          {form.formState.errors.eventInput ? (
-            <p className="text-danger dark:text-danger mt-1 text-xs">
-              {form.formState.errors.eventInput.message}
-            </p>
-          ) : null}
-        </div>
+        <FormField
+          id="eventInput"
+          className="flex-1"
+          error={form.formState.errors.eventInput?.message}
+        >
+          <FormControl>
+            <Input
+              type="text"
+              {...form.register("eventInput")}
+              placeholder="Enter event ID (hex), note1, or nevent1..."
+              className="rounded-lg px-4 py-3 leading-6"
+              disabled={isSearching}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormField>
         <button
           type="submit"
           disabled={isSearching || !form.formState.isValid}

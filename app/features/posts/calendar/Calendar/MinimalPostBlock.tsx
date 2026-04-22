@@ -247,7 +247,7 @@ function RegularLayout({
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus-visible:ring-2 focus-visible:ring-focus-ring`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} focus-ring px-2 py-1`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -292,7 +292,7 @@ function RegularLayout({
       style={queueColorStyle ? queueStyle : undefined}
       title={title}
     >
-      <div className="relative flex items-center gap-1.5">
+      <div className="cluster-tight.5 relative">
         {timeLabel ? (
           <span className="flex-shrink-0 text-xs tabular-nums opacity-90">
             {timeLabel}

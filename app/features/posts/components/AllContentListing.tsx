@@ -493,7 +493,7 @@ export default function AllContentListing({
       {/* Mobile: Sort + virtualized card list (visible only on mobile) */}
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
-          <div className="mt-3 flex items-center gap-2">
+          <div className="cluster mt-3">
             <span
               className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
             >

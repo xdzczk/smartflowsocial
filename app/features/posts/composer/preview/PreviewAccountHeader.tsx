@@ -63,7 +63,7 @@ export function PreviewAccountHeader({
   const name = previewDisplayName(user);
   const picture = previewPicture(user);
   return (
-    <div className={cn("mb-2.5 flex items-center gap-2.5", className)}>
+    <div className={cn("cluster.5 mb-2.5", className)}>
       <Avatar className="border-border-subtle h-9 w-9 border">
         {picture ? <AvatarImage src={picture} alt="" /> : null}
         <AvatarFallback className="text-xs font-medium">

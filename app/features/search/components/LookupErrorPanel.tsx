@@ -1,6 +1,7 @@
-import { AlertCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { StatusIcon } from "~/components/ui/status-icon";
 import type { LookupLoaderErrorPayload } from "~/features/search";
 import { cn } from "~/lib/utils";
 
@@ -48,10 +49,7 @@ export function LookupErrorPanel({
       role="alert"
     >
       <div className="flex gap-3">
-        <AlertCircle
-          className="text-danger mt-0.5 h-5 w-5 shrink-0"
-          aria-hidden
-        />
+        <StatusIcon tone="danger" size="lg" className="mt-0.5" />
         <div className="min-w-0 flex-1">
           <h2 className="text-text text-base font-semibold">{title}</h2>
           <p className="text-text-secondary mt-2 text-sm leading-relaxed">

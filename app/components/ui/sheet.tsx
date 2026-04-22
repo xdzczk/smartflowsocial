@@ -33,7 +33,7 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 const sheetVariants = cva(
   // Sheet uses --surface-overlay (same family as dialog/popover) so menus and
   // sheets share elevation language. shadow-3 carries the lift.
-  "fixed z-50 gap-4 bg-surface-overlay text-text p-6 shadow-3 transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-surface-overlay text-text p-6 shadow-3 motion-fast ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {
@@ -67,7 +67,7 @@ const SheetContent = React.forwardRef<
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
-      <SheetPrimitive.Close className="focus-visible:ring-focus-ring data-[state=open]:bg-surface-hover data-[state=open]:text-text absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:pointer-events-none">
+      <SheetPrimitive.Close className="focus-ring data-[state=open]:bg-surface-hover data-[state=open]:text-text absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
         <X className={INLINE_ICON_SIZE_CLASS} />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>

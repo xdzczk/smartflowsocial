@@ -18,7 +18,7 @@ export function TrustStrip(): React.ReactElement {
         <span
           key={label}
           role="listitem"
-          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1"
+          className="inline-cluster-tight.5 rounded-md px-2 py-1"
         >
           <Icon className="text-text-secondary h-3.5 w-3.5 shrink-0" />
           <span>{label}</span>

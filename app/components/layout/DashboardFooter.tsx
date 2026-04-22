@@ -104,7 +104,7 @@ export default function Footer() {
           {syncNeedsAttention ? (
             <>
               <span className="hidden lg:inline">·</span>
-              <div className="flex items-center gap-1 text-xs">
+              <div className="cluster-tight text-xs">
                 <TriangleAlert className="text-warning h-3 w-3" />
                 <span className="hidden sm:inline">Needs attention</span>
               </div>

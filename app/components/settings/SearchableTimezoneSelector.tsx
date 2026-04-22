@@ -251,7 +251,7 @@ export function SearchableTimezoneSelector({
                     onClick={() => handleSelect(option)}
                     onMouseEnter={() => setFocusedIndex(index)}
                     className={cn(
-                      "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none",
+                      "motion-fast relative flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none",
                       "hover:bg-surface-hover hover:text-text",
                       "focus-visible:bg-surface-hover focus-visible:text-text",
                       isFocused && "bg-surface-hover text-text",

@@ -254,7 +254,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
                 lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"
               )}
             />
-            <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-1.5 sm:pr-2">
+            <div className="cluster-tight absolute inset-y-0 right-0 pr-1.5 sm:pr-2">
               {lookupNavigating ? (
                 <Loader2
                   className="text-text-secondary h-4 w-4 shrink-0 animate-spin"
@@ -274,7 +274,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
             </div>
           </div>
           {pasteKind ? (
-            <div className="mt-1.5 flex items-center gap-2 px-0.5">
+            <div className="cluster mt-1.5 px-0.5">
               <Badge variant="secondary" className="font-mono text-[10px]">
                 {pasteKind}
               </Badge>

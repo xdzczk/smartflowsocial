@@ -58,7 +58,7 @@ export function ProofCampaignControlRail({
   actionBar: ReactNode;
 }) {
   return (
-    <div className="border-border bg-surface/30 flex flex-col gap-6 rounded-xl border p-4">
+    <div className="border-border bg-surface/30 stack-loose rounded-xl border p-4">
       <div className="space-y-2">
         <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Selected

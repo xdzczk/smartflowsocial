@@ -98,7 +98,7 @@ export function LongFormCoverImage({
                     document.getElementById("cover-image-input")?.click()
                   }
                   className={cn(
-                    "text-text/90 border-border/35 inline-flex items-center border-r px-3 text-xs font-medium transition-colors",
+                    "text-text/90 border-border/35 motion-fast inline-flex items-center border-r px-3 text-xs font-medium",
                     "hover:bg-surface-hover/40 disabled:pointer-events-none disabled:opacity-45"
                   )}
                 >
@@ -112,7 +112,7 @@ export function LongFormCoverImage({
                 <button
                   type="button"
                   onClick={onOpenAssetBrowser}
-                  className="text-text-secondary hover:text-text/90 hover:bg-surface-hover/30 px-3 text-xs font-medium transition-colors"
+                  className="text-text-secondary hover:text-text/90 hover:bg-surface-hover/30 motion-fast px-3 text-xs font-medium"
                 >
                   From assets
                 </button>

@@ -202,7 +202,7 @@ export default function BulkPostsUploadArea({
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drop target wraps native file input */}
       <label
         htmlFor="bulk-posts-file-input"
-        className={`relative block rounded-lg border-2 border-dashed transition-colors ${labelBorderClass} ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+        className={`motion-fast relative block rounded-lg border-2 border-dashed ${labelBorderClass} ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
         aria-label="Upload media files"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}

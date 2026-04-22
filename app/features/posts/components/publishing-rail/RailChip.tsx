@@ -17,7 +17,7 @@ export function RailChip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 min-w-0 shrink-0 items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors",
+        "motion-fast inline-flex h-7 min-w-0 shrink-0 items-center justify-center rounded-md border px-2 text-xs font-medium",
         selected
           ? "border-brand bg-brand text-brand-on hover:bg-brand/90"
           : "border-border bg-canvas text-text hover:bg-surface-hover/60",

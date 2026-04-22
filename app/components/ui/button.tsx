@@ -4,10 +4,11 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils";
 const buttonVariants = cva(
-  // Base: type, focus, transition. Uses --focus-ring (= --brand-strong).
-  // Focus = ring-2 + offset-2 + offset-canvas → breathing room, "designed" not "glued on".
-  // Override with `focus-visible:ring-offset-0` on inline / table-row buttons where offset clips.
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  // Base: type, focus, transition. Focus uses the canonical `focus-ring-offset`
+  // recipe (Phase 1j-2) — ring-2 with a 2px canvas-colored donut so the ring
+  // reads as designed polish on top of a surface. Override with `focus-ring`
+  // on inline / table-row buttons where the offset clips against neighbours.
+  "focus-ring-offset inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium motion-fast disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {

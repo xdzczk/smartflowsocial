@@ -264,7 +264,7 @@ function SearchPostSkeleton() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <div className="border-border bg-surface shadow-1 space-y-4 rounded-xl border p-4">
-            <div className="flex items-center gap-3">
+            <div className="cluster-loose">
               <div className="bg-surface-hover h-10 w-10 animate-pulse rounded-full" />
               <div className="space-y-2">
                 <div className="bg-surface-hover h-4 w-32 animate-pulse rounded-xs" />

@@ -12,6 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -615,7 +618,7 @@ export function RescheduleScheduledPostModal({
             </div>
             <DialogPrimitive.Close
               type="button"
-              className="ring-offset-canvas focus-visible:ring-focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/50 shrink-0 rounded-md border border-transparent p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+              className="focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/50 motion-fast shrink-0 rounded-md border border-transparent p-1.5"
               aria-label="Close"
             >
               <X className={INLINE_ICON_SIZE_CLASS} aria-hidden />
@@ -674,34 +677,29 @@ export function RescheduleScheduledPostModal({
                     ? "Choose when to schedule the repost."
                     : "Choose when to schedule the quote and add an optional caption."}
                 </p>
-                <div>
-                  <label
-                    htmlFor="repostQuoteScheduledFor"
-                    className="text-text mb-1 block text-sm font-medium"
-                  >
-                    Schedule at
-                  </label>
-                  <input
-                    id="repostQuoteScheduledFor"
-                    type="datetime-local"
-                    value={repostQuoteScheduledFor}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      const min = getMinDatetimeLocalForSchedule(
+                <FormField id="repostQuoteScheduledFor">
+                  <FormLabel>Schedule at</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={repostQuoteScheduledFor}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const min = getMinDatetimeLocalForSchedule(
+                          userTimezone,
+                          post.scheduledAtUtc ?? undefined
+                        );
+                        setRepostQuoteScheduledFor(
+                          clampDateTimeLocalToMin(v, min)
+                        );
+                      }}
+                      min={getMinDatetimeLocalForSchedule(
                         userTimezone,
                         post.scheduledAtUtc ?? undefined
-                      );
-                      setRepostQuoteScheduledFor(
-                        clampDateTimeLocalToMin(v, min)
-                      );
-                    }}
-                    min={getMinDatetimeLocalForSchedule(
-                      userTimezone,
-                      post.scheduledAtUtc ?? undefined
-                    )}
-                    className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
+                      )}
+                    />
+                  </FormControl>
+                </FormField>
                 {scheduleRepostQuoteMode === "repost" ? (
                   <div className="border-border space-y-1.5 rounded-md border p-3">
                     <span className="text-text-secondary text-xs">
@@ -717,7 +715,7 @@ export function RescheduleScheduledPostModal({
                           { key: "minSats" as const, label: "Sats" },
                         ] as const
                       ).map(({ key, label }) => (
-                        <div key={key} className="flex items-center gap-1.5">
+                        <div key={key} className="cluster-tight.5">
                           <label className="text-text-secondary text-xs whitespace-nowrap">
                             {label}
                           </label>
@@ -752,22 +750,17 @@ export function RescheduleScheduledPostModal({
                   </div>
                 ) : null}
                 {scheduleRepostQuoteMode === "quote" ? (
-                  <div>
-                    <label
-                      htmlFor="repostQuoteCaption"
-                      className="text-text mb-1 block text-sm font-medium"
-                    >
-                      Quote caption (optional)
-                    </label>
-                    <textarea
-                      id="repostQuoteCaption"
-                      value={repostQuoteCaption}
-                      onChange={(e) => setRepostQuoteCaption(e.target.value)}
-                      placeholder="Add your comment..."
-                      rows={3}
-                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
-                    />
-                  </div>
+                  <FormField id="repostQuoteCaption">
+                    <FormLabel>Quote caption (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        value={repostQuoteCaption}
+                        onChange={(e) => setRepostQuoteCaption(e.target.value)}
+                        placeholder="Add your comment..."
+                        rows={3}
+                      />
+                    </FormControl>
+                  </FormField>
                 ) : null}
                 {(scheduleRepostQuoteFetcher.data?.error ?? signingError) ? (
                   <div className="border-danger/30 bg-danger/10 rounded-lg border p-3">
@@ -918,7 +911,7 @@ export function RescheduleScheduledPostModal({
                   <section className="space-y-2">
                     <button
                       type="button"
-                      className="text-text-secondary hover:text-text inline-flex items-center gap-1.5 text-xs font-medium"
+                      className="text-text-secondary hover:text-text inline-cluster-tight.5 text-xs font-medium"
                       onClick={() => setShowAdvancedActions((prev) => !prev)}
                       data-testid="reschedule-advanced-toggle"
                     >
@@ -958,7 +951,7 @@ export function RescheduleScheduledPostModal({
                 ) : null}
 
                 {isSigningEvent ? (
-                  <div className="bg-surface-hover text-text-secondary border-border/70 flex flex-col gap-2 rounded-lg border p-3 text-sm">
+                  <div className="bg-surface-hover text-text-secondary border-border/70 stack-tight rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}

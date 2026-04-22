@@ -120,7 +120,7 @@ export default function BulkPostsSchedulingPanel({
   const chipIntervals = intervals.filter((h) => h > 0);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="stack-tight">
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <Label

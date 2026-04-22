@@ -82,7 +82,7 @@ export function BlastrPolicySettings({
   const content = (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="cluster">
           <Label htmlFor="blastr-policy-mode" className="text-sm font-medium">
             Mode
           </Label>
@@ -102,7 +102,7 @@ export function BlastrPolicySettings({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="cluster">
           <Switch
             id="blastr-policy-enabled"
             checked={enabled}

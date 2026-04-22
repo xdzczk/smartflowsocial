@@ -10,8 +10,8 @@ import {
 import { Suspense, useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
+import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastAudiencesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,

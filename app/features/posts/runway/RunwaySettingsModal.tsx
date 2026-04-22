@@ -162,7 +162,7 @@ export function RunwaySettingsModal({
             ) : (
               <ul className="border-border flex max-h-40 flex-col gap-2 overflow-y-auto rounded-md border p-2">
                 {queueTypes.map((qt) => (
-                  <li key={qt.id} className="flex items-center gap-2">
+                  <li key={qt.id} className="cluster">
                     <Checkbox
                       id={`runway-queue-${qt.id}`}
                       checked={selectedQueueNames.includes(qt.name)}
@@ -222,7 +222,7 @@ export function RunwaySettingsModal({
               amber otherwise.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <Label
                   htmlFor="runway-red-threshold"
                   className="text-text-secondary shrink-0 text-sm"
@@ -247,7 +247,7 @@ export function RunwaySettingsModal({
                 />
                 <span className="text-text-secondary text-sm">days</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <Label
                   htmlFor="runway-orange-threshold"
                   className="text-text-secondary shrink-0 text-sm"

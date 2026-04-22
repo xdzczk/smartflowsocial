@@ -28,8 +28,7 @@ export const RAIL_SUMMARY_TO_FEEDBACK = "pt-2";
 export const railFieldClassNames = cn(
   "border-border bg-surface text-text placeholder:text-text-tertiary",
   "h-9 w-full rounded-md border px-3 text-xs font-normal shadow-none",
-  "transition-colors",
-  "focus-visible:ring-focus-ring focus-visible:outline-none focus-visible:ring-2",
+  "motion-fast focus-ring",
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 

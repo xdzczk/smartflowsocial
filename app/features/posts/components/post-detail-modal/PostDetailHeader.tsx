@@ -80,7 +80,7 @@ export function PostDetailHeader({
         <DialogPrimitive.Close
           type="button"
           className={cn(
-            "ring-offset-canvas focus-visible:ring-focus-ring text-text-secondary hover:text-text rounded-md border border-transparent p-1.5 transition-colors focus-visible:ring-2",
+            "focus-ring text-text-secondary hover:text-text motion-fast rounded-md border border-transparent p-1.5",
             "focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none",
             "hover:bg-surface-hover/50 shrink-0"
           )}

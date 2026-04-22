@@ -93,7 +93,7 @@ export function BillingAlertBanner({
         <Link
           prefetch="intent"
           to={to}
-          className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
         >
           {label}
         </Link>

@@ -61,7 +61,7 @@ const DialogContent = React.forwardRef<
         >
           {children}
           {hideCloseButton ? null : (
-            <DialogPrimitive.Close className="focus-visible:ring-focus-ring data-[state=open]:bg-surface-hover data-[state=open]:text-text absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:pointer-events-none">
+            <DialogPrimitive.Close className="focus-ring data-[state=open]:bg-surface-hover data-[state=open]:text-text absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
               <X className={INLINE_ICON_SIZE_CLASS} />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>

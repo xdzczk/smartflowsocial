@@ -50,7 +50,7 @@ export function GiveawayNewBuilderPresetTemplates({
       >
         Start from preset
       </h2>
-      <ul className="flex flex-col gap-2">
+      <ul className="stack-tight">
         {presets.map((p) => (
           <li key={p.id}>
             <form

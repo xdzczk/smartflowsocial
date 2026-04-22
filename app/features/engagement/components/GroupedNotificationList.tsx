@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { EmptyState } from "~/components/ui/empty-state";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import {
   Tooltip,
@@ -172,19 +173,12 @@ export default function GroupedNotificationList({
 
   if (groupedNotifications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="text-text-secondary mb-4">
-          <Bell
-            className="h-16 w-16"
-            strokeWidth={INLINE_ICON_STROKE}
-            aria-hidden
-          />
-        </div>
-        <p className="text-text text-lg font-medium">No notifications yet</p>
-        <p className="text-text-secondary text-sm">
-          When you get replies or mentions, they&apos;ll show up here
-        </p>
-      </div>
+      <EmptyState
+        size="lg"
+        icon={<Bell strokeWidth={INLINE_ICON_STROKE} />}
+        title="No notifications yet"
+        description="When you get replies or mentions, they'll show up here"
+      />
     );
   }
 
@@ -459,7 +453,7 @@ function GroupedNotificationCard({
 
                   {parentPost.stats ? (
                     <div className="text-text-secondary/90 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px]">
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-cluster-tight">
                         <MessageCircle
                           className={INLINE_ICON_SIZE_CLASS}
                           strokeWidth={INLINE_ICON_STROKE}
@@ -467,7 +461,7 @@ function GroupedNotificationCard({
                         />
                         {parentPost.stats.replies}
                       </span>
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-cluster-tight">
                         <Zap
                           className={INLINE_ICON_SIZE_CLASS}
                           strokeWidth={INLINE_ICON_STROKE}
@@ -477,7 +471,7 @@ function GroupedNotificationCard({
                           ? `${parentPost.stats.satszapped.toLocaleString()}`
                           : "0"}
                       </span>
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-cluster-tight">
                         <Heart
                           className={INLINE_ICON_SIZE_CLASS}
                           strokeWidth={INLINE_ICON_STROKE}
@@ -485,7 +479,7 @@ function GroupedNotificationCard({
                         />
                         {parentPost.stats.likes}
                       </span>
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-cluster-tight">
                         <Repeat
                           className={INLINE_ICON_SIZE_CLASS}
                           strokeWidth={INLINE_ICON_STROKE}

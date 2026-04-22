@@ -98,7 +98,7 @@ export function UploadProviderSettings({
 
   const primaryAccentColor = "hsl(var(--primary))";
   const optionRowBase =
-    "flex items-start space-x-3 rounded-lg border p-3 transition-colors";
+    "flex items-start space-x-3 rounded-lg border p-3 motion-fast";
   const optionRowSelected = "border-brand bg-surface-hover/30";
 
   const ctaLabel = (() => {
@@ -135,7 +135,7 @@ export function UploadProviderSettings({
                 selectedProvider === "BLOSSOM"
               }
               onChange={() => setSelectedProvider("BLOSSOM_PRIMAL")}
-              className="border-border accent-checkbox focus-visible:ring-focus-ring mt-1 h-4 w-4 focus-visible:ring-2"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
@@ -168,7 +168,7 @@ export function UploadProviderSettings({
               value="BLOSSOM_BLOSSTR"
               checked={selectedProvider === "BLOSSOM_BLOSSTR"}
               onChange={() => setSelectedProvider("BLOSSOM_BLOSSTR")}
-              className="border-border accent-checkbox focus-visible:ring-focus-ring mt-1 h-4 w-4 focus-visible:ring-2"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
@@ -237,7 +237,7 @@ export function UploadProviderSettings({
                 value="BLOSSOM_SFS"
                 checked={selectedProvider === "BLOSSOM_SFS"}
                 onChange={() => setSelectedProvider("BLOSSOM_SFS")}
-                className="border-border accent-checkbox focus-visible:ring-focus-ring mt-1 h-4 w-4 focus-visible:ring-2"
+                className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
                 style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
@@ -271,7 +271,7 @@ export function UploadProviderSettings({
               value="BLOSSOM_CUSTOM"
               checked={selectedProvider === "BLOSSOM_CUSTOM"}
               onChange={() => setSelectedProvider("BLOSSOM_CUSTOM")}
-              className="border-border accent-checkbox focus-visible:ring-focus-ring mt-1 h-4 w-4 focus-visible:ring-2"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
@@ -329,7 +329,7 @@ export function UploadProviderSettings({
           <button
             type="submit"
             disabled={submitDisabled}
-            className="bg-brand text-brand-on hover:bg-brand/90 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-brand text-brand-on hover:bg-brand/90 motion-fast rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Saving…" : ctaLabel}
           </button>

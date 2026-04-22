@@ -9,7 +9,6 @@ import {
 import { Suspense, useMemo, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { AdminUsersPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -26,6 +25,7 @@ import {
   AdminDataTableHead,
   AdminPageHeader,
   AdminSection,
+  AdminUsersPageSkeleton,
 } from "~/features/admin";
 import type { AdminUserSegment } from "~/features/admin/repositories/admin-users-queries.server";
 import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users-queries.server";

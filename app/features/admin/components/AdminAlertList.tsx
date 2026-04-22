@@ -62,7 +62,7 @@ export function AdminAlertList({ alerts }: { alerts: AdminAlertItem[] }) {
                   <Link
                     to={a.href}
                     className={cn(
-                      "hover:bg-surface-hover/50 block rounded-lg border px-3 py-2 text-sm transition-colors",
+                      "hover:bg-surface-hover/50 motion-fast block rounded-lg border px-3 py-2 text-sm",
                       a.severity === "danger"
                         ? "border-danger/40 bg-danger/5"
                         : "border-warning/40 bg-warning/5"

@@ -32,9 +32,9 @@ export function ThreadExplorer({
 
   return (
     <section className="border-border bg-surface shadow-1 rounded-xl border">
-      <div className="border-border flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-border stack-tight border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="cluster">
             <MessageCircle
               className="text-text-secondary h-4 w-4 shrink-0"
               strokeWidth={INLINE_ICON_STROKE}

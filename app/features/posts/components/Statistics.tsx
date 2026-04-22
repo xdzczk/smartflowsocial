@@ -69,7 +69,7 @@ export default function Statistics({
 
   const cardBase = "card-lift kpi-card min-h-[72px] shadow-1 dark:shadow-none";
   const contentBase =
-    "hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring";
+    "focus-ring hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 motion-fast";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
   const dtBase = "text-text text-h1 tabular-nums";
   const ddBase = "text-text-secondary/90 text-overline";

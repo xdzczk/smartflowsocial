@@ -48,7 +48,7 @@ export function BulkDraftsListing({ groups }: BulkDraftsListingProps) {
         <li key={g.id}>
           <Link
             to={`/dashboard/bulkposts?groupId=${encodeURIComponent(g.id)}`}
-            className="hover:bg-surface-hover/50 flex items-center justify-between gap-4 px-4 py-3 transition-colors"
+            className="hover:bg-surface-hover/50 motion-fast flex items-center justify-between gap-4 px-4 py-3"
           >
             <span className="font-medium">
               {g.postCount} {g.postCount === 1 ? "post" : "posts"}

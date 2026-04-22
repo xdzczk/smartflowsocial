@@ -76,7 +76,7 @@ export function RailSettingsValueRow({
         type="button"
         className={cn(
           RAIL_SETTINGS_ROW,
-          "hover:bg-surface-hover/60 w-full cursor-pointer rounded-sm text-left transition-colors",
+          "hover:bg-surface-hover/60 motion-fast w-full cursor-pointer rounded-sm text-left",
           className
         )}
         onClick={onClick}

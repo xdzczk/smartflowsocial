@@ -188,7 +188,7 @@ export default function AccountSwitchMenu() {
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="flex items-center gap-3 rounded-md border p-3">
+          <div className="cluster-loose rounded-md border p-3">
             <Avatar className="h-8 w-8">
               {currentAvatar ? (
                 <AvatarImage src={currentAvatar} alt={currentLabel} />

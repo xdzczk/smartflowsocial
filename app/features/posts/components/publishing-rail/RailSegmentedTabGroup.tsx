@@ -54,7 +54,7 @@ export function RailSegmentedTabGroup({
               disabled={disabled}
               className={cn(
                 TAB_ROW_H,
-                "flex items-center justify-center px-1 text-center text-xs transition-colors",
+                "motion-fast flex items-center justify-center px-1 text-center text-xs",
                 disabled && "pointer-events-none opacity-90",
                 /* Active: no bottom rule so it reads as one surface with the rail body below */
                 active

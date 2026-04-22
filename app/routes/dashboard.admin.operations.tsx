@@ -3,8 +3,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { AdminOperationsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
-import { AdminOperationsPageInner } from "~/features/admin";
+import {
+  AdminOperationsPageInner,
+  AdminOperationsPageSkeleton,
+} from "~/features/admin";
 import { adminOperationsAction } from "~/features/admin/admin-operations-action.server";
 import {
   defaultRangeForAdminPath,

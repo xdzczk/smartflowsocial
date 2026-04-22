@@ -49,7 +49,7 @@ export function QueueTypeCard({
   const chips = getQueueMetadataChips(queueType);
 
   return (
-    <div className="border-border/80 hover:bg-surface-hover/40 flex flex-col gap-2 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="border-border/80 hover:bg-surface-hover/40 stack-tight motion-fast rounded-lg border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <div
           className="mt-1.5 h-3 w-3 shrink-0 rounded-full"

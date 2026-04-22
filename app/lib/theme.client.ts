@@ -1,5 +1,10 @@
+import { THEME_COLOR_HEX } from "./theme-color";
+
 export type StoredThemePreference = "system" | "light" | "dark";
 export type EffectiveTheme = "light" | "dark";
+
+/** Re-exported for back-compat; canonical source is `~/lib/theme-color`. */
+export { THEME_COLOR_HEX };
 
 export const THEME_STORAGE_KEY = "theme" as const;
 
@@ -85,11 +90,49 @@ export function resolveEffectiveTheme(
   return getSystemEffectiveTheme();
 }
 
+const THEME_COLOR_META_ID = "sfs-theme-color";
+
+/**
+ * Updates `<meta name="theme-color">` for the effective UI theme (not OS alone).
+ * Removes SSR `theme-color` entries with `media=` so in-app light/dark wins on Android/PWA.
+ */
+export function syncThemeColorMeta(theme: EffectiveTheme): void {
+  if (typeof document === "undefined") return;
+  const content =
+    theme === "dark" ? THEME_COLOR_HEX.dark : THEME_COLOR_HEX.light;
+
+  let meta = document.getElementById(
+    THEME_COLOR_META_ID
+  ) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.id = THEME_COLOR_META_ID;
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = content;
+
+  document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
+    el.remove();
+  });
+}
+
+export function syncThemeColorMetaFromDocument(): void {
+  if (typeof document === "undefined") return;
+  const effective: EffectiveTheme = document.documentElement.classList.contains(
+    "dark"
+  )
+    ? "dark"
+    : "light";
+  syncThemeColorMeta(effective);
+}
+
 export function applyEffectiveThemeToDocument(theme: EffectiveTheme): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   if (theme === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
+  syncThemeColorMeta(theme);
 }
 
 let unsubscribeSystem: (() => void) | null = null;

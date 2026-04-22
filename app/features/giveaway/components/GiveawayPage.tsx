@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import { scopeIsFollowGraphAccountPool } from "../types";
@@ -76,7 +77,7 @@ export default function GiveawayPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="stack sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-text text-2xl font-semibold tracking-tight">
             Giveaways
@@ -258,15 +259,16 @@ export default function GiveawayPage({
       </Form>
 
       {kpis.total === 0 ? (
-        <div className="border-border bg-surface-hover/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-text font-medium">No giveaways yet</p>
-          <p className="text-text-secondary mt-1 max-w-sm text-sm">
-            Create your first giveaway to pick winners from engagement, then
-            lock and pay out fairly.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/giveaway/new">New giveaway</Link>
-          </Button>
+        <div className="border-border bg-surface-hover/20 rounded-lg border border-dashed">
+          <EmptyState
+            title="No giveaways yet"
+            description="Create your first giveaway to pick winners from engagement, then lock and pay out fairly."
+            action={
+              <Button asChild>
+                <Link to="/dashboard/giveaway/new">New giveaway</Link>
+              </Button>
+            }
+          />
         </div>
       ) : giveaways.length > 0 ? (
         <>

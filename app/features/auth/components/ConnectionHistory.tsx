@@ -120,7 +120,7 @@ export function ConnectionHistory({
         {displayedEntries.map((entry) => (
           <div
             key={entry.id}
-            className="bg-surface-hover/30 hover:bg-surface-hover/50 flex min-w-0 items-start gap-3 rounded-md border p-3 transition-colors"
+            className="bg-surface-hover/30 hover:bg-surface-hover/50 motion-fast flex min-w-0 items-start gap-3 rounded-md border p-3"
           >
             <div className="mt-0.5">{getEntryIcon(entry)}</div>
             <div className="min-w-0 flex-1 space-y-1">
@@ -134,7 +134,7 @@ export function ConnectionHistory({
                   {format(new Date(entry.timestamp), "MMM d, HH:mm:ss")}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="cluster">
                 <span className="text-text-secondary text-xs">
                   {entry.type}
                 </span>

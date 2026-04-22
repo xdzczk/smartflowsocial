@@ -286,14 +286,14 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                       }`}
                     >
                       <td className="text-text px-4 py-3 text-sm font-medium">
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-cluster-tight.5">
                           {feature.label}
                           {feature.tooltip ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  className="text-text-secondary hover:text-text hidden shrink-0 transition md:inline-flex"
+                                  className="text-text-secondary hover:text-text motion-fast hidden shrink-0 md:inline-flex"
                                   aria-label={`More about ${feature.label}`}
                                 >
                                   <HelpCircle className="h-3.5 w-3.5" />

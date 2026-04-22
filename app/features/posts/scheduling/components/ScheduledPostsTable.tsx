@@ -491,7 +491,7 @@ export function ScheduledPostsTable({
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
+                            className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                             aria-label="Actions"
                           >
                             <MoreHorizontal
@@ -590,7 +590,7 @@ export function ScheduledPostsTable({
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
-            <div className="mb-3 flex items-center gap-2">
+            <div className="cluster mb-3">
               <span
                 className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
               >

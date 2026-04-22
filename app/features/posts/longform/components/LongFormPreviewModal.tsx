@@ -87,7 +87,7 @@ export default function LongFormPreviewModal({
           {/* Article Card Preview - matches the Primal/Nostr style */}
           <div className="mx-auto max-w-2xl p-6">
             {/* Author Header */}
-            <div className="mb-4 flex items-center gap-3">
+            <div className="cluster-loose mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] text-lg font-semibold text-white">
                 {author.charAt(0).toUpperCase()}
               </div>
@@ -104,7 +104,7 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Date and Source */}
-            <div className="text-text-secondary dark:text-text mb-4 flex items-center gap-2 text-sm">
+            <div className="text-text-secondary dark:text-text cluster mb-4 text-sm">
               <span>{formatDate()}</span>
               <span>•</span>
               <span>via {BRAND_NAME}</span>
@@ -155,10 +155,10 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Zap Button */}
-            <div className="flex items-center gap-3">
+            <div className="cluster-loose">
               {/* Hashtags */}
               {displayedHashtags ? (
-                <div className="ml-auto flex items-center gap-2">
+                <div className="cluster ml-auto">
                   <span className="text-text-secondary dark:text-text text-xs">
                     {displayedHashtags}
                   </span>

@@ -57,7 +57,7 @@ export function LongFormPostArticleHead({
           type="text"
           id="article-composer-title"
           placeholder="Write a title"
-          className="text-text placeholder:text-text-tertiary/40 focus:border-border/25 w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight transition-colors outline-none focus-visible:ring-0 sm:text-[2rem] lg:text-[2.125rem]"
+          className="text-text placeholder:text-text-tertiary/40 focus:border-border/25 motion-fast w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight outline-none focus-visible:ring-0 sm:text-[2rem] lg:text-[2.125rem]"
           aria-label="Article title"
           name={titleFieldReg.name}
           onChange={(e) => void titleFieldReg.onChange(e)}
@@ -78,7 +78,7 @@ export function LongFormPostArticleHead({
             <button
               type="button"
               className={cn(
-                "text-[10px] font-normal underline-offset-2 transition-colors",
+                "motion-fast text-[10px] font-normal underline-offset-2",
                 !content
                   ? "text-text-secondary/35 pointer-events-none cursor-not-allowed"
                   : "text-text-secondary/50 hover:text-text-secondary/70 underline"
@@ -100,7 +100,7 @@ export function LongFormPostArticleHead({
             }
             placeholder="Short line for previews and search (recommended)."
             rows={2}
-            className="border-border/25 focus-visible:border-border/45 resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none transition-colors focus-visible:ring-0"
+            className="border-border/25 focus-visible:border-border/45 motion-fast resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none focus-visible:ring-0"
           />
         </div>
 

@@ -1,5 +1,6 @@
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
+import { StatusIcon, type StatusTone } from "~/components/ui/status-icon";
 import { cn } from "~/lib/utils";
 
 /** Mirrors HealthStatus from admin-system-health without importing .server in client bundles. */
@@ -12,11 +13,11 @@ const toneStyles: Record<AdminHealthTone, string> = {
   failing: "bg-danger/15 text-danger-text border-danger/35",
 };
 
-const icons: Record<AdminHealthTone, typeof CheckCircle2> = {
-  healthy: CheckCircle2,
-  degraded: AlertTriangle,
-  unknown: HelpCircle,
-  failing: XCircle,
+const HEALTH_TO_STATUS_TONE: Record<AdminHealthTone, StatusTone> = {
+  healthy: "success",
+  degraded: "warning",
+  unknown: "neutral",
+  failing: "danger",
 };
 
 export function AdminStatusPill({
@@ -30,7 +31,6 @@ export function AdminStatusPill({
   detail?: string;
   className?: string;
 }) {
-  const Icon = icons[status];
   return (
     <div
       className={cn(
@@ -39,8 +39,12 @@ export function AdminStatusPill({
         className
       )}
     >
-      <span className="flex items-center gap-1.5 font-medium">
-        <Icon className="size-3.5 shrink-0 opacity-90" aria-hidden />
+      <span className="cluster-tight.5 font-medium">
+        <StatusIcon
+          tone={HEALTH_TO_STATUS_TONE[status]}
+          size="sm"
+          icon={status === "unknown" ? HelpCircle : undefined}
+        />
         {label}
         <span className="font-normal opacity-90">{status}</span>
       </span>

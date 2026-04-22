@@ -8,7 +8,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 export function ComposerSkeleton() {
   return (
     <div
-      className="flex flex-col gap-6 lg:flex-row lg:items-start"
+      className="stack-loose lg:flex-row lg:items-start"
       aria-busy="true"
       aria-label="Loading composer"
     >

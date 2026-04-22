@@ -313,7 +313,7 @@ export default function DraftBulkResume({
             className="bg-success text-success-foreground hover:bg-success/90 shadow-2 rounded-lg px-8 py-3 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
-              <span className="flex items-center gap-2">
+              <span className="cluster">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Signing & Scheduling...
               </span>

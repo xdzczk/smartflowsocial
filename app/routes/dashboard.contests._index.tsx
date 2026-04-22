@@ -8,6 +8,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
+import { Trophy } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { requireUserId } from "~/features/auth";
 import {
   contestCopy,
@@ -219,7 +221,7 @@ export default function ContestsIndexRoute() {
           {actionData.error}
         </div>
       ) : null}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="stack sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-text text-2xl font-semibold tracking-tight">
             Contests
@@ -379,15 +381,17 @@ export default function ContestsIndexRoute() {
       </Form>
 
       {!hasAnyContests ? (
-        <div className="border-border bg-surface-hover/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-text font-medium">No contests yet</p>
-          <p className="text-text-secondary mt-1 max-w-sm text-sm">
-            Create your first contest to rank entries and reward winners.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/contests/new">New contest</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          icon={<Trophy />}
+          title="No contests yet"
+          description="Create your first contest to rank entries and reward winners."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/contests/new">New contest</Link>
+            </Button>
+          }
+        />
       ) : data.contests.length > 0 ? (
         <>
           <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
@@ -412,7 +416,7 @@ export default function ContestsIndexRoute() {
                   return (
                     <tr
                       key={contest.id}
-                      className="hover:bg-surface-hover/40 cursor-pointer transition-colors"
+                      className="hover:bg-surface-hover/40 motion-fast cursor-pointer"
                       onClick={() => {
                         navigate(`/dashboard/contests/detail/${contest.id}`);
                       }}
@@ -449,7 +453,7 @@ export default function ContestsIndexRoute() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                          className={`inline-cluster-tight.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
                         >
                           <span
                             className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
@@ -556,7 +560,7 @@ export default function ContestsIndexRoute() {
                 /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- whole card opens detail; action strip stops propagation */
                 <li
                   key={contest.id}
-                  className="hover:bg-surface-hover/30 cursor-pointer p-4 transition-colors"
+                  className="hover:bg-surface-hover/30 motion-fast cursor-pointer p-4"
                   onClick={() => {
                     navigate(`/dashboard/contests/detail/${contest.id}`);
                   }}
@@ -581,7 +585,7 @@ export default function ContestsIndexRoute() {
                       </span>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                          className={`inline-cluster-tight.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
                         >
                           <span
                             className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
@@ -661,15 +665,17 @@ export default function ContestsIndexRoute() {
           </ul>
         </>
       ) : (
-        <div className="border-border bg-surface-hover/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-text font-medium">No contests match filters</p>
-          <p className="text-text-secondary mt-1 max-w-sm text-sm">
-            Try clearing filters or create a new contest to reward top replies.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/contests/new">New contest</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          icon={<Trophy />}
+          title="No contests match filters"
+          description="Try clearing filters or create a new contest to reward top replies."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/contests/new">New contest</Link>
+            </Button>
+          }
+        />
       )}
     </div>
   );

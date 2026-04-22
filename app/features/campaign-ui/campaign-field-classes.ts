@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 export const campaignFieldClassNames = cn(
   "border-border bg-canvas text-text placeholder:text-text-tertiary",
   "h-10 w-full rounded-md border px-3 text-sm shadow-none",
-  "transition-colors",
+  "motion-fast",
   "focus-visible:ring-focus-ring focus-visible:outline-none focus-visible:ring-1",
   "disabled:cursor-not-allowed disabled:opacity-50"
 );

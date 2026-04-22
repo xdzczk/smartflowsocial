@@ -119,7 +119,7 @@ function MonthlyPostTile({
         e.stopPropagation();
         onPostEdit(post);
       }}
-      className={`focus-visible:ring-focus-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color,transform,box-shadow] focus-visible:ring-2 focus-visible:outline-none ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${interactionClass} ${
+      className={`focus-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color,transform,box-shadow] ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${interactionClass} ${
         isMobile ? "p-0.5" : "p-1"
       }`}
       title={
@@ -357,7 +357,7 @@ export function MonthlyView({
   };
 
   const cellClassName = (dayInfo: CalendarDay) =>
-    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 transition-colors ${
+    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 motion-fast ${
       isMobile ? "px-1 py-1" : "px-2 py-1.5"
     } ${
       dayInfo.isCurrentMonth

@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import type { CombinedContent } from "../types";
@@ -384,7 +385,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="card-lift border-border-subtle bg-surface hover:bg-surface-hover/30 focus-visible:ring-focus-ring shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed focus-visible:ring-2 focus-visible:outline-none md:h-[232px] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle bg-surface hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
@@ -458,13 +459,13 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Link
                 to="/dashboard/compose?type=post"
-                className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring rounded-xl px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 rounded-xl px-4 py-2 text-sm font-medium"
               >
                 Schedule first post
               </Link>
               <Link
                 to="/dashboard/compose"
-                className="card-lift border-border-subtle text-text hover:bg-surface-hover/50 focus-visible:ring-focus-ring shadow-1 rounded-xl border px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -474,20 +475,22 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }
       return (
         <div
-          className="border-border-subtle flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"
+          className="border-border-subtle rounded-xl border border-dashed"
           role="region"
           aria-label="Post timeline"
         >
-          <p className="text-text-secondary/90 text-sm">
-            No posts yet. Create your first post or schedule one to see your
-            flow.
-          </p>
-          <Link
-            to="/dashboard/compose?type=post"
-            className="card-lift border-border-subtle text-text hover:bg-surface-hover/50 focus-visible:ring-focus-ring shadow-1 rounded-xl border px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Open composer
-          </Link>
+          <EmptyState
+            title="No posts yet"
+            description="Create your first post or schedule one to see your flow."
+            action={
+              <Link
+                to="/dashboard/compose?type=post"
+                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+              >
+                Open composer
+              </Link>
+            }
+          />
         </div>
       );
     }

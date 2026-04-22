@@ -100,7 +100,7 @@ export default function AccountSwitcher() {
               `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
             return (
               <SelectItem key={c.npub} value={c.npub}>
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   <Avatar className="h-5 w-5">
                     {c.picture ? (
                       <AvatarImage src={c.picture} alt={label} />

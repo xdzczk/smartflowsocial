@@ -33,7 +33,7 @@ export function QueueSelector({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2",
+          "focus-ring border-border bg-canvas text-text focus:border-brand w-full rounded-md border px-3 py-2 text-sm",
           selectClassName
         )}
       >

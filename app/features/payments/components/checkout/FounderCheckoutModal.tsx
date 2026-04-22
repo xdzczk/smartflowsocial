@@ -94,7 +94,7 @@ export function FounderCheckoutModal({
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 focus-visible:ring-focus-ring shrink-0 rounded-lg border px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 shrink-0 rounded-lg border px-3 py-2 text-sm font-medium"
               >
                 Close
               </button>
@@ -153,11 +153,11 @@ export function FounderCheckoutModal({
             lifetimeOneTime
           />
 
-          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="stack-tight border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-canvas text-text-secondary hover:bg-surface-hover/60 focus-visible:ring-focus-ring order-2 rounded-lg border px-4 py-2.5 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none sm:order-1"
+                className="focus-ring border-border bg-canvas text-text-secondary hover:bg-surface-hover/60 order-2 rounded-lg border px-4 py-2.5 text-sm font-medium sm:order-1"
               >
                 Cancel
               </button>
@@ -168,7 +168,7 @@ export function FounderCheckoutModal({
                   type="button"
                   onClick={onSelectManual}
                   disabled={isSubmitting}
-                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -186,7 +186,7 @@ export function FounderCheckoutModal({
                   type="button"
                   onClick={onSelectBtcOnchain}
                   disabled={isSubmitting}
-                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

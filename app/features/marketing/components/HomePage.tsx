@@ -48,17 +48,17 @@ export function HomePage(): ReactNode {
               Cadence holds indefinitely.
             </p>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <div className="stack sm:flex-row sm:justify-center">
               <a
                 href="/plans"
-                className="bg-brand-action text-brand-on hover:bg-brand-action/90 focus-visible:ring-focus-ring inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+                className="focus-ring bg-brand-action text-brand-on hover:bg-brand-action/90 motion-fast inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold"
               >
                 <span>ENTER CONSOLE</span>
                 <ArrowRight className="h-5 w-5" aria-hidden />
               </a>
               <a
                 href="/"
-                className="border-border bg-surface text-text hover:bg-surface-hover hover:text-text focus-visible:ring-focus-ring inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+                className="focus-ring border-border bg-surface text-text hover:bg-surface-hover hover:text-text motion-fast inline-flex items-center justify-center gap-2 rounded-lg border px-8 py-4 text-lg font-semibold"
               >
                 <span>Watch Demo</span>
               </a>

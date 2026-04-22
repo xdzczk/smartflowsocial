@@ -185,7 +185,7 @@ export function SessionDetailsDialog({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Connection Label</Label>
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   {isEditingLabel ? (
                     <>
                       <Input
@@ -221,7 +221,7 @@ export function SessionDetailsDialog({
 
               <div className="flex items-center justify-between">
                 <Label>Signer App Name</Label>
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   {isEditingAppName ? (
                     <>
                       <Input

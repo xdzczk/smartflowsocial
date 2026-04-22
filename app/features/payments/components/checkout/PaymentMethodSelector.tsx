@@ -43,7 +43,7 @@ export function PaymentMethodSelector({
 }: PaymentMethodSelectorProps): React.ReactElement {
   return (
     <div
-      className="flex flex-col gap-2 sm:flex-row sm:flex-wrap"
+      className="stack-tight sm:flex-row sm:flex-wrap"
       role="tablist"
       aria-label="Payment method"
     >
@@ -60,7 +60,7 @@ export function PaymentMethodSelector({
             disabled={disabled}
             onClick={() => onChange(id)}
             className={cn(
-              "border-border focus-visible:ring-focus-ring relative flex flex-1 flex-col items-start rounded-lg border px-4 py-3 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:opacity-50",
+              "focus-ring border-border motion-fast relative flex flex-1 flex-col items-start rounded-lg border px-4 py-3 text-left text-sm disabled:opacity-50",
               selected
                 ? "border-brand bg-brand/10 ring-brand/35 shadow-1 ring-2"
                 : "bg-surface hover:bg-surface-hover/40"
@@ -71,7 +71,7 @@ export function PaymentMethodSelector({
                 Recommended
               </span>
             ) : null}
-            <span className="flex items-center gap-2 font-semibold">
+            <span className="cluster font-semibold">
               <Icon
                 className={cn(
                   "h-5 w-5 shrink-0",

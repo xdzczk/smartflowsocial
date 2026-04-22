@@ -299,7 +299,7 @@ export function ComposerThreadField({
                 />
                 <p
                   className={cn(
-                    "pointer-events-none absolute right-0 bottom-0 text-[9px] tabular-nums transition-colors duration-150",
+                    "motion-fast pointer-events-none absolute right-0 bottom-0 text-[9px] tabular-nums",
                     "text-text-tertiary/30 group-focus-within:text-text-tertiary/55"
                   )}
                 >
@@ -345,8 +345,8 @@ export function ComposerThreadField({
               <button
                 type="button"
                 className={cn(
-                  "text-text-tertiary hover:text-text-secondary inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-normal transition-colors",
-                  "hover:bg-surface-hover/60 focus-visible:ring-focus-ring focus-visible:ring-2 focus-visible:outline-none",
+                  "text-text-tertiary hover:text-text-secondary motion-fast inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-normal",
+                  "focus-ring hover:bg-surface-hover/60",
                   "disabled:pointer-events-none disabled:opacity-50"
                 )}
                 disabled={disabled}
@@ -379,7 +379,7 @@ export function ComposerThreadField({
           ])
         }
         className={cn(
-          "text-text-secondary hover:text-text/90 hover:bg-surface-hover/60 mt-1 inline-flex min-h-10 max-w-full items-center gap-2 rounded-md px-1.5 py-2 text-left text-xs transition-colors",
+          "text-text-secondary hover:text-text/90 hover:bg-surface-hover/60 motion-fast mt-1 inline-flex min-h-10 max-w-full items-center gap-2 rounded-md px-1.5 py-2 text-left text-xs",
           "disabled:pointer-events-none disabled:opacity-50"
         )}
       >

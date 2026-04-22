@@ -231,7 +231,7 @@ export function RemoteSignerReconnectDialog(props: {
           </div>
         </div>
 
-        <div className="border-border/60 mt-2 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="border-border/60 stack-tight mt-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
           {isAddFlow ? (
             <Button
               type="button"

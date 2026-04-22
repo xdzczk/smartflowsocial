@@ -15,7 +15,7 @@ import {
 import type { EngagementSortBy } from "../engagement-filter";
 
 const FILTER_BUTTON_BASE =
-  "rounded-full px-3 py-1 text-xs font-medium transition-colors";
+  "rounded-full px-3 py-1 text-xs font-medium motion-fast";
 const FILTER_ACTIVE = "bg-brand text-brand-on";
 const FILTER_INACTIVE =
   "bg-surface-hover text-text-secondary hover:bg-surface-hover/80";

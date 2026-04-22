@@ -33,7 +33,7 @@ export function RenderedPollPreview({
             <li
               key={optionKeys[i] ?? `poll-opt-${i}`}
               className={cn(
-                "bg-surface-hover/50 flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                "bg-surface-hover/50 cluster-loose rounded-md px-3 py-2 text-sm",
                 "border-border-subtle border"
               )}
             >

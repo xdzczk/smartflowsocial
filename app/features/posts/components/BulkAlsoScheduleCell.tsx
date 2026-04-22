@@ -55,7 +55,7 @@ export function BulkAlsoScheduleCell({
 
   return (
     <div className="w-full max-w-full min-w-0 space-y-3 text-xs">
-      <div className="flex items-center gap-2">
+      <div className="cluster">
         <Checkbox
           id={`${rowLabelId}-repost`}
           checked={hasRepost}
@@ -150,7 +150,7 @@ export function BulkAlsoScheduleCell({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <div className="cluster">
         <Checkbox
           id={`${rowLabelId}-quote`}
           checked={hasQuote}

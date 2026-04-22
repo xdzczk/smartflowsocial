@@ -151,7 +151,7 @@ export function NWCSettings({
           <div className="space-y-2">
             <Label>Connected wallet</Label>
             <div className="bg-surface-hover space-y-2 rounded-md p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="stack-tight sm:flex-row sm:items-center sm:justify-between">
                 <p className="min-w-0 font-mono text-sm break-all">
                   {maskedNwcString}
                 </p>
@@ -181,7 +181,7 @@ export function NWCSettings({
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="stack-tight sm:flex-row">
               <Button
                 type="button"
                 variant="outline"

@@ -369,7 +369,7 @@ function LongFormDetailRail({
                 Performance metrics are not available yet.
               </p>
             )}
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="stack-tight mt-2">
               {viewThreadUrl ? (
                 <Link
                   to={viewThreadUrl}

@@ -3,7 +3,7 @@ import { useFetcher } from "@remix-run/react";
 export function GiveawayDetailSavePresetForm() {
   const fetcher = useFetcher();
   return (
-    <fetcher.Form method="post" className="flex items-center gap-2">
+    <fetcher.Form method="post" className="cluster">
       <input type="hidden" name="intent" value="savePreset" />
       <label htmlFor="presetName" className="text-text-secondary text-sm">
         Save as preset:

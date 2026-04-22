@@ -756,7 +756,7 @@ export function GiveawayDetailPage({
                         {ENGAGEMENT_OPTIONS.map((opt) => (
                           <label
                             key={opt}
-                            className="text-text flex items-center gap-1.5 text-sm"
+                            className="text-text cluster-tight.5 text-sm"
                           >
                             <input
                               type="checkbox"
@@ -854,7 +854,7 @@ export function GiveawayDetailPage({
             </previewFetcher.Form>
           ) : null}
 
-          {previewFetcher.data?.error || lockFetcher.data?.error ? (
+          {(previewFetcher.data?.error ?? lockFetcher.data?.error) ? (
             <p className="text-danger text-sm">
               {previewFetcher.data?.error ?? lockFetcher.data?.error}
             </p>
@@ -985,7 +985,7 @@ export function GiveawayDetailPage({
                   <p className="text-danger text-xs font-medium">
                     Locking is irreversible. You cannot reroll after lock.
                   </p>
-                  <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <DialogFooter className="stack-tight sm:flex-row sm:justify-end">
                     <Button
                       type="button"
                       variant="outline"
@@ -1324,7 +1324,7 @@ export function GiveawayDetailPage({
             </summary>
             <ul className="border-border space-y-2 border-t p-4">
               {winners.map((w, i) => (
-                <li key={w.pubkey} className="flex items-center gap-2 text-sm">
+                <li key={w.pubkey} className="cluster text-sm">
                   <span className="text-text-secondary">{i + 1}.</span>
                   <WinnerNpubRow
                     npub={w.npub}

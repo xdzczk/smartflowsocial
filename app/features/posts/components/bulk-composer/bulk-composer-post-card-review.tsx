@@ -37,7 +37,7 @@ export function BulkComposerPostCardReviewBody({
   ) : null;
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+    <div className="stack-tight sm:flex-row sm:items-start">
       {mediaBlock != null ? (
         <div className="flex min-w-0 shrink-0 flex-wrap gap-2">
           {mediaBlock}

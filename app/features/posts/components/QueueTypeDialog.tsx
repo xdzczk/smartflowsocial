@@ -342,7 +342,7 @@ export function QueueTypeDialog({
                         key={token}
                         type="button"
                         onClick={() => form.setValue("colorToken", token)}
-                        className="focus-visible:ring-focus-ring h-8 w-8 shrink-0 rounded-full border-2 transition-transform focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95"
+                        className="focus-ring-offset h-8 w-8 shrink-0 rounded-full border-2 transition-transform active:scale-95"
                         style={{
                           backgroundColor: QUEUE_COLOR_ACCENTS[token],
                           borderColor: isSelected

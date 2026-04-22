@@ -10,6 +10,9 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -449,42 +452,37 @@ export function ScheduleRepostQuoteModal({
                     ? "Choose when to schedule the repost."
                     : "Choose when to schedule the quote and add an optional caption."}
                 </p>
-                <div>
-                  <label
-                    htmlFor="schedule-repost-quote-datetime"
-                    className="text-text mb-1 block text-sm font-medium"
-                  >
-                    Schedule at
-                  </label>
-                  <input
-                    id="schedule-repost-quote-datetime"
-                    type="datetime-local"
-                    value={scheduledFor}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      const notBefore =
+                <FormField id="schedule-repost-quote-datetime">
+                  <FormLabel>Schedule at</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const notBefore =
+                          post?.scheduledAtUtc != null
+                            ? post.scheduledAtUtc instanceof Date
+                              ? post.scheduledAtUtc
+                              : new Date(post.scheduledAtUtc)
+                            : undefined;
+                        const min = getMinDatetimeLocalForSchedule(
+                          userTimezone,
+                          notBefore
+                        );
+                        setScheduledFor(clampDateTimeLocalToMin(v, min));
+                      }}
+                      min={getMinDatetimeLocalForSchedule(
+                        userTimezone,
                         post?.scheduledAtUtc != null
                           ? post.scheduledAtUtc instanceof Date
                             ? post.scheduledAtUtc
                             : new Date(post.scheduledAtUtc)
-                          : undefined;
-                      const min = getMinDatetimeLocalForSchedule(
-                        userTimezone,
-                        notBefore
-                      );
-                      setScheduledFor(clampDateTimeLocalToMin(v, min));
-                    }}
-                    min={getMinDatetimeLocalForSchedule(
-                      userTimezone,
-                      post?.scheduledAtUtc != null
-                        ? post.scheduledAtUtc instanceof Date
-                          ? post.scheduledAtUtc
-                          : new Date(post.scheduledAtUtc)
-                        : undefined
-                    )}
-                    className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2"
-                  />
-                </div>
+                          : undefined
+                      )}
+                    />
+                  </FormControl>
+                </FormField>
                 {mode === "repost" ? (
                   <div className="border-border space-y-1.5 rounded-xs border p-3">
                     <span className="text-text-secondary text-xs">
@@ -498,7 +496,7 @@ export function ScheduleRepostQuoteModal({
                         { key: "minReposts" as const, label: "Reposts" },
                         { key: "minSats" as const, label: "Sats" },
                       ].map(({ key, label }) => (
-                        <div key={key} className="flex items-center gap-1.5">
+                        <div key={key} className="cluster-tight.5">
                           <label className="text-text-secondary text-xs whitespace-nowrap">
                             {label}
                           </label>
@@ -533,22 +531,17 @@ export function ScheduleRepostQuoteModal({
                   </div>
                 ) : null}
                 {mode === "quote" ? (
-                  <div>
-                    <label
-                      htmlFor="schedule-quote-caption"
-                      className="text-text mb-1 block text-sm font-medium"
-                    >
-                      Quote caption (optional)
-                    </label>
-                    <textarea
-                      id="schedule-quote-caption"
-                      value={quoteCaption}
-                      onChange={(e) => setQuoteCaption(e.target.value)}
-                      placeholder="Add your comment..."
-                      rows={3}
-                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2"
-                    />
-                  </div>
+                  <FormField id="schedule-quote-caption">
+                    <FormLabel>Quote caption (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        value={quoteCaption}
+                        onChange={(e) => setQuoteCaption(e.target.value)}
+                        placeholder="Add your comment..."
+                        rows={3}
+                      />
+                    </FormControl>
+                  </FormField>
                 ) : null}
                 {isSigning ? (
                   <div className="bg-surface-hover text-text-secondary flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">

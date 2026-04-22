@@ -1,7 +1,5 @@
-import { Loader2 } from "lucide-react";
-
+import { StatusIcon } from "~/components/ui/status-icon";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import type { ChildReply } from "../hooks/useNotificationActions";
 interface ChildRepliesPanelProps {
@@ -25,11 +23,8 @@ export function ChildRepliesPanel({
         aria-live="polite"
         aria-busy="true"
       >
-        <div className="text-text-secondary flex items-center gap-2 text-xs">
-          <Loader2
-            className={`${INLINE_ICON_SIZE_CLASS} animate-spin`}
-            aria-hidden
-          />
+        <div className="text-text-secondary cluster text-xs">
+          <StatusIcon tone="pending" />
           Loading replies...
         </div>
       </div>
@@ -90,7 +85,7 @@ export function ChildRepliesPanel({
             key={reply.id}
             className="border-border bg-surface-hover rounded-lg border p-2"
           >
-            <div className="mb-1 flex items-center gap-2">
+            <div className="cluster mb-1">
               {replyAuthorPicture ? (
                 <img
                   src={replyAuthorPicture}

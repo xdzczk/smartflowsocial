@@ -56,7 +56,7 @@ export function AuthStepList({ steps, className }: AuthStepListProps) {
         <li
           key={step.id}
           className={cn(
-            "flex gap-3 py-2.5 transition-colors duration-200",
+            "motion-base flex gap-3 py-2.5",
             index < steps.length - 1 &&
               "border-border/60 border-b border-dashed"
           )}
@@ -67,7 +67,7 @@ export function AuthStepList({ steps, className }: AuthStepListProps) {
           <div className="min-w-0 flex-1 space-y-0.5">
             <div
               className={cn(
-                "text-sm font-medium transition-colors duration-200",
+                "motion-base text-sm font-medium",
                 step.status === "pending" && "text-text-secondary",
                 step.status === "active" && "text-text",
                 step.status === "complete" && "text-text",

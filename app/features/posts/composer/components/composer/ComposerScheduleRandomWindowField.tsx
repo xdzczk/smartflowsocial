@@ -45,7 +45,7 @@ export function ComposerScheduleRandomWindowField({
   const selectId = `${idPrefix}-minutes`;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="stack-tight">
       <RailSettingsRow
         labelFor={switchId}
         label={label}

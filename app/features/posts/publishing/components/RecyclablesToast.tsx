@@ -1,5 +1,6 @@
-import { Check, CircleX, X } from "lucide-react";
+import { X } from "lucide-react";
 
+import { StatusIcon } from "~/components/ui/status-icon";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -30,20 +31,12 @@ export function RecyclablesToast({ toast, onClose }: RecyclablesToastProps) {
           toast.type === "success" ? "bg-success" : "bg-danger"
         }`}
       >
-        <div className="flex items-center gap-2">
-          {toast.type === "success" ? (
-            <Check
-              className="h-5 w-5"
-              strokeWidth={INLINE_ICON_STROKE}
-              aria-hidden
-            />
-          ) : (
-            <CircleX
-              className="h-5 w-5"
-              strokeWidth={INLINE_ICON_STROKE}
-              aria-hidden
-            />
-          )}
+        <div className="cluster">
+          <StatusIcon
+            tone={toast.type === "success" ? "success" : "danger"}
+            size="lg"
+            className="text-current"
+          />
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium">{toast.message}</span>
             {toast.link ? (

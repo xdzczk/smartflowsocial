@@ -108,7 +108,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="border-border bg-canvas hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
+        className="focus-ring border-border bg-canvas hover:bg-surface-hover inline-flex h-9 w-9 items-center justify-center rounded-lg border"
         aria-label={user ? themeAriaLabel(placeholderTheme) : "Theme: System"}
         type="button"
       >
@@ -120,7 +120,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="border-border bg-canvas hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="focus-ring border-border bg-canvas hover:bg-surface-hover motion-fast inline-flex h-9 w-9 items-center justify-center rounded-lg border"
       aria-label={label}
       type="button"
     >

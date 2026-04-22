@@ -21,9 +21,9 @@ export default function UpgradePrompt({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="bg-surface-overlay shadow-3 mx-4 max-w-md rounded-xl p-6">
+      <div className="bg-surface-overlay shadow-3 inset-card-lg mx-4 max-w-md rounded-xl">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex items-center gap-3">
+          <div className="cluster-loose">
             <div className="bg-warning/12 dark:bg-warning/15 flex h-10 w-10 items-center justify-center rounded-full">
               <Lock className="text-warning dark:text-warning h-5 w-5" />
             </div>
@@ -59,13 +59,13 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring flex-1 rounded-lg px-4 py-2 text-center font-medium focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+            className="focus-ring bg-brand text-brand-on hover:bg-brand/90 flex-1 rounded-lg px-4 py-2 text-center font-medium"
           >
             View Plans
           </Link>
           <button
             onClick={onClose}
-            className="border-border text-text-secondary hover:bg-surface-hover dark:border-border dark:text-text dark:hover:bg-surface-hover focus-visible:ring-focus-ring flex-1 rounded-lg border px-4 py-2 font-medium focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+            className="focus-ring border-border text-text-secondary hover:bg-surface-hover dark:border-border dark:text-text dark:hover:bg-surface-hover flex-1 rounded-lg border px-4 py-2 font-medium"
           >
             Cancel
           </button>

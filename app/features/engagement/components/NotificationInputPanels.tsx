@@ -119,7 +119,7 @@ export function ReplyInputPanel({
           value={replyContent}
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder="Write your reply... (type / for templates)"
-          className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm focus-visible:ring-2"
+          className="focus-ring text-text placeholder:text-text-tertiary w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm"
           rows={3}
         />
         {showSlashMenu && filteredBySlash.length > 0 ? (
@@ -218,7 +218,7 @@ export function QuoteInputPanel({
         value={quoteContent}
         onChange={(e) => onContentChange(e.target.value)}
         placeholder="Add your thoughts on this reply..."
-        className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm focus-visible:ring-2"
+        className="focus-ring text-text placeholder:text-text-tertiary w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm"
         rows={3}
       />
       <div className="flex justify-end gap-2">
@@ -363,7 +363,7 @@ export function UnifiedEngagementComposer({
             }
           }}
           placeholder={placeholder}
-          className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring min-h-[88px] w-full resize-y rounded-sm border-0 bg-transparent px-1.5 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-ring text-text placeholder:text-text-tertiary min-h-[88px] w-full resize-y rounded-sm border-0 bg-transparent px-1.5 py-1.5 text-sm"
           rows={4}
         />
       </div>

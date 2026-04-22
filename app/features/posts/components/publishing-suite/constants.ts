@@ -8,7 +8,7 @@ export const PUBLISHING_SEGMENTED_ROW_H = "h-10";
 export const PUBLISHING_FILTER_CONTROL_H = "h-9";
 export const PUBLISHING_FILTER_CONTROL_RADIUS = "rounded-lg";
 export const PUBLISHING_FILTER_CONTROL_BASE_CLASS =
-  "border-border/60 bg-canvas text-text shadow-none focus-visible:ring-focus-ring focus-visible:ring-2 focus-visible:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
+  "focus-ring border-border/60 bg-canvas text-text shadow-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Width tokens: type + queue should match; From/To should match. */
 export const PUBLISHING_FILTER_WIDTH_STANDARD =
@@ -40,7 +40,7 @@ export const PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS =
 
 /** Interactive data row hover (tables). */
 export const PUBLISHING_TABLE_ROW_CLASS =
-  "group border-border cursor-pointer border-b transition-colors last:border-b-0 hover:bg-surface-hover/35";
+  "group border-border cursor-pointer border-b motion-fast last:border-b-0 hover:bg-surface-hover/35";
 
 /** Emphasized datetime cells (Scheduled / Published tables). */
 export const PUBLISHING_DATETIME_CELL_CLASS =

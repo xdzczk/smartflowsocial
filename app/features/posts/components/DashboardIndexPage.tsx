@@ -397,7 +397,7 @@ export default function DashboardIndexPage() {
                   <button
                     type="button"
                     onClick={() => flowViewRef.current?.scrollToNext()}
-                    className="text-text-secondary hover:text-text focus-visible:ring-focus-ring flex-shrink-0 rounded-xs text-xs underline focus-visible:ring-2 focus-visible:outline-none"
+                    className="focus-ring text-text-secondary hover:text-text flex-shrink-0 rounded-xs text-xs underline"
                     aria-label="Scroll timeline to next posts or schedule"
                   >
                     Scroll to next
@@ -434,14 +434,14 @@ export default function DashboardIndexPage() {
               {flowError ? (
                 <Alert
                   variant="destructive"
-                  className="mx-4 flex flex-col gap-2 lg:mx-8"
+                  className="stack-tight mx-4 lg:mx-8"
                 >
-                  <AlertDescription className="flex flex-col gap-2">
+                  <AlertDescription className="stack-tight">
                     <span className="font-medium">{flowError.message}</span>
                     <button
                       type="button"
                       onClick={() => revalidator.revalidate()}
-                      className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                      className="focus-ring bg-brand text-brand-on hover:bg-brand/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
                     >
                       Retry
                     </button>

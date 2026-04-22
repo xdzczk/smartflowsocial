@@ -204,7 +204,7 @@ export function getQueueColorStyle(
 
 /** Unassigned blocks: class for background that transitions to darker grey on hover/focus/active. */
 export const UNASSIGNED_BG_CLASS =
-  "bg-[var(--calendar-unassigned-bg)] hover:bg-[var(--calendar-unassigned-bg-hover)] focus:bg-[var(--calendar-unassigned-bg-hover)] active:bg-[var(--calendar-unassigned-bg-hover)] transition-colors duration-200";
+  "bg-[var(--calendar-unassigned-bg)] hover:bg-[var(--calendar-unassigned-bg-hover)] focus:bg-[var(--calendar-unassigned-bg-hover)] active:bg-[var(--calendar-unassigned-bg-hover)] motion-base";
 
 /**
  * Style and optional class for applying QueueColorStyle to a block (handles unassigned hover state).

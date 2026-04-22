@@ -4,11 +4,11 @@ import { Await, Link, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { ContestProofPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatContestStatusLabel,
   listContestsFiltered,
+  ContestProofPageSkeleton,
 } from "~/features/contest";
 import { summarizeContestProofSettlement } from "~/features/contest/contest-proof-settlement.server";
 import type { Contest } from "~/features/contest/data/contest-prisma-types.server";

@@ -18,7 +18,7 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       // Height aligned with default Button (h-9). Border = --border (= --input alias).
-      "border-border bg-surface text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring shadow-1 flex h-9 w-full items-center justify-between rounded-md border px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "focus-ring border-border bg-surface text-text placeholder:text-text-tertiary shadow-1 motion-fast flex h-9 w-full items-center justify-between rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}

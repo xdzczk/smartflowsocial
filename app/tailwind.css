@@ -694,6 +694,248 @@ body.has-btcpay-confirmation-bar {
   text-transform: uppercase;
 }
 
+/* ============================================================================
+ * Spacing rhythm (Phase 1f)
+ *
+ * Atomic spacing keeps Tailwind's 4px base scale (p-1 = 4, p-2 = 8, p-3 = 12,
+ * p-4 = 16, p-6 = 24, p-8 = 32). The atomic scale is fine; the problem the
+ * codebase had was *intent* — 541 `gap-2`, 231 `space-y-2`, 214 `p-4`, but
+ * spread across many semantically-different surfaces (cards, modals, page
+ * shells, list items) without any signal of which-is-which.
+ *
+ * The semantic utilities below encode INTENT, so when reading the JSX you
+ * can tell "this is a section stack" vs "this is a list-item stack" without
+ * counting pixels. They wrap the most common atomic combos.
+ *
+ *   stack-tight     space-y-2 (8px)   form rows, list items, inline lists
+ *   stack           space-y-4 (16px)  default card content
+ *   stack-loose     space-y-6 (24px)  section subdivisions inside a panel
+ *   stack-section   space-y-8 (32px)  page-level section separation
+ *
+ *   cluster-tight   flex items-center gap-1 (4px)  dense icon chains, breadcrumbs
+ *   cluster         flex items-center gap-2 (8px)  default icon+text rows
+ *   cluster-loose   flex items-center gap-3 (12px) toolbar items, button groups
+ *
+ *   inset-card      p-4 (16px)            standard card / panel padding
+ *   inset-card-lg   p-6 (24px)            modal body / hero card padding
+ *   inset-section   px-6 py-8 (24/32)     page section padding
+ *
+ * Migration:
+ *   - Don't mass-sweep. Adopt at the primitive layer (Card, Dialog) and at
+ *     page shells where the intent is unambiguous. Existing atomic spacing
+ *     keeps working — these utilities exist to *signal intent*, not to
+ *     replace the atomic scale.
+ *   - When in doubt: cards use `stack`, page shells use `stack-section`,
+ *     icon+text rows use `cluster`.
+ * ========================================================================= */
+
+/*
+ * Spacing tokens: spacing utilities below pull from these. Wrapping a subtree
+ * with `data-density="compact"` (Phase 1g) overrides these tokens to ~75% so
+ * the entire spacing rhythm tightens uniformly without touching consumers.
+ */
+:root, .dark {
+  --space-stack-tight: 0.5rem;
+  --space-stack: 1rem;
+  --space-stack-loose: 1.5rem;
+  --space-stack-section: 2rem;
+
+  --space-cluster-tight: 0.25rem;
+  --space-cluster: 0.5rem;
+  --space-cluster-loose: 0.75rem;
+
+  --space-inset-card: 1rem;
+  --space-inset-card-lg: 1.5rem;
+  --space-inset-section-x: 1.5rem;
+  --space-inset-section-y: 2rem;
+}
+
+@utility stack-tight   { display: flex; flex-direction: column; gap: var(--space-stack-tight); }
+@utility stack         { display: flex; flex-direction: column; gap: var(--space-stack); }
+@utility stack-loose   { display: flex; flex-direction: column; gap: var(--space-stack-loose); }
+@utility stack-section { display: flex; flex-direction: column; gap: var(--space-stack-section); }
+
+@utility cluster-tight { display: flex; align-items: center; gap: var(--space-cluster-tight); }
+@utility cluster       { display: flex; align-items: center; gap: var(--space-cluster); }
+@utility cluster-loose { display: flex; align-items: center; gap: var(--space-cluster-loose); }
+
+@utility inset-card    { padding: var(--space-inset-card); }
+@utility inset-card-lg { padding: var(--space-inset-card-lg); }
+@utility inset-section { padding: var(--space-inset-section-y) var(--space-inset-section-x); }
+
+/* ============================================================================
+ * Density scope (Phase 1g)
+ *
+ * Apply `data-density="compact"` to any container (data table wrapper, sidebar
+ * rail, dense list, settings sub-panel) to opt that subtree into a tighter
+ * spacing rhythm. The scope tightens stack/cluster gaps and inset paddings to
+ * ~75% of comfortable values, and reduces table cell padding for the common
+ * `<table>` case so AdminDataTable no longer needs a bespoke compact branch.
+ *
+ *   stack-tight     8 → 6
+ *   stack          16 → 12
+ *   stack-loose    24 → 16
+ *   cluster-tight   4 → 4    (already minimal; left alone)
+ *   cluster         8 → 6
+ *   cluster-loose  12 → 8
+ *   inset-card     16 → 12
+ *   inset-card-lg  24 → 16
+ *   table cells    8 → 6
+ *
+ * This is a SCOPE, not a global mode — there's no theme-level "compact density"
+ * toggle. Use it when the local context (data table, dense rail) needs more
+ * information per pixel, not as a user-facing setting.
+ * ========================================================================= */
+
+[data-density="compact"] {
+  --space-stack-tight: 0.375rem;   /* 6px */
+  --space-stack: 0.75rem;          /* 12px */
+  --space-stack-loose: 1rem;       /* 16px */
+  --space-cluster: 0.375rem;       /* 6px */
+  --space-cluster-loose: 0.5rem;   /* 8px */
+  --space-inset-card: 0.75rem;     /* 12px */
+  --space-inset-card-lg: 1rem;     /* 16px */
+}
+
+[data-density="compact"] :where(td, th) {
+  padding: 0.375rem 0.5rem;
+}
+
+/* ============================================================================
+ * Motion (Phase 1g)
+ *
+ * The codebase used `transition-colors duration-200` (or just bare `transition`)
+ * pretty consistently, but the duration/easing choices were ad-hoc whenever
+ * something stepped outside that pattern. This pass anchors all motion to a
+ * three-step duration ladder + four canonical easings, with full
+ * `prefers-reduced-motion` respect.
+ *
+ * Duration ladder (intentional gaps so they read as different speeds, not
+ * variants of "kinda fast"):
+ *
+ *   --motion-fast   120ms   hover, focus, color shifts, ring transitions
+ *   --motion-base   200ms   default appearance changes, accordion, dropdowns
+ *   --motion-slow   320ms   modal open, sheet slide, page transitions
+ *
+ * Easing tokens (premium curves, not browser defaults):
+ *
+ *   --ease-out      cubic-bezier(0.16, 1, 0.3, 1)     decelerate (entrance)
+ *   --ease-in       cubic-bezier(0.7, 0, 0.84, 0)     accelerate (exit)
+ *   --ease-in-out   cubic-bezier(0.65, 0, 0.35, 1)    smooth in/out
+ *   --ease-spring   cubic-bezier(0.34, 1.56, 0.64, 1) slight overshoot (entrances
+ *                                                      that should feel "alive")
+ *
+ * Semantic utilities (one class = property + duration + easing):
+ *
+ *   motion-fast   color/bg/border/opacity/shadow/transform | 120ms | ease-out
+ *   motion-base   same set                                  | 200ms | ease-out
+ *   motion-slow   same set                                  | 320ms | ease-out
+ *
+ * Reduced motion: when the user requests reduced motion, all three durations
+ * collapse to 1ms (instant) so transitions still fire (state still changes
+ * synchronously) but no animation is perceived.
+ *
+ * Migration:
+ *   - `transition-colors duration-200`        → `motion-base`
+ *   - `transition-colors duration-150`        → `motion-fast`
+ *   - `transition` (bare) on a hover/focus     → `motion-base` (most common case)
+ *   - Modal/sheet open/close: keep Radix-driven `data-[state]:animate-*`,
+ *     but use `--motion-slow` if you set custom `duration-300`.
+ * ========================================================================= */
+
+@theme {
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@utility motion-fast {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+@utility motion-base {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-out);
+}
+@utility motion-slow {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-slow);
+  transition-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-slow: 1ms;
+  }
+}
+
+/* ============================================================================
+ * Focus ring recipes (Phase 1j-2)
+ *
+ * Two canonical recipes replace the ~80 ad-hoc focus-ring class strings the
+ * codebase had accumulated. Both:
+ *
+ *   - use the `--focus-ring` design token (= brand-strong) for color
+ *   - use a 2px ring width (1px reads as a hover hint, not a focus signal)
+ *   - hide the default browser outline (`outline-none`) but leave a
+ *     transparent outline so Windows High Contrast / forced-colors mode
+ *     still shows a visible focus indicator
+ *
+ * `focus-ring`        — flush 2px ring on the element edge.
+ *                        Use for inputs, badges, segmented controls, table
+ *                        rows, calendar cells, anything bordered or living
+ *                        inside a row where a gap would clip neighbours.
+ *
+ * `focus-ring-offset` — 2px ring with a 2px canvas-colored "donut" gap.
+ *                        Use for solid CTAs, icon buttons, floating chips —
+ *                        anything sitting visibly on a surface where the
+ *                        gap reads as intentional polish.
+ *
+ * Don't mix-and-match. Picking the wrong recipe is more obvious than the
+ * old per-site spelling, which is the point.
+ * ========================================================================= */
+
+@utility focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring;
+}
+
+@utility focus-ring-offset {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
+}
+
+/*
+ * Form controls with `focus-ring` + `aria-invalid="true"` (from <FormControl>,
+ * RHF, or native validation) need a border + focus ring that beats the default
+ * brand focus ring. Attribute selector bumps specificity so we don't rely on
+ * !important or source order. Phase 1j-3.
+ */
+@layer components {
+  .focus-ring[aria-invalid="true"],
+  .focus-ring-offset[aria-invalid="true"] {
+    border-color: hsl(var(--danger));
+  }
+
+  .focus-ring[aria-invalid="true"]:focus-visible,
+  .focus-ring-offset[aria-invalid="true"]:focus-visible {
+    --tw-ring-color: hsl(var(--danger) / 0.5);
+  }
+}
+
 @layer base {
   /* Match native form controls and picker popovers to app theme (see root inline theme script on <html>). */
   html {

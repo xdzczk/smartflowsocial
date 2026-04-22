@@ -52,7 +52,7 @@ export function AdminTabNav() {
               end={tab.end}
               className={({ isActive }) =>
                 cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+                  "motion-fast rounded-md px-3 py-1.5 text-sm font-medium",
                   isActive
                     ? "bg-surface-hover text-text shadow-1"
                     : "text-text-secondary hover:text-text hover:bg-surface-hover/60"

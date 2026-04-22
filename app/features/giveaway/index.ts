@@ -84,3 +84,6 @@ export {
   giveawayKeys,
 } from "./hooks/useGiveawayQuery";
 export type { GiveawayLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
+export { GiveawayBuilderPageSkeleton } from "./components/GiveawayBuilderPageSkeleton";
+export { GiveawayDetailPageSkeleton } from "./components/GiveawayDetailPageSkeleton";
+export { GiveawayProofPageSkeleton } from "./components/GiveawayProofPageSkeleton";

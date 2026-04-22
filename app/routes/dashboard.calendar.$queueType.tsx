@@ -8,9 +8,9 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { CalendarQueuePageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireSession, requireUserId } from "~/features/auth";
 import { CalendarQueuePage } from "~/features/posts/calendar";
+import { CalendarQueuePageSkeleton } from "~/features/posts/calendar/CalendarQueuePageSkeleton";
 import type {
   UserData as _UserData,
   QueueType as _QueueType,

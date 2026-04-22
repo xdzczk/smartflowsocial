@@ -102,8 +102,8 @@ export default function TopPostsList({
             aria-label="Last 7 days"
             className={
               timeframeDays === 7
-                ? "text-text focus-visible:ring-focus-ring rounded-xs font-medium underline focus-visible:ring-2 focus-visible:outline-none"
-                : "text-text-secondary/80 hover:text-text-secondary focus-visible:ring-focus-ring rounded-xs focus-visible:ring-2 focus-visible:outline-none"
+                ? "focus-ring text-text rounded-xs font-medium underline"
+                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
             }
           >
             7d
@@ -117,8 +117,8 @@ export default function TopPostsList({
             aria-label="Last 30 days"
             className={
               timeframeDays === 30
-                ? "text-text focus-visible:ring-focus-ring rounded-xs font-medium underline focus-visible:ring-2 focus-visible:outline-none"
-                : "text-text-secondary/80 hover:text-text-secondary focus-visible:ring-focus-ring rounded-xs focus-visible:ring-2 focus-visible:outline-none"
+                ? "focus-ring text-text rounded-xs font-medium underline"
+                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
             }
           >
             30d
@@ -151,7 +151,7 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border/60 hover:bg-surface-hover/50 focus-visible:ring-focus-ring flex w-full flex-row items-center gap-3 rounded-xs border p-2 text-left text-[11px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="focus-ring border-border/60 hover:bg-surface-hover/50 motion-fast flex w-full flex-row items-center gap-3 rounded-xs border p-2 text-left text-[11px]"
                     aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
                     <div className="bg-surface-hover/50 flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">

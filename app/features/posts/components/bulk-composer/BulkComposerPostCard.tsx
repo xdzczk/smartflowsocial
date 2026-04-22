@@ -173,7 +173,7 @@ export function BulkComposerPostCard({
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="cluster-tight">
           {variant === "build" ? (
             <>
               {onDuplicate ? (

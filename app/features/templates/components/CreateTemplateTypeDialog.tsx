@@ -30,7 +30,7 @@ export function CreateTemplateTypeDialog({
             a live post.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+        <div className="stack-tight pt-2 sm:flex-row">
           <Button
             type="button"
             className="flex-1"

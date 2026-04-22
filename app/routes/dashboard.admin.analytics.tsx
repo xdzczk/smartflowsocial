@@ -3,7 +3,6 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { AdminAnalyticsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AdminChartCard,
   AdminLineChart,
@@ -12,6 +11,7 @@ import {
   AdminSection,
   MetricCard,
   useAdminCurrency,
+  AdminAnalyticsPageSkeleton,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,

@@ -234,7 +234,7 @@ function FlowCardInner({
   const shadowColor = queueColor ?? "hsl(var(--primary))";
 
   const isPublished = Boolean(item.publishedAt);
-  /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers transition when publishedAt may not have updated yet */
+  /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */
   const isPastCard = isPublished || Boolean(isLastPosted);
 
   return (
@@ -242,7 +242,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised focus-visible:ring-focus-ring group shadow-1 relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 focus-visible:ring-2 focus-visible:outline-none md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`focus-ring card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised group shadow-1 relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),

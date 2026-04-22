@@ -15,7 +15,7 @@ export function AdminPageHeader({
   const { formatDate } = useFormattedDate();
 
   return (
-    <div className="border-border flex flex-col gap-2 border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="border-border stack-tight border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h1 className="text-h1">{title}</h1>
         {subtitle ? (

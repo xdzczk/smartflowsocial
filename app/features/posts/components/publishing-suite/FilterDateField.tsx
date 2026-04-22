@@ -31,7 +31,7 @@ export function FilterDateField({
   widthClassName?: string;
 }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("cluster", className)}>
       <Label
         htmlFor={id}
         className="text-text-secondary text-xs font-medium whitespace-nowrap"

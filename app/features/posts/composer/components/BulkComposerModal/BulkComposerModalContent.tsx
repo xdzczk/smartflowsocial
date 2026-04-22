@@ -217,7 +217,7 @@ export function BulkComposerModalContent({
   return (
     <>
       {displayedHashtags && String(displayedHashtags).length <= 80 ? (
-        <div className="bg-surface-hover text-text mb-3 inline-flex items-center gap-1 rounded-xs px-2 py-1 text-xs leading-4 font-semibold">
+        <div className="bg-surface-hover text-text inline-cluster-tight mb-3 rounded-xs px-2 py-1 text-xs leading-4 font-semibold">
           <Hash
             className="inline-block size-4 opacity-75"
             strokeWidth={INLINE_ICON_STROKE}

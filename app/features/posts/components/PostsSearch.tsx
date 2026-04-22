@@ -13,7 +13,7 @@ interface PostsSearchProps {
 
 export function PostsSearch({ searchTerm, onSearchChange }: PostsSearchProps) {
   return (
-    <div className="mb-4 flex items-center gap-2">
+    <div className="cluster mb-4">
       <div className="relative w-full">
         <div className="text-text-secondary pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
           <Search

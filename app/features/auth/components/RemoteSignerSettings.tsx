@@ -363,7 +363,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         title="Primary fallback signer"
         description={`Set an account-level fallback signer so ${BRAND_NAME} can recover from stale local sessions across devices.`}
         footer={
-          <div className="border-border/60 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="border-border/60 stack-tight border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               onClick={handleSaveActiveConnectionAsPrimary}
               disabled={

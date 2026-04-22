@@ -278,10 +278,7 @@ export function DraftEditForm({
           </div>
           {onAlsoScheduleRepostChange ? (
             <>
-              <label
-                htmlFor="draft-also-schedule-repost"
-                className="flex items-center gap-2"
-              >
+              <label htmlFor="draft-also-schedule-repost" className="cluster">
                 <Checkbox
                   id="draft-also-schedule-repost"
                   checked={alsoScheduleRepost}
@@ -380,7 +377,7 @@ export function DraftEditForm({
                           { key: "minReposts" as const, label: "Reposts" },
                           { key: "minSats" as const, label: "Sats" },
                         ].map(({ key, label }) => (
-                          <div key={key} className="flex items-center gap-1.5">
+                          <div key={key} className="cluster-tight.5">
                             <label className="text-text-secondary text-xs whitespace-nowrap">
                               {label}
                             </label>
@@ -420,10 +417,7 @@ export function DraftEditForm({
                   ) : null}
                 </div>
               ) : null}
-              <label
-                htmlFor="draft-also-schedule-quote"
-                className="flex items-center gap-2"
-              >
+              <label htmlFor="draft-also-schedule-quote" className="cluster">
                 <Checkbox
                   id="draft-also-schedule-quote"
                   checked={alsoScheduleQuote}

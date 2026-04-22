@@ -180,11 +180,11 @@ export default function BroadcastSuppressionRoute() {
             />
           </div>
           <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="cluster text-sm">
               <input type="checkbox" name="permanent" defaultChecked />
               Permanent
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="cluster text-sm">
               <span className="text-text-secondary">Or expire after</span>
               <input
                 type="datetime-local"
@@ -238,10 +238,7 @@ export default function BroadcastSuppressionRoute() {
                         const label =
                           p?.name ?? formatNpubShort(r.recipientPubkey);
                         return (
-                          <div
-                            className="flex items-center gap-2"
-                            title={r.recipientPubkey}
-                          >
+                          <div className="cluster" title={r.recipientPubkey}>
                             <Avatar className="h-6 w-6">
                               <AvatarImage
                                 src={p?.picture ?? undefined}

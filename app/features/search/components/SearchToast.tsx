@@ -24,7 +24,7 @@ export function SearchToast({ toast, onClose }: SearchToastProps) {
           toast.type === "success" ? "bg-success" : "bg-danger"
         }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="cluster">
           {toast.type === "success" ? (
             <Check
               className="h-5 w-5"

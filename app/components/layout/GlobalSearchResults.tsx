@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import type { DateDisplayLocale } from "~/lib/temporal";
@@ -160,9 +161,7 @@ export function GlobalSearchResults({
   if (results.length === 0) {
     return (
       <div className="border-border bg-surface shadow-2 max-h-96 overflow-y-auto rounded-lg border">
-        <div className="text-text-secondary p-8 text-center text-sm">
-          No results found
-        </div>
+        <EmptyState size="sm" title="No results found" />
       </div>
     );
   }
@@ -196,7 +195,7 @@ export function GlobalSearchResults({
                 {getTypeIcon(result.type)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   <span className="text-text text-sm font-medium">
                     {getPreviewText(result)}
                   </span>

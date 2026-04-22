@@ -921,7 +921,7 @@ export function PollComposer({
   }, [onRelayClick]);
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div className="stack-loose lg:flex-row lg:items-start">
       <div className="mb-4 min-w-0 flex-1 lg:mb-0">
         <ComposerLeftCanvas>
           <div className={composerCanvasFieldStackClass}>
@@ -932,7 +932,7 @@ export function PollComposer({
             >
               Question
             </ComposerCanvasSectionLabel>
-            <div className="focus-within:bg-surface-hover/50 focus-within:ring-border-subtle rounded-md transition-colors focus-within:ring-1">
+            <div className="focus-within:bg-surface-hover/50 focus-within:ring-border-subtle motion-fast rounded-md focus-within:ring-1">
               <textarea
                 id="poll-question"
                 value={question}
@@ -947,7 +947,7 @@ export function PollComposer({
 
           <ComposerCanvasDivider />
 
-          <div className="flex flex-col gap-2">
+          <div className="stack-tight">
             <div className="flex flex-col gap-0.5">
               <ComposerCanvasSectionLabel as="span" className="mb-0">
                 Options
@@ -962,7 +962,7 @@ export function PollComposer({
                 {options.map((opt, i) => (
                   <li
                     key={optionRowIds[i] ?? `opt-fallback-${i}`}
-                    className="flex items-center gap-2 py-2 pr-1 pl-2 sm:pl-2.5"
+                    className="cluster py-2 pr-1 pl-2 sm:pl-2.5"
                   >
                     <span
                       className="text-text-tertiary/70 w-5 shrink-0 text-center text-[11px] tabular-nums"
@@ -1174,7 +1174,7 @@ export function PollComposer({
 
           <ComposerCanvasDivider />
 
-          <div className="flex flex-col gap-4 sm:gap-5">
+          <div className="stack sm:gap-5">
             <PollComposerPreviewBlock
               question={question}
               options={options}

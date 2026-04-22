@@ -65,7 +65,7 @@ export function DateRangeQuickPresets({
     )?.id ?? null;
 
   const basePillClass =
-    "focus-visible:ring-focus-ring inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none";
+    "focus-ring inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium motion-fast";
 
   return (
     <div

@@ -15,6 +15,7 @@ export function AdminDataTable({
 }) {
   return (
     <div
+      data-density={density === "compact" ? "compact" : undefined}
       className={cn(
         "border-border bg-surface/40 shadow-1 overflow-x-auto rounded-xl border",
         className
@@ -23,9 +24,9 @@ export function AdminDataTable({
       <table
         className={cn(
           "w-full text-sm",
-          density === "compact"
-            ? "[&_td]:p-1.5 [&_th]:p-1.5"
-            : "[&_td]:p-2 [&_th]:p-2",
+          // Comfortable padding lives on the table; compact padding comes from
+          // the data-density scope above (which targets td/th globally).
+          density !== "compact" && "[&_td]:p-2 [&_th]:p-2",
           "[&_tbody_tr]:border-border [&_tbody_tr]:border-b",
           zebra && "[&_tbody_tr:nth-child(even)]:bg-surface-hover/25"
         )}

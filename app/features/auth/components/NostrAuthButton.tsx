@@ -141,7 +141,7 @@ export default function NostrAuthButton() {
     <>
       {user ? (
         <>
-          <div className="flex items-center gap-3">
+          <div className="cluster-loose">
             <Avatar>
               <AvatarImage src={getUserProfilePicture(user)} alt="Profile" />
               <AvatarFallback>{getUserAvatarFallback(user)}</AvatarFallback>
@@ -167,7 +167,7 @@ export default function NostrAuthButton() {
         </>
       ) : (
         <Button
-          className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold"
           asChild
         >
           <Link to="/">Sign in</Link>

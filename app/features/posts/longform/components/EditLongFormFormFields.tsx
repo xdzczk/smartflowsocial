@@ -5,6 +5,9 @@
 
 import { useEffect, useRef } from "react";
 
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { useLongFormEditor } from "~/features/posts/useLongFormEditor";
 
 import { LongFormContentEditor } from "./LongFormContentEditor";
@@ -63,49 +66,34 @@ export function EditLongFormFormFields({
 
   return (
     <>
-      <div>
-        <label
-          htmlFor="longform-title"
-          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
-        >
-          Title
-        </label>
-        <input
-          id="longform-title"
-          name="longform-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
-          placeholder="Article title..."
-        />
-      </div>
+      <FormField id="longform-title">
+        <FormLabel>Title</FormLabel>
+        <FormControl>
+          <Input
+            name="longform-title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Article title..."
+          />
+        </FormControl>
+      </FormField>
 
-      <div>
-        <label
-          htmlFor="longform-summary"
-          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
-        >
-          Summary
-        </label>
-        <textarea
-          id="longform-summary"
-          name="longform-summary"
-          value={summary}
-          onChange={(e) => setSummary(e.target.value)}
-          rows={3}
-          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
-          placeholder="Article summary..."
-        />
-      </div>
+      <FormField id="longform-summary">
+        <FormLabel>Summary</FormLabel>
+        <FormControl>
+          <Textarea
+            name="longform-summary"
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            rows={3}
+            placeholder="Article summary..."
+          />
+        </FormControl>
+      </FormField>
 
-      <div>
-        <label
-          htmlFor="longform-content"
-          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
-        >
-          Content
-        </label>
+      <FormField id="longform-content">
+        <FormLabel>Content</FormLabel>
         <LongFormContentEditor
           uploadProvider={null}
           onOpenAssetBrowser={() => {}}
@@ -114,29 +102,22 @@ export function EditLongFormFormFields({
           editor={editor}
         />
         {!editorReady ? (
-          <div className="text-text-secondary dark:text-text mt-2 text-sm">
-            Loading editor...
-          </div>
+          <p className="text-text-secondary text-xs">Loading editor...</p>
         ) : null}
-      </div>
+      </FormField>
 
-      <div>
-        <label
-          htmlFor="longform-cover-image"
-          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
-        >
-          Cover Image URL (optional)
-        </label>
-        <input
-          id="longform-cover-image"
-          name="longform-cover-image"
-          type="url"
-          value={image}
-          onChange={(e) => setImage(e.target.value)}
-          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
-          placeholder="https://example.com/image.jpg"
-        />
-      </div>
+      <FormField id="longform-cover-image">
+        <FormLabel>Cover Image URL (optional)</FormLabel>
+        <FormControl>
+          <Input
+            name="longform-cover-image"
+            type="url"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+          />
+        </FormControl>
+      </FormField>
     </>
   );
 }

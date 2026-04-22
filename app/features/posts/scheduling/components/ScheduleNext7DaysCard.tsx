@@ -92,7 +92,7 @@ export function ScheduleNext7DaysCard({
 
   return (
     <div
-      className={`group focus-visible:ring-focus-ring flex min-w-0 flex-1 flex-col focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
+      className={`focus-ring group flex min-w-0 flex-1 flex-col focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
       role="button"
       aria-label="Next 7 days schedule"
@@ -131,7 +131,7 @@ export function ScheduleNext7DaysCard({
             </h3>
             {allSet ? (
               <span
-                className="text-text-secondary flex items-center gap-1 text-xs"
+                className="text-text-secondary cluster-tight text-xs"
                 aria-label="All days meet your target"
               >
                 <Check className="text-success size-3.5 shrink-0" />
@@ -142,7 +142,7 @@ export function ScheduleNext7DaysCard({
           <button
             type="button"
             onClick={onOpenTargetModal}
-            className="text-text-secondary hover:text-text focus-visible:ring-focus-ring inline-flex flex-shrink-0 items-center gap-1 rounded-xs p-1 text-xs focus-visible:ring-2 focus-visible:outline-none"
+            className="focus-ring text-text-secondary hover:text-text inline-flex flex-shrink-0 items-center gap-1 rounded-xs p-1 text-xs"
             title="Set target per day"
             aria-label="Set target posts per day"
           >
@@ -161,13 +161,13 @@ export function ScheduleNext7DaysCard({
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   to="/dashboard/compose?type=post"
-                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring rounded-md px-3 py-1.5 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 rounded-md px-3 py-1.5 text-xs font-medium"
                 >
                   Schedule first post
                 </Link>
                 <Link
                   to="/dashboard/compose"
-                  className="border-border-subtle text-text hover:bg-surface-hover/50 focus-visible:ring-focus-ring rounded-md border px-3 py-1.5 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-ring border-border-subtle text-text hover:bg-surface-hover/50 rounded-md border px-3 py-1.5 text-xs font-medium"
                 >
                   Open composer
                 </Link>
@@ -175,7 +175,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="flex flex-col gap-2"
+              className="stack-tight"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
@@ -197,7 +197,7 @@ export function ScheduleNext7DaysCard({
                   <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus-visible:ring-focus-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow focus-visible:ring-2 focus-visible:outline-none ${
+                      className={`focus-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow ${
                         gap
                           ? "border-warning/50 bg-warning/10 hover:bg-warning/20 dark:border-warning/40 dark:bg-warning/10 dark:hover:bg-warning/20"
                           : "border-border/60 bg-surface-hover/20 hover:bg-surface-hover/50"

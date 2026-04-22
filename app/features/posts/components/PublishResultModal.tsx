@@ -1,12 +1,4 @@
-import {
-  CheckCircle2,
-  Clock,
-  Loader2,
-  XCircle,
-  Plus,
-  CheckSquare,
-  LayoutDashboard,
-} from "lucide-react";
+import { Clock, Plus, CheckSquare, LayoutDashboard } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -18,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { StatusIcon } from "~/components/ui/status-icon";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -48,7 +41,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "scheduled") {
     return (
       <>
-        <Clock className="text-success h-6 w-6" />
+        <StatusIcon tone="success" size="xl" icon={Clock} />
         Scheduled Successfully
       </>
     );
@@ -56,7 +49,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "publishing") {
     return (
       <>
-        <Loader2 className="text-info h-6 w-6 animate-spin" />
+        <StatusIcon tone="pending" size="xl" className="text-info" />
         Publishing...
       </>
     );
@@ -64,7 +57,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "success") {
     return (
       <>
-        <CheckCircle2 className="text-success h-6 w-6" />
+        <StatusIcon tone="success" size="xl" />
         Published Successfully
       </>
     );
@@ -72,15 +65,14 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "partial") {
     return (
       <>
-        <CheckCircle2 className="text-warning h-6 w-6" />
+        <StatusIcon tone="warning" size="xl" />
         Partially Published
       </>
     );
   }
-  // status must be "failed" at this point
   return (
     <>
-      <XCircle className="text-danger h-6 w-6" />
+      <StatusIcon tone="danger" size="xl" />
       Publishing Failed
     </>
   );
@@ -234,19 +226,12 @@ function RelayStatusBadge({ status }: { status: RelayAck["status"] }) {
   );
 }
 
-// Helper component for relay status icon
 function RelayStatusIcon({ status }: { status: RelayAck["status"] }) {
-  if (status === "ACCEPTED") {
-    return <CheckCircle2 className="text-success h-5 w-5" />;
-  }
-  if (status === "FAILED") {
-    return <XCircle className="text-danger h-5 w-5" />;
-  }
-  if (status === "TIMEOUT") {
-    return <Clock className="text-warning h-5 w-5" />;
-  }
-  // status must be "PENDING" at this point
-  return <Loader2 className="text-text-secondary h-5 w-5 animate-spin" />;
+  if (status === "ACCEPTED") return <StatusIcon tone="success" size="lg" />;
+  if (status === "FAILED") return <StatusIcon tone="danger" size="lg" />;
+  if (status === "TIMEOUT")
+    return <StatusIcon tone="warning" size="lg" icon={Clock} />;
+  return <StatusIcon tone="pending" size="lg" />;
 }
 
 interface PublishResultModalProps {
@@ -726,7 +711,7 @@ export default function PublishResultModal({
         }}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+          <DialogTitle className="cluster text-2xl">
             <StatusTitle status={status} />
           </DialogTitle>
           <DialogDescription className="text-base">
@@ -766,13 +751,13 @@ export default function PublishResultModal({
                 key={ack.relayUrl}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
-                <div className="flex items-center gap-3">
+                <div className="cluster-loose">
                   <RelayStatusIcon status={ack.status} />
                   <span className="font-mono text-sm">
                     {formatRelayUrl(ack.relayUrl)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   <RelayStatusBadge status={ack.status} />
                 </div>
               </div>
@@ -784,7 +769,7 @@ export default function PublishResultModal({
         relayAcksForUi.length === 0 &&
         status === "publishing" ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8">
-            <Loader2 className="text-info h-8 w-8 animate-spin" />
+            <StatusIcon tone="pending" size="xl" className="text-info" />
             <span className="text-text-secondary text-center text-sm">
               {resolvedPublishAttemptId
                 ? relayAcks.length > 0

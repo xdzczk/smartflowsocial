@@ -1,6 +1,7 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { QueueType, UserData } from "~/features/posts/types";
 import { isVideoFile } from "~/lib/helpers";
@@ -96,11 +97,13 @@ export function DayViewSidebar({
             userTimeFormat={userTimeFormat}
           />
         ) : (
-          <div className="border-border/40 bg-canvas/40 text-text-secondary flex flex-1 flex-col items-center justify-center rounded-[var(--calendar-radius-md)] border p-4 text-center">
-            <p className="text-sm font-medium">No post selected</p>
-            <p className="mt-1 text-xs">
-              Select a post in the timeline to inspect details and edit.
-            </p>
+          <div className="border-border/40 bg-canvas/40 flex flex-1 flex-col rounded-[var(--calendar-radius-md)] border">
+            <EmptyState
+              size="sm"
+              title="No post selected"
+              description="Select a post in the timeline to inspect details and edit."
+              className="flex-1"
+            />
           </div>
         )}
       </div>

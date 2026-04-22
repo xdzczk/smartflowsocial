@@ -180,9 +180,7 @@ export function HashtagPresetToggle({
             : "border-border bg-surface-hover dark:border-border p-3"
         )}
       >
-        <div
-          className={cn("flex items-center gap-2", subdued ? "mb-1.5" : "mb-2")}
-        >
+        <div className={cn("cluster", subdued ? "mb-1.5" : "mb-2")}>
           <span
             className={cn(
               CN_MUTED_EMPHASIS,

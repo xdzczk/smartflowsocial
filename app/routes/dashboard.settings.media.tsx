@@ -11,7 +11,6 @@ import {
 import { Suspense, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { MediaSettingsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -35,6 +34,7 @@ import {
   getSubscriptionData,
 } from "~/features/payments";
 import { getBlossomStorageLimitBytes } from "~/features/payments/blossom-storage-limits";
+import { MediaSettingsPageSkeleton } from "~/features/settings";
 import {
   deleteMediaById,
   deleteRemoteBlossomObject,
@@ -363,7 +363,7 @@ function SettingsMediaPageInner() {
                 })}
               </ul>
               {totalPages > 1 ? (
-                <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="stack-tight pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <Link
                     to={`/dashboard/settings/media?page=${page - 1}`}
                     className={

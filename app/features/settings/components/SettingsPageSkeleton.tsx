@@ -11,7 +11,7 @@ export function SettingsPageSkeleton() {
         <div className="bg-surface-hover mt-2 h-4 w-full max-w-2xl rounded-md" />
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <div className="stack-loose lg:flex-row lg:items-start lg:gap-8">
         <div className="lg:hidden">
           <div className="bg-surface-hover mb-2 h-4 w-32 rounded-md" />
           <div className="bg-surface-hover h-10 w-full rounded-md" />

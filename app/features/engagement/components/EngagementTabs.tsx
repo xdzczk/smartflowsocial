@@ -32,7 +32,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("all")}
-          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`motion-fast border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap ${
             activeTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
@@ -41,7 +41,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("replies")}
-          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`motion-fast border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap ${
             activeTab === "replies" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
@@ -50,7 +50,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("needs-response")}
-          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`motion-fast border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap ${
             activeTab === "needs-response"
               ? ACTIVE_TAB_CLASSES
               : INACTIVE_TAB_CLASSES
@@ -61,7 +61,7 @@ export function EngagementTabs({
         <button
           type="button"
           onClick={() => onTabChange("mentions")}
-          className={`border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`motion-fast border-b-2 px-1 py-3 text-sm font-medium whitespace-nowrap ${
             activeTab === "mentions" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >

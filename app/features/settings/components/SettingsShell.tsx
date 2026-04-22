@@ -57,9 +57,10 @@ export function SettingsShell({
   const [searchParams] = useSearchParams();
   const grouped = groupVisibleSettingsSections(sections);
 
+  // No overflow-x-hidden on root — it breaks `position:sticky` on the rail (same as dashboard main / ActionRail).
   return (
     <div
-      className="mx-auto w-full max-w-[1400px] overflow-x-hidden px-4 pb-8 sm:px-6"
+      className="mx-auto w-full max-w-[1400px] px-4 pb-8 sm:px-6"
       data-testid="settings-page"
     >
       <div className="pt-2 pb-4">
@@ -121,7 +122,7 @@ export function SettingsShell({
         </div>
 
         <aside
-          className="border-border bg-surface-raised shadow-2 hidden w-full shrink-0 rounded-lg border lg:sticky lg:top-[4.75rem] lg:flex lg:max-h-[calc(100vh-5.75rem)] lg:w-[300px] lg:flex-col lg:self-start xl:w-[320px]"
+          className="border-border bg-surface-raised shadow-2 hidden w-full shrink-0 rounded-lg border lg:sticky lg:top-[4.75rem] lg:z-10 lg:flex lg:max-h-[calc(100dvh-5.75rem)] lg:w-[300px] lg:flex-col lg:self-start xl:w-[320px]"
           aria-label="Settings sections"
           data-testid="settings-section-rail"
         >
@@ -145,7 +146,7 @@ export function SettingsShell({
                             replace
                             preventScrollReset
                             className={cn(
-                              "focus-visible:ring-focus-ring block rounded-md px-2.5 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                              "focus-ring-offset motion-fast block rounded-md px-2.5 py-2 text-sm",
                               isActive
                                 ? "bg-surface-selected text-text border-border-subtle border font-semibold"
                                 : "text-text-secondary hover:bg-surface-hover/70 hover:text-text"

@@ -309,7 +309,7 @@ export default function UserMenu() {
 
         <div className="space-y-6">
           {/* Current User Info */}
-          <div className="flex items-center gap-3 rounded-md border p-3">
+          <div className="cluster-loose rounded-md border p-3">
             <Avatar className="h-10 w-10">
               {currentAvatar ? (
                 <AvatarImage src={currentAvatar} alt={currentLabel} />

@@ -62,7 +62,7 @@ export function HashtagPresetSelector({
     return (
       <Card className="w-full">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
+          <CardTitle className="cluster text-sm">
             <Hash className={INLINE_ICON_SIZE_CLASS} />
             Hashtag Presets
           </CardTitle>
@@ -80,7 +80,7 @@ export function HashtagPresetSelector({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-sm">
+            <CardTitle className="cluster text-sm">
               <Hash className={INLINE_ICON_SIZE_CLASS} />
               Hashtag Presets
             </CardTitle>
@@ -108,7 +108,7 @@ export function HashtagPresetSelector({
 
         {selectedPreset && !isExpanded ? (
           <div className="bg-surface-hover/50 mt-3 rounded-lg p-3">
-            <div className="mb-2 flex items-center gap-2">
+            <div className="cluster mb-2">
               <h4 className="text-sm font-medium">{selectedPreset.name}</h4>
               <Badge variant="secondary" className="text-xs">
                 {countHashtags(selectedPreset.tags)} tags
@@ -184,7 +184,7 @@ export function HashtagPresetSelector({
                 return (
                   <div
                     key={preset.id}
-                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                    className={`motion-fast cursor-pointer rounded-lg border p-3 ${
                       selectedPresetId === preset.id
                         ? "border-border bg-surface-hover dark:border-brand dark:bg-brand/10"
                         : "hover:bg-surface-hover"
@@ -196,7 +196,7 @@ export function HashtagPresetSelector({
                   >
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
+                        <div className="cluster mb-1">
                           <h4 className="text-sm font-medium">{preset.name}</h4>
                           <Badge variant="secondary" className="text-xs">
                             {countHashtags(preset.tags)} tags

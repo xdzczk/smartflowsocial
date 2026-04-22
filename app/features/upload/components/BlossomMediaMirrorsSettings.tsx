@@ -170,7 +170,7 @@ export function BlossomMediaMirrorsSettings({
 
         {watchedEnableMirror ? (
           <div className="space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="stack-tight sm:flex-row sm:items-center sm:justify-between">
               <Label className="text-text">Mirror URLs</Label>
               <Button
                 type="button"

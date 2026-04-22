@@ -323,7 +323,7 @@ export function GiveawayNewBuilder({
             {scopeType === "PERIOD" ? (
               <div className="border-border/60 space-y-3 border-t pt-4">
                 <div className="flex flex-wrap gap-4">
-                  <label className="text-text flex items-center gap-2 text-sm">
+                  <label className="text-text cluster text-sm">
                     <input
                       type="radio"
                       name="periodModeUi"
@@ -334,7 +334,7 @@ export function GiveawayNewBuilder({
                     />
                     Last N days
                   </label>
-                  <label className="text-text flex items-center gap-2 text-sm">
+                  <label className="text-text cluster text-sm">
                     <input
                       type="radio"
                       name="periodModeUi"
@@ -583,19 +583,19 @@ export function GiveawayNewBuilder({
             <div className="border-border/60 space-y-2 border-t pt-4">
               <p className="text-text text-sm font-medium">Exclusions</p>
               <div className="flex flex-wrap gap-4">
-                <label className="text-text flex items-center gap-2 text-sm">
+                <label className="text-text cluster text-sm">
                   <input type="checkbox" name="excludeMuted" value="true" />
                   Muted
                 </label>
-                <label className="text-text flex items-center gap-2 text-sm">
+                <label className="text-text cluster text-sm">
                   <input type="checkbox" name="excludeBlocked" value="true" />
                   Blacklisted
                 </label>
-                <label className="text-text flex items-center gap-2 text-sm">
+                <label className="text-text cluster text-sm">
                   <input type="checkbox" name="excludeLowTrust" value="true" />
                   Low trust
                 </label>
-                <label className="text-text flex items-center gap-2 text-sm">
+                <label className="text-text cluster text-sm">
                   <input
                     type="checkbox"
                     name="excludeNonFollowers"
@@ -662,8 +662,8 @@ export function GiveawayNewBuilder({
                   }}
                   className={
                     rewardMode === "simple"
-                      ? "border-brand bg-brand/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
-                      : "border-border bg-surface hover:border-brand/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
+                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
                   }
                 >
                   <p className="text-text font-medium">Simple payout</p>
@@ -678,8 +678,8 @@ export function GiveawayNewBuilder({
                   }}
                   className={
                     rewardMode === "advanced"
-                      ? "border-brand bg-brand/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
-                      : "border-border bg-surface hover:border-brand/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
+                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
                   }
                 >
                   <p className="text-text font-medium">

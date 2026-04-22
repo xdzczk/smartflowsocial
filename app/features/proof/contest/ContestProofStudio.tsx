@@ -104,7 +104,7 @@ export function ContestProofStudio({
                     setSelectedId(c.id);
                   }}
                   className={cn(
-                    "hover:bg-surface-hover/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    "hover:bg-surface-hover/80 motion-fast w-full rounded-lg border px-3 py-2.5 text-left",
                     selected?.id === c.id
                       ? "border-brand bg-surface-hover/40"
                       : "border-border bg-surface/50"

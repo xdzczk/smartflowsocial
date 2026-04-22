@@ -63,13 +63,13 @@ export function FirstRunDashboard({
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
               <Link
                 to="/dashboard/compose?type=post"
-                className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring inline-flex h-10 items-center rounded-md px-4 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
               >
                 Create first post
               </Link>
               <Link
                 to="/dashboard/settings?tab=publishing"
-                className="border-border-subtle text-text hover:bg-surface-hover/60 focus-visible:ring-focus-ring inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring border-border-subtle text-text hover:bg-surface-hover/60 inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
               >
                 Create first queue
               </Link>
@@ -88,7 +88,7 @@ export function FirstRunDashboard({
               <Link
                 key={item.title}
                 to={item.to}
-                className="border-border-subtle hover:bg-surface-hover/50 focus-visible:ring-focus-ring flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-ring border-border-subtle hover:bg-surface-hover/50 motion-fast flex items-start gap-3 rounded-lg border px-3 py-2.5"
               >
                 <span className="mt-0.5 shrink-0" aria-hidden>
                   {item.done ? (

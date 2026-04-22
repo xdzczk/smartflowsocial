@@ -258,7 +258,7 @@ export function SearchReplyThread({
                     to={eventUrl(reply.id, nostrClientConfig)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-text-secondary hover:text-text inline-flex items-center gap-1 text-xs font-medium"
+                    className="text-text-secondary hover:text-text inline-cluster-tight text-xs font-medium"
                   >
                     <ExternalLink
                       className="h-3 w-3"

@@ -428,7 +428,7 @@ export function RecipientPicker({
               setExpandedMembers([]);
             }}
             className={cn(
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              "motion-fast rounded-md px-3 py-1.5 text-xs font-medium",
               poolTab === k
                 ? "bg-brand text-brand-on"
                 : "text-text-secondary hover:bg-surface-hover"
@@ -477,7 +477,7 @@ export function RecipientPicker({
             savedAudiences.map((s) => (
               <div
                 key={s.id}
-                className="border-border flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="border-border stack-tight rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium">{s.name}</p>
@@ -670,7 +670,7 @@ export function RecipientPicker({
                       {inSel ? (
                         "Added"
                       ) : (
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-cluster-tight">
                           <UserPlus className="h-3.5 w-3.5" />
                           Add
                         </span>
@@ -720,7 +720,7 @@ export function RecipientPicker({
               return (
                 <span
                   key={pl}
-                  className="border-border bg-canvas inline-flex items-center gap-1.5 rounded-full border py-1 pr-1 pl-2 text-xs"
+                  className="border-border bg-canvas inline-cluster-tight.5 rounded-full border py-1 pr-1 pl-2 text-xs"
                 >
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={pr?.picture ?? undefined} alt="" />

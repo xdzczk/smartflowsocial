@@ -284,7 +284,7 @@ export function GiveawayTable({
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
-                        className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
+                        className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                         aria-label="Actions"
                       >
                         <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />

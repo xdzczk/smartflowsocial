@@ -53,7 +53,7 @@ function SupportLines({
   return (
     <ul
       className={cn(
-        isGrid ? "grid grid-cols-2 gap-x-4 gap-y-3" : "flex flex-col gap-2.5"
+        isGrid ? "grid grid-cols-2 gap-x-4 gap-y-3" : "stack-tight.5"
       )}
     >
       {items.map((s) => (

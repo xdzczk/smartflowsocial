@@ -108,7 +108,7 @@ export function ComposerActionButtons({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="stack-tight sm:flex-row">
       {signerReady === false ? (
         <Button variant="default" asChild>
           <Link to="/dashboard/settings?tab=signers">Connect signer</Link>

@@ -87,7 +87,7 @@ export function RemoteSignerSessionList({
               type="button"
               onClick={() => onSelect(session.id)}
               className={cn(
-                "hover:bg-surface-hover/50 focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                "focus-ring hover:bg-surface-hover/50 motion-fast w-full rounded-md border px-3 py-2 text-left text-sm",
                 isSelected
                   ? "border-brand bg-brand/5"
                   : "border-transparent bg-transparent"

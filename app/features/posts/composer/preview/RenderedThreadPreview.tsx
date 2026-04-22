@@ -35,7 +35,7 @@ export function RenderedThreadPreview({
           className="bg-border-subtle absolute top-2 bottom-2 left-[0.45rem] w-px"
           aria-hidden
         />
-        <div className="relative z-[1] flex flex-col gap-2 pl-4">
+        <div className="stack-tight relative z-[1] pl-4">
           {visibleSegments.map((seg) => (
             <ThreadSegmentPreviewCard key={seg.id} segment={seg} />
           ))}

@@ -110,7 +110,7 @@ export function ReferralSettings({
         title="Referral link"
         description={`Share this link to sign people up with your referral. Earnings apply when they subscribe to a paid ${BRAND_NAME} plan.`}
       >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <div className="stack-tight sm:flex-row sm:items-stretch">
           <Input
             readOnly
             value={referralLink}

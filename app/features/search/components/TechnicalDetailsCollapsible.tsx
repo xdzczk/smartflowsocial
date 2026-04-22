@@ -54,7 +54,7 @@ export function TechnicalDetailsCollapsible({
         className
       )}
     >
-      <summary className="text-text-secondary hover:bg-surface-hover/40 cursor-pointer list-none px-4 py-3 text-sm font-medium transition-colors marker:hidden [&::-webkit-details-marker]:hidden">
+      <summary className="text-text-secondary hover:bg-surface-hover/40 motion-fast cursor-pointer list-none px-4 py-3 text-sm font-medium marker:hidden [&::-webkit-details-marker]:hidden">
         <span className="flex items-center justify-between gap-2">
           Technical details
           <span className="text-text-secondary/80 text-xs font-normal">

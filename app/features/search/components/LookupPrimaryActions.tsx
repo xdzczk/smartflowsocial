@@ -19,7 +19,7 @@ export function LookupPrimaryActions({
   className = "",
 }: LookupPrimaryActionsProps) {
   return (
-    <div className={`flex flex-col gap-2 ${className}`.trim()}>
+    <div className={`stack-tight ${className}`.trim()}>
       <Button
         type="button"
         variant="default"

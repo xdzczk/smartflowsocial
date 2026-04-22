@@ -71,7 +71,7 @@ export function ComposerContentField({
           isCard &&
             "border-border bg-surface focus-within:ring-brand/25 shadow-1 relative overflow-hidden rounded-lg border transition-shadow duration-200 focus-within:ring-2",
           !isCard &&
-            "focus-within:bg-surface-hover/50 focus-within:ring-border-subtle rounded-md transition-colors duration-200 focus-within:ring-1"
+            "focus-within:bg-surface-hover/50 focus-within:ring-border-subtle motion-base rounded-md focus-within:ring-1"
         )}
       >
         <div

@@ -111,7 +111,7 @@ export function PublishedPostPickerGrid({
                 {filteredPosts.length}
               </span>
             </span>
-            <div className="flex items-center gap-2">
+            <div className="cluster">
               <button
                 type="button"
                 className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
@@ -154,7 +154,7 @@ export function PublishedPostPickerGrid({
                   onClick={() => {
                     onValueChange(p.id);
                   }}
-                  className={`border-border bg-canvas flex flex-col overflow-hidden rounded-lg border text-left transition-colors ${selected ? "bg-surface-selected border-brand ring-brand/20 ring-2" : "hover:border-brand/40"}`}
+                  className={`border-border bg-canvas motion-fast flex flex-col overflow-hidden rounded-lg border text-left ${selected ? "bg-surface-selected border-brand ring-brand/20 ring-2" : "hover:border-brand/40"}`}
                 >
                   <div className="bg-surface-hover relative aspect-video w-full overflow-hidden">
                     {firstUrl ? (

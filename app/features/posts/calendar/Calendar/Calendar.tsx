@@ -956,7 +956,7 @@ function MiniCalendarGrid({
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="stack-tight">
       <div className="flex items-center justify-between">
         <button
           type="button"
