@@ -9,6 +9,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 import type { ToastMessage } from "~/components/types";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import {
   invalidateDependentCaches,
   useRefreshPostViews,
@@ -583,28 +588,60 @@ export function usePublishedPosts({
           const eventData = longformRepostFetcher.data.longformRepostEventData;
           const originalPost = longformRepostFetcher.data.originalPost;
 
-          // Sign the event using client-side signing
-          const { signedEvent } = await nostrAdapter.signEvent(eventData, {
-            clearCacheOnError: false,
-          });
-
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? [];
 
-          // Publish the signed event
-          const response = await fetch("/api/publish", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+          // Per-article idempotency key. Includes the submission instant
+          // so re-clicking "Repost article" later starts a fresh attempt
+          // instead of being deduped against the prior one.
+          const originalEventId = String(
+            originalPost?.nostrEventId ?? originalPost?.signedEvent?.id ?? ""
+          );
+          const idempotencyKey = `longform-repost:${originalEventId}:${Date.now()}`;
+
+          const result = await startRecoverableSign({
+            intent: durableIntent(
+              "long_form_publish",
+              idempotencyKey,
+              "Repost article"
+            ),
+            surface: `published-posts:longform-repost:${originalEventId}`,
+            performSignAndSubmit: async (submissionId) => {
+              const { signedEvent } = await nostrAdapter.signEvent(eventData, {
+                clearCacheOnError: false,
+              });
+
+              const response = await fetch("/api/publish", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  relays: sanitizedRelays,
+                  event: signedEvent,
+                  attemptId: submissionId,
+                }),
+              });
+
+              if (!response.ok) {
+                const message = `Failed to publish longform repost (${response.status})`;
+                signingAttempts.markFailed(submissionId, message);
+                throw new Error(message);
+              }
+              signingAttempts.markCompleted(submissionId);
             },
-            body: JSON.stringify({
-              relays: sanitizedRelays,
-              event: signedEvent,
-            }),
           });
 
-          if (!response.ok) {
-            throw new Error("Failed to publish longform repost");
+          if (!result.ok) {
+            // Recoverable failure modes (`awaiting_signer`) keep the
+            // global recovery banner up; only surface a toast for the
+            // terminal branches the banner can't drive on its own.
+            if (result.reason === "fatal" || result.reason === "expired") {
+              throw new Error(
+                result.lastError ?? `Failed to publish longform repost`
+              );
+            }
+            return;
           }
 
           // Show success toast
@@ -612,13 +649,7 @@ export function usePublishedPosts({
             setToast({
               type: "success",
               message: "Article reposted successfully!",
-              link: nostrUrls.articleUrl(
-                String(
-                  originalPost?.nostrEventId ??
-                    originalPost?.signedEvent?.id ??
-                    ""
-                )
-              ),
+              link: nostrUrls.articleUrl(originalEventId),
               linkText: "View Original Article",
             });
 
@@ -702,28 +733,51 @@ export function usePublishedPosts({
 
           const eventData = individualRepostFetcher.data.repostEventData;
 
-          // Sign the event using client-side signing
-          const { signedEvent } = await nostrAdapter.signEvent(eventData, {
-            clearCacheOnError: false,
-          });
-
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? [];
 
-          // Publish the signed event
-          const response = await fetch("/api/publish", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+          // Locate the parent event id in the kind-6 tags so we can scope
+          // the per-attempt idempotency key. Falls back to the submission
+          // instant when no `e` tag is present.
+          const originalEventId = String(
+            eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ?? ""
+          );
+          const idempotencyKey = `individual-repost:${originalEventId || "no-event"}:${Date.now()}`;
+
+          const result = await startRecoverableSign({
+            intent: durableIntent("publish_quote", idempotencyKey, "Repost"),
+            surface: `published-posts:individual-repost:${originalEventId || "unknown"}`,
+            performSignAndSubmit: async (submissionId) => {
+              const { signedEvent } = await nostrAdapter.signEvent(eventData, {
+                clearCacheOnError: false,
+              });
+
+              const response = await fetch("/api/publish", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  relays: sanitizedRelays,
+                  event: signedEvent,
+                  attemptId: submissionId,
+                }),
+              });
+
+              if (!response.ok) {
+                const message = `Failed to publish repost (${response.status})`;
+                signingAttempts.markFailed(submissionId, message);
+                throw new Error(message);
+              }
+              signingAttempts.markCompleted(submissionId);
             },
-            body: JSON.stringify({
-              relays: sanitizedRelays,
-              event: signedEvent,
-            }),
           });
 
-          if (!response.ok) {
-            throw new Error("Failed to publish repost");
+          if (!result.ok) {
+            if (result.reason === "fatal" || result.reason === "expired") {
+              throw new Error(result.lastError ?? `Failed to publish repost`);
+            }
+            return;
           }
 
           // Add delay before showing success toast
@@ -731,12 +785,7 @@ export function usePublishedPosts({
             setToast({
               type: "success",
               message: "Post reposted successfully!",
-              link: nostrUrls.eventUrl(
-                String(
-                  eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ??
-                    ""
-                )
-              ),
+              link: nostrUrls.eventUrl(originalEventId),
               linkText: "View Original Post",
             });
 

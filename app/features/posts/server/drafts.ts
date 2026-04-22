@@ -18,7 +18,6 @@ export {
   deleteDraftGroupPosts,
   createDraftGroupVersion,
   getBulkDraftGroupPosts,
-  signDraftForScheduling,
   restoreLongformDraftVersion,
 } from "../drafts/index.server";
 export type { BulkDraftSnapshotRow } from "../drafts/index.server";

@@ -220,6 +220,8 @@ function defaultLabelFor(
       return "Schedule repost";
     case "publish_poll_vote":
       return "Vote";
+    case "publish_zap_request":
+      return "Zap";
     case "reaction":
       return "Like";
     case "search_engagement_lookup":

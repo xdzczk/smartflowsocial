@@ -1,6 +1,17 @@
 /**
- * Draft signing service
- * Handles signing and scheduling logic for draft posts
+ * Draft signing service — runs in the BROWSER.
+ *
+ * Despite living in `services/` (which is conventionally server code in
+ * this repo), this module signs drafts using the user's connected
+ * Nostr signer (NIP-07 / NIP-46), which is fundamentally a client
+ * operation: the private key only exists in the user's browser /
+ * remote signer app. Renamed to `.client.ts` so the file extension
+ * matches its actual runtime, and so Remix's bundler correctly keeps
+ * it out of the server bundle.
+ *
+ * Called from `useDraftEditState.handleSignAndResume` inside a
+ * `startRecoverableSign` boundary — that is the durable signing
+ * surface for the "resume scheduled draft" flow.
  */
 
 import type {
@@ -8,7 +19,7 @@ import type {
   SignedEvent,
 } from "~/features/nostr/types";
 import type { UserData, PostData } from "~/features/posts/types";
-import { logError } from "~/lib/error-logger.server";
+import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
@@ -81,11 +92,15 @@ async function getEffectiveHashtags(
         return "";
       }
     } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        userId: user.id,
-        selectedQueue,
-        message: "Error fetching effective hashtags",
-      });
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "draft-sign",
+          action: "getEffectiveHashtags",
+          userId: user.id,
+          selectedQueue,
+        }
+      );
       // Fallback to user's default hashtags
       // Note: hashTags property doesn't exist on UserData, using empty string as fallback
       return "";
@@ -107,9 +122,10 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
         ? parsed.filter((item): item is string => typeof item === "string")
         : [];
     } catch (e) {
-      logError(e instanceof Error ? e : new Error(String(e)), {
+      logClientError(e instanceof Error ? e : new Error(String(e)), {
+        component: "draft-sign",
+        action: "getImageUrls",
         fileUrl: fileUrl[0],
-        message: "Error parsing fileUrl",
       });
       return [];
     }

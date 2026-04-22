@@ -29,6 +29,7 @@ import {
   _resetForTests as resetSigningAttempts,
   cancelAll,
   markCompleted,
+  markFailed,
   signingAttempts,
 } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -166,6 +167,88 @@ describe("startRecoverableSign", () => {
     if (!result.ok) {
       expect(result.reason).toBe("cancelled");
     }
+  });
+
+  it("preserves the terminal completed state when the callback marks completion and then throws (catch-path guard)", async () => {
+    // Regression: `runAttempt`'s catch used to overwrite `attempt.state`
+    // with `awaiting_signer` / `failed` / `expired` even when the
+    // callback had already finalized the attempt via `markCompleted`
+    // before raising. That resurrected the recovery banner / per-row
+    // spinner for an attempt the caller had already moved past.
+    const promise = startRecoverableSign({
+      intent: durableIntent("publish_reply", "idem-catch-1", "Reply"),
+      surface: "test:reply-then-throw",
+      performSignAndSubmit: async (submissionId) => {
+        markCompleted(submissionId);
+        // Simulate a downstream cleanup error AFTER the server has
+        // confirmed the submit. The wrapper must still resolve `ok:true`
+        // because the caller already declared success.
+        throw new Error("post-submit cleanup failed");
+      },
+    });
+
+    await flushMicrotasks();
+    const result = await promise;
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const stored = signingAttempts
+      .getAllAttempts()
+      .find((a) => a.attemptId === result.attemptId);
+    expect(stored?.state).toBe("completed");
+  });
+
+  it("ignores a stale markFailed after the attempt is already completed (terminal-state idempotency)", async () => {
+    // Regression: out-of-order callbacks could flip the state machine
+    // backwards (`completed` -> `failed`). Both `markCompleted` and
+    // `markFailed` must early-return on an already-terminal attempt so
+    // the recovery banner / row spinner is not resurrected.
+    const promise = startRecoverableSign({
+      intent: durableIntent("publish_quote", "idem-double-1", "Quote"),
+      surface: "test:double-mark",
+      performSignAndSubmit: async (submissionId) => {
+        markCompleted(submissionId);
+        markFailed(submissionId, "spurious late failure callback");
+      },
+    });
+
+    await flushMicrotasks();
+    const result = await promise;
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const stored = signingAttempts
+      .getAllAttempts()
+      .find((a) => a.attemptId === result.attemptId);
+    expect(stored?.state).toBe("completed");
+    expect(stored?.lastError).toBeNull();
+  });
+
+  it("ignores a stale markCompleted after the attempt is already failed (terminal-state idempotency)", async () => {
+    // Mirror of the previous test: a late `markCompleted` must not
+    // overwrite a `failed` terminal state set by an earlier
+    // `markFailed` callback, otherwise the user would see a spurious
+    // success after a real submit failure.
+    const promise = startRecoverableSign({
+      intent: durableIntent("publish_dm", "idem-double-2", "Send"),
+      surface: "test:fail-then-complete",
+      performSignAndSubmit: async (submissionId) => {
+        markFailed(submissionId, "real failure");
+        markCompleted(submissionId);
+      },
+    });
+
+    await flushMicrotasks();
+    const result = await promise;
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe("fatal");
+
+    const stored = signingAttempts
+      .getAllAttempts()
+      .find((a) => a.attemptId === result.attemptId);
+    expect(stored?.state).toBe("failed");
+    expect(stored?.lastError).toBe("real failure");
   });
 
   it("never rejects even when the closure throws synchronously", async () => {

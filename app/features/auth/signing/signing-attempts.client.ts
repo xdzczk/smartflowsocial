@@ -72,7 +72,8 @@ export type DurableIntentName =
   | "nip65_publish"
   | "long_form_publish"
   | "schedule_repost_quote"
-  | "publish_poll_vote";
+  | "publish_poll_vote"
+  | "publish_zap_request";
 
 /**
  * Ephemeral intents represent micro-interactions where a missed sign is
@@ -520,6 +521,19 @@ async function runAttempt(
     emit();
   } catch (error) {
     if (attempts.get(attempt.attemptId) !== attempt) return;
+    // Mirror of the resolve-path guard above. The callback may have already
+    // driven the attempt into a terminal state via `markCompleted` /
+    // `markFailed` BEFORE throwing (e.g. a downstream cleanup error after
+    // a successful submit, or a `markFailed` followed by a re-thrown
+    // signer error). Do NOT clobber that terminal state with
+    // `awaiting_signer` / `failed` / `expired` — that would resurrect the
+    // recovery banner / per-row spinner for an attempt the caller has
+    // already moved past, and would duplicate telemetry for a single
+    // logical outcome.
+    if (isTerminalState(attempt.state)) {
+      clearExpiryTimer(attempt);
+      return;
+    }
     const kind = classifySignError(error);
     attempt.lastError = error instanceof Error ? error.message : String(error);
     if (kind === "signer_unavailable") {
@@ -732,6 +746,12 @@ export function cancelAll(): void {
 export function markCompleted(submissionId: string): void {
   const attempt = attempts.get(submissionId);
   if (!attempt) return;
+  // Idempotent: if a prior callback already finalized this attempt
+  // (`completed` / `failed` / `expired`), do not overwrite or re-emit
+  // telemetry. Out-of-order server callbacks (e.g. a late `submit_ok`
+  // after a transient `markFailed`) must not flip the state machine
+  // backwards.
+  if (isTerminalState(attempt.state)) return;
   clearExpiryTimer(attempt);
   attempt.state = "completed";
   attempt.awaitingSince = null;
@@ -748,6 +768,10 @@ export function markCompleted(submissionId: string): void {
 export function markFailed(submissionId: string, message: string): void {
   const attempt = attempts.get(submissionId);
   if (!attempt) return;
+  // Idempotent: same rationale as `markCompleted`. Once an attempt has
+  // reached a terminal state, do not flip it (e.g. `completed` ->
+  // `failed`) on a stale callback.
+  if (isTerminalState(attempt.state)) return;
   clearExpiryTimer(attempt);
   attempt.state = "failed";
   attempt.awaitingSince = null;

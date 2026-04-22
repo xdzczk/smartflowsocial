@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
+  durableIntent,
   ephemeralIntent,
   startRecoverableSign,
 } from "~/features/auth/signing/use-recoverable-sign.client";
@@ -122,39 +123,62 @@ export function useLookupNoteEngagement({
 
       setReplyError(null);
       setIsReplySending(true);
-      try {
-        const kind1EventData = {
-          kind: 1,
-          content: trimmed,
-          tags: [
-            ["e", eventId, tagRelay, "reply"],
-            ["p", authorPubkey],
-          ],
-          created_at: Math.floor(Date.now() / 1000),
-        };
 
-        const { signedEvent } = await nostrAdapter.signEvent(kind1EventData, {
-          clearCacheOnError: false,
-        });
+      // Per-reply idempotency key: scoped to the parent event id and the
+      // submission instant so a Resume-from-banner replays the same row
+      // without the server re-recording the reply twice.
+      const idempotencyKey = `lookup-reply:${eventId}:${Date.now()}`;
+      const result = await startRecoverableSign({
+        intent: durableIntent("publish_reply", idempotencyKey, "Reply"),
+        surface: `lookup:reply:${eventId}`,
+        performSignAndSubmit: async (submissionId) => {
+          const kind1EventData = {
+            kind: 1,
+            content: trimmed,
+            tags: [
+              ["e", eventId, tagRelay, "reply"],
+              ["p", authorPubkey],
+            ],
+            created_at: Math.floor(Date.now() / 1000),
+          };
 
-        const response = await fetch(PUBLISH_API_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            relays: publishRelays,
-            event: signedEvent,
-            recordAsReply: {
-              replyToEventId: eventId,
-            },
-          }),
-        });
+          const { signedEvent } = await nostrAdapter.signEvent(kind1EventData, {
+            clearCacheOnError: false,
+          });
 
-        if (!response.ok) throw new Error("Failed to publish reply");
-      } catch {
-        setReplyError("Couldn’t send reply. Try again.");
+          const response = await fetch(PUBLISH_API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relays: publishRelays,
+              event: signedEvent,
+              attemptId: submissionId,
+              recordAsReply: {
+                replyToEventId: eventId,
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const message = `Failed to publish reply (${response.status})`;
+            signingAttempts.markFailed(submissionId, message);
+            throw new Error(message);
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
+      });
+
+      setIsReplySending(false);
+
+      if (!result.ok) {
+        // While the attempt is parked in `awaiting_signer` the global
+        // recovery banner owns the recovery affordance — only surface a
+        // textual error for the terminal failure modes the banner can't
+        // recover from on its own.
+        if (result.reason === "fatal" || result.reason === "expired") {
+          setReplyError("Couldn’t send reply. Try again.");
+        }
         throw new Error("reply_failed");
-      } finally {
-        setIsReplySending(false);
       }
     },
     [authorPubkey, eventId, publishRelays, tagRelay]
