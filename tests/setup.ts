@@ -7,6 +7,8 @@ import { createRequire } from "node:module";
 
 import "dotenv/config";
 import * as matchers from "@testing-library/jest-dom/matchers";
+// eslint-disable-next-line testing-library/no-manual-cleanup -- vitest is not configured with globals: true, so RTL's auto-cleanup never runs; we wire it through the global afterEach below.
+import { cleanup } from "@testing-library/react";
 import { expect, afterEach, vi } from "vitest";
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -35,6 +37,13 @@ if (typeof globalThis.WebSocket === "undefined") {
 
 // Clean up after each test
 afterEach(() => {
+  // @testing-library/react's auto-cleanup only fires when the test runner
+  // exposes a global `afterEach` hook at module load (e.g. with
+  // `vitest --globals`). We don't enable globals, so unmount + DOM teardown
+  // has to be requested explicitly here. Without this, multiple `render()`
+  // calls across separate tests in the same jsdom environment leak nodes
+  // and break `screen.getByX` queries with "found multiple elements".
+  cleanup();
   vi.clearAllMocks();
 });
 

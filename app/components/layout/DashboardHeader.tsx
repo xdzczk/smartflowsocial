@@ -43,6 +43,8 @@ import { BRAND_NAME } from "~/lib/brand";
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
 const NAV_ICON_STROKE = 2.25;
 
+const DASHBOARD_ROOT_PATH = "/dashboard";
+
 // Nav config for expandable sections (reduces inline complexity in Header)
 // Semantic rule: Create = Plus. Composer = MessageSquare (single entry).
 const CREATE_SECTION_ITEMS = [
@@ -152,7 +154,7 @@ function NavigationItem({
   const subscription = useSubscription();
   const hasAnySubscription = !!subscription?.currentSubscription;
 
-  const isDashboardRoot = to === "/dashboard";
+  const isDashboardRoot = to === DASHBOARD_ROOT_PATH;
   // Browse-all: any child route is navigable once the user has a subscription (limits are action-level).
   const hasAccess = isDashboardRoot ? true : hasAnySubscription;
 
@@ -287,9 +289,9 @@ function SidebarNavContent({
   return (
     <nav className="space-y-1">
       <NavigationItem
-        to="/dashboard"
+        to={DASHBOARD_ROOT_PATH}
         feature="dashboard"
-        isActive={pathname === "/dashboard"}
+        isActive={pathname === DASHBOARD_ROOT_PATH}
         onUpgradeClick={onUpgradeClick}
         onActiveClick={onMobileNavActiveClick}
         icon={
@@ -392,7 +394,7 @@ function SidebarHeader({
     >
       <Link
         prefetch="intent"
-        to="/dashboard"
+        to={DASHBOARD_ROOT_PATH}
         className={`group text-foreground hover:text-primary focus:ring-ring inline-flex items-center rounded-lg transition-colors focus:ring-2 focus:outline-none ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
@@ -536,7 +538,7 @@ export default function Header({
     | { isFirstRunDashboard?: boolean }
     | undefined;
   const isFirstRunDashboard =
-    location.pathname === "/dashboard" &&
+    location.pathname === DASHBOARD_ROOT_PATH &&
     dashboardIndexData?.isFirstRunDashboard === true;
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined"

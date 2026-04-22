@@ -200,7 +200,7 @@ Tallies are computed **client-side** by subscribing to the poll’s relay URLs f
 
 - `app/features/polls/` — parse/build/validate/aggregate
 - `app/routes/api.publish.tsx` — vote publish + relay merge
-- `app/lib/nostr-adapter.client.ts` — `signPollEventWithOneRetry`
+- `app/lib/nostr-adapter.client.ts` — `signPollEvent`
 
 **Spec**
 

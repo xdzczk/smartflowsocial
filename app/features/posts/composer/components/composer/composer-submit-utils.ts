@@ -119,12 +119,15 @@ export async function buildRepostSchedules(
       mainSignedEvent as SignedEvent,
       scheduledForUnix
     );
-    const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
-      content: repostEvent.content,
-      created_at: repostEvent.created_at,
-      kind: repostEvent.kind,
-      tags: repostEvent.tags,
-    });
+    const { signedEvent } = await nostrAdapter.signEvent(
+      {
+        content: repostEvent.content,
+        created_at: repostEvent.created_at,
+        kind: repostEvent.kind,
+        tags: repostEvent.tags,
+      },
+      { clearCacheOnError: false }
+    );
     out.push({ scheduledFor: scheduledForUnix, signedEvent });
   }
   return out;
@@ -170,12 +173,15 @@ export async function buildQuoteSchedules(
       scheduledForUnix,
       tagArray
     );
-    const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
-      content: quoteEvent.content,
-      created_at: quoteEvent.created_at,
-      kind: quoteEvent.kind,
-      tags: quoteEvent.tags,
-    });
+    const { signedEvent } = await nostrAdapter.signEvent(
+      {
+        content: quoteEvent.content,
+        created_at: quoteEvent.created_at,
+        kind: quoteEvent.kind,
+        tags: quoteEvent.tags,
+      },
+      { clearCacheOnError: false }
+    );
     out.push({
       scheduledFor: scheduledForUnix,
       signedEvent,

@@ -35,4 +35,7 @@ export { loadDraftsData } from "./services/drafts-loader.server";
 export { handleDraftsAction } from "./services/drafts-action.server";
 export { loadDraftEditData } from "./services/draft-edit-loader.server";
 export { handleDraftEditAction } from "./services/draft-edit-action.server";
-export { signDraftForScheduling } from "./services/draft-sign.server";
+// Note: `signDraftForScheduling` lives in `./services/draft-sign.client.ts`
+// (it signs in the browser via the user's NIP-07/NIP-46 signer) and is
+// re-exported from `./index.ts` for client consumers (`useDraftEditState`).
+// It is intentionally NOT re-exported from this server barrel.

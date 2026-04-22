@@ -2,6 +2,11 @@ import { useNavigate, useRouteLoaderData } from "@remix-run/react";
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import type { PostData } from "~/features/posts/types";
 import type { QuotePostDataItem } from "~/features/posts/utils/bulk-composer-data";
 import {
@@ -650,25 +655,47 @@ export function useRecyclablesState({
       setTimeout(() => setToast(null), 8000);
     };
 
-    const publishRepost = async (repostEventData: Record<string, unknown>) => {
+    const publishRepost = async (
+      repostEventData: Record<string, unknown>
+    ): Promise<{ ok: boolean; lastError: string | null; tags: unknown }> => {
       const eventData = buildEventData(repostEventData);
-      const { signedEvent } =
-        await nostrAdapter.signEventWithOneRetry(eventData);
-
-      const response = await fetch("/api/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          relays: getUserRelaysForPublish(),
-          event: signedEvent,
-        }),
+      // Drive through the signing-attempts core so a stalled signer
+      // surfaces the foreground recovery banner (and resumes
+      // automatically on `nostr-connection-healthy`) instead of
+      // silently failing in this fire-and-forget effect.
+      const idempotencyKey = `recyclables-repost:${signingAttempts.createSubmissionId()}`;
+      const result = await startRecoverableSign({
+        intent: durableIntent("publish_quote", idempotencyKey, "Repost"),
+        surface: "recyclables:individual-repost",
+        performSignAndSubmit: async (submissionId) => {
+          const { signedEvent } = await nostrAdapter.signEvent(eventData, {
+            clearCacheOnError: false,
+          });
+          const response = await fetch("/api/publish", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relays: getUserRelaysForPublish(),
+              event: signedEvent,
+              attemptId: submissionId,
+            }),
+          });
+          if (!response.ok) {
+            const message = await response.text().catch(() => "");
+            signingAttempts.markFailed(
+              submissionId,
+              message || "Failed to publish repost"
+            );
+            throw new Error(message || "Failed to publish repost");
+          }
+          signingAttempts.markCompleted(submissionId);
+        },
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to publish repost");
-      }
-
-      setTimeout(() => showRepostSuccessToast(eventData.tags), 1000);
+      return {
+        ok: result.ok,
+        lastError: result.ok ? null : result.lastError,
+        tags: eventData.tags,
+      };
     };
 
     const handleRepost = async () => {
@@ -677,7 +704,12 @@ export function useRecyclablesState({
 
       if (data.repostEventData) {
         try {
-          await publishRepost(data.repostEventData);
+          const outcome = await publishRepost(data.repostEventData);
+          if (outcome.ok) {
+            setTimeout(() => showRepostSuccessToast(outcome.tags), 1000);
+          } else if (outcome.lastError) {
+            showErrorToast(outcome.lastError);
+          }
         } catch (error: unknown) {
           logClientError(
             error instanceof Error ? error : new Error(String(error)),

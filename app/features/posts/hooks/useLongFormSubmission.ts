@@ -6,12 +6,12 @@
 import { useState } from "react";
 
 import { cancelSignerInFlight } from "~/features/auth/signer";
+import { pendingPublish } from "~/features/auth/signing/signing-attempts.client";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer/publish-mode";
 import {
   appendRelayOverride,
   appendSubmissionId,
 } from "~/features/posts/composer/services/build-publish-formdata.client";
-import { pendingPublish } from "~/features/posts/composer/state/pending-publish.client";
 import {
   delayAfterMainToSeconds,
   isValidDelayAfterMain,
@@ -182,13 +182,15 @@ async function buildSignedLongformQuoteSchedules(
       quoteScheduledUnix,
       tagArray
     );
-    const { signedEvent: quoteSignedEvent } =
-      await nostrAdapter.signEventWithOneRetry({
+    const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent(
+      {
         content: quoteEvent.content,
         created_at: quoteEvent.created_at,
         kind: quoteEvent.kind,
         tags: quoteEvent.tags,
-      });
+      },
+      { clearCacheOnError: false }
+    );
     quoteSchedules.push({
       scheduledFor: quoteScheduledUnix,
       signedEvent: quoteSignedEvent,
@@ -327,7 +329,9 @@ export function useLongFormSubmission({
 
         setIsSigning(true);
         const { nostrEvent, signedEvent } =
-          await nostrAdapter.signLongFormEventWithOneRetry(eventData);
+          await nostrAdapter.signLongFormEvent(eventData, {
+            clearCacheOnError: false,
+          });
 
         // Cancellation guard: if the user discarded this attempt or a
         // fresher click overrode it while the bunker was busy, bail out

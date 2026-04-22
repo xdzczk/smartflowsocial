@@ -17,11 +17,11 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
   _resetForTests as resetPendingPublish,
   pendingPublish,
-} from "~/features/posts/composer/state/pending-publish.client";
+} from "~/features/auth/signing/signing-attempts.client";
+import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 
 describe("useComposerSignerReconnect", () => {
   beforeEach(() => {

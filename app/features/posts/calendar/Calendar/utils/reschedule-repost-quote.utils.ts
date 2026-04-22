@@ -42,24 +42,30 @@ export async function submitRepostSchedule(
   },
   scheduledForUnix: number,
   submit: (formData: FormData) => void,
-  repostConditions?: RepostConditions | null
+  repostConditions?: RepostConditions | null,
+  attemptId?: string
 ): Promise<void> {
   const repostEvent = buildKind6RepostEvent(
     originalSignedEvent,
     scheduledForUnix
   );
-  const { signedEvent: repostSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent(
+    {
       content: repostEvent.content,
       created_at: repostEvent.created_at,
       kind: repostEvent.kind,
       tags: repostEvent.tags,
-    });
+    },
+    { clearCacheOnError: false }
+  );
   const formData = new FormData();
   formData.set("_action", "scheduleRepost");
   formData.set("postId", postId);
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  if (attemptId) {
+    formData.set("attemptId", attemptId);
+  }
   if (repostConditions) {
     if (repostConditions.minReactions != null)
       formData.set("minReactions", String(repostConditions.minReactions));
@@ -86,7 +92,8 @@ export async function submitQuoteSchedule(
   },
   scheduledForUnix: number,
   caption: string,
-  submit: (formData: FormData) => void
+  submit: (formData: FormData) => void,
+  attemptId?: string
 ): Promise<void> {
   const tagArray: string[][] = [];
   const quoteEvent = buildQuoteEvent(
@@ -95,18 +102,23 @@ export async function submitQuoteSchedule(
     scheduledForUnix,
     tagArray
   );
-  const { signedEvent: quoteSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent(
+    {
       content: quoteEvent.content,
       created_at: quoteEvent.created_at,
       kind: quoteEvent.kind,
       tags: quoteEvent.tags,
-    });
+    },
+    { clearCacheOnError: false }
+  );
   const formData = new FormData();
   formData.set("_action", "scheduleQuote");
   formData.set("postId", postId);
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
+  if (attemptId) {
+    formData.set("attemptId", attemptId);
+  }
   if (caption) {
     formData.set("quoteCaption", caption);
   }

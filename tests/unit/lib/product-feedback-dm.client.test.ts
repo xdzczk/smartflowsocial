@@ -13,7 +13,6 @@ import {
 const mocks = vi.hoisted(() => ({
   getActiveSignerConfig: vi.fn(),
   signEvent: vi.fn(),
-  signEventWithOneRetry: vi.fn(),
   encryptNip04WithActiveSigner: vi.fn(),
   encryptNip44WithActiveSigner: vi.fn(),
   generateSecretKey: vi.fn(),
@@ -30,8 +29,6 @@ vi.mock("~/features/auth/signer", () => ({
 vi.mock("~/lib/nostr-adapter.client", () => ({
   nostrAdapter: {
     signEvent: (...args: unknown[]) => mocks.signEvent(...args),
-    signEventWithOneRetry: (...args: unknown[]) =>
-      mocks.signEventWithOneRetry(...args),
   },
 }));
 vi.mock("~/lib/nostr-signer-encrypt.client", () => ({
@@ -62,9 +59,8 @@ describe("product-feedback-dm client", () => {
     (window as unknown as { nostr?: unknown }).nostr = undefined;
     mocks.encryptNip04WithActiveSigner.mockResolvedValue("enc-04");
     mocks.encryptNip44WithActiveSigner.mockResolvedValue("enc-44");
-    mocks.signEvent.mockResolvedValue({ signedEvent: { id: "signed-4" } });
-    mocks.signEventWithOneRetry.mockResolvedValue({
-      signedEvent: { id: "sealed", content: "seal" },
+    mocks.signEvent.mockResolvedValue({
+      signedEvent: { id: "signed-4", content: "seal" },
     });
     mocks.generateSecretKey.mockReturnValue(new Uint8Array([1, 2, 3]));
     mocks.getConversationKey.mockReturnValue("conv-key");
@@ -119,6 +115,6 @@ describe("product-feedback-dm client", () => {
       "feedback text"
     );
     expect(mocks.signEvent).toHaveBeenCalled();
-    expect(event).toEqual({ id: "signed-4" });
+    expect(event).toEqual({ id: "signed-4", content: "seal" });
   });
 });

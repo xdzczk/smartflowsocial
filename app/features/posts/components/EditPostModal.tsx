@@ -8,6 +8,11 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
 import { cancelSignerInFlight } from "~/features/auth/signer";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrResignNotice";
 import { RescheduleScheduledPostModal } from "~/features/posts/scheduling";
@@ -104,6 +109,10 @@ export function EditPostModal({
     signAttempt?.timeoutMs
   );
   const pendingRetryRef = useRef<(() => void) | null>(null);
+  // Tracks the in-flight signing attempt so the fetcher.data effect can
+  // mark it completed/failed once the server response lands. Mirrors the
+  // pattern used by RescheduleScheduledPostModal.
+  const inFlightAttemptIdRef = useRef<string | null>(null);
 
   const clearSigningState = () => {
     setIsSigningEvent(false);
@@ -111,6 +120,7 @@ export function EditPostModal({
   };
   const cancelSigningState = () => {
     pendingRetryRef.current = null;
+    inFlightAttemptIdRef.current = null;
     clearSigningState();
   };
   const retryLastSign = (): boolean => {
@@ -190,6 +200,7 @@ export function EditPostModal({
   });
 
   useEffect(() => {
+    if (fetcher.state !== "idle") return;
     const dataRaw = fetcher.data;
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -199,6 +210,7 @@ export function EditPostModal({
             error?: unknown;
           })
         : null;
+    const attemptId = inFlightAttemptIdRef.current;
     if (data && typeof data.success === "boolean" && data.success) {
       if (
         data.needsSigning &&
@@ -207,16 +219,25 @@ export function EditPostModal({
       ) {
         return; // Keep modal open for re-signing
       }
+      if (attemptId) {
+        signingAttempts.markCompleted(attemptId);
+        inFlightAttemptIdRef.current = null;
+      }
       toast.success("Post updated");
       onConfirm();
     }
     if (data && "error" in data && typeof data.error === "string") {
+      const message = getClientDisplayErrorMessage(data.error);
+      if (attemptId) {
+        signingAttempts.markFailed(attemptId, message);
+        inFlightAttemptIdRef.current = null;
+      }
       // Defer to avoid cascading renders
       setTimeout(() => {
-        setSigningError(getClientDisplayErrorMessage(data.error));
+        setSigningError(message);
       }, 0);
     }
-  }, [fetcher.data, onConfirm]);
+  }, [fetcher.state, fetcher.data, onConfirm]);
 
   useEffect(() => {
     if (
@@ -261,79 +282,128 @@ export function EditPostModal({
   };
 
   const handleSubmit = async () => {
-    try {
-      setIsSigningEvent(true);
-      setSigningError(null);
-      pendingRetryRef.current = () => void handleSubmit();
-      setIsUploadingImages(true);
+    setIsSigningEvent(true);
+    setSigningError(null);
+    pendingRetryRef.current = () => void handleSubmit();
+    setIsUploadingImages(true);
 
-      // Flush Tiptap editor to form so content is current when longform
-      if (isLongform) {
-        longformEditorApiRef.current?.flushSync();
+    // Flush Tiptap editor to form so content is current when longform
+    if (isLongform) {
+      longformEditorApiRef.current?.flushSync();
+    }
+    const contentToSubmit = isLongform ? form.getValues("content") : content;
+    const contentValue: string | undefined =
+      typeof contentToSubmit === "string" ? contentToSubmit : undefined;
+
+    // Idempotency key collapses a resumed retry onto the same server
+    // dedupe slot: same post + same target time => same attempt, even
+    // if the user reopens the modal after the bunker drops mid-sign.
+    const targetTimeUnix = scheduledFor
+      ? Math.floor(scheduledFor.getTime() / 1000)
+      : 0;
+    const idempotencyKey = `edit_post:${post.id}:${String(targetTimeUnix)}`;
+
+    // Wrap captured-by-closure values in an object so TS doesn't narrow
+    // them down to `null` after the closure runs (the recoverable wrapper
+    // assigns these inside `performSignAndSubmit`, which TS flow analysis
+    // cannot see from the outer scope).
+    const captured: {
+      formData: FormData | null;
+      signedEvent: Record<string, unknown> | null;
+    } = { formData: null, signedEvent: null };
+
+    const result = await startRecoverableSign({
+      intent: durableIntent("composer_publish", idempotencyKey, "Edit post"),
+      surface: `edit_post:${post.id}`,
+      performSignAndSubmit: async (submissionId) => {
+        const prepared = await prepareEditPostSubmission({
+          post,
+          isLongform,
+          caption,
+          title,
+          summary,
+          content: contentValue,
+          image,
+          existingImages,
+          newFiles,
+          selectedHashtagPresetTags,
+          manualHashtags,
+          useHashtagPresets,
+          selectedQueueType,
+          selectedHashtagPresetId,
+          scheduledFor,
+          includeHashtagsInNoteBody,
+        });
+
+        const formData = "formData" in prepared ? prepared.formData : prepared;
+        const mainSignedEvent =
+          "signedEvent" in prepared && prepared.signedEvent
+            ? prepared.signedEvent
+            : null;
+        // Forward the per-attempt id so the route's downstream
+        // /api/publish dedupe (PR 0) collapses any resumed retry onto
+        // the original side-effect.
+        formData.append("attemptId", submissionId);
+
+        captured.formData = formData;
+        captured.signedEvent = mainSignedEvent as Record<
+          string,
+          unknown
+        > | null;
+
+        pendingRetryRef.current = null;
+        setIsSigningEvent(false);
+        setIsUploadingImages(false);
+        inFlightAttemptIdRef.current = submissionId;
+        fetcher.submit(formData, { method: "post" });
+        // The fetcher.data effect promotes the attempt to `completed`
+        // (or `failed`) once the server response settles. Returning
+        // here parks the store state in `submitting`.
+      },
+    });
+
+    if (result.ok) {
+      if (captured.signedEvent && captured.formData) {
+        try {
+          await runScheduleRepostQuoteIfNeeded(
+            isLongform,
+            captured.signedEvent,
+            captured.formData,
+            post.id,
+            repostDelayList,
+            quoteEntries,
+            alsoScheduleRepost,
+            alsoScheduleQuote,
+            repostConditions
+          );
+        } catch (error: unknown) {
+          showErrorToastFromUnknown(error);
+        }
       }
-      const contentToSubmit = isLongform ? form.getValues("content") : content;
-      const contentValue: string | undefined =
-        typeof contentToSubmit === "string" ? contentToSubmit : undefined;
+      return;
+    }
 
-      const result = await prepareEditPostSubmission({
-        post,
-        isLongform,
-        caption,
-        title,
-        summary,
-        content: contentValue,
-        image,
-        existingImages,
-        newFiles,
-        selectedHashtagPresetTags,
-        manualHashtags,
-        useHashtagPresets,
-        selectedQueueType,
-        selectedHashtagPresetId,
-        scheduledFor,
-        includeHashtagsInNoteBody,
-      });
+    pendingRetryRef.current = null;
+    setIsSigningEvent(false);
+    setIsUploadingImages(false);
+    inFlightAttemptIdRef.current = null;
 
-      const formData = "formData" in result ? result.formData : result;
-      const mainSignedEvent =
-        "signedEvent" in result && result.signedEvent
-          ? result.signedEvent
-          : null;
-
-      // Signing complete; proceed to submit
-      pendingRetryRef.current = null;
-      setIsSigningEvent(false);
-      setIsUploadingImages(false);
-      fetcher.submit(formData, { method: "post" });
-
-      await runScheduleRepostQuoteIfNeeded(
-        isLongform,
-        mainSignedEvent,
-        formData,
-        post.id,
-        repostDelayList,
-        quoteEntries,
-        alsoScheduleRepost,
-        alsoScheduleQuote,
-        repostConditions
-      );
-    } catch (error: unknown) {
-      pendingRetryRef.current = null;
+    if (result.reason === "fatal") {
       logClientError(
-        error instanceof Error ? error : new Error(String(error)),
+        result.lastError ? new Error(result.lastError) : new Error("sign fail"),
         {
           component: "EditPostModal",
           action: "prepareEditPostSubmission",
           message: "Error re-signing event",
         }
       );
-      setIsSigningEvent(false);
-      setIsUploadingImages(false);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to sign event. Please try again.";
-      setSigningError(errorMessage);
+      setSigningError(
+        result.lastError ?? "Failed to sign event. Please try again."
+      );
+    } else if (result.reason === "expired") {
+      setSigningError(
+        "Recovery window expired before your signer reconnected."
+      );
     }
   };
 

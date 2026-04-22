@@ -1,12 +1,16 @@
 import { type FetcherWithComponents } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { NostrSigner } from "~/features/auth/nostr-signer.client";
 import {
   cancelSignerInFlight,
-  getActiveSigner,
   setSigningInProgress,
 } from "~/features/auth/signer";
+import {
+  signBatchWithRecovery,
+  type SignBatchInput,
+} from "~/features/auth/signing/sign-batch-with-recovery.client";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import { durableIntent } from "~/features/auth/signing/use-recoverable-sign.client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import {
@@ -46,6 +50,18 @@ export interface UseBulkPostSigningParams {
   extraFormData?: Record<string, string>;
   repostConditions?: RepostConditions | null;
   fetcher: FetcherWithComponents<{ error?: string }>;
+}
+
+const SIGN_RETRY_COPY = "Failed to sign posts. Please try again.";
+
+function buildBulkBatchKey(preparedEvents: PreparedEvent[]): string {
+  // Stable-ish per-batch idempotency seed: caption hashes + scheduled
+  // times. Combined with a fresh per-attempt random suffix so a retry
+  // after a fatal error gets a brand-new server-side dedupe slot.
+  const sig = preparedEvents
+    .map((e) => `${String(e.scheduledFor)}:${e.caption.length}`)
+    .join("|");
+  return `bulk:${sig}:${signingAttempts.createSubmissionId()}`;
 }
 
 export function useBulkPostSigning({
@@ -97,12 +113,18 @@ export function useBulkPostSigning({
   }, [actionError]);
 
   const pendingRetryRef = useRef<(() => void) | null>(null);
+  const activeAttemptIdRef = useRef<string | null>(null);
   const clearSigningState = () => {
     setIsSigning(false);
     setSigningError(null);
   };
   const cancelSigningState = () => {
     pendingRetryRef.current = null;
+    const id = activeAttemptIdRef.current;
+    if (id) {
+      signingAttempts.cancelAttempt(id);
+      activeAttemptIdRef.current = null;
+    }
     clearSigningState();
   };
   const retryLastSign = (): boolean => {
@@ -198,6 +220,30 @@ export function useBulkPostSigning({
     ]
   );
 
+  // Per-item sign closure shared between the initial pass and the
+  // retry pass. The shared helper invokes us with `index` pointing into
+  // the items array we passed in, which the caller remaps back onto
+  // `preparedEvents` indices via the `signed` result entries.
+  const signOneEntry: SignBatchInput<
+    PreparedEvent,
+    SignedEntryWithIndex
+  >["signItem"] = useCallback(async (eventData, _index, signer) => {
+    const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+      eventData.events,
+      { clearCacheOnError: false, signer: signer ?? undefined }
+    );
+    return {
+      originalIndex: 0, // placeholder; remapped via SignedBatchEntry.originalIndex
+      nostrEvent,
+      signedEvent,
+      fileUrl: eventData.fileUrl,
+      caption: eventData.caption,
+      queueType: eventData.queueType,
+      isRecyclable: eventData.isRecyclable,
+      originalPostId: eventData.originalPostId,
+    };
+  }, []);
+
   async function handleSignAndSubmit() {
     try {
       setSigningError(null);
@@ -209,108 +255,62 @@ export function useBulkPostSigning({
       };
       setSigningProgress({ current: 0, total: preparedEvents.length });
 
-      // Acquire the signer once and reuse it across the loop. Otherwise
-      // every iteration re-enters `getActiveSigner`, which after a bfcache
-      // resume / long-hidden visibility flip would rebuild a fresh
-      // `BunkerSigner` per post (50 posts → 50 extra REQ subscriptions
-      // against the bunker relay, hitting subscription quotas and adding
-      // hundreds of ms per post). Holding the reference here also makes
-      // the loop immune to invalidation that fires mid-loop.
-      const signer = await getActiveSigner();
-
-      const signed: SignedEntryWithIndex[] = [];
-      let failedIndices: number[] = [];
-
-      for (let index = 0; index < preparedEvents.length; index++) {
-        const eventData = preparedEvents[index];
-        if (!eventData) {
-          throw new Error("Missing prepared event data");
-        }
-        try {
-          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-            eventData.events,
-            { clearCacheOnError: false, signer: signer ?? undefined }
-          );
-          signed.push({
-            originalIndex: index,
-            nostrEvent,
-            signedEvent,
-            fileUrl: eventData.fileUrl,
-            caption: eventData.caption,
-            queueType: eventData.queueType,
-            isRecyclable: eventData.isRecyclable,
-            originalPostId: eventData.originalPostId,
-          });
-          setSigningProgress({
-            current: index + 1,
-            total: preparedEvents.length,
-          });
-          if (index < preparedEvents.length - 1) {
-            await new Promise((r) => setTimeout(r, 100));
-          }
-        } catch (eventError) {
-          const { handleAsyncError } =
-            await import("~/lib/error-handler.client");
-          handleAsyncError(
-            eventError,
-            {
-              component: "useBulkPostSigning",
-              action: "signEvent",
-              eventIndex: index,
-            },
-            false
-          );
-          failedIndices.push(index);
-        }
-      }
-
-      if (failedIndices.length > 0) {
-        setSigningProgress({
-          current: preparedEvents.length,
-          total: preparedEvents.length,
-        });
-        await new Promise((r) => setTimeout(r, 1500));
-        // Re-acquire the signer for the second pass: the first pass may
-        // have hit a transport hiccup, and `getActiveSigner` will pick up
-        // any staleness flag that was raised in the meantime.
-        const retrySigner: NostrSigner | null = await getActiveSigner();
-        const stillFailed: number[] = [];
-        for (const index of failedIndices) {
-          const ev = preparedEvents[index];
-          if (!ev) continue;
-          try {
-            const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-              ev.events,
+      const result = await signBatchWithRecovery<
+        PreparedEvent,
+        SignedEntryWithIndex
+      >({
+        items: preparedEvents,
+        intent: durableIntent(
+          "composer_publish",
+          buildBulkBatchKey(preparedEvents),
+          "Schedule posts"
+        ),
+        surface: "bulkposts",
+        signItem: signOneEntry,
+        onProgress: (current, total) => setSigningProgress({ current, total }),
+        onItemFailed: (eventError, eventIndex) => {
+          void (async () => {
+            const { handleAsyncError } =
+              await import("~/lib/error-handler.client");
+            handleAsyncError(
+              eventError,
               {
-                clearCacheOnError: false,
-                signer: retrySigner ?? undefined,
-              }
+                component: "useBulkPostSigning",
+                action: "signEvent",
+                eventIndex,
+              },
+              false
             );
-            signed.push({
-              originalIndex: index,
-              nostrEvent,
-              signedEvent,
-              fileUrl: ev.fileUrl,
-              caption: ev.caption,
-              queueType: ev.queueType,
-              isRecyclable: ev.isRecyclable,
-              originalPostId: ev.originalPostId,
-            });
-            await new Promise((r) => setTimeout(r, 100));
-          } catch {
-            stillFailed.push(index);
-          }
-        }
-        failedIndices = stillFailed;
-      }
+          })();
+        },
+      });
+      activeAttemptIdRef.current = result.attemptId;
 
-      if (failedIndices.length > 0) {
-        setPartialSignState({ signedEntries: signed, failedIndices });
-        setSigningError(null);
-      } else {
+      // Normalize signed entries with their original indices preserved.
+      const signed: SignedEntryWithIndex[] = result.signed.map((entry) => ({
+        ...entry.signed,
+        originalIndex: entry.originalIndex,
+      }));
+
+      if (result.ok) {
         pendingRetryRef.current = null;
         await submitSignedEntries(signed);
+        return;
       }
+
+      if (result.reason === "partial") {
+        setPartialSignState({
+          signedEntries: signed,
+          failedIndices: result.failedIndices,
+        });
+        setSigningError(null);
+        return;
+      }
+
+      // expired / fatal / cancelled: surface as an error so the host UI
+      // re-enables the submit button. The signing-attempts banner has
+      // already presented the recovery affordance.
+      setSigningError(result.lastError ?? SIGN_RETRY_COPY);
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
       handleAsyncError(
@@ -321,11 +321,7 @@ export function useBulkPostSigning({
         },
         false
       );
-      setSigningError(
-        error instanceof Error
-          ? error.message
-          : "Failed to sign posts. Please try again."
-      );
+      setSigningError(error instanceof Error ? error.message : SIGN_RETRY_COPY);
     } finally {
       setSigningInProgress(false);
       pendingRetryRef.current = null;
@@ -348,54 +344,69 @@ export function useBulkPostSigning({
     }
     setIsSigning(true);
     setSigningInProgress(true);
-    setPartialSignState(null);
     const { signedEntries: existingSigned, failedIndices } = partialSignState;
-    const newSigned: SignedEntryWithIndex[] = [...existingSigned];
-    const stillFailed: number[] = [];
-    const total = failedIndices.length;
-    setSigningProgress({ current: 0, total });
-    let current = 0;
-    // Acquire signer once for the retry batch — same rationale as the
-    // initial pass.
-    const signer = await getActiveSigner();
-    for (const index of failedIndices) {
-      const eventData = preparedEvents[index];
-      if (!eventData) continue;
-      try {
-        const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-          eventData.events,
-          { clearCacheOnError: false, signer: signer ?? undefined }
-        );
-        newSigned.push({
-          originalIndex: index,
-          nostrEvent,
-          signedEvent,
-          fileUrl: eventData.fileUrl,
-          caption: eventData.caption,
-          queueType: eventData.queueType,
-          isRecyclable: eventData.isRecyclable,
-          originalPostId: eventData.originalPostId,
-        });
-        current += 1;
-        setSigningProgress({ current, total });
-        await new Promise((r) => setTimeout(r, 100));
-      } catch {
-        stillFailed.push(index);
-      }
+    setPartialSignState(null);
+
+    // Build a "retry slice" of just the failed prepared events so the
+    // shared helper can drive them through a fresh durable attempt.
+    const retryItems: PreparedEvent[] = [];
+    const indexMap: number[] = [];
+    for (const i of failedIndices) {
+      const ev = preparedEvents[i];
+      if (!ev) continue;
+      retryItems.push(ev);
+      indexMap.push(i);
     }
+    const total = retryItems.length;
+    setSigningProgress({ current: 0, total });
+
+    const result = await signBatchWithRecovery<
+      PreparedEvent,
+      SignedEntryWithIndex
+    >({
+      items: retryItems,
+      intent: durableIntent(
+        "composer_publish",
+        buildBulkBatchKey(retryItems),
+        "Retry signing"
+      ),
+      surface: "bulkposts:retry",
+      signItem: signOneEntry,
+      onProgress: (current) => setSigningProgress({ current, total }),
+    });
+    activeAttemptIdRef.current = result.attemptId;
+
+    const remapped: SignedEntryWithIndex[] = result.signed.map((entry) => ({
+      ...entry.signed,
+      originalIndex: indexMap[entry.originalIndex] ?? entry.originalIndex,
+    }));
+    const newSigned: SignedEntryWithIndex[] = [...existingSigned, ...remapped];
+    const stillFailedRelative = result.ok ? [] : result.failedIndices;
+    const stillFailed: number[] = stillFailedRelative
+      .map((rel) => indexMap[rel])
+      .filter((v): v is number => typeof v === "number");
+
     setSigningInProgress(false);
     setIsSigning(false);
     setSigningProgress(null);
+
     if (stillFailed.length > 0) {
       setPartialSignState({
         signedEntries: newSigned,
         failedIndices: stillFailed,
       });
-    } else {
+    } else if (result.ok) {
       pendingRetryRef.current = null;
       await submitSignedEntries(newSigned);
+    } else {
+      // expired / fatal / cancelled: surface and let the user retry.
+      setSigningError(result.lastError ?? SIGN_RETRY_COPY);
+      setPartialSignState({
+        signedEntries: newSigned,
+        failedIndices: stillFailed,
+      });
     }
-  }, [partialSignState, preparedEvents, submitSignedEntries]);
+  }, [partialSignState, preparedEvents, submitSignedEntries, signOneEntry]);
 
   const handleSaveAsDraft = useCallback(() => {
     const finalFormData = new FormData();

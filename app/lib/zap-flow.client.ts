@@ -6,6 +6,11 @@
 
 import { nip19 } from "nostr-tools";
 
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 const DEFAULT_RELAYS = [
@@ -200,30 +205,84 @@ export async function zapRecipient(
     eventIdHex,
   });
 
-  const { signedEvent } = await nostrAdapter.signEventWithOneRetry({
-    kind: 9734,
-    content: "",
-    tags,
-    created_at,
+  // Wrap the sign + LNURL callback in a recoverable signing attempt so
+  // a bunker drop mid-zap parks the attempt in `awaiting_signer` and
+  // resumes when the bunker comes back, instead of surfacing a raw
+  // `RemoteSignerTimeoutError` to the user. Idempotency key scopes the
+  // recovery to (recipient, target event, submission instant) so a
+  // resumed attempt doesn't double-sign a stale request from a prior
+  // click — the user can click Zap again to start a fresh attempt.
+  //
+  // Scope of the recoverable boundary: sign + LNURL callback fetch
+  // only. Once we have an invoice (`pr`), the signing concern is
+  // settled; the payment step (NWC / WebLN) has its own error handling
+  // and is not subject to signer recovery.
+  const idempotencyKey = `zap:${recipientHex}:${eventIdHex ?? "none"}:${created_at}`;
+
+  // `invoiceCarrier` is mutated inside the `performSignAndSubmit`
+  // closure below; the explicit type widens past TypeScript's narrowing
+  // so the post-call `!invoiceCarrier` guard is recognised as a real
+  // runtime check rather than dead code (the closure may not run if
+  // the attempt is cancelled / expired before it executes).
+  let invoiceCarrier: { pr: string } | null = null as { pr: string } | null;
+  let lastInvoiceError: string | null = null;
+  const signResult = await startRecoverableSign({
+    intent: durableIntent("publish_zap_request", idempotencyKey, "Zap"),
+    surface: `zap:${recipientHex}${eventIdHex ? `:${eventIdHex}` : ""}`,
+    performSignAndSubmit: async (submissionId) => {
+      const { signedEvent } = await nostrAdapter.signEvent(
+        {
+          kind: 9734,
+          content: "",
+          tags,
+          created_at,
+        },
+        { clearCacheOnError: false }
+      );
+
+      const callbackUrl = new URL(metadata.callback);
+      callbackUrl.searchParams.set("amount", String(millisats));
+      callbackUrl.searchParams.set("nostr", JSON.stringify(signedEvent));
+
+      const callbackRes = await fetch(callbackUrl.toString(), {
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!callbackRes.ok) {
+        const message = ZAP_FLOW_ERROR_INVOICE;
+        lastInvoiceError = message;
+        signingAttempts.markFailed(submissionId, message);
+        throw new Error(message);
+      }
+
+      const callbackData = (await callbackRes.json()) as {
+        pr?: string;
+        error?: string;
+      };
+      const pr = callbackData.pr;
+      if (typeof pr !== "string" || pr.trim() === "") {
+        const message = callbackData.error ?? ZAP_FLOW_ERROR_INVOICE;
+        lastInvoiceError = message;
+        signingAttempts.markFailed(submissionId, message);
+        throw new Error(message);
+      }
+
+      invoiceCarrier = { pr };
+      signingAttempts.markCompleted(submissionId);
+    },
   });
 
-  const callbackUrl = new URL(metadata.callback);
-  callbackUrl.searchParams.set("amount", String(millisats));
-  callbackUrl.searchParams.set("nostr", JSON.stringify(signedEvent));
-
-  const callbackRes = await fetch(callbackUrl.toString(), {
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!callbackRes.ok) throw new Error(ZAP_FLOW_ERROR_INVOICE);
-
-  const callbackData = (await callbackRes.json()) as {
-    pr?: string;
-    error?: string;
-  };
-  const pr = callbackData.pr;
-  if (typeof pr !== "string" || pr.trim() === "") {
-    throw new Error(callbackData.error ?? ZAP_FLOW_ERROR_INVOICE);
+  if (!signResult.ok || !invoiceCarrier) {
+    // Preserve the legacy throwing contract for `zapRecipient` callers
+    // (ZapButton, ZapNoteDrawer). The recovery banner already surfaces
+    // the awaiting-signer affordance during `awaiting_signer`; we only
+    // throw once the attempt resolves to a terminal failure.
+    const message =
+      (signResult.ok ? null : signResult.lastError) ??
+      lastInvoiceError ??
+      ZAP_FLOW_ERROR_INVOICE;
+    throw new Error(message);
   }
+  const { pr } = invoiceCarrier;
 
   if (typeof window === "undefined") {
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);

@@ -10,6 +10,8 @@ import type { UseFormReturn } from "react-hook-form";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { ForegroundSignRecoveryBanner as PendingPublishBanner } from "~/features/auth/signing/components/ForegroundSignRecoveryBanner";
+import { pendingPublish } from "~/features/auth/signing/signing-attempts.client";
 import {
   buildFollowUpCollapsedSummary,
   countRepostConditionRules,
@@ -49,14 +51,12 @@ import { useComposerSubmit } from "../hooks/useComposerSubmit";
 import { useUnifiedComposerState } from "../hooks/useUnifiedComposerState";
 import { UnifiedComposerPreviewBlock } from "../preview/UnifiedComposerPreviewBlock";
 import type { ComposerContext } from "../services/compose-route-contract";
-import { pendingPublish } from "../state/pending-publish.client";
 import { usePendingPublishAttempt } from "../state/use-pending-publish-attempt";
 
 import {
   ComposerCanvasDivider,
   ComposerErrors,
   ComposerLeftCanvas,
-  PendingPublishBanner,
   type ComposerPublishMode,
   getTextSubmitActionForMode,
   getReadinessPresentation,

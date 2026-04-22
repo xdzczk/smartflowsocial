@@ -202,12 +202,15 @@ export async function prepareEditPostSubmission({
     : nowSeconds();
 
   // Re-sign the event with new content
-  const { nostrEvent, signedEvent } = await nostrAdapter.signEventWithOneRetry({
-    content: eventContent,
-    created_at: eventTime,
-    kind: eventKind,
-    tags: eventTags,
-  });
+  const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+    {
+      content: eventContent,
+      created_at: eventTime,
+      kind: eventKind,
+      tags: eventTags,
+    },
+    { clearCacheOnError: false }
+  );
 
   // Build form data
   const formData = new FormData();

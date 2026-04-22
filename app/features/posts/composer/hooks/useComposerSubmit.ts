@@ -4,6 +4,10 @@
 
 import * as React from "react";
 
+import {
+  createSubmissionId,
+  pendingPublish,
+} from "~/features/auth/signing/signing-attempts.client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { buildThreadSubmitFormData } from "~/features/posts/composer/composer-submit/build-thread-submit-form-data";
 import { signThreadSegmentsWithRetry } from "~/features/posts/composer/composer-submit/sign-thread-segments";
@@ -36,10 +40,6 @@ import {
   appendRelayOverride,
   appendSubmissionId,
 } from "../services/build-publish-formdata.client";
-import {
-  createSubmissionId,
-  pendingPublish,
-} from "../state/pending-publish.client";
 
 import type {
   TextPostFormData,
@@ -561,13 +561,15 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           );
 
           setIsSigning(true);
-          const { nostrEvent, signedEvent } =
-            await nostrAdapter.signEventWithOneRetry({
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+            {
               content: contentToSign,
               created_at: scheduledForUnix,
               kind: 1,
               tags: tagArray,
-            });
+            },
+            { clearCacheOnError: false }
+          );
           // Cancellation guard: see runThreadSubmit. The pending-publish
           // store is the source of truth for "is this attempt still live?"
           if (isAttemptStale(submissionId)) {
@@ -703,12 +705,26 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       };
 
       // Single entry point: every publish click — fresh or partial-thread
-      // retry — hands off to the pending-publish state machine. The store
+      // retry — hands off to the signing-attempts state machine. The store
       // owns the resumable-attempt lifecycle (awaiting_signer / resuming /
       // expired) and re-invokes `dispatch` on `nostr-connection-healthy`
       // with the same submissionId so the server-side
       // creationIdempotencyKey collapses both attempts onto one Post row.
-      pendingPublish.start({ performSignAndSubmit: dispatch });
+      //
+      // intent.idempotencyKey reuses `submissionId` so the server-side
+      // `/api/publish` once-only guard collapses every resume of this
+      // attempt onto a single side-effect run — same key the route
+      // already feeds into the publish-attempt-dedupe utility.
+      pendingPublish.start({
+        performSignAndSubmit: dispatch,
+        intent: {
+          kind: "durable",
+          name: "composer_publish",
+          idempotencyKey: submissionId,
+          label: "Publish",
+        },
+        surface: "composer",
+      });
     },
     [
       form,

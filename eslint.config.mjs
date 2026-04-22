@@ -441,6 +441,20 @@ export default (async () => {
           },
         ],
         "no-restricted-imports": "off", // Handled in routes-specific block
+        // Ban deprecated client-side sign helpers. The retry/backoff is now
+        // owned by `signing-attempts` (see `app/features/auth/signing/`).
+        // Use `nostrAdapter.signEvent(..., { clearCacheOnError: false })`
+        // (or `signLongFormEvent` / `signPollEvent`) inside a
+        // `startRecoverableSign` / `pendingPublish.start` boundary.
+        "no-restricted-syntax": [
+          "error",
+          {
+            selector:
+              "MemberExpression[property.name=/^(signEventWithOneRetry|signEventWithRetry|signLongFormEventWithOneRetry|signPollEventWithOneRetry)$/]",
+            message:
+              "Deprecated. Use nostrAdapter.signEvent / signLongFormEvent / signPollEvent (with { clearCacheOnError: false }) inside the signing-attempts state machine (startRecoverableSign or pendingPublish.start).",
+          },
+        ],
         // Import quality rules
         "import/no-cycle": ["error", { maxDepth: 10 }],
         "import/no-duplicates": "error",

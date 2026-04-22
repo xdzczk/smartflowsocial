@@ -65,11 +65,13 @@ import { buildPollTags, KIND_VOTE } from "~/features/polls";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { invalidateRelayIntentCache } from "~/features/user/services/user-cache.server";
+import { _resetPublishAttemptDedupeForTests } from "~/lib/publish-attempt-dedupe.server";
 import { action } from "~/routes/api.publish";
 
 describe("API: Publish", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    _resetPublishAttemptDedupeForTests();
     (requireSession as ReturnType<typeof vi.fn>).mockResolvedValue({
       userId: TEST_USER_ID,
       pubkey: getTestPublicKey(),
@@ -316,6 +318,122 @@ describe("API: Publish", () => {
         "wss://shared.example.com",
         "wss://poll-only.example.com",
       ]);
+    });
+  });
+
+  describe("Attempt-id idempotency", () => {
+    it("runs publish + side effects once across two POSTs sharing an attemptId", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: 1,
+        content: "Idempotent post",
+      });
+      const attemptId = "attempt-uuid-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+
+      const buildRequest = (): Request =>
+        new Request("http://localhost:3000/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: mockEvent, attemptId }),
+        });
+
+      const firstResponse = await action({
+        request: buildRequest(),
+        params: {},
+        context: {},
+      });
+      const firstRaw: unknown = await firstResponse.json();
+      const firstBody =
+        firstRaw && typeof firstRaw === "object" && !Array.isArray(firstRaw)
+          ? (firstRaw as { success?: unknown; deduped?: unknown })
+          : {};
+
+      const secondResponse = await action({
+        request: buildRequest(),
+        params: {},
+        context: {},
+      });
+      const secondRaw: unknown = await secondResponse.json();
+      const secondBody =
+        secondRaw && typeof secondRaw === "object" && !Array.isArray(secondRaw)
+          ? (secondRaw as { success?: unknown; deduped?: unknown })
+          : {};
+
+      expect(firstBody).toEqual({ success: true });
+      expect(secondBody).toEqual({ success: true, deduped: true });
+      // Relays may be called twice (publishing is intrinsically idempotent
+      // by event id) but the side-effect surface MUST run exactly once.
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(1);
+    });
+
+    it("treats distinct attemptIds as independent (both run side effects)", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: 1,
+        content: "Two attempts",
+      });
+
+      const requestA = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: mockEvent, attemptId: "attempt-A" }),
+      });
+      const requestB = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: mockEvent, attemptId: "attempt-B" }),
+      });
+
+      await action({ request: requestA, params: {}, context: {} });
+      await action({ request: requestB, params: {}, context: {} });
+
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
+    });
+
+    it("preserves legacy behavior when attemptId is omitted (no dedupe)", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: 1,
+        content: "Legacy client",
+      });
+
+      const buildRequest = (): Request =>
+        new Request("http://localhost:3000/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: mockEvent }),
+        });
+
+      await action({ request: buildRequest(), params: {}, context: {} });
+      await action({ request: buildRequest(), params: {}, context: {} });
+
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
+    });
+
+    it("ignores malformed attemptId (empty / oversized) and falls back to legacy path", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: 1,
+        content: "Bad attempt id",
+      });
+
+      const requestEmpty = new Request("http://localhost:3000/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: mockEvent, attemptId: "   " }),
+      });
+      const requestOversized = new Request(
+        "http://localhost:3000/api/publish",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: mockEvent,
+            attemptId: "x".repeat(200),
+          }),
+        }
+      );
+
+      await action({ request: requestEmpty, params: {}, context: {} });
+      await action({ request: requestOversized, params: {}, context: {} });
+
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
     });
   });
 

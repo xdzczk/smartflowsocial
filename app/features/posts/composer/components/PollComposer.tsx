@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { createSubmissionId } from "~/features/auth/signing/signing-attempts.client";
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import { TagsChipRow } from "~/features/posts/components/TagsChipRow";
@@ -38,7 +39,6 @@ import {
   appendRelayOverride,
   appendSubmissionId,
 } from "../services/build-publish-formdata.client";
-import { createSubmissionId } from "../state/pending-publish.client";
 import type { InitialPollRestore } from "../types/initial-poll-restore";
 
 import {
@@ -450,8 +450,8 @@ export function PollComposer({
     setIsSigning(true);
     setPublishSubmitInFlight(true);
     try {
-      const { nostrEvent, signedEvent } =
-        await nostrAdapter.signPollEventWithOneRetry({
+      const { nostrEvent, signedEvent } = await nostrAdapter.signPollEvent(
+        {
           question: questionForEvent,
           created_at: createdUnix,
           optionLabels: trimmedOptions,
@@ -459,7 +459,9 @@ export function PollComposer({
           relayUrls,
           endsAt: endsAtUnix,
           topicTagValues: parseTopicTagValues(selectedHashtags),
-        });
+        },
+        { clearCacheOnError: false }
+      );
 
       const fd = new FormData();
       fd.set("_action", actionType);

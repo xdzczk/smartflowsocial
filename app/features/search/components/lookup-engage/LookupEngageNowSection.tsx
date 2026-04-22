@@ -3,12 +3,45 @@ import { nip19 } from "nostr-tools";
 import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { CompactSignStatus } from "~/features/auth/signing/components/CompactSignStatus";
+import { SubtleSignPending } from "~/features/auth/signing/components/SubtleSignPending";
+import { useEphemeralSignTier } from "~/features/auth/signing/use-ephemeral-sign-tier.client";
+import { useSigningAttemptById } from "~/features/auth/signing/use-recoverable-sign.client";
 import { useLookupNoteEngagement } from "~/features/search/hooks/useLookupNoteEngagement";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
 import { LookupReplyComposerDrawer } from "./LookupReplyComposerDrawer";
 import { ZapNoteDrawer } from "./ZapNoteDrawer";
+
+/**
+ * Two-tier ephemeral sign indicator for the per-row Like attempt:
+ *   - subtle (default): tiny inline spinner next to the action
+ *   - compact (after EPHEMERAL_ESCALATION_MS): pill with "Resume now /
+ *     Cancel" so the user can drive recovery from the lookup row even
+ *     when the global recovery banner is suppressed for ephemeral
+ *     intents.
+ *
+ * Mirrors the equivalent helper in `NotificationItem` so both surfaces
+ * present the same recovery UX for likes.
+ */
+function LookupActionRecovery({
+  attemptId,
+  actionLabel,
+}: {
+  attemptId: string | null;
+  actionLabel: string;
+}) {
+  const attempt = useSigningAttemptById(attemptId);
+  const tier = useEphemeralSignTier(attempt);
+  if (tier === "subtle") {
+    return <SubtleSignPending attempt={attempt} label={actionLabel} />;
+  }
+  if (tier === "compact") {
+    return <CompactSignStatus attempt={attempt} actionLabel={actionLabel} />;
+  }
+  return null;
+}
 
 export interface LookupEngageNowSectionProps {
   eventId: string;
@@ -102,6 +135,13 @@ export function LookupEngageNowSection({
         />
         Zap
       </Button>
+
+      {engagement.likeAttemptId ? (
+        <LookupActionRecovery
+          attemptId={engagement.likeAttemptId}
+          actionLabel="Like"
+        />
+      ) : null}
 
       {engagement.likeError ? (
         <p className="text-destructive text-[11px]" role="alert">

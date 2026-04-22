@@ -9,6 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { CompactSignStatus } from "~/features/auth/signing/components/CompactSignStatus";
+import { SubtleSignPending } from "~/features/auth/signing/components/SubtleSignPending";
+import { useEphemeralSignTier } from "~/features/auth/signing/use-ephemeral-sign-tier.client";
+import { useSigningAttemptById } from "~/features/auth/signing/use-recoverable-sign.client";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -32,6 +36,32 @@ import {
   UnifiedEngagementComposer,
   type EngagementComposerMode,
 } from "./NotificationInputPanels";
+
+/**
+ * Inline recovery slot for ephemeral notification actions (PR 4 of the
+ * unified signing-recovery plan). Shows the subtle spinner while the
+ * attempt is in flight; flips to the compact "Resume / Cancel" pill once
+ * the attempt has been parked in `awaiting_signer` past
+ * `EPHEMERAL_ESCALATION_MS`. Renders nothing when no attempt is in
+ * flight, so it can be mounted unconditionally next to the action.
+ */
+function EphemeralActionRecovery({
+  attemptId,
+  actionLabel,
+}: {
+  attemptId: string | null;
+  actionLabel: string;
+}) {
+  const attempt = useSigningAttemptById(attemptId);
+  const tier = useEphemeralSignTier(attempt);
+  if (tier === "subtle") {
+    return <SubtleSignPending attempt={attempt} label={actionLabel} />;
+  }
+  if (tier === "compact") {
+    return <CompactSignStatus attempt={attempt} actionLabel={actionLabel} />;
+  }
+  return null;
+}
 
 function isWorkflowDimmed(
   state?:
@@ -643,6 +673,19 @@ export function NotificationItem({
             <p className="text-success mt-1.5 text-[11px] leading-snug">
               {rowSuccessLine}
             </p>
+          ) : null}
+
+          {actions.likeAttemptId || actions.repostAttemptId ? (
+            <div className="mt-1.5 flex items-center gap-2">
+              <EphemeralActionRecovery
+                attemptId={actions.likeAttemptId}
+                actionLabel="Like"
+              />
+              <EphemeralActionRecovery
+                attemptId={actions.repostAttemptId}
+                actionLabel="Repost"
+              />
+            </div>
           ) : null}
 
           {actions.showReplyInput ? (

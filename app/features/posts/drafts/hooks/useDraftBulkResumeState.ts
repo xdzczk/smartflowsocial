@@ -6,6 +6,12 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 
+import { signBatchWithRecovery } from "~/features/auth/signing/sign-batch-with-recovery.client";
+import {
+  signingAttempts,
+  type SigningAttempt,
+} from "~/features/auth/signing/signing-attempts.client";
+import { durableIntent } from "~/features/auth/signing/use-recoverable-sign.client";
 import type { QueueType, PostData } from "~/features/posts/types";
 import { defaultIncludeHashtagsForQueueSelection } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
@@ -33,6 +39,46 @@ export interface DraftBulkResumePost {
   queueType: string | QueueType;
   scheduledFor: string;
   includeHashtagsInNoteBody: boolean;
+}
+
+interface BatchFailure {
+  ok: false;
+  attemptId: string;
+  reason: "partial" | "expired" | "fatal" | "cancelled";
+  failedIndices: readonly number[];
+  lastError: string | null;
+}
+
+function describeBatchFailure(result: BatchFailure): string {
+  if (result.lastError) return result.lastError;
+  switch (result.reason) {
+    case "partial":
+      return `Failed to sign ${result.failedIndices.length} draft(s). Please try again.`;
+    case "expired":
+      return "Signing window expired. Please retry.";
+    case "fatal":
+      return "Failed to sign drafts. Please try again.";
+    case "cancelled":
+      return "Signing was cancelled.";
+  }
+}
+
+function markBatchAsFailed(attemptId: string, result: BatchFailure): void {
+  const inStore =
+    signingAttempts
+      .getAllAttempts()
+      .find((a: SigningAttempt) => a.attemptId === attemptId) ?? null;
+  if (!inStore) return;
+  if (
+    inStore.state === "submitting" ||
+    inStore.state === "signing" ||
+    inStore.state === "resuming"
+  ) {
+    signingAttempts.markFailed(
+      attemptId,
+      result.lastError ?? `bulk_${result.reason}`
+    );
+  }
 }
 
 export interface UseDraftBulkResumeStateProps {
@@ -278,8 +324,11 @@ export function useDraftBulkResumeState({
         );
       }
 
-      // Sign sequentially to avoid flooding remote signers with concurrent requests
-      const signedPosts: Array<{
+      // Drive the batch through the shared signing-attempts core so a
+      // stalled signer parks the whole resume as a single recovery
+      // banner (instead of N silent failures), and re-signing on
+      // resume picks up only the still-unsigned posts.
+      interface DraftSigned {
         id: string;
         content: string | undefined;
         caption: string | undefined;
@@ -287,48 +336,71 @@ export function useDraftBulkResumeState({
         scheduledFor: string;
         signedEvent: string;
         nostrEvent: string;
-      }> = [];
-      for (const post of posts) {
-        const userTimezone = user?.timezone ?? "UTC";
-        const scheduledZoned = parseDateTimeLocal(
-          post.scheduledFor,
-          userTimezone
-        );
-        const utcZoned = scheduledZoned.withTimeZone("UTC");
-        const scheduledForUnix = toUnixTimestamp(utcZoned);
-        const queueTypeName = getQueueTypeName(post.queueType);
-        const tagsString =
-          queueTypeName && queueTypeName !== "unassigned"
-            ? (hashtagCache.get(queueTypeName) ?? "")
-            : "";
-        const tagArray = tagsString
-          .split(" ")
-          .filter((tag) => tag.length > 0)
-          .map((tag) => ["t", tag.replace("#", "")]);
-        const appendTags = post.includeHashtagsInNoteBody !== false;
-        const contentToSign = appendTags
-          ? `${post.content ?? ""}\n${tagsString}`
-          : (post.content ?? "");
-        const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-          {
-            content: contentToSign,
-            created_at: scheduledForUnix,
-            kind: 1,
-            tags: tagArray,
-          },
-          { clearCacheOnError: false }
-        );
-        signedPosts.push({
-          id: post.id,
-          content: post.content ?? undefined,
-          caption: post.caption ?? undefined,
-          queueType: post.queueType,
-          scheduledFor: scheduledForUnix.toString(),
-          signedEvent: JSON.stringify(signedEvent),
-          nostrEvent: JSON.stringify(nostrEvent),
-        });
+      }
+      const idempotencyKey = `draft-bulk-resume:${posts.map((p) => p.id).join(",")}:${signingAttempts.createSubmissionId()}`;
+      const result = await signBatchWithRecovery<
+        DraftBulkResumePost,
+        DraftSigned
+      >({
+        items: posts,
+        intent: durableIntent(
+          "composer_publish",
+          idempotencyKey,
+          "Resume drafts"
+        ),
+        surface: "drafts:bulk-resume",
+        signItem: async (post, _index, signer) => {
+          const userTimezone = user?.timezone ?? "UTC";
+          const scheduledZoned = parseDateTimeLocal(
+            post.scheduledFor,
+            userTimezone
+          );
+          const utcZoned = scheduledZoned.withTimeZone("UTC");
+          const scheduledForUnix = toUnixTimestamp(utcZoned);
+          const queueTypeName = getQueueTypeName(post.queueType);
+          const tagsString =
+            queueTypeName && queueTypeName !== "unassigned"
+              ? (hashtagCache.get(queueTypeName) ?? "")
+              : "";
+          const tagArray = tagsString
+            .split(" ")
+            .filter((tag) => tag.length > 0)
+            .map((tag) => ["t", tag.replace("#", "")]);
+          const appendTags = post.includeHashtagsInNoteBody !== false;
+          const contentToSign = appendTags
+            ? `${post.content ?? ""}\n${tagsString}`
+            : (post.content ?? "");
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
+            {
+              content: contentToSign,
+              created_at: scheduledForUnix,
+              kind: 1,
+              tags: tagArray,
+            },
+            { clearCacheOnError: false, signer: signer ?? undefined }
+          );
+          return {
+            id: post.id,
+            content: post.content ?? undefined,
+            caption: post.caption ?? undefined,
+            queueType: post.queueType,
+            scheduledFor: scheduledForUnix.toString(),
+            signedEvent: JSON.stringify(signedEvent),
+            nostrEvent: JSON.stringify(nostrEvent),
+          };
+        },
+      });
+
+      if (!result.ok) {
+        markBatchAsFailed(result.attemptId, result);
+        const message = describeBatchFailure(result);
+        setSigningError(message);
+        pendingRetryRef.current = null;
+        setIsSubmitting(false);
+        return;
       }
 
+      const signedPosts = result.signed.map((entry) => entry.signed);
       const formData = new FormData();
       formData.append("_action", "bulkSignAndResume");
       signedPosts.forEach((post) => {
@@ -345,6 +417,9 @@ export function useDraftBulkResumeState({
         formData.append("nostrEvents", post.nostrEvent);
       });
       pendingRetryRef.current = null;
+      // Hand off to the route action; the foreground attempt remains in
+      // `submitting` until the route round-trip completes successfully.
+      signingAttempts.markCompleted(result.attemptId);
       fetcher.submit(formData, { method: "post", action: "/dashboard/drafts" });
     } catch (error) {
       logClientError(

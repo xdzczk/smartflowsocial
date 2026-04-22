@@ -33,7 +33,6 @@ export { ComposerActionButtons } from "./ComposerActionButtons";
 export type { ComposerActionButtonsProps } from "./ComposerActionButtons";
 export { ComposerErrors } from "./ComposerErrors";
 export type { ComposerErrorsProps } from "./ComposerErrors";
-export { PendingPublishBanner } from "./PendingPublishBanner";
 export * from "./composer-validation";
 export {
   ACTION_POST_TEXT,

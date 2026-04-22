@@ -11,6 +11,11 @@ import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
 import { cancelSignerInFlight } from "~/features/auth/signer";
+import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
+import {
+  durableIntent,
+  startRecoverableSign,
+} from "~/features/auth/signing/use-recoverable-sign.client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { useComposerSignerReconnect } from "~/features/posts/composer/hooks/useComposerSignerReconnect";
 import type { PostData, RepostConditions } from "~/features/posts/types";
@@ -36,6 +41,9 @@ import {
   toUnixTimestamp,
 } from "~/lib/temporal";
 import type { UserData } from "~/lib/validation/user-data";
+
+const SCHEDULE_REPOST_LABEL = "Schedule repost";
+const SCHEDULE_QUOTE_LABEL = "Schedule quote";
 
 interface SignedEventShape {
   id: string;
@@ -96,6 +104,7 @@ async function signAndSubmitRepost(
   lookupSourceSignedEvent: SignedEvent | null,
   signed: SignedEventShape,
   scheduledForUnix: number,
+  attemptId: string,
   fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>,
   repostConditions?: {
     minReactions?: number;
@@ -106,13 +115,15 @@ async function signAndSubmitRepost(
   } | null
 ): Promise<void> {
   const repostEvent = buildKind6RepostEvent(signed, scheduledForUnix);
-  const { signedEvent: repostSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
+  const { signedEvent: repostSignedEvent } = await nostrAdapter.signEvent(
+    {
       content: repostEvent.content,
       created_at: repostEvent.created_at,
       kind: repostEvent.kind,
       tags: repostEvent.tags,
-    });
+    },
+    { clearCacheOnError: false }
+  );
   const formData = new FormData();
   formData.set("_action", "scheduleRepost");
   if (post?.id) {
@@ -122,6 +133,7 @@ async function signAndSubmitRepost(
   }
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(repostSignedEvent));
+  formData.set("attemptId", attemptId);
   if (repostConditions) {
     if (repostConditions.minReactions != null)
       formData.set("minReactions", String(repostConditions.minReactions));
@@ -143,6 +155,7 @@ async function signAndSubmitQuote(
   signed: SignedEventShape,
   scheduledForUnix: number,
   quoteCaption: string,
+  attemptId: string,
   fetcher: ReturnType<typeof useFetcher<{ success?: boolean; error?: string }>>
 ): Promise<void> {
   const tagArray: string[][] = [];
@@ -152,13 +165,15 @@ async function signAndSubmitQuote(
     scheduledForUnix,
     tagArray
   );
-  const { signedEvent: quoteSignedEvent } =
-    await nostrAdapter.signEventWithOneRetry({
+  const { signedEvent: quoteSignedEvent } = await nostrAdapter.signEvent(
+    {
       content: quoteEvent.content,
       created_at: quoteEvent.created_at,
       kind: quoteEvent.kind,
       tags: quoteEvent.tags,
-    });
+    },
+    { clearCacheOnError: false }
+  );
   const formData = new FormData();
   formData.set("_action", "scheduleQuote");
   if (post?.id) {
@@ -168,6 +183,7 @@ async function signAndSubmitQuote(
   }
   formData.set("scheduledFor", scheduledForUnix.toString());
   formData.set("signedEvent", JSON.stringify(quoteSignedEvent));
+  formData.set("attemptId", attemptId);
   if (quoteCaption) {
     formData.set("quoteCaption", quoteCaption);
   }
@@ -190,7 +206,7 @@ function getConfirmButtonLabel(
     return phase ? `Waiting for signer… ${phase}` : "Waiting for signer…";
   }
   if (isSubmitting) return "Signing...";
-  return mode === "repost" ? "Schedule repost" : "Schedule quote";
+  return mode === "repost" ? SCHEDULE_REPOST_LABEL : SCHEDULE_QUOTE_LABEL;
 }
 
 interface ScheduleRepostQuoteModalProps {
@@ -228,12 +244,16 @@ export function ScheduleRepostQuoteModal({
 
   const pendingRetryRef = useRef<(() => void) | null>(null);
   const submitInFlightRef = useRef(false);
+  // Tracks the in-flight signing attempt so the fetcher.data effect can
+  // mark it completed/failed once the server response lands.
+  const inFlightAttemptIdRef = useRef<string | null>(null);
   const clearSigningState = useCallback(() => {
     setIsSigning(false);
     setSigningError(null);
   }, []);
   const cancelSigningState = useCallback(() => {
     pendingRetryRef.current = null;
+    inFlightAttemptIdRef.current = null;
     clearSigningState();
   }, [clearSigningState]);
   const retryLastSign = useCallback((): boolean => {
@@ -254,17 +274,27 @@ export function ScheduleRepostQuoteModal({
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   useEffect(() => {
-    if (fetcher.state === "idle" || !fetcher.data) return;
+    if (fetcher.state !== "idle" || !fetcher.data) return;
     const successMsg =
       mode === "repost"
         ? "Repost scheduled successfully!"
         : "Quote post scheduled successfully!";
+    const attemptId = inFlightAttemptIdRef.current;
     if (fetcher.data.success) {
+      if (attemptId) {
+        signingAttempts.markCompleted(attemptId);
+        inFlightAttemptIdRef.current = null;
+      }
       toast.success(successMsg);
       onSuccess?.();
       onClose();
     } else if (fetcher.data.error) {
-      toast.error(String(fetcher.data.error));
+      const message = String(fetcher.data.error);
+      if (attemptId) {
+        signingAttempts.markFailed(attemptId, message);
+        inFlightAttemptIdRef.current = null;
+      }
+      toast.error(message);
     }
   }, [fetcher.data, fetcher.state, mode, onClose, onSuccess]);
 
@@ -284,44 +314,70 @@ export function ScheduleRepostQuoteModal({
     const { scheduledForUnix, signed } = validation;
     if ((!post && !lookupSourceSignedEvent) || !mode) return;
     submitInFlightRef.current = true;
-    try {
-      setSigningError(null);
-      setIsSigning(true);
-      pendingRetryRef.current = () => void handleConfirm();
-      if (mode === "repost") {
-        await signAndSubmitRepost(
-          post,
-          lookupSourceSignedEvent,
-          signed,
-          scheduledForUnix,
-          fetcher,
-          repostConditions
-        );
-      } else {
-        await signAndSubmitQuote(
-          post,
-          lookupSourceSignedEvent,
-          signed,
-          scheduledForUnix,
-          quoteCaption,
-          fetcher
-        );
-      }
-    } catch (error) {
-      handleErrorSafely(error, {
+    setSigningError(null);
+    setIsSigning(true);
+    pendingRetryRef.current = () => void handleConfirm();
+
+    // Stable across resumes for the same intent: same source event +
+    // mode + target time => same dedupe slot. The user reopening the
+    // modal with a different time is a fresh intent.
+    const idempotencyKey = `schedule_${mode}:${signed.id}:${String(scheduledForUnix)}`;
+
+    const result = await startRecoverableSign({
+      intent: durableIntent(
+        "schedule_repost_quote",
+        idempotencyKey,
+        mode === "repost" ? SCHEDULE_REPOST_LABEL : SCHEDULE_QUOTE_LABEL
+      ),
+      surface: `schedule_${mode}:${signed.id}`,
+      performSignAndSubmit: async (submissionId) => {
+        if (mode === "repost") {
+          await signAndSubmitRepost(
+            post,
+            lookupSourceSignedEvent,
+            signed,
+            scheduledForUnix,
+            submissionId,
+            fetcher,
+            repostConditions
+          );
+        } else {
+          await signAndSubmitQuote(
+            post,
+            lookupSourceSignedEvent,
+            signed,
+            scheduledForUnix,
+            quoteCaption,
+            submissionId,
+            fetcher
+          );
+        }
+        inFlightAttemptIdRef.current = submissionId;
+        // Returning here parks the attempt in `submitting`. The
+        // fetcher.data effect promotes it to `completed` / `failed`.
+      },
+    });
+
+    pendingRetryRef.current = null;
+    submitInFlightRef.current = false;
+
+    if (result.ok) return;
+
+    setIsSigning(false);
+    inFlightAttemptIdRef.current = null;
+
+    if (result.reason === "fatal") {
+      const msg = result.lastError ?? "Failed to sign. Please try again.";
+      handleErrorSafely(new Error(msg), {
         component: "ScheduleRepostQuoteModal",
         action: "handleConfirm",
       });
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Failed to sign. Please try again.";
       setSigningError(msg);
       toast.error(msg);
-    } finally {
-      pendingRetryRef.current = null;
-      setIsSigning(false);
-      submitInFlightRef.current = false;
+    } else if (result.reason === "expired") {
+      const msg = "Recovery window expired before your signer reconnected.";
+      setSigningError(msg);
+      toast.error(msg);
     }
   };
 
@@ -360,7 +416,9 @@ export function ScheduleRepostQuoteModal({
                 id="schedule-repost-quote-title"
                 className="text-foreground text-lg font-semibold"
               >
-                {mode === "repost" ? "Schedule repost" : "Schedule quote"}
+                {mode === "repost"
+                  ? SCHEDULE_REPOST_LABEL
+                  : SCHEDULE_QUOTE_LABEL}
               </h3>
               <button
                 type="button"

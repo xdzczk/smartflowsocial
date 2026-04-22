@@ -50,5 +50,7 @@ export {
 } from "../hooks/useDraftsQuery";
 export { useDraftsState } from "../hooks/useDraftsState";
 
-// signDraftForScheduling is used by useDraftEditState (client hook) for signing
-export { signDraftForScheduling } from "./services/draft-sign.server";
+// signDraftForScheduling is used by useDraftEditState (client hook) for signing.
+// Lives in `draft-sign.client.ts` because signing requires the user's NIP-07 /
+// NIP-46 signer, which is only available in the browser.
+export { signDraftForScheduling } from "./services/draft-sign.client";
