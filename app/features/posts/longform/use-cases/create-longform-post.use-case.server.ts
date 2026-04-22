@@ -81,7 +81,25 @@ export class CreateLongFormPostUseCase {
       };
     }
 
-    // Not scheduled - create normally
+    // Not scheduled - create as DRAFT regardless of `input.isPublished`.
+    //
+    // When the caller intends to publish immediately (`input.isPublished === true`),
+    // they invoke `PublishLongFormNowUseCase` right after this use case. That use
+    // case owns the full DRAFT → PUBLISHING → PUBLISHED lifecycle, persists the
+    // signedEvent/nostrEvent and publishAttemptId atomically on the PUBLISHED
+    // transition, and writes per-relay ACK rows.
+    //
+    // We deliberately do NOT pre-mark the post as PUBLISHED here. Doing so used
+    // to make `PublishLongFormNowUseCase` treat the very first publish as a
+    // duplicate (its idempotency guard reads `currentState`), silently skip the
+    // call to the Nostr publisher, and report success — leaving an event that
+    // never actually reached any relay. We also do NOT persist signedEvent /
+    // nostrEvent / scheduledAtUtc at create time for this path: the signed event
+    // carries a `published_at` tag set to "now", which `calculateLongFormStatus`
+    // would otherwise auto-interpret as a scheduled post and put us in
+    // SCHEDULED state instead of DRAFT.
+    const isImmediatePublish = input.isPublished ?? false;
+
     const post = await createLongFormPost({
       userId: input.userId,
       title: input.title,
@@ -91,22 +109,30 @@ export class CreateLongFormPostUseCase {
       tags: input.tags,
       queueTypeId,
       hashTagPresetId: input.hashTagPresetId,
-      isPublished: input.isPublished ?? false,
-      signedEvent: input.signedEvent as unknown as Prisma.JsonValue | undefined,
-      nostrEvent: input.nostrEvent as unknown as Prisma.JsonValue | undefined,
-      scheduledAtUtc: input.scheduledFor ?? undefined,
+      isPublished: false,
+      signedEvent: isImmediatePublish
+        ? undefined
+        : (input.signedEvent as unknown as Prisma.JsonValue | undefined),
+      nostrEvent: isImmediatePublish
+        ? undefined
+        : (input.nostrEvent as unknown as Prisma.JsonValue | undefined),
+      scheduledAtUtc: isImmediatePublish
+        ? undefined
+        : (input.scheduledFor ?? undefined),
     });
 
-    // Set initial state using state machine
-    const initialState = input.isPublished ? "PUBLISHED" : "DRAFT";
-    await this.stateMachine.transition(
-      post.id,
-      input.userId,
-      initialState,
-      input.isPublished
-        ? "Longform post created and published"
-        : "Longform post created as draft"
-    );
+    // For the immediate-publish path the post is already DRAFT from the create
+    // call above, so we skip the redundant state-machine transition (DRAFT →
+    // DRAFT short-circuits anyway). For other callers we fall through with the
+    // existing DRAFT-init behavior.
+    if (!isImmediatePublish) {
+      await this.stateMachine.transition(
+        post.id,
+        input.userId,
+        "DRAFT",
+        "Longform post created as draft"
+      );
+    }
 
     return {
       post,

@@ -243,7 +243,7 @@ describe("CreateLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         content: "Test content",
-        currentState: "PUBLISHED",
+        currentState: "DRAFT",
       };
 
       mockResolveQueueTypeId.mockResolvedValue("queue-1");
@@ -270,6 +270,72 @@ describe("CreateLongFormPostUseCase", () => {
       // State machine is mocked (mockTransition); real runTransaction not used for this path
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(createOutboxEventInTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should create the post as DRAFT when isPublished is true so PublishLongFormNowUseCase owns the publish lifecycle (regression: must not pre-mark PUBLISHED)", async () => {
+      // Regression for the bug where this use case pre-set currentState to
+      // PUBLISHED before any relay publish happened. PublishLongFormNowUseCase
+      // then short-circuited as a "duplicate" and the event never reached
+      // any relay — but the UI still showed "Published".
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "DRAFT",
+      };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 30023,
+        content: "test",
+        tags: [["published_at", String(Math.floor(Date.now() / 1000))]],
+        sig: "test-sig",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
+
+      await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        signedEvent,
+        nostrEvent: {
+          created_at: signedEvent.created_at,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+          tags: signedEvent.tags,
+        },
+        isPublished: true,
+      });
+
+      // Repo must be called with isPublished:false so it writes
+      // currentState:"DRAFT" — never "PUBLISHED" — at create time.
+      expect(mockCreateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({ isPublished: false })
+      );
+      // signedEvent / nostrEvent / scheduledAtUtc must NOT be persisted at
+      // create time for the immediate-publish path: the signed event carries
+      // a `published_at` tag that calculateLongFormStatus would otherwise
+      // mistakenly auto-promote into a SCHEDULED state.
+      const createCall = mockCreateLongFormPost.mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(createCall.signedEvent).toBeUndefined();
+      expect(createCall.nostrEvent).toBeUndefined();
+      expect(createCall.scheduledAtUtc).toBeUndefined();
+      // No PUBLISHED state-machine transition in this use case — that belongs
+      // to PublishLongFormNowUseCase after relays accept the event.
+      expect(mockTransition).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        "PUBLISHED",
+        expect.anything(),
+        expect.anything()
+      );
     });
   });
 });

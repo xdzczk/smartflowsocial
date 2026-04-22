@@ -44,6 +44,13 @@ export interface PublishLongFormNowInput {
   postId: string;
   userId: string;
   signedEvent: SignedEvent;
+  /**
+   * Unsigned Nostr event (kind 30023) corresponding to `signedEvent`. When
+   * provided, persisted to `LongFormPost.nostrEvent` atomically on the
+   * PUBLISHED transition. Optional for backwards compatibility with callers
+   * that don't have it on hand (e.g. retry paths reading from the DB).
+   */
+  nostrEvent?: NostrEvent;
   relays: string[];
   correlationId?: string; // For request tracking
 }

@@ -4,6 +4,7 @@
  * Publishes a long form post immediately to Nostr relays.
  */
 
+import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
 import { getLongFormPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
@@ -40,17 +41,26 @@ export class PublishLongFormNowUseCase {
         `Long form post ${input.postId} not found for user ${input.userId}`
       );
     }
-    // Use currentState as single source of truth
+    // Use currentState as single source of truth, but only treat the post as a
+    // *real* duplicate publish when a previous attempt actually completed
+    // (publishAttemptId is the first-class idempotency key written in this same
+    // use case on the PUBLISHED transition). Without that extra guard, any
+    // upstream caller that pre-marks the post as PUBLISHED would cause us to
+    // silently skip the very first publish — the relays never see the event,
+    // yet the UI shows "Published". This is exactly the bug we hit when
+    // `CreateLongFormPostUseCase` used to set `currentState: "PUBLISHED"`
+    // before ever calling us.
     const isAlreadyPublished = deriveIsPublishedLongForm(post.currentState);
-    if (isAlreadyPublished) {
-      // Idempotent behavior: if already published, log and return gracefully
-      // This handles duplicate requests (e.g., double-clicks, form resubmissions)
+    if (isAlreadyPublished && post.publishAttemptId) {
+      // Idempotent behavior: a previous publish attempt already completed.
+      // Handles real duplicates (double-click, retried form submission).
       logInfo(
         "PublishLongFormNowUseCase: Post already published, skipping duplicate publish",
         buildObsContext({
           postId: input.postId,
           userId: input.userId,
           correlationId,
+          publishAttemptId: post.publishAttemptId,
         })
       );
       return;
@@ -160,22 +170,29 @@ export class PublishLongFormNowUseCase {
         );
       }
 
-      // Transition to PUBLISHED and atomically persist publish metadata.
+      // Transition to PUBLISHED and atomically persist publish metadata. We
+      // also write `signedEvent` (and `nostrEvent` if the caller passed it)
+      // here because the immediate-publish path no longer persists them at
+      // create time — see CreateLongFormPostUseCase for why.
+      const publishedPostData: Prisma.LongFormPostUpdateInput = {
+        nostrEventId: validatedSignedEvent.id,
+        publishAttemptId,
+        publishedAt: new Date(),
+        postedAt: new Date(),
+        publishingLockId: null,
+        publishingLockExpiresAt: null,
+        signedEvent: validatedSignedEvent as unknown as Prisma.InputJsonValue,
+      };
+      if (input.nostrEvent) {
+        publishedPostData.nostrEvent =
+          input.nostrEvent as unknown as Prisma.InputJsonValue;
+      }
       await this.stateMachine.transition(
         input.postId,
         input.userId,
         "PUBLISHED",
         "Successfully published to Nostr",
-        {
-          additionalPostData: {
-            nostrEventId: validatedSignedEvent.id,
-            publishAttemptId,
-            publishedAt: new Date(),
-            postedAt: new Date(),
-            publishingLockId: null,
-            publishingLockExpiresAt: null,
-          },
-        }
+        { additionalPostData: publishedPostData }
       );
 
       // Send push notification for publish success
