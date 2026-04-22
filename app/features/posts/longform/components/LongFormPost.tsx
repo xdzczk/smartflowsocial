@@ -138,15 +138,6 @@ export default function LongFormPost({
   const customTags = normalizeWatchedText(form.watch("customTags"));
   const includeHashtagsInNoteBody = form.watch("includeHashtagsInNoteBody");
 
-  const titleFieldReg = form.register("title");
-  const titleRegisterRefRef = useRef(titleFieldReg.ref);
-  useEffect(() => {
-    titleRegisterRefRef.current = titleFieldReg.ref;
-  }, [titleFieldReg.ref]);
-  const stableTitleRef = useCallback((el: HTMLInputElement | null) => {
-    titleRegisterRefRef.current(el);
-  }, []);
-
   const relayOverride =
     relayOverrideProp && relayOverrideProp.length > 0
       ? relayOverrideProp
@@ -859,8 +850,7 @@ export default function LongFormPost({
           <ComposerLeftCanvas>
             <LongFormPostArticleHead
               initialPostId={initialData?.id}
-              titleFieldReg={titleFieldReg}
-              stableTitleRef={stableTitleRef}
+              title={title}
               summary={summary}
               content={content}
               form={

@@ -12,12 +12,7 @@ type LongformForm = UseFormReturn<z.infer<typeof longformPostClientSchema>>;
 
 export interface LongFormPostArticleHeadProps {
   initialPostId: string | undefined;
-  titleFieldReg: {
-    name: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => unknown;
-    onBlur: (e: React.FocusEvent<HTMLInputElement>) => unknown;
-  };
-  stableTitleRef: (el: HTMLInputElement | null) => void;
+  title: string;
   summary: string | undefined;
   content: string | undefined;
   form: LongformForm;
@@ -34,8 +29,7 @@ export interface LongFormPostArticleHeadProps {
 
 export function LongFormPostArticleHead({
   initialPostId,
-  titleFieldReg,
-  stableTitleRef,
+  title,
   summary,
   content,
   form,
@@ -59,10 +53,14 @@ export function LongFormPostArticleHead({
           placeholder="Write a title"
           className="text-text placeholder:text-text-tertiary/40 focus:border-border/25 motion-fast w-full border-0 border-b border-transparent bg-transparent pb-3 text-[1.65rem] leading-[1.15] font-semibold tracking-tight outline-none focus-visible:ring-0 sm:text-[2rem] lg:text-[2.125rem]"
           aria-label="Article title"
-          name={titleFieldReg.name}
-          onChange={(e) => void titleFieldReg.onChange(e)}
-          onBlur={(e) => void titleFieldReg.onBlur(e)}
-          ref={stableTitleRef}
+          name="title"
+          value={title}
+          onChange={(e) =>
+            form.setValue("title", e.target.value, {
+              shouldValidate: true,
+              shouldDirty: true,
+            })
+          }
         />
 
         <div className="pt-0.5">
