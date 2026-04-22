@@ -1,24 +1,23 @@
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
+import { StatusIcon, type StatusTone } from "~/components/ui/status-icon";
 import { cn } from "~/lib/utils";
 
 /** Mirrors HealthStatus from admin-system-health without importing .server in client bundles. */
 export type AdminHealthTone = "healthy" | "degraded" | "unknown" | "failing";
 
 const toneStyles: Record<AdminHealthTone, string> = {
-  healthy:
-    "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30",
-  degraded:
-    "bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/35",
-  unknown: "bg-muted text-muted-foreground border-border",
-  failing: "bg-red-500/15 text-red-800 dark:text-red-200 border-red-500/35",
+  healthy: "bg-success/15 text-success-text border-success/30",
+  degraded: "bg-warning/15 text-warning-text border-warning/35",
+  unknown: "bg-surface-hover text-text-secondary border-border",
+  failing: "bg-danger/15 text-danger-text border-danger/35",
 };
 
-const icons: Record<AdminHealthTone, typeof CheckCircle2> = {
-  healthy: CheckCircle2,
-  degraded: AlertTriangle,
-  unknown: HelpCircle,
-  failing: XCircle,
+const HEALTH_TO_STATUS_TONE: Record<AdminHealthTone, StatusTone> = {
+  healthy: "success",
+  degraded: "warning",
+  unknown: "neutral",
+  failing: "danger",
 };
 
 export function AdminStatusPill({
@@ -32,7 +31,6 @@ export function AdminStatusPill({
   detail?: string;
   className?: string;
 }) {
-  const Icon = icons[status];
   return (
     <div
       className={cn(
@@ -41,8 +39,12 @@ export function AdminStatusPill({
         className
       )}
     >
-      <span className="flex items-center gap-1.5 font-medium">
-        <Icon className="size-3.5 shrink-0 opacity-90" aria-hidden />
+      <span className="cluster-tight.5 font-medium">
+        <StatusIcon
+          tone={HEALTH_TO_STATUS_TONE[status]}
+          size="sm"
+          icon={status === "unknown" ? HelpCircle : undefined}
+        />
         {label}
         <span className="font-normal opacity-90">{status}</span>
       </span>
@@ -56,9 +58,8 @@ export function AdminStatusPill({
 export type AlertSeverity = "warning" | "danger";
 
 const alertStyles: Record<AlertSeverity, string> = {
-  warning:
-    "bg-amber-500/12 text-amber-950 dark:text-amber-50 border-amber-500/35",
-  danger: "bg-red-500/12 text-red-950 dark:text-red-50 border-red-500/35",
+  warning: "bg-warning/12 text-warning-text border-warning/35",
+  danger: "bg-danger/12 text-danger-text border-danger/35",
 };
 
 export function AdminAlertSeverityPill({

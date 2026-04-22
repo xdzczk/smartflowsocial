@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Select,
   SelectContent,
@@ -114,10 +115,10 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer border-b px-3 py-3 text-left text-xs font-medium"
+    className="bg-surface border-border text-text-secondary hover:text-text cursor-pointer border-b px-3 py-3 text-left text-xs font-medium"
     onClick={() => onRequestSort(sortKey)}
   >
-    <span className="text-foreground font-medium">{label}</span>
+    <span className="text-text font-medium">{label}</span>
     {sortConfig.key === sortKey
       ? sortConfig.direction === "asc"
         ? " ↑"
@@ -261,29 +262,25 @@ export function DraftsTable({
 
   if (posts.length === 0) {
     return (
-      <div
-        className={`${PUBLISHING_LIST_SURFACE_CLASS} px-6 py-12 text-center`}
-      >
-        <h3 className="text-foreground mb-2 text-lg font-semibold">
-          No drafts yet
-        </h3>
-        <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
-          Anything saved from the composer will appear here.
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button asChild variant="default" size="sm">
-            <Link to="/dashboard/compose">New post</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/compose?type=article">New article</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/bulkposts">Bulk posts</Link>
-          </Button>
-        </div>
-        <p className="text-muted-foreground mt-6 text-xs">
-          Use templates to speed up repetitive content workflows.
-        </p>
+      <div className={PUBLISHING_LIST_SURFACE_CLASS}>
+        <EmptyState
+          size="lg"
+          title="No drafts yet"
+          description="Anything saved from the composer will appear here. Use templates to speed up repetitive content workflows."
+          action={
+            <>
+              <Button asChild variant="default" size="sm">
+                <Link to="/dashboard/compose">New post</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/dashboard/compose?type=article">New article</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/dashboard/bulkposts">Bulk posts</Link>
+              </Button>
+            </>
+          }
+        />
       </div>
     );
   }
@@ -295,7 +292,7 @@ export function DraftsTable({
           <table className="min-w-full table-fixed align-middle text-sm">
             <thead>
               <tr>
-                <th className="bg-card border-border text-muted-foreground w-10 border-b px-2 py-3 text-center">
+                <th className="bg-surface border-border text-text-secondary w-10 border-b px-2 py-3 text-center">
                   <Checkbox
                     id="draft-select-all"
                     checked={
@@ -306,10 +303,10 @@ export function DraftsTable({
                     onCheckedChange={() => onToggleSelectAll()}
                   />
                 </th>
-                <th className="bg-card border-border text-muted-foreground border-b px-3 py-3 text-left text-xs font-medium">
+                <th className="bg-surface border-border text-text-secondary border-b px-3 py-3 text-left text-xs font-medium">
                   Draft
                 </th>
-                <th className="bg-card border-border text-muted-foreground w-40 border-b px-3 py-3 text-center text-xs font-medium">
+                <th className="bg-surface border-border text-text-secondary w-40 border-b px-3 py-3 text-center text-xs font-medium">
                   Queue
                 </th>
                 <SortableHeader
@@ -318,7 +315,7 @@ export function DraftsTable({
                   sortConfig={sortConfig}
                   onRequestSort={onRequestSort}
                 />
-                <th className="bg-card border-border text-muted-foreground w-28 border-b px-3 py-3 text-center text-xs font-medium">
+                <th className="bg-surface border-border text-text-secondary w-28 border-b px-3 py-3 text-center text-xs font-medium">
                   Actions
                 </th>
               </tr>
@@ -368,7 +365,7 @@ export function DraftsTable({
                     role="button"
                     tabIndex={0}
                     aria-label={`Open draft: ${preview.title}`}
-                    className={`${PUBLISHING_TABLE_ROW_CLASS} border-border hover:border-border/80 hover:bg-muted/40 cursor-pointer border-b transition-colors last:border-b-0`}
+                    className={`${PUBLISHING_TABLE_ROW_CLASS} border-border hover:border-border/80 hover:bg-surface-hover/40 motion-fast cursor-pointer border-b last:border-b-0`}
                     onClick={() => onResume(post)}
                     onKeyDown={handleRowKeyDown}
                   >
@@ -391,7 +388,7 @@ export function DraftsTable({
                                 className="h-14 w-14 rounded-md object-cover"
                               />
                               {isRepost ? (
-                                <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+                                <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                                   <Repeat
                                     className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                     strokeWidth={2}
@@ -402,11 +399,11 @@ export function DraftsTable({
                             </div>
                           ) : (
                             <div className="relative">
-                              <div className="bg-muted text-muted-foreground flex h-14 w-14 items-center justify-center rounded-md text-xs font-medium">
+                              <div className="bg-surface-hover text-text-secondary flex h-14 w-14 items-center justify-center rounded-md text-xs font-medium">
                                 {rowThumbBadge}
                               </div>
                               {isRepost ? (
-                                <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+                                <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                                   <Repeat
                                     className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                     strokeWidth={2}
@@ -425,17 +422,17 @@ export function DraftsTable({
                               {typeLabel}
                             </span>
                             {preview.mediaLine ? (
-                              <span className="text-muted-foreground text-xs leading-tight">
+                              <span className="text-text-secondary text-xs leading-tight">
                                 {preview.mediaLine}
                               </span>
                             ) : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-foreground group-hover:text-primary pr-2 leading-snug font-semibold">
+                            <p className="text-text group-hover:text-brand pr-2 leading-snug font-semibold">
                               {preview.title}
                             </p>
                             <p
-                              className={`text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed ${preview.subtitle ? "" : "min-h-[1.25rem]"}`}
+                              className={`text-text-secondary mt-1 line-clamp-2 text-sm leading-relaxed ${preview.subtitle ? "" : "min-h-[1.25rem]"}`}
                             >
                               {preview.subtitle || "\u00a0"}
                             </p>
@@ -453,7 +450,7 @@ export function DraftsTable({
                         ) : null}
                       </div>
                     </td>
-                    <td className="text-muted-foreground px-3 py-3 align-middle text-xs whitespace-nowrap">
+                    <td className="text-text-secondary px-3 py-3 align-middle text-xs whitespace-nowrap">
                       {formatDate(updatedIso)}
                     </td>
                     <td className="px-3 py-3 text-center align-middle">
@@ -463,7 +460,7 @@ export function DraftsTable({
                             type="button"
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
-                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                             aria-label="Actions"
                           >
                             <MoreHorizontal
@@ -532,7 +529,7 @@ export function DraftsTable({
                                   deleteFetcher.state !== "idle" ||
                                   bulkDeleteState !== "idle"
                                 }
-                                className="text-destructive focus:text-destructive w-full"
+                                className="text-danger focus:text-danger w-full"
                               >
                                 {deleteFetcher.state !== "idle" &&
                                 deleteFetcher.formData?.get("postId") ===
@@ -556,9 +553,9 @@ export function DraftsTable({
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {showMobileSortControl && onSortChange ? (
-            <div className="mb-3 flex items-center gap-2">
+            <div className="cluster mb-3">
               <span
-                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+                className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
               >
                 Sort:
               </span>
@@ -670,7 +667,7 @@ export function DraftsTable({
                     <div ref={sentinelRef} className="h-4 w-full" />
                   ) : null}
                   {isFetchingNextPage ? (
-                    <div className="text-muted-foreground py-4 text-center text-sm">
+                    <div className="text-text-secondary py-4 text-center text-sm">
                       Loading more...
                     </div>
                   ) : null}

@@ -106,7 +106,7 @@ export function UnifiedComposerContentSection({
     <div
       className={
         contentDensity === "campaignSource"
-          ? "flex flex-col gap-2 sm:gap-2.5"
+          ? "stack-tight sm:gap-2.5"
           : "flex flex-col gap-3 sm:gap-4"
       }
     >

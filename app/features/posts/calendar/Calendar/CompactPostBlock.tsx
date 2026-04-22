@@ -52,7 +52,7 @@ function getClassName(
   isLongform: boolean | undefined
 ): string {
   const baseClasses =
-    "rounded-[var(--calendar-radius-md)] p-1.5 text-xs transition-[transform,opacity,box-shadow] focus:outline-none focus:ring-2 focus:ring-ring";
+    "focus-ring rounded-[var(--calendar-radius-md)] p-1.5 text-xs transition-[transform,opacity,box-shadow]";
   const cursorClass = isPast ? "cursor-default" : "cursor-pointer";
   const dragClass = isDragging
     ? "rotate-2 opacity-50"
@@ -97,11 +97,11 @@ function ThumbnailSection({
       <MediaThumbnail
         src={firstImage}
         alt="Post thumbnail"
-        className="h-4 w-4 flex-shrink-0 rounded"
+        className="h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]"
         forceType={isVideoFile(firstImage) ? "video" : "image"}
         hidePlayButton={true}
         fallback={
-          <div className="bg-muted h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
+          <div className="bg-surface-hover h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
         }
       />
       <PostBadges post={post} size="sm" />
@@ -170,7 +170,7 @@ function MediaPreview({
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={false}
           fallback={
-            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+            <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-xs font-medium">
               {post.postType === "VIDEO" || isVideoFile(firstImage)
                 ? "VIDEO"
                 : "MEDIA"}
@@ -181,7 +181,7 @@ function MediaPreview({
       </div>
       {(post.caption ?? (isLongform && post.summary)) ? (
         <p
-          className="text-muted-foreground [display:-webkit-box] flex-shrink-0 text-xs leading-relaxed break-words [-webkit-box-orient:vertical]"
+          className="text-text-secondary [display:-webkit-box] flex-shrink-0 text-xs leading-relaxed break-words [-webkit-box-orient:vertical]"
           style={{ WebkitLineClamp: captionLines }}
         >
           {isLongform ? (post.summary ?? postPreview) : postPreview}

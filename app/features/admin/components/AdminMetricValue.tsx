@@ -37,7 +37,7 @@ export function AdminMetricValue({
         {value}
       </p>
       {deltaStr ? (
-        <p className="text-muted-foreground text-xs tabular-nums">{deltaStr}</p>
+        <p className="text-text-secondary text-xs tabular-nums">{deltaStr}</p>
       ) : null}
     </div>
   );
@@ -56,7 +56,7 @@ export function AdminMetricTitleRow({
     <div
       className={cn("flex w-full items-start justify-between gap-2", className)}
     >
-      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+      <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
         {title}
       </p>
       {definition ? (
@@ -64,7 +64,7 @@ export function AdminMetricTitleRow({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground -m-0.5 rounded p-0.5"
+              className="text-text-secondary hover:text-text -m-0.5 rounded-xs p-0.5"
               aria-label="Metric definition"
             >
               <CircleHelp className="size-3.5" />
@@ -72,7 +72,7 @@ export function AdminMetricTitleRow({
           </TooltipTrigger>
           <TooltipContent
             side="top"
-            className="bg-popover text-popover-foreground border-border max-w-xs text-left text-xs font-normal normal-case"
+            className="bg-surface-overlay text-text border-border max-w-xs text-left text-xs font-normal normal-case"
           >
             {definition}
           </TooltipContent>

@@ -152,7 +152,7 @@ export function ZapNoteDrawer({
           <div>
             <label
               htmlFor="lookup-zap-custom"
-              className="text-muted-foreground mb-1 block text-xs"
+              className="text-text-secondary mb-1 block text-xs"
             >
               Custom (sats)
             </label>
@@ -169,15 +169,15 @@ export function ZapNoteDrawer({
             />
           </div>
           {error ? (
-            <p className="text-destructive text-xs" role="alert">
+            <p className="text-danger text-xs" role="alert">
               {error}
             </p>
           ) : null}
-          <p className="text-muted-foreground text-[11px] leading-snug">
+          <p className="text-text-secondary text-[11px] leading-snug">
             Uses WebLN when available. Configure wallet under{" "}
             <Link
               to="/dashboard/settings?tab=engagement"
-              className="text-primary underline-offset-2 hover:underline"
+              className="text-brand underline-offset-2 hover:underline"
             >
               Settings
             </Link>
@@ -197,7 +197,7 @@ export function ZapNoteDrawer({
           <Button
             type="button"
             size="sm"
-            className="border-amber-500/40 bg-amber-500/10 text-amber-950 hover:bg-amber-500/20 dark:text-amber-100"
+            className="border-warning/40 bg-warning/10 text-warning-text hover:bg-warning/20 dark:text-warning"
             disabled={loading}
             onClick={() => void send()}
           >

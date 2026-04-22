@@ -49,7 +49,7 @@ function LastSyncedDateDisplay({ lastSyncedDate }: { lastSyncedDate: Date }) {
   });
 
   return (
-    <p className="text-muted-foreground text-xs">
+    <p className="text-text-secondary text-xs">
       Last synced {formattedDate} {formattedTime}
     </p>
   );
@@ -134,16 +134,16 @@ export function MutedListSettings({
       description="Control how muted accounts and trust signals affect what you see."
       contentClassName="space-y-0"
     >
-      <div className="bg-muted/25 border-border/50 flex flex-col gap-3 rounded-md border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-surface-hover/25 border-border/50 flex flex-col gap-3 rounded-md border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-muted-foreground text-xs font-medium">
+          <p className="text-text-secondary text-xs font-medium">
             Muted accounts
           </p>
           <p className="text-2xl font-semibold tabular-nums">{mutedCount}</p>
           {lastSyncedDate ? (
             <LastSyncedDateDisplay lastSyncedDate={lastSyncedDate} />
           ) : (
-            <p className="text-muted-foreground text-xs">Not synced yet</p>
+            <p className="text-text-secondary text-xs">Not synced yet</p>
           )}
         </div>
         <Button

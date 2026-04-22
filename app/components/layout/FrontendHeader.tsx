@@ -14,7 +14,7 @@ export default function Header() {
           <a
             href="https://smartflow.social"
             rel="noopener noreferrer"
-            className="flex h-10 items-center justify-center transition sm:h-12 lg:h-16"
+            className="motion-fast flex h-10 items-center justify-center sm:h-12 lg:h-16"
             aria-label={`${BRAND_NAME} – Home`}
           >
             <Logo
@@ -25,7 +25,7 @@ export default function Header() {
             />
           </a>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="cluster">
           <ThemeToggle />
           <NostrAuthButton />
         </div>

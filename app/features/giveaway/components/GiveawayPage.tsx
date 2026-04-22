@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import { scopeIsFollowGraphAccountPool } from "../types";
@@ -76,12 +77,12 @@ export default function GiveawayPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="stack sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          <h2 className="text-text text-2xl font-semibold tracking-tight">
             Giveaways
           </h2>
-          <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+          <p className="text-text-secondary mt-1 max-w-xl text-sm">
             Reward real engagement, pick winners fairly, and track payout
             status.
           </p>
@@ -137,13 +138,13 @@ export default function GiveawayPage({
       <Form
         method="get"
         replace
-        className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4"
+        className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="min-w-[200px] flex-1">
             <label
               htmlFor="g-q"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Search
             </label>
@@ -153,13 +154,13 @@ export default function GiveawayPage({
               type="search"
               defaultValue={filters.q}
               placeholder="Title or id…"
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div>
             <label
               htmlFor="g-status"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Status
             </label>
@@ -167,7 +168,7 @@ export default function GiveawayPage({
               id="g-status"
               name="status"
               defaultValue={filters.status}
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
             >
               <option value="">All statuses</option>
               <option value="DRAFT">Draft</option>
@@ -180,7 +181,7 @@ export default function GiveawayPage({
           <div>
             <label
               htmlFor="g-scope"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Scope
             </label>
@@ -188,7 +189,7 @@ export default function GiveawayPage({
               id="g-scope"
               name="scope"
               defaultValue={filters.scope}
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
             >
               <option value="">All scopes</option>
               <option value="PERIOD">Period</option>
@@ -201,7 +202,7 @@ export default function GiveawayPage({
           <div>
             <label
               htmlFor="g-sort"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Sort
             </label>
@@ -209,7 +210,7 @@ export default function GiveawayPage({
               id="g-sort"
               name="sort"
               defaultValue={filters.sort}
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
             >
               <option value="newest">Newest</option>
               <option value="payout_pending">Payout pending</option>
@@ -219,7 +220,7 @@ export default function GiveawayPage({
           <div>
             <label
               htmlFor="g-from"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               From
             </label>
@@ -228,13 +229,13 @@ export default function GiveawayPage({
               name="from"
               type="date"
               defaultValue={filters.from}
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div>
             <label
               htmlFor="g-to"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               To
             </label>
@@ -243,7 +244,7 @@ export default function GiveawayPage({
               name="to"
               type="date"
               defaultValue={filters.to}
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div className="flex gap-2">
@@ -258,21 +259,22 @@ export default function GiveawayPage({
       </Form>
 
       {kpis.total === 0 ? (
-        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-foreground font-medium">No giveaways yet</p>
-          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-            Create your first giveaway to pick winners from engagement, then
-            lock and pay out fairly.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/giveaway/new">New giveaway</Link>
-          </Button>
+        <div className="border-border bg-surface-hover/20 rounded-lg border border-dashed">
+          <EmptyState
+            title="No giveaways yet"
+            description="Create your first giveaway to pick winners from engagement, then lock and pay out fairly."
+            action={
+              <Button asChild>
+                <Link to="/dashboard/giveaway/new">New giveaway</Link>
+              </Button>
+            }
+          />
         </div>
       ) : giveaways.length > 0 ? (
         <>
-          <div className="border-border bg-card hidden overflow-x-auto rounded-lg border md:block">
+          <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/40 border-border text-muted-foreground border-b text-xs uppercase">
+              <thead className="bg-surface-hover/40 border-border text-text-secondary border-b text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 font-medium">Giveaway</th>
                   <th className="px-4 py-3 font-medium">Status</th>
@@ -286,15 +288,15 @@ export default function GiveawayPage({
               </thead>
               <tbody className="divide-border divide-y">
                 {giveaways.map((g) => (
-                  <tr key={g.id} className="hover:bg-muted/30">
+                  <tr key={g.id} className="hover:bg-surface-hover/30">
                     <td className="px-4 py-3">
                       <Link
                         to={`/dashboard/giveaway/detail/${g.id}`}
-                        className="text-foreground font-medium hover:underline"
+                        className="text-text font-medium hover:underline"
                       >
                         {giveawayRowTitle(g.name, g.id)}
                       </Link>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-text-secondary text-xs">
                         Created{" "}
                         {new Date(g.createdAt).toLocaleDateString(undefined, {
                           month: "short",
@@ -311,17 +313,17 @@ export default function GiveawayPage({
                       {g.status === "LOCKED" &&
                       g.payoutTotal > 0 &&
                       g.payoutSettled < g.payoutTotal ? (
-                        <p className="text-muted-foreground mt-1 text-xs">
+                        <p className="text-text-secondary mt-1 text-xs">
                           Paying
                         </p>
                       ) : null}
                     </td>
-                    <td className="text-muted-foreground max-w-[200px] px-4 py-3 text-xs">
+                    <td className="text-text-secondary max-w-[200px] px-4 py-3 text-xs">
                       {g.scopeSummaryLabel}
                     </td>
                     <td className="px-4 py-3">
                       {scopeIsFollowGraphAccountPool(g.scopeType) ? (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-xs">
                           Account pool
                         </span>
                       ) : (
@@ -329,7 +331,7 @@ export default function GiveawayPage({
                           {g.engagementTypes.map((t) => (
                             <span
                               key={t}
-                              className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
+                              className="bg-surface-hover text-text-secondary rounded-xs px-1.5 py-0.5 text-xs"
                             >
                               {engagementLabel(t)}
                             </span>
@@ -343,7 +345,7 @@ export default function GiveawayPage({
                         : g.winnerCount}{" "}
                       winners
                       <br />
-                      <span className="text-muted-foreground">
+                      <span className="text-text-secondary">
                         {g.budgetSats > 0
                           ? `${g.budgetSats.toLocaleString()} sats`
                           : "No payout set"}
@@ -352,9 +354,9 @@ export default function GiveawayPage({
                     <td className="px-4 py-3 text-xs">
                       {g.payoutTotal > 0 ? (
                         <>
-                          <div className="bg-muted mb-1 h-1.5 w-24 overflow-hidden rounded-full">
+                          <div className="bg-surface-hover mb-1 h-1.5 w-24 overflow-hidden rounded-full">
                             <div
-                              className="bg-primary h-full"
+                              className="bg-brand h-full"
                               style={{
                                 width: `${(100 * g.payoutSettled) / g.payoutTotal}%`,
                               }}
@@ -366,7 +368,7 @@ export default function GiveawayPage({
                         "—"
                       )}
                     </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                    <td className="text-text-secondary px-4 py-3 text-xs">
                       {new Date(g.updatedAt).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
@@ -416,7 +418,7 @@ export default function GiveawayPage({
                               type="submit"
                               variant="ghost"
                               size="sm"
-                              className="text-destructive hover:text-destructive"
+                              className="text-danger hover:text-danger"
                               disabled={delFetcher.state !== "idle"}
                               onClick={(e) => {
                                 if (
@@ -438,14 +440,14 @@ export default function GiveawayPage({
             </table>
           </div>
 
-          <ul className="border-border bg-card divide-border divide-y rounded-lg border md:hidden">
+          <ul className="border-border bg-surface divide-border divide-y rounded-lg border md:hidden">
             {giveaways.map((g) => (
               <li key={g.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <Link
                       to={`/dashboard/giveaway/detail/${g.id}`}
-                      className="text-foreground font-medium hover:underline"
+                      className="text-text font-medium hover:underline"
                     >
                       {giveawayRowTitle(g.name, g.id)}
                     </Link>
@@ -458,31 +460,31 @@ export default function GiveawayPage({
                       {g.status === "LOCKED" &&
                       g.payoutTotal > 0 &&
                       g.payoutSettled < g.payoutTotal ? (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-xs">
                           Paying
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-muted-foreground mt-2 text-xs">
+                    <p className="text-text-secondary mt-2 text-xs">
                       {g.scopeSummaryLabel}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {scopeIsFollowGraphAccountPool(g.scopeType) ? (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-xs">
                           Account pool
                         </span>
                       ) : (
                         g.engagementTypes.map((t) => (
                           <span
                             key={t}
-                            className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
+                            className="bg-surface-hover text-text-secondary rounded-xs px-1.5 py-0.5 text-xs"
                           >
                             {engagementLabel(t)}
                           </span>
                         ))
                       )}
                     </div>
-                    <p className="text-muted-foreground mt-2 text-xs">
+                    <p className="text-text-secondary mt-2 text-xs">
                       {g.snapshotWinnerCount > 0
                         ? g.snapshotWinnerCount
                         : g.winnerCount}{" "}
@@ -492,7 +494,7 @@ export default function GiveawayPage({
                         : "No payout set"}
                     </p>
                     {g.payoutTotal > 0 ? (
-                      <p className="text-muted-foreground mt-1 text-xs">
+                      <p className="text-text-secondary mt-1 text-xs">
                         Progress: {g.payoutSettled}/{g.payoutTotal} marked sent
                         or paid
                       </p>
@@ -523,7 +525,7 @@ export default function GiveawayPage({
                         type="submit"
                         size="sm"
                         variant="outline"
-                        className="text-destructive"
+                        className="text-danger"
                         disabled={delFetcher.state !== "idle"}
                         onClick={(e) => {
                           if (!confirm("Delete this giveaway permanently?")) {
@@ -541,11 +543,9 @@ export default function GiveawayPage({
           </ul>
         </>
       ) : (
-        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-foreground font-medium">
-            No giveaways match filters
-          </p>
-          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+        <div className="border-border bg-surface-hover/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+          <p className="text-text font-medium">No giveaways match filters</p>
+          <p className="text-text-secondary mt-1 max-w-sm text-sm">
             Try clearing filters or create a new giveaway to reward engagement
             on your posts.
           </p>

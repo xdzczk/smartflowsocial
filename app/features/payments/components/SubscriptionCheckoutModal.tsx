@@ -141,7 +141,7 @@ export function SubscriptionCheckoutModal({
     >
       <DialogContent
         hideCloseButton
-        className="bg-background max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
+        className="bg-canvas max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="p-6 pb-0">
@@ -150,11 +150,11 @@ export function SubscriptionCheckoutModal({
               <DialogTitle className="text-xl font-semibold">
                 Complete checkout
               </DialogTitle>
-              <p className="text-foreground text-base font-semibold">
+              <p className="text-text text-base font-semibold">
                 {plan.name} · {plan.price === 0 ? "Free" : `$${plan.price}`}{" "}
                 {plan.period ? plan.period : ""}
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-text-secondary text-sm leading-relaxed">
                 Pick a payment path. Access activates after your payment
                 confirms.
               </p>
@@ -162,7 +162,7 @@ export function SubscriptionCheckoutModal({
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring shrink-0 rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 shrink-0 rounded-lg border px-3 py-2 text-sm font-medium"
               >
                 Close
               </button>
@@ -185,24 +185,24 @@ export function SubscriptionCheckoutModal({
               <section aria-labelledby="panel-auto-renew">
                 <h4
                   id="panel-auto-renew"
-                  className="text-foreground mb-1 text-base font-semibold"
+                  className="text-text mb-1 text-base font-semibold"
                 >
                   Auto-renew with wallet
-                  <span className="bg-primary/15 text-primary ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                  <span className="bg-brand/15 text-brand ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
                     Recommended
                   </span>
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   Connect Nostr Wallet Connect once, pay the first invoice, then
                   renew on cadence until you cancel.
                 </p>
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Best for uninterrupted access without manual renewals.
                 </p>
                 <div className="mt-4">
                   <label
                     htmlFor="checkout-nwc-string"
-                    className="text-muted-foreground mb-1 block text-xs font-medium"
+                    className="text-text-secondary mb-1 block text-xs font-medium"
                   >
                     NWC connection string
                   </label>
@@ -213,20 +213,20 @@ export function SubscriptionCheckoutModal({
                     onBlur={() => setNwcTouched(true)}
                     placeholder="nostr+walletconnect://…"
                     autoComplete="off"
-                    className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus:ring-1 focus:outline-none"
+                    className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus-visible:ring-1 focus-visible:outline-none"
                   />
                   {nwcEnabled && maskedNwcString ? (
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="text-text-secondary mt-1 text-xs">
                       Leave empty to bill the saved wallet ({maskedNwcString})
                     </p>
                   ) : null}
                   {showNwcError ? (
-                    <p className="text-destructive mt-1 text-xs" role="alert">
+                    <p className="text-danger mt-1 text-xs" role="alert">
                       Enter a valid Nostr Wallet Connect URL
                       (nostr+walletconnect://…).
                     </p>
                   ) : (
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="text-text-secondary mt-1 text-xs">
                       We request payments through your wallet - you approve each
                       charge. We never custody funds.
                     </p>
@@ -239,22 +239,22 @@ export function SubscriptionCheckoutModal({
               <section aria-labelledby="panel-ln">
                 <h4
                   id="panel-ln"
-                  className="text-foreground mb-1 text-base font-semibold"
+                  className="text-text mb-1 text-base font-semibold"
                 >
                   One-time Lightning payment
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   Pay each invoice manually. Access runs for the term you pay
                   for; nothing renews unless you come back and pay again.
                 </p>
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   No NWC required - scan and pay.
                 </p>
                 {showManualDurationPicker ? (
                   <div className="mt-4">
                     <label
                       htmlFor="checkout-manual-duration"
-                      className="text-muted-foreground mb-1 block text-xs font-medium"
+                      className="text-text-secondary mb-1 block text-xs font-medium"
                     >
                       Access period
                     </label>
@@ -267,7 +267,7 @@ export function SubscriptionCheckoutModal({
                         )
                       }
                       disabled={isSubmitting}
-                      className="border-border bg-muted text-foreground focus:border-primary focus:ring-ring w-full max-w-md rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+                      className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring w-full max-w-md rounded-lg border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                     >
                       {manualDurations.map((months) => (
                         <option key={months} value={months}>
@@ -281,13 +281,13 @@ export function SubscriptionCheckoutModal({
                         </option>
                       ))}
                     </select>
-                    <p className="text-muted-foreground mt-2 text-xs">
+                    <p className="text-text-secondary mt-2 text-xs">
                       Prefer auto-renew later? Pay once now, connect NWC in
                       Settings when you are ready.
                     </p>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground mt-4 text-sm">
+                  <p className="text-text-secondary mt-4 text-sm">
                     Yearly Lightning is one invoice for 12 months upfront.
                   </p>
                 )}
@@ -300,15 +300,15 @@ export function SubscriptionCheckoutModal({
               <section aria-labelledby="panel-btc">
                 <h4
                   id="panel-btc"
-                  className="text-foreground mb-1 text-base font-semibold"
+                  className="text-text mb-1 text-base font-semibold"
                 >
                   Bitcoin on-chain
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   Pay from any BTC wallet through BTCPay. Access turns on after
                   the required confirmations land.
                 </p>
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Suited to yearly or larger amounts. Yearly billing only.
                 </p>
               </section>
@@ -323,11 +323,11 @@ export function SubscriptionCheckoutModal({
             pricing={plan.checkoutPricing}
           />
 
-          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="stack-tight border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-background text-muted-foreground hover:bg-muted/60 focus:ring-ring order-2 rounded-lg border px-4 py-2.5 text-sm font-medium focus:ring-2 focus:outline-none sm:order-1"
+                className="focus-ring border-border bg-canvas text-text-secondary hover:bg-surface-hover/60 order-2 rounded-lg border px-4 py-2.5 text-sm font-medium sm:order-1"
               >
                 Cancel
               </button>
@@ -338,7 +338,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectAutoRenew}
                   disabled={isSubmitting || !autoRenewOk}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -355,7 +355,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectManual}
                   disabled={isSubmitting}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -373,7 +373,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectBtcOnchain}
                   disabled={isSubmitting}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

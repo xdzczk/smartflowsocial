@@ -118,14 +118,14 @@ export function getStatusColor(
 ): string {
   // Past posts get grayed out styling regardless of other conditions
   if (isPast) {
-    return "bg-muted text-muted-foreground opacity-60";
+    return "bg-surface-hover text-text-secondary opacity-60";
   }
 
   if (isLongform) {
     if (post.signedEvent) {
       return "bg-success/10 text-success dark:text-success";
     }
-    return "bg-secondary text-secondary-foreground";
+    return "bg-surface-hover text-text";
   }
 
   // Fallback to original logic for regular posts
@@ -133,11 +133,11 @@ export function getStatusColor(
 
   if (post.signedEvent) {
     return wasAutoScheduled
-      ? "bg-muted text-muted-foreground"
-      : "bg-muted text-muted-foreground";
+      ? "bg-surface-hover text-text-secondary"
+      : "bg-surface-hover text-text-secondary";
   }
 
-  return "bg-secondary text-secondary-foreground";
+  return "bg-surface-hover text-text";
 }
 
 /** Opacity for past (older) posts so they stay queue-colored but visually recede (same idea as Queue Health without hover). */
@@ -204,7 +204,7 @@ export function getQueueColorStyle(
 
 /** Unassigned blocks: class for background that transitions to darker grey on hover/focus/active. */
 export const UNASSIGNED_BG_CLASS =
-  "bg-[var(--calendar-unassigned-bg)] hover:bg-[var(--calendar-unassigned-bg-hover)] focus:bg-[var(--calendar-unassigned-bg-hover)] active:bg-[var(--calendar-unassigned-bg-hover)] transition-colors duration-200";
+  "bg-[var(--calendar-unassigned-bg)] hover:bg-[var(--calendar-unassigned-bg-hover)] focus:bg-[var(--calendar-unassigned-bg-hover)] active:bg-[var(--calendar-unassigned-bg-hover)] motion-base";
 
 /**
  * Style and optional class for applying QueueColorStyle to a block (handles unassigned hover state).

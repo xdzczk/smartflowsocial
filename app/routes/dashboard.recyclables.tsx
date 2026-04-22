@@ -8,10 +8,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { RecyclablesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { RecyclablesPage } from "~/features/posts/publishing";
+import { RecyclablesPageSkeleton } from "~/features/posts/publishing/RecyclablesPageSkeleton";
 import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,

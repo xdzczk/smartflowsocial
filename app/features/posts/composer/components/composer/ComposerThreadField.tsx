@@ -88,20 +88,20 @@ export function ComposerThreadField({
         </div>
       ) : null}
       {onAutoNumberSegmentsChange ? (
-        <div className="border-border/25 bg-muted/[0.04] flex max-w-[min(100%,42rem)] items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+        <div className="border-border-subtle bg-surface-hover/40 flex max-w-[min(100%,42rem)] items-center justify-between gap-3 rounded-md border px-2.5 py-2">
           <div className="min-w-0 space-y-0.5">
             <Label
               htmlFor="thread-auto-number-segments"
-              className="text-foreground/90 cursor-pointer text-xs leading-tight font-medium"
+              className="text-text/90 cursor-pointer text-xs leading-tight font-medium"
             >
               Number segments in text
             </Label>
-            <p className="text-muted-foreground/80 text-[11px] leading-snug">
+            <p className="text-text-tertiary text-[11px] leading-snug">
               Inserts{" "}
-              <span className="text-muted-foreground font-mono tabular-nums">
+              <span className="text-text-secondary font-mono tabular-nums">
                 1)
               </span>{" "}
-              <span className="text-muted-foreground font-mono tabular-nums">
+              <span className="text-text-secondary font-mono tabular-nums">
                 2)
               </span>{" "}
               … at the start of each segment. Updates when you reorder.
@@ -120,7 +120,7 @@ export function ComposerThreadField({
         <div key={seg.id} className="relative">
           {idx > 0 ? (
             <div
-              className="bg-border/35 mb-4 h-px w-full max-w-[min(100%,42rem)]"
+              className="bg-border-subtle mb-4 h-px w-full max-w-[min(100%,42rem)]"
               aria-hidden
             />
           ) : null}
@@ -129,9 +129,9 @@ export function ComposerThreadField({
             tabIndex={-1}
             aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
             className={cn(
-              "group border-border/20 relative border-l pl-3 transition-[background-color,border-color] duration-150",
-              "hover:bg-muted/[0.025]",
-              "focus-within:border-primary/30 focus-within:bg-muted/[0.04]"
+              "group border-border-subtle relative border-l pl-3 transition-[background-color,border-color] duration-150",
+              "hover:bg-surface-hover/30",
+              "focus-within:border-brand/30 focus-within:bg-surface-hover/40"
             )}
             onDragOver={(e) => {
               e.preventDefault();
@@ -167,8 +167,8 @@ export function ComposerThreadField({
             }}
           >
             {draggingOverSegmentId === seg.id ? (
-              <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center border border-dashed">
-                <span className="text-muted-foreground text-xs">
+              <div className="border-brand bg-brand/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center border border-dashed">
+                <span className="text-text-secondary text-xs">
                   Drop to add media
                 </span>
               </div>
@@ -177,7 +177,7 @@ export function ComposerThreadField({
             {/* Utility row: index + reorder + remove */}
             <div className="flex items-center justify-between gap-2 pb-1.5">
               <span
-                className="text-muted-foreground/45 text-[11px] font-medium tracking-tight tabular-nums"
+                className="text-text-tertiary/70 text-[11px] font-medium tracking-tight tabular-nums"
                 aria-hidden
               >
                 {idx + 1}
@@ -195,7 +195,7 @@ export function ComposerThreadField({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground/70 hover:text-muted-foreground h-8 w-8"
+                      className="text-text-tertiary hover:text-text-secondary h-8 w-8"
                       aria-label={`Move segment ${idx + 1} up`}
                       disabled={disabled || idx === 0}
                       onClick={() =>
@@ -219,7 +219,7 @@ export function ComposerThreadField({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground/70 hover:text-muted-foreground h-8 w-8"
+                      className="text-text-tertiary hover:text-text-secondary h-8 w-8"
                       aria-label={`Move segment ${idx + 1} down`}
                       disabled={disabled || idx >= segments.length - 1}
                       onClick={() =>
@@ -245,7 +245,7 @@ export function ComposerThreadField({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground/45 hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+                      className="text-text-tertiary/65 hover:bg-danger/10 hover:text-danger h-8 w-8"
                       onClick={() =>
                         onSegmentsChange((prev) =>
                           prev.filter((p) => p.id !== seg.id)
@@ -268,7 +268,7 @@ export function ComposerThreadField({
             {/* Main writing field */}
             <div
               className={cn(
-                "focus-within:bg-muted/[0.07] focus-within:ring-border/25 -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-[background-color,box-shadow] duration-150",
+                "focus-within:bg-surface-hover/50 focus-within:ring-border-subtle -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-[background-color,box-shadow] duration-150",
                 "focus-within:ring-1"
               )}
             >
@@ -295,12 +295,12 @@ export function ComposerThreadField({
                   placeholder="Write this part of the thread…"
                   rows={3}
                   disabled={disabled}
-                  className="text-foreground placeholder:text-muted-foreground/55 min-h-[4.25rem] resize-y border-0 bg-transparent px-0 pt-0 pb-3.5 text-base leading-relaxed shadow-none focus-visible:ring-0"
+                  className="text-text placeholder:text-text-tertiary/80 min-h-[4.25rem] resize-y border-0 bg-transparent px-0 pt-0 pb-3.5 text-base leading-relaxed shadow-none focus-visible:ring-0"
                 />
                 <p
                   className={cn(
-                    "pointer-events-none absolute right-0 bottom-0 text-[9px] tabular-nums transition-colors duration-150",
-                    "text-muted-foreground/18 group-focus-within:text-muted-foreground/32"
+                    "motion-fast pointer-events-none absolute right-0 bottom-0 text-[9px] tabular-nums",
+                    "text-text-tertiary/30 group-focus-within:text-text-tertiary/55"
                   )}
                 >
                   {seg.content.length} chars
@@ -345,15 +345,15 @@ export function ComposerThreadField({
               <button
                 type="button"
                 className={cn(
-                  "text-muted-foreground/65 hover:text-muted-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-normal transition-colors",
-                  "hover:bg-muted/50 focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                  "text-text-tertiary hover:text-text-secondary motion-fast inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-normal",
+                  "focus-ring hover:bg-surface-hover/60",
                   "disabled:pointer-events-none disabled:opacity-50"
                 )}
                 disabled={disabled}
                 onClick={() => insertSegmentBelow(idx)}
               >
                 <CornerDownRight
-                  className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0"
+                  className="text-text-tertiary/70 h-3.5 w-3.5 shrink-0"
                   strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
@@ -379,12 +379,12 @@ export function ComposerThreadField({
           ])
         }
         className={cn(
-          "text-muted-foreground/70 hover:text-foreground/85 hover:bg-muted/45 mt-1 inline-flex min-h-10 max-w-full items-center gap-2 rounded-md px-1.5 py-2 text-left text-xs transition-colors",
+          "text-text-secondary hover:text-text/90 hover:bg-surface-hover/60 motion-fast mt-1 inline-flex min-h-10 max-w-full items-center gap-2 rounded-md px-1.5 py-2 text-left text-xs",
           "disabled:pointer-events-none disabled:opacity-50"
         )}
       >
         <ListPlus
-          className="text-muted-foreground/50 h-4 w-4 shrink-0"
+          className="text-text-tertiary/70 h-4 w-4 shrink-0"
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />

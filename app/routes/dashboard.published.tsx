@@ -3,10 +3,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { PublishedPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { PublishedPostsPage } from "~/features/posts/publishing";
+import { PublishedPostsPageSkeleton } from "~/features/posts/publishing/PublishedPostsPageSkeleton";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import { getPublishedDashboardData } from "~/features/posts/server/publishing";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";

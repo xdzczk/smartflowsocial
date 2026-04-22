@@ -8,7 +8,7 @@ export function UnifiedComposerBlossomSignerMediaNote() {
     <div
       className={cn(
         "rounded-md border px-2.5 py-2 text-[11px] leading-snug",
-        "border-amber-500/55 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+        "border-warning/45 bg-warning/12 text-warning-text"
       )}
     >
       <span className="font-medium">Media uploads disabled</span>
@@ -19,7 +19,7 @@ export function UnifiedComposerBlossomSignerMediaNote() {
       Open{" "}
       <Link
         to="/dashboard/settings"
-        className="text-primary font-medium underline underline-offset-2"
+        className="text-brand font-medium underline underline-offset-2"
       >
         Settings
       </Link>{" "}

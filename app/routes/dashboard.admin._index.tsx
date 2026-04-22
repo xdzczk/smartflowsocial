@@ -68,7 +68,7 @@ export default function AdminOverviewPage() {
       />
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
         <AdminSection eyebrow="Pulse" title="Executive strip">
-          <p className="text-muted-foreground mb-3 text-xs leading-snug">
+          <p className="text-text-secondary mb-3 text-xs leading-snug">
             Top-line business, publishing, and signer health. Click a card to
             drill into Analytics where linked.
           </p>
@@ -200,19 +200,19 @@ export default function AdminOverviewPage() {
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Publishing health</h2>
-            <p className="text-foreground/90 text-sm leading-snug">
+            <p className="text-text/90 text-sm leading-snug">
               {d.insights.publishingNarrative}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Queue depth (scheduled + publishing):{" "}
-              <span className="text-foreground font-medium tabular-nums">
+              <span className="text-text font-medium tabular-nums">
                 {d.publishing.scheduledQueueDepth}
               </span>
               {" · "}
               Failed (all time, short):{" "}
               <Link
                 to="/dashboard/admin/operations?focus=failures"
-                className="text-primary font-medium hover:underline"
+                className="text-brand font-medium hover:underline"
               >
                 {d.publishing.failedShort}
               </Link>
@@ -229,16 +229,16 @@ export default function AdminOverviewPage() {
               ) : null}
             </p>
             <div className="space-y-2">
-              <p className="text-muted-foreground text-xs font-medium">
+              <p className="text-text-secondary text-xs font-medium">
                 Short post states (mix)
               </p>
-              <div className="bg-muted flex h-3 w-full overflow-hidden rounded-full">
+              <div className="bg-surface-hover flex h-3 w-full overflow-hidden rounded-full">
                 {stateTotal > 0
                   ? d.publishing.stateMixShort.map((row) => (
                       <div
                         key={row.state}
                         title={`${row.state}: ${row.count}`}
-                        className="bg-primary/70 h-full first:rounded-l-full last:rounded-r-full"
+                        className="bg-brand/70 h-full first:rounded-l-full last:rounded-r-full"
                         style={{
                           width: `${(row.count / stateTotal) * 100}%`,
                           opacity: 0.35 + (row.count / stateTotal) * 0.65,
@@ -247,7 +247,7 @@ export default function AdminOverviewPage() {
                     ))
                   : null}
               </div>
-              <ul className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              <ul className="text-text-secondary flex flex-wrap gap-x-3 gap-y-1 text-xs">
                 {d.publishing.stateMixShort.slice(0, 8).map((row) => (
                   <li key={row.state}>
                     <span className="font-mono">{row.state}</span>: {row.count}
@@ -256,14 +256,14 @@ export default function AdminOverviewPage() {
               </ul>
             </div>
             <div className="space-y-2">
-              <p className="text-muted-foreground text-xs font-medium">
+              <p className="text-text-secondary text-xs font-medium">
                 Publishes per day (last 7 days, UTC)
               </p>
               <div className="flex h-24 items-end gap-1">
                 {d.publishing.dailyPublishesShort.map((day) => (
                   <div
                     key={day.day}
-                    className="bg-primary/80 hover:bg-primary min-w-[6px] flex-1 rounded-t transition-all"
+                    className="bg-brand/80 hover:bg-brand min-w-[6px] flex-1 rounded-t transition-all"
                     style={{
                       height: `${(day.count / maxDaily) * 100}%`,
                       minHeight: day.count > 0 ? "4px" : "0",
@@ -272,7 +272,7 @@ export default function AdminOverviewPage() {
                   />
                 ))}
               </div>
-              <p className="text-muted-foreground text-[10px]">
+              <p className="text-text-secondary text-[10px]">
                 {d.publishing.dailyPublishesShort.map((x) => x.day).join(" · ")}
               </p>
             </div>
@@ -280,28 +280,28 @@ export default function AdminOverviewPage() {
 
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">User activity</h2>
-            <ul className="text-muted-foreground space-y-2 text-sm">
+            <ul className="text-text-secondary space-y-2 text-sm">
               <li>
                 Active publishers (proxy):{" "}
-                <span className="text-foreground font-medium">
+                <span className="text-text font-medium">
                   {d.users.activeUsersProxy}
                 </span>
               </li>
               <li>
                 Session-active users (range):{" "}
-                <span className="text-foreground font-medium">
+                <span className="text-text font-medium">
                   {d.productUsage.activeSessionUsersInRange}
                 </span>
               </li>
               <li>
                 Signups in range:{" "}
-                <span className="text-foreground font-medium">
+                <span className="text-text font-medium">
                   {d.users.signupsInRange}
                 </span>
               </li>
               <li>
                 Avg posts / active publisher:{" "}
-                <span className="text-foreground font-medium">
+                <span className="text-text font-medium">
                   {d.users.avgPostsPerActiveUser === null
                     ? "—"
                     : d.users.avgPostsPerActiveUser.toFixed(2)}
@@ -310,21 +310,21 @@ export default function AdminOverviewPage() {
             </ul>
             <Link
               to="/dashboard/admin/users"
-              className="text-primary text-sm hover:underline"
+              className="text-brand text-sm hover:underline"
             >
               Open user directory →
             </Link>
 
-            <div className="border-border bg-card/50 space-y-2 rounded-xl border p-3">
-              <p className="text-muted-foreground text-xs font-medium">
+            <div className="border-border bg-surface/50 space-y-2 rounded-xl border p-3">
+              <p className="text-text-secondary text-xs font-medium">
                 Relay publish ACKs (range)
               </p>
-              <p className="text-foreground text-sm leading-snug">
+              <p className="text-text text-sm leading-snug">
                 {d.insights.relay.note}
               </p>
               <Link
                 to="/dashboard/admin/operations?focus=relay"
-                className="text-primary text-xs hover:underline"
+                className="text-brand text-xs hover:underline"
               >
                 Open Operations (relay) →
               </Link>
@@ -368,15 +368,15 @@ export default function AdminOverviewPage() {
               definition="ReferralEarning rows created in the window (commission)."
             />
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Ready for batch payout:{" "}
-            <span className="text-foreground font-semibold">
+            <span className="text-text font-semibold">
               {d.referrals.batchReadyCount}
             </span>
             .{" "}
             <Link
               to="/dashboard/admin/referrals"
-              className="text-primary hover:underline"
+              className="text-brand hover:underline"
             >
               Open Referrals →
             </Link>
@@ -396,7 +396,7 @@ export default function AdminOverviewPage() {
           </div>
         </AdminSection>
 
-        <details className="text-muted-foreground text-xs">
+        <details className="text-text-secondary text-xs">
           <summary className="cursor-pointer font-medium">
             About these metrics
           </summary>
@@ -404,12 +404,12 @@ export default function AdminOverviewPage() {
             Active publishers = distinct users with a published short or
             long-form post in the selected range. Publish success rate uses
             publishes vs failures with{" "}
-            <code className="text-foreground">updatedAt</code> in the range.
-            Queue and outbox probes run from the web app; worker liveness is
-            inferred from waiting vs active job counts on BullMQ queues (no
-            separate heartbeat). Relay ACK ratios depend on user-chosen relays
-            and are informational; severe aggregate failure rates surface as
-            alerts only.
+            <code className="text-text">updatedAt</code> in the range. Queue and
+            outbox probes run from the web app; worker liveness is inferred from
+            waiting vs active job counts on BullMQ queues (no separate
+            heartbeat). Relay ACK ratios depend on user-chosen relays and are
+            informational; severe aggregate failure rates surface as alerts
+            only.
           </p>
         </details>
       </div>

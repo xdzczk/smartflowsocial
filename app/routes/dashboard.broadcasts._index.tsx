@@ -7,11 +7,14 @@ import {
   useLoaderData,
   useSearchParams,
 } from "@remix-run/react";
+import { Megaphone } from "lucide-react";
 import { Suspense } from "react";
 
 import { BroadcastCampaignRowActions } from "~/components/broadcast/BroadcastCampaignRowActions";
+import { BroadcastIndexPageSkeleton } from "~/components/broadcast/BroadcastIndexPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastIndexPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { requireUserId } from "~/features/auth";
 import {
   archiveBroadcastCampaign,
@@ -183,11 +186,11 @@ function SummaryCard(props: {
     <Link
       to={props.href}
       className={cn(
-        "border-border bg-card hover:bg-muted/40 rounded-lg border p-4 transition-colors",
-        props.active && "ring-primary ring-2"
+        "border-border bg-surface hover:bg-surface-hover/40 motion-fast rounded-lg border p-4",
+        props.active && "ring-brand ring-2"
       )}
     >
-      <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+      <div className="text-text-secondary text-xs font-medium tracking-wide uppercase">
         {props.label}
       </div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">
@@ -205,17 +208,17 @@ function broadcastsIndexHrefQuery(params: Record<string, string>): string {
 function statusBadgeClass(kind: string): string {
   switch (kind) {
     case "success":
-      return "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200";
+      return "bg-success/15 text-success-text";
     case "danger":
-      return "bg-destructive/15 text-destructive";
+      return "bg-danger/15 text-danger";
     case "warn":
-      return "bg-amber-500/15 text-amber-900 dark:text-amber-100";
+      return "bg-warning/15 text-warning-text";
     case "info":
-      return "bg-blue-500/15 text-blue-900 dark:text-blue-100";
+      return "bg-info/15 text-info-text";
     case "mixed":
-      return "bg-violet-500/15 text-violet-900 dark:text-violet-100";
+      return "bg-brand/12 text-brand-text";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }
 
@@ -243,14 +246,14 @@ function BroadcastsIndexPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Broadcasts</h1>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+          <p className="text-text-secondary mt-1 max-w-2xl text-sm">
             Send signed Nostr direct messages to selected audiences with
             compatibility-aware delivery.
           </p>
         </div>
         <Link
           to="/dashboard/broadcasts/new"
-          className="bg-primary text-primary-foreground inline-flex shrink-0 rounded-md px-4 py-2 text-sm font-medium"
+          className="bg-brand text-brand-on inline-flex shrink-0 rounded-md px-4 py-2 text-sm font-medium"
         >
           New broadcast
         </Link>
@@ -311,14 +314,14 @@ function BroadcastsIndexPage() {
             name="q"
             defaultValue={filters.search ?? ""}
             placeholder="Search name or message…"
-            className="border-input bg-background min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
           />
           <select
             name="status"
             defaultValue={
               typeof filters.status === "string" ? filters.status : ""
             }
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
           >
             <option value="">All statuses</option>
             <option value="DRAFT">Draft</option>
@@ -340,7 +343,7 @@ function BroadcastsIndexPage() {
           <select
             name="audience"
             defaultValue={filters.audienceType ?? ""}
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
           >
             <option value="">All audiences</option>
             <option value="CUSTOM">Custom list</option>
@@ -350,7 +353,7 @@ function BroadcastsIndexPage() {
           <select
             name="delivery"
             defaultValue={filters.deliveryMode ?? ""}
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
           >
             <option value="">All delivery modes</option>
             <option value="BEST_COMPATIBILITY">Best compatibility</option>
@@ -361,7 +364,7 @@ function BroadcastsIndexPage() {
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <label className="text-text-secondary cluster text-sm">
             <span>Updated from</span>
             <input
               type="date"
@@ -371,10 +374,10 @@ function BroadcastsIndexPage() {
                   ? filters.dateFrom.toISOString().slice(0, 10)
                   : ""
               }
-              className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
             />
           </label>
-          <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <label className="text-text-secondary cluster text-sm">
             <span>to</span>
             <input
               type="date"
@@ -382,18 +385,18 @@ function BroadcastsIndexPage() {
               defaultValue={
                 filters.dateTo ? filters.dateTo.toISOString().slice(0, 10) : ""
               }
-              className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
             />
           </label>
           <button
             type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-3 py-2 text-sm font-medium"
           >
             Apply filters
           </button>
           <Link
             to={BROADCASTS_INDEX_HREF}
-            className="text-muted-foreground text-sm hover:underline"
+            className="text-text-secondary text-sm hover:underline"
           >
             Reset
           </Link>
@@ -403,7 +406,7 @@ function BroadcastsIndexPage() {
                 ? BROADCASTS_INDEX_HREF
                 : `${BROADCASTS_INDEX_HREF}?archived=1`
             }
-            className="text-primary text-sm font-medium hover:underline"
+            className="text-brand text-sm font-medium hover:underline"
           >
             {filters.includeArchived ? "Hide archived" : "Show archived"}
           </Link>
@@ -411,23 +414,21 @@ function BroadcastsIndexPage() {
       </Form>
 
       {campaigns.length === 0 ? (
-        <div className="border-border bg-muted/30 rounded-lg border border-dashed p-10 text-center">
-          <p className="text-muted-foreground mb-4 text-sm">
-            No broadcasts match these filters. Create a campaign to reach your
-            audience with signed direct messages—use meaningful updates, not
-            noise.
-          </p>
-          <Link
-            to="/dashboard/broadcasts/new"
-            className="bg-primary text-primary-foreground inline-flex rounded-md px-4 py-2 text-sm font-medium"
-          >
-            New broadcast
-          </Link>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/30 rounded-lg border border-dashed"
+          icon={<Megaphone />}
+          title="No broadcasts match these filters"
+          description="Create a campaign to reach your audience with signed direct messages—use meaningful updates, not noise."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/broadcasts/new">New broadcast</Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[960px] text-left text-sm">
-            <thead className="bg-muted/50 border-b text-xs font-medium">
+            <thead className="bg-surface-hover/50 border-b text-xs font-medium">
               <tr>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Status</th>
@@ -443,7 +444,7 @@ function BroadcastsIndexPage() {
             </thead>
             <tbody className="divide-y">
               {campaigns.map((c) => (
-                <tr key={c.id} className="hover:bg-muted/30">
+                <tr key={c.id} className="hover:bg-surface-hover/30">
                   <td className="px-3 py-2 font-medium">
                     <Link
                       to={`/dashboard/broadcasts/${c.id}`}
@@ -452,7 +453,7 @@ function BroadcastsIndexPage() {
                       {c.name}
                     </Link>
                     {c.archivedAt ? (
-                      <span className="text-muted-foreground ml-2 text-xs">
+                      <span className="text-text-secondary ml-2 text-xs">
                         (archived)
                       </span>
                     ) : null}
@@ -467,7 +468,7 @@ function BroadcastsIndexPage() {
                       {formatBroadcastCampaignStatus(c.status)}
                     </span>
                   </td>
-                  <td className="text-muted-foreground px-3 py-2 text-xs">
+                  <td className="text-text-secondary px-3 py-2 text-xs">
                     {formatBroadcastAudienceLabel(
                       c.audienceType,
                       c.totalRecipients
@@ -482,7 +483,7 @@ function BroadcastsIndexPage() {
                   <td className="px-3 py-2 text-right tabular-nums">
                     {failedPct(c)}%
                   </td>
-                  <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                  <td className="text-text-secondary px-3 py-2 text-xs whitespace-nowrap">
                     {c.scheduledFor
                       ? `Scheduled ${new Date(c.scheduledFor).toLocaleString()}`
                       : c.completedAt
@@ -491,10 +492,10 @@ function BroadcastsIndexPage() {
                           ? `Started ${new Date(c.startedAt).toLocaleString()}`
                           : "—"}
                   </td>
-                  <td className="text-muted-foreground px-3 py-2 text-xs">
+                  <td className="text-text-secondary px-3 py-2 text-xs">
                     {formatBroadcastDeliveryMode(c.deliveryMode)}
                   </td>
-                  <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                  <td className="text-text-secondary px-3 py-2 text-xs whitespace-nowrap">
                     {new Date(c.updatedAt).toLocaleString()}
                   </td>
                   <td className="px-1 py-1">

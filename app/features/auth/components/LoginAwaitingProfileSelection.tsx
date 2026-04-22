@@ -57,10 +57,10 @@ export function LoginAwaitingProfileSelection({
           <Button
             type="button"
             variant="default"
-            className="bg-background text-foreground hover:bg-muted border-border border"
+            className="bg-canvas text-text hover:bg-surface-hover border-border border"
             onClick={onLoginWithPrimal}
           >
-            <span className="flex items-center gap-2">
+            <span className="cluster">
               <PrimalLogoIcon className="size-5 shrink-0" />
               Login with Primal
             </span>
@@ -128,7 +128,7 @@ export function LoginAwaitingProfileSelection({
     >
       <div className="flex items-start gap-3">
         <Loader2
-          className="text-primary mt-0.5 h-5 w-5 shrink-0 animate-spin"
+          className="text-brand mt-0.5 h-5 w-5 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-3">
@@ -139,14 +139,14 @@ export function LoginAwaitingProfileSelection({
       <AuthStepList steps={steps} />
 
       {timeRemaining !== null ? (
-        <div className="text-muted-foreground text-xs">
+        <div className="text-text-secondary text-xs">
           Time remaining: {Math.ceil(timeRemaining / 1000)}s
         </div>
       ) : null}
 
       {timeRemaining !== null && connectionTimeout ? (
         <div className="space-y-1">
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-text-secondary flex justify-between text-xs">
             <span>Progress</span>
             <span>
               {Math.round(
@@ -155,9 +155,9 @@ export function LoginAwaitingProfileSelection({
               %
             </span>
           </div>
-          <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+          <div className="bg-surface-hover h-2 w-full overflow-hidden rounded-full">
             <div
-              className="bg-primary h-full transition-all duration-300"
+              className="bg-brand h-full transition-all duration-300"
               style={{
                 width: `${Math.min(
                   100,

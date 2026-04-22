@@ -64,26 +64,26 @@ export function DraftPreview({
       ) : null}
 
       {/* Post Type */}
-      <div className="dark:bg-card bg-muted rounded-lg p-4">
+      <div className="dark:bg-surface bg-surface-hover rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+          <span className="text-text-secondary dark:text-text text-sm font-medium">
             Post Type
           </span>
-          <span className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded-full px-2 py-1 text-xs font-medium">
+          <span className="bg-surface-hover text-text dark:bg-surface-hover dark:text-text rounded-full px-2 py-1 text-xs font-medium">
             {post.postType}
           </span>
         </div>
       </div>
 
       {/* Queue */}
-      <div className="dark:bg-card bg-muted rounded-lg p-4">
+      <div className="dark:bg-surface bg-surface-hover rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground dark:text-foreground text-sm font-medium">
+          <span className="text-text-secondary dark:text-text text-sm font-medium">
             Current Queue
           </span>
           {queueColor ? (
             <div
-              className="inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
+              className="shadow-1 inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold"
               style={{
                 backgroundColor: `${queueColor}20`,
                 color: queueColor,
@@ -94,7 +94,7 @@ export function DraftPreview({
             </div>
           ) : (
             <div
-              className={`inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-sm`}
+              className={`inline-flex rounded-md border-2 px-3 py-1 text-xs leading-4 font-semibold ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-1`}
             >
               {selectedQueue}
             </div>

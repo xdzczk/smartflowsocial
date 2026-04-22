@@ -41,23 +41,23 @@ export function ContestStatsStrip({
             : aggregates.totalReposts;
 
   return (
-    <div className="border-border bg-muted/30 grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm shadow-sm sm:grid-cols-4">
+    <div className="border-border bg-surface-hover/30 shadow-1 grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm sm:grid-cols-4">
       <div>
-        <p className="text-muted-foreground">Total entries</p>
+        <p className="text-text-secondary">Total entries</p>
         <p className="text-lg font-semibold tabular-nums">{totalEntries}</p>
       </div>
       <div>
-        <p className="text-muted-foreground">Unique participants</p>
+        <p className="text-text-secondary">Unique participants</p>
         <p className="text-lg font-semibold tabular-nums">
           {uniqueParticipants}
         </p>
       </div>
       <div>
-        <p className="text-muted-foreground">Leading score</p>
+        <p className="text-text-secondary">Leading score</p>
         <p className="text-lg font-semibold tabular-nums">{leadingScore}</p>
       </div>
       <div>
-        <p className="text-muted-foreground">{metricLabel}</p>
+        <p className="text-text-secondary">{metricLabel}</p>
         <p className="text-lg font-semibold tabular-nums">{metricValue}</p>
       </div>
     </div>

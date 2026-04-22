@@ -38,10 +38,10 @@ export function LoginNip46Form({
   return (
     <div className="animate-in fade-in slide-in-from-bottom-1 space-y-6 duration-200">
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
           Remote signer
         </p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-text-secondary text-sm leading-relaxed">
           Connect with Amber, nsecBunker, or another NIP-46 signer. Your keys
           stay in the signer — we never ask for your private key.
         </p>
@@ -52,16 +52,16 @@ export function LoginNip46Form({
           value={nip46Tab}
           onValueChange={(v) => setNip46Tab(v as "bunker" | "nostrconnect")}
         >
-          <TabsList className="border-border bg-muted/80 h-auto w-full flex-wrap gap-1 p-1">
+          <TabsList className="border-border bg-surface-hover/80 h-auto w-full flex-wrap gap-1 p-1">
             <TabsTrigger
               value="bunker"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 px-3 py-2 text-sm"
+              className="data-[state=active]:bg-brand data-[state=active]:text-brand-on flex-1 px-3 py-2 text-sm"
             >
               Paste bunker input
             </TabsTrigger>
             <TabsTrigger
               value="nostrconnect"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 px-3 py-2 text-sm"
+              className="data-[state=active]:bg-brand data-[state=active]:text-brand-on flex-1 px-3 py-2 text-sm"
             >
               Generate nostrconnect URI
             </TabsTrigger>
@@ -103,14 +103,11 @@ export function LoginNip46Form({
                 id="nip46Relays"
                 name="nip46Relays"
                 aria-describedby="nip46RelaysHelp"
-                className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={relayList}
                 onChange={(e) => setRelayList(e.target.value)}
               />
-              <div
-                id="nip46RelaysHelp"
-                className="text-muted-foreground text-xs"
-              >
+              <div id="nip46RelaysHelp" className="text-text-secondary text-xs">
                 If approval gets stuck, remove unreachable relays or add
                 alternatives.
               </div>
@@ -129,10 +126,10 @@ export function LoginNip46Form({
                 <textarea
                   id="nip46NostrConnectUri"
                   readOnly
-                  className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                  className="border-border bg-canvas shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm"
                   value={nostrConnectUri}
                 />
-                <div className="text-muted-foreground text-xs">
+                <div className="text-text-secondary text-xs">
                   Approve in your remote signer, then keep this page open while
                   we finish connecting.
                 </div>

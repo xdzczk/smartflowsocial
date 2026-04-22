@@ -79,17 +79,17 @@ export default function MediaPlayer({
   if (hasError) {
     return (
       <div
-        className={`dark:bg-muted bg-muted flex items-center justify-center ${className}`}
+        className={`dark:bg-surface-hover bg-surface-hover flex items-center justify-center ${className}`}
       >
         <div className="text-center">
-          <div className="text-muted-foreground mb-2">
+          <div className="text-text-secondary mb-2">
             <FileQuestion
               className="mx-auto h-8 w-8"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           </div>
-          <p className="text-muted-foreground text-sm">Unable to load media</p>
+          <p className="text-text-secondary text-sm">Unable to load media</p>
         </div>
       </div>
     );
@@ -98,9 +98,9 @@ export default function MediaPlayer({
   if (isLoading) {
     return (
       <div
-        className={`dark:bg-muted bg-muted flex animate-pulse items-center justify-center ${className}`}
+        className={`dark:bg-surface-hover bg-surface-hover flex animate-pulse items-center justify-center ${className}`}
       >
-        <div className="text-muted-foreground">
+        <div className="text-text-secondary">
           <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
         </div>
       </div>
@@ -184,9 +184,9 @@ export function MediaThumbnail({
       />
       {isVideo ? (
         <div className="bg-opacity-30 group-hover:bg-opacity-50 absolute inset-0 flex items-center justify-center bg-black transition-all duration-200">
-          <div className="bg-card/90 group-hover:bg-card rounded-full p-3 transition-all duration-200">
+          <div className="bg-surface/90 group-hover:bg-surface rounded-full p-3 transition-all duration-200">
             <Play
-              className="text-foreground h-8 w-8"
+              className="text-text h-8 w-8"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
@@ -194,7 +194,7 @@ export function MediaThumbnail({
         </div>
       ) : null}
       {/* Media type indicator */}
-      <div className="bg-opacity-70 absolute top-2 left-2 rounded bg-black px-2 py-1 text-xs text-white">
+      <div className="bg-opacity-70 absolute top-2 left-2 rounded-xs bg-black px-2 py-1 text-xs text-white">
         {isVideo ? "🎥" : "🖼️"}
       </div>
     </div>

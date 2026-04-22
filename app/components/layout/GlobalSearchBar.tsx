@@ -237,7 +237,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
         <div ref={containerRef} className={`relative ${className}`}>
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
-              <Search className="text-muted-foreground h-4 w-4" />
+              <Search className="text-text-secondary h-4 w-4" />
             </div>
             <input
               ref={inputRef}
@@ -250,14 +250,14 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               placeholder="Inspect a Nostr note, profile, or URL"
               title="Paste a Nostr note, profile, or URL — ⌘K to focus"
               className={cn(
-                "border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-1.5 pl-8 text-sm focus:ring focus:outline-none sm:py-2 sm:pl-10",
+                "border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-1.5 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none sm:py-2 sm:pl-10",
                 lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"
               )}
             />
-            <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-1.5 sm:pr-2">
+            <div className="cluster-tight absolute inset-y-0 right-0 pr-1.5 sm:pr-2">
               {lookupNavigating ? (
                 <Loader2
-                  className="text-muted-foreground h-4 w-4 shrink-0 animate-spin"
+                  className="text-text-secondary h-4 w-4 shrink-0 animate-spin"
                   aria-label="Resolving lookup"
                 />
               ) : null}
@@ -265,7 +265,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="text-muted-foreground hover:text-foreground flex items-center p-1"
+                  className="text-text-secondary hover:text-text flex items-center p-1"
                   aria-label="Clear search"
                 >
                   <X className={INLINE_ICON_SIZE_CLASS} />
@@ -274,11 +274,11 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
             </div>
           </div>
           {pasteKind ? (
-            <div className="mt-1.5 flex items-center gap-2 px-0.5">
+            <div className="cluster mt-1.5 px-0.5">
               <Badge variant="secondary" className="font-mono text-[10px]">
                 {pasteKind}
               </Badge>
-              <span className="text-muted-foreground text-[11px]">
+              <span className="text-text-secondary text-[11px]">
                 Detected format
               </span>
             </div>

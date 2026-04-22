@@ -77,7 +77,7 @@ export function DraftsToolbar({
   const sortControl = showSort ? (
     <div className="flex min-w-0 flex-shrink-0 items-center gap-2">
       <span
-        className={`text-muted-foreground hidden text-sm sm:inline ${MOBILE_FILTER_LABEL_CLASS}`}
+        className={`text-text-secondary hidden text-sm sm:inline ${MOBILE_FILTER_LABEL_CLASS}`}
       >
         Sort
       </span>

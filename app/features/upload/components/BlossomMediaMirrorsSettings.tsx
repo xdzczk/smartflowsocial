@@ -170,8 +170,8 @@ export function BlossomMediaMirrorsSettings({
 
         {watchedEnableMirror ? (
           <div className="space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <Label className="text-foreground">Mirror URLs</Label>
+            <div className="stack-tight sm:flex-row sm:items-center sm:justify-between">
+              <Label className="text-text">Mirror URLs</Label>
               <Button
                 type="button"
                 variant="secondary"
@@ -204,7 +204,7 @@ export function BlossomMediaMirrorsSettings({
                     }}
                     className={
                       form.formState.errors.mirrorUrls?.[index]
-                        ? "border-destructive"
+                        ? "border-danger"
                         : ""
                     }
                   />
@@ -235,12 +235,12 @@ export function BlossomMediaMirrorsSettings({
               </Button>
             </div>
             {form.formState.errors.mirrorUrls ? (
-              <p className="text-destructive text-sm">
+              <p className="text-danger text-sm">
                 {form.formState.errors.mirrorUrls.message ??
                   "Please fix validation errors"}
               </p>
             ) : null}
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               HTTPS only. Save after editing the list.
             </p>
           </div>
@@ -250,7 +250,7 @@ export function BlossomMediaMirrorsSettings({
           <p className="text-success text-sm">Mirror settings updated.</p>
         ) : null}
         {fetcher.data?.error ? (
-          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+          <p className="text-danger text-sm">{fetcher.data.error}</p>
         ) : null}
       </div>
     </ManagementListSection>

@@ -59,7 +59,7 @@ export function SchedulingSection({
   return (
     <div className={className}>
       {showTimeInput ? (
-        <div className="flex flex-col gap-2">
+        <div className="stack-tight">
           <Label htmlFor="scheduledFor">{label}</Label>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Input

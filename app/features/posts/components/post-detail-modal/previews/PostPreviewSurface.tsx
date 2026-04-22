@@ -12,7 +12,7 @@ export function PostPreviewSurface({
   return (
     <div
       className={cn(
-        "border-border/70 bg-muted/20 overflow-hidden rounded-2xl border shadow-sm",
+        "border-border/70 bg-surface-hover/20 shadow-1 overflow-hidden rounded-xl border",
         className
       )}
     >

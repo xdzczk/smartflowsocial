@@ -23,10 +23,10 @@ interface CreateComposerShellProps {
 }
 
 function tabButtonClass(active: boolean): string {
-  return `rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+  return `rounded-md px-2.5 py-1 text-xs font-medium motion-fast ${
     active
-      ? "bg-primary text-primary-foreground"
-      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+      ? "bg-brand-strong text-brand-on shadow-1"
+      : "text-text-secondary hover:bg-surface-hover hover:text-text"
   }`;
 }
 
@@ -46,21 +46,21 @@ export function CreateComposerShell({
 
   return (
     <div className="px-6 pt-4 pb-5">
-      <header className="border-border/50 mb-3 space-y-2 border-b pb-2.5">
+      <header className="border-border-subtle mb-3 space-y-2 border-b pb-2.5">
         <div className="flex w-full min-w-0 items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <NewPostHeader title={title} />
           </div>
           {showSaveLabel ? (
             <span
-              className="text-muted-foreground shrink-0 text-right text-xs whitespace-nowrap tabular-nums"
+              className="text-text-secondary shrink-0 text-right text-xs whitespace-nowrap tabular-nums"
               aria-live="polite"
             >
               {saveStateLabel.trim()}
             </span>
           ) : showTitleStatusPlaceholder ? (
             <span
-              className="text-muted-foreground shrink-0 text-right text-xs whitespace-nowrap tabular-nums opacity-0"
+              className="text-text-secondary shrink-0 text-right text-xs whitespace-nowrap tabular-nums opacity-0"
               aria-hidden
             >
               Saved locally

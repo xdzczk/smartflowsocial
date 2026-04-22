@@ -93,19 +93,19 @@ export default function Footer() {
   return (
     <footer
       id="page-footer"
-      className="border-border bg-card sticky bottom-0 z-10 flex flex-none items-center border-t"
+      className="border-border bg-surface sticky bottom-0 z-10 flex flex-none items-center border-t"
     >
       <div className="max-w-10xl mx-auto flex w-full flex-col gap-2 px-3 py-2 text-center text-xs sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-2.5 sm:text-left sm:text-sm md:px-6 lg:px-8">
-        <div className="text-muted-foreground shrink-0">
+        <div className="text-text-secondary shrink-0">
           {BRAND_NAME} © {new Date().getFullYear()}
         </div>
-        <div className="text-muted-foreground flex min-w-0 items-center justify-center gap-1.5 tabular-nums sm:flex-1 sm:justify-end sm:gap-2">
+        <div className="text-text-secondary flex min-w-0 items-center justify-center gap-1.5 tabular-nums sm:flex-1 sm:justify-end sm:gap-2">
           <SignerStatusIndicator />
           {syncNeedsAttention ? (
             <>
               <span className="hidden lg:inline">·</span>
-              <div className="flex items-center gap-1 text-xs">
-                <TriangleAlert className="h-3 w-3 text-yellow-500" />
+              <div className="cluster-tight text-xs">
+                <TriangleAlert className="text-warning h-3 w-3" />
                 <span className="hidden sm:inline">Needs attention</span>
               </div>
             </>

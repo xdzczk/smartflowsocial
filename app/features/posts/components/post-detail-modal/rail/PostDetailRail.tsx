@@ -28,7 +28,7 @@ import type { PostThreadGroupResponse } from "../usePostThreadGroup";
 import { DetailModalReplySnippet } from "./DetailModalReplySnippet";
 
 const RAIL_SECTION_LABEL = cn(
-  "normal-case tracking-tight text-muted-foreground/75 !mb-1.5 text-[10px] font-medium"
+  "normal-case tracking-tight text-text-secondary/75 !mb-1.5 text-[10px] font-medium"
 );
 
 const USER_TAGS_VISIBLE = 8;
@@ -69,12 +69,12 @@ function UserTagChips({
   const visible = expanded ? tags : tags.slice(0, USER_TAGS_VISIBLE);
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-foreground text-xs font-medium">Tags</span>
+      <span className="text-text text-xs font-medium">Tags</span>
       <div className="flex flex-wrap gap-1">
         {visible.map((tag) => (
           <span
             key={tag}
-            className="bg-muted text-foreground max-w-[min(100%,14rem)] truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
+            className="bg-surface-hover text-text max-w-[min(100%,14rem)] truncate rounded-xs px-1.5 py-0.5 text-[10px] font-medium"
             title={tag}
           >
             #{tag.length > 36 ? `${tag.slice(0, 33)}…` : tag}
@@ -85,7 +85,7 @@ function UserTagChips({
         <button
           type="button"
           onClick={onToggle}
-          className="text-muted-foreground hover:text-foreground text-left text-[10px] font-medium"
+          className="text-text-secondary hover:text-text text-left text-[10px] font-medium"
         >
           {expanded ? "Show fewer" : `Show all (${tags.length})`}
         </button>
@@ -280,7 +280,7 @@ export function PostDetailRail({
   return (
     <aside
       className={cn(
-        "border-border/70 bg-background/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
+        "border-border/70 bg-canvas/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
         "border-t md:border-t-0 md:border-l"
       )}
     >
@@ -338,7 +338,7 @@ export function PostDetailRail({
           ) : null}
           {queueType ? (
             <div className="flex flex-col gap-1.5">
-              <span className="text-foreground text-xs font-medium">Queue</span>
+              <span className="text-text text-xs font-medium">Queue</span>
               <QueueTypeCalm queueType={queueType} />
             </div>
           ) : null}
@@ -414,7 +414,7 @@ export function PostDetailRail({
                   trailing={null}
                 />
               ) : null}
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 {type === "scheduled"
                   ? "Use Edit and Reschedule to validate this post before it goes live."
                   : "No performance metrics are available for this state."}
@@ -432,54 +432,54 @@ export function PostDetailRail({
             {engagementStats ? (
               <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.replies}
                   </p>
-                  <p className="text-muted-foreground">Replies</p>
+                  <p className="text-text-secondary">Replies</p>
                 </div>
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.likes}
                   </p>
-                  <p className="text-muted-foreground">Likes</p>
+                  <p className="text-text-secondary">Likes</p>
                 </div>
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.reposts}
                   </p>
-                  <p className="text-muted-foreground">Reposts</p>
+                  <p className="text-text-secondary">Reposts</p>
                 </div>
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.zaps}
                   </p>
-                  <p className="text-muted-foreground">Zaps</p>
+                  <p className="text-text-secondary">Zaps</p>
                 </div>
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.mentions}
                   </p>
-                  <p className="text-muted-foreground">Mentions</p>
+                  <p className="text-text-secondary">Mentions</p>
                 </div>
                 <div>
-                  <p className="text-foreground text-sm font-semibold tabular-nums">
+                  <p className="text-text text-sm font-semibold tabular-nums">
                     {engagementStats.satszapped}
                   </p>
-                  <p className="text-muted-foreground">Sats</p>
+                  <p className="text-text-secondary">Sats</p>
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground mt-1.5 text-xs">
+              <p className="text-text-secondary mt-1.5 text-xs">
                 Performance metrics are not available yet.
               </p>
             )}
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="stack-tight mt-2">
               {viewThreadUrl ? (
                 <Link
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -493,7 +493,7 @@ export function PostDetailRail({
                   to={openOnNostrUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   Open on Nostr
                   <ChevronRight
@@ -518,7 +518,7 @@ export function PostDetailRail({
               aria-busy={isThreadLoading}
             >
               {isThreadLoading ? (
-                <p className="text-muted-foreground text-xs">Loading…</p>
+                <p className="text-text-secondary text-xs">Loading…</p>
               ) : previewReplies.length > 0 ? (
                 previewReplies.map((r) => (
                   <DetailModalReplySnippet
@@ -528,7 +528,7 @@ export function PostDetailRail({
                   />
                 ))
               ) : (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Replies: {directReplies.length}
                 </p>
               )}
@@ -537,7 +537,7 @@ export function PostDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -564,7 +564,7 @@ export function PostDetailRail({
                 onClick={toggleTechnical}
                 aria-expanded={showTechnicalExpanded}
                 aria-controls="post-detail-technical-block"
-                className="text-muted-foreground hover:text-foreground text-[10px] font-medium"
+                className="text-text-secondary hover:text-text text-[10px] font-medium"
               >
                 {showTechnicalExpanded ? "Hide" : "Show"}
               </button>
@@ -573,10 +573,10 @@ export function PostDetailRail({
               <div id="post-detail-technical-block" className="mt-2 space-y-2">
                 {technicalTags.length > 0 ? (
                   <div>
-                    <p className="text-muted-foreground mb-1 text-[10px] font-medium">
+                    <p className="text-text-secondary mb-1 text-[10px] font-medium">
                       Tags (raw)
                     </p>
-                    <pre className="bg-muted/40 text-foreground max-h-32 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap">
+                    <pre className="bg-surface-hover/40 text-text max-h-32 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap">
                       {technicalTags.join("\n")}
                     </pre>
                   </div>
@@ -584,7 +584,7 @@ export function PostDetailRail({
                 {hasSignedEventJson ? (
                   <pre
                     id="post-detail-signed-event"
-                    className="bg-muted/40 text-foreground max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
+                    className="bg-surface-hover/40 text-text max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
                   >
                     {JSON.stringify(post.signedEvent, null, 2)}
                   </pre>

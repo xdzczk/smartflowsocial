@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  THEME_COLOR_HEX,
   applyEffectiveThemeToDocument,
   applyThemePreferenceToDocument,
   clearSessionThemeOverride,
@@ -25,6 +26,9 @@ describe("theme client", () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.documentElement.className = "";
+    document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+      el.remove();
+    });
   });
 
   it("reads and writes stored theme preferences", () => {
@@ -60,8 +64,33 @@ describe("theme client", () => {
     expect(resolveEffectiveTheme("dark")).toBe("dark");
     applyEffectiveThemeToDocument("dark");
     expect(document.documentElement).toHaveClass("dark");
+    expect(document.getElementById("sfs-theme-color")).toHaveAttribute(
+      "content",
+      THEME_COLOR_HEX.dark
+    );
     applyEffectiveThemeToDocument("light");
     expect(document.documentElement).not.toHaveClass("dark");
+    expect(document.getElementById("sfs-theme-color")).toHaveAttribute(
+      "content",
+      THEME_COLOR_HEX.light
+    );
+  });
+
+  it("syncs theme-color meta and removes SSR media variants", () => {
+    const mediaMeta = document.createElement("meta");
+    mediaMeta.name = "theme-color";
+    mediaMeta.content = "#ffffff";
+    mediaMeta.setAttribute("media", "(prefers-color-scheme: dark)");
+    document.head.appendChild(mediaMeta);
+
+    applyEffectiveThemeToDocument("light");
+    expect(
+      document.querySelectorAll('meta[name="theme-color"][media]')
+    ).toHaveLength(0);
+    expect(document.getElementById("sfs-theme-color")).toHaveAttribute(
+      "content",
+      THEME_COLOR_HEX.light
+    );
   });
 
   it("reads system effective theme from matchMedia", () => {

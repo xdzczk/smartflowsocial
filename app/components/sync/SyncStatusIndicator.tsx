@@ -4,10 +4,10 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Skeleton } from "~/components/ui/skeleton";
+import { StatusIcon } from "~/components/ui/status-icon";
 import {
   getSyncState,
   subscribeToSyncState,
@@ -41,8 +41,8 @@ export function SyncStatusIndicator() {
 
   if (syncState === "synced") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircle className="h-3 w-3 text-green-500" />
+      <div className="text-text-secondary cluster-tight text-xs">
+        <StatusIcon tone="success" size="xs" />
         <span className="hidden sm:inline">Synced</span>
       </div>
     );
@@ -50,17 +50,16 @@ export function SyncStatusIndicator() {
 
   if (syncState === "syncing") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+      <div className="text-text-secondary cluster-tight text-xs">
         <Skeleton className="h-3 w-3 rounded-full" />
         <span className="hidden sm:inline">Syncing...</span>
       </div>
     );
   }
 
-  // needs_attention
   return (
-    <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      <TriangleAlert className="h-3 w-3 text-yellow-500" />
+    <div className="text-text-secondary cluster-tight text-xs">
+      <StatusIcon tone="warning" size="xs" />
       <span className="hidden sm:inline">Needs attention</span>
     </div>
   );

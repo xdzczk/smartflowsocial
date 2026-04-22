@@ -1,6 +1,7 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { QueueType, UserData } from "~/features/posts/types";
 import { isVideoFile } from "~/lib/helpers";
@@ -96,11 +97,13 @@ export function DayViewSidebar({
             userTimeFormat={userTimeFormat}
           />
         ) : (
-          <div className="border-border/40 bg-background/40 text-muted-foreground flex flex-1 flex-col items-center justify-center rounded-[var(--calendar-radius-md)] border p-4 text-center">
-            <p className="text-sm font-medium">No post selected</p>
-            <p className="mt-1 text-xs">
-              Select a post in the timeline to inspect details and edit.
-            </p>
+          <div className="border-border/40 bg-canvas/40 flex flex-1 flex-col rounded-[var(--calendar-radius-md)] border">
+            <EmptyState
+              size="sm"
+              title="No post selected"
+              description="Select a post in the timeline to inspect details and edit."
+              className="flex-1"
+            />
           </div>
         )}
       </div>
@@ -163,13 +166,13 @@ function DayViewPostDetailCard({
   const summaryText = postIsLongform ? post.summary : null;
 
   return (
-    <div className="border-border/40 bg-background flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--calendar-radius-md)] border">
+    <div className="border-border/40 bg-canvas flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--calendar-radius-md)] border">
       <div className="border-border/40 flex items-start justify-between border-b p-3">
         <div>
           <p className="text-xs font-semibold tracking-wide text-[hsl(var(--calendar-accent-purple))] uppercase">
             Selected post
           </p>
-          <p className="text-foreground mt-1 line-clamp-2 text-sm font-semibold">
+          <p className="text-text mt-1 line-clamp-2 text-sm font-semibold">
             {captionOrTitle && captionOrTitle.length > 0
               ? captionOrTitle
               : preview}
@@ -179,21 +182,21 @@ function DayViewPostDetailCard({
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         <div className="flex flex-wrap gap-1.5">
-          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium">
+          <span className="bg-surface-hover text-text-secondary rounded-full px-2 py-0.5 text-[11px] font-medium">
             {postTypeLabel}
           </span>
-          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium">
+          <span className="bg-surface-hover text-text-secondary rounded-full px-2 py-0.5 text-[11px] font-medium">
             {statusLabel}
           </span>
           {mediaCount > 1 ? (
-            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium">
+            <span className="bg-surface-hover text-text-secondary rounded-full px-2 py-0.5 text-[11px] font-medium">
               {mediaCount} attachments
             </span>
           ) : null}
         </div>
 
         {mediaUrl ? (
-          <div className="bg-muted relative aspect-video w-full overflow-hidden rounded-[var(--calendar-radius-md)]">
+          <div className="bg-surface-hover relative aspect-video w-full overflow-hidden rounded-[var(--calendar-radius-md)]">
             <MediaThumbnail
               src={mediaUrl}
               alt=""
@@ -201,7 +204,7 @@ function DayViewPostDetailCard({
               forceType={isVideoFile(mediaUrl) ? "video" : "image"}
               hidePlayButton={false}
               fallback={
-                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs">
+                <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-xs">
                   {post.postType === "VIDEO" || isVideoFile(mediaUrl)
                     ? "VIDEO"
                     : "IMAGE"}
@@ -210,40 +213,36 @@ function DayViewPostDetailCard({
             />
           </div>
         ) : (
-          <div className="bg-muted text-muted-foreground flex aspect-video w-full items-center justify-center rounded-[var(--calendar-radius-md)] text-xs">
+          <div className="bg-surface-hover text-text-secondary flex aspect-video w-full items-center justify-center rounded-[var(--calendar-radius-md)] text-xs">
             No media preview
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-2">
           <div className="rounded-[var(--calendar-radius-sm)] border border-[hsl(var(--border)/0.5)] p-2">
-            <p className="text-muted-foreground text-[11px] uppercase">
+            <p className="text-text-secondary text-[11px] uppercase">
               Scheduled
             </p>
-            <p className="text-foreground mt-0.5 text-sm font-medium">
-              {timeString}
-            </p>
+            <p className="text-text mt-0.5 text-sm font-medium">{timeString}</p>
           </div>
           <div className="rounded-[var(--calendar-radius-sm)] border border-[hsl(var(--border)/0.5)] p-2">
-            <p className="text-muted-foreground text-[11px] uppercase">Queue</p>
-            <p className="text-foreground mt-0.5 text-sm font-medium">
+            <p className="text-text-secondary text-[11px] uppercase">Queue</p>
+            <p className="text-text mt-0.5 text-sm font-medium">
               {post.queueType?.name ?? "Unassigned"}
             </p>
           </div>
           <div className="rounded-[var(--calendar-radius-sm)] border border-[hsl(var(--border)/0.5)] p-2">
-            <p className="text-muted-foreground text-[11px] uppercase">
+            <p className="text-text-secondary text-[11px] uppercase">
               Scheduling mode
             </p>
-            <p className="text-foreground mt-0.5 text-sm font-medium">
+            <p className="text-text mt-0.5 text-sm font-medium">
               {schedulingMode}
             </p>
           </div>
           {post.postKind ? (
             <div className="rounded-[var(--calendar-radius-sm)] border border-[hsl(var(--border)/0.5)] p-2">
-              <p className="text-muted-foreground text-[11px] uppercase">
-                Kind
-              </p>
-              <p className="text-foreground mt-0.5 text-sm font-medium">
+              <p className="text-text-secondary text-[11px] uppercase">Kind</p>
+              <p className="text-text mt-0.5 text-sm font-medium">
                 {post.postKind}
               </p>
             </div>
@@ -252,20 +251,18 @@ function DayViewPostDetailCard({
 
         {summaryText ? (
           <div>
-            <p className="text-muted-foreground text-[11px] font-medium uppercase">
+            <p className="text-text-secondary text-[11px] font-medium uppercase">
               Summary
             </p>
-            <p className="text-foreground mt-1 line-clamp-3 text-sm">
-              {summaryText}
-            </p>
+            <p className="text-text mt-1 line-clamp-3 text-sm">{summaryText}</p>
           </div>
         ) : null}
 
         <div>
-          <p className="text-muted-foreground text-[11px] font-medium uppercase">
+          <p className="text-text-secondary text-[11px] font-medium uppercase">
             Content
           </p>
-          <p className="text-foreground mt-1 line-clamp-5 text-sm">
+          <p className="text-text mt-1 line-clamp-5 text-sm">
             {captionOrTitle && captionOrTitle.length > 0
               ? captionOrTitle
               : preview}
@@ -276,14 +273,14 @@ function DayViewPostDetailCard({
           <button
             type="button"
             onClick={onReschedule}
-            className="border-border bg-background text-foreground hover:bg-muted/50 inline-flex w-full items-center justify-center rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
+            className="border-border bg-canvas text-text hover:bg-surface-hover/50 inline-flex w-full items-center justify-center rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
           >
             Reschedule
           </button>
           <button
             type="button"
             onClick={onEdit}
-            className="border-border bg-background text-foreground hover:bg-muted/50 inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
+            className="border-border bg-canvas text-text hover:bg-surface-hover/50 inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--calendar-radius-sm)] border px-3 py-2 text-sm font-medium"
           >
             <Pencil className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
             Edit post

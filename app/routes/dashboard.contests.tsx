@@ -21,10 +21,10 @@ export default function ContestsLayout() {
             end={item.end}
             className={({ isActive }) =>
               [
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "motion-fast rounded-md px-3 py-2 text-sm font-medium",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-brand/10 text-brand"
+                  : "text-text-secondary hover:bg-surface-hover hover:text-text",
               ].join(" ")
             }
           >

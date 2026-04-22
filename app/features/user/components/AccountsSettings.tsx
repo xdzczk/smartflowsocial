@@ -158,7 +158,7 @@ export function AccountsSettings({
             <div className="truncate font-medium">
               {bits.name ?? bits.display_name ?? npub}
             </div>
-            <div className="text-muted-foreground truncate text-xs">{npub}</div>
+            <div className="text-text-secondary truncate text-xs">{npub}</div>
           </div>
         </div>
       </div>
@@ -175,12 +175,12 @@ export function AccountsSettings({
       <Card className="p-4">
         <div className="mb-4">
           <h2 className="text-xl font-semibold">Accounts</h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             This account is managed by a parent account.
           </p>
         </div>
 
-        <div className="bg-muted/30 mb-6 flex items-center justify-between rounded-md border p-4">
+        <div className="bg-surface-hover/30 mb-6 flex items-center justify-between rounded-md border p-4">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="h-10 w-10">
               {bits.picture ? (
@@ -192,7 +192,7 @@ export function AccountsSettings({
                 Managed by {parentName}
               </div>
               {parentUser?.npub ? (
-                <div className="text-muted-foreground truncate text-xs">
+                <div className="text-text-secondary truncate text-xs">
                   {parentUser.npub}
                 </div>
               ) : null}
@@ -213,7 +213,7 @@ export function AccountsSettings({
           </Button>
         </div>
 
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           As a child account, you cannot search for or link child accounts.
         </p>
       </Card>
@@ -224,7 +224,7 @@ export function AccountsSettings({
     <Card className="p-4">
       <div className="mb-4">
         <h2 className="text-xl font-semibold">Accounts</h2>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           Search Nostr users by profile name and request to add them as child
           accounts.
         </p>
@@ -250,9 +250,7 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Search results</h3>
           <div className="divide-y rounded-md border">
             {results.length === 0 ? (
-              <div className="text-muted-foreground p-3 text-sm">
-                No results
-              </div>
+              <div className="text-text-secondary p-3 text-sm">No results</div>
             ) : (
               results.map((r) => {
                 const isSubmittingThis =
@@ -297,7 +295,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {r.profileName ?? r.profileDisplayName ?? r.npub}
                         </div>
-                        <div className="text-muted-foreground truncate text-xs">
+                        <div className="text-text-secondary truncate text-xs">
                           {r.npub}
                         </div>
                       </div>
@@ -316,9 +314,7 @@ export function AccountsSettings({
             )}
           </div>
           {fetcher.data?.error ? (
-            <p className="text-destructive mt-2 text-sm">
-              {fetcher.data.error}
-            </p>
+            <p className="text-danger mt-2 text-sm">{fetcher.data.error}</p>
           ) : null}
         </div>
       ) : null}
@@ -328,7 +324,7 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Confirmed children</h3>
           <div className="divide-y rounded-md border">
             {confirmedChildren?.length === 0 ? (
-              <div className="text-muted-foreground p-3 text-sm">
+              <div className="text-text-secondary p-3 text-sm">
                 No confirmed children
               </div>
             ) : (
@@ -356,7 +352,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {bits.name ?? bits.display_name ?? u.npub}
                         </div>
-                        <div className="text-muted-foreground truncate text-xs">
+                        <div className="text-text-secondary truncate text-xs">
                           {u.npub}
                         </div>
                       </div>
@@ -384,7 +380,7 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Pending requests</h3>
           <div className="divide-y rounded-md border">
             {pendingChildren?.length === 0 ? (
-              <div className="text-muted-foreground p-3 text-sm">
+              <div className="text-text-secondary p-3 text-sm">
                 No pending requests
               </div>
             ) : (
@@ -412,7 +408,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {bits.name ?? bits.display_name ?? u.npub}
                         </div>
-                        <div className="text-muted-foreground truncate text-xs">
+                        <div className="text-text-secondary truncate text-xs">
                           {u.npub}
                         </div>
                       </div>

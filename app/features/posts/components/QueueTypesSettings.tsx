@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { ManagementListSection } from "~/features/settings/components/patterns";
 
 import type { QueueType } from "../types";
@@ -225,28 +226,22 @@ export function QueueTypesSettings({
         }
       >
         {queueTypesState.length === 0 ? (
-          <div className="text-muted-foreground py-10 text-center">
-            <ListTree
-              className="mx-auto mb-3 h-10 w-10 opacity-[0.35]"
-              aria-hidden
-            />
-            <p className="text-foreground mb-1 text-sm font-medium">
-              No queues yet
-            </p>
-            <p className="mx-auto mb-5 max-w-sm text-xs leading-relaxed">
-              Queues define reusable publishing schedules. Create one to reuse
-              timing logic across posts and keep publishing consistent.
-            </p>
-            <Button
-              type="button"
-              onClick={handleCreateNew}
-              size="sm"
-              variant="outline"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create first queue
-            </Button>
-          </div>
+          <EmptyState
+            icon={<ListTree />}
+            title="No queues yet"
+            description="Queues define reusable publishing schedules. Create one to reuse timing logic across posts and keep publishing consistent."
+            action={
+              <Button
+                type="button"
+                onClick={handleCreateNew}
+                size="sm"
+                variant="outline"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create first queue
+              </Button>
+            }
+          />
         ) : (
           <div className="space-y-2">
             {queueTypesState.map((queueType) => (
@@ -285,14 +280,14 @@ export function QueueTypesSettings({
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
-              className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground border"
+              className="border-border bg-canvas text-text hover:bg-surface-hover hover:text-text border"
               onClick={() => confirmDeleteQueue("queue_only")}
             >
               Delete queue only
             </AlertDialogAction>
             <AlertDialogAction
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
               onClick={() => confirmDeleteQueue("queue_and_scheduled")}
             >
               Delete queue + scheduled

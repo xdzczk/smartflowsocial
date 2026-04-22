@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
 
 import type { CombinedContent } from "../types";
@@ -352,11 +353,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           return (
             <div className="flex min-w-0 flex-1 items-center justify-center">
               {isLoadingMorePast ? (
-                <span className="text-muted-foreground text-sm">
+                <span className="text-text-secondary text-sm">
                   {LOADING_LABEL}
                 </span>
               ) : (
-                <span className="text-muted-foreground text-sm" aria-hidden>
+                <span className="text-text-secondary text-sm" aria-hidden>
                   •
                 </span>
               )}
@@ -367,11 +368,11 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           return (
             <div className="flex min-w-0 flex-1 items-center justify-center">
               {isLoadingMoreFuture ? (
-                <span className="text-muted-foreground text-sm">
+                <span className="text-text-secondary text-sm">
                   {LOADING_LABEL}
                 </span>
               ) : (
-                <span className="text-muted-foreground text-sm" aria-hidden>
+                <span className="text-text-secondary text-sm" aria-hidden>
                   •
                 </span>
               )}
@@ -384,18 +385,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="card-lift border-border-subtle bg-card hover:bg-muted/30 focus:ring-ring flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed shadow-sm focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle bg-surface hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
-                  className="text-muted-foreground h-12 w-12 md:h-14 md:w-14"
+                  className="text-text-secondary h-12 w-12 md:h-14 md:w-14"
                   aria-hidden
                 />
                 <div className="flex flex-col items-start gap-0.5 text-left">
-                  <span className="text-foreground font-semibold">
-                    Open composer
-                  </span>
-                  <span className="text-muted-foreground/90 text-sm">
+                  <span className="text-text font-semibold">Open composer</span>
+                  <span className="text-text-secondary/90 text-sm">
                     Schedule or publish
                   </span>
                 </div>
@@ -450,23 +449,23 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             role="region"
             aria-label="Post timeline"
           >
-            <h3 className="text-foreground text-base font-semibold">
+            <h3 className="text-text text-base font-semibold">
               Schedule your first post
             </h3>
-            <p className="text-muted-foreground/90 max-w-xl text-sm">
+            <p className="text-text-secondary/90 max-w-xl text-sm">
               You&apos;ve started. Once content is scheduled, your flow appears
               here.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Link
                 to="/dashboard/compose?type=post"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-xl px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 rounded-xl px-4 py-2 text-sm font-medium"
               >
                 Schedule first post
               </Link>
               <Link
                 to="/dashboard/compose"
-                className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
+                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -476,20 +475,22 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       }
       return (
         <div
-          className="border-border-subtle flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center"
+          className="border-border-subtle rounded-xl border border-dashed"
           role="region"
           aria-label="Post timeline"
         >
-          <p className="text-muted-foreground/90 text-sm">
-            No posts yet. Create your first post or schedule one to see your
-            flow.
-          </p>
-          <Link
-            to="/dashboard/compose?type=post"
-            className="card-lift border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-xl border px-4 py-2 text-sm font-medium shadow-sm focus:ring-2 focus:outline-none"
-          >
-            Open composer
-          </Link>
+          <EmptyState
+            title="No posts yet"
+            description="Create your first post or schedule one to see your flow."
+            action={
+              <Link
+                to="/dashboard/compose?type=post"
+                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+              >
+                Open composer
+              </Link>
+            }
+          />
         </div>
       );
     }

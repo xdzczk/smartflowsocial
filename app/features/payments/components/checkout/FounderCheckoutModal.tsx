@@ -68,7 +68,7 @@ export function FounderCheckoutModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideCloseButton
-        className="bg-background max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
+        className="bg-canvas max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="p-6 pb-0">
@@ -77,16 +77,16 @@ export function FounderCheckoutModal({
               <DialogTitle className="text-2xl font-semibold tracking-tight">
                 Founder checkout
               </DialogTitle>
-              <p className="text-primary text-xs font-semibold tracking-wider uppercase">
+              <p className="text-brand text-xs font-semibold tracking-wider uppercase">
                 One-time lifetime access
               </p>
-              <p className="text-foreground text-lg font-semibold tabular-nums">
+              <p className="text-text text-lg font-semibold tabular-nums">
                 {plan.name} · ${plan.oneTimePriceUsd}{" "}
-                <span className="text-muted-foreground text-base font-normal">
+                <span className="text-text-secondary text-base font-normal">
                   one-time
                 </span>
               </p>
-              <p className="text-muted-foreground max-w-lg text-sm leading-relaxed">
+              <p className="text-text-secondary max-w-lg text-sm leading-relaxed">
                 Permanent Founder-tier access on this account after payment
                 confirms. No subscription - pay once, no recurring bill.
               </p>
@@ -94,7 +94,7 @@ export function FounderCheckoutModal({
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-muted text-muted-foreground hover:bg-muted/80 focus:ring-ring shrink-0 rounded-lg border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 shrink-0 rounded-lg border px-3 py-2 text-sm font-medium"
               >
                 Close
               </button>
@@ -116,11 +116,11 @@ export function FounderCheckoutModal({
               <section aria-labelledby="founder-panel-ln">
                 <h4
                   id="founder-panel-ln"
-                  className="text-foreground mb-1 text-base font-semibold"
+                  className="text-text mb-1 text-base font-semibold"
                 >
                   One-time Lightning payment
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   Single Lightning invoice. When it clears, this account is
                   granted permanent Founder-tier access.
                 </p>
@@ -132,11 +132,11 @@ export function FounderCheckoutModal({
               <section aria-labelledby="founder-panel-btc">
                 <h4
                   id="founder-panel-btc"
-                  className="text-foreground mb-1 text-base font-semibold"
+                  className="text-text mb-1 text-base font-semibold"
                 >
                   Bitcoin on-chain
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   On-chain via BTCPay. Founder access activates after required
                   confirmations - same outcome as Lightning, different rail.
                 </p>
@@ -153,11 +153,11 @@ export function FounderCheckoutModal({
             lifetimeOneTime
           />
 
-          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="stack-tight border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <DialogClose asChild>
               <button
                 type="button"
-                className="border-border bg-background text-muted-foreground hover:bg-muted/60 focus:ring-ring order-2 rounded-lg border px-4 py-2.5 text-sm font-medium focus:ring-2 focus:outline-none sm:order-1"
+                className="focus-ring border-border bg-canvas text-text-secondary hover:bg-surface-hover/60 order-2 rounded-lg border px-4 py-2.5 text-sm font-medium sm:order-1"
               >
                 Cancel
               </button>
@@ -168,7 +168,7 @@ export function FounderCheckoutModal({
                   type="button"
                   onClick={onSelectManual}
                   disabled={isSubmitting}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -186,7 +186,7 @@ export function FounderCheckoutModal({
                   type="button"
                   onClick={onSelectBtcOnchain}
                   disabled={isSubmitting}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors focus:ring-2 focus:outline-none disabled:opacity-50"
+                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

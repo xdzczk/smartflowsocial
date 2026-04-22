@@ -45,11 +45,11 @@ export function ConnectionHistory({
       case "success":
         return <CheckCircle className="text-success h-4 w-4" />;
       case "failure":
-        return <XCircle className="text-destructive h-4 w-4" />;
+        return <XCircle className="text-danger h-4 w-4" />;
       case "timeout":
-        return <AlertCircle className="text-destructive h-4 w-4" />;
+        return <AlertCircle className="text-danger h-4 w-4" />;
       default:
-        return <Info className="text-muted-foreground h-4 w-4" />;
+        return <Info className="text-text-secondary h-4 w-4" />;
     }
   };
 
@@ -58,17 +58,17 @@ export function ConnectionHistory({
       case "success":
         return "text-success";
       case "failure":
-        return "text-destructive";
+        return "text-danger";
       case "timeout":
-        return "text-destructive";
+        return "text-danger";
       default:
-        return "text-muted-foreground";
+        return "text-text-secondary";
     }
   };
 
   if (entries.length === 0) {
     return (
-      <div className="text-muted-foreground rounded-md border p-4 text-center text-sm">
+      <div className="text-text-secondary rounded-md border p-4 text-center text-sm">
         No runtime events available
       </div>
     );
@@ -120,7 +120,7 @@ export function ConnectionHistory({
         {displayedEntries.map((entry) => (
           <div
             key={entry.id}
-            className="bg-muted/30 hover:bg-muted/50 flex min-w-0 items-start gap-3 rounded-md border p-3 transition-colors"
+            className="bg-surface-hover/30 hover:bg-surface-hover/50 motion-fast flex min-w-0 items-start gap-3 rounded-md border p-3"
           >
             <div className="mt-0.5">{getEntryIcon(entry)}</div>
             <div className="min-w-0 flex-1 space-y-1">
@@ -130,20 +130,20 @@ export function ConnectionHistory({
                 >
                   {entry.message}
                 </span>
-                <span className="text-muted-foreground shrink-0 text-xs">
+                <span className="text-text-secondary shrink-0 text-xs">
                   {format(new Date(entry.timestamp), "MMM d, HH:mm:ss")}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">
+              <div className="cluster">
+                <span className="text-text-secondary text-xs">
                   {entry.type}
                 </span>
                 {entry.details && Object.keys(entry.details).length > 0 ? (
-                  <details className="text-muted-foreground text-xs">
-                    <summary className="hover:text-foreground cursor-pointer">
+                  <details className="text-text-secondary text-xs">
+                    <summary className="hover:text-text cursor-pointer">
                       Details
                     </summary>
-                    <pre className="bg-background mt-1 rounded p-2 text-xs">
+                    <pre className="bg-canvas mt-1 rounded-xs p-2 text-xs">
                       {JSON.stringify(entry.details, null, 2)}
                     </pre>
                   </details>

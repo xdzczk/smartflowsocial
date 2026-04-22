@@ -31,13 +31,13 @@ export function BulkComposerPostCardReviewBody({
       onClick={() => onMediaClick(reviewDisplay.mediaUrl)}
     />
   ) : !reviewDisplay.caption ? (
-    <div className="bg-muted text-muted-foreground flex h-24 w-full max-w-44 items-center justify-center rounded-lg text-xs sm:w-24">
+    <div className="bg-surface-hover text-text-secondary flex h-24 w-full max-w-44 items-center justify-center rounded-lg text-xs sm:w-24">
       {reviewDisplay.isRepost ? "REPOST" : "TEXT"}
     </div>
   ) : null;
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+    <div className="stack-tight sm:flex-row sm:items-start">
       {mediaBlock != null ? (
         <div className="flex min-w-0 shrink-0 flex-wrap gap-2">
           {mediaBlock}
@@ -45,26 +45,24 @@ export function BulkComposerPostCardReviewBody({
       ) : null}
       <div className="min-w-0 flex-1 space-y-2">
         {reviewDisplay.caption ? (
-          <p className="text-foreground text-sm leading-snug whitespace-pre-wrap">
+          <p className="text-text text-sm leading-snug whitespace-pre-wrap">
             {reviewDisplay.caption}
           </p>
         ) : null}
-        <dl className="text-muted-foreground grid w-full gap-1 text-xs">
+        <dl className="text-text-secondary grid w-full gap-1 text-xs">
           <div className="flex justify-between gap-2">
             <dt>Scheduled</dt>
-            <dd className="text-foreground font-medium">
+            <dd className="text-text font-medium">
               {reviewDisplay.scheduledLabel}
             </dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt>Queue</dt>
-            <dd className="text-foreground font-medium">
-              {preparedEvent.queueType}
-            </dd>
+            <dd className="text-text font-medium">{preparedEvent.queueType}</dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt>Follow-up</dt>
-            <dd className="text-foreground text-right font-medium">
+            <dd className="text-text text-right font-medium">
               {followUpSummaryLine(
                 post,
                 bulkRepostConditions,
@@ -74,7 +72,7 @@ export function BulkComposerPostCardReviewBody({
           </div>
           <div className="flex justify-between gap-2">
             <dt>Hide tags</dt>
-            <dd className="text-foreground font-medium">
+            <dd className="text-text font-medium">
               {post.includeHashtagsInNoteBody === false ? "On" : "Off"}
             </dd>
           </div>

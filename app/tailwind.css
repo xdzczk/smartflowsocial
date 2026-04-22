@@ -63,11 +63,6 @@ body.has-btcpay-confirmation-bar {
     animation: flow-next-shadow-glow var(--flow-glow-duration, 3s) ease-in-out infinite;
   }
 
-  /* Flow cards: slightly lighter surface in dark mode for contrast with Flow section */
-  .dark .flow-card-surface {
-    background-color: hsl(0 0% 9.5%);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .animate-flow-next-shadow-glow {
       animation-duration: 4s;
@@ -105,6 +100,25 @@ body.has-btcpay-confirmation-bar {
   }
 }
 
+/* ============================================================================
+ * @theme — Tailwind v4 token surface
+ *
+ * Naming policy (Phase 1b):
+ *   - Existing token names (background, card, popover, primary, primary-action,
+ *     accent, secondary, muted, border, input, ring, destructive, success,
+ *     foreground, muted-foreground, *-foreground) are kept so today's ~3,000
+ *     consumers do not break.
+ *   - New canonical names are added alongside (canvas, surface, surface-raised,
+ *     surface-overlay, surface-hover, surface-active, surface-selected, text,
+ *     text-secondary, text-tertiary, border-strong, brand, brand-strong,
+ *     brand-soft, danger, warning, focus-ring, shadow-1/2/3).
+ *   - Old names are aliased (CSS-var indirection) onto the new system; values
+ *     are shared, so renaming consumers in Phase 1c is purely cosmetic.
+ *   - Per-feature islands (calendar-*, landing-*, switch-*, queue-*) collapse
+ *     into the global system but the *names* stay aliased for one phase to
+ *     avoid touching feature consumers in this PR.
+ * ========================================================================= */
+
 @theme {
   /* Font families */
   --font-sans:
@@ -112,48 +126,154 @@ body.has-btcpay-confirmation-bar {
     Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Custom spacing scale */
+  /* Spacing extensions */
   --spacing-18: 4.5rem;
   --spacing-88: 22rem;
   --spacing-128: 32rem;
 
-  /* Border radius - will reference CSS variables defined in :root */
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  /* ---------- Radius ladder (5 steps + full) ----------
+     Each step is tied to a component family. New code SHOULD pick the
+     semantic step, not raw pixel values. The ladder progression is
+     intentional (4 → 6 → 10 → 14 → 16) — wider gaps between control and
+     panel sizes than between panel and modal, so the "modal feels special"
+     distinction reads as a small but intentional bump.
 
-  /* Colors - reference CSS variables that will be defined in :root */
-  /* In v4, colors can reference other CSS variables using hsl() */
+       xs (4px)   icon buttons, inline dismiss, dot indicators, micro pills
+       sm (6px)   small controls (h-7/h-8), badges, chips, segmented tabs
+       md (10px)  default buttons (h-9), inputs, list items, dropdown items
+       lg (14px)  cards, panels, sticky rails, popovers
+       xl (16px)  modals, dialogs, sheets, hero cards
+
+     Migration note: stock Tailwind `rounded-xl` is 12px. We REDEFINE it to
+     16px so the modal/hero family reads as visibly more rounded than the
+     panel family. `rounded-2xl` is intentionally NOT defined — sweep those
+     to `rounded-xl`. Bare `rounded` (4px stock) maps to our `rounded-xs`. */
+  --radius-xs: 0.25rem;  /* 4px */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.625rem; /* 10px */
+  --radius-lg: 0.875rem; /* 14px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-full: 9999px;
+
+  /* Legacy --radius (used by per-feature CSS like Calendar). Pinned to md. */
+  --radius: var(--radius-md);
+
+  /* ---------- Surfaces ---------- */
+  --color-canvas: hsl(var(--canvas));
+  --color-surface: hsl(var(--surface));
+  --color-surface-raised: hsl(var(--surface-raised));
+  --color-surface-overlay: hsl(var(--surface-overlay));
+  --color-surface-hover: hsl(var(--surface-hover));
+  --color-surface-active: hsl(var(--surface-active));
+  --color-surface-selected: hsl(var(--surface-selected));
+  --color-surface-selected-foreground: hsl(var(--surface-selected-foreground));
+
+  /* Legacy surface aliases (kept until Phase 1c finishes consumer rename) */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-action: hsl(var(--primary-action));
-  --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-success: hsl(var(--success));
-  --color-success-foreground: hsl(var(--success-foreground));
-  --color-checkbox: hsl(var(--checkbox));
-  --color-checkbox-foreground: hsl(var(--checkbox-foreground));
+
+  /* ---------- Text ---------- */
+  --color-text: hsl(var(--text));
+  --color-text-secondary: hsl(var(--text-secondary));
+  --color-text-tertiary: hsl(var(--text-tertiary));
+  --color-text-on-brand: hsl(var(--text-on-brand));
+
+  /* ---------- Borders ---------- */
   --color-border: hsl(var(--border));
   --color-border-subtle: hsl(var(--border-subtle));
+  --color-border-strong: hsl(var(--border-strong));
   --color-input: hsl(var(--input));
+
+  /* ---------- Brand ---------- */
+  --color-brand: hsl(var(--brand));
+  --color-brand-strong: hsl(var(--brand-strong));
+  --color-brand-soft: hsl(var(--brand-soft));
+  --color-brand-on: hsl(var(--brand-on));
+
+  /* Legacy brand aliases */
+  --color-primary: hsl(var(--primary));
+  --color-primary-action: hsl(var(--primary-action));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  /* ---------- Status ----------
+   * Two foreground families:
+   *   --*-foreground : pairs with the SOLID status fill (Toast, action button) — near-white
+   *   --*-text       : pairs with the TINTED status WASH (Alert, Badge, Notice) —
+   *                    saturated dark in light mode, saturated light in dark mode,
+   *                    so legibility on alpha-tinted backgrounds clears WCAG AA.
+   */
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-text: hsl(var(--success-text));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-warning-text: hsl(var(--warning-text));
+  --color-danger: hsl(var(--danger));
+  --color-danger-foreground: hsl(var(--danger-foreground));
+  --color-danger-text: hsl(var(--danger-text));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+  --color-info-text: hsl(var(--info-text));
+  --color-brand-text: hsl(var(--brand-text));
+
+  /* Legacy danger aliases */
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  /* ---------- Misc ---------- */
+  --color-checkbox: hsl(var(--checkbox));
+  --color-checkbox-foreground: hsl(var(--checkbox-foreground));
+
+  --color-focus-ring: hsl(var(--focus-ring));
+  /* Legacy ring alias */
   --color-ring: hsl(var(--ring));
+
+  /* Charts (data-vis, untouched in Phase 1) */
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+
+  /* ---------- Elevation (shadow ladder) ----------
+   *
+   * Surface + shadow + border together form an elevation tier. Use the same
+   * tier for every component playing the same architectural role.
+   *
+   *   Tier 0 — flat content (in-flow paragraphs, lists)
+   *     no surface, no shadow, no border. Just typography on canvas.
+   *
+   *   Tier 1 — content card, form section (most common)
+   *     bg-surface  border border-border-subtle  shadow-1
+   *     Subtle hairline + 1px shadow. Premium, not loud. Default for Card.
+   *
+   *   Tier 2 — feature panel, key dashboard card, sticky rail
+   *     bg-surface (or bg-surface-raised)  border border-border  shadow-2
+   *     Stronger border + 4px shadow. "Important" surface that deserves emphasis.
+   *
+   *   Tier 3 — overlay / popover / dropdown / sheet (transient floating surface)
+   *     bg-surface-overlay  border border-border  shadow-3
+   *     Highest surface brightness + stacked shadow. For things that float
+   *     above the canvas and dismiss.
+   *
+   * Migration map from raw Tailwind shadows:
+   *   shadow-sm    → shadow-1
+   *   shadow / shadow-md → shadow-2 (re-evaluate: most are tier-1 cards)
+   *   shadow-lg / shadow-xl / shadow-2xl → shadow-3
+   */
+  --shadow-1: var(--elevation-1);
+  --shadow-2: var(--elevation-2);
+  --shadow-3: var(--elevation-3);
 
   /* Animations */
   --animate-fade-in: fadeIn 0.5s ease-in-out;
@@ -192,42 +312,120 @@ body.has-btcpay-confirmation-bar {
   }
 }
 
+/* ============================================================================
+ * Token values — light + dark
+ *
+ * Light premium principles (Phase 1b changes):
+ *   - Canvas drops to 97.5% so cards (100%) physically lift above the page.
+ *   - Lavender --secondary retired; --secondary becomes a neutral elevated
+ *     grey to match dark mode's role.
+ *   - Popover stays at 100% white (lifts via shadow, not a brighter surface).
+ *
+ * Dark premium principles (Phase 1b changes):
+ *   - Popover/overlay lifts from 6.7% → 10% so menus/dialogs sit *above*
+ *     cards (today they have no surface lift — only border + shadow).
+ *   - --border strengthened from 9.5% → 14% so it reads on top of cards
+ *     (rails no longer need dark:border-white/14 overrides).
+ *   - --destructive saturation/lightness bumped so danger text is legible
+ *     in dark (today 0 50% 28% is too dim for inline text).
+ * ========================================================================= */
+
 @layer base {
   :root {
-    /* Light Mode - Neutral Foundation with Brand Accents */
-    --background: 0 0% 100%; /* White #FFFFFF */
-    --foreground: 0 0% 5%; /* Pure black (neutral) */
-    --card: 0 0% 99%; /* Slightly off-white for depth */
-    --card-foreground: 0 0% 5%; /* Pure black (neutral) */
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%; /* Pure black (neutral) */
-    --primary: 255 77% 51%; /* Calm purple - desaturated by 20% for headlines, subtle accents */
-    --primary-action: 255 97% 51%; /* Action purple - bright for buttons, active states */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 250 25% 90%; /* Pale lavender #C7C8FF */
-    --secondary-foreground: 0 0% 5%; /* Pure black (neutral) */
-    --muted: 0 0% 98%; /* Neutral light gray */
-    --muted-foreground: 25 10% 38%; /* Stronger secondary for light auth / body */
-    --accent: 255 60% 70%; /* Medium lavender #8B66FF */
-    --accent-foreground: 0 0% 100%; /* White */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 36%; /* Green-600 equivalent */
-    --success-foreground: 0 0% 100%; /* White */
-    --checkbox: 0 0% 50%; /* Neutral gray for checkboxes */
-    --checkbox-foreground: 0 0% 100%; /* White checkmark */
-    --border: 0 0% 86%; /* Slightly stronger panel edges in light */
-    --border-subtle: 0 0% 92%; /* Softer border for cards/surfaces (~30% less contrast) */
-    --input: 0 0% 90%; /* Neutral input border */
-    --ring: 255 97% 51%; /* Action purple for focus states */
-    --chart-1: 255 97% 51%; /* Brand primary */
-    --chart-2: 255 60% 70%; /* Brand secondary */
-    --chart-3: 250 100% 31%; /* Deep indigo #1E03A0 */
-    --chart-4: 250 25% 80%; /* Light lavender */
-    --chart-5: 250 100% 5%; /* Dark indigo */
-    --radius: 0.625rem; /* Softer corners (was 0.5rem) */
+    /* ---------- Surfaces ---------- */
+    --canvas: 0 0% 97.5%;             /* page background — slightly off-white so cards lift */
+    --surface: 0 0% 100%;             /* card / panel surface (pure white) */
+    --surface-raised: 0 0% 100%;      /* elevated card; in light, lift comes from shadow */
+    --surface-overlay: 0 0% 100%;     /* menus / popovers / dialogs */
+    --surface-hover: 0 0% 96%;        /* row / item hover background */
+    --surface-active: 0 0% 93%;       /* pressed state */
+    --surface-selected: 255 60% 96%;  /* subtle brand wash for selected items */
+    --surface-selected-foreground: 255 77% 35%;
 
-    /* Switch / toggle — distinct off-state on cards; brand on-state (see .dark for contrast pass) */
+    /* Legacy surface aliases (point to new tokens) */
+    --background: var(--canvas);
+    --card: var(--surface);
+    --popover: var(--surface-overlay);
+    --muted: var(--surface-hover);     /* "muted" was used as hover-bg; aligns intent */
+    --secondary: 0 0% 95%;             /* retired lavender; neutral elevated grey */
+
+    /* ---------- Text ---------- */
+    --text: 0 0% 9%;                   /* primary text (slightly softer than 5%) */
+    --text-secondary: 25 8% 38%;       /* same as old --muted-foreground */
+    --text-tertiary: 0 0% 50%;         /* helper / placeholder / timestamps */
+    --text-on-brand: 0 0% 100%;
+
+    /* Legacy text aliases */
+    --foreground: var(--text);
+    --card-foreground: var(--text);
+    --popover-foreground: var(--text);
+    --muted-foreground: var(--text-secondary);
+    --secondary-foreground: var(--text);
+
+    /* ---------- Borders ---------- */
+    --border-subtle: 0 0% 93%;         /* hairline on cards; lift carries the rest */
+    --border: 0 0% 88%;                /* default — inputs, dividers */
+    --border-strong: 0 0% 75%;         /* emphasized — selected outline, focus border */
+    --input: var(--border);            /* input border merged into --border */
+
+    /* ---------- Brand ---------- */
+    --brand: 255 77% 51%;              /* calm purple — headlines, subtle accents */
+    --brand-strong: 255 97% 51%;       /* action purple — primary buttons, focus ring */
+    --brand-soft: 255 60% 70%;         /* lavender — accent fill / hover wash */
+    --brand-on: 0 0% 100%;
+
+    /* Legacy brand aliases */
+    --primary: var(--brand);
+    --primary-action: var(--brand-strong);
+    --primary-foreground: var(--brand-on);
+    --accent: var(--brand-soft);
+    --accent-foreground: var(--brand-on);
+
+    /* ---------- Focus ring ---------- */
+    --focus-ring: var(--brand-strong);
+    --ring: var(--focus-ring);         /* legacy alias */
+
+    /* ---------- Status ---------- */
+    --success: 142 70% 36%;
+    --success-foreground: 0 0% 100%;
+    /* Status text on tinted washes — saturated dark for AA on alpha-tinted bg */
+    --success-text: 142 72% 20%;
+
+    --warning: 38 92% 45%;             /* NEW — retires raw amber-* in alerts */
+    --warning-foreground: 0 0% 12%;
+    --warning-text: 32 92% 22%;
+
+    --danger: 0 78% 50%;
+    --danger-foreground: 0 0% 100%;
+    --danger-text: 0 76% 30%;
+
+    --info: 217 91% 50%;               /* "scheduled / live / preview" status */
+    --info-foreground: 0 0% 100%;
+    --info-text: 217 80% 28%;          /* AA on alpha-tinted bg */
+
+    --brand-text: 255 70% 30%;         /* dark brand for use on brand-soft washes */
+
+    /* Legacy danger aliases */
+    --destructive: var(--danger);
+    --destructive-foreground: var(--danger-foreground);
+
+    /* ---------- Misc ---------- */
+    --checkbox: 0 0% 50%;
+    --checkbox-foreground: 0 0% 100%;
+
+    /* ---------- Charts (untouched) ---------- */
+    --chart-1: 255 97% 51%;
+    --chart-2: 255 60% 70%;
+    --chart-3: 250 100% 31%;
+    --chart-4: 250 25% 80%;
+    --chart-5: 250 100% 5%;
+
+    /* ---------- Elevation ---------- */
+    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
+    --elevation-2: 0 4px 12px 0 hsl(0 0% 0% / 0.06);
+    --elevation-3: 0 12px 32px 0 hsl(0 0% 0% / 0.10);
+
+    /* ---------- Switch / toggle (sealed island; values unchanged) ---------- */
     --switch-track-off: 0 0% 91%;
     --switch-track-off-hover: 0 0% 86%;
     --switch-border-off: 0 0% 74%;
@@ -244,77 +442,137 @@ body.has-btcpay-confirmation-bar {
     --switch-track-on-disabled: 255 42% 72%;
     --switch-border-on-disabled: 255 38% 62%;
     --switch-thumb-on-disabled: 0 0% 100%;
+    /* Switch thumb shadow tokens (replaces raw hsl literals in switch.tsx) */
+    --switch-thumb-shadow-off: 0 1px 2px hsl(0 0% 0% / 0.14);
+    --switch-thumb-shadow-on: 0 1px 2px hsl(255 97% 20% / 0.35);
 
-    /* Calendar: Surface & elevation (Surface 0 = --background). Use only these in Calendar. */
-    --calendar-surface-1-bg: 0 0% 99%; /* Surface 1 – main content container */
+    /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
+    /* Surface 1 = main content container */
+    --calendar-surface-1-bg: var(--surface);
     --calendar-surface-1-shadow: none;
-    --calendar-surface-1-radius: 0.875rem; /* 14px – large panels */
-    --calendar-surface-2-bg: 0 0% 99%; /* Surface 2 – calendar panel */
-    --calendar-surface-2-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
-    --calendar-surface-2-radius: 0.875rem;
-    --calendar-surface-2-border: 0 0% 90%;
-    --calendar-surface-3-bg: 0 0% 99%;
-    --calendar-surface-3-border: 0 0% 90%;
-    --calendar-surface-3-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04); /* Post card */
-    --calendar-surface-3-radius: 0.625rem; /* 10px – cards */
-    --calendar-surface-4-bg: 0 0% 98%; /* Hover/active */
-    --calendar-surface-4-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.08);
-    /* Calendar radius scale: 6px (controls), 10px (cards), 14px (panels). No other values. */
-    --calendar-radius-sm: 0.375rem; /* 6px – small controls / toggles */
-    --calendar-radius-md: 0.625rem; /* 10px – cards / post blocks */
-    --calendar-radius-lg: 0.875rem; /* 14px – large panels */
+    --calendar-surface-1-radius: var(--radius-lg);
+    /* Surface 2 = calendar panel */
+    --calendar-surface-2-bg: var(--surface);
+    --calendar-surface-2-shadow: var(--elevation-1);
+    --calendar-surface-2-radius: var(--radius-lg);
+    --calendar-surface-2-border: var(--border-subtle);
+    /* Surface 3 = post card */
+    --calendar-surface-3-bg: var(--surface);
+    --calendar-surface-3-border: var(--border-subtle);
+    --calendar-surface-3-shadow: var(--elevation-1);
+    --calendar-surface-3-radius: var(--radius-md);
+    /* Surface 4 = hover/active */
+    --calendar-surface-4-bg: var(--surface-hover);
+    --calendar-surface-4-shadow: var(--elevation-2);
+    /* Calendar radius scale folds into global. */
+    --calendar-radius-sm: var(--radius-sm);
+    --calendar-radius-md: var(--radius-md);
+    --calendar-radius-lg: var(--radius-lg);
     --calendar-transition-duration: 200ms;
     --calendar-transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    /* Bug fix: this token was consumed by DayViewSidebar but never defined. */
+    --calendar-accent-purple: var(--brand);
 
-    /* Landing page specific variables */
-    --landing-card-elevated: 0 0% 99%;
-    --landing-section-alt: 0 0% 100%;
+    /* ---------- Landing (sealed island; values aligned) ---------- */
+    --landing-card-elevated: var(--surface-raised);
+    --landing-section-alt: var(--canvas);
   }
+
   .dark {
-    /* Dark Mode - True Neutral Foundation with Brand Accents */
-    /* Three-layer neutral system (no color bias) */
-    --background: 0 0% 4.3%; /* Base canvas #0B0B0D */
-    --foreground: 0 0% 98%; /* White */
-    --card: 0 0% 6.7%; /* Surface panels #111114 */
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6.7%; /* Surface panels */
-    --popover-foreground: 0 0% 98%;
-    --secondary: 0 0% 12%; /* Neutral grey, no blue tint */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 7.5%; /* Between surface and elevated */
-    --muted-foreground: 30 5% 60%; /* Warm grey #9A948F for secondary text */
-    --border: 0 0% 9.5%; /* Borders/dividers - subtle, felt not seen */
-    --border-subtle: 0 0% 7%; /* Softer border for cards (~30% less contrast) */
-    --input: 0 0% 9.5%; /* Input borders - matches border */
+    /* ---------- Surfaces ---------- */
+    --canvas: 0 0% 4.3%;               /* base canvas */
+    --surface: 0 0% 6.7%;              /* card / panel */
+    --surface-raised: 0 0% 8.5%;       /* elevated cards (Flow cards, right rails) */
+    --surface-overlay: 0 0% 10%;       /* menus / popovers / dialogs — actually lifts above cards */
+    --surface-hover: 0 0% 9%;          /* row / item hover */
+    --surface-active: 0 0% 11.5%;      /* pressed */
+    --surface-selected: 255 30% 14%;   /* brand-tinted selection wash */
+    --surface-selected-foreground: 0 0% 98%;
 
-    /* Brand colors - two-purple system */
-    --primary: 255 77% 51%; /* Calm purple - desaturated for headlines, subtle accents */
-    --primary-action: 255 97% 51%; /* Action purple - bright for buttons, active states */
-    --primary-foreground: 0 0% 100%;
-    --accent: 255 60% 70%; /* Medium lavender #8B66FF - hover/selection */
-    --accent-foreground: 0 0% 100%;
-    --ring: 255 97% 51%; /* Action purple for focus states */
+    /* Legacy surface aliases */
+    --background: var(--canvas);
+    --card: var(--surface);
+    --popover: var(--surface-overlay);
+    --muted: var(--surface-hover);
+    --secondary: 0 0% 12%;             /* unchanged from prior dark value */
 
-    /* Destructive actions - desaturated by ~25% for restraint */
-    --destructive: 0 50% 28%;
-    --destructive-foreground: 0 0% 98%;
+    /* ---------- Text ---------- */
+    --text: 0 0% 98%;
+    --text-secondary: 30 5% 65%;       /* slightly stronger than prior 60% for legibility */
+    --text-tertiary: 0 0% 52%;
+    --text-on-brand: 0 0% 100%;
 
-    /* Success actions - desaturated by ~25% for restraint */
-    --success: 142 50% 40%; /* Desaturated green for dark backgrounds */
-    --success-foreground: 0 0% 100%; /* White */
+    /* Legacy text aliases */
+    --foreground: var(--text);
+    --card-foreground: var(--text);
+    --popover-foreground: var(--text);
+    --muted-foreground: var(--text-secondary);
+    --secondary-foreground: var(--text);
 
-    /* Checkbox - neutral gray for selection states */
-    --checkbox: 0 0% 60%; /* Neutral gray for checkboxes in dark mode */
-    --checkbox-foreground: 0 0% 100%; /* White checkmark */
+    /* ---------- Borders ----------
+       Strengthened from prior 9.5% → 14% so borders read on cards/rails and the
+       per-feature dark:border-white/14 overrides are no longer needed. */
+    --border-subtle: 0 0% 9%;          /* hairline on cards */
+    --border: 0 0% 14%;                /* default — inputs, dividers */
+    --border-strong: 0 0% 22%;         /* emphasized */
+    --input: var(--border);
 
-    /* Chart colors - keep brand for data visualization */
-    --chart-1: 255 97% 51%; /* Brand primary */
-    --chart-2: 255 60% 70%; /* Brand secondary */
-    --chart-3: 250 100% 31%; /* Deep indigo #1E03A0 */
-    --chart-4: 250 25% 60%; /* Medium lavender */
-    --chart-5: 250 25% 80%; /* Light lavender */
+    /* ---------- Brand (unchanged hues) ---------- */
+    --brand: 255 77% 51%;
+    --brand-strong: 255 97% 51%;
+    --brand-soft: 255 60% 70%;
+    --brand-on: 0 0% 100%;
 
-    /* Switch / toggle — visible off-track vs card (~6.7%); decisive purple on-state */
+    --primary: var(--brand);
+    --primary-action: var(--brand-strong);
+    --primary-foreground: var(--brand-on);
+    --accent: var(--brand-soft);
+    --accent-foreground: var(--brand-on);
+
+    /* ---------- Focus ring ---------- */
+    --focus-ring: var(--brand-strong);
+    --ring: var(--focus-ring);
+
+    /* ---------- Status ---------- */
+    --success: 142 50% 40%;            /* unchanged */
+    --success-foreground: 0 0% 100%;
+    /* Status text on tinted washes — light & saturated for AA on dark alpha-tinted bg */
+    --success-text: 142 55% 78%;
+
+    --warning: 38 70% 50%;             /* NEW */
+    --warning-foreground: 0 0% 5%;
+    --warning-text: 38 78% 78%;
+
+    --danger: 0 60% 50%;               /* lifted from prior 0 50% 28% (too dim for text) */
+    --danger-foreground: 0 0% 98%;
+    --danger-text: 0 80% 82%;
+
+    --info: 217 80% 60%;               /* "scheduled / live / preview" status */
+    --info-foreground: 0 0% 100%;
+    --info-text: 217 75% 80%;
+
+    --brand-text: 255 65% 82%;
+
+    --destructive: var(--danger);
+    --destructive-foreground: var(--danger-foreground);
+
+    /* ---------- Misc ---------- */
+    --checkbox: 0 0% 60%;
+    --checkbox-foreground: 0 0% 100%;
+
+    /* ---------- Charts ---------- */
+    --chart-1: 255 97% 51%;
+    --chart-2: 255 60% 70%;
+    --chart-3: 250 100% 31%;
+    --chart-4: 250 25% 60%;
+    --chart-5: 250 25% 80%;
+
+    /* ---------- Elevation (deeper shadows for dark) ---------- */
+    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.30);
+    --elevation-2: 0 4px 12px 0 hsl(0 0% 0% / 0.40);
+    --elevation-3: 0 16px 40px 0 hsl(0 0% 0% / 0.55);
+
+    /* ---------- Switch (sealed island) ---------- */
     --switch-track-off: 0 0% 15%;
     --switch-track-off-hover: 0 0% 18%;
     --switch-border-off: 0 0% 28%;
@@ -331,21 +589,350 @@ body.has-btcpay-confirmation-bar {
     --switch-track-on-disabled: 255 52% 34%;
     --switch-border-on-disabled: 255 44% 28%;
     --switch-thumb-on-disabled: 0 0% 82%;
+    --switch-thumb-shadow-off: 0 1px 3px hsl(0 0% 0% / 0.4);
+    --switch-thumb-shadow-on: 0 1px 2px hsl(255 97% 20% / 0.35);
 
-    /* Landing page specific variables */
-    --landing-card-elevated: 0 0% 8.6%; /* Elevated cards #16161A */
-    --landing-section-alt: 0 0% 4.3%; /* Base canvas for alternation */
+    /* ---------- Calendar (sealed island) ---------- */
+    --calendar-surface-1-bg: var(--surface);
+    --calendar-surface-2-bg: var(--surface);
+    --calendar-surface-2-shadow: var(--elevation-1);
+    --calendar-surface-2-border: var(--border);
+    --calendar-surface-3-bg: var(--surface);
+    --calendar-surface-3-border: var(--border);
+    --calendar-surface-3-shadow: var(--elevation-1);
+    --calendar-surface-4-bg: var(--surface-hover);
+    --calendar-surface-4-shadow: var(--elevation-2);
 
-    /* Calendar: Surface & elevation (dark) */
-    --calendar-surface-1-bg: 0 0% 6.7%;
-    --calendar-surface-2-bg: 0 0% 6.7%;
-    --calendar-surface-2-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
-    --calendar-surface-2-border: 0 0% 9.5%;
-    --calendar-surface-3-bg: 0 0% 6.7%;
-    --calendar-surface-3-border: 0 0% 9.5%;
-    --calendar-surface-3-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.15);
-    --calendar-surface-4-bg: 0 0% 9%;
-    --calendar-surface-4-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.25);
+    /* ---------- Landing (sealed island) ---------- */
+    --landing-card-elevated: var(--surface-raised);
+    --landing-section-alt: var(--canvas);
+  }
+}
+
+/* ============================================================================
+ * Typography ladder (Phase 1e-4)
+ *
+ * Semantic text utilities that bundle size + line-height + tracking + weight
+ * into one class. Use these instead of composing raw `text-{size} font-{weight}
+ * tracking-{x}` chains so the rhythm stays consistent across pages.
+ *
+ * The ladder (top → bottom):
+ *   text-display    36px / 1.05 / -0.025em / 700  marketing hero, splash, big empty states
+ *   text-h1         28px / 1.15 / -0.020em / 700  page titles ("Dashboard", "Settings")
+ *   text-h2         22px / 1.20 / -0.015em / 600  section / modal titles
+ *   text-h3         18px / 1.30 / -0.010em / 600  card titles, subsection headers
+ *   text-h4         15px / 1.40 /  0       / 600  inline headers, KPI values
+ *   text-body       14px / 1.50 /  0       / 400  default body / paragraph
+ *   text-body-sm    13px / 1.45 /  0       / 400  secondary body / form help
+ *   text-caption    12px / 1.40 /  0.005em / 500  meta, timestamps, footnotes
+ *   text-overline   11px / 1.40 /  0.080em / 600  tiny uppercase section labels (UPPERCASE)
+ *
+ * Migration mapping from raw classes:
+ *   text-4xl/5xl + bold        →  text-display
+ *   text-2xl/3xl + bold        →  text-h1
+ *   text-xl + semibold         →  text-h2
+ *   text-lg + semibold         →  text-h3
+ *   text-base + semibold       →  text-h4
+ *   text-sm                    →  text-body
+ *   text-xs                    →  text-caption (or text-body-sm if it's prose)
+ *   text-[11px] uppercase      →  text-overline
+ * ========================================================================= */
+
+@utility text-display {
+  font-size: 2.25rem;        /* 36px */
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+@utility text-h1 {
+  font-size: 1.75rem;        /* 28px */
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+@utility text-h2 {
+  font-size: 1.375rem;       /* 22px */
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+@utility text-h3 {
+  font-size: 1.125rem;       /* 18px */
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+@utility text-h4 {
+  font-size: 0.9375rem;      /* 15px */
+  line-height: 1.4;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+@utility text-body {
+  font-size: 0.875rem;       /* 14px */
+  line-height: 1.5;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+@utility text-body-sm {
+  font-size: 0.8125rem;      /* 13px */
+  line-height: 1.45;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+@utility text-caption {
+  font-size: 0.75rem;        /* 12px */
+  line-height: 1.4;
+  letter-spacing: 0.005em;
+  font-weight: 500;
+}
+@utility text-overline {
+  font-size: 0.6875rem;      /* 11px */
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+ * Spacing rhythm (Phase 1f)
+ *
+ * Atomic spacing keeps Tailwind's 4px base scale (p-1 = 4, p-2 = 8, p-3 = 12,
+ * p-4 = 16, p-6 = 24, p-8 = 32). The atomic scale is fine; the problem the
+ * codebase had was *intent* — 541 `gap-2`, 231 `space-y-2`, 214 `p-4`, but
+ * spread across many semantically-different surfaces (cards, modals, page
+ * shells, list items) without any signal of which-is-which.
+ *
+ * The semantic utilities below encode INTENT, so when reading the JSX you
+ * can tell "this is a section stack" vs "this is a list-item stack" without
+ * counting pixels. They wrap the most common atomic combos.
+ *
+ *   stack-tight     space-y-2 (8px)   form rows, list items, inline lists
+ *   stack           space-y-4 (16px)  default card content
+ *   stack-loose     space-y-6 (24px)  section subdivisions inside a panel
+ *   stack-section   space-y-8 (32px)  page-level section separation
+ *
+ *   cluster-tight   flex items-center gap-1 (4px)  dense icon chains, breadcrumbs
+ *   cluster         flex items-center gap-2 (8px)  default icon+text rows
+ *   cluster-loose   flex items-center gap-3 (12px) toolbar items, button groups
+ *
+ *   inset-card      p-4 (16px)            standard card / panel padding
+ *   inset-card-lg   p-6 (24px)            modal body / hero card padding
+ *   inset-section   px-6 py-8 (24/32)     page section padding
+ *
+ * Migration:
+ *   - Don't mass-sweep. Adopt at the primitive layer (Card, Dialog) and at
+ *     page shells where the intent is unambiguous. Existing atomic spacing
+ *     keeps working — these utilities exist to *signal intent*, not to
+ *     replace the atomic scale.
+ *   - When in doubt: cards use `stack`, page shells use `stack-section`,
+ *     icon+text rows use `cluster`.
+ * ========================================================================= */
+
+/*
+ * Spacing tokens: spacing utilities below pull from these. Wrapping a subtree
+ * with `data-density="compact"` (Phase 1g) overrides these tokens to ~75% so
+ * the entire spacing rhythm tightens uniformly without touching consumers.
+ */
+:root, .dark {
+  --space-stack-tight: 0.5rem;
+  --space-stack: 1rem;
+  --space-stack-loose: 1.5rem;
+  --space-stack-section: 2rem;
+
+  --space-cluster-tight: 0.25rem;
+  --space-cluster: 0.5rem;
+  --space-cluster-loose: 0.75rem;
+
+  --space-inset-card: 1rem;
+  --space-inset-card-lg: 1.5rem;
+  --space-inset-section-x: 1.5rem;
+  --space-inset-section-y: 2rem;
+}
+
+@utility stack-tight   { display: flex; flex-direction: column; gap: var(--space-stack-tight); }
+@utility stack         { display: flex; flex-direction: column; gap: var(--space-stack); }
+@utility stack-loose   { display: flex; flex-direction: column; gap: var(--space-stack-loose); }
+@utility stack-section { display: flex; flex-direction: column; gap: var(--space-stack-section); }
+
+@utility cluster-tight { display: flex; align-items: center; gap: var(--space-cluster-tight); }
+@utility cluster       { display: flex; align-items: center; gap: var(--space-cluster); }
+@utility cluster-loose { display: flex; align-items: center; gap: var(--space-cluster-loose); }
+
+@utility inset-card    { padding: var(--space-inset-card); }
+@utility inset-card-lg { padding: var(--space-inset-card-lg); }
+@utility inset-section { padding: var(--space-inset-section-y) var(--space-inset-section-x); }
+
+/* ============================================================================
+ * Density scope (Phase 1g)
+ *
+ * Apply `data-density="compact"` to any container (data table wrapper, sidebar
+ * rail, dense list, settings sub-panel) to opt that subtree into a tighter
+ * spacing rhythm. The scope tightens stack/cluster gaps and inset paddings to
+ * ~75% of comfortable values, and reduces table cell padding for the common
+ * `<table>` case so AdminDataTable no longer needs a bespoke compact branch.
+ *
+ *   stack-tight     8 → 6
+ *   stack          16 → 12
+ *   stack-loose    24 → 16
+ *   cluster-tight   4 → 4    (already minimal; left alone)
+ *   cluster         8 → 6
+ *   cluster-loose  12 → 8
+ *   inset-card     16 → 12
+ *   inset-card-lg  24 → 16
+ *   table cells    8 → 6
+ *
+ * This is a SCOPE, not a global mode — there's no theme-level "compact density"
+ * toggle. Use it when the local context (data table, dense rail) needs more
+ * information per pixel, not as a user-facing setting.
+ * ========================================================================= */
+
+[data-density="compact"] {
+  --space-stack-tight: 0.375rem;   /* 6px */
+  --space-stack: 0.75rem;          /* 12px */
+  --space-stack-loose: 1rem;       /* 16px */
+  --space-cluster: 0.375rem;       /* 6px */
+  --space-cluster-loose: 0.5rem;   /* 8px */
+  --space-inset-card: 0.75rem;     /* 12px */
+  --space-inset-card-lg: 1rem;     /* 16px */
+}
+
+[data-density="compact"] :where(td, th) {
+  padding: 0.375rem 0.5rem;
+}
+
+/* ============================================================================
+ * Motion (Phase 1g)
+ *
+ * The codebase used `transition-colors duration-200` (or just bare `transition`)
+ * pretty consistently, but the duration/easing choices were ad-hoc whenever
+ * something stepped outside that pattern. This pass anchors all motion to a
+ * three-step duration ladder + four canonical easings, with full
+ * `prefers-reduced-motion` respect.
+ *
+ * Duration ladder (intentional gaps so they read as different speeds, not
+ * variants of "kinda fast"):
+ *
+ *   --motion-fast   120ms   hover, focus, color shifts, ring transitions
+ *   --motion-base   200ms   default appearance changes, accordion, dropdowns
+ *   --motion-slow   320ms   modal open, sheet slide, page transitions
+ *
+ * Easing tokens (premium curves, not browser defaults):
+ *
+ *   --ease-out      cubic-bezier(0.16, 1, 0.3, 1)     decelerate (entrance)
+ *   --ease-in       cubic-bezier(0.7, 0, 0.84, 0)     accelerate (exit)
+ *   --ease-in-out   cubic-bezier(0.65, 0, 0.35, 1)    smooth in/out
+ *   --ease-spring   cubic-bezier(0.34, 1.56, 0.64, 1) slight overshoot (entrances
+ *                                                      that should feel "alive")
+ *
+ * Semantic utilities (one class = property + duration + easing):
+ *
+ *   motion-fast   color/bg/border/opacity/shadow/transform | 120ms | ease-out
+ *   motion-base   same set                                  | 200ms | ease-out
+ *   motion-slow   same set                                  | 320ms | ease-out
+ *
+ * Reduced motion: when the user requests reduced motion, all three durations
+ * collapse to 1ms (instant) so transitions still fire (state still changes
+ * synchronously) but no animation is perceived.
+ *
+ * Migration:
+ *   - `transition-colors duration-200`        → `motion-base`
+ *   - `transition-colors duration-150`        → `motion-fast`
+ *   - `transition` (bare) on a hover/focus     → `motion-base` (most common case)
+ *   - Modal/sheet open/close: keep Radix-driven `data-[state]:animate-*`,
+ *     but use `--motion-slow` if you set custom `duration-300`.
+ * ========================================================================= */
+
+@theme {
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@utility motion-fast {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+@utility motion-base {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-out);
+}
+@utility motion-slow {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-duration: var(--duration-slow);
+  transition-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-slow: 1ms;
+  }
+}
+
+/* ============================================================================
+ * Focus ring recipes (Phase 1j-2)
+ *
+ * Two canonical recipes replace the ~80 ad-hoc focus-ring class strings the
+ * codebase had accumulated. Both:
+ *
+ *   - use the `--focus-ring` design token (= brand-strong) for color
+ *   - use a 2px ring width (1px reads as a hover hint, not a focus signal)
+ *   - hide the default browser outline (`outline-none`) but leave a
+ *     transparent outline so Windows High Contrast / forced-colors mode
+ *     still shows a visible focus indicator
+ *
+ * `focus-ring`        — flush 2px ring on the element edge.
+ *                        Use for inputs, badges, segmented controls, table
+ *                        rows, calendar cells, anything bordered or living
+ *                        inside a row where a gap would clip neighbours.
+ *
+ * `focus-ring-offset` — 2px ring with a 2px canvas-colored "donut" gap.
+ *                        Use for solid CTAs, icon buttons, floating chips —
+ *                        anything sitting visibly on a surface where the
+ *                        gap reads as intentional polish.
+ *
+ * Don't mix-and-match. Picking the wrong recipe is more obvious than the
+ * old per-site spelling, which is the point.
+ * ========================================================================= */
+
+@utility focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring;
+}
+
+@utility focus-ring-offset {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas;
+}
+
+/*
+ * Form controls with `focus-ring` + `aria-invalid="true"` (from <FormControl>,
+ * RHF, or native validation) need a border + focus ring that beats the default
+ * brand focus ring. Attribute selector bumps specificity so we don't rely on
+ * !important or source order. Phase 1j-3.
+ */
+@layer components {
+  .focus-ring[aria-invalid="true"],
+  .focus-ring-offset[aria-invalid="true"] {
+    border-color: hsl(var(--danger));
+  }
+
+  .focus-ring[aria-invalid="true"]:focus-visible,
+  .focus-ring-offset[aria-invalid="true"]:focus-visible {
+    --tw-ring-color: hsl(var(--danger) / 0.5);
   }
 }
 
@@ -373,8 +960,8 @@ body.has-btcpay-confirmation-bar {
     border-color: hsl(var(--border));
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: hsl(var(--canvas));
+    color: hsl(var(--text));
     font-family: var(--font-sans);
   }
   /* Show focus ring only for keyboard focus, not after mouse/touch click.
@@ -383,7 +970,7 @@ body.has-btcpay-confirmation-bar {
     outline: none !important;
     box-shadow: none !important;
   }
-  /* Focus rings: purple only, no white/background offset band */
+  /* Focus rings: brand only, no white/background offset band */
   *:focus-visible {
     --tw-ring-offset-width: 0px !important;
   }
@@ -392,26 +979,26 @@ body.has-btcpay-confirmation-bar {
 @layer components {
   /* Ensure buttons have proper contrast in both modes */
   .btn-primary {
-    background-color: hsl(var(--primary-action));
-    color: hsl(var(--primary-foreground));
+    background-color: hsl(var(--brand-strong));
+    color: hsl(var(--brand-on));
   }
   .btn-primary:hover {
-    background-color: hsl(var(--primary-action) / 0.9);
+    background-color: hsl(var(--brand-strong) / 0.9);
   }
 
   /* Ensure tabs are visible in both modes */
   .tabs-trigger {
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--text-secondary));
   }
   .tabs-trigger[data-state="active"] {
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   /* Ensure form inputs have proper contrast */
   .form-input {
-    border-color: hsl(var(--input));
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--surface));
+    color: hsl(var(--text));
   }
 
   /*
@@ -420,7 +1007,7 @@ body.has-btcpay-confirmation-bar {
    * We do not use @tailwindcss/typography; these rules restore readable article structure.
    */
   .longform-markdown-preview {
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview h1 {
@@ -430,7 +1017,7 @@ body.has-btcpay-confirmation-bar {
     line-height: 2.25rem;
     font-weight: 600;
     letter-spacing: -0.02em;
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview h1:first-child {
@@ -444,7 +1031,7 @@ body.has-btcpay-confirmation-bar {
     line-height: 2rem;
     font-weight: 600;
     letter-spacing: -0.015em;
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview h2:first-child {
@@ -457,7 +1044,7 @@ body.has-btcpay-confirmation-bar {
     font-size: 1.25rem;
     line-height: 1.75rem;
     font-weight: 600;
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview h3:first-child {
@@ -470,7 +1057,7 @@ body.has-btcpay-confirmation-bar {
     font-size: 1.125rem;
     line-height: 1.625rem;
     font-weight: 600;
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview h5,
@@ -480,7 +1067,7 @@ body.has-btcpay-confirmation-bar {
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: 600;
-    color: hsl(var(--foreground));
+    color: hsl(var(--text));
   }
 
   .longform-markdown-preview p {
@@ -524,36 +1111,36 @@ body.has-btcpay-confirmation-bar {
     margin-bottom: 0.75rem;
     border-left: 4px solid hsl(var(--border));
     padding-left: 1rem;
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--text-secondary));
   }
 
   .longform-markdown-preview pre {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
     overflow-x: auto;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-md);
     border: 1px solid hsl(var(--border));
-    background-color: hsl(var(--muted) / 0.35);
+    background-color: hsl(var(--surface-hover) / 0.6);
     padding: 1rem;
     font-size: 0.875rem;
     line-height: 1.6;
   }
 
   .longform-markdown-preview :not(pre) > code {
-    border-radius: 0.25rem;
-    background-color: hsl(var(--muted) / 0.45);
+    border-radius: var(--radius-sm);
+    background-color: hsl(var(--surface-hover) / 0.7);
     padding: 0.125rem 0.375rem;
     font-size: 0.875em;
   }
 
   .longform-markdown-preview a {
-    color: hsl(var(--primary-action));
+    color: hsl(var(--brand-strong));
     text-decoration: underline;
     text-underline-offset: 2px;
   }
 
   .longform-markdown-preview a:hover {
-    color: hsl(var(--primary));
+    color: hsl(var(--brand));
   }
 
   .longform-markdown-preview img {
@@ -561,13 +1148,13 @@ body.has-btcpay-confirmation-bar {
     margin-bottom: 0.75rem;
     max-width: 100%;
     height: auto;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-md);
   }
 
   .longform-markdown-preview del,
   .longform-markdown-preview s {
     text-decoration: line-through;
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--text-secondary));
   }
 
   /* Prevent iOS zoom on input focus: use at least 16px on mobile (otherwise Safari zooms in) */
@@ -587,7 +1174,7 @@ body.has-btcpay-confirmation-bar {
   .landing-texture {
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(var(--foreground) / 0.03) 1px,
+      hsl(var(--text) / 0.03) 1px,
       transparent 0
     );
     background-size: 20px 20px;
@@ -596,17 +1183,17 @@ body.has-btcpay-confirmation-bar {
   .dark .landing-texture {
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(var(--foreground) / 0.05) 1px,
+      hsl(var(--text) / 0.05) 1px,
       transparent 0
     );
   }
 
   /* Dashboard base canvas: 1–2% grain so base feels crafted, not flat */
   .dashboard-canvas {
-    background-color: hsl(var(--background));
+    background-color: hsl(var(--canvas));
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(var(--foreground) / 0.015) 1px,
+      hsl(var(--text) / 0.015) 1px,
       transparent 0
     );
     background-size: 24px 24px;
@@ -615,7 +1202,7 @@ body.has-btcpay-confirmation-bar {
   .dark .dashboard-canvas {
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(var(--foreground) / 0.025) 1px,
+      hsl(var(--text) / 0.025) 1px,
       transparent 0
     );
   }
@@ -623,14 +1210,14 @@ body.has-btcpay-confirmation-bar {
   /* Flow zone: subtle inset shadow so strip feels recessed */
   .flow-zone {
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--foreground) / 0.03),
-      inset 0 -1px 0 0 hsl(var(--foreground) / 0.03);
+      inset 0 1px 0 0 hsl(var(--text) / 0.03),
+      inset 0 -1px 0 0 hsl(var(--text) / 0.03);
   }
 
   .dark .flow-zone {
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--foreground) / 0.04),
-      inset 0 -1px 0 0 hsl(var(--foreground) / 0.04);
+      inset 0 1px 0 0 hsl(var(--text) / 0.04),
+      inset 0 -1px 0 0 hsl(var(--text) / 0.04);
   }
 
   /* Flow slot: smooth position transition when item moves (e.g. next scheduled → last posted) */
@@ -645,13 +1232,13 @@ body.has-btcpay-confirmation-bar {
 
   /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
-    background: linear-gradient(to bottom, hsl(var(--muted) / 0.3), hsl(var(--background)));
+    background: linear-gradient(to bottom, hsl(var(--surface-hover) / 0.5), hsl(var(--canvas)));
   }
 
   .hero-gradient-dark {
     background:
-      radial-gradient(ellipse at top, hsl(var(--muted) / 0.2) 0%, transparent 50%),
-      linear-gradient(to bottom, hsl(var(--muted) / 0.15), hsl(var(--background)));
+      radial-gradient(ellipse at top, hsl(var(--surface-hover) / 0.3) 0%, transparent 50%),
+      linear-gradient(to bottom, hsl(var(--surface-hover) / 0.2), hsl(var(--canvas)));
   }
 
   /* Hero motif backgrounds: use .dark so they follow app theme (not Tailwind’s dark: media query) */
@@ -674,23 +1261,23 @@ body.has-btcpay-confirmation-bar {
     pointer-events: none;
     background: linear-gradient(
       135deg,
-      hsl(var(--background) / 0.72) 0%,
-      hsl(var(--background) / 0.55) 45%,
-      hsl(var(--secondary) / 0.25) 100%
+      hsl(var(--canvas) / 0.72) 0%,
+      hsl(var(--canvas) / 0.55) 45%,
+      hsl(var(--surface-hover) / 0.5) 100%
     );
   }
   .dark .login-motif-panel.hero-motif-bg::before {
     background: linear-gradient(
       135deg,
-      hsl(var(--background) / 0.55) 0%,
-      hsl(var(--background) / 0.35) 50%,
+      hsl(var(--canvas) / 0.55) 0%,
+      hsl(var(--canvas) / 0.35) 50%,
       transparent 100%
     );
   }
 
   /* Hero gradient text for controlled color moment */
   .hero-gradient-text {
-    background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary-action)));
+    background: linear-gradient(to bottom, hsl(var(--brand)), hsl(var(--brand-strong)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -705,11 +1292,7 @@ body.has-btcpay-confirmation-bar {
 
   @media (hover: hover) {
     .card-lift:hover {
-      box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
-    }
-
-    .dark .card-lift:hover {
-      box-shadow: 0 4px 12px hsl(var(--foreground) / 0.12);
+      box-shadow: var(--elevation-2);
     }
   }
 
@@ -722,13 +1305,9 @@ body.has-btcpay-confirmation-bar {
   /* On touch devices, prevent ghost hover from leaving dashboard cards in hover state */
   @media (hover: none) {
     #page-content .card-lift:hover {
-      background-color: hsl(var(--card));
+      background-color: hsl(var(--surface));
       box-shadow: none;
       transform: none;
-    }
-
-    .dark #page-content .card-lift:hover {
-      background-color: hsl(var(--card));
     }
   }
 

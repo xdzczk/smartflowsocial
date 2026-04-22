@@ -8,10 +8,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { DraftsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { DraftsPage } from "~/features/posts/drafts";
+import { DraftsPageSkeleton } from "~/features/posts/drafts/DraftsPageSkeleton";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import {
   handleDraftsAction,

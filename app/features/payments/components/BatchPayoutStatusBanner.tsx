@@ -43,50 +43,50 @@ export function BatchPayoutStatusBanner({
       aria-live="polite"
       aria-busy
       className={cn(
-        "border-border bg-primary/5 relative overflow-hidden rounded-lg border",
+        "border-border bg-brand/5 relative overflow-hidden rounded-lg border",
         className
       )}
     >
       <div
-        className="bg-muted pointer-events-none absolute inset-x-0 top-0 h-1 overflow-hidden"
+        className="bg-surface-hover pointer-events-none absolute inset-x-0 top-0 h-1 overflow-hidden"
         aria-hidden
       >
-        <div className="bg-primary/45 h-full w-full animate-pulse" />
+        <div className="bg-brand/45 h-full w-full animate-pulse" />
       </div>
       <div className="flex items-start gap-3 p-3 pt-4">
         <Loader2
-          className="text-primary mt-0.5 h-4 w-4 shrink-0 animate-spin"
+          className="text-brand mt-0.5 h-4 w-4 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-2">
           <div className="space-y-1">
-            <p className="text-foreground text-sm font-medium">
+            <p className="text-text text-sm font-medium">
               Batch payout in progress
             </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-text-secondary text-xs leading-relaxed">
               Your wallet is paying each Lightning invoice. Progress updates
               after each payment—keep this tab open until it finishes.
             </p>
           </div>
           {progress && progress.totalSteps > 0 ? (
             <>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 Winners processed: {processed} / {progress.totalSteps}
               </p>
-              <div className="bg-muted h-2 overflow-hidden rounded-full">
+              <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
                 <div
-                  className="bg-primary h-full transition-[width] duration-300 ease-out"
+                  className="bg-brand h-full transition-[width] duration-300 ease-out"
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 Ledger: {progress.totals.paid} paid · {progress.totals.failed}{" "}
                 failed · {progress.totals.claimNeeded} need claim ·{" "}
                 {progress.totals.skipped} skipped
               </p>
             </>
           ) : (
-            <p className="text-muted-foreground text-xs">Starting batch…</p>
+            <p className="text-text-secondary text-xs">Starting batch…</p>
           )}
         </div>
       </div>

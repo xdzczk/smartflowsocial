@@ -4,12 +4,12 @@ export type AdminCardVariant = "default" | "emphasis" | "muted" | "dangerZone";
 
 const variantClass: Record<AdminCardVariant, string> = {
   default:
-    "border-border bg-card/60 border shadow-sm transition-shadow hover:shadow-md",
+    "border-border bg-surface/60 border shadow-1 transition-shadow hover:shadow-2",
   emphasis:
-    "border-primary/25 bg-primary/[0.06] border shadow-sm transition-shadow hover:shadow-md",
-  muted: "border-border/70 bg-muted/25 border shadow-sm",
+    "border-brand/25 bg-brand/[0.06] border shadow-1 transition-shadow hover:shadow-2",
+  muted: "border-border/70 bg-surface-hover/25 border shadow-1",
   dangerZone:
-    "border-amber-500/35 bg-amber-500/[0.06] dark:bg-amber-950/20 border shadow-sm",
+    "border-warning/35 bg-warning/[0.06] dark:bg-warning/20 border shadow-1",
 };
 
 export function AdminCard({

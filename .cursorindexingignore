@@ -1,0 +1,48 @@
+# Files matched here are still openable in Cursor, but are NOT included
+# in the codebase index (semantic search / @-mentions / Tab completions
+# context). Use this for large generated, vendored, or binary trees.
+#
+# This is the lighter-weight cousin of `.cursorignore` — same syntax as
+# `.gitignore`. Edit freely.
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+build/
+public/build/
+dist/
+out/
+.next/
+.turbo/
+.cache/
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+tests/e2e/screenshots/
+tests/e2e/videos/
+tests/performance/results/
+
+# Local DB data dirs
+postgres-data/
+redis-data/
+
+# Generated / large single files
+*.tsbuildinfo
+.tsbuildinfo
+eslint-report.json
+pnpm-lock.yaml
+
+# Lockfiles for other package managers (we use pnpm)
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Source maps and minified bundles
+*.min.js
+*.min.css
+*.map

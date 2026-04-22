@@ -119,7 +119,7 @@ function MonthlyPostTile({
         e.stopPropagation();
         onPostEdit(post);
       }}
-      className={`focus:ring-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color,transform,box-shadow] focus:ring-2 focus:outline-none ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${interactionClass} ${
+      className={`focus-ring flex h-full w-full min-w-0 items-center justify-center rounded-[var(--calendar-radius-sm)] px-1.5 py-1 text-left transition-[opacity,background-color,transform,box-shadow] ${statusClass} ${borderClass} ${unassignedBgClass} ${cursorClass} ${interactionClass} ${
         isMobile ? "p-0.5" : "p-1"
       }`}
       title={
@@ -138,7 +138,7 @@ function MonthlyPostTile({
           </span>
         ) : null}
         <div
-          className={`bg-muted relative overflow-hidden rounded-[var(--calendar-radius-sm)] ${
+          className={`bg-surface-hover relative overflow-hidden rounded-[var(--calendar-radius-sm)] ${
             isMobile ? "h-6 w-6" : "h-5 w-5 flex-shrink-0"
           }`}
         >
@@ -150,13 +150,13 @@ function MonthlyPostTile({
               forceType={isVideoFile(mediaUrl) ? "video" : "image"}
               hidePlayButton={true}
               fallback={
-                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-[10px]">
                   {isVideoFile(mediaUrl) ? "VIDEO" : "IMG"}
                 </div>
               }
             />
           ) : (
-            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
+            <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center">
               <PostIcon
                 post={post}
                 isLongform={postIsLongform}
@@ -282,10 +282,10 @@ export function MonthlyView({
             isMobile ? "mb-0.5 text-xs" : "mb-1 text-sm"
           } ${
             dayInfo.isToday
-              ? "text-foreground"
+              ? "text-text"
               : dayInfo.isCurrentMonth
-                ? "text-foreground"
-                : "text-muted-foreground"
+                ? "text-text"
+                : "text-text-secondary"
           }`}
         >
           {fromDate(dayInfo.date, userTimezone).day}
@@ -318,7 +318,7 @@ export function MonthlyView({
               >
                 {isMoreLabel ? (
                   <div
-                    className={`text-muted-foreground/80 border-border/30 flex h-full min-h-0 items-center justify-center rounded-[var(--calendar-radius-sm)] border border-dashed ${
+                    className={`text-text-secondary/80 border-border/30 flex h-full min-h-0 items-center justify-center rounded-[var(--calendar-radius-sm)] border border-dashed ${
                       isMobile
                         ? "px-1 py-0.5 text-[10px]"
                         : "px-2 py-1 text-[11px]"
@@ -357,18 +357,18 @@ export function MonthlyView({
   };
 
   const cellClassName = (dayInfo: CalendarDay) =>
-    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 transition-colors ${
+    `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 motion-fast ${
       isMobile ? "px-1 py-1" : "px-2 py-1.5"
     } ${
       dayInfo.isCurrentMonth
         ? "bg-[hsl(var(--calendar-surface-2-bg))]"
-        : "bg-secondary/20"
+        : "bg-surface-hover/40"
     } ${
       dragOverDateKey ===
       `${fromDate(dayInfo.date, userTimezone).year}-${String(fromDate(dayInfo.date, userTimezone).month).padStart(2, "0")}-${String(fromDate(dayInfo.date, userTimezone).day).padStart(2, "0")}`
-        ? "bg-primary/5 ring-primary/40 ring-1"
+        ? "bg-brand/5 ring-brand/40 ring-1"
         : ""
-    } ${dayInfo.isToday ? "ring-primary ring-1" : ""}`;
+    } ${dayInfo.isToday ? "ring-brand ring-1" : ""}`;
 
   return (
     <DateGrid

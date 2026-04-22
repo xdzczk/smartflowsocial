@@ -98,7 +98,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
+    className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -318,7 +318,7 @@ export function ScheduledPostsTable({
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   <Checkbox
                     id="scheduled-select-all"
                     checked={
@@ -329,7 +329,7 @@ export function ScheduledPostsTable({
                     onCheckedChange={() => onToggleSelectAll()}
                   />
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                   Media
                 </th>
                 <SortableHeader
@@ -344,16 +344,16 @@ export function ScheduledPostsTable({
                   sortConfig={sortConfig}
                   onRequestSort={onRequestSort}
                 />
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   Time Remaining
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   Queue
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   Status
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   Actions
                 </th>
               </tr>
@@ -374,7 +374,7 @@ export function ScheduledPostsTable({
                     className={cn(
                       PUBLISHING_TABLE_ROW_CLASS,
                       selectedPosts.has(post.id) &&
-                        "bg-muted/40 hover:bg-muted/50"
+                        "bg-surface-hover/40 hover:bg-surface-hover/50"
                     )}
                     onClick={() => onPostClick(post)}
                   >
@@ -392,7 +392,7 @@ export function ScheduledPostsTable({
                           <MediaThumbnail
                             src={getImageUrls(post.fileUrl)[0]}
                             alt="Post preview"
-                            className="h-12 w-12 rounded object-cover"
+                            className="h-12 w-12 rounded-xs object-cover"
                             onClick={() => {
                               const imageUrl = getImageUrls(post.fileUrl)[0];
                               if (imageUrl) {
@@ -400,13 +400,13 @@ export function ScheduledPostsTable({
                               }
                             }}
                             fallback={
-                              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                              <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                                 {rowThumbBadge}
                               </div>
                             }
                           />
                         ) : post.repost ? (
-                          <div className="bg-accent/15 text-accent-foreground flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded text-[10px] font-medium">
+                          <div className="bg-brand/12 text-text flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-xs text-[10px] font-medium">
                             <Repeat
                               className={`${SMALL_ICON_SIZE_CLASS} shrink-0`}
                               strokeWidth={INLINE_ICON_STROKE}
@@ -415,16 +415,16 @@ export function ScheduledPostsTable({
                             REPOST
                           </div>
                         ) : post.isQuotedPost ? (
-                          <div className="bg-success/20 text-success dark:text-success flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                          <div className="bg-success/20 text-success dark:text-success flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                             QUOTE
                           </div>
                         ) : (
-                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                          <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                             {rowThumbBadge}
                           </div>
                         )}
                         {post.repost ? (
-                          <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                          <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                             <Repeat
                               className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                               strokeWidth={INLINE_ICON_STROKE}
@@ -455,7 +455,7 @@ export function ScheduledPostsTable({
                           : post.caption}
                       </p>
                       {post.dependencyMode === "attached" ? (
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-text-secondary text-xs">
                           Follow-up
                           {post.followUpTimingMode === "offset_from_parent"
                             ? " · Offset from parent"
@@ -467,7 +467,7 @@ export function ScheduledPostsTable({
                       {formatDate(post.scheduledAtUtc)}
                     </td>
                     <td className="p-3 text-center">
-                      <div className="text-primary text-sm font-medium">
+                      <div className="text-brand text-sm font-medium">
                         {countdowns[post.id] ?? "—"}
                       </div>
                     </td>
@@ -481,7 +481,7 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3 text-center">
-                      <span className="text-muted-foreground text-xs font-medium">
+                      <span className="text-text-secondary text-xs font-medium">
                         {post.signedEvent ? "Signed" : "Scheduled"}
                       </span>
                     </td>
@@ -491,7 +491,7 @@ export function ScheduledPostsTable({
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                             aria-label="Actions"
                           >
                             <MoreHorizontal
@@ -566,7 +566,7 @@ export function ScheduledPostsTable({
                               deletingPostId != null ||
                               bulkDeleteState !== "idle"
                             }
-                            className="text-destructive focus:text-destructive"
+                            className="text-danger focus:text-danger"
                             onSelect={() =>
                               handleDeleteWithCascade(post.id, "post")
                             }
@@ -590,9 +590,9 @@ export function ScheduledPostsTable({
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
           {onSortChange ? (
-            <div className="mb-3 flex items-center gap-2">
+            <div className="cluster mb-3">
               <span
-                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+                className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
               >
                 Sort:
               </span>
@@ -711,7 +711,7 @@ export function ScheduledPostsTable({
                     <div ref={sentinelRef} className="h-4 w-full" />
                   ) : null}
                   {isFetchingNextPage ? (
-                    <div className="text-muted-foreground py-4 text-center text-sm">
+                    <div className="text-text-secondary py-4 text-center text-sm">
                       Loading more...
                     </div>
                   ) : null}

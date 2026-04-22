@@ -1,7 +1,16 @@
 import type { ReactNode } from "react";
 
-import { cn } from "~/lib/utils";
+import { EmptyState } from "~/components/ui/empty-state";
 
+/**
+ * Domain wrapper that delegates to the canonical <EmptyState>. The
+ * publishing surfaces accept actions via `children` (legacy shape) which
+ * are passed straight through to the primitive's action slot.
+ *
+ * Phase 1i. Previously a standalone implementation; consolidated onto
+ * the shared primitive so all empty states across the app render with
+ * the same icon / title / body / CTA proportions.
+ */
 export function PublishingEmptyState({
   icon,
   title,
@@ -18,25 +27,13 @@ export function PublishingEmptyState({
   "data-testid"?: string;
 }) {
   return (
-    <div
+    <EmptyState
       data-testid={dataTestId}
-      className={cn(
-        "text-muted-foreground flex flex-col items-center justify-center gap-3 px-4 py-16 text-center",
-        className
-      )}
-    >
-      {icon ? (
-        <div className="text-muted-foreground/80 [&_svg]:size-12">{icon}</div>
-      ) : null}
-      <h2 className="text-foreground text-base font-semibold">{title}</h2>
-      {description ? (
-        <p className="max-w-sm text-sm leading-relaxed">{description}</p>
-      ) : null}
-      {children ? (
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          {children}
-        </div>
-      ) : null}
-    </div>
+      icon={icon}
+      title={title}
+      description={description}
+      action={children}
+      className={className}
+    />
   );
 }

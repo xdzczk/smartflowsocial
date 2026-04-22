@@ -118,7 +118,7 @@ export function LookupResultHeader({
   return (
     <div
       className={cn(
-        "border-border bg-card flex flex-col gap-3 rounded-xl border px-4 py-3 shadow-sm sm:min-h-[72px] sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+        "border-border bg-surface shadow-1 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:min-h-[72px] sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className
       )}
     >
@@ -133,19 +133,17 @@ export function LookupResultHeader({
             className="h-10 w-10 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <div className="bg-muted h-10 w-10 shrink-0 rounded-full" />
+          <div className="bg-surface-hover h-10 w-10 shrink-0 rounded-full" />
         )}
         <div className="min-w-0">
-          <p className="text-foreground truncate text-sm font-semibold">
+          <p className="text-text truncate text-sm font-semibold">
             {displayName}
           </p>
           {npubShort ? (
-            <p className="text-muted-foreground font-mono text-xs">
-              {npubShort}
-            </p>
+            <p className="text-text-secondary font-mono text-xs">{npubShort}</p>
           ) : null}
           {queryLabel ? (
-            <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+            <p className="text-text-secondary mt-0.5 truncate text-[11px]">
               Searched: {truncateMiddle(queryLabel, 24, 12)}
             </p>
           ) : null}
@@ -153,15 +151,15 @@ export function LookupResultHeader({
       </div>
 
       <div className="flex min-w-0 flex-[1.1] flex-col gap-1 sm:px-2">
-        <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <div className="text-text-secondary flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
           <span>Kind {result.kind}</span>
           <span className="text-border">·</span>
           <span title={absolute}>{absolute}</span>
           <span className="text-border">·</span>
-          <span className="text-muted-foreground/90">{relative}</span>
+          <span className="text-text-secondary/90">{relative}</span>
         </div>
         {metaLine ? (
-          <p className="text-muted-foreground line-clamp-2 text-[11px] leading-snug">
+          <p className="text-text-secondary line-clamp-2 text-[11px] leading-snug">
             {metaLine}
           </p>
         ) : null}

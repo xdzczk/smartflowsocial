@@ -45,7 +45,7 @@ export function ScheduledPostPreview({
           />
         </div>
       ) : null}
-      <div className={cn("text-foreground text-sm", captionClassName)}>
+      <div className={cn("text-text text-sm", captionClassName)}>
         {isLongform && "title" in post
           ? (post.title ?? "Untitled article")
           : "caption" in post
@@ -54,10 +54,10 @@ export function ScheduledPostPreview({
               : null
             : null}
         {(!("caption" in post) || !post.caption?.trim()) && !isLongform ? (
-          <span className="text-muted-foreground">No caption</span>
+          <span className="text-text-secondary">No caption</span>
         ) : null}
         {"fileUrl" in post && post.fileUrl.length > 0 ? (
-          <span className="text-muted-foreground ml-2 text-xs">
+          <span className="text-text-secondary ml-2 text-xs">
             ({post.fileUrl.length} file{post.fileUrl.length > 1 ? "s" : ""})
           </span>
         ) : null}

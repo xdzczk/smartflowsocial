@@ -245,7 +245,7 @@ function ContestNewFormSetupSteps({
               }}
               className={campaignFieldClassNames}
             />
-            <p className="text-muted-foreground text-[11px] leading-snug">
+            <p className="text-text-secondary text-[11px] leading-snug">
               Must be after activation time from the rail (Now or Schedule).
             </p>
           </div>
@@ -280,14 +280,14 @@ function ContestNewFormSetupSteps({
               className={campaignFieldClassNames}
             />
             {resolvedContestEndAt.trim() ? (
-              <p className="text-muted-foreground text-[11px] leading-snug">
+              <p className="text-text-secondary text-[11px] leading-snug">
                 Estimated end (from current activation time):{" "}
-                <span className="text-foreground font-medium tabular-nums">
+                <span className="text-text font-medium tabular-nums">
                   {resolvedContestEndAt.replace("T", " ")}
                 </span>
               </p>
             ) : (
-              <p className="text-muted-foreground text-[11px] leading-snug">
+              <p className="text-text-secondary text-[11px] leading-snug">
                 Uses the same activation time as in the rail (Now or Schedule).
                 The contest ends this many hours after the post goes live.
               </p>
@@ -295,7 +295,7 @@ function ContestNewFormSetupSteps({
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             {contestCopy.tieBreakShort}
           </p>
           <TooltipProvider delayDuration={200}>
@@ -303,7 +303,7 @@ function ContestNewFormSetupSteps({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="text-primary text-xs font-medium underline-offset-2 hover:underline"
+                  className="text-brand text-xs font-medium underline-offset-2 hover:underline"
                 >
                   Details
                 </button>
@@ -315,10 +315,7 @@ function ContestNewFormSetupSteps({
           </TooltipProvider>
         </div>
         {stepIssuesRanking ? (
-          <p
-            className="text-destructive mt-1 text-xs leading-snug"
-            role="alert"
-          >
+          <p className="text-danger mt-1 text-xs leading-snug" role="alert">
             {stepIssuesRanking}
           </p>
         ) : null}
@@ -395,7 +392,7 @@ function ContestNewFormSetupSteps({
         </div>
         {prizeMode === "RANKED" ? (
           <div className="space-y-2">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Set sats per rank (1–{winnerCount}). Unused ranks can be 0.
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -404,7 +401,7 @@ function ContestNewFormSetupSteps({
                 return (
                   <div key={rank} className="space-y-1">
                     <label
-                      className="text-muted-foreground text-xs"
+                      className="text-text-secondary text-xs"
                       htmlFor={`rankReward_${rank}`}
                     >
                       Rank {rank} (sats)
@@ -433,11 +430,11 @@ function ContestNewFormSetupSteps({
           </div>
         ) : null}
         <div className="border-border/50 mt-2 space-y-2 border-t pt-3">
-          <RewardSummaryLine className="text-foreground font-medium">
+          <RewardSummaryLine className="text-text font-medium">
             {prizeSummary}
           </RewardSummaryLine>
           {stepIssuesRewards ? (
-            <p className="text-destructive text-xs leading-snug" role="alert">
+            <p className="text-danger text-xs leading-snug" role="alert">
               {stepIssuesRewards}
             </p>
           ) : null}
@@ -454,9 +451,7 @@ function ContestNewFormSetupSteps({
           description={contestCopy.eligibilitySectionLead}
         />
         <div className="space-y-2">
-          <p className="text-muted-foreground text-xs font-medium">
-            Exclusions
-          </p>
+          <p className="text-text-secondary text-xs font-medium">Exclusions</p>
           <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <label className="flex cursor-pointer items-center gap-2.5">
               <input
@@ -505,13 +500,13 @@ function ContestNewFormSetupSteps({
           </div>
         </div>
         <div className="border-border/60 space-y-3 border-t pt-3">
-          <p className="text-muted-foreground text-xs font-medium">
+          <p className="text-text-secondary text-xs font-medium">
             Minimum thresholds
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <label
-                className="text-foreground text-sm font-medium"
+                className="text-text text-sm font-medium"
                 htmlFor="minAccountAgeDays"
               >
                 Account age (days)
@@ -532,7 +527,7 @@ function ContestNewFormSetupSteps({
             </div>
             <div className="space-y-1">
               <label
-                className="text-foreground text-sm font-medium"
+                className="text-text text-sm font-medium"
                 htmlFor="minFollowers"
               >
                 Followers
@@ -554,7 +549,7 @@ function ContestNewFormSetupSteps({
           </div>
           <p
             id="contest-min-thresholds-hint"
-            className="text-muted-foreground/80 text-[10px] leading-snug"
+            className="text-text-secondary/80 text-[10px] leading-snug"
           >
             Use 0 to turn off a threshold.
           </p>
@@ -1082,7 +1077,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       <div className="flex items-center gap-4">
         <Link
           to="/dashboard/contests"
-          className="text-muted-foreground hover:text-foreground text-sm"
+          className="text-text-secondary hover:text-text text-sm"
         >
           ← Back to Contests
         </Link>
@@ -1096,10 +1091,10 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
       >
         <div className="min-w-0 space-y-8">
           <div className="space-y-1">
-            <h1 className="text-foreground text-2xl font-bold tracking-tight">
+            <h1 className="text-text text-2xl font-bold tracking-tight">
               New contest
             </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-text-secondary mt-1 text-sm">
               Save a draft anytime, then launch from the rail.
             </p>
           </div>
@@ -1108,7 +1103,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           typeof actionData === "object" &&
           "error" in actionData &&
           actionData.error ? (
-            <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
+            <div className="border-danger/40 bg-danger/10 text-danger rounded-md border p-3 text-sm">
               {String(actionData.error)}
             </div>
           ) : null}
@@ -1116,7 +1111,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           typeof actionData === "object" &&
           "draftSaved" in actionData &&
           (actionData as { draftSaved?: boolean }).draftSaved ? (
-            <p className="text-muted-foreground text-sm">Draft saved.</p>
+            <p className="text-text-secondary text-sm">Draft saved.</p>
           ) : null}
 
           {presetDefaults?.id ? (
@@ -1156,7 +1151,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
               }}
               className={campaignFieldClassNames}
             />
-            <p className="text-muted-foreground text-xs">{entryRuleSummary}</p>
+            <p className="text-text-secondary text-xs">{entryRuleSummary}</p>
           </section>
 
           <SourcePostModule
@@ -1208,10 +1203,10 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
                 {selectedSourcePost ? (
                   <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
                     <div>
-                      <p className="text-muted-foreground text-xs font-medium">
+                      <p className="text-text-secondary text-xs font-medium">
                         Selected source
                       </p>
-                      <p className="text-foreground mt-0.5 text-sm">
+                      <p className="text-text mt-0.5 text-sm">
                         {formatPostOptionLabel(selectedSourcePost)}
                       </p>
                     </div>
@@ -1330,8 +1325,8 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
                     className={cn(
                       "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
                       primaryCtaDisabled || isSubmitting
-                        ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
-                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                        ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
+                        : "bg-brand text-brand-on hover:bg-brand/90"
                     )}
                   >
                     {primaryLabel}

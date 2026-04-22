@@ -131,7 +131,7 @@ export function ContentTableRow({
       key={`${item.type}-${item.id}`}
       className={cn(
         PUBLISHING_TABLE_ROW_CLASS,
-        isSelected && "bg-muted/40 hover:bg-muted/50"
+        isSelected && "bg-surface-hover/40 hover:bg-surface-hover/50"
       )}
       onClick={() => {
         if (type === "draft" && onResumeDraft) {
@@ -167,15 +167,15 @@ export function ContentTableRow({
                   <MediaThumbnail
                     src={firstImageUrl}
                     alt="Post preview"
-                    className="h-12 w-12 rounded object-cover"
+                    className="h-12 w-12 rounded-xs object-cover"
                     fallback={
-                      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                      <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                         {postThumbnailBadge}
                       </div>
                     }
                   />
                   {isRepost ? (
-                    <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                    <div className="bg-brand absolute -top-1 -right-1 rounded-full p-0.5">
                       <Repeat
                         className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                         strokeWidth={2}
@@ -194,9 +194,9 @@ export function ContentTableRow({
               <MediaThumbnail
                 src={item.image}
                 alt="Article cover"
-                className="h-12 w-12 rounded object-cover"
+                className="h-12 w-12 rounded-xs object-cover"
                 fallback={
-                  <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                  <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                     ART
                   </div>
                 }
@@ -207,11 +207,11 @@ export function ContentTableRow({
           // Default fallback: repost with no media vs text post vs article
           return (
             <div className="relative inline-block">
-              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+              <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                 {postThumbnailBadge}
               </div>
               {isRepost ? (
-                <div className="bg-primary absolute -top-1 -right-1 rounded-full p-0.5">
+                <div className="bg-brand absolute -top-1 -right-1 rounded-full p-0.5">
                   <Repeat
                     className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                     strokeWidth={2}
@@ -224,16 +224,14 @@ export function ContentTableRow({
         })()}
       </td>
       <td className="max-w-md p-3 whitespace-normal">
-        <p className="text-foreground leading-snug font-semibold">
-          {titleText}
-        </p>
+        <p className="text-text leading-snug font-semibold">{titleText}</p>
         {excerpt ? (
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
+          <p className="text-text-secondary mt-1 line-clamp-2 text-sm leading-relaxed">
             {excerpt}
           </p>
         ) : null}
         {type === "scheduled" && item.dependencyMode === "attached" ? (
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-text-secondary mt-1 text-xs">
             Follow-up
             {item.followUpTimingMode === "offset_from_parent"
               ? " · Offset from parent"
@@ -361,7 +359,7 @@ export function ContentRowActions({
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
-          className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+          className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
           aria-label="Actions"
         >
           <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
@@ -663,7 +661,7 @@ export function ContentRowActions({
         )}
         <DropdownMenuItem
           disabled={deleteFetcher.state !== "idle"}
-          className="text-destructive focus:text-destructive"
+          className="text-danger focus:text-danger"
           onSelect={() => {
             onBeforeDelete?.(item.id);
             const postType =

@@ -19,7 +19,7 @@ export function PublishingFilterRow(props: PublishingFilterRowProps) {
   return (
     <div
       className={cn(
-        "border-border mb-4 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3",
+        "border-border stack mb-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3",
         className
       )}
     >

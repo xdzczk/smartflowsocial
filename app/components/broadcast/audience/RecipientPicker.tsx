@@ -403,7 +403,7 @@ export function RecipientPicker({
 
   return (
     <div className="border-border space-y-4 rounded-xl border p-4">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-text-secondary text-xs">
         Only eligible recipients are included at send time. Search filters the
         list below.
       </p>
@@ -428,10 +428,10 @@ export function RecipientPicker({
               setExpandedMembers([]);
             }}
             className={cn(
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              "motion-fast rounded-md px-3 py-1.5 text-xs font-medium",
               poolTab === k
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
+                ? "bg-brand text-brand-on"
+                : "text-text-secondary hover:bg-surface-hover"
             )}
           >
             {label}
@@ -440,7 +440,7 @@ export function RecipientPicker({
         <button
           type="button"
           disabled
-          className="text-muted-foreground cursor-not-allowed rounded-md px-3 py-1.5 text-xs font-medium opacity-60"
+          className="text-text-secondary cursor-not-allowed rounded-md px-3 py-1.5 text-xs font-medium opacity-60"
           title="Coming soon"
         >
           Prior contacts
@@ -450,7 +450,7 @@ export function RecipientPicker({
       <div>
         <label
           htmlFor="recipient-picker-search"
-          className="text-muted-foreground mb-1 block text-xs font-medium"
+          className="text-text-secondary mb-1 block text-xs font-medium"
         >
           Search eligible recipients
         </label>
@@ -469,7 +469,7 @@ export function RecipientPicker({
       {poolTab === "saved" ? (
         <div className="space-y-3">
           {savedAudiences.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               No saved audiences. Save recipient groups you reuse often to speed
               up future broadcasts.
             </p>
@@ -477,11 +477,11 @@ export function RecipientPicker({
             savedAudiences.map((s) => (
               <div
                 key={s.id}
-                className="border-border flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="border-border stack-tight rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium">{s.name}</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     {s.audienceType}
                     {s.lastResolvedSize != null
                       ? ` · last size ${String(s.lastResolvedSize)}`
@@ -526,7 +526,7 @@ export function RecipientPicker({
           {expandingSavedId && expandedMembers.length > 0 ? (
             <div className="border-border max-h-64 space-y-1 overflow-y-auto rounded-md border p-2">
               {expandedFailed ? (
-                <p className="text-destructive text-xs">
+                <p className="text-danger text-xs">
                   Could not load members. Try again.
                 </p>
               ) : null}
@@ -542,7 +542,7 @@ export function RecipientPicker({
                 return (
                   <div
                     key={pl}
-                    className="hover:bg-muted/50 flex items-center justify-between gap-2 rounded-md px-2 py-1.5"
+                    className="hover:bg-surface-hover/50 flex items-center justify-between gap-2 rounded-md px-2 py-1.5"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <Avatar className="h-8 w-8">
@@ -555,11 +555,11 @@ export function RecipientPicker({
                         <p className="truncate text-sm font-medium">
                           {pr.name}
                         </p>
-                        <p className="text-muted-foreground truncate font-mono text-[11px]">
+                        <p className="text-text-secondary truncate font-mono text-[11px]">
                           {formatNpubShort(pl)}
                         </p>
                       </div>
-                      <span className="bg-muted shrink-0 rounded px-1.5 py-0.5 text-[10px]">
+                      <span className="bg-surface-hover shrink-0 rounded-xs px-1.5 py-0.5 text-[10px]">
                         Saved
                       </span>
                     </div>
@@ -584,14 +584,14 @@ export function RecipientPicker({
       ) : (
         <div className="space-y-2">
           {poolLoadingTab === poolTab ? (
-            <p className="text-muted-foreground text-sm">Loading pool…</p>
+            <p className="text-text-secondary text-sm">Loading pool…</p>
           ) : poolFailed ? (
-            <p className="text-destructive text-sm">
+            <p className="text-danger text-sm">
               Could not load this list. Try another source or try again shortly.
             </p>
           ) : null}
           {poolNote ? (
-            <p className="text-muted-foreground text-xs">{poolNote}</p>
+            <p className="text-text-secondary text-xs">{poolNote}</p>
           ) : null}
           {checkedBrowser.size > 0 ? (
             <Button
@@ -606,7 +606,7 @@ export function RecipientPicker({
           ) : null}
           <div className="border-border max-h-80 space-y-0 overflow-y-auto rounded-md border">
             {displayRows.length === 0 && poolLoadingTab !== poolTab ? (
-              <p className="text-muted-foreground p-4 text-sm">
+              <p className="text-text-secondary p-4 text-sm">
                 {search.trim()
                   ? "No matches. Try another search."
                   : "No recipients in this pool."}
@@ -628,13 +628,13 @@ export function RecipientPicker({
                   <label
                     key={pk}
                     className={cn(
-                      "border-border/60 hover:bg-muted/40 flex cursor-pointer items-center gap-2 border-b px-3 py-2 last:border-0",
-                      inSel && "bg-muted/20"
+                      "border-border/60 hover:bg-surface-hover/40 flex cursor-pointer items-center gap-2 border-b px-3 py-2 last:border-0",
+                      inSel && "bg-surface-hover/20"
                     )}
                   >
                     <input
                       type="checkbox"
-                      className="border-input rounded"
+                      className="border-border rounded-xs"
                       checked={checkedBrowser.has(pk)}
                       disabled={disabled}
                       onChange={() => {
@@ -649,11 +649,11 @@ export function RecipientPicker({
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{pr.name}</p>
-                      <p className="text-muted-foreground truncate font-mono text-[11px]">
+                      <p className="text-text-secondary truncate font-mono text-[11px]">
                         {pr.nip05 ?? formatNpubShort(pk)}
                       </p>
                     </div>
-                    <span className="bg-muted shrink-0 rounded px-1.5 py-0.5 text-[10px]">
+                    <span className="bg-surface-hover shrink-0 rounded-xs px-1.5 py-0.5 text-[10px]">
                       {rowRelationshipLabel}
                     </span>
                     <Button
@@ -670,7 +670,7 @@ export function RecipientPicker({
                       {inSel ? (
                         "Added"
                       ) : (
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-cluster-tight">
                           <UserPlus className="h-3.5 w-3.5" />
                           Add
                         </span>
@@ -682,7 +682,7 @@ export function RecipientPicker({
             )}
           </div>
           {filteredPoolRows.length > MAX_BROWSER_ROWS ? (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Showing first {String(MAX_BROWSER_ROWS)} matches. Refine search to
               narrow the list.
             </p>
@@ -690,25 +690,25 @@ export function RecipientPicker({
         </div>
       )}
 
-      <div className="border-border bg-muted/20 space-y-3 rounded-lg border p-3">
+      <div className="border-border bg-surface-hover/20 space-y-3 rounded-lg border p-3">
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span>
-            <span className="text-muted-foreground">Selected: </span>
+            <span className="text-text-secondary">Selected: </span>
             <strong>{String(selectedPubkeys.length)}</strong>
           </span>
           <span>
-            <span className="text-muted-foreground">Suppressed: </span>
+            <span className="text-text-secondary">Suppressed: </span>
             <strong>{String(suppressedCount)}</strong>
           </span>
           <span>
-            <span className="text-muted-foreground">Sendable: </span>
-            <strong className="text-emerald-700 dark:text-emerald-300">
+            <span className="text-text-secondary">Sendable: </span>
+            <strong className="text-success-text">
               {String(sendableCount)}
             </strong>
           </span>
         </div>
         {selectedPubkeys.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             Select eligible recipients from followers, mutuals, or saved
             audiences.
           </p>
@@ -720,7 +720,7 @@ export function RecipientPicker({
               return (
                 <span
                   key={pl}
-                  className="border-border bg-background inline-flex items-center gap-1.5 rounded-full border py-1 pr-1 pl-2 text-xs"
+                  className="border-border bg-canvas inline-cluster-tight.5 rounded-full border py-1 pr-1 pl-2 text-xs"
                 >
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={pr?.picture ?? undefined} alt="" />
@@ -734,7 +734,7 @@ export function RecipientPicker({
                   <button
                     type="button"
                     disabled={disabled}
-                    className="text-muted-foreground hover:text-foreground rounded-full p-0.5"
+                    className="text-text-secondary hover:text-text rounded-full p-0.5"
                     aria-label="Remove"
                     onClick={() => {
                       removePubkey(pl);
@@ -770,7 +770,7 @@ export function RecipientPicker({
                   <button
                     type="button"
                     disabled={disabled}
-                    className="text-muted-foreground hover:text-foreground shrink-0 p-1"
+                    className="text-text-secondary hover:text-text shrink-0 p-1"
                     aria-label="Remove"
                     onClick={() => {
                       removePubkey(pl);

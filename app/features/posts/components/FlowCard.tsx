@@ -230,11 +230,11 @@ function FlowCardInner({
       }
     : undefined;
 
-  // Coloured shadow on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
+  // Coloured shadow-1 on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
   const shadowColor = queueColor ?? "hsl(var(--primary))";
 
   const isPublished = Boolean(item.publishedAt);
-  /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers transition when publishedAt may not have updated yet */
+  /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */
   const isPastCard = isPublished || Boolean(isLastPosted);
 
   return (
@@ -242,7 +242,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`card-lift flow-card-queue-shadow flow-card-surface border-border-subtle bg-card focus:ring-ring group relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-xl border shadow-sm transition-opacity duration-200 focus:ring-2 focus:outline-none md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`focus-ring card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised group shadow-1 relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),
@@ -264,10 +264,12 @@ function FlowCardInner({
             thumbnailClassName="h-full min-h-full w-full object-cover object-center"
             hidePlayButton
             twoItemLayout="vertical"
-            fallback={<div className="bg-muted h-full w-full flex-shrink-0" />}
+            fallback={
+              <div className="bg-surface-hover h-full w-full flex-shrink-0" />
+            }
           />
           {isRepostContent(item) ? (
-            <div className="bg-primary absolute top-1 right-1 rounded-full p-1">
+            <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
               <Repeat
                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                 strokeWidth={2}
@@ -277,9 +279,9 @@ function FlowCardInner({
           ) : null}
         </div>
       ) : (
-        <div className="bg-muted/50 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-xl p-2 md:w-32 md:min-w-[128px] md:p-3">
+        <div className="bg-surface-hover/50 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-xl p-2 md:w-32 md:min-w-[128px] md:p-3">
           {isRepostContent(item) ? (
-            <div className="bg-primary absolute top-1 right-1 rounded-full p-1">
+            <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
               <Repeat
                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                 strokeWidth={2}
@@ -287,7 +289,7 @@ function FlowCardInner({
               />
             </div>
           ) : null}
-          <span className="text-muted-foreground line-clamp-4 text-sm">
+          <span className="text-text-secondary line-clamp-4 text-sm">
             {contentSummaryText}
           </span>
         </div>
@@ -295,26 +297,26 @@ function FlowCardInner({
       {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-3 text-left md:gap-1.5 md:p-5">
         {isLastPosted ? (
-          <span className="text-muted-foreground bg-muted/50 mb-0.5 self-start rounded px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
             Last post
           </span>
         ) : isNextScheduledAndFuture ? (
-          <span className="text-muted-foreground bg-muted/50 mb-0.5 self-start rounded px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
             Next post
           </span>
         ) : null}
-        <span className="text-foreground text-xl leading-tight font-bold tabular-nums">
+        <span className="text-text text-xl leading-tight font-bold tabular-nums">
           {timeLabel}
         </span>
         {hasMedia ? (
-          <span className="text-muted-foreground/90 line-clamp-2 text-sm">
+          <span className="text-text-secondary/90 line-clamp-2 text-sm">
             {contentSummaryText}
           </span>
         ) : null}
-        <span className="text-muted-foreground/90 mt-0.5 text-[11px] leading-snug">
+        <span className="text-text-secondary/90 mt-0.5 text-[11px] leading-snug">
           {formattedTime}
         </span>
-        <span className="text-muted-foreground/90 text-xs leading-snug">
+        <span className="text-text-secondary/90 text-xs leading-snug">
           {statusLabel}
           {postKindLabel ? ` · ${postKindLabel}` : ""}
           {queueName ? ` · ${queueName}` : ""}

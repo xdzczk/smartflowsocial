@@ -87,7 +87,7 @@ export function ComposerMediaField({
       <ComposerCanvasSectionLabel
         className={
           compact
-            ? "text-muted-foreground/75 mb-0.5 text-[10px] font-medium tracking-wide uppercase"
+            ? "text-text-tertiary mb-0.5 text-[10px] font-medium tracking-wide uppercase"
             : undefined
         }
       >
@@ -103,12 +103,12 @@ export function ComposerMediaField({
         tabIndex={-1}
         aria-label={dropZoneLabel}
         className={cn(
-          "relative rounded-lg transition-colors",
+          "motion-fast relative rounded-lg",
           empty && !isDraggingOver && "min-h-0",
-          !empty && "bg-muted/10 rounded-md px-1 py-1.5 sm:px-1.5",
+          !empty && "bg-surface-hover/40 rounded-md px-1 py-1.5 sm:px-1.5",
           isDraggingOver &&
             dropEnabled &&
-            "bg-primary/5 ring-primary/40 ring-dashed ring-2"
+            "bg-brand/5 ring-brand/40 ring-dashed ring-2"
         )}
         onDragOver={dropEnabled ? handleDragOver : undefined}
         onDragLeave={dropEnabled ? handleDragLeave : undefined}
@@ -116,8 +116,8 @@ export function ComposerMediaField({
         onKeyDown={handleKeyDown}
       >
         {isDraggingOver && dropEnabled ? (
-          <div className="border-primary bg-primary/5 pointer-events-none absolute inset-0 z-10 flex min-h-[3.5rem] items-center justify-center rounded-md border-2 border-dashed">
-            <span className="text-muted-foreground text-sm">
+          <div className="border-brand bg-brand/5 pointer-events-none absolute inset-0 z-10 flex min-h-[3.5rem] items-center justify-center rounded-md border-2 border-dashed">
+            <span className="text-text-secondary text-sm">
               Drop to add images or videos
             </span>
           </div>
@@ -138,7 +138,7 @@ export function ComposerMediaField({
         {empty && !isDraggingOver && emptyHint ? (
           <p
             className={cn(
-              "text-muted-foreground/70 leading-snug",
+              "text-text-tertiary leading-snug",
               compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]"
             )}
           >

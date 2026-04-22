@@ -144,7 +144,7 @@ export default function TemplateEditPage() {
       <div className="mb-6">
         <Link
           to="/dashboard/templates"
-          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-sm"
+          className="text-brand hover:text-brand/90 dark:text-text-secondary dark:hover:text-text text-sm"
         >
           ← Back to template library
         </Link>
@@ -164,7 +164,7 @@ export default function TemplateEditPage() {
             <AlertDialogAction
               onClick={handleDeleteTemplate}
               disabled={deleteTemplateFetcher.state !== "idle"}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -175,7 +175,7 @@ export default function TemplateEditPage() {
       {/* Header: title and meta (template name is edited inside the composer) */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Edit template</h1>
-        <p className="dark:text-muted-foreground text-muted-foreground text-sm">
+        <p className="dark:text-text-secondary text-text-secondary text-sm">
           {template.templateType === "LONGFORM"
             ? "Article template"
             : "Post template"}
@@ -187,14 +187,14 @@ export default function TemplateEditPage() {
         <div className="py-12 text-center">
           <div className="mx-auto max-w-md">
             <Trash2
-              className="text-foreground mx-auto h-12 w-12"
+              className="text-text mx-auto h-12 w-12"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
-            <h3 className="dark:text-foreground text-foreground mt-4 text-lg font-medium">
+            <h3 className="dark:text-text text-text mt-4 text-lg font-medium">
               No content in this template
             </h3>
-            <p className="dark:text-muted-foreground text-muted-foreground mt-2 text-sm">
+            <p className="dark:text-text-secondary text-text-secondary mt-2 text-sm">
               This template is empty. You can delete it or go back.
             </p>
           </div>

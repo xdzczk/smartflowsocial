@@ -10,8 +10,8 @@ import {
 import { Suspense, useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
+import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastAudiencesPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   createBroadcastSavedAudience,
@@ -44,13 +44,13 @@ interface BroadcastAudiencesLoaderData {
 function audienceTypeBadgeClass(t: string): string {
   switch (t) {
     case "MUTUALS":
-      return "bg-emerald-500/15 text-emerald-900 dark:text-emerald-100";
+      return "bg-success/15 text-success-text";
     case "FOLLOWERS":
-      return "bg-amber-500/15 text-amber-950 dark:text-amber-100";
+      return "bg-warning/15 text-warning-text";
     case "CUSTOM":
-      return "bg-blue-500/15 text-blue-950 dark:text-blue-100";
+      return "bg-info/15 text-info-text";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }
 
@@ -259,7 +259,7 @@ function BroadcastAudiencesRouteLoaded({
     <div className="w-full min-w-0 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Audiences</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           Save audience definitions to reuse in new broadcasts. Graph-based
           types (mutuals) resolve at send time; custom lists are filtered to
           followers at send time.
@@ -269,7 +269,7 @@ function BroadcastAudiencesRouteLoaded({
       {notice === "saved" ? (
         <div
           role="status"
-          className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
+          className="border-success/40 bg-success/10 text-success-text rounded-md border px-3 py-2 text-sm"
         >
           Audience saved.
         </div>
@@ -284,7 +284,7 @@ function BroadcastAudiencesRouteLoaded({
             <h2 className="font-medium">Edit audience</h2>
             <button
               type="button"
-              className="text-muted-foreground text-xs hover:underline"
+              className="text-text-secondary text-xs hover:underline"
               onClick={() => {
                 setSearchParams({});
               }}
@@ -312,7 +312,7 @@ function BroadcastAudiencesRouteLoaded({
                 name="name"
                 required
                 defaultValue={editingRow.name}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -325,7 +325,7 @@ function BroadcastAudiencesRouteLoaded({
               <select
                 id="aud-edit-type"
                 name="audienceType"
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
                 value={editAudienceType}
                 onChange={(e) =>
                   setEditAudienceType(
@@ -361,13 +361,13 @@ function BroadcastAudiencesRouteLoaded({
                 id="aud-edit-rule"
                 name="ruleSummary"
                 defaultValue={editingRow.ruleSummary ?? ""}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
               />
             </div>
             <button
               type="submit"
               disabled={disableEditAudienceSubmit}
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+              className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
             >
               Save changes
             </button>
@@ -395,7 +395,7 @@ function BroadcastAudiencesRouteLoaded({
               id="aud-name"
               name="name"
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div>
@@ -408,7 +408,7 @@ function BroadcastAudiencesRouteLoaded({
             <select
               id="aud-type"
               name="audienceType"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
               value={createAudienceType}
               onChange={(e) => setCreateAudienceType(e.target.value)}
             >
@@ -439,13 +439,13 @@ function BroadcastAudiencesRouteLoaded({
             <input
               id="aud-rule"
               name="ruleSummary"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <button
             type="submit"
             disabled={disableCreateAudienceSubmit}
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
           >
             Save audience
           </button>
@@ -456,7 +456,7 @@ function BroadcastAudiencesRouteLoaded({
         <h2 className="mb-2 font-medium">Saved audiences</h2>
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 border-b text-xs font-medium">
+            <thead className="bg-surface-hover/50 border-b text-xs font-medium">
               <tr>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Type</th>
@@ -471,7 +471,7 @@ function BroadcastAudiencesRouteLoaded({
                 <tr>
                   <td
                     colSpan={6}
-                    className="text-muted-foreground px-3 py-6 text-center text-sm"
+                    className="text-text-secondary px-3 py-6 text-center text-sm"
                   >
                     No saved audiences yet.
                   </td>
@@ -490,7 +490,7 @@ function BroadcastAudiencesRouteLoaded({
                         {r.audienceType}
                       </span>
                     </td>
-                    <td className="text-muted-foreground max-w-[200px] truncate px-3 py-2 text-xs">
+                    <td className="text-text-secondary max-w-[200px] truncate px-3 py-2 text-xs">
                       {r.ruleSummary ??
                         formatBroadcastAudienceLabel(
                           r.audienceType,
@@ -500,20 +500,20 @@ function BroadcastAudiencesRouteLoaded({
                     <td className="px-3 py-2 tabular-nums">
                       {r.lastResolvedSize ?? "—"}
                     </td>
-                    <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                    <td className="text-text-secondary px-3 py-2 text-xs whitespace-nowrap">
                       {new Date(r.updatedAt).toLocaleString()}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-2">
                         <Link
                           to={`/dashboard/broadcasts/new?savedAudienceId=${encodeURIComponent(r.id)}`}
-                          className="text-primary text-xs font-medium hover:underline"
+                          className="text-brand text-xs font-medium hover:underline"
                         >
                           Use
                         </Link>
                         <Link
                           to={`${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(r.id)}`}
-                          className="text-primary text-xs font-medium hover:underline"
+                          className="text-brand text-xs font-medium hover:underline"
                         >
                           Edit
                         </Link>
@@ -526,7 +526,7 @@ function BroadcastAudiencesRouteLoaded({
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="text-primary text-xs font-medium hover:underline"
+                            className="text-brand text-xs font-medium hover:underline"
                           >
                             Duplicate
                           </button>
@@ -540,7 +540,7 @@ function BroadcastAudiencesRouteLoaded({
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="text-primary text-xs font-medium hover:underline"
+                            className="text-brand text-xs font-medium hover:underline"
                           >
                             Refresh estimate
                           </button>
@@ -550,7 +550,7 @@ function BroadcastAudiencesRouteLoaded({
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="text-destructive text-xs hover:underline"
+                            className="text-danger text-xs hover:underline"
                           >
                             Delete
                           </button>

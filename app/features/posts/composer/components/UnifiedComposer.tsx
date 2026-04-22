@@ -1274,7 +1274,7 @@ export function UnifiedComposer({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 lg:flex-row lg:items-start",
+        "stack-loose lg:flex-row lg:items-start",
         isContestSourcePostDensity && "gap-4"
       )}
     >
@@ -1451,8 +1451,8 @@ export function UnifiedComposer({
                 <div
                   className={
                     isContestSourcePostDensity
-                      ? "flex flex-col gap-2 sm:gap-2.5"
-                      : "flex flex-col gap-4 sm:gap-5"
+                      ? "stack-tight sm:gap-2.5"
+                      : "stack sm:gap-5"
                   }
                 >
                   <UnifiedComposerTagsSection

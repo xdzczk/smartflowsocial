@@ -85,7 +85,7 @@ export function BillingAlertBanner({
 
   return (
     <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-      <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
+      <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
         <div>
           <p className="font-medium">{copy.title}</p>
           <p className="text-sm opacity-90">{copy.description}</p>
@@ -93,7 +93,7 @@ export function BillingAlertBanner({
         <Link
           prefetch="intent"
           to={to}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
         >
           {label}
         </Link>
@@ -114,24 +114,22 @@ export function BillingStatusCard({
   const { label, to } = billingContextPrimaryCta(billingContext.primaryCta);
 
   return (
-    <div className="border-border bg-card mb-4 rounded-lg border p-4">
+    <div className="border-border bg-surface mb-4 rounded-lg border p-4">
       <h3 className="mb-2 text-sm font-semibold">Billing</h3>
-      <dl className="text-muted-foreground space-y-1 text-sm">
+      <dl className="text-text-secondary space-y-1 text-sm">
         <div className="flex justify-between gap-4">
           <dt>Billing mode</dt>
-          <dd className="text-foreground text-right font-medium">
-            {modeLabel}
-          </dd>
+          <dd className="text-text text-right font-medium">{modeLabel}</dd>
         </div>
         {paidUntil ? (
           <div className="flex justify-between gap-4">
             <dt>Current paid period ends</dt>
-            <dd className="text-foreground text-right">{paidUntil}</dd>
+            <dd className="text-text text-right">{paidUntil}</dd>
           </div>
         ) : null}
         <div className="flex justify-between gap-4">
           <dt>Status</dt>
-          <dd className="text-foreground text-right font-medium">
+          <dd className="text-text text-right font-medium">
             {billingContext.uiStatus.replace(/_/g, " ")}
           </dd>
         </div>
@@ -140,14 +138,14 @@ export function BillingStatusCard({
         <Link
           to={to}
           prefetch="intent"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
         >
           {label}
         </Link>
         <Link
           to="/dashboard/settings?billing=overview"
           prefetch="intent"
-          className="border-border hover:bg-muted inline-flex rounded-md border px-3 py-1.5 text-xs font-medium"
+          className="border-border hover:bg-surface-hover inline-flex rounded-md border px-3 py-1.5 text-xs font-medium"
         >
           Billing settings
         </Link>

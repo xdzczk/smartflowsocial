@@ -6,6 +6,9 @@ import { Card, CardContent } from "~/components/ui/card";
 import type { PostStatistics } from "~/features/posts/server";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
+// KPI category palette — purple/blue/green/slate are intentionally raw decorative
+// hues used to differentiate Compose/Scheduled/Published/Runway tiles. Not status
+// colors. Do not migrate to --warning/--success/--info tokens.
 const KPI_COLOR_CSS_VAR = "--kpi-color";
 
 function kpiColorStyle(color: string): CSSProperties {
@@ -57,20 +60,19 @@ export default function Statistics({
   const runwayDaysNum = runwayDays ?? 0;
   const runwayIconClass =
     runwayDaysNum <= 0 && !hasScheduledPosts
-      ? "bg-muted text-muted-foreground dark:bg-muted/80"
+      ? "bg-surface-hover text-text-secondary dark:bg-surface-hover/80"
       : runwayDaysNum < 2
-        ? "bg-red-400/15 text-red-600 dark:bg-red-400/20 dark:text-red-400"
+        ? "bg-danger/15 text-danger dark:bg-danger/20 dark:text-danger"
         : runwayDaysNum <= 7
-          ? "bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
+          ? "bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning"
           : "bg-slate-500/15 text-slate-600 dark:bg-slate-400/20 dark:text-slate-400";
 
-  const cardBase = "card-lift kpi-card min-h-[72px] shadow-sm dark:shadow-none";
+  const cardBase = "card-lift kpi-card min-h-[72px] shadow-1 dark:shadow-none";
   const contentBase =
-    "hover:bg-muted/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
+    "focus-ring hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 motion-fast";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
-  const dtBase = "text-foreground text-2xl font-bold tabular-nums";
-  const ddBase =
-    "text-muted-foreground/90 text-[11px] font-medium uppercase tracking-tight leading-snug";
+  const dtBase = "text-text text-h1 tabular-nums";
+  const ddBase = "text-text-secondary/90 text-overline";
 
   const runwayKpiColor =
     runwayDaysNum <= 0 && !hasScheduledPosts
@@ -128,7 +130,7 @@ export default function Statistics({
             aria-label={`Scheduled, ${stats.scheduledCount} posts`}
           >
             <div
-              className={`${iconBase} bg-blue-400/12 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400`}
+              className={`${iconBase} bg-info/12 text-info dark:bg-info/15 dark:text-info`}
             >
               <Clock
                 className="inline-block size-6"
@@ -152,7 +154,7 @@ export default function Statistics({
             aria-label={`Published, ${stats.successCount} posts`}
           >
             <div
-              className={`${iconBase} bg-green-500/12 text-green-600 dark:bg-green-400/15 dark:text-green-400`}
+              className={`${iconBase} text-success dark:text-success bg-green-500/12 dark:bg-green-400/15`}
             >
               <Check
                 className="inline-block size-6"

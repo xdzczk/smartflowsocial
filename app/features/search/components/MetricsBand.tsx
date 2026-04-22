@@ -2,7 +2,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
 const cellClass =
-  "bg-card flex flex-col items-center justify-center gap-0.5 px-2 py-3 text-center";
+  "bg-surface flex flex-col items-center justify-center gap-0.5 px-2 py-3 text-center";
 
 export interface SearchStatsShape {
   likes: number;
@@ -35,13 +35,13 @@ export function MetricsBand({
 }: MetricsBandProps) {
   return (
     <div className={cn("space-y-0", className)}>
-      <div className="border-border bg-border grid grid-cols-3 gap-px overflow-hidden rounded-xl border shadow-sm sm:grid-cols-6">
+      <div className="border-border bg-border shadow-1 grid grid-cols-3 gap-px overflow-hidden rounded-xl border sm:grid-cols-6">
         {CELLS.map(({ key, label }) => (
           <div key={key} className={cellClass}>
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+            <span className="text-text-secondary text-[11px] font-medium tracking-wide uppercase">
               {label}
             </span>
-            <span className="text-foreground text-base font-semibold tabular-nums">
+            <span className="text-text text-base font-semibold tabular-nums">
               {stats[key]}
             </span>
           </div>
@@ -49,10 +49,7 @@ export function MetricsBand({
       </div>
       {statsUnavailable ? (
         <div className="mt-2 flex justify-center">
-          <Badge
-            variant="outline"
-            className="text-muted-foreground font-normal"
-          >
+          <Badge variant="outline" className="text-text-secondary font-normal">
             Stats unavailable (relay or index timeout)
           </Badge>
         </div>

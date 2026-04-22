@@ -71,15 +71,15 @@ function isFreeOrNonPaidLifecycle(
 function NoSubscriptionMessage() {
   return (
     <div className="py-8 text-center">
-      <Crown className="text-foreground mx-auto mb-4 h-12 w-12" />
+      <Crown className="text-text mx-auto mb-4 h-12 w-12" />
       <h3 className="mb-2 text-lg font-medium">You’re on the Free plan</h3>
-      <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+      <p className="text-text-secondary mx-auto mb-6 max-w-md text-sm">
         Upgrade to unlock premium scheduling, templates, engagement tools, and
         more.
       </p>
       <Link
         to="/plans"
-        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+        className="bg-brand text-brand-on hover:bg-brand/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
       >
         View plans
         <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -120,27 +120,27 @@ function UpgradePlanSection() {
     <div className="border-border space-y-4 rounded-lg border p-4">
       <div>
         <p className="font-medium">Upgrade plan</p>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           Paid plans add calendars, drafts and templates, bulk scheduling, and
           premium infrastructure—choose what fits you.
         </p>
       </div>
-      <ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
+      <ul className="text-text-secondary list-inside list-disc space-y-1 text-sm">
         <li>Advanced scheduling and calendar</li>
         <li>Drafts, templates, and bulk tools</li>
         <li>Higher limits and premium features</li>
       </ul>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="stack-tight sm:flex-row sm:flex-wrap sm:items-center">
         <Link
           to="/plans"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           Choose a paid plan
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
         </Link>
         <Link
           to="/plans"
-          className="text-primary hover:text-primary/90 inline-flex items-center gap-2 text-sm font-medium"
+          className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
         >
           View all plans and features
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -263,7 +263,7 @@ export function SubscriptionSettings({
         <h2 className="text-lg font-semibold tracking-tight">
           Billing overview
         </h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        <p className="text-text-secondary mt-1 text-sm leading-relaxed">
           Your plan, renewal status, and next steps.
         </p>
       </div>
@@ -271,9 +271,10 @@ export function SubscriptionSettings({
       {subscription ? (
         <div className="space-y-6">
           {/* Current plan summary */}
-          <div className="bg-muted/30 rounded-lg border p-4">
+          <div className="bg-surface-hover/30 rounded-lg border p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
+                {/* Decorative premium-tier gold; intentionally raw, not a status color. */}
                 <Crown className="h-5 w-5 text-yellow-500" />
                 <div className="min-w-0">
                   <h3 className="font-medium">Current plan</h3>
@@ -289,7 +290,7 @@ export function SubscriptionSettings({
                       {getDisplaySubscriptionStatus(subscription)}
                     </span>
                     {subscription.plan?.enableLifetimeAccess ? (
-                      <span className="bg-muted text-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
+                      <span className="bg-surface-hover text-text inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                         Lifetime access
                       </span>
                     ) : null}
@@ -302,7 +303,7 @@ export function SubscriptionSettings({
                     ? `$${subscription.plan.price}`
                     : "Free"}
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   {subscription.plan?.enableLifetimeAccess
                     ? "One-time payment"
                     : subscription.plan?.price &&
@@ -318,24 +319,24 @@ export function SubscriptionSettings({
           {renewalContext ? (
             <div className="rounded-lg border p-4">
               <h3 className="mb-3 text-sm font-medium">Renewal and payment</h3>
-              <dl className="text-muted-foreground space-y-2 text-sm">
+              <dl className="text-text-secondary space-y-2 text-sm">
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                   <dt>Renewal method</dt>
-                  <dd className="text-foreground font-medium sm:text-right">
+                  <dd className="text-text font-medium sm:text-right">
                     {billingModeLabel(renewalContext.commMode)}
                   </dd>
                 </div>
                 {formatBillingPaidUntil(renewalContext.paidUntil) ? (
                   <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                     <dt>Paid-through / next renewal</dt>
-                    <dd className="text-foreground font-medium sm:text-right">
+                    <dd className="text-text font-medium sm:text-right">
                       {formatBillingPaidUntil(renewalContext.paidUntil)}
                     </dd>
                   </div>
                 ) : null}
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                   <dt>Billing status</dt>
-                  <dd className="text-foreground font-medium sm:text-right">
+                  <dd className="text-text font-medium sm:text-right">
                     {renewalContext.uiStatus.replace(/_/g, " ")}
                   </dd>
                 </div>
@@ -344,14 +345,14 @@ export function SubscriptionSettings({
                 <Link
                   to={primaryCta.to}
                   prefetch="intent"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
                 >
                   {primaryCta.label}
                 </Link>
                 <Link
                   to="/dashboard/settings?billing=payments"
                   prefetch="intent"
-                  className="border-border hover:bg-muted inline-flex rounded-md border px-3 py-1.5 text-xs font-medium"
+                  className="border-border hover:bg-surface-hover inline-flex rounded-md border px-3 py-1.5 text-xs font-medium"
                 >
                   Payment method and history
                 </Link>
@@ -362,11 +363,11 @@ export function SubscriptionSettings({
           {/* Subscription details — paid price */}
           {subscription.plan?.price && Number(subscription.plan.price) > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-lg border p-4">
+              <div className="cluster-loose rounded-lg border p-4">
                 <Calendar className="text-success h-5 w-5" />
                 <div>
                   <p className="font-medium">Subscription started</p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-text-secondary text-sm">
                     {formatSubscriptionDate(subscription.startDate)}
                   </p>
                 </div>
@@ -374,11 +375,11 @@ export function SubscriptionSettings({
 
               {(subscription.currentPeriodEnd ?? subscription.nextPaymentDue) &&
               !subscription.plan.enableLifetimeAccess ? (
-                <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <CreditCard className="text-primary h-5 w-5" />
+                <div className="cluster-loose rounded-lg border p-4">
+                  <CreditCard className="text-brand h-5 w-5" />
                   <div>
                     <p className="font-medium">Next renewal</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-text-secondary text-sm">
                       {formatSubscriptionDate(
                         subscription.currentPeriodEnd ??
                           subscription.nextPaymentDue
@@ -389,11 +390,11 @@ export function SubscriptionSettings({
               ) : null}
 
               {!subscription.plan.enableLifetimeAccess ? (
-                <div className="flex items-center gap-3 rounded-lg border p-4 md:col-span-2">
-                  <CreditCard className="text-muted-foreground h-5 w-5" />
+                <div className="cluster-loose rounded-lg border p-4 md:col-span-2">
+                  <CreditCard className="text-text-secondary h-5 w-5" />
                   <div>
                     <p className="font-medium">Billing</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-text-secondary text-sm">
                       {formatCadence(subscription.billingCadence)} ·{" "}
                       {formatRenewalMode(subscription.renewalMode)}
                       {typeof subscription.accessDurationMonths === "number" &&
@@ -402,7 +403,7 @@ export function SubscriptionSettings({
                         <> · {subscription.accessDurationMonths}m upfront</>
                       ) : null}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       {formatBillingPaymentMethod(
                         subscription.billingPaymentMethod
                       )}
@@ -415,15 +416,15 @@ export function SubscriptionSettings({
 
           {subscription.status === "PAST_DUE" ||
           subscription.status === "UNPAID" ? (
-            <div className="dark:border-border dark:bg-muted rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="dark:text-foreground h-5 w-5 text-amber-600" />
+            <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
+              <div className="cluster">
+                <AlertCircle className="dark:text-text text-warning h-5 w-5" />
                 <div className="space-y-1">
-                  <p className="dark:text-foreground text-sm font-medium text-amber-800">
+                  <p className="dark:text-text text-warning-text text-sm font-medium">
                     Renewal issue detected
                   </p>
                   {subscription.nextRenewalAttemptAt ? (
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       Next retry:{" "}
                       {formatSubscriptionDateTime(
                         subscription.nextRenewalAttemptAt
@@ -431,7 +432,7 @@ export function SubscriptionSettings({
                     </p>
                   ) : null}
                   {subscription.gracePeriodEndsAt ? (
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       Grace until:{" "}
                       {formatSubscriptionDateTime(
                         subscription.gracePeriodEndsAt
@@ -439,7 +440,7 @@ export function SubscriptionSettings({
                     </p>
                   ) : null}
                   {typeof subscription.renewalFailureCount === "number" ? (
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       Failed attempts: {subscription.renewalFailureCount}
                     </p>
                   ) : null}
@@ -447,7 +448,7 @@ export function SubscriptionSettings({
               </div>
               <Link
                 to="/plans"
-                className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
+                className="text-brand mt-2 inline-block text-sm font-medium hover:underline"
               >
                 Resolve renewal
               </Link>
@@ -455,10 +456,10 @@ export function SubscriptionSettings({
           ) : null}
 
           {subscription.cancelAtPeriodEnd ? (
-            <div className="dark:border-border dark:bg-muted rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="dark:text-foreground h-5 w-5 text-yellow-600" />
-                <p className="dark:text-foreground text-sm font-medium text-yellow-800">
+            <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
+              <div className="cluster">
+                <AlertCircle className="dark:text-text text-warning-text h-5 w-5" />
+                <p className="dark:text-text text-warning-text text-sm font-medium">
                   Your subscription is set to cancel at the end of the current
                   period
                 </p>
@@ -470,10 +471,10 @@ export function SubscriptionSettings({
           Number(subscription.plan.price) > 0 &&
           !subscription.plan.enableLifetimeAccess &&
           getDisplaySubscriptionStatus(subscription) === "EXPIRED" ? (
-            <div className="dark:border-border dark:bg-muted rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="dark:text-foreground h-5 w-5 text-amber-600" />
-                <p className="dark:text-foreground text-sm font-medium text-amber-800">
+            <div className="dark:border-border dark:bg-surface-hover border-warning/40 bg-warning/12 rounded-lg border p-4">
+              <div className="cluster">
+                <AlertCircle className="dark:text-text text-warning h-5 w-5" />
+                <p className="dark:text-text text-warning-text text-sm font-medium">
                   Your access to {subscription.plan.name} expired on{" "}
                   {formatSubscriptionDate(
                     subscription.currentPeriodEnd ?? subscription.nextPaymentDue
@@ -483,7 +484,7 @@ export function SubscriptionSettings({
               </div>
               <Link
                 to="/plans"
-                className="text-primary mt-2 inline-block text-sm font-medium hover:underline"
+                className="text-brand mt-2 inline-block text-sm font-medium hover:underline"
               >
                 View plans
               </Link>
@@ -497,7 +498,7 @@ export function SubscriptionSettings({
           getDisplaySubscriptionStatus(subscription) === "ACTIVE" ? (
             <div className="border-border space-y-4 rounded-lg border p-4">
               <div>
-                <p className="text-muted-foreground mb-2 text-sm">
+                <p className="text-text-secondary mb-2 text-sm">
                   You keep access to {subscription.plan.name} until{" "}
                   {formatSubscriptionDate(
                     subscription.currentPeriodEnd ?? subscription.nextPaymentDue
@@ -512,7 +513,7 @@ export function SubscriptionSettings({
                   />
                   <button
                     type="submit"
-                    className="text-destructive hover:text-destructive/90 text-sm font-medium"
+                    className="text-danger hover:text-danger/90 text-sm font-medium"
                   >
                     Cancel at period end
                   </button>
@@ -523,7 +524,7 @@ export function SubscriptionSettings({
                   p.id !== subscription.planId && p.id !== subscription.plan?.id
               ) ? (
                 <div className="border-border border-t pt-4">
-                  <p className="text-muted-foreground mb-2 text-sm">
+                  <p className="text-text-secondary mb-2 text-sm">
                     Switch to another plan at period end:
                   </p>
                   <Form
@@ -537,7 +538,7 @@ export function SubscriptionSettings({
                     />
                     <select
                       name="planId"
-                      className="border-border bg-background text-foreground rounded-md border px-3 py-1.5 text-sm"
+                      className="border-border bg-canvas text-text rounded-md border px-3 py-1.5 text-sm"
                       required
                     >
                       <option value="">Choose plan</option>
@@ -556,7 +557,7 @@ export function SubscriptionSettings({
                     </select>
                     <button
                       type="submit"
-                      className="border-border bg-muted text-muted-foreground hover:bg-muted/80 rounded-md border px-3 py-1.5 text-sm font-medium"
+                      className="border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 rounded-md border px-3 py-1.5 text-sm font-medium"
                     >
                       Switch at period end
                     </button>
@@ -571,7 +572,7 @@ export function SubscriptionSettings({
             <div className="border-border space-y-4 rounded-lg border p-4">
               <div>
                 <p className="font-medium">Extend subscription</p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   Add paid time. Your paid-through date moves forward without
                   losing remaining days.
                 </p>
@@ -591,7 +592,7 @@ export function SubscriptionSettings({
                       name="targetPlanId"
                       value={topUpPlanId}
                       onChange={(e) => setTopUpPlanId(e.target.value)}
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
                       required
                     >
                       {availablePlans
@@ -615,7 +616,7 @@ export function SubscriptionSettings({
                           e.target.value === "yearly" ? "yearly" : "monthly"
                         )
                       }
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
                     >
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
@@ -630,7 +631,7 @@ export function SubscriptionSettings({
                       name="accessDurationMonths"
                       value={topUpMonths}
                       onChange={(e) => setTopUpMonths(Number(e.target.value))}
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
                     >
                       {topUpCadence === "yearly" ? (
                         <option value={12}>12 months</option>
@@ -656,7 +657,7 @@ export function SubscriptionSettings({
                             : "lightning_one_time"
                         )
                       }
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
+                      className="border-border bg-canvas text-text w-full rounded-md border px-3 py-2 text-sm"
                     >
                       {nwcEnabled ? (
                         <option value="nwc_auto_renew">
@@ -673,7 +674,7 @@ export function SubscriptionSettings({
                 <button
                   type="submit"
                   disabled={topUpFetcher.state !== "idle"}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
                 >
                   {topUpFetcher.state === "idle"
                     ? "Continue to checkout"
@@ -682,7 +683,7 @@ export function SubscriptionSettings({
               </topUpFetcher.Form>
 
               {topUpFetcher.data?.error ? (
-                <div className="text-destructive text-sm">
+                <div className="text-danger text-sm">
                   {topUpFetcher.data.error}
                 </div>
               ) : null}
@@ -694,13 +695,13 @@ export function SubscriptionSettings({
               {topUpFetcher.data &&
               topUpFetcher.data.invoice &&
               topUpFetcher.data.paymentId ? (
-                <div className="bg-muted/30 space-y-2 rounded-lg border p-3">
+                <div className="bg-surface-hover/30 space-y-2 rounded-lg border p-3">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="text-sm font-medium">
                         Invoice for {topUpFetcher.data.planName ?? "extension"}
                       </p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-text-secondary text-xs">
                         {typeof topUpFetcher.data.amountUsd === "number"
                           ? `$${topUpFetcher.data.amountUsd.toFixed(2)}`
                           : null}
@@ -714,16 +715,16 @@ export function SubscriptionSettings({
                         if (!invoice || !paymentId) return;
                         void copyToClipboard(invoice, paymentId);
                       }}
-                      className="border-border bg-background hover:bg-muted inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+                      className="border-border bg-canvas hover:bg-surface-hover inline-cluster rounded-md border px-3 py-1.5 text-sm"
                     >
                       <Copy className={SMALL_ICON_SIZE_CLASS} />
                       Copy invoice
                     </button>
                   </div>
-                  <p className="text-muted-foreground font-mono text-xs break-all">
+                  <p className="text-text-secondary font-mono text-xs break-all">
                     {topUpFetcher.data.invoice}
                   </p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     Status:{" "}
                     {invoiceIsPaid
                       ? "Paid"
@@ -734,7 +735,7 @@ export function SubscriptionSettings({
 
               <Link
                 to="/plans"
-                className="text-primary hover:text-primary/90 inline-flex items-center gap-2 text-sm font-medium"
+                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
               >
                 Compare plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -748,7 +749,7 @@ export function SubscriptionSettings({
             <div className="text-center">
               <Link
                 to="/plans"
-                className="text-primary hover:text-primary/90 inline-flex items-center gap-2 text-sm font-medium"
+                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
               >
                 View plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />

@@ -62,13 +62,13 @@ interface NotificationActionButtonsProps {
 }
 
 const primaryActionClass =
-  "text-muted-foreground hover:text-foreground h-8 gap-1 px-2 text-xs font-medium";
+  "text-text-secondary hover:text-text h-8 gap-1 px-2 text-xs font-medium";
 
 const secondaryAckClass =
-  "text-muted-foreground/80 hover:text-foreground h-7 gap-0.5 px-1.5 text-[11px] font-normal";
+  "text-text-secondary/80 hover:text-text h-7 gap-0.5 px-1.5 text-[11px] font-normal";
 
 const utilityLinkClass =
-  "text-muted-foreground/75 hover:text-foreground/90 text-[11px] leading-none";
+  "text-text-secondary/75 hover:text-text/90 text-[11px] leading-none";
 
 export function NotificationActionButtons({
   eventId,
@@ -99,7 +99,7 @@ export function NotificationActionButtons({
   const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
 
   const trayOpenClass =
-    "bg-primary/10 text-primary border-primary/25 border shadow-sm";
+    "bg-brand/10 text-brand border-brand/25 border shadow-1";
 
   return (
     <div className="mt-0.5 space-y-1">
@@ -146,9 +146,9 @@ export function NotificationActionButtons({
             repostTrayOpen
               ? trayOpenClass
               : repostPostedHighlight
-                ? "text-primary border-primary/30 bg-primary/5 border"
+                ? "text-brand border-brand/30 bg-brand/5 border"
                 : repostScheduledHighlight
-                  ? "text-primary/85 border-primary/35 border border-dashed"
+                  ? "text-brand/85 border-brand/35 border border-dashed"
                   : ""
           }`}
           disabled={isReposting}
@@ -187,7 +187,7 @@ export function NotificationActionButtons({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8 shrink-0"
+              className="text-text-secondary hover:text-text h-8 w-8 shrink-0"
               aria-label="More actions"
               onClick={(e) => e.stopPropagation()}
             >
@@ -248,9 +248,7 @@ export function NotificationActionButtons({
           variant="ghost"
           size="sm"
           className={`${secondaryAckClass} ${
-            likeCompleted
-              ? "text-primary bg-primary/8 border-primary/20 border"
-              : ""
+            likeCompleted ? "text-brand bg-brand/8 border-brand/20 border" : ""
           }`}
           aria-label="Like"
           onClick={(e) => {
@@ -265,7 +263,7 @@ export function NotificationActionButtons({
           />
           Like
           {stats?.likes != null && stats.likes > 0 ? (
-            <span className="text-muted-foreground/70 tabular-nums">
+            <span className="text-text-secondary/70 tabular-nums">
               {stats.likes}
             </span>
           ) : null}
@@ -276,9 +274,7 @@ export function NotificationActionButtons({
             variant="ghost"
             size="sm"
             className={`${secondaryAckClass} ${
-              zapCompleted
-                ? "text-primary bg-primary/8 border-primary/20 border"
-                : ""
+              zapCompleted ? "text-brand bg-brand/8 border-brand/20 border" : ""
             }`}
             aria-label="Zap"
             onClick={(e) => {

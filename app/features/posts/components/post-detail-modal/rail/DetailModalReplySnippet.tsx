@@ -15,8 +15,8 @@ export function DetailModalReplySnippet({
   const ell = body.length > 140 ? "…" : "";
   return (
     <div className="border-border/60 border-l-2 pl-2">
-      <p className="text-foreground text-xs font-medium">{name}</p>
-      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs whitespace-pre-wrap">
+      <p className="text-text text-xs font-medium">{name}</p>
+      <p className="text-text-secondary mt-0.5 line-clamp-2 text-xs whitespace-pre-wrap">
         {snippet}
         {ell}
       </p>

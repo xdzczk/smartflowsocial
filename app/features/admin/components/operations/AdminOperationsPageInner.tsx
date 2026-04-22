@@ -83,9 +83,9 @@ export function AdminOperationsPageInner() {
     const el = document.getElementById(id);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    el.classList.add("ring-primary/35", "rounded-xl", "ring-2");
+    el.classList.add("ring-brand/35", "rounded-xl", "ring-2");
     const t = window.setTimeout(() => {
-      el.classList.remove("ring-primary/35", "rounded-xl", "ring-2");
+      el.classList.remove("ring-brand/35", "rounded-xl", "ring-2");
     }, 2400);
     return () => {
       window.clearTimeout(t);
@@ -178,15 +178,15 @@ export function AdminOperationsPageInner() {
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
         <AdminCard
           variant="emphasis"
-          className="border-primary/20 sticky top-[52px] z-[5] shadow-md backdrop-blur-sm lg:top-14"
+          className="border-brand/20 shadow-2 sticky top-[52px] z-[5] backdrop-blur-sm lg:top-14"
         >
-          <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+          <p className="text-text-secondary text-[11px] font-semibold tracking-wide uppercase">
             Current operational state
           </p>
-          <p className="text-foreground mt-1 text-sm leading-snug font-medium">
+          <p className="text-text mt-1 text-sm leading-snug font-medium">
             {sum.headline}
           </p>
-          <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums">
+          <div className="text-text-secondary mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums">
             <span>Stuck publishing: {sum.stuckPublishing}</span>
             <span>Outbox dead-lettered: {sum.outboxDeadLettered}</span>
             <span>
@@ -196,7 +196,7 @@ export function AdminOperationsPageInner() {
                 : "—"}
             </span>
           </div>
-          <p className="text-foreground/90 mt-3 text-sm">{sum.nextStep}</p>
+          <p className="text-text/90 mt-3 text-sm">{sum.nextStep}</p>
         </AdminCard>
 
         <AdminSection eyebrow="Signer" title="NIP-46 reconnect health (range)">
@@ -224,7 +224,7 @@ export function AdminOperationsPageInner() {
             />
           </div>
           {d.signerConnect.failuresByBucket.length > 0 ? (
-            <ul className="text-muted-foreground mt-2 text-xs">
+            <ul className="text-text-secondary mt-2 text-xs">
               {d.signerConnect.failuresByBucket.map((b) => (
                 <li key={b.bucket}>
                   <span className="font-mono">{b.bucket}</span>: {b.count}
@@ -232,7 +232,7 @@ export function AdminOperationsPageInner() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               No failure buckets in range — either healthy or no telemetry yet.
             </p>
           )}
@@ -257,12 +257,12 @@ export function AdminOperationsPageInner() {
         </div>
 
         {d.queueError ? (
-          <p className="text-sm text-amber-600">{d.queueError}</p>
+          <p className="text-warning text-sm">{d.queueError}</p>
         ) : null}
 
         <section className="space-y-2" id="relay">
           <h2 className="text-lg font-semibold">Relay publish ACKs (range)</h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             {d.relayAcks.accepted + d.relayAcks.failed === 0
               ? "No relay acknowledgement rows in this window."
               : `${d.relayAcks.accepted} accepted vs ${d.relayAcks.failed} failed/timeout${
@@ -275,10 +275,10 @@ export function AdminOperationsPageInner() {
 
         <section className="space-y-2" id="stuck">
           <h2 className="text-lg font-semibold">Stuck in publishing</h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Posts in PUBLISHING longer than the stuck threshold (see metric
             definitions). Count:{" "}
-            <span className="text-foreground font-semibold tabular-nums">
+            <span className="text-text font-semibold tabular-nums">
               {sum.stuckPublishing}
             </span>
             .
@@ -316,8 +316,8 @@ export function AdminOperationsPageInner() {
           description="Removes Redis failed job records and old PublishRelayAck rows. Actions are logged server-side. Does not fix FAILED posts or DB dead-letter rows."
         >
           {maintenanceNotice ? (
-            <div className="border-border bg-muted/40 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
-              <span className="text-foreground/90">{maintenanceNotice}</span>
+            <div className="border-border bg-surface-hover/40 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
+              <span className="text-text/90">{maintenanceNotice}</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -376,7 +376,7 @@ export function AdminOperationsPageInner() {
               <CleanFailedForm method="post" className="space-y-4">
                 <input type="hidden" name="_action" value="clean_failed_jobs" />
                 {cleanError ? (
-                  <p className="text-destructive text-sm" role="alert">
+                  <p className="text-danger text-sm" role="alert">
                     {cleanError}
                   </p>
                 ) : null}
@@ -420,16 +420,15 @@ export function AdminOperationsPageInner() {
               <DialogHeader>
                 <DialogTitle>Purge old relay ACK rows</DialogTitle>
                 <DialogDescription>
-                  Deletes{" "}
-                  <code className="text-foreground">PublishRelayAck</code> rows
-                  with <code className="text-foreground">createdAt</code> older
+                  Deletes <code className="text-text">PublishRelayAck</code>{" "}
+                  rows with <code className="text-text">createdAt</code> older
                   than the retention window (7–365 days). Newer rows are kept.
                 </DialogDescription>
               </DialogHeader>
               <PurgeRelayAckForm method="post" className="space-y-4">
                 <input type="hidden" name="_action" value="purge_relay_acks" />
                 {purgeError ? (
-                  <p className="text-destructive text-sm" role="alert">
+                  <p className="text-danger text-sm" role="alert">
                     {purgeError}
                   </p>
                 ) : null}
@@ -443,7 +442,7 @@ export function AdminOperationsPageInner() {
                     max={365}
                     defaultValue={30}
                   />
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     Values outside 7–365 are clamped server-side.
                   </p>
                 </div>
@@ -486,7 +485,7 @@ export function AdminOperationsPageInner() {
         {d.outbox ? (
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">Outbox</h2>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Pending: {d.outbox.pending} · Ready: {d.outbox.ready} ·
               Dead-lettered: {d.outbox.deadLettered}
             </p>
@@ -509,7 +508,7 @@ export function AdminOperationsPageInner() {
               <tbody>
                 {d.failuresByReason.map((row) => (
                   <tr key={row.reason}>
-                    <td className="text-muted-foreground max-w-md p-2 text-xs">
+                    <td className="text-text-secondary max-w-md p-2 text-xs">
                       {row.reason}
                     </td>
                     <td className="p-2 text-right tabular-nums">{row.count}</td>
@@ -546,7 +545,7 @@ export function AdminOperationsPageInner() {
                     <td className="max-w-[160px] truncate p-2 font-mono text-xs">
                       {p.npub}
                     </td>
-                    <td className="text-muted-foreground max-w-md p-2 text-xs">
+                    <td className="text-text-secondary max-w-md p-2 text-xs">
                       {p.reason}
                     </td>
                   </tr>
@@ -558,16 +557,16 @@ export function AdminOperationsPageInner() {
 
         <section className="scroll-mt-24 space-y-2" id="deadletter">
           <h2 className="text-lg font-semibold">Dead-letter queue</h2>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             Re-enqueue sends the job back to BullMQ (same as{" "}
-            <code className="text-foreground">
+            <code className="text-text">
               scripts/replay-queue-dead-letter.ts
             </code>
-            ). Confirm with <span className="text-foreground">REPLAY</span>.
+            ). Confirm with <span className="text-text">REPLAY</span>.
             {d.queueError ? (
               <>
                 {" "}
-                <span className="text-amber-600 dark:text-amber-500">
+                <span className="text-warning dark:text-warning">
                   Queue stats failed to load — replay may not work until Redis
                   is reachable.
                 </span>
@@ -603,7 +602,7 @@ export function AdminOperationsPageInner() {
                     <td className="p-2 font-mono text-xs">
                       {row.postId ?? "—"}
                     </td>
-                    <td className="text-muted-foreground max-w-md p-2 text-xs">
+                    <td className="text-text-secondary max-w-md p-2 text-xs">
                       {row.error}
                     </td>
                     <td className="p-2 text-right">
@@ -665,7 +664,7 @@ export function AdminOperationsPageInner() {
                     name="entry_id"
                     value={replayTarget.id}
                   />
-                  <dl className="text-muted-foreground space-y-1 text-xs">
+                  <dl className="text-text-secondary space-y-1 text-xs">
                     <div className="flex gap-2">
                       <dt className="shrink-0 font-medium">Entry</dt>
                       <dd className="min-w-0 truncate font-mono">
@@ -684,7 +683,7 @@ export function AdminOperationsPageInner() {
                     </div>
                   </dl>
                   {replayError ? (
-                    <p className="text-destructive text-sm" role="alert">
+                    <p className="text-danger text-sm" role="alert">
                       {replayError}
                     </p>
                   ) : null}
@@ -753,7 +752,7 @@ export function AdminOperationsPageInner() {
                     <td className="p-2 text-right tabular-nums">
                       {formatSats(e.commissionSats, dateLocale)}
                     </td>
-                    <td className="text-muted-foreground p-2 text-xs">
+                    <td className="text-text-secondary p-2 text-xs">
                       {e.payoutFailureReason ?? "—"}
                     </td>
                   </tr>
@@ -765,7 +764,7 @@ export function AdminOperationsPageInner() {
 
         <Link
           to="/dashboard/admin"
-          className="text-primary text-sm hover:underline"
+          className="text-brand text-sm hover:underline"
         >
           ← Overview
         </Link>

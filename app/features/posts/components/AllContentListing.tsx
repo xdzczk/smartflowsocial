@@ -493,9 +493,9 @@ export default function AllContentListing({
       {/* Mobile: Sort + virtualized card list (visible only on mobile) */}
       {isMobile ? (
         <div className="block flex min-h-0 flex-1 flex-col md:hidden">
-          <div className="mt-3 flex items-center gap-2">
+          <div className="cluster mt-3">
             <span
-              className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+              className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
             >
               Sort:
             </span>
@@ -603,7 +603,7 @@ export default function AllContentListing({
                     <div ref={sentinelRef} className="h-4 w-full" />
                   ) : null}
                   {isFetchingNextPage ? (
-                    <div className="text-muted-foreground py-4 text-center text-sm">
+                    <div className="text-text-secondary py-4 text-center text-sm">
                       Loading more...
                     </div>
                   ) : null}
@@ -680,7 +680,7 @@ export default function AllContentListing({
         <div className="mt-8">
           {type === "draft" ? (
             content.length === 0 ? (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="drafts-empty-state"
                   title="No drafts yet"
@@ -695,7 +695,7 @@ export default function AllContentListing({
                 </PublishingEmptyState>
               </div>
             ) : (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="drafts-filtered-empty"
                   title="No drafts match these filters"
@@ -715,7 +715,7 @@ export default function AllContentListing({
             )
           ) : type === "scheduled" ? (
             content.length === 0 ? (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="scheduled-empty-state"
                   title="Nothing scheduled"
@@ -730,7 +730,7 @@ export default function AllContentListing({
                 </PublishingEmptyState>
               </div>
             ) : (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="scheduled-filtered-empty"
                   title="No items match these filters"
@@ -760,7 +760,7 @@ export default function AllContentListing({
           ) : (
             <>
               {content.length === 0 ? (
-                <div className="border-border bg-card rounded-xl border">
+                <div className="border-border bg-surface rounded-xl border">
                   <PublishingEmptyState
                     data-testid="published-empty-state"
                     title="No published content yet"
@@ -775,7 +775,7 @@ export default function AllContentListing({
                   </PublishingEmptyState>
                 </div>
               ) : (
-                <div className="border-border bg-card rounded-xl border">
+                <div className="border-border bg-surface rounded-xl border">
                   <PublishingEmptyState
                     data-testid="published-filtered-empty"
                     title="No items match these filters"

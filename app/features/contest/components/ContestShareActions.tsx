@@ -23,7 +23,7 @@ export function ContestShareActions({
     <div className="flex flex-wrap gap-2">
       <button
         type="button"
-        className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+        className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
         onClick={() => {
           void navigator.clipboard.writeText(announcementText);
           setCopiedKey("announcement");
@@ -33,7 +33,7 @@ export function ContestShareActions({
       </button>
       <button
         type="button"
-        className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+        className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
         onClick={() => {
           void navigator.clipboard.writeText(updateText);
           setCopiedKey("update");

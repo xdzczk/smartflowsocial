@@ -60,24 +60,22 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
   };
 
   return (
-    <div className="giveaway-container border-border bg-card rounded-lg border p-4 shadow">
-      <h2 className="text-foreground mb-4 text-xl font-bold">
-        Giveaway Winners
-      </h2>
+    <div className="giveaway-container border-border bg-surface shadow-1 rounded-lg border p-4">
+      <h2 className="text-text mb-4 text-xl font-bold">Giveaway Winners</h2>
       <GiveawayPost randomUsers={randomUsers} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Reposters Section */}
-        <div className="border-border bg-secondary/30 rounded-lg border p-3">
-          <h3 className="text-foreground mb-2 font-semibold">Reposters</h3>
+        <div className="border-border bg-surface-hover/60 rounded-lg border p-3">
+          <h3 className="text-text mb-2 font-semibold">Reposters</h3>
           {randomUsers.reposters.length > 0 ? (
             <ul className="space-y-2">
               {randomUsers.reposters.map((user, index) => (
                 <li
                   // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`repost-${index}`}
-                  className="border-border bg-card rounded border p-2"
+                  className="border-border bg-surface rounded-xs border p-2"
                 >
-                  <div className="text-foreground mb-2 overflow-hidden text-xs text-ellipsis">
+                  <div className="text-text mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />
@@ -85,22 +83,22 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">No reposters found</p>
+            <p className="text-text-secondary text-sm">No reposters found</p>
           )}
         </div>
 
         {/* Likers/Zappers Section */}
-        <div className="border-border bg-secondary/30 rounded-lg border p-3">
-          <h3 className="text-foreground mb-2 font-semibold">Likes & Zaps</h3>
+        <div className="border-border bg-surface-hover/60 rounded-lg border p-3">
+          <h3 className="text-text mb-2 font-semibold">Likes & Zaps</h3>
           {randomUsers.likers.length > 0 ? (
             <ul className="space-y-2">
               {randomUsers.likers.map((user, index) => (
                 <li
                   // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`like-${index}`}
-                  className="border-border bg-card rounded border p-2"
+                  className="border-border bg-surface rounded-xs border p-2"
                 >
-                  <div className="text-foreground mb-2 overflow-hidden text-xs text-ellipsis">
+                  <div className="text-text mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />
@@ -108,24 +106,24 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               No likes or zaps found
             </p>
           )}
         </div>
 
         {/* Commenters Section */}
-        <div className="border-border bg-secondary/30 rounded-lg border p-3">
-          <h3 className="text-foreground mb-2 font-semibold">Commenters</h3>
+        <div className="border-border bg-surface-hover/60 rounded-lg border p-3">
+          <h3 className="text-text mb-2 font-semibold">Commenters</h3>
           {randomUsers.commenters.length > 0 ? (
             <ul className="space-y-2">
               {randomUsers.commenters.map((user, index) => (
                 <li
                   // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`comment-${index}`}
-                  className="border-border bg-card rounded border p-2"
+                  className="border-border bg-surface rounded-xs border p-2"
                 >
-                  <div className="text-foreground mb-2 overflow-hidden text-xs text-ellipsis">
+                  <div className="text-text mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />
@@ -133,7 +131,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">No comments found</p>
+            <p className="text-text-secondary text-sm">No comments found</p>
           )}
         </div>
       </div>

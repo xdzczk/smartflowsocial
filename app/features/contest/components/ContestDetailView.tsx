@@ -46,15 +46,15 @@ function rootUserFromData(
 
 function headerToneClassForStatus(status: string): string {
   if (status === "ENDED_REVIEW") {
-    return "border-blue-500/40 bg-blue-500/5";
+    return "border-info/40 bg-info/5";
   }
   if (status === "LOCKED" || status === "PAYOUT_IN_PROGRESS") {
-    return "border-amber-500/40 bg-amber-500/5";
+    return "border-warning/40 bg-warning/5";
   }
   if (status === "COMPLETED") {
-    return "border-emerald-500/40 bg-emerald-500/5";
+    return "border-success/40 bg-success/5";
   }
-  return "border-border bg-card";
+  return "border-border bg-surface";
 }
 
 function stateSummaryForContest(status: string, statusLabel: string): string {

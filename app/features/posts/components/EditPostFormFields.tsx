@@ -1,5 +1,15 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Checkbox } from "~/components/ui/checkbox";
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
 
 import type { QueueType, HashTagPreset } from "../types";
@@ -57,13 +67,10 @@ export function EditPostFormFields({
   return (
     <>
       {/* Images section */}
-      <div>
-        <label
-          htmlFor="edit-post-images"
-          className="text-muted-foreground mb-2 block text-sm font-medium"
-        >
+      <div className="stack-tight">
+        <p className="text-text text-sm leading-none font-medium">
           Images / Media
-        </label>
+        </p>
         <div className="flex flex-wrap gap-3">
           {existingImages.map((url, idx) => (
             // eslint-disable-next-line react/no-array-index-key -- Stable list of existing images, composite key with prefix
@@ -71,12 +78,12 @@ export function EditPostFormFields({
               <img
                 src={url}
                 alt="Existing"
-                className="h-24 w-24 rounded object-cover"
+                className="h-24 w-24 rounded-xs object-cover"
               />
               <button
                 type="button"
                 onClick={() => onRemoveExistingImage(idx)}
-                className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
+                className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
               >
                 ×
               </button>
@@ -90,12 +97,12 @@ export function EditPostFormFields({
                 <img
                   src={objectURL}
                   alt="New"
-                  className="h-24 w-24 rounded object-cover"
+                  className="h-24 w-24 rounded-xs object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}
-                  className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
+                  className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
                 >
                   ×
                 </button>
@@ -105,7 +112,7 @@ export function EditPostFormFields({
           <label
             htmlFor="edit-post-file-input"
             className={cn(
-              "border-border flex h-24 w-24 items-center justify-center rounded border-2 border-dashed",
+              "border-border flex h-24 w-24 items-center justify-center rounded-xs border-2 border-dashed",
               mediaAddDisabled
                 ? "pointer-events-none cursor-not-allowed opacity-50"
                 : "hover:border-border cursor-pointer"
@@ -121,29 +128,24 @@ export function EditPostFormFields({
               disabled={mediaAddDisabled}
               onChange={onFileChange}
             />
-            <span className="text-muted-foreground text-3xl">+</span>
+            <span className="text-text-secondary text-3xl">+</span>
           </label>
         </div>
       </div>
 
       {/* Caption */}
-      <div>
-        <label
-          htmlFor="edit-post-caption"
-          className="text-muted-foreground mb-2 block text-sm font-medium"
-        >
-          Caption
-        </label>
-        <textarea
-          id="edit-post-caption"
-          name="edit-post-caption"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          rows={4}
-          className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
-          placeholder="What's on your mind?"
-        />
-      </div>
+      <FormField id="edit-post-caption">
+        <FormLabel>Caption</FormLabel>
+        <FormControl>
+          <Textarea
+            name="edit-post-caption"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            rows={4}
+            placeholder="What's on your mind?"
+          />
+        </FormControl>
+      </FormField>
 
       {/* Hashtag Preset Toggle */}
       <HashtagPresetToggle
@@ -156,23 +158,20 @@ export function EditPostFormFields({
 
       {/* Manual hashtags fallback */}
       {!useHashtagPresets ? (
-        <div>
-          <label
-            htmlFor="edit-post-hashtags"
-            className="text-muted-foreground mb-2 block text-sm font-medium"
-          >
+        <FormField id="edit-post-hashtags">
+          <FormLabel>
             Hashtags (space-separated, e.g. #nostr #bitcoin)
-          </label>
-          <input
-            id="edit-post-hashtags"
-            name="edit-post-hashtags"
-            type="text"
-            value={manualHashtags}
-            onChange={(e) => setManualHashtags(e.target.value)}
-            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
-            placeholder="#tag1 #tag2 #tag3"
-          />
-        </div>
+          </FormLabel>
+          <FormControl>
+            <Input
+              name="edit-post-hashtags"
+              type="text"
+              value={manualHashtags}
+              onChange={(e) => setManualHashtags(e.target.value)}
+              placeholder="#tag1 #tag2 #tag3"
+            />
+          </FormControl>
+        </FormField>
       ) : null}
 
       <label
@@ -184,32 +183,33 @@ export function EditPostFormFields({
           checked={includeHashtagsInNoteBody === false}
           onCheckedChange={(c) => setIncludeHashtagsInNoteBody(c !== true)}
         />
-        <span className="text-muted-foreground text-sm">Hide tags</span>
+        <span className="text-text-secondary text-sm">Hide tags</span>
       </label>
 
       {hideQueueField ? null : (
-        <div>
-          <label
-            htmlFor="edit-post-queue-type"
-            className="text-muted-foreground mb-2 block text-sm font-medium"
-          >
-            Queue
-          </label>
-          <select
-            id="edit-post-queue-type"
-            name="edit-post-queue-type"
-            value={selectedQueueType}
-            onChange={(e) => setSelectedQueueType(e.target.value)}
-            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
-          >
-            <option value="">Manual (No Queue)</option>
-            {queueTypes.map((queueType) => (
-              <option key={queueType.id} value={queueType.id}>
-                {queueType.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormField id="edit-post-queue-type">
+          <FormLabel>Queue</FormLabel>
+          <FormControl>
+            <Select
+              value={selectedQueueType || "__manual__"}
+              onValueChange={(v) =>
+                setSelectedQueueType(v === "__manual__" ? "" : v)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Manual (No Queue)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__manual__">Manual (No Queue)</SelectItem>
+                {queueTypes.map((queueType) => (
+                  <SelectItem key={queueType.id} value={queueType.id}>
+                    {queueType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormControl>
+        </FormField>
       )}
     </>
   );

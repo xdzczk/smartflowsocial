@@ -20,11 +20,11 @@ function PreviewMediaItem({
           className
         )}
       >
-        <span className="text-muted-foreground text-xs font-medium">
+        <span className="text-text-secondary text-xs font-medium">
           Uploading…
         </span>
         {m.fileLabel ? (
-          <span className="text-muted-foreground/80 line-clamp-2 text-[11px]">
+          <span className="text-text-tertiary line-clamp-2 text-[11px]">
             {m.fileLabel}
           </span>
         ) : null}
@@ -39,18 +39,16 @@ function PreviewMediaItem({
           className
         )}
       >
-        <span className="text-destructive text-xs font-medium">
+        <span className="text-danger-text text-xs font-medium">
           Upload failed
         </span>
         {m.failureMessage ? (
-          <span className="text-muted-foreground line-clamp-3 text-[11px]">
+          <span className="text-text-secondary line-clamp-3 text-[11px]">
             {m.failureMessage}
           </span>
         ) : null}
         {m.fileLabel ? (
-          <span className="text-muted-foreground/70 text-[10px]">
-            {m.fileLabel}
-          </span>
+          <span className="text-text-tertiary text-[10px]">{m.fileLabel}</span>
         ) : null}
       </div>
     );
@@ -88,11 +86,11 @@ export function PreviewPostMediaGrid({
     return (
       <div
         className={cn(
-          "border-border/50 overflow-hidden rounded-lg border",
+          "border-border-subtle overflow-hidden rounded-lg border",
           className
         )}
       >
-        <div className="bg-muted/30 aspect-video max-h-64 min-h-[7.5rem] w-full">
+        <div className="bg-surface-hover/50 aspect-video max-h-64 min-h-[7.5rem] w-full">
           <PreviewMediaItem m={m} className="h-full w-full" />
         </div>
       </div>
@@ -102,16 +100,16 @@ export function PreviewPostMediaGrid({
   return (
     <div
       className={cn(
-        "border-border/50 overflow-hidden rounded-lg border",
+        "border-border-subtle overflow-hidden rounded-lg border",
         className
       )}
     >
-      <div className={cn(GRID_TWO_COL, "bg-muted/25")}>
+      <div className={cn(GRID_TWO_COL, "bg-surface-hover/40")}>
         {media.map((m, i) => (
           <div
             key={m.id}
             className={cn(
-              "bg-muted/40 overflow-hidden",
+              "bg-surface-hover/60 overflow-hidden",
               n === 3 && i === 0 ? "col-span-2 aspect-video" : "aspect-square"
             )}
           >

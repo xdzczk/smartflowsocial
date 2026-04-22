@@ -82,11 +82,11 @@ export function ProductFeedbackSidebar({
     dashLoader?.feedbackInboxKind10050Relays ?? [];
 
   // Match inactive `NavigationItem` / `OperatorAdminNavItem` in DashboardHeader; `text-xs` scales the row down.
-  const triggerClass = `group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-muted-foreground hover:bg-muted hover:text-foreground active:border-border focus:outline-none focus:ring-2 focus:ring-ring ${
+  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
   const iconSpanClass =
-    "text-foreground/70 group-hover:text-foreground flex flex-none items-center";
+    "text-text/70 group-hover:text-text flex flex-none items-center";
 
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -241,17 +241,17 @@ export function ProductFeedbackSidebar({
                 with your Nostr account. When you continue, your extension or
                 remote signer will ask you to approve.
               </DialogDescription>
-              <details className="text-muted-foreground mt-2 text-xs">
+              <details className="text-text-secondary mt-2 text-xs">
                 <summary className="cursor-pointer underline-offset-2 select-none hover:underline">
                   Technical details (remote signers)
                 </summary>
                 <p className="border-border mt-2 border-l-2 pl-3">
                   Remote signers must expose NIP-46{" "}
-                  <code className="bg-muted rounded px-1 py-0.5 text-[0.8rem]">
+                  <code className="bg-surface-hover rounded-xs px-1 py-0.5 text-[0.8rem]">
                     nip04_encrypt
                   </code>{" "}
                   for the DM. Optional NIP-17 gift wraps need NIP-44 (e.g.{" "}
-                  <code className="bg-muted rounded px-1 py-0.5 text-[0.8rem]">
+                  <code className="bg-surface-hover rounded-xs px-1 py-0.5 text-[0.8rem]">
                     nip44_encrypt
                   </code>
                   ) when the inbox publishes kind 10050 and the server enables
@@ -294,7 +294,7 @@ export function ProductFeedbackSidebar({
               id={categoryId}
               name="category"
               required
-              className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+              className="focus-ring border-border bg-canvas flex h-10 w-full rounded-md border px-3 py-2 text-sm"
               defaultValue="bug"
             >
               <option value="bug">Bug report</option>

@@ -57,16 +57,17 @@ export function SettingsShell({
   const [searchParams] = useSearchParams();
   const grouped = groupVisibleSettingsSections(sections);
 
+  // No overflow-x-hidden on root — it breaks `position:sticky` on the rail (same as dashboard main / ActionRail).
   return (
     <div
-      className="mx-auto w-full max-w-[1400px] overflow-x-hidden px-4 pb-8 sm:px-6"
+      className="mx-auto w-full max-w-[1400px] px-4 pb-8 sm:px-6"
       data-testid="settings-page"
     >
       <div className="pt-2 pb-4">
         <PublishingPageHeader title={title} subtitle={subtitle} />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-5 xl:gap-6">
+      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         <div className="lg:hidden" data-testid="settings-nav-mobile">
           <Label htmlFor="settings-section-select" className="mb-2 block">
             Settings section
@@ -99,7 +100,7 @@ export function SettingsShell({
             <SelectContent>
               {grouped.map((g) => (
                 <SelectGroup key={g.groupId}>
-                  <SelectLabel className="text-muted-foreground px-2 py-1.5 text-[11px] font-medium tracking-wide">
+                  <SelectLabel className="text-text-secondary px-2 py-1.5 text-[11px] font-medium tracking-wide">
                     {g.groupLabel}
                   </SelectLabel>
                   {g.items.map((section) => (
@@ -114,14 +115,14 @@ export function SettingsShell({
         </div>
 
         <div
-          className="w-full max-w-[720px] min-w-0 flex-1 overflow-x-hidden"
+          className="w-full max-w-[880px] min-w-0 flex-1 overflow-x-hidden"
           data-testid="settings-active-panel"
         >
           {children}
         </div>
 
         <aside
-          className="border-border bg-muted/20 hidden w-full shrink-0 rounded-lg border shadow-sm lg:sticky lg:top-[4.75rem] lg:flex lg:max-h-[calc(100vh-5.75rem)] lg:w-[272px] lg:flex-col lg:self-start xl:w-[288px]"
+          className="border-border bg-surface-raised shadow-2 hidden w-full shrink-0 rounded-lg border lg:sticky lg:top-[4.75rem] lg:z-10 lg:flex lg:max-h-[calc(100dvh-5.75rem)] lg:w-[300px] lg:flex-col lg:self-start xl:w-[320px]"
           aria-label="Settings sections"
           data-testid="settings-section-rail"
         >
@@ -129,7 +130,7 @@ export function SettingsShell({
             <div className="space-y-3">
               {grouped.map((g) => (
                 <div key={g.groupId}>
-                  <p className="text-muted-foreground px-2 pb-1 text-[10px] font-medium tracking-wide uppercase">
+                  <p className="text-text-secondary px-2 pb-1 text-[10px] font-medium tracking-wide uppercase">
                     {g.groupLabel}
                   </p>
                   <ul className="flex flex-col gap-px">
@@ -145,10 +146,10 @@ export function SettingsShell({
                             replace
                             preventScrollReset
                             className={cn(
-                              "focus-visible:ring-ring block rounded-md px-2.5 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                              "focus-ring-offset motion-fast block rounded-md px-2.5 py-2 text-sm",
                               isActive
-                                ? "bg-primary/10 text-foreground border-border/80 border font-semibold shadow-[inset_0_0_0_1px_hsl(var(--border)/0.35)]"
-                                : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                                ? "bg-surface-selected text-text border-border-subtle border font-semibold"
+                                : "text-text-secondary hover:bg-surface-hover/70 hover:text-text"
                             )}
                             data-testid={`settings-nav-item-${section.id}`}
                             aria-current={isActive ? "page" : undefined}
@@ -157,7 +158,7 @@ export function SettingsShell({
                               {section.label}
                             </span>
                             {section.description ? (
-                              <span className="text-muted-foreground mt-0.5 block text-[11px] leading-snug font-normal">
+                              <span className="text-text-secondary mt-0.5 block text-[11px] leading-snug font-normal">
                                 {section.description}
                               </span>
                             ) : null}

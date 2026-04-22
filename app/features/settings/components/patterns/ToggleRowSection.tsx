@@ -36,7 +36,7 @@ export function ToggleRowSection({
         <div className="min-w-0 space-y-0.5">
           <p className="text-sm font-medium">{label}</p>
           {description ? (
-            <p className="text-muted-foreground text-xs leading-snug">
+            <p className="text-text-secondary text-xs leading-snug">
               {description}
             </p>
           ) : null}

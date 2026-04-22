@@ -4,7 +4,6 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { GiveawayDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
@@ -24,6 +23,7 @@ import {
   runGiveawayPayoutBatchStepWithNwc,
   updateGiveawayPayoutSettings,
   updateGiveaway,
+  GiveawayDetailPageSkeleton,
 } from "~/features/giveaway";
 import {
   formatScopeSummaryLabel,

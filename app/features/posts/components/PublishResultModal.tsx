@@ -1,12 +1,4 @@
-import {
-  CheckCircle2,
-  Clock,
-  Loader2,
-  XCircle,
-  Plus,
-  CheckSquare,
-  LayoutDashboard,
-} from "lucide-react";
+import { Clock, Plus, CheckSquare, LayoutDashboard } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -18,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { StatusIcon } from "~/components/ui/status-icon";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -48,7 +41,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "scheduled") {
     return (
       <>
-        <Clock className="h-6 w-6 text-green-500" />
+        <StatusIcon tone="success" size="xl" icon={Clock} />
         Scheduled Successfully
       </>
     );
@@ -56,7 +49,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "publishing") {
     return (
       <>
-        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+        <StatusIcon tone="pending" size="xl" className="text-info" />
         Publishing...
       </>
     );
@@ -64,7 +57,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "success") {
     return (
       <>
-        <CheckCircle2 className="h-6 w-6 text-green-500" />
+        <StatusIcon tone="success" size="xl" />
         Published Successfully
       </>
     );
@@ -72,15 +65,14 @@ function StatusTitle({ status }: { status: StatusType }) {
   if (status === "partial") {
     return (
       <>
-        <CheckCircle2 className="h-6 w-6 text-yellow-500" />
+        <StatusIcon tone="warning" size="xl" />
         Partially Published
       </>
     );
   }
-  // status must be "failed" at this point
   return (
     <>
-      <XCircle className="h-6 w-6 text-red-500" />
+      <StatusIcon tone="danger" size="xl" />
       Publishing Failed
     </>
   );
@@ -207,46 +199,39 @@ function StatusDescription({
 function RelayStatusBadge({ status }: { status: RelayAck["status"] }) {
   if (status === "ACCEPTED") {
     return (
-      <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+      <span className="bg-success/12 text-success-text dark:bg-success/15 dark:text-success rounded-full px-2 py-1 text-xs font-medium">
         Accepted
       </span>
     );
   }
   if (status === "FAILED") {
     return (
-      <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
+      <span className="bg-danger/12 text-danger-text dark:bg-danger/15 dark:text-danger rounded-full px-2 py-1 text-xs font-medium">
         Failed
       </span>
     );
   }
   if (status === "TIMEOUT") {
     return (
-      <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+      <span className="bg-warning/12 text-warning-text dark:bg-warning/15 dark:text-warning rounded-full px-2 py-1 text-xs font-medium">
         Timeout
       </span>
     );
   }
   // status must be "PENDING" at this point
   return (
-    <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-xs font-medium">
+    <span className="bg-surface-hover text-text-secondary rounded-full px-2 py-1 text-xs font-medium">
       Pending
     </span>
   );
 }
 
-// Helper component for relay status icon
 function RelayStatusIcon({ status }: { status: RelayAck["status"] }) {
-  if (status === "ACCEPTED") {
-    return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-  }
-  if (status === "FAILED") {
-    return <XCircle className="h-5 w-5 text-red-500" />;
-  }
-  if (status === "TIMEOUT") {
-    return <Clock className="h-5 w-5 text-yellow-500" />;
-  }
-  // status must be "PENDING" at this point
-  return <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />;
+  if (status === "ACCEPTED") return <StatusIcon tone="success" size="lg" />;
+  if (status === "FAILED") return <StatusIcon tone="danger" size="lg" />;
+  if (status === "TIMEOUT")
+    return <StatusIcon tone="warning" size="lg" icon={Clock} />;
+  return <StatusIcon tone="pending" size="lg" />;
 }
 
 interface PublishResultModalProps {
@@ -726,7 +711,7 @@ export default function PublishResultModal({
         }}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+          <DialogTitle className="cluster text-2xl">
             <StatusTitle status={status} />
           </DialogTitle>
           <DialogDescription className="text-base">
@@ -751,7 +736,7 @@ export default function PublishResultModal({
             )}
             {hasTimedOut &&
             (status === "publishing" || status === "partial") ? (
-              <span className="mt-2 block text-sm text-yellow-600 dark:text-yellow-400">
+              <span className="text-warning-text mt-2 block text-sm">
                 Still waiting for some relays to respond...
               </span>
             ) : null}
@@ -766,13 +751,13 @@ export default function PublishResultModal({
                 key={ack.relayUrl}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
-                <div className="flex items-center gap-3">
+                <div className="cluster-loose">
                   <RelayStatusIcon status={ack.status} />
                   <span className="font-mono text-sm">
                     {formatRelayUrl(ack.relayUrl)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="cluster">
                   <RelayStatusBadge status={ack.status} />
                 </div>
               </div>
@@ -784,8 +769,8 @@ export default function PublishResultModal({
         relayAcksForUi.length === 0 &&
         status === "publishing" ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <span className="text-muted-foreground text-center text-sm">
+            <StatusIcon tone="pending" size="xl" className="text-info" />
+            <span className="text-text-secondary text-center text-sm">
               {resolvedPublishAttemptId
                 ? relayAcks.length > 0
                   ? "Preparing relay status…"
@@ -793,7 +778,7 @@ export default function PublishResultModal({
                 : "Checking publish status..."}
             </span>
             {hasTimedOut ? (
-              <span className="text-muted-foreground text-center text-sm">
+              <span className="text-text-secondary text-center text-sm">
                 Relay responses are taking longer than usual. Your post was
                 published—you can close this and check Published.
               </span>

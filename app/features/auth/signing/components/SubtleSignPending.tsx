@@ -18,8 +18,7 @@
  * action button without branching on intent kind.
  */
 
-import { Loader2 } from "lucide-react";
-
+import { StatusIcon } from "~/components/ui/status-icon";
 import { cn } from "~/lib/utils";
 
 import type { SigningAttempt } from "../signing-attempts.client";
@@ -52,14 +51,11 @@ export function SubtleSignPending({
       role="status"
       aria-live="polite"
       aria-label={`${accessibleLabel} pending`}
-      className={cn(
-        "text-muted-foreground inline-flex items-center",
-        className
-      )}
+      className={cn("text-text-secondary inline-flex items-center", className)}
       data-testid="subtle-sign-pending"
       data-state={attempt.state}
     >
-      <Loader2 aria-hidden="true" className="h-3 w-3 animate-spin" />
+      <StatusIcon tone="pending" size="xs" />
       <span className="sr-only">{accessibleLabel} pending</span>
     </span>
   );

@@ -160,11 +160,11 @@ interface NotificationItemProps {
   isFollowingAuthor?: boolean;
 }
 
-const MUTED_BG_CLASS = "bg-muted";
-const MUTED_TEXT_CLASS = "text-muted-foreground";
+const MUTED_BG_CLASS = "bg-surface-hover";
+const MUTED_TEXT_CLASS = "text-text-secondary";
 
 const LINKED_CHIP =
-  "border-border text-muted-foreground rounded border px-1.5 py-0.5 text-[10px] font-medium";
+  "border-border text-text-secondary rounded-xs border px-1.5 py-0.5 text-[10px] font-medium";
 
 const TYPE_BADGES = {
   reply: {
@@ -486,14 +486,14 @@ export function NotificationItem({
   return (
     <div
       data-testid="engagement-item"
-      className={`border-l-4 transition-colors ${
+      className={`motion-fast border-l-4 ${
         contentVariant === "mention" ? "px-2.5 py-2 sm:px-3" : "p-2.5 sm:p-3"
       } ${
         isInteractionActive
-          ? "border-primary bg-muted/50 ring-primary/10 ring-1 shadow-sm"
-          : "hover:bg-muted/25 border-transparent"
+          ? "border-brand bg-surface-hover/50 ring-brand/10 shadow-1 ring-1"
+          : "hover:bg-surface-hover/25 border-transparent"
       } ${dimmed ? "opacity-[0.88]" : ""} ${
-        isKeyboardFocused ? "ring-primary/35 ring-2 ring-inset" : ""
+        isKeyboardFocused ? "ring-brand/35 ring-2 ring-inset" : ""
       }`}
     >
       <div className="flex gap-2">
@@ -505,28 +505,28 @@ export function NotificationItem({
               className="h-11 w-11 rounded-full"
             />
           ) : (
-            <div className="bg-muted h-11 w-11 rounded-full" />
+            <div className="bg-surface-hover h-11 w-11 rounded-full" />
           )}
         </div>
 
         <div
           className={`min-w-0 flex-1 ${
             isInteractionActive
-              ? "border-border/60 bg-muted/25 border-l-primary/35 -mr-px rounded-r-md border-l-2 pl-2.5"
+              ? "border-border/60 bg-surface-hover/25 border-l-primary/35 -mr-px rounded-r-md border-l-2 pl-2.5"
               : ""
           }`}
         >
           <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-foreground text-sm font-semibold tracking-tight">
+            <span className="text-text text-sm font-semibold tracking-tight">
               {displayName}
             </span>
             {notification.authorNip05 ? (
-              <span className="text-muted-foreground/90 text-[11px]">
+              <span className="text-text-secondary/90 text-[11px]">
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
             {isFollowingAuthor && contentVariant === "mention" ? (
-              <span className="text-foreground/85 text-[11px] font-medium">
+              <span className="text-text/85 text-[11px] font-medium">
                 Following
               </span>
             ) : null}
@@ -544,7 +544,7 @@ export function NotificationItem({
               {typeBadge.icon}
               {typeBadge.label}
             </span>
-            <span className="text-muted-foreground/80 text-[10px] tabular-nums">
+            <span className="text-text-secondary/80 text-[10px] tabular-nums">
               {formatDate(notification.createdAt, {
                 isUnixTimestamp: true,
               })}
@@ -553,9 +553,7 @@ export function NotificationItem({
 
           <p
             className={`mb-1 text-sm leading-snug break-words whitespace-pre-wrap ${
-              contentVariant === "mention"
-                ? "text-foreground/88"
-                : "text-foreground"
+              contentVariant === "mention" ? "text-text/88" : "text-text"
             } ${preview.noisy ? "line-clamp-3" : "line-clamp-4"}`}
             title={notification.content}
           >
@@ -563,7 +561,7 @@ export function NotificationItem({
           </p>
 
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-muted-foreground/90 text-[10px] font-medium">
+            <span className="text-text-secondary/90 text-[10px] font-medium">
               {workflowStatusLabel(workflowState)}
             </span>
             {linkedActions.map((action) => {
@@ -582,7 +580,7 @@ export function NotificationItem({
                 <Link
                   key={`${action.kind}-${action.postId ?? "nopost"}-${action.draftId ?? "nodraft"}-${action.scheduledFor ?? "noschedule"}-${action.label ?? "nolabel"}`}
                   to={href}
-                  className={`${LINKED_CHIP} hover:text-foreground hover:underline`}
+                  className={`${LINKED_CHIP} hover:text-text hover:underline`}
                   title={action.scheduledFor ?? undefined}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -676,7 +674,7 @@ export function NotificationItem({
           ) : null}
 
           {actions.likeAttemptId || actions.repostAttemptId ? (
-            <div className="mt-1.5 flex items-center gap-2">
+            <div className="cluster mt-1.5">
               <EphemeralActionRecovery
                 attemptId={actions.likeAttemptId}
                 actionLabel="Like"
@@ -818,7 +816,7 @@ export function NotificationItem({
           ) : null}
 
           {actions.toast?.type === "error" ? (
-            <div className="border-destructive/30 bg-destructive/10 text-destructive mt-2 rounded-md border px-2 py-1.5 text-xs">
+            <div className="border-danger/30 bg-danger/10 text-danger mt-2 rounded-md border px-2 py-1.5 text-xs">
               {actions.toast.message}
             </div>
           ) : null}

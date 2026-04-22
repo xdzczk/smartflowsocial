@@ -14,11 +14,11 @@ export function GiveawayNewBuilderPresetTemplates({
       >
         <h2
           id="preset-templates-heading"
-          className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
+          className="text-text-secondary text-xs font-medium tracking-wide uppercase"
         >
           Presets
         </h2>
-        <p className="text-muted-foreground mt-2 text-xs leading-snug">
+        <p className="text-text-secondary mt-2 text-xs leading-snug">
           Upgrade your plan to save and reuse giveaway templates.
         </p>
       </section>
@@ -31,9 +31,9 @@ export function GiveawayNewBuilderPresetTemplates({
         className="border-border/50 mt-8 border-t pt-4"
         aria-labelledby="preset-templates-heading"
       >
-        <div className="bg-muted/25 text-muted-foreground rounded-md px-3 py-2 text-xs leading-snug">
-          <span className="text-foreground/90 font-medium">Presets</span> — none
-          yet. Save one from a giveaway detail page to start here next time.
+        <div className="bg-surface-hover/25 text-text-secondary rounded-md px-3 py-2 text-xs leading-snug">
+          <span className="text-text/90 font-medium">Presets</span> — none yet.
+          Save one from a giveaway detail page to start here next time.
         </div>
       </section>
     );
@@ -46,11 +46,11 @@ export function GiveawayNewBuilderPresetTemplates({
     >
       <h2
         id="preset-templates-heading"
-        className="text-muted-foreground text-sm font-medium"
+        className="text-text-secondary text-sm font-medium"
       >
         Start from preset
       </h2>
-      <ul className="flex flex-col gap-2">
+      <ul className="stack-tight">
         {presets.map((p) => (
           <li key={p.id}>
             <form
@@ -59,9 +59,9 @@ export function GiveawayNewBuilderPresetTemplates({
             >
               <input type="hidden" name="intent" value="createFromPreset" />
               <input type="hidden" name="presetId" value={p.id} />
-              <span className="text-foreground text-sm">
+              <span className="text-text text-sm">
                 {p.name}{" "}
-                <span className="text-muted-foreground">
+                <span className="text-text-secondary">
                   · {p.scopeType} · {p.winnerCount} winner
                   {p.winnerCount !== 1 ? "s" : ""}
                 </span>

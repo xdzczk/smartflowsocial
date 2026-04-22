@@ -32,14 +32,14 @@ function ThreadSegmentRow({
 }) {
   return (
     <div className="pl-0.5">
-      <p className="text-muted-foreground/90 mb-1 text-[10px] font-medium tracking-tight">
+      <p className="text-text-secondary/90 mb-1 text-[10px] font-medium tracking-tight">
         Part {position}
       </p>
-      <p className="text-muted-foreground line-clamp-3 text-sm whitespace-pre-wrap">
+      <p className="text-text-secondary line-clamp-3 text-sm whitespace-pre-wrap">
         {text}
       </p>
       {hasMedia ? (
-        <span className="text-muted-foreground/80 mt-1 block text-[10px]">
+        <span className="text-text-secondary/80 mt-1 block text-[10px]">
           Media attached
         </span>
       ) : null}
@@ -172,7 +172,7 @@ export function ThreadPostPreview({
   return (
     <div className="space-y-3 py-0.5">
       {groupId && isPending ? (
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <div className="text-text-secondary cluster text-xs">
           <Loader2
             className={`${INLINE_ICON_SIZE_CLASS} animate-spin`}
             aria-hidden
@@ -183,7 +183,7 @@ export function ThreadPostPreview({
 
       {showStack ? (
         <div className="border-border/40 space-y-2 border-l border-dashed pl-3">
-          <p className="text-muted-foreground/80 -ml-3 pl-3 text-[10px] font-medium tracking-tight">
+          <p className="text-text-secondary/80 -ml-3 pl-3 text-[10px] font-medium tracking-tight">
             Thread
           </p>
           {prevSeg ? (
@@ -195,13 +195,13 @@ export function ThreadPostPreview({
           ) : null}
           <div
             className={cn(
-              "bg-primary/[0.06] -ml-3 rounded-r-md py-2.5 pr-2 pl-3",
-              "ring-primary/10 ring-1 ring-inset"
+              "bg-brand/[0.06] -ml-3 rounded-r-md py-2.5 pr-2 pl-3",
+              "ring-brand/10 ring-1 ring-inset"
             )}
           >
-            <p className="text-primary/80 mb-2 text-[10px] font-semibold tracking-tight">
+            <p className="text-brand/80 mb-2 text-[10px] font-semibold tracking-tight">
               Part {segments[currentIndex]?.position ?? currentIndex + 1}{" "}
-              <span className="text-muted-foreground/80 font-normal">
+              <span className="text-text-secondary/80 font-normal">
                 (current)
               </span>
             </p>
@@ -223,7 +223,7 @@ export function ThreadPostPreview({
               hasMedia={nextSeg.hasMedia}
             />
           ) : null}
-          <div className="text-muted-foreground/70 -ml-3 space-y-0.5 pl-3 text-[11px]">
+          <div className="text-text-secondary/70 -ml-3 space-y-0.5 pl-3 text-[11px]">
             <p>{contextLine}</p>
             {positionLabel ? <p>{positionLabel}</p> : null}
           </div>
@@ -240,11 +240,11 @@ export function ThreadPostPreview({
             onImageClick={onImageClick}
           />
           {positionLabel ? (
-            <p className="text-muted-foreground/70 text-[11px]">
+            <p className="text-text-secondary/70 text-[11px]">
               {positionLabel}
             </p>
           ) : threadKindOnly ? (
-            <p className="text-muted-foreground/70 text-[11px]">
+            <p className="text-text-secondary/70 text-[11px]">
               {threadKindOnly}
             </p>
           ) : null}

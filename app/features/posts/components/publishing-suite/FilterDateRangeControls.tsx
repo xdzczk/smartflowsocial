@@ -68,7 +68,7 @@ export function FilterDateRangeControls({
       />
 
       {formattedRangeLabel ? (
-        <span className="text-muted-foreground text-xs" aria-hidden>
+        <span className="text-text-secondary text-xs" aria-hidden>
           {formattedRangeLabel}
         </span>
       ) : null}
@@ -77,7 +77,7 @@ export function FilterDateRangeControls({
         <button
           type="button"
           onClick={() => onDateRangeChange({ from: "", to: "" })}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+          className="focus-ring text-text-secondary hover:text-text rounded-md px-2 py-1 text-xs font-medium underline-offset-2 hover:underline"
         >
           Clear dates
         </button>

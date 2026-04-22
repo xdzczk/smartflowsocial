@@ -186,7 +186,7 @@ export function TagsChipRow({
           className={cn(
             "mb-0",
             compact &&
-              "text-muted-foreground/75 text-[10px] font-medium tracking-wide uppercase"
+              "text-text-secondary/75 text-[10px] font-medium tracking-wide uppercase"
           )}
         >
           Tags
@@ -202,7 +202,7 @@ export function TagsChipRow({
           }}
           disabled={disabled || presets.length === 0}
         >
-          <SelectTrigger className="border-border/50 bg-muted/10 h-8 w-auto min-w-[7.5rem] shrink-0 text-xs shadow-none">
+          <SelectTrigger className="border-border/50 bg-surface-hover/10 h-8 w-auto min-w-[7.5rem] shrink-0 text-xs shadow-none">
             <SelectValue placeholder="Preset" />
           </SelectTrigger>
           <SelectContent>
@@ -226,7 +226,7 @@ export function TagsChipRow({
           onKeyDown={onManualKeyDown}
           disabled={disabled}
           placeholder="Add tag — Enter or comma"
-          className="border-border/50 bg-muted/10 h-8 min-w-0 flex-1 basis-[12rem] text-xs shadow-sm"
+          className="border-border/50 bg-surface-hover/10 shadow-1 h-8 min-w-0 flex-1 basis-[12rem] text-xs"
           aria-label="Add hashtag"
         />
       </div>
@@ -244,7 +244,7 @@ export function TagsChipRow({
                 <button
                   type="button"
                   onClick={() => removeTag(idx)}
-                  className="hover:bg-muted-foreground/20 rounded-full p-0.5"
+                  className="hover:bg-surface-hover-foreground/20 rounded-full p-0.5"
                   aria-label={`Remove ${tag}`}
                 >
                   <X
@@ -270,19 +270,19 @@ export function TagsChipRow({
             <Label
               htmlFor="tags-include-in-note-body"
               className={cn(
-                "text-muted-foreground leading-snug font-medium",
+                "text-text-secondary leading-snug font-medium",
                 compact ? "text-[10px]" : "text-xs"
               )}
             >
               Hide tags from note text
             </Label>
             {!compact ? (
-              <p className="text-muted-foreground/75 text-[10px] leading-snug">
+              <p className="text-text-secondary/75 text-[10px] leading-snug">
                 Off by default. Turn on to keep tags out of the note text (topic
                 metadata only).
               </p>
             ) : (
-              <p className="text-muted-foreground/65 text-[9px] leading-snug">
+              <p className="text-text-secondary/65 text-[9px] leading-snug">
                 Topic metadata only when on.
               </p>
             )}
@@ -301,7 +301,7 @@ export function TagsChipRow({
 
       {recentTags.length > 0 ? (
         <div className="space-y-1">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-text-secondary text-[10px] font-medium tracking-wide uppercase">
             Recent
           </span>
           <RailChipGroup>
@@ -310,7 +310,7 @@ export function TagsChipRow({
                 key={t}
                 type="button"
                 disabled={disabled}
-                className="text-muted-foreground hover:bg-muted/50 h-6 border-transparent bg-transparent px-2 text-[11px] font-normal"
+                className="text-text-secondary hover:bg-surface-hover/50 h-6 border-transparent bg-transparent px-2 text-[11px] font-normal"
                 onClick={() => addTagsAndRemember([t])}
               >
                 #{t}
@@ -321,7 +321,7 @@ export function TagsChipRow({
       ) : null}
 
       {queuePresetName ? (
-        <p className="text-muted-foreground/80 text-[10px]">
+        <p className="text-text-secondary/80 text-[10px]">
           Queue default: {queuePresetName}
         </p>
       ) : null}

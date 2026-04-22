@@ -47,12 +47,12 @@ export default function BroadcastUnsubscribePage() {
   const data = useLoaderData<typeof loader>();
   return (
     <main className="mx-auto flex min-h-[60vh] w-full max-w-xl items-center px-6 py-12">
-      <section className="border-border bg-card w-full rounded-xl border p-6 shadow-sm">
+      <section className="border-border bg-surface shadow-1 w-full rounded-xl border p-6">
         <h1 className="text-xl font-semibold">{data.title}</h1>
-        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+        <p className="text-text-secondary mt-3 text-sm leading-relaxed">
           {data.message}
         </p>
-        <p className="text-muted-foreground mt-4 text-xs">
+        <p className="text-text-secondary mt-4 text-xs">
           You can close this page.
         </p>
       </section>

@@ -96,13 +96,13 @@ export function DraftsHybridTableRow({
               alt=""
               className="size-11 rounded-md object-cover sm:size-12"
               fallback={
-                <div className="bg-muted text-muted-foreground flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
+                <div className="bg-surface-hover text-text-secondary flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
                   {postThumbnailBadge}
                 </div>
               }
             />
             {isRepost ? (
-              <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+              <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                 <Repeat
                   className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                   strokeWidth={2}
@@ -121,7 +121,7 @@ export function DraftsHybridTableRow({
           alt=""
           className="size-11 rounded-md object-cover sm:size-12"
           fallback={
-            <div className="bg-muted text-muted-foreground flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
+            <div className="bg-surface-hover text-text-secondary flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
               ART
             </div>
           }
@@ -130,11 +130,11 @@ export function DraftsHybridTableRow({
     }
     return (
       <div className="relative shrink-0">
-        <div className="bg-muted text-muted-foreground flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
+        <div className="bg-surface-hover text-text-secondary flex size-11 items-center justify-center rounded-md text-xs font-medium sm:size-12">
           {postThumbnailBadge}
         </div>
         {isRepost ? (
-          <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+          <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
             <Repeat
               className={`${SMALL_ICON_SIZE_CLASS} text-white`}
               strokeWidth={2}
@@ -152,7 +152,7 @@ export function DraftsHybridTableRow({
     <tr
       className={cn(
         PUBLISHING_TABLE_ROW_CLASS,
-        isSelected && "bg-muted/40 hover:bg-muted/50"
+        isSelected && "bg-surface-hover/40 hover:bg-surface-hover/50"
       )}
       onClick={() => onResumeDraft?.()}
     >
@@ -173,14 +173,14 @@ export function DraftsHybridTableRow({
         </div>
       </td>
       <td className="max-w-md px-3 py-3 align-middle whitespace-normal">
-        <p className="text-foreground leading-snug font-semibold">{title}</p>
+        <p className="text-text leading-snug font-semibold">{title}</p>
         {excerpt ? (
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed">
+          <p className="text-text-secondary mt-1 line-clamp-2 text-sm leading-relaxed">
             {excerpt}
           </p>
         ) : null}
       </td>
-      <td className="text-foreground px-3 py-3 align-middle text-sm whitespace-nowrap">
+      <td className="text-text px-3 py-3 align-middle text-sm whitespace-nowrap">
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <span className="cursor-default tabular-nums underline decoration-dotted underline-offset-4">
@@ -189,7 +189,7 @@ export function DraftsHybridTableRow({
           </TooltipTrigger>
           <TooltipContent
             side="top"
-            className="border-border bg-popover text-popover-foreground max-w-xs border"
+            className="border-border bg-surface-overlay text-text max-w-xs border"
           >
             {absoluteLabel}
           </TooltipContent>

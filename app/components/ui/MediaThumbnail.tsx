@@ -78,7 +78,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     if (fallback) return <>{fallback}</>;
     return (
       <div
-        className={`bg-muted text-muted-foreground flex items-center justify-center text-xs font-medium ${className}`}
+        className={`bg-surface-hover text-text-secondary flex items-center justify-center text-xs font-medium ${className}`}
       >
         NO MEDIA
       </div>
@@ -103,7 +103,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   if (hasError) {
     return (
       <div
-        className={`bg-muted text-muted-foreground flex items-center justify-center text-xs font-medium ${className}`}
+        className={`bg-surface-hover text-text-secondary flex items-center justify-center text-xs font-medium ${className}`}
       >
         TEXT
       </div>
@@ -160,7 +160,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
       />
       {!hidePlayButton ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-opacity-60 rounded-full bg-black p-2 shadow-lg">
+          <div className="bg-opacity-60 shadow-2 rounded-full bg-black p-2">
             <Play className="h-6 w-6 text-white drop-shadow-sm" />
           </div>
         </div>

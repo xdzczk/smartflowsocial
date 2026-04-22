@@ -168,7 +168,7 @@ export function GiveawayNewBuilderStickySummary({
           columns={2}
           radiogroupAriaLabel="Giveaway source post publish timing"
         />
-        <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug">
+        <p className="text-text-secondary mt-1.5 text-[11px] leading-snug">
           {giveawaySourcePostLaunchHint(sourcePostLaunchMode)}
         </p>
       </ActionRailSection>
@@ -178,7 +178,7 @@ export function GiveawayNewBuilderStickySummary({
           <ActionRailLabel>Publish time</ActionRailLabel>
           <Label
             htmlFor="giveaway-rail-scheduled-source-post"
-            className="text-muted-foreground text-[11px] font-medium"
+            className="text-text-secondary text-[11px] font-medium"
           >
             Date and time
           </Label>
@@ -195,7 +195,7 @@ export function GiveawayNewBuilderStickySummary({
               );
             }}
           />
-          <p className="text-muted-foreground text-[11px] leading-snug">
+          <p className="text-text-secondary text-[11px] leading-snug">
             {userTimezone} · When the announcement note should go out.
           </p>
         </ActionRailSection>

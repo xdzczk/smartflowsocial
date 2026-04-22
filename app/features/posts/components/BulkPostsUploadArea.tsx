@@ -44,7 +44,7 @@ function BulkUploadProcessingContent({
 }) {
   return (
     <>
-      <div className="text-muted-foreground">
+      <div className="text-text-secondary">
         <Loader2
           className={cn("animate-spin", hasPosts ? "h-8 w-8" : "h-12 w-12")}
           aria-hidden
@@ -53,16 +53,16 @@ function BulkUploadProcessingContent({
       <div>
         <p
           className={cn(
-            "text-muted-foreground dark:text-foreground font-medium",
+            "text-text-secondary dark:text-text font-medium",
             hasPosts ? "text-sm" : "text-xl"
           )}
         >
           Processing media files&hellip; {processingProgress.current}/
           {processingProgress.total}
         </p>
-        <div className="bg-muted mt-2 h-2 w-64 rounded-full">
+        <div className="bg-surface-hover mt-2 h-2 w-64 rounded-full">
           <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
+            className="bg-brand h-2 rounded-full transition-all duration-300"
             style={{
               width: `${(processingProgress.current / processingProgress.total) * 100}%`,
             }}
@@ -84,9 +84,7 @@ function BulkUploadIdleContent({
     <>
       <div
         className={
-          mediaUploadBlocked
-            ? "text-muted-foreground opacity-50"
-            : "text-success"
+          mediaUploadBlocked ? "text-text-secondary opacity-50" : "text-success"
         }
       >
         <Upload
@@ -98,7 +96,7 @@ function BulkUploadIdleContent({
       <div>
         <p
           className={cn(
-            "text-muted-foreground dark:text-foreground font-medium",
+            "text-text-secondary dark:text-text font-medium",
             hasPosts ? "text-sm" : "text-xl"
           )}
         >
@@ -168,9 +166,9 @@ export default function BulkPostsUploadArea({
   );
 
   const labelBorderClass = uploadDisabled
-    ? "dark:bg-card border-border bg-muted dark:border-border"
+    ? "dark:bg-surface border-border bg-surface-hover dark:border-border"
     : isDragging
-      ? "border-primary bg-primary/5"
+      ? "border-brand bg-brand/5"
       : "border-border";
 
   return (
@@ -189,13 +187,13 @@ export default function BulkPostsUploadArea({
         <h2
           className={cn(
             "font-semibold",
-            hasPosts ? "text-foreground text-sm" : "text-lg"
+            hasPosts ? "text-text text-sm" : "text-lg"
           )}
         >
           Shared media
         </h2>
         {uploadProvider ? (
-          <span className="text-muted-foreground/80 text-[10px] tabular-nums">
+          <span className="text-text-secondary/80 text-[10px] tabular-nums">
             {uploadProviderCaption(uploadProvider)}
           </span>
         ) : null}
@@ -204,7 +202,7 @@ export default function BulkPostsUploadArea({
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drop target wraps native file input */}
       <label
         htmlFor="bulk-posts-file-input"
-        className={`relative block rounded-lg border-2 border-dashed transition-colors ${labelBorderClass} ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+        className={`motion-fast relative block rounded-lg border-2 border-dashed ${labelBorderClass} ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
         aria-label="Upload media files"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -243,10 +241,9 @@ export default function BulkPostsUploadArea({
         </div>
       </label>
       {hasPosts ? (
-        <p className="text-muted-foreground mt-2 text-[11px] leading-snug">
+        <p className="text-text-secondary mt-2 text-[11px] leading-snug">
           Per-post queue, schedule, follow-up, and tags: use{" "}
-          <span className="text-foreground font-medium">Advanced</span> on each
-          card.
+          <span className="text-text font-medium">Advanced</span> on each card.
         </p>
       ) : null}
     </div>

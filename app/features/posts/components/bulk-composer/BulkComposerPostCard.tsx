@@ -124,7 +124,7 @@ export function BulkComposerPostCard({
       type="button"
       disabled={variant === "review"}
       className={cn(
-        "border-border text-foreground hover:bg-muted/80 inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium",
+        "border-border text-text hover:bg-surface-hover/80 inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium",
         variant === "review" && "pointer-events-none opacity-90"
       )}
     >
@@ -143,37 +143,37 @@ export function BulkComposerPostCard({
     <article
       data-bulk-post-index={index}
       className={cn(
-        "border-border bg-card rounded-xl border shadow-sm",
+        "border-border bg-surface shadow-1 rounded-xl border",
         validationErrors?.length && variant === "build"
-          ? "ring-1 ring-amber-500/30"
+          ? "ring-warning/30 ring-1"
           : ""
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-foreground text-sm font-semibold">
+          <span className="text-text text-sm font-semibold">
             Post {index + 1}
           </span>
           <span
             className={cn(
               "rounded-md border px-1.5 py-0.5 text-xs font-medium",
               status.variant === "amber" &&
-                "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-100",
+                "border-warning/40 bg-warning/10 text-warning-text",
               status.variant === "muted" &&
-                "border-border bg-muted/40 text-muted-foreground",
+                "border-border bg-surface-hover/40 text-text-secondary",
               status.variant === "default" &&
-                "border-primary/30 bg-primary/5 text-primary"
+                "border-brand/30 bg-brand/5 text-brand"
             )}
           >
             {variant === "review" && reviewDisplay ? "Locked" : status.label}
           </span>
           {variant === "build" && scheduleOverlapWarning ? (
-            <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-100">
+            <span className="border-warning/40 bg-warning/10 text-warning-text rounded-md border px-1.5 py-0.5 text-xs font-medium">
               Timing warning
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="cluster-tight">
           {variant === "build" ? (
             <>
               {onDuplicate ? (
@@ -181,7 +181,7 @@ export function BulkComposerPostCard({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground h-8 px-2"
+                  className="text-text-secondary h-8 px-2"
                   onClick={() => onDuplicate(index)}
                   aria-label="Duplicate post"
                 >
@@ -192,7 +192,7 @@ export function BulkComposerPostCard({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground h-8 px-2"
+                className="text-text-secondary h-8 px-2"
                 onClick={() => setAdvancedOpen((o) => !o)}
                 aria-expanded={advancedOpen}
                 title="Queue, schedule, follow-up, recyclable, and tags"
@@ -209,7 +209,7 @@ export function BulkComposerPostCard({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-destructive hover:text-destructive h-8 px-2"
+                className="text-danger hover:text-danger h-8 px-2"
                 onClick={() => onRemove(index)}
               >
                 Remove
@@ -276,7 +276,7 @@ export function BulkComposerPostCard({
 
         {validationErrors?.length ? (
           <ul
-            className="text-destructive space-y-0.5 text-xs leading-snug"
+            className="text-danger space-y-0.5 text-xs leading-snug"
             role="alert"
           >
             {validationErrors.map((err) => (

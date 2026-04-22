@@ -61,15 +61,15 @@ export function AttachmentsStrip({
   const compact = density === "compact";
   const minimalAdd = addControlTone === "minimal";
   const tileClass = compact
-    ? "h-12 w-12 rounded border-border/40"
-    : "h-16 w-16 rounded border-border";
+    ? "h-12 w-12 rounded-xs border-border/40"
+    : "h-16 w-16 rounded-xs border-border";
   const failedTileClass = compact
-    ? "min-h-[3.75rem] w-[4.75rem] max-w-[5.5rem] rounded border-border/40"
-    : "min-h-[5.75rem] w-[7.25rem] rounded border-border";
+    ? "min-h-[3.75rem] w-[4.75rem] max-w-[5.5rem] rounded-xs border-border/40"
+    : "min-h-[5.75rem] w-[7.25rem] rounded-xs border-border";
   const addBtnClass = compact ? "h-12 w-12 shrink-0" : "h-16 w-16 shrink-0";
   const plusClass = compact ? "h-4 w-4" : "h-6 w-6";
   const minimalAddBtnClass =
-    "h-9 w-9 shrink-0 rounded-md border border-dashed border-border/30 bg-transparent text-muted-foreground/55 hover:border-border/45 hover:bg-muted/40 hover:text-muted-foreground";
+    "h-9 w-9 shrink-0 rounded-md border border-dashed border-border/30 bg-transparent text-text-secondary/55 hover:border-border/45 hover:bg-surface-hover/40 hover:text-text-secondary";
 
   const useComposerWell =
     variant === "inline" &&
@@ -80,7 +80,7 @@ export function AttachmentsStrip({
     return (
       <div
         className={cn(
-          "border-border/35 bg-muted/[0.06] flex min-h-[3.25rem] w-full items-center gap-3 rounded-lg border border-dashed px-3 py-2.5",
+          "border-border/35 bg-surface-hover/[0.06] flex min-h-[3.25rem] w-full items-center gap-3 rounded-lg border border-dashed px-3 py-2.5",
           compact && "min-h-[2.75rem] gap-2 py-2",
           className
         )}
@@ -92,7 +92,7 @@ export function AttachmentsStrip({
           onClick={onAdd}
           disabled={disabled}
           className={cn(
-            "border-border/50 text-muted-foreground hover:text-foreground shrink-0 p-0",
+            "border-border/50 text-text-secondary hover:text-text shrink-0 p-0",
             compact ? "h-9 w-9" : "h-11 w-11"
           )}
           aria-label="Add attachment"
@@ -103,7 +103,7 @@ export function AttachmentsStrip({
             aria-hidden
           />
         </Button>
-        <span className="text-muted-foreground text-xs leading-snug">
+        <span className="text-text-secondary text-xs leading-snug">
           {emptyWellHint}
         </span>
       </div>
@@ -124,7 +124,7 @@ export function AttachmentsStrip({
         <div
           key={att.localId}
           className={cn(
-            "bg-muted/50 relative flex shrink-0 items-center justify-center overflow-hidden border",
+            "bg-surface-hover/50 relative flex shrink-0 items-center justify-center overflow-hidden border",
             att.status === "failed" ? failedTileClass : tileClass
           )}
           title={
@@ -151,29 +151,29 @@ export function AttachmentsStrip({
                   preload="metadata"
                 />
               ) : (
-                <span className="text-muted-foreground truncate px-1 text-xs">
+                <span className="text-text-secondary truncate px-1 text-xs">
                   {att.url.split("/").pop() ?? "File"}
                 </span>
               )}
             </>
           ) : null}
           {att.status === "queued" || att.status === "uploading" ? (
-            <span className="text-muted-foreground text-xs">
+            <span className="text-text-secondary text-xs">
               {att.status === "uploading" ? "Uploading…" : "Queued"}
             </span>
           ) : null}
           {att.status === "failed" ? (
             <div className="flex h-full w-full flex-col items-stretch justify-end gap-1 px-1 pt-5 pb-1 text-center">
-              <span className="text-destructive text-[10px] leading-tight font-medium">
+              <span className="text-danger text-[10px] leading-tight font-medium">
                 Upload failed
               </span>
               {att.file?.name ? (
-                <span className="text-muted-foreground line-clamp-2 text-[9px] leading-snug">
+                <span className="text-text-secondary line-clamp-2 text-[9px] leading-snug">
                   {att.file.name}
                 </span>
               ) : null}
               {att.uploadErrorMessage ? (
-                <span className="text-muted-foreground/90 line-clamp-2 text-[8px] leading-snug">
+                <span className="text-text-secondary/90 line-clamp-2 text-[8px] leading-snug">
                   {att.uploadErrorMessage}
                 </span>
               ) : null}
@@ -192,7 +192,7 @@ export function AttachmentsStrip({
             </div>
           ) : null}
           {onReorder && attachments.length > 1 ? (
-            <div className="bg-background/80 absolute bottom-0 left-0 flex flex-col gap-0 p-0.5">
+            <div className="bg-canvas/80 absolute bottom-0 left-0 flex flex-col gap-0 p-0.5">
               <Button
                 type="button"
                 variant="ghost"
@@ -252,7 +252,7 @@ export function AttachmentsStrip({
         disabled={disabled}
         className={cn(
           minimalAdd ? minimalAddBtnClass : addBtnClass,
-          !minimalAdd && compact && "border-border/40 text-muted-foreground"
+          !minimalAdd && compact && "border-border/40 text-text-secondary"
         )}
         aria-label="Add attachment"
       >

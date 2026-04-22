@@ -10,6 +10,9 @@ import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -409,12 +412,12 @@ export function ScheduleRepostQuoteModal({
         aria-modal="true"
         aria-labelledby="schedule-repost-quote-title"
       >
-        <div className="border-border bg-card w-full max-w-md rounded-lg border shadow-xl">
+        <div className="border-border bg-surface-overlay shadow-3 w-full max-w-md rounded-xl border">
           <div className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3
                 id="schedule-repost-quote-title"
-                className="text-foreground text-lg font-semibold"
+                className="text-text text-lg font-semibold"
               >
                 {mode === "repost"
                   ? SCHEDULE_REPOST_LABEL
@@ -423,7 +426,7 @@ export function ScheduleRepostQuoteModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-text-secondary hover:text-text"
                 aria-label="Close"
               >
                 <X
@@ -435,59 +438,54 @@ export function ScheduleRepostQuoteModal({
             </div>
 
             {!hasSignedEvent ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 This post cannot be used to schedule a repost or quote.
               </p>
             ) : isRepostChainBlocked ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 You cannot schedule a repost or quote of a repost.
               </p>
             ) : (
               <div className="space-y-4">
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   {mode === "repost"
                     ? "Choose when to schedule the repost."
                     : "Choose when to schedule the quote and add an optional caption."}
                 </p>
-                <div>
-                  <label
-                    htmlFor="schedule-repost-quote-datetime"
-                    className="text-foreground mb-1 block text-sm font-medium"
-                  >
-                    Schedule at
-                  </label>
-                  <input
-                    id="schedule-repost-quote-datetime"
-                    type="datetime-local"
-                    value={scheduledFor}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      const notBefore =
+                <FormField id="schedule-repost-quote-datetime">
+                  <FormLabel>Schedule at</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const notBefore =
+                          post?.scheduledAtUtc != null
+                            ? post.scheduledAtUtc instanceof Date
+                              ? post.scheduledAtUtc
+                              : new Date(post.scheduledAtUtc)
+                            : undefined;
+                        const min = getMinDatetimeLocalForSchedule(
+                          userTimezone,
+                          notBefore
+                        );
+                        setScheduledFor(clampDateTimeLocalToMin(v, min));
+                      }}
+                      min={getMinDatetimeLocalForSchedule(
+                        userTimezone,
                         post?.scheduledAtUtc != null
                           ? post.scheduledAtUtc instanceof Date
                             ? post.scheduledAtUtc
                             : new Date(post.scheduledAtUtc)
-                          : undefined;
-                      const min = getMinDatetimeLocalForSchedule(
-                        userTimezone,
-                        notBefore
-                      );
-                      setScheduledFor(clampDateTimeLocalToMin(v, min));
-                    }}
-                    min={getMinDatetimeLocalForSchedule(
-                      userTimezone,
-                      post?.scheduledAtUtc != null
-                        ? post.scheduledAtUtc instanceof Date
-                          ? post.scheduledAtUtc
-                          : new Date(post.scheduledAtUtc)
-                        : undefined
-                    )}
-                    className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
-                  />
-                </div>
+                          : undefined
+                      )}
+                    />
+                  </FormControl>
+                </FormField>
                 {mode === "repost" ? (
-                  <div className="border-border space-y-1.5 rounded border p-3">
-                    <span className="text-muted-foreground text-xs">
+                  <div className="border-border space-y-1.5 rounded-xs border p-3">
+                    <span className="text-text-secondary text-xs">
                       Only repost if original gets (optional)
                     </span>
                     <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
@@ -498,8 +496,8 @@ export function ScheduleRepostQuoteModal({
                         { key: "minReposts" as const, label: "Reposts" },
                         { key: "minSats" as const, label: "Sats" },
                       ].map(({ key, label }) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                          <label className="text-muted-foreground text-xs whitespace-nowrap">
+                        <div key={key} className="cluster-tight.5">
+                          <label className="text-text-secondary text-xs whitespace-nowrap">
                             {label}
                           </label>
                           <input
@@ -524,7 +522,7 @@ export function ScheduleRepostQuoteModal({
                                 return { ...prev, [key]: v };
                               });
                             }}
-                            className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                            className="border-border bg-canvas text-text w-20 rounded-md border px-2 py-1.5 text-sm"
                             aria-label={`Min ${label.toLowerCase()}`}
                           />
                         </div>
@@ -533,25 +531,20 @@ export function ScheduleRepostQuoteModal({
                   </div>
                 ) : null}
                 {mode === "quote" ? (
-                  <div>
-                    <label
-                      htmlFor="schedule-quote-caption"
-                      className="text-foreground mb-1 block text-sm font-medium"
-                    >
-                      Quote caption (optional)
-                    </label>
-                    <textarea
-                      id="schedule-quote-caption"
-                      value={quoteCaption}
-                      onChange={(e) => setQuoteCaption(e.target.value)}
-                      placeholder="Add your comment..."
-                      rows={3}
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2"
-                    />
-                  </div>
+                  <FormField id="schedule-quote-caption">
+                    <FormLabel>Quote caption (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        value={quoteCaption}
+                        onChange={(e) => setQuoteCaption(e.target.value)}
+                        placeholder="Add your comment..."
+                        rows={3}
+                      />
+                    </FormControl>
+                  </FormField>
                 ) : null}
                 {isSigning ? (
-                  <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                  <div className="bg-surface-hover text-text-secondary flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
                       {(() => {
@@ -570,7 +563,7 @@ export function ScheduleRepostQuoteModal({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      className="text-text-secondary hover:text-text shrink-0"
                       onClick={() => {
                         cancelSigningState();
                         cancelSignerInFlight();
@@ -581,8 +574,8 @@ export function ScheduleRepostQuoteModal({
                   </div>
                 ) : null}
                 {(fetcher.data?.error ?? signingError) ? (
-                  <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
-                    <div className="text-destructive text-sm">
+                  <div className="border-danger/30 bg-danger/10 rounded-lg border p-3">
+                    <div className="text-danger text-sm">
                       {fetcher.data?.error ?? signingError}
                     </div>
                   </div>
@@ -594,7 +587,7 @@ export function ScheduleRepostQuoteModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
+                className="text-text-secondary hover:text-text px-4 py-2 text-sm font-medium"
               >
                 Cancel
               </button>
@@ -603,7 +596,7 @@ export function ScheduleRepostQuoteModal({
                   type="button"
                   onClick={() => void handleConfirm()}
                   disabled={isSubmitting || isSigning || !scheduledFor.trim()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                 >
                   {getConfirmButtonLabel(
                     isSigning,

@@ -301,7 +301,7 @@ export function QueueTypeDialog({
         >
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 pb-2">
             <section className="space-y-3">
-              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              <h3 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
                 Basic info
               </h3>
               <div className="space-y-2">
@@ -312,7 +312,7 @@ export function QueueTypeDialog({
                   placeholder="e.g., Morning thread"
                 />
                 {form.formState.errors.name ? (
-                  <p className="text-destructive text-sm">
+                  <p className="text-danger text-sm">
                     {form.formState.errors.name.message}
                   </p>
                 ) : null}
@@ -327,7 +327,7 @@ export function QueueTypeDialog({
               </div>
               <div className="space-y-2">
                 <Label>Queue color</Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Identifies this queue in calendars and pickers.
                 </p>
                 <div
@@ -342,7 +342,7 @@ export function QueueTypeDialog({
                         key={token}
                         type="button"
                         onClick={() => form.setValue("colorToken", token)}
-                        className="focus:ring-ring h-8 w-8 shrink-0 rounded-full border-2 transition-transform focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
+                        className="focus-ring-offset h-8 w-8 shrink-0 rounded-full border-2 transition-transform active:scale-95"
                         style={{
                           backgroundColor: QUEUE_COLOR_ACCENTS[token],
                           borderColor: isSelected
@@ -364,7 +364,7 @@ export function QueueTypeDialog({
             <Separator />
 
             <section className="space-y-3">
-              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              <h3 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
                 Publishing defaults
               </h3>
               <div className="space-y-2">
@@ -387,7 +387,7 @@ export function QueueTypeDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   New posts in this queue can start from this preset. Queues and
                   presets work together across {BRAND_NAME}.
                 </p>
@@ -401,7 +401,7 @@ export function QueueTypeDialog({
                   >
                     Keep preset hashtags in metadata only
                   </Label>
-                  <p className="text-muted-foreground text-xs leading-snug">
+                  <p className="text-text-secondary text-xs leading-snug">
                     When on, preset tags are not appended to the note text by
                     default (you can still change per post).
                   </p>
@@ -424,7 +424,7 @@ export function QueueTypeDialog({
                   >
                     Enabled
                   </Label>
-                  <p className="text-muted-foreground text-xs leading-snug">
+                  <p className="text-text-secondary text-xs leading-snug">
                     Disabled queues stay in settings but cannot be selected for
                     new posts.
                   </p>
@@ -443,7 +443,7 @@ export function QueueTypeDialog({
             <Separator />
 
             <section className="space-y-3">
-              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              <h3 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
                 Schedule logic
               </h3>
               <div className="space-y-2">
@@ -480,7 +480,7 @@ export function QueueTypeDialog({
               {scheduleType === "INTERVAL" ? (
                 <div className="space-y-3">
                   {hasLegacyGlobalInterval ? (
-                    <p className="text-muted-foreground text-xs leading-relaxed">
+                    <p className="text-text-secondary text-xs leading-relaxed">
                       This queue previously used a global schedule setting. Set
                       a custom interval to continue editing it.
                     </p>
@@ -496,7 +496,7 @@ export function QueueTypeDialog({
                       {...form.register("intervalHours")}
                     />
                     {form.formState.errors.intervalHours ? (
-                      <p className="text-destructive text-sm">
+                      <p className="text-danger text-sm">
                         {form.formState.errors.intervalHours.message}
                       </p>
                     ) : null}
@@ -513,11 +513,11 @@ export function QueueTypeDialog({
                     placeholder="08:00, 12:00, 18:00"
                   />
                   {form.formState.errors.slots ? (
-                    <p className="text-destructive text-sm">
+                    <p className="text-danger text-sm">
                       {form.formState.errors.slots.message}
                     </p>
                   ) : null}
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     In your timezone from General settings.
                   </p>
                 </div>
@@ -526,7 +526,7 @@ export function QueueTypeDialog({
               {scheduleType === "WEEKLY_SLOTS" ? (
                 <div className="space-y-2">
                   <Label>Weekly slots</Label>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     Day and time pairs in your timezone.
                   </p>
                   {fields.map((field, index) => (
@@ -583,7 +583,7 @@ export function QueueTypeDialog({
                     Add slot
                   </Button>
                   {form.formState.errors.weeklySlots ? (
-                    <p className="text-destructive text-sm">
+                    <p className="text-danger text-sm">
                       {form.formState.errors.weeklySlots.message}
                     </p>
                   ) : null}
@@ -594,7 +594,7 @@ export function QueueTypeDialog({
             <Separator />
 
             <section className="space-y-3">
-              <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              <h3 className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
                 Timing behavior
               </h3>
               <div className="space-y-2">
@@ -620,7 +620,7 @@ export function QueueTypeDialog({
                     <SelectItem value="15">±15 minutes</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Applies when scheduling or using queue mode; optional jitter
                   so posts do not land on identical timestamps.
                 </p>

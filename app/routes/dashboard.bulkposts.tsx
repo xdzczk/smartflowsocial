@@ -3,11 +3,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BulkPostsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
-import { BulkPostsPage } from "~/features/posts/ui";
+import { BulkPostsPageSkeleton, BulkPostsPage } from "~/features/posts/ui";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 

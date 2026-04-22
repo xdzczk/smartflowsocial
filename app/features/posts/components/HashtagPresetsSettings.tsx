@@ -217,7 +217,7 @@ export function HashtagPresetsSettings({
                       disabled={isSubmitting}
                     />
                     {createForm.formState.errors.name ? (
-                      <p className="text-destructive text-sm">
+                      <p className="text-danger text-sm">
                         {createForm.formState.errors.name.message}
                       </p>
                     ) : null}
@@ -234,11 +234,11 @@ export function HashtagPresetsSettings({
                       className="font-mono text-sm"
                     />
                     {createForm.formState.errors.tags ? (
-                      <p className="text-destructive text-sm">
+                      <p className="text-danger text-sm">
                         {createForm.formState.errors.tags.message}
                       </p>
                     ) : null}
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       Space-separated. Tags are normalized to start with # on
                       save.
                     </p>
@@ -247,7 +247,7 @@ export function HashtagPresetsSettings({
                         {createPreviewTags.map((t) => (
                           <span
                             key={t}
-                            className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[11px]"
+                            className="bg-surface-hover text-text-secondary rounded-xs px-1.5 py-0.5 text-[11px]"
                           >
                             {t}
                           </span>
@@ -267,7 +267,7 @@ export function HashtagPresetsSettings({
                       disabled={isSubmitting}
                     />
                     {createForm.formState.errors.description ? (
-                      <p className="text-destructive text-sm">
+                      <p className="text-danger text-sm">
                         {createForm.formState.errors.description.message}
                       </p>
                     ) : null}
@@ -296,12 +296,12 @@ export function HashtagPresetsSettings({
         }
       >
         {presets.length === 0 ? (
-          <div className="text-muted-foreground py-10 text-center">
+          <div className="text-text-secondary py-10 text-center">
             <Hash
               className="mx-auto mb-3 h-10 w-10 opacity-[0.35]"
               aria-hidden
             />
-            <p className="text-foreground mb-1 text-sm font-medium">
+            <p className="text-text mb-1 text-sm font-medium">
               No hashtag presets yet
             </p>
             <p className="mx-auto mb-5 max-w-md text-xs leading-relaxed">
@@ -328,7 +328,7 @@ export function HashtagPresetsSettings({
               return (
                 <div
                   key={preset.id}
-                  className="border-border/80 hover:bg-muted/40 flex flex-col gap-3 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                  className="border-border/80 hover:bg-surface-hover/40 motion-fast flex flex-col gap-3 rounded-lg border px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                 >
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
@@ -336,13 +336,13 @@ export function HashtagPresetsSettings({
                         {preset.name}
                       </h3>
                       {allTags.length > 0 ? (
-                        <span className="text-muted-foreground bg-muted/80 rounded px-1.5 py-0.5 text-[10px] leading-none">
+                        <span className="text-text-secondary bg-surface-hover/80 rounded-xs px-1.5 py-0.5 text-[10px] leading-none">
                           {allTags.length} tags
                         </span>
                       ) : null}
                     </div>
                     {preset.description ? (
-                      <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+                      <p className="text-text-secondary line-clamp-2 text-xs leading-relaxed">
                         {preset.description}
                       </p>
                     ) : null}
@@ -351,24 +351,24 @@ export function HashtagPresetsSettings({
                         {visible.map((tag) => (
                           <span
                             key={tag}
-                            className="bg-muted text-muted-foreground max-w-[140px] truncate rounded px-1.5 py-0.5 text-[11px]"
+                            className="bg-surface-hover text-text-secondary max-w-[140px] truncate rounded-xs px-1.5 py-0.5 text-[11px]"
                           >
                             {tag}
                           </span>
                         ))}
                         {more > 0 ? (
-                          <span className="text-muted-foreground text-[11px]">
+                          <span className="text-text-secondary text-[11px]">
                             +{more} more
                           </span>
                         ) : null}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-[11px]">
+                      <p className="text-text-secondary text-[11px]">
                         No tags yet
                       </p>
                     )}
                     {linked > 0 ? (
-                      <p className="text-muted-foreground pt-0.5 text-[11px]">
+                      <p className="text-text-secondary pt-0.5 text-[11px]">
                         Used by {linked} queue{linked === 1 ? "" : "s"}
                       </p>
                     ) : null}
@@ -389,7 +389,7 @@ export function HashtagPresetsSettings({
                       type="button"
                       size="icon"
                       variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+                      className="text-danger hover:bg-danger/10 hover:text-danger h-9 w-9"
                       onClick={() => setPresetPendingDelete(preset)}
                       disabled={isSubmitting}
                       aria-label={`Delete ${preset.name}`}
@@ -409,7 +409,7 @@ export function HashtagPresetsSettings({
           </p>
         ) : null}
         {fetcher.data?.error ? (
-          <p className="text-destructive mt-4 text-sm">{fetcher.data.error}</p>
+          <p className="text-danger mt-4 text-sm">{fetcher.data.error}</p>
         ) : null}
       </ManagementListSection>
 
@@ -440,7 +440,7 @@ export function HashtagPresetsSettings({
                   disabled={isSubmitting}
                 />
                 {editForm.formState.errors.name ? (
-                  <p className="text-destructive text-sm">
+                  <p className="text-danger text-sm">
                     {editForm.formState.errors.name.message}
                   </p>
                 ) : null}
@@ -457,11 +457,11 @@ export function HashtagPresetsSettings({
                   className="font-mono text-sm"
                 />
                 {editForm.formState.errors.tags ? (
-                  <p className="text-destructive text-sm">
+                  <p className="text-danger text-sm">
                     {editForm.formState.errors.tags.message}
                   </p>
                 ) : null}
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Space-separated. Tags are normalized on save.
                 </p>
                 {editPreviewTags.length > 0 ? (
@@ -469,7 +469,7 @@ export function HashtagPresetsSettings({
                     {editPreviewTags.map((t) => (
                       <span
                         key={t}
-                        className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[11px]"
+                        className="bg-surface-hover text-text-secondary rounded-xs px-1.5 py-0.5 text-[11px]"
                       >
                         {t}
                       </span>
@@ -487,7 +487,7 @@ export function HashtagPresetsSettings({
                   disabled={isSubmitting}
                 />
                 {editForm.formState.errors.description ? (
-                  <p className="text-destructive text-sm">
+                  <p className="text-danger text-sm">
                     {editForm.formState.errors.description.message}
                   </p>
                 ) : null}
@@ -524,7 +524,7 @@ export function HashtagPresetsSettings({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete hashtag preset?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="text-muted-foreground space-y-2 text-sm">
+              <div className="text-text-secondary space-y-2 text-sm">
                 <p>
                   {presetPendingDelete
                     ? `“${presetPendingDelete.name}” will be removed.`
@@ -544,7 +544,7 @@ export function HashtagPresetsSettings({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
               onClick={() => {
                 if (presetPendingDelete) {
                   runDelete(presetPendingDelete.id);

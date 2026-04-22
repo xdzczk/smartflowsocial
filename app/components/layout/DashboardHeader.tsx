@@ -171,24 +171,24 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
+  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
-      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
+      ? "bg-surface-selected text-text border-border-subtle"
       : hasAccess
-        ? "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
-        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
+        ? "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
+        : "text-text-secondary/50 cursor-not-allowed opacity-60"
   }`;
 
   const title = !hasAccess ? "Subscription required" : (children as string);
 
   // Inactive icons use slightly higher contrast than inactive text; match link hover so icon and text react together
   const iconSpanClass = isActive
-    ? "text-foreground dark:text-primary"
+    ? "text-brand"
     : hasAccess
-      ? "text-foreground/70 group-hover:text-foreground"
-      : "text-muted-foreground";
+      ? "text-text/70 group-hover:text-text"
+      : "text-text-secondary";
 
   return (
     <Link
@@ -206,7 +206,7 @@ function NavigationItem({
           <span className="grow py-2">{children}</span>
           {!hasAccess ? (
             <Lock
-              className="h-4 w-4 flex-shrink-0 text-amber-500"
+              className="text-warning h-4 w-4 flex-shrink-0"
               strokeWidth={NAV_ICON_STROKE}
             />
           ) : null}
@@ -228,16 +228,16 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
+  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
-      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
-      : "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
+      ? "bg-surface-selected text-text border-border-subtle"
+      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
   }`;
   const iconSpanClass = isActive
-    ? "text-foreground dark:text-primary"
-    : "text-foreground/70 group-hover:text-foreground";
+    ? "text-brand"
+    : "text-text/70 group-hover:text-text";
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
@@ -388,14 +388,14 @@ function SidebarHeader({
 }: SidebarHeaderProps) {
   return (
     <div
-      className={`bg-card lg:border-border flex h-16 w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
+      className={`bg-surface lg:border-border flex h-16 w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
         isDesktopExpanded ? "lg:px-4" : "lg:px-0"
       }`}
     >
       <Link
         prefetch="intent"
         to={DASHBOARD_ROOT_PATH}
-        className={`group text-foreground hover:text-primary focus:ring-ring inline-flex items-center rounded-lg transition-colors focus:ring-2 focus:outline-none ${
+        className={`focus-ring group text-text hover:text-brand motion-fast inline-flex items-center rounded-lg ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
         title={BRAND_NAME}
@@ -445,7 +445,7 @@ function PageHeaderBar({
   return (
     <header
       id="page-header"
-      className={`bg-background border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
+      className={`bg-canvas border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
     >
       <div className="max-w-10xl mx-auto flex w-full min-w-0 justify-between px-3 sm:px-4 lg:px-8">
         <div className="flex shrink-0 items-center gap-2">
@@ -574,7 +574,7 @@ export default function Header({
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`border-border bg-card text-foreground fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
+        className={`border-border bg-surface text-text fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
           isDesktopExpanded ? "lg:w-64" : "lg:w-16"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >

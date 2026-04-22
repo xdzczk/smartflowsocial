@@ -19,9 +19,7 @@ export function LongFormEditHeader({
 }: LongFormEditHeaderProps) {
   return (
     <>
-      <h1 className="text-foreground mb-6 text-2xl font-bold">
-        Edit Long-form Post
-      </h1>
+      <h1 className="text-text text-h1 mb-6">Edit Long-form Post</h1>
 
       <Badge variant="secondary" className="mb-6">
         <Hash

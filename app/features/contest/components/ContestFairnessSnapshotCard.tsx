@@ -41,28 +41,28 @@ export function ContestFairnessSnapshotCard({
     (minAge != null && minAge > 0) ||
     (minFollowers != null && minFollowers > 0);
   return (
-    <div className="border-border bg-card rounded-lg border p-4">
+    <div className="border-border bg-surface rounded-lg border p-4">
       <h2 className="mb-3 text-sm font-semibold">{contestCopy.fairnessCard}</h2>
       {snapshot ? (
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">Snapshot frozen</dt>
+            <dt className="text-text-secondary">Snapshot frozen</dt>
             <dd>{new Date(snapshot.snapshotAt).toLocaleString()}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Eligible entries</dt>
+            <dt className="text-text-secondary">Eligible entries</dt>
             <dd>{snapshot.eligibleEntries}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Excluded entries</dt>
+            <dt className="text-text-secondary">Excluded entries</dt>
             <dd>{snapshot.excludedEntries}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Ranking metric</dt>
+            <dt className="text-text-secondary">Ranking metric</dt>
             <dd>{snapshot.rankingMetric}</dd>
           </div>
           <div className="sm:col-span-2">
-            <dt className="text-muted-foreground">Tie-break</dt>
+            <dt className="text-text-secondary">Tie-break</dt>
             <dd className="font-mono text-xs">
               {snapshot.tieBreakRule.trim() !== ""
                 ? snapshot.tieBreakRule
@@ -70,24 +70,24 @@ export function ContestFairnessSnapshotCard({
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Entry scope</dt>
+            <dt className="text-text-secondary">Entry scope</dt>
             <dd>
               {entryType === "REPLY_DIRECT" ? "Direct replies only" : entryType}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Alternates</dt>
+            <dt className="text-text-secondary">Alternates</dt>
             <dd>{alternatesCount}</dd>
           </div>
         </dl>
       ) : (
-        <p className="text-muted-foreground text-sm">No snapshot yet.</p>
+        <p className="text-text-secondary text-sm">No snapshot yet.</p>
       )}
       <div className="mt-3 border-t pt-3">
-        <p className="text-muted-foreground mb-1 text-xs font-medium">
+        <p className="text-text-secondary mb-1 text-xs font-medium">
           Fairness filters
         </p>
-        <ul className="text-muted-foreground list-inside list-disc text-xs">
+        <ul className="text-text-secondary list-inside list-disc text-xs">
           {!hasAnyFilter ? <li>None (all filters off)</li> : null}
           {excludeMuted ? <li>Exclude muted</li> : null}
           {excludeBlocked ? <li>Exclude blocked</li> : null}

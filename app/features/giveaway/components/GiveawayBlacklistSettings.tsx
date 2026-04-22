@@ -111,7 +111,7 @@ export function GiveawayBlacklistSettings({
       </div>
 
       {items.length === 0 ? (
-        <p className="text-muted-foreground py-6 text-center text-sm">
+        <p className="text-text-secondary py-6 text-center text-sm">
           No blocked npubs. Add an address above to exclude it from giveaways.
         </p>
       ) : (
@@ -121,14 +121,14 @@ export function GiveawayBlacklistSettings({
               key={npub}
               className="border-border/60 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
             >
-              <span className="text-muted-foreground min-w-0 truncate font-mono text-xs">
+              <span className="text-text-secondary min-w-0 truncate font-mono text-xs">
                 {npub}
               </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
+                className="text-text-secondary hover:text-danger h-8 w-8 shrink-0"
                 disabled={pending}
                 aria-label={`Remove ${npub.slice(0, 12)}…`}
                 onClick={() => handleRemove(npub)}

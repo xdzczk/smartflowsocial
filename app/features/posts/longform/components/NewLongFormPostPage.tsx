@@ -210,7 +210,7 @@ export default function NewLongFormPostPage() {
             onClick={() =>
               setLongformDraftPicker({ open: true, mode: "drafts" })
             }
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
             aria-label="Open drafts"
           >
             Drafts
@@ -222,7 +222,7 @@ export default function NewLongFormPostPage() {
             onClick={() =>
               setLongformDraftPicker({ open: true, mode: "templates" })
             }
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
             aria-label="Open templates"
           >
             Templates

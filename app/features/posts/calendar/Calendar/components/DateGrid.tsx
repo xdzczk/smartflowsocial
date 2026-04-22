@@ -64,7 +64,7 @@ export function DateGrid({
         {weekdayLabels.map((day) => (
           <div
             key={day}
-            className="text-muted-foreground flex min-w-0 flex-1 items-center justify-center border-r px-2 py-1 text-center text-sm font-medium last:border-r-0"
+            className="text-text-secondary flex min-w-0 flex-1 items-center justify-center border-r px-2 py-1 text-center text-sm font-medium last:border-r-0"
           >
             {day}
           </div>
@@ -82,8 +82,8 @@ export function DateGrid({
             `border-border/40 flex min-h-[120px] flex-col border-r border-b last:border-r-0 px-2 py-1.5 ${
               dayInfo.isCurrentMonth
                 ? "bg-[hsl(var(--calendar-surface-2-bg))]"
-                : "bg-secondary/20"
-            } ${dayInfo.isToday ? "ring-primary ring-1" : ""}`;
+                : "bg-surface-hover/40"
+            } ${dayInfo.isToday ? "ring-brand ring-1" : ""}`;
 
           return (
             <div

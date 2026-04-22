@@ -25,13 +25,13 @@ export function AdminSection({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           {eyebrow ? (
-            <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.12em] uppercase">
+            <p className="text-text-secondary text-[11px] font-semibold tracking-[0.12em] uppercase">
               {eyebrow}
             </p>
           ) : null}
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           {description ? (
-            <p className="text-muted-foreground max-w-3xl text-sm">
+            <p className="text-text-secondary max-w-3xl text-sm">
               {description}
             </p>
           ) : null}

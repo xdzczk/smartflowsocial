@@ -16,16 +16,16 @@ export function PaymentSuccessModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="bg-card mx-4 max-w-md rounded-lg p-6 shadow-xl">
+      <div className="bg-surface-overlay shadow-3 inset-card-lg mx-4 max-w-md rounded-xl">
         <div className="text-center">
           <Check className="text-success mx-auto mb-4 h-12 w-12" />
-          <h3 className="text-foreground mb-2 text-lg font-semibold">
+          <h3 className="text-text mb-2 text-lg font-semibold">
             Payment Successful!
           </h3>
-          <p className="text-foreground">
+          <p className="text-text">
             {message ?? "Your plan has been activated successfully!"}
           </p>
-          <p className="text-muted-foreground mt-2 text-sm">Redirecting...</p>
+          <p className="text-text-secondary mt-2 text-sm">Redirecting...</p>
         </div>
       </div>
     </div>

@@ -50,9 +50,9 @@ export function LoginSignerSelection({
             type="button"
             variant="default"
             className={cn(
-              "bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-full py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl",
+              "bg-brand text-brand-on hover:bg-brand/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip07" &&
-                "ring-primary/50 ring-offset-background ring-2 ring-offset-2"
+                "ring-brand/50 ring-offset-canvas ring-2 ring-offset-2"
             )}
             onClick={onNip07}
             onMouseEnter={() => setHighlighted("nip07")}
@@ -67,8 +67,8 @@ export function LoginSignerSelection({
             </span>
           </Button>
           {nip07Available === false ? (
-            <div className="text-muted-foreground space-y-1 text-xs">
-              <p className="flex items-center gap-1">
+            <div className="text-text-secondary space-y-1 text-xs">
+              <p className="cluster-tight">
                 <AlertTriangle className={SMALL_ICON_SIZE_CLASS} />
                 Extension not detected
               </p>
@@ -78,7 +78,7 @@ export function LoginSignerSelection({
                   href="https://getalby.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 hover:underline"
+                  className="text-brand inline-cluster-tight hover:underline"
                 >
                   Alby
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -87,7 +87,7 @@ export function LoginSignerSelection({
                   href="https://github.com/fiatjaf/nos2x"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 hover:underline"
+                  className="text-brand inline-cluster-tight hover:underline"
                 >
                   nos2x
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -96,7 +96,7 @@ export function LoginSignerSelection({
                   href="https://amber.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-1 hover:underline"
+                  className="text-brand inline-cluster-tight hover:underline"
                 >
                   Amber
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -110,9 +110,9 @@ export function LoginSignerSelection({
             type="button"
             variant="outline"
             className={cn(
-              "border-border bg-card hover:bg-muted hover:text-foreground h-auto w-full py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg dark:shadow-lg",
+              "border-border bg-surface hover:bg-surface-hover hover:text-text shadow-2 hover:shadow-2 dark:shadow-2 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip46" &&
-                "ring-primary/40 ring-offset-background ring-2 ring-offset-2"
+                "ring-brand/40 ring-offset-canvas ring-2 ring-offset-2"
             )}
             onClick={onNip46}
             onMouseEnter={() => setHighlighted("nip46")}
@@ -123,11 +123,11 @@ export function LoginSignerSelection({
         </div>
       </div>
 
-      <p className="text-muted-foreground min-h-[2.5rem] text-center text-xs leading-relaxed sm:text-left">
+      <p className="text-text-secondary min-h-[2.5rem] text-center text-xs leading-relaxed sm:text-left">
         {helperLine}
       </p>
 
-      <div className="text-muted-foreground/90 border-border/60 space-y-0.5 border-t pt-3 text-center text-[11px] leading-relaxed sm:text-left">
+      <div className="text-text-secondary/90 border-border/60 space-y-0.5 border-t pt-3 text-center text-[11px] leading-relaxed sm:text-left">
         <p>No private key upload</p>
         <p>Signer-based authentication only</p>
       </div>
@@ -136,7 +136,7 @@ export function LoginSignerSelection({
         <Button
           type="button"
           variant="default"
-          className="bg-background text-foreground hover:bg-muted border-border h-auto w-full border py-3 text-base font-semibold shadow-lg transition-all hover:shadow-xl sm:col-span-2"
+          className="bg-canvas text-text hover:bg-surface-hover border-border shadow-2 hover:shadow-3 h-auto w-full border py-3 text-base font-semibold transition-all sm:col-span-2"
           onClick={onPrimal}
         >
           <span className="flex items-center justify-center gap-2">

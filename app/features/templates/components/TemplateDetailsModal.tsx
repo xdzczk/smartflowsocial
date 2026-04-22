@@ -47,10 +47,10 @@ export function TemplateDetailsModal({
         aria-hidden
         onClick={onClose}
       />
-      <div className="bg-card relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg p-6 shadow-lg">
+      <div className="bg-surface shadow-2 relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg p-6">
         <button
           onClick={onClose}
-          className="dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:text-muted-foreground absolute top-4 right-4"
+          className="dark:text-text-secondary dark:hover:text-text text-text-secondary hover:text-text-secondary absolute top-4 right-4"
           aria-label="Close"
         >
           <X className="h-6 w-6" strokeWidth={INLINE_ICON_STROKE} aria-hidden />
@@ -59,7 +59,7 @@ export function TemplateDetailsModal({
         <h2 className="mb-4 text-xl font-bold">{template.name}</h2>
 
         {template.longformTitle && template.longformTitle !== template.name ? (
-          <p className="dark:text-muted-foreground text-muted-foreground mb-2 text-sm">
+          <p className="dark:text-text-secondary text-text-secondary mb-2 text-sm">
             Article: {template.longformTitle}
           </p>
         ) : null}
@@ -69,7 +69,7 @@ export function TemplateDetailsModal({
             <img
               src={template.imageUrl}
               alt={template.name}
-              className="max-h-64 w-full rounded object-cover"
+              className="max-h-64 w-full rounded-xs object-cover"
             />
           </div>
         ) : null}
@@ -77,13 +77,13 @@ export function TemplateDetailsModal({
         {template.text ? (
           <div className="mb-4">
             <h3 className="mb-2 font-semibold">Content</h3>
-            <p className="dark:text-foreground text-muted-foreground max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
+            <p className="dark:text-text text-text-secondary max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
               {richContentToPlainPreview(template.text)}
             </p>
           </div>
         ) : null}
 
-        <div className="dark:text-muted-foreground text-muted-foreground mb-6 text-sm">
+        <div className="dark:text-text-secondary text-text-secondary mb-6 text-sm">
           Created: {formatDate(template.createdAt)}
         </div>
 

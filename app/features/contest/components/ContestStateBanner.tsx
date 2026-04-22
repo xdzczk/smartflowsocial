@@ -40,7 +40,7 @@ export function ContestStateBanner({ status }: { status: ContestStatus }) {
         : status === "ENDED_REVIEW"
           ? "amber"
           : status === "LOCKED" || status === "PAYOUT_IN_PROGRESS"
-            ? "orange"
+            ? "amber"
             : status === "COMPLETED"
               ? "green"
               : status === "CANCELLED"

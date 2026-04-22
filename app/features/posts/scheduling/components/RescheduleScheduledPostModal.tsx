@@ -12,6 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { cancelSignerInFlight } from "~/features/auth/signer";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -599,11 +602,11 @@ export function RescheduleScheduledPostModal({
   return (
     <Dialog open onOpenChange={(open) => !open && requestClose()}>
       <DialogContent
-        className="bg-card text-card-foreground border-border/80 flex max-h-[90dvh] w-full max-w-[min(920px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl"
+        className="bg-surface-overlay text-text border-border/80 shadow-3 flex max-h-[90dvh] w-full max-w-[min(920px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-xl p-0"
         hideCloseButton
         data-testid="reschedule-modal"
       >
-        <DialogHeader className="border-border/70 bg-card/95 shrink-0 border-b px-6 py-4 text-left backdrop-blur-sm">
+        <DialogHeader className="border-border/70 bg-surface/95 shrink-0 border-b px-6 py-4 text-left backdrop-blur-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <DialogTitle className="text-xl font-semibold tracking-tight">
@@ -615,7 +618,7 @@ export function RescheduleScheduledPostModal({
             </div>
             <DialogPrimitive.Close
               type="button"
-              className="ring-offset-background focus:ring-ring text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0 rounded-md border border-transparent p-1.5 transition-colors focus:ring-2 focus:ring-offset-0 focus:outline-none"
+              className="focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/50 motion-fast shrink-0 rounded-md border border-transparent p-1.5"
               aria-label="Close"
             >
               <X className={INLINE_ICON_SIZE_CLASS} aria-hidden />
@@ -628,38 +631,36 @@ export function RescheduleScheduledPostModal({
           data-testid="reschedule-modal-layout"
         >
           <aside
-            className="border-border/70 bg-muted/10 min-h-0 shrink-0 border-b px-5 py-5 md:w-[38%] md:border-r md:border-b-0"
+            className="border-border/70 bg-surface-hover/10 min-h-0 shrink-0 border-b px-5 py-5 md:w-[38%] md:border-r md:border-b-0"
             data-testid="reschedule-identity-pane"
           >
             <div className="space-y-4">
-              <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+              <p className="text-text-secondary text-[11px] font-medium tracking-wide uppercase">
                 Post identity
               </p>
-              <PostPreviewSurface className="bg-card/70">
+              <PostPreviewSurface className="bg-surface/70">
                 <ScheduledPostPreview
                   post={post}
                   isLongform={isLongform}
-                  imageClassName="mb-3 rounded-lg border border-border/70 bg-muted/20"
+                  imageClassName="mb-3 rounded-lg border border-border/70 bg-surface-hover/20"
                   captionClassName="text-sm leading-relaxed"
                 />
               </PostPreviewSurface>
               <dl className="space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
-                  <dt className="text-muted-foreground text-xs">Media</dt>
+                  <dt className="text-text-secondary text-xs">Media</dt>
                   <dd className="text-right text-sm font-medium">
                     {mediaCount} file{mediaCount === 1 ? "" : "s"}
                   </dd>
                 </div>
                 <div className="flex items-start justify-between gap-3">
-                  <dt className="text-muted-foreground text-xs">Queue</dt>
+                  <dt className="text-text-secondary text-xs">Queue</dt>
                   <dd className="text-right text-sm font-medium">
                     {queueSummary}
                   </dd>
                 </div>
                 <div className="flex items-start justify-between gap-3">
-                  <dt className="text-muted-foreground text-xs">
-                    Current time
-                  </dt>
+                  <dt className="text-text-secondary text-xs">Current time</dt>
                   <dd className="text-right text-sm font-medium">
                     {formatDateTime(currentScheduledFor)}
                   </dd>
@@ -671,42 +672,37 @@ export function RescheduleScheduledPostModal({
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-6">
             {scheduleRepostQuoteMode ? (
               <div className="space-y-4">
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   {scheduleRepostQuoteMode === "repost"
                     ? "Choose when to schedule the repost."
                     : "Choose when to schedule the quote and add an optional caption."}
                 </p>
-                <div>
-                  <label
-                    htmlFor="repostQuoteScheduledFor"
-                    className="text-foreground mb-1 block text-sm font-medium"
-                  >
-                    Schedule at
-                  </label>
-                  <input
-                    id="repostQuoteScheduledFor"
-                    type="datetime-local"
-                    value={repostQuoteScheduledFor}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      const min = getMinDatetimeLocalForSchedule(
+                <FormField id="repostQuoteScheduledFor">
+                  <FormLabel>Schedule at</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={repostQuoteScheduledFor}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const min = getMinDatetimeLocalForSchedule(
+                          userTimezone,
+                          post.scheduledAtUtc ?? undefined
+                        );
+                        setRepostQuoteScheduledFor(
+                          clampDateTimeLocalToMin(v, min)
+                        );
+                      }}
+                      min={getMinDatetimeLocalForSchedule(
                         userTimezone,
                         post.scheduledAtUtc ?? undefined
-                      );
-                      setRepostQuoteScheduledFor(
-                        clampDateTimeLocalToMin(v, min)
-                      );
-                    }}
-                    min={getMinDatetimeLocalForSchedule(
-                      userTimezone,
-                      post.scheduledAtUtc ?? undefined
-                    )}
-                    className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
+                      )}
+                    />
+                  </FormControl>
+                </FormField>
                 {scheduleRepostQuoteMode === "repost" ? (
                   <div className="border-border space-y-1.5 rounded-md border p-3">
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-text-secondary text-xs">
                       Only repost if original gets (optional)
                     </span>
                     <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
@@ -719,8 +715,8 @@ export function RescheduleScheduledPostModal({
                           { key: "minSats" as const, label: "Sats" },
                         ] as const
                       ).map(({ key, label }) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                          <label className="text-muted-foreground text-xs whitespace-nowrap">
+                        <div key={key} className="cluster-tight.5">
+                          <label className="text-text-secondary text-xs whitespace-nowrap">
                             {label}
                           </label>
                           <input
@@ -745,7 +741,7 @@ export function RescheduleScheduledPostModal({
                                 return { ...prev, [key]: v };
                               });
                             }}
-                            className="border-border bg-background text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                            className="border-border bg-canvas text-text w-20 rounded-md border px-2 py-1.5 text-sm"
                             aria-label={`Min ${label.toLowerCase()}`}
                           />
                         </div>
@@ -754,26 +750,21 @@ export function RescheduleScheduledPostModal({
                   </div>
                 ) : null}
                 {scheduleRepostQuoteMode === "quote" ? (
-                  <div>
-                    <label
-                      htmlFor="repostQuoteCaption"
-                      className="text-foreground mb-1 block text-sm font-medium"
-                    >
-                      Quote caption (optional)
-                    </label>
-                    <textarea
-                      id="repostQuoteCaption"
-                      value={repostQuoteCaption}
-                      onChange={(e) => setRepostQuoteCaption(e.target.value)}
-                      placeholder="Add your comment..."
-                      rows={3}
-                      className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
-                    />
-                  </div>
+                  <FormField id="repostQuoteCaption">
+                    <FormLabel>Quote caption (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        value={repostQuoteCaption}
+                        onChange={(e) => setRepostQuoteCaption(e.target.value)}
+                        placeholder="Add your comment..."
+                        rows={3}
+                      />
+                    </FormControl>
+                  </FormField>
                 ) : null}
                 {(scheduleRepostQuoteFetcher.data?.error ?? signingError) ? (
-                  <div className="border-destructive/30 bg-destructive/10 rounded-lg border p-3">
-                    <div className="text-destructive text-sm">
+                  <div className="border-danger/30 bg-danger/10 rounded-lg border p-3">
+                    <div className="text-danger text-sm">
                       {getClientDisplayErrorMessage(
                         scheduleRepostQuoteFetcher.data?.error ?? signingError
                       )}
@@ -827,7 +818,7 @@ export function RescheduleScheduledPostModal({
                 </section>
 
                 <section className="space-y-2.5">
-                  <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                  <p className="text-text-secondary text-[11px] font-medium tracking-wide uppercase">
                     Quick shortcuts
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -882,7 +873,7 @@ export function RescheduleScheduledPostModal({
 
                 {!isLongform ? (
                   <section className="space-y-2">
-                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                    <p className="text-text-secondary text-[11px] font-medium tracking-wide uppercase">
                       Queue
                     </p>
                     <QueueSelector
@@ -895,8 +886,8 @@ export function RescheduleScheduledPostModal({
                         );
                       }}
                       queueTypes={queueTypes}
-                      className="bg-muted/20 border-border/70 rounded-lg border p-3"
-                      labelClassName="text-muted-foreground text-xs font-medium"
+                      className="bg-surface-hover/20 border-border/70 rounded-lg border p-3"
+                      labelClassName="text-text-secondary text-xs font-medium"
                       selectClassName="text-sm"
                     />
                   </section>
@@ -904,12 +895,12 @@ export function RescheduleScheduledPostModal({
 
                 <section className="space-y-2">
                   {wasAutoScheduled ? (
-                    <p className="text-muted-foreground text-xs leading-relaxed">
+                    <p className="text-text-secondary text-xs leading-relaxed">
                       This post followed a queue slot. Confirming applies your
                       selected time as a manual schedule.
                     </p>
                   ) : null}
-                  <p className="text-muted-foreground text-xs leading-relaxed">
+                  <p className="text-text-secondary text-xs leading-relaxed">
                     If this post has attached follow-ups, their schedule will be
                     adjusted automatically.
                   </p>
@@ -920,7 +911,7 @@ export function RescheduleScheduledPostModal({
                   <section className="space-y-2">
                     <button
                       type="button"
-                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-medium"
+                      className="text-text-secondary hover:text-text inline-cluster-tight.5 text-xs font-medium"
                       onClick={() => setShowAdvancedActions((prev) => !prev)}
                       data-testid="reschedule-advanced-toggle"
                     >
@@ -932,8 +923,8 @@ export function RescheduleScheduledPostModal({
                       Advanced actions
                     </button>
                     {showAdvancedActions ? (
-                      <div className="bg-muted/20 border-border/70 space-y-2 rounded-lg border p-3">
-                        <p className="text-foreground text-sm font-medium">
+                      <div className="bg-surface-hover/20 border-border/70 space-y-2 rounded-lg border p-3">
+                        <p className="text-text text-sm font-medium">
                           Also schedule
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -960,7 +951,7 @@ export function RescheduleScheduledPostModal({
                 ) : null}
 
                 {isSigningEvent ? (
-                  <div className="bg-muted text-muted-foreground border-border/70 flex flex-col gap-2 rounded-lg border p-3 text-sm">
+                  <div className="bg-surface-hover text-text-secondary border-border/70 stack-tight rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}
@@ -982,20 +973,20 @@ export function RescheduleScheduledPostModal({
                 ) : null}
 
                 {form.formState.errors.scheduledFor ? (
-                  <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                  <div className="border-danger/30 bg-danger/10 text-danger rounded-lg border p-3 text-sm">
                     {form.formState.errors.scheduledFor.message}
                   </div>
                 ) : null}
 
                 {(fetcher.data?.error ?? signingError) ? (
-                  <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                  <div className="border-danger/30 bg-danger/10 text-danger rounded-lg border p-3 text-sm">
                     <p>{rescheduleErrorMessage}</p>
                     {requiresFullEditor ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="text-destructive mt-2 px-0 underline"
+                        className="text-danger mt-2 px-0 underline"
                         onClick={openFullEditor}
                       >
                         Open full editor to resolve
@@ -1008,7 +999,7 @@ export function RescheduleScheduledPostModal({
           </div>
         </div>
 
-        <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+        <div className="border-border/70 bg-surface/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             {scheduleRepostQuoteMode ? (
               <>

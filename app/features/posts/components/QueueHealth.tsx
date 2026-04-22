@@ -15,14 +15,14 @@ const QUEUE_COLOR_CSS_VAR = "--queue-color";
 
 /** Solid Tailwind background class per named queue for bar fill (no arbitrary values). */
 const BAR_FILL_CLASS: Record<string, string> = {
-  main: "bg-primary",
+  main: "bg-brand",
   memes: "bg-success",
-  quotes: "bg-accent",
-  unassigned: "bg-muted",
+  quotes: "bg-brand-soft",
+  unassigned: "bg-surface-hover",
 };
 
 function getBarFillClass(queueName: string): string {
-  return BAR_FILL_CLASS[queueName.toLowerCase()] ?? "bg-muted";
+  return BAR_FILL_CLASS[queueName.toLowerCase()] ?? "bg-surface-hover";
 }
 
 export interface QueueHealthProps {
@@ -82,7 +82,7 @@ export default function QueueHealth({
 
   return (
     <div
-      className={`group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
+      className={`focus-ring group flex min-w-0 flex-1 flex-col focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
       role="button"
       aria-label="Queue Health"
@@ -113,16 +113,16 @@ export default function QueueHealth({
         }
       }}
     >
-      <Card className="flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
+      <Card className="shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
         <CardHeader className="px-4 pt-2 pb-1.5">
-          <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
+          <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
             Queue Health
           </h3>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
           {countsByQueue.length === 0 ? (
             <div className="flex min-h-[12rem] flex-col justify-center gap-2">
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 {isPostActivationEmpty
                   ? "Queues appear here once you start adding scheduled content."
                   : "No queues with scheduled posts."}
@@ -130,7 +130,7 @@ export default function QueueHealth({
               {isPostActivationEmpty ? (
                 <Link
                   to="/dashboard/compose?type=post"
-                  className="text-primary hover:text-primary/90 focus:ring-ring w-fit rounded text-xs font-medium underline focus:ring-2 focus:outline-none"
+                  className="focus-ring text-brand hover:text-brand/90 w-fit rounded-xs text-xs font-medium underline"
                 >
                   Schedule first post
                 </Link>
@@ -161,22 +161,22 @@ export default function QueueHealth({
                   <li key={queueName} className="flex min-h-[2.75rem] flex-col">
                     <Link
                       to={scheduledUrl}
-                      className={`focus:ring-ring card-lift bg-muted/30 hover:bg-muted/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow focus:ring-2 focus:outline-none ${bundle ? "queue-health-row" : ""}`}
+                      className={`focus-ring card-lift bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow ${bundle ? "queue-health-row" : ""}`}
                       style={linkStyle}
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                        <span className="text-foreground min-w-0 truncate text-xs font-medium">
+                        <span className="text-text min-w-0 truncate text-xs font-medium">
                           {queueName}
                         </span>
                         <span
-                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-70 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : "text-muted-foreground"}`}
+                          className={`flex-shrink-0 text-xs tabular-nums transition-opacity duration-200 ${bundle ? "font-bold opacity-70 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100" : "text-text-secondary"}`}
                           style={bundle ? { color: bundle.accent } : undefined}
                         >
                           {count}
                         </span>
                       </div>
                       <div
-                        className={`h-2.5 min-w-0 overflow-hidden rounded-[1px] ${bundle ? "" : "bg-muted/30"}`}
+                        className={`h-2.5 min-w-0 overflow-hidden rounded-[1px] ${bundle ? "" : "bg-surface-hover/30"}`}
                         role="presentation"
                         aria-hidden
                         style={

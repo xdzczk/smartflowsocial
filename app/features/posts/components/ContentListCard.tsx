@@ -174,7 +174,7 @@ export function ContentListCard({
           onPostSelect?.(item);
         }
       }}
-      className="group border-border bg-card hover:bg-muted/50 flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left shadow-sm transition-colors"
+      className="group border-border bg-surface hover:bg-surface-hover/50 shadow-1 motion-fast flex cursor-pointer items-stretch gap-3 overflow-hidden rounded-lg border p-3 text-left"
       style={{
         height: CONTENT_LIST_CARD_HEIGHT_PX,
         minHeight: CONTENT_LIST_CARD_HEIGHT_PX,
@@ -207,14 +207,14 @@ export function ContentListCard({
               className="h-full w-full rounded-md"
               thumbnailClassName="h-full w-full object-cover"
               fallback={
-                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
+                <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-[10px] font-medium">
                   {thumbnailBadge}
                 </div>
               }
             />
           ) : (
             <div
-              className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium"
+              className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-xs font-medium"
               aria-hidden
             >
               {thumbnailBadge}
@@ -222,7 +222,7 @@ export function ContentListCard({
           )}
         </div>
         {isRepostContent(item) ? (
-          <div className="bg-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+          <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
             <Repeat
               className={`${SMALL_ICON_SIZE_CLASS} text-white`}
               strokeWidth={2}
@@ -233,12 +233,12 @@ export function ContentListCard({
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         <p className="truncate font-medium">{getContentTitle(item)}</p>
-        <p className="text-muted-foreground truncate text-xs">
+        <p className="text-text-secondary truncate text-xs">
           {getContentPreview(item)?.slice(0, 40) ?? ""}
           {(getContentPreview(item)?.length ?? 0) > 40 ? "…" : ""}
         </p>
         <div className="mt-1 flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-          <span className="text-muted-foreground">{dateLabel}</span>
+          <span className="text-text-secondary">{dateLabel}</span>
           <QueueStatusChip
             queueType={item.queueType}
             mode={type === "draft" ? "draft" : "default"}
@@ -246,7 +246,7 @@ export function ContentListCard({
           {type === "draft" ? null : <ContentStatusChip item={item} />}
         </div>
         {type === "scheduled" && item.dependencyMode === "attached" ? (
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-text-secondary mt-1 text-xs">
             Follow-up
             {item.followUpTimingMode === "offset_from_parent"
               ? " · Offset from parent"
@@ -263,7 +263,7 @@ export function ContentListCard({
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-foreground focus:ring-ring flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-0 focus:outline-none"
+            className="focus-ring text-text-secondary hover:text-text flex h-8 w-8 items-center justify-center rounded-md"
             aria-label="Actions"
           >
             <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
@@ -537,7 +537,7 @@ export function ContentListCard({
           )}
           <DropdownMenuItem
             disabled={deleteFetcher.state !== "idle"}
-            className="text-destructive w-full cursor-pointer disabled:opacity-50"
+            className="text-danger w-full cursor-pointer disabled:opacity-50"
             onSelect={() => {
               onBeforeDelete?.(item.id);
               const postType =

@@ -162,7 +162,7 @@ export function SearchReplyThread({
             onClick={() => {
               toggleBranch(replyKey);
             }}
-            className="text-muted-foreground hover:text-foreground mt-1 shrink-0 rounded p-0.5"
+            className="text-text-secondary hover:text-text mt-1 shrink-0 rounded-xs p-0.5"
             aria-expanded={isOpen}
             title={
               isOpen ? "Hide nested replies" : "Load or show nested replies"
@@ -198,7 +198,7 @@ export function SearchReplyThread({
                   className="h-9 w-9 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+                <div className="dark:bg-surface-hover dark:text-text-secondary bg-surface-hover text-text flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
                   <User
                     className="h-4 w-4"
                     strokeWidth={INLINE_ICON_STROKE}
@@ -208,10 +208,10 @@ export function SearchReplyThread({
               )}
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0">
-                  <span className="text-foreground text-sm font-medium">
+                  <span className="text-text text-sm font-medium">
                     {replyName}
                   </span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-text-secondary text-xs">
                     {formatDate(reply.created_at * 1000, {
                       isUnixTimestamp: false,
                     })}
@@ -221,7 +221,7 @@ export function SearchReplyThread({
                   <div className="mb-1">
                     <p
                       className={cn(
-                        "text-foreground text-sm leading-relaxed break-words whitespace-pre-wrap",
+                        "text-text text-sm leading-relaxed break-words whitespace-pre-wrap",
                         showClamp && "line-clamp-3"
                       )}
                     >
@@ -233,7 +233,7 @@ export function SearchReplyThread({
                         onClick={() => {
                           toggleBodyExpanded(replyKey);
                         }}
-                        className="text-muted-foreground hover:text-foreground mt-0.5 text-xs font-medium"
+                        className="text-text-secondary hover:text-text mt-0.5 text-xs font-medium"
                       >
                         {bodyExpanded ? "Show less" : "Show more"}
                       </button>
@@ -248,7 +248,7 @@ export function SearchReplyThread({
                         key={index}
                         src={url}
                         alt=""
-                        className="h-16 max-w-[120px] rounded object-cover"
+                        className="h-16 max-w-[120px] rounded-xs object-cover"
                       />
                     ))}
                   </div>
@@ -258,7 +258,7 @@ export function SearchReplyThread({
                     to={eventUrl(reply.id, nostrClientConfig)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs font-medium"
+                    className="text-text-secondary hover:text-text inline-cluster-tight text-xs font-medium"
                   >
                     <ExternalLink
                       className="h-3 w-3"
@@ -267,7 +267,7 @@ export function SearchReplyThread({
                     />
                     View
                   </Link>
-                  <code className="text-muted-foreground max-w-full truncate text-[10px]">
+                  <code className="text-text-secondary max-w-full truncate text-[10px]">
                     {truncateEventId(reply.id)}
                   </code>
                 </div>
@@ -277,7 +277,7 @@ export function SearchReplyThread({
             {isOpen ? (
               <div className="mt-3">
                 {isLoadingThis && !cache.has(replyKey) ? (
-                  <p className="text-muted-foreground pl-6 text-xs">
+                  <p className="text-text-secondary pl-6 text-xs">
                     Loading replies…
                   </p>
                 ) : children && children.length > 0 ? (
@@ -285,7 +285,7 @@ export function SearchReplyThread({
                     {children.map((child) => renderReply(child, depth + 1))}
                   </ul>
                 ) : cache.has(replyKey) ? (
-                  <p className="text-muted-foreground pl-6 text-xs">
+                  <p className="text-text-secondary pl-6 text-xs">
                     No nested replies loaded for this note.
                   </p>
                 ) : null}

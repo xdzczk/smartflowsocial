@@ -183,7 +183,10 @@ describe("PublishLongFormNowUseCase", () => {
       );
     });
 
-    it("should throw error if post already published", async () => {
+    it("should skip publish when post is already PUBLISHED with a recorded publishAttemptId (real duplicate)", async () => {
+      // A real prior publish leaves both `currentState: "PUBLISHED"` AND
+      // `publishAttemptId` set (written atomically in the PUBLISHED transition).
+      // Only that combination should short-circuit a re-entry.
       (
         mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
@@ -191,6 +194,7 @@ describe("PublishLongFormNowUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         currentState: "PUBLISHED",
+        publishAttemptId: "prior-attempt-id",
       });
 
       await expect(
@@ -211,6 +215,36 @@ describe("PublishLongFormNowUseCase", () => {
       ).resolves.toBeUndefined();
 
       expect(mockPublish).not.toHaveBeenCalled();
+    });
+
+    it("should still publish when currentState is PUBLISHED but publishAttemptId is missing (regression: pre-marked PUBLISHED must not silently skip)", async () => {
+      // Regression for the bug where CreateLongFormPostUseCase pre-set
+      // currentState to PUBLISHED before this use case ran, causing the
+      // very first publish to be treated as a duplicate and skipped — the
+      // event never reached any relay yet the UI showed "Published".
+      (
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        currentState: "PUBLISHED",
+        publishAttemptId: null,
+      });
+
+      const signedEvent = createValidSignedEvent({ content: "test" });
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: true }],
+      });
+
+      await useCase.execute({
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent,
+        relays: ["wss://relay1.com"],
+      });
+
+      expect(mockPublish).toHaveBeenCalledTimes(1);
     });
 
     it("should use correlation ID if provided", async () => {

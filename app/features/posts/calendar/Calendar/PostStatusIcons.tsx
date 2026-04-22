@@ -32,7 +32,7 @@ export function PostStatusIcons({
       ) : null}
       {showScheduledIcon ? (
         <Clock
-          className={`text-muted-foreground ${SMALL_ICON_SIZE_CLASS}`}
+          className={`text-text-secondary ${SMALL_ICON_SIZE_CLASS}`}
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />
@@ -47,7 +47,7 @@ export function PostStatusBadges({ post, isLongform }: PostStatusIconsProps) {
       {!isLongform &&
       !post.manual_override &&
       Boolean(!post.manual_override) ? (
-        <span className="border-border text-foreground dark:bg-muted/20 dark:text-muted-foreground rounded-full border bg-transparent px-2 py-1 text-xs dark:border-transparent">
+        <span className="border-border text-text dark:bg-surface-hover/20 dark:text-text-secondary rounded-full border bg-transparent px-2 py-1 text-xs dark:border-transparent">
           Auto
         </span>
       ) : null}

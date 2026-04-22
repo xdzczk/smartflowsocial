@@ -411,7 +411,7 @@ export function GiveawayDetailPage({
       <div className="flex items-center gap-4">
         <Link
           to="/dashboard/giveaway"
-          className="text-muted-foreground hover:text-foreground text-sm"
+          className="text-text-secondary hover:text-text text-sm"
         >
           ← Back to Giveaways
         </Link>
@@ -420,20 +420,20 @@ export function GiveawayDetailPage({
       <div
         className={`rounded-lg border p-5 ${
           giveaway.status === "PREVIEWED"
-            ? "border-blue-500/40 bg-blue-500/5"
+            ? "border-info/40 bg-info/5"
             : giveaway.status === "LOCKED"
-              ? "border-amber-500/40 bg-amber-500/5"
+              ? "border-warning/40 bg-warning/5"
               : giveaway.status === "PAID_OUT"
-                ? "border-emerald-500/40 bg-emerald-500/5"
-                : "border-border bg-card"
+                ? "border-success/40 bg-success/5"
+                : "border-border bg-surface"
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-foreground text-2xl font-bold tracking-tight">
+            <h1 className="text-text text-2xl font-bold tracking-tight">
               {giveaway.name ?? `Giveaway ${giveaway.id.slice(0, 8)}`}
             </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               {giveaway.status === "PREVIEWED"
                 ? "This giveaway is ready to finalize. Locking winners applies your plan’s finalization fee (if any) and creates an official record. You can reroll or exclude winners first."
                 : giveaway.status === "LOCKED"
@@ -449,7 +449,7 @@ export function GiveawayDetailPage({
             >
               {phaseLabel}
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-text-secondary">
               Updated{" "}
               {giveaway.updatedAt
                 ? new Date(giveaway.updatedAt).toLocaleString()
@@ -457,7 +457,7 @@ export function GiveawayDetailPage({
             </span>
           </div>
         </div>
-        <p className="text-muted-foreground mt-3 text-sm">
+        <p className="text-text-secondary mt-3 text-sm">
           {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
           {giveaway.winnerCount} winner
           {giveaway.winnerCount !== 1 ? "s" : ""} configured
@@ -465,7 +465,7 @@ export function GiveawayDetailPage({
       </div>
 
       {giveaway.status === "CANCELLED" ? (
-        <p className="text-muted-foreground">This giveaway was cancelled.</p>
+        <p className="text-text-secondary">This giveaway was cancelled.</p>
       ) : null}
 
       {giveaway.status === "DRAFT" ||
@@ -475,7 +475,7 @@ export function GiveawayDetailPage({
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="text-destructive hover:text-destructive/90 text-sm underline"
+            className="text-danger hover:text-danger/90 text-sm underline"
           >
             Delete giveaway
           </button>
@@ -497,7 +497,7 @@ export function GiveawayDetailPage({
                   <input type="hidden" name="intent" value="delete" />
                   <AlertDialogAction
                     type="submit"
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-danger text-danger-foreground hover:bg-danger/90"
                     disabled={deleteFetcher.state !== "idle"}
                   >
                     {deleteFetcher.state !== "idle"
@@ -515,14 +515,14 @@ export function GiveawayDetailPage({
         <div className="space-y-4">
           {giveaway.scopeSummaryLabel != null ||
           giveaway.engagementTypes != null ? (
-            <div className="border-border bg-muted/20 rounded-lg border p-4">
-              <h2 className="text-foreground mb-2 text-sm font-semibold">
+            <div className="border-border bg-surface-hover/20 rounded-lg border p-4">
+              <h2 className="text-text mb-2 text-sm font-semibold">
                 Configuration
               </h2>
-              <ul className="text-muted-foreground space-y-1 text-sm">
+              <ul className="text-text-secondary space-y-1 text-sm">
                 {giveaway.scopeSummaryLabel != null ? (
                   <li>
-                    <span className="text-foreground font-medium">Scope:</span>{" "}
+                    <span className="text-text font-medium">Scope:</span>{" "}
                     {giveaway.scopeSummaryLabel}
                   </li>
                 ) : null}
@@ -530,14 +530,12 @@ export function GiveawayDetailPage({
                 Array.isArray(giveaway.engagementTypes) &&
                 giveaway.engagementTypes.length > 0 ? (
                   <li>
-                    <span className="text-foreground font-medium">
-                      Engagement:
-                    </span>{" "}
+                    <span className="text-text font-medium">Engagement:</span>{" "}
                     {giveaway.engagementTypes.join(", ").toLowerCase()}
                   </li>
                 ) : null}
                 <li>
-                  <span className="text-foreground font-medium">Winners:</span>{" "}
+                  <span className="text-text font-medium">Winners:</span>{" "}
                   {giveaway.winnerCount} ·{" "}
                   {scopeIsFollowGraphAccountPool(giveaway.scopeType)
                     ? "uniform random from accounts"
@@ -548,14 +546,14 @@ export function GiveawayDetailPage({
                 {giveaway.status === "PREVIEWED" && finalizationQuote ? (
                   <>
                     <li>
-                      <span className="text-foreground font-medium">
+                      <span className="text-text font-medium">
                         Planned payout:
                       </span>{" "}
                       {finalizationQuote.plannedPayoutSats.toLocaleString()}{" "}
                       sats
                     </li>
                     <li>
-                      <span className="text-foreground font-medium">
+                      <span className="text-text font-medium">
                         Finalization fee:
                       </span>{" "}
                       {finalizationQuote.plannedPayoutSats <= 0
@@ -573,9 +571,7 @@ export function GiveawayDetailPage({
                   giveaway.filters["excludeLowTrust"] ||
                   giveaway.filters["excludeNonFollowers"]) ? (
                   <li>
-                    <span className="text-foreground font-medium">
-                      Filter out:
-                    </span>{" "}
+                    <span className="text-text font-medium">Filter out:</span>{" "}
                     {[
                       giveaway.filters["excludeMuted"] && "Muted",
                       giveaway.filters["excludeBlocked"] && "Blacklisted",
@@ -592,22 +588,20 @@ export function GiveawayDetailPage({
           ) : null}
 
           {previewMeta ? (
-            <div className="border-border rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
-              <h2 className="text-foreground mb-2 text-sm font-semibold">
+            <div className="border-border border-info/20 bg-info/5 rounded-lg border p-4">
+              <h2 className="text-text mb-2 text-sm font-semibold">
                 Fairness & audit
               </h2>
-              <ul className="text-muted-foreground space-y-1 text-sm">
+              <ul className="text-text-secondary space-y-1 text-sm">
                 <li>
-                  <span className="text-foreground font-medium">
-                    Eligible pool:
-                  </span>{" "}
+                  <span className="text-text font-medium">Eligible pool:</span>{" "}
                   {previewMeta.eligiblePoolSize?.toLocaleString() ?? "—"}{" "}
                   accounts (after filters)
                 </li>
                 {typeof previewMeta.eligiblePoolSize === "number" &&
                 previewMeta.eligiblePoolSize > 0 &&
                 previewMeta.eligiblePoolSize < giveaway.winnerCount ? (
-                  <li className="text-amber-700 dark:text-amber-400">
+                  <li className="text-warning-text">
                     Only {previewMeta.eligiblePoolSize} eligible account
                     {previewMeta.eligiblePoolSize === 1 ? "" : "s"} found for
                     the current rules, so preview will select{" "}
@@ -616,17 +610,13 @@ export function GiveawayDetailPage({
                   </li>
                 ) : null}
                 <li>
-                  <span className="text-foreground font-medium">
-                    Snapshot time:
-                  </span>{" "}
+                  <span className="text-text font-medium">Snapshot time:</span>{" "}
                   {previewMeta.computedAt
                     ? new Date(previewMeta.computedAt).toLocaleString()
                     : "—"}
                 </li>
                 <li>
-                  <span className="text-foreground font-medium">
-                    Selection:
-                  </span>{" "}
+                  <span className="text-text font-medium">Selection:</span>{" "}
                   {scopeIsFollowGraphAccountPool(giveaway.scopeType)
                     ? "Uniform random from accounts"
                     : previewMeta.selectionMode === "WEIGHTED_BY_ENGAGEMENT"
@@ -634,7 +624,7 @@ export function GiveawayDetailPage({
                       : "Unique user (one entry each)"}
                 </li>
                 <li>
-                  <span className="text-foreground font-medium">Rerolls:</span>{" "}
+                  <span className="text-text font-medium">Rerolls:</span>{" "}
                   {giveaway.rerollCount ?? 0}
                 </li>
               </ul>
@@ -642,25 +632,21 @@ export function GiveawayDetailPage({
           ) : null}
 
           {giveaway.status === "PREVIEWED" && finalizationQuote ? (
-            <div className="border-border rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-              <h2 className="text-foreground mb-2 text-sm font-semibold">
+            <div className="border-border border-success/20 bg-success/5 rounded-lg border p-4">
+              <h2 className="text-text mb-2 text-sm font-semibold">
                 Finalization
               </h2>
-              <ul className="text-muted-foreground space-y-1 text-sm">
+              <ul className="text-text-secondary space-y-1 text-sm">
                 <li>
-                  <span className="text-foreground font-medium">
-                    Planned payout:
-                  </span>{" "}
+                  <span className="text-text font-medium">Planned payout:</span>{" "}
                   {finalizationQuote.plannedPayoutSats.toLocaleString()} sats
                 </li>
                 <li>
-                  <span className="text-foreground font-medium">
-                    Your plan:
-                  </span>{" "}
+                  <span className="text-text font-medium">Your plan:</span>{" "}
                   {planDisplayName}
                 </li>
                 <li>
-                  <span className="text-foreground font-medium">
+                  <span className="text-text font-medium">
                     Finalization fee:
                   </span>{" "}
                   {finalizationQuote.plannedPayoutSats <= 0
@@ -670,21 +656,21 @@ export function GiveawayDetailPage({
                       : `${finalizationQuote.feeSats.toLocaleString()} sats (${finalizationQuote.feeRateBps / 100}%)`}
                 </li>
                 <li>
-                  <span className="text-foreground font-medium">
+                  <span className="text-text font-medium">
                     Total due at lock:
                   </span>{" "}
                   {finalizationQuote.dueNowSats.toLocaleString()} sats
                 </li>
               </ul>
               {finalizationQuote.plannedPayoutSats <= 0 ? (
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   This giveaway selects winners only. No finalization fee will
                   be charged.
                 </p>
               ) : null}
               {(planType === "free" || planType === "creator") &&
               finalizationQuote.feeSats > 0 ? (
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Running giveaways regularly? Upgrade to Pro to reduce or
                   remove finalization fees.
                 </p>
@@ -693,11 +679,11 @@ export function GiveawayDetailPage({
           ) : null}
 
           {excludedList.length > 0 && giveaway.status === "PREVIEWED" ? (
-            <details className="border-border bg-muted/20 rounded-lg border p-4">
-              <summary className="text-foreground cursor-pointer text-sm font-medium">
+            <details className="border-border bg-surface-hover/20 rounded-lg border p-4">
+              <summary className="text-text cursor-pointer text-sm font-medium">
                 Manually excluded ({excludedList.length})
               </summary>
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-text-secondary mt-2 text-xs">
                 These pubkeys were excluded during preview; the current winner
                 set avoids them.
               </p>
@@ -716,20 +702,20 @@ export function GiveawayDetailPage({
               <button
                 type="button"
                 onClick={() => setShowEdit((s) => !s)}
-                className="text-muted-foreground hover:text-foreground text-sm"
+                className="text-text-secondary hover:text-text text-sm"
               >
                 {showEdit ? "Hide edit" : "Edit configuration"}
               </button>
               {showEdit ? (
                 <updateFetcher.Form
                   method="post"
-                  className="border-border bg-muted/20 flex flex-col gap-3 rounded-lg border p-4"
+                  className="border-border bg-surface-hover/20 flex flex-col gap-3 rounded-lg border p-4"
                 >
                   <input type="hidden" name="intent" value="update" />
                   <div>
                     <label
                       htmlFor="edit-name"
-                      className="text-muted-foreground mb-1 block text-sm"
+                      className="text-text-secondary mb-1 block text-sm"
                     >
                       Giveaway name
                     </label>
@@ -739,13 +725,13 @@ export function GiveawayDetailPage({
                       type="text"
                       defaultValue={giveaway.name ?? ""}
                       placeholder="Optional name"
-                      className="border-border bg-background w-full max-w-sm rounded border px-2 py-1 text-sm"
+                      className="border-border bg-canvas w-full max-w-sm rounded-xs border px-2 py-1 text-sm"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="edit-winnerCount"
-                      className="text-muted-foreground mb-1 block text-sm"
+                      className="text-text-secondary mb-1 block text-sm"
                     >
                       Winner count
                     </label>
@@ -756,11 +742,11 @@ export function GiveawayDetailPage({
                       min={1}
                       max={maxWinnerCount}
                       defaultValue={giveaway.winnerCount}
-                      className="border-border bg-background w-20 rounded border px-2 py-1 text-sm"
+                      className="border-border bg-canvas w-20 rounded-xs border px-2 py-1 text-sm"
                     />
                   </div>
                   <div>
-                    <span className="text-muted-foreground mb-1 block text-sm">
+                    <span className="text-text-secondary mb-1 block text-sm">
                       {scopeIsFollowGraphAccountPool(giveaway.scopeType)
                         ? "How winners are chosen"
                         : "Engagement types"}
@@ -770,7 +756,7 @@ export function GiveawayDetailPage({
                         {ENGAGEMENT_OPTIONS.map((opt) => (
                           <label
                             key={opt}
-                            className="text-foreground flex items-center gap-1.5 text-sm"
+                            className="text-text cluster-tight.5 text-sm"
                           >
                             <input
                               type="checkbox"
@@ -787,13 +773,13 @@ export function GiveawayDetailPage({
                         ))}
                       </div>
                     ) : scopeIsFollowGraphAccountPool(giveaway.scopeType) ? (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-text-secondary text-sm">
                         Winners are picked at random from eligible accounts in
                         your follower or following list — not from note
                         engagement.
                       </p>
                     ) : (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-text-secondary text-sm">
                         For this scope, reactions, reposts, comments, and zaps
                         all count as entries.
                       </p>
@@ -802,10 +788,10 @@ export function GiveawayDetailPage({
                   <div>
                     {scopeIsFollowGraphAccountPool(giveaway.scopeType) ? (
                       <>
-                        <span className="text-muted-foreground mb-1 block text-sm">
+                        <span className="text-text-secondary mb-1 block text-sm">
                           Selection mode
                         </span>
-                        <p className="text-foreground text-sm">
+                        <p className="text-text text-sm">
                           Uniform random from accounts
                         </p>
                         <input
@@ -818,14 +804,14 @@ export function GiveawayDetailPage({
                       <>
                         <label
                           htmlFor="edit-selectionMode"
-                          className="text-muted-foreground mb-1 block text-sm"
+                          className="text-text-secondary mb-1 block text-sm"
                         >
                           Selection mode
                         </label>
                         <select
                           id="edit-selectionMode"
                           name="selectionMode"
-                          className="border-border bg-background rounded border px-2 py-1 text-sm"
+                          className="border-border bg-canvas rounded-xs border px-2 py-1 text-sm"
                           defaultValue={giveaway.selectionMode ?? "UNIQUE_USER"}
                         >
                           <option value="UNIQUE_USER">Unique user</option>
@@ -844,7 +830,7 @@ export function GiveawayDetailPage({
                     {updateFetcher.state !== "idle" ? "Saving…" : "Save"}
                   </button>
                   {updateFetcher.data?.error ? (
-                    <p className="text-destructive text-sm">
+                    <p className="text-danger text-sm">
                       {updateFetcher.data.error}
                     </p>
                   ) : null}
@@ -858,7 +844,7 @@ export function GiveawayDetailPage({
               <input type="hidden" name="intent" value="preview" />
               <button
                 type="submit"
-                className="bg-primary text-primary-foreground rounded-md px-4 py-2"
+                className="bg-brand text-brand-on rounded-md px-4 py-2"
                 disabled={previewFetcher.state !== "idle"}
               >
                 {previewFetcher.state !== "idle"
@@ -868,8 +854,8 @@ export function GiveawayDetailPage({
             </previewFetcher.Form>
           ) : null}
 
-          {previewFetcher.data?.error || lockFetcher.data?.error ? (
-            <p className="text-destructive text-sm">
+          {(previewFetcher.data?.error ?? lockFetcher.data?.error) ? (
+            <p className="text-danger text-sm">
               {previewFetcher.data?.error ?? lockFetcher.data?.error}
             </p>
           ) : null}
@@ -907,7 +893,7 @@ export function GiveawayDetailPage({
                   onClick={() => {
                     setShowCancelConfirm(true);
                   }}
-                  className="text-destructive border-destructive/40"
+                  className="text-danger border-danger/40"
                 >
                   Cancel giveaway
                 </Button>
@@ -920,18 +906,16 @@ export function GiveawayDetailPage({
                   <DialogHeader>
                     <DialogTitle>Lock winners</DialogTitle>
                   </DialogHeader>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-text-secondary text-sm">
                     This action locks the current winner selection and starts
                     payout tracking. The finalization fee covers official
                     locking, audit trail, payout checklist, and receipt tools —
                     not custody of prize funds.
                   </p>
                   {finalizationQuote ? (
-                    <div className="bg-muted/40 space-y-1 rounded-md border p-3 text-sm">
+                    <div className="bg-surface-hover/40 space-y-1 rounded-md border p-3 text-sm">
                       <p>
-                        <span className="text-foreground font-medium">
-                          Giveaway:
-                        </span>{" "}
+                        <span className="text-text font-medium">Giveaway:</span>{" "}
                         {(() => {
                           const n = giveaway.name?.trim();
                           return n && n.length > 0
@@ -940,32 +924,28 @@ export function GiveawayDetailPage({
                         })()}
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
-                          Scope:
-                        </span>{" "}
+                        <span className="text-text font-medium">Scope:</span>{" "}
                         {giveaway.scopeSummaryLabel ?? giveaway.scopeType}
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
-                          Winners:
-                        </span>{" "}
+                        <span className="text-text font-medium">Winners:</span>{" "}
                         {winners.length}
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
+                        <span className="text-text font-medium">
                           Planned payout:
                         </span>{" "}
                         {finalizationQuote.plannedPayoutSats.toLocaleString()}{" "}
                         sats
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
+                        <span className="text-text font-medium">
                           Your plan:
                         </span>{" "}
                         {planDisplayName}
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
+                        <span className="text-text font-medium">
                           Finalization fee:
                         </span>{" "}
                         {finalizationQuote.plannedPayoutSats <= 0
@@ -975,39 +955,37 @@ export function GiveawayDetailPage({
                             : `${finalizationQuote.feeSats.toLocaleString()} sats (${finalizationQuote.feeRateBps / 100}%)`}
                       </p>
                       <p>
-                        <span className="text-foreground font-medium">
-                          Due now:
-                        </span>{" "}
+                        <span className="text-text font-medium">Due now:</span>{" "}
                         {finalizationQuote.dueNowSats.toLocaleString()} sats
                       </p>
                     </div>
                   ) : null}
                   <div className="grid gap-2 text-sm">
-                    <div className="bg-muted/30 rounded-md border p-3">
-                      <p className="text-foreground font-medium">
+                    <div className="bg-surface-hover/30 rounded-md border p-3">
+                      <p className="text-text font-medium">
                         What this includes
                       </p>
-                      <ul className="text-muted-foreground mt-1 list-inside list-disc text-xs">
+                      <ul className="text-text-secondary mt-1 list-inside list-disc text-xs">
                         <li>Official winner locking</li>
                         <li>Audit trail</li>
                         <li>Payout checklist</li>
                         <li>Receipt and proof tools</li>
                       </ul>
                     </div>
-                    <div className="bg-muted/30 rounded-md border p-3">
-                      <p className="text-foreground font-medium">
+                    <div className="bg-surface-hover/30 rounded-md border p-3">
+                      <p className="text-text font-medium">
                         What this does not include
                       </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
+                      <p className="text-text-secondary mt-1 text-xs">
                         {BRAND_NAME} does not hold prize funds. After lock, you
                         can pay winners manually or with your connected wallet.
                       </p>
                     </div>
                   </div>
-                  <p className="text-destructive text-xs font-medium">
+                  <p className="text-danger text-xs font-medium">
                     Locking is irreversible. You cannot reroll after lock.
                   </p>
-                  <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <DialogFooter className="stack-tight sm:flex-row sm:justify-end">
                     <Button
                       type="button"
                       variant="outline"
@@ -1037,7 +1015,7 @@ export function GiveawayDetailPage({
                     ) : null}
                     <Button
                       type="button"
-                      className="bg-primary text-primary-foreground"
+                      className="bg-brand text-brand-on"
                       disabled={lockFetcher.state !== "idle"}
                       onClick={() => {
                         const fd = new FormData();
@@ -1078,7 +1056,7 @@ export function GiveawayDetailPage({
                       <input type="hidden" name="intent" value="cancel" />
                       <AlertDialogAction
                         type="submit"
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="bg-danger text-danger-foreground hover:bg-danger/90"
                         disabled={cancelFetcher.state !== "idle"}
                       >
                         {cancelFetcher.state !== "idle"
@@ -1094,7 +1072,7 @@ export function GiveawayDetailPage({
 
           {winners.length > 0 ? (
             <div className="border-border rounded-lg border p-4">
-              <h2 className="text-foreground mb-3 font-semibold">
+              <h2 className="text-text mb-3 font-semibold">
                 {giveaway.status === "PREVIEWED"
                   ? "Selected winners"
                   : "Winners"}{" "}
@@ -1104,10 +1082,10 @@ export function GiveawayDetailPage({
                 {winners.map((w, i) => (
                   <li
                     key={w.pubkey}
-                    className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3">
-                      <span className="text-muted-foreground mt-1 text-sm font-medium">
+                      <span className="text-text-secondary mt-1 text-sm font-medium">
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1 space-y-2">
@@ -1121,14 +1099,14 @@ export function GiveawayDetailPage({
                           {winnerEngagementBadges(w).map((b) => (
                             <span
                               key={b}
-                              className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs"
+                              className="bg-surface-hover text-text-secondary rounded-xs px-2 py-0.5 text-xs"
                             >
                               {b}
                             </span>
                           ))}
                         </div>
                         {w.satsPerWinner != null && w.satsPerWinner > 0 ? (
-                          <p className="text-muted-foreground text-xs tabular-nums">
+                          <p className="text-text-secondary text-xs tabular-nums">
                             {w.satsPerWinner.toLocaleString()} sats
                           </p>
                         ) : null}
@@ -1150,27 +1128,27 @@ export function GiveawayDetailPage({
 
       {giveaway.status === "LOCKED" ? (
         <div className="space-y-4">
-          <div className="border-border rounded-lg border border-amber-500/25 bg-amber-500/10 p-4 text-sm">
-            <p className="text-foreground font-semibold">Finalization</p>
+          <div className="border-border border-warning/25 bg-warning/10 rounded-lg border p-4 text-sm">
+            <p className="text-text font-semibold">Finalization</p>
             {giveaway.finalizationFeeStatus === "PAID" &&
             giveaway.finalizationFeeSats != null ? (
-              <p className="text-muted-foreground mt-1">
+              <p className="text-text-secondary mt-1">
                 Finalization fee paid:{" "}
                 {giveaway.finalizationFeeSats.toLocaleString()} sats
               </p>
             ) : giveaway.finalizationFeeStatus === "WAIVED" ? (
-              <p className="text-muted-foreground mt-1">
+              <p className="text-text-secondary mt-1">
                 Finalization included in your plan
                 {giveaway.planAtFinalization
                   ? ` (${giveaway.planAtFinalization})`
                   : ""}
               </p>
             ) : (
-              <p className="text-muted-foreground mt-1">
+              <p className="text-text-secondary mt-1">
                 No finalization fee (selection only or n/a).
               </p>
             )}
-            <div className="text-muted-foreground mt-2 space-y-0.5">
+            <div className="text-text-secondary mt-2 space-y-0.5">
               <p>
                 Planned payout:{" "}
                 {(
@@ -1189,20 +1167,20 @@ export function GiveawayDetailPage({
           </div>
           <form
             method="post"
-            className="border-border bg-card space-y-3 rounded-lg border p-4"
+            className="border-border bg-surface space-y-3 rounded-lg border p-4"
           >
             <input type="hidden" name="intent" value="updatePayoutSettings" />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Payout settings</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   {payoutCopy.lockTrustNote} Manual payout remains available as
                   fallback.
                 </p>
               </div>
               <button
                 type="submit"
-                className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
               >
                 Save
               </button>
@@ -1241,15 +1219,15 @@ export function GiveawayDetailPage({
 
       {giveaway.status === "PAID_OUT" ? (
         <div className="space-y-4">
-          <div className="border-border bg-card rounded-lg border p-5">
-            <h2 className="text-foreground text-lg font-semibold">Receipt</h2>
+          <div className="border-border bg-surface rounded-lg border p-5">
+            <h2 className="text-text text-lg font-semibold">Receipt</h2>
             {unresolvedCount > 0 ? (
-              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+              <p className="text-warning-text mt-1 text-sm">
                 Completed with issues: {unresolvedCount} payout item
                 {unresolvedCount === 1 ? "" : "s"} still need review.
               </p>
             ) : null}
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-text-secondary mt-1 text-sm">
               {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
               {winners.length} winner{winners.length !== 1 ? "s" : ""} ·{" "}
               {(giveaway.plannedPayoutSats ?? totalBudgetSats).toLocaleString()}{" "}
@@ -1266,11 +1244,11 @@ export function GiveawayDetailPage({
             </p>
             <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
               <div>
-                <dt className="text-muted-foreground">Total recipients</dt>
+                <dt className="text-text-secondary">Total recipients</dt>
                 <dd>{winners.length}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Paid manually</dt>
+                <dt className="text-text-secondary">Paid manually</dt>
                 <dd>
                   {
                     winners.filter(
@@ -1282,7 +1260,7 @@ export function GiveawayDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Paid via wallet</dt>
+                <dt className="text-text-secondary">Paid via wallet</dt>
                 <dd>
                   {
                     winners.filter(
@@ -1292,7 +1270,7 @@ export function GiveawayDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Unresolved</dt>
+                <dt className="text-text-secondary">Unresolved</dt>
                 <dd>{unresolvedCount}</dd>
               </div>
             </dl>
@@ -1340,14 +1318,14 @@ export function GiveawayDetailPage({
               </Form>
             </div>
           </div>
-          <details className="border-border bg-muted/10 rounded-lg border">
-            <summary className="text-foreground cursor-pointer p-4 text-sm font-medium">
+          <details className="border-border bg-surface-hover/10 rounded-lg border">
+            <summary className="text-text cursor-pointer p-4 text-sm font-medium">
               View winners ({winners.length})
             </summary>
             <ul className="border-border space-y-2 border-t p-4">
               {winners.map((w, i) => (
-                <li key={w.pubkey} className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">{i + 1}.</span>
+                <li key={w.pubkey} className="cluster text-sm">
+                  <span className="text-text-secondary">{i + 1}.</span>
                   <WinnerNpubRow
                     npub={w.npub}
                     displayName={winnerProfiles[w.pubkey]?.displayName}
@@ -1388,33 +1366,33 @@ export function GiveawayDetailPage({
       ) : null}
 
       {activityEntries.length > 0 ? (
-        <div className="border-border bg-muted/10 rounded-lg border">
+        <div className="border-border bg-surface-hover/10 rounded-lg border">
           <button
             type="button"
             onClick={() => {
               setActivityOpen((o) => !o);
             }}
-            className="text-foreground flex w-full items-center justify-between p-4 text-left text-sm font-medium"
+            className="text-text flex w-full items-center justify-between p-4 text-left text-sm font-medium"
           >
             Activity log ({activityEntries.length})
-            <span className="text-muted-foreground text-xs">
+            <span className="text-text-secondary text-xs">
               {activityOpen ? "Hide" : "Show"}
             </span>
           </button>
           {activityOpen ? (
-            <ol className="border-border text-muted-foreground max-h-64 space-y-3 overflow-y-auto border-t p-4 text-xs">
+            <ol className="border-border text-text-secondary max-h-64 space-y-3 overflow-y-auto border-t p-4 text-xs">
               {[...activityEntries].reverse().map((e) => (
                 <li
                   key={`${e.at}-${e.type}-${JSON.stringify(e.payload ?? {})}`}
                 >
                   <div>
-                    <span className="text-foreground font-medium">
+                    <span className="text-text font-medium">
                       {formatActivityTypeLabel(e.type)}
                     </span>{" "}
                     · {new Date(e.at).toLocaleString()}
                   </div>
                   {e.payload && Object.keys(e.payload).length > 0 ? (
-                    <pre className="bg-muted/50 mt-1 max-w-full overflow-x-auto rounded p-2 font-mono text-[10px] leading-snug whitespace-pre-wrap">
+                    <pre className="bg-surface-hover/50 mt-1 max-w-full overflow-x-auto rounded-xs p-2 font-mono text-[10px] leading-snug whitespace-pre-wrap">
                       {JSON.stringify(e.payload, null, 2)}
                     </pre>
                   ) : null}

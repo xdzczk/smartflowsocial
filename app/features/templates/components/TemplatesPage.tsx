@@ -338,7 +338,7 @@ export default function TemplatesPage() {
 
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             {rawTemplatesCount === 0 ? (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="empty-state"
                   icon={<FileText strokeWidth={1.25} aria-hidden />}
@@ -351,7 +351,7 @@ export default function TemplatesPage() {
                 </PublishingEmptyState>
               </div>
             ) : templates.length === 0 ? (
-              <div className="border-border bg-card rounded-xl border">
+              <div className="border-border bg-surface rounded-xl border">
                 <PublishingEmptyState
                   data-testid="templates-filtered-empty"
                   title="No templates match these filters"
@@ -396,14 +396,14 @@ export default function TemplatesPage() {
                   return (
                     <li key={id}>
                       <div
-                        className="border-border bg-card hover:border-border/80 hover:bg-muted/30 focus-visible:ring-ring cursor-pointer rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        className="focus-ring-offset border-border bg-surface hover:border-border/80 hover:bg-surface-hover/30 motion-fast cursor-pointer rounded-xl border p-4"
                         role="button"
                         tabIndex={0}
                         aria-label={`Template: ${displayName}`}
                         onClick={() => setSheetTemplate(template)}
                         onKeyDown={handleCardKeyDown}
                       >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-5">
+                        <div className="stack sm:flex-row sm:items-stretch sm:gap-5">
                           <div className="shrink-0">
                             {thumb ? (
                               <img
@@ -413,17 +413,17 @@ export default function TemplatesPage() {
                               />
                             ) : (
                               <div
-                                className="border-border/40 bg-muted/30 size-14 rounded-lg border border-dashed sm:size-16"
+                                className="border-border/40 bg-surface-hover/30 size-14 rounded-lg border border-dashed sm:size-16"
                                 aria-hidden
                               />
                             )}
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col">
                             <div className="space-y-1 text-left">
-                              <h3 className="text-foreground text-base font-semibold tracking-tight">
+                              <h3 className="text-text text-base font-semibold tracking-tight">
                                 {displayName}
                               </h3>
-                              <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+                              <p className="text-text-secondary line-clamp-2 text-sm leading-relaxed">
                                 {previewSnippet(t)}
                               </p>
                             </div>
@@ -434,14 +434,14 @@ export default function TemplatesPage() {
                               ) : (
                                 <TextOnlyIndicatorChip />
                               )}
-                              <span className="text-muted-foreground text-xs sm:hidden">
+                              <span className="text-text-secondary text-xs sm:hidden">
                                 {formatTemplateUpdated(t as never, dateLocale)}
                               </span>
                             </div>
                           </div>
 
                           <div className="flex shrink-0 flex-col gap-2 sm:min-w-[12rem] sm:items-end">
-                            <span className="text-muted-foreground hidden text-xs tabular-nums sm:block sm:text-right">
+                            <span className="text-text-secondary hidden text-xs tabular-nums sm:block sm:text-right">
                               {formatTemplateUpdated(t as never, dateLocale)}
                             </span>
                             <div
@@ -522,7 +522,7 @@ export default function TemplatesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
+                                    className="text-danger focus:text-danger"
                                     onClick={() => {
                                       const fd = new FormData();
                                       fd.set("_action", "delete");
@@ -570,7 +570,7 @@ export default function TemplatesPage() {
                             : "Post"
                         }
                       />
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-text-secondary text-xs">
                         Updated {formatDate(detail.updatedAt)}
                       </span>
                     </div>
@@ -579,7 +579,7 @@ export default function TemplatesPage() {
                     {"longformTitle" in detail &&
                     detail.longformTitle &&
                     detail.longformTitle !== detail.name ? (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-text-secondary text-sm">
                         Article title: {detail.longformTitle}
                       </p>
                     ) : null}
@@ -593,16 +593,16 @@ export default function TemplatesPage() {
                     {detail.text ? (
                       <div>
                         <p className="mb-1 text-xs font-medium">Preview</p>
-                        <p className="text-muted-foreground max-h-56 overflow-y-auto text-sm whitespace-pre-wrap">
+                        <p className="text-text-secondary max-h-56 overflow-y-auto text-sm whitespace-pre-wrap">
                           {richContentToPlainPreview(detail.text)}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-text-secondary text-sm">
                         No body text yet.
                       </p>
                     )}
-                    <div className="mt-auto flex flex-col gap-2 border-t pt-4">
+                    <div className="stack-tight mt-auto border-t pt-4">
                       <Button className="w-full gap-2" asChild>
                         <Link
                           to={useHref ?? "#"}
@@ -623,7 +623,7 @@ export default function TemplatesPage() {
                       <Button
                         type="button"
                         variant="ghost"
-                        className="text-destructive hover:text-destructive w-full"
+                        className="text-danger hover:text-danger w-full"
                         onClick={() => {
                           const fd = new FormData();
                           fd.set("_action", "delete");

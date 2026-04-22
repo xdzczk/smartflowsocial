@@ -170,7 +170,7 @@ export function MixedDraftsBulkActions({
         size="default"
         onClick={onBulkDelete}
         disabled={bulkDeleteState !== "idle"}
-        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="border-danger/40 text-danger hover:bg-danger/10 hover:text-danger"
       >
         {bulkDeleteState !== "idle" ? "Deleting..." : "Delete"}
       </Button>

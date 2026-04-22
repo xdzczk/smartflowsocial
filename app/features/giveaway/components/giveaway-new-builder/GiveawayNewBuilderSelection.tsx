@@ -26,7 +26,7 @@ export function GiveawayNewBuilderSelection({
       {isFollowGraphScope ? (
         <>
           <input type="hidden" name="selectionMode" value="UNIQUE_USER" />
-          <p className="text-muted-foreground text-xs leading-snug">
+          <p className="text-text-secondary text-xs leading-snug">
             One entry per account; pool is your follow graph at lock time.
           </p>
         </>
@@ -34,7 +34,7 @@ export function GiveawayNewBuilderSelection({
         <div className="max-w-md space-y-1">
           <label
             htmlFor="selectionMode"
-            className="text-muted-foreground text-sm font-medium"
+            className="text-text-secondary text-sm font-medium"
           >
             Selection mode
           </label>
@@ -60,7 +60,7 @@ export function GiveawayNewBuilderSelection({
           </select>
         </div>
       )}
-      <p className="text-muted-foreground/90 text-[11px] leading-snug">
+      <p className="text-text-secondary/90 text-[11px] leading-snug">
         {isFollowGraphScope
           ? "Preview winners before lock; locked giveaways cannot be edited."
           : "Preview before lock — locked giveaways cannot be edited."}

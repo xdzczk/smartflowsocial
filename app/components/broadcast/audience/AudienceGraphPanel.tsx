@@ -38,20 +38,20 @@ export function AudienceGraphPanel({
           className={cn(
             "rounded-md px-2 py-1 text-xs font-medium",
             risk.level === "low"
-              ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
-              : "bg-amber-500/15 text-amber-900 dark:text-amber-100"
+              ? "bg-success/15 text-success-text"
+              : "bg-warning/15 text-warning-text"
           )}
         >
           {risk.label}
         </span>
       </div>
-      <p className="text-muted-foreground text-sm">
+      <p className="text-text-secondary text-sm">
         Resolved at send time from mutual follow relationships. Best for direct
         updates to accounts with a two-way relationship.
       </p>
       <p className="text-sm">
-        <span className="text-muted-foreground">Estimated audience size: </span>
-        <strong className="text-foreground">
+        <span className="text-text-secondary">Estimated audience size: </span>
+        <strong className="text-text">
           {fetcher.state === "loading"
             ? "…"
             : failed
@@ -61,7 +61,7 @@ export function AudienceGraphPanel({
                 : "—"}
         </strong>
         {failed ? (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-text-secondary text-xs">
             {" "}
             (graph cache could not be loaded — try again or use a custom list)
           </span>

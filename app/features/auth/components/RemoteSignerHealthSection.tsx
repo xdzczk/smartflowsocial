@@ -29,17 +29,17 @@ export function RemoteSignerHealthSection({
   return (
     <div>
       <div className="mb-1">
-        <h3 className="text-foreground mb-1 text-base font-semibold">
+        <h3 className="text-text mb-1 text-base font-semibold">
           Active signer session
         </h3>
-        <p className="text-muted-foreground mb-3 text-xs">
+        <p className="text-text-secondary mb-3 text-xs">
           Runtime health and recent events for the signer you&apos;re using now.
         </p>
-        <div className="bg-muted/30 rounded-md border p-4">
+        <div className="bg-surface-hover/30 rounded-md border p-4">
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="font-medium">{activeConnection.label}</div>
-              <div className="text-muted-foreground text-sm break-words">
+              <div className="text-text-secondary text-sm break-words">
                 {activeConnection.metadata.signerAppName ?? "Unknown signer"}
               </div>
             </div>

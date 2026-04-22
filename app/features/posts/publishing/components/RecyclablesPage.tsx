@@ -322,7 +322,7 @@ export default function RecyclablesPage() {
 
       {/* Loading indicator for next page */}
       {isFetchingNextPage ? (
-        <div className="text-muted-foreground mt-4 text-center text-sm">
+        <div className="text-text-secondary mt-4 text-center text-sm">
           Loading more posts...
         </div>
       ) : null}

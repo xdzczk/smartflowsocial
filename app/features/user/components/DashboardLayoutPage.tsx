@@ -17,45 +17,43 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
+import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
+import { BroadcastIndexPageSkeleton } from "~/components/broadcast/BroadcastIndexPageSkeleton";
+import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPageSkeleton";
+import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
-import {
-  AdminAnalyticsPageSkeleton,
-  AdminOperationsPageSkeleton,
-  AdminUsersPageSkeleton,
-  BroadcastAudiencesPageSkeleton,
-  BroadcastDetailPageSkeleton,
-  BroadcastIndexPageSkeleton,
-  BroadcastNewPageSkeleton,
-  BroadcastReviewPageSkeleton,
-  BulkPostsPageSkeleton,
-  CalendarPageSkeleton,
-  CalendarQueuePageSkeleton,
-  ContestDetailPageSkeleton,
-  ContestProofPageSkeleton,
-  DraftsPageSkeleton,
-  GiveawayBuilderPageSkeleton,
-  GiveawayDetailPageSkeleton,
-  GiveawayProofPageSkeleton,
-  MediaSettingsPageSkeleton,
-  PublishedPostsPageSkeleton,
-  RecyclablesPageSkeleton,
-  ScheduledPostsPageSkeleton,
-  TemplatesPageSkeleton,
-} from "~/components/skeletons/RoutePageSkeletons";
 import { Skeleton } from "~/components/ui/skeleton";
+import { AdminAnalyticsPageSkeleton } from "~/features/admin/components/AdminAnalyticsPageSkeleton";
+import { AdminOperationsPageSkeleton } from "~/features/admin/components/AdminOperationsPageSkeleton";
+import { AdminUsersPageSkeleton } from "~/features/admin/components/AdminUsersPageSkeleton";
+import { ContestDetailPageSkeleton } from "~/features/contest/components/ContestDetailPageSkeleton";
+import { ContestProofPageSkeleton } from "~/features/contest/components/ContestProofPageSkeleton";
 import { EngagementFeedSkeleton } from "~/features/engagement/components/EngagementFeedSkeleton";
+import { GiveawayBuilderPageSkeleton } from "~/features/giveaway/components/GiveawayBuilderPageSkeleton";
+import { GiveawayDetailPageSkeleton } from "~/features/giveaway/components/GiveawayDetailPageSkeleton";
+import { GiveawayProofPageSkeleton } from "~/features/giveaway/components/GiveawayProofPageSkeleton";
 import {
   BillingAlertBanner,
   getUserPlanType,
   isSubscriptionPeriodExpired,
 } from "~/features/payments";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
+import { CalendarPageSkeleton } from "~/features/posts/calendar/CalendarPageSkeleton";
+import { CalendarQueuePageSkeleton } from "~/features/posts/calendar/CalendarQueuePageSkeleton";
+import { BulkPostsPageSkeleton } from "~/features/posts/components/BulkPostsPageSkeleton";
 import { CreateComposerShell } from "~/features/posts/composer/components/CreateComposerShell";
+import { DraftsPageSkeleton } from "~/features/posts/drafts/DraftsPageSkeleton";
+import { PublishedPostsPageSkeleton } from "~/features/posts/publishing/PublishedPostsPageSkeleton";
+import { RecyclablesPageSkeleton } from "~/features/posts/publishing/RecyclablesPageSkeleton";
+import { ScheduledPostsPageSkeleton } from "~/features/posts/scheduling/ScheduledPostsPageSkeleton";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
+import { MediaSettingsPageSkeleton } from "~/features/settings/components/MediaSettingsPageSkeleton";
 import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
+import { TemplatesPageSkeleton } from "~/features/templates/components/TemplatesPageSkeleton";
 import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
@@ -67,6 +65,8 @@ const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
 const DASHBOARD_INDEX_PATH = "/dashboard";
 const FREE_PLAN_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-free-plan-banner";
+const SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY =
+  "smartflowsocial:dismissed-subscription-expired-banner";
 const FREE_PLAN_BANNER_ANALYTICS_EVENT = "smartflow:free-plan-banner-analytics";
 const subscribeNoop = () => () => {};
 const getClientMountedSnapshot = () => true;
@@ -357,6 +357,25 @@ export function DashboardLayoutPage(): ReactNode {
       return false;
     }
   }, [isClientMounted]);
+  const [
+    isSubscriptionExpiredBannerDismissedLocally,
+    setIsSubscriptionExpiredBannerDismissedLocally,
+  ] = useState(false);
+  const isSubscriptionExpiredBannerDismissed = useMemo(() => {
+    if (!isClientMounted) return false;
+    try {
+      return (
+        sessionStorage.getItem(SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY) ===
+        "1"
+      );
+    } catch {
+      return false;
+    }
+  }, [isClientMounted]);
+  const shouldShowSubscriptionExpiredBanner =
+    isSubscriptionExpired &&
+    !isSubscriptionExpiredBannerDismissed &&
+    !isSubscriptionExpiredBannerDismissedLocally;
   const hasTrackedFreePlanBannerView = useRef(false);
 
   const shouldShowFreePlanBanner =
@@ -389,6 +408,15 @@ export function DashboardLayoutPage(): ReactNode {
     trackFreePlanBannerEvent("free_plan_banner_cta_clicked");
   };
 
+  const handleDismissSubscriptionExpiredBanner = () => {
+    try {
+      sessionStorage.setItem(SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY, "1");
+    } catch {
+      // Ignore storage access errors.
+    }
+    setIsSubscriptionExpiredBannerDismissedLocally(true);
+  };
+
   const handleDesktopSidebarToggle = () => {
     setDesktopSidebarOpen((prev) => {
       const next = !prev;
@@ -401,7 +429,7 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-background mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
@@ -435,7 +463,7 @@ export function DashboardLayoutPage(): ReactNode {
                 return (
                   <div
                     key={p.npub}
-                    className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100"
+                    className="border-warning/40 bg-warning/12 text-warning-text dark:border-warning/40 dark:bg-warning/15 dark:text-warning mb-4 flex items-start justify-between gap-3 rounded-lg border p-4"
                   >
                     <div>
                       <p className="font-medium">
@@ -457,7 +485,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="reject" />
                         <button
-                          className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
+                          className="bg-surface-hover text-text hover:bg-surface-active inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -475,7 +503,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:opacity-70"
+                          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -493,31 +521,45 @@ export function DashboardLayoutPage(): ReactNode {
 
           {showBillingAlert ? (
             <BillingAlertBanner billingContext={billingContext} />
-          ) : isSubscriptionExpired ? (
+          ) : shouldShowSubscriptionExpiredBanner ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-border bg-muted text-muted-foreground mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
-                <div>
+              <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">Your subscription has expired</p>
                   <p className="text-sm opacity-90">
                     You’re on the Free plan now. Resubscribe to restore your
                     previous plan benefits.
                   </p>
                 </div>
-                <Link
-                  prefetch="intent"
-                  to="/plans"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex items-center rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
-                >
-                  View plans
-                </Link>
+                <div className="cluster-tight.5 self-start md:ml-4 md:shrink-0">
+                  <Link
+                    prefetch="intent"
+                    to="/plans"
+                    className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
+                  >
+                    View plans
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Dismiss subscription expired banner"
+                    onClick={handleDismissSubscriptionExpiredBanner}
+                    className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
+                  >
+                    <X
+                      className={INLINE_ICON_SIZE_CLASS}
+                      strokeWidth={INLINE_ICON_STROKE}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           ) : shouldShowFreePlanBanner ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-border-subtle bg-card/80 text-muted-foreground mb-4 rounded-xl border px-4 py-3.5 shadow-sm">
+              <div className="border-border-subtle bg-surface/80 text-text-secondary shadow-1 mb-4 rounded-xl border px-4 py-3.5">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-foreground text-sm font-semibold tracking-tight">
+                    <p className="text-text text-sm font-semibold tracking-tight">
                       You’re on the Free plan
                     </p>
                     <p className="mt-1 text-sm leading-5">
@@ -526,12 +568,12 @@ export function DashboardLayoutPage(): ReactNode {
                       publishing infrastructure.
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 self-start md:ml-4 md:shrink-0">
+                  <div className="cluster-tight.5 self-start md:ml-4 md:shrink-0">
                     <Link
                       prefetch="intent"
                       to="/plans"
                       onClick={handleFreePlanBannerCtaClick}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+                      className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium"
                     >
                       View plans
                     </Link>
@@ -539,7 +581,7 @@ export function DashboardLayoutPage(): ReactNode {
                       type="button"
                       aria-label="Dismiss free plan banner"
                       onClick={handleDismissFreePlanBanner}
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                      className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
                     >
                       <X
                         className={INLINE_ICON_SIZE_CLASS}

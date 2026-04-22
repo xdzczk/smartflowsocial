@@ -73,8 +73,8 @@ export default function PostTypeTabs({
   const getTabClasses = (isActive: boolean) =>
     `whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
       isActive
-        ? "border-border text-foreground dark:border-primary dark:text-primary"
-        : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+        ? "border-border text-text dark:border-brand dark:text-brand"
+        : "border-transparent text-text-secondary hover:border-border hover:text-text"
     }`;
 
   // Use pagination totals if available, otherwise fall back to array lengths
@@ -115,7 +115,7 @@ export default function PostTypeTabs({
       <div className={wrapperClass}>
         <Select value={currentTab} onValueChange={handleMobileTabChange}>
           <SelectTrigger
-            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:ml-0"
             aria-label="Content type"
           >
             <SelectValue>{label}</SelectValue>

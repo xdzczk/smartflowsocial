@@ -48,28 +48,28 @@ export function FirstRunDashboard({
   return (
     <div className="max-w-10xl mx-auto w-full px-4 lg:px-8">
       <div className="space-y-4">
-        <Card className="shadow-sm dark:shadow-none">
+        <Card className="shadow-1 dark:shadow-none">
           <CardContent className="px-5 py-5 md:px-6 md:py-6">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Get started
             </p>
-            <h1 className="text-foreground mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
+            <h1 className="text-text text-h1 md:text-display mt-2">
               Start publishing on Nostr properly
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
+            <p className="text-text-secondary mt-2 max-w-2xl text-sm leading-6">
               Schedule posts, organize queues, and manage your publishing
               workflow from one place.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
               <Link
                 to="/dashboard/compose?type=post"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring inline-flex h-10 items-center rounded-md px-4 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
               >
                 Create first post
               </Link>
               <Link
                 to="/dashboard/settings?tab=publishing"
-                className="border-border-subtle text-foreground hover:bg-muted/60 focus:ring-ring inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium focus:ring-2 focus:outline-none"
+                className="focus-ring border-border-subtle text-text hover:bg-surface-hover/60 inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
               >
                 Create first queue
               </Link>
@@ -77,9 +77,9 @@ export function FirstRunDashboard({
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm dark:shadow-none">
+        <Card className="shadow-1 dark:shadow-none">
           <CardHeader className="px-5 pt-4 pb-2 md:px-6">
-            <h2 className="text-foreground text-sm font-semibold tracking-tight">
+            <h2 className="text-text text-sm font-semibold tracking-tight">
               Quick start
             </h2>
           </CardHeader>
@@ -88,20 +88,20 @@ export function FirstRunDashboard({
               <Link
                 key={item.title}
                 to={item.to}
-                className="border-border-subtle hover:bg-muted/50 focus:ring-ring flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
+                className="focus-ring border-border-subtle hover:bg-surface-hover/50 motion-fast flex items-start gap-3 rounded-lg border px-3 py-2.5"
               >
                 <span className="mt-0.5 shrink-0" aria-hidden>
                   {item.done ? (
-                    <CheckCircle2 className="text-primary h-4 w-4" />
+                    <CheckCircle2 className="text-brand h-4 w-4" />
                   ) : (
-                    <Circle className="text-muted-foreground h-4 w-4" />
+                    <Circle className="text-text-secondary h-4 w-4" />
                   )}
                 </span>
                 <span className="min-w-0">
-                  <span className="text-foreground block text-sm font-medium">
+                  <span className="text-text block text-sm font-medium">
                     {item.title}
                   </span>
-                  <span className="text-muted-foreground block text-xs leading-5">
+                  <span className="text-text-secondary block text-xs leading-5">
                     {item.description}
                   </span>
                 </span>
@@ -111,33 +111,27 @@ export function FirstRunDashboard({
         </Card>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Card className="shadow-sm dark:shadow-none">
+          <Card className="shadow-1 dark:shadow-none">
             <CardContent className="p-4">
-              <h3 className="text-foreground text-sm font-medium">
-                Schedule posts
-              </h3>
-              <p className="text-muted-foreground mt-1 text-xs leading-5">
+              <h3 className="text-text text-sm font-medium">Schedule posts</h3>
+              <p className="text-text-secondary mt-1 text-xs leading-5">
                 Plan posts ahead instead of publishing manually.
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm dark:shadow-none">
+          <Card className="shadow-1 dark:shadow-none">
             <CardContent className="p-4">
-              <h3 className="text-foreground text-sm font-medium">
-                Build queues
-              </h3>
-              <p className="text-muted-foreground mt-1 text-xs leading-5">
+              <h3 className="text-text text-sm font-medium">Build queues</h3>
+              <p className="text-text-secondary mt-1 text-xs leading-5">
                 Create a consistent publishing flow for memes, threads, promos,
                 or campaigns.
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm dark:shadow-none">
+          <Card className="shadow-1 dark:shadow-none">
             <CardContent className="p-4">
-              <h3 className="text-foreground text-sm font-medium">
-                Track activity
-              </h3>
-              <p className="text-muted-foreground mt-1 text-xs leading-5">
+              <h3 className="text-text text-sm font-medium">Track activity</h3>
+              <p className="text-text-secondary mt-1 text-xs leading-5">
                 Once you start posting, your flow, runway, and queue health
                 appear here.
               </p>

@@ -22,7 +22,7 @@ export function UnifiedComposerDraftHeaderTrailing({
         onClick={onOpenDrafts}
         disabled={disabled}
         aria-label="Open drafts"
-        className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+        className="text-text-secondary hover:text-text h-8 px-2 text-xs"
       >
         Drafts
       </Button>
@@ -34,7 +34,7 @@ export function UnifiedComposerDraftHeaderTrailing({
           onClick={onOpenTemplates}
           disabled={disabled}
           aria-label="Open templates"
-          className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+          className="text-text-secondary hover:text-text h-8 px-2 text-xs"
         >
           Templates
         </Button>

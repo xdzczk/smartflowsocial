@@ -181,6 +181,7 @@ export { default as BulkPostsPage } from "./components/BulkPostsPage";
 export { default as BulkPostsActionButtons } from "./components/BulkPostsActionButtons";
 export { default as BulkPostsSchedulingPanel } from "./components/BulkPostsSchedulingPanel";
 export { default as BulkPostsUploadArea } from "./components/BulkPostsUploadArea";
+export { BulkPostsPageSkeleton } from "./components/BulkPostsPageSkeleton";
 
 // ============================================================================
 // Shared mutations (used across pages)

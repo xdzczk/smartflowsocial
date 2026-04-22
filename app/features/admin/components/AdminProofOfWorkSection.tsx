@@ -97,14 +97,14 @@ export function AdminProofOfWorkSection({
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Proof Studio</h2>
-        <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+        <p className="text-text-secondary mt-1 max-w-xl text-sm">
           Public proof-of-work cards for the selected analytics range — same
           engine as giveaway and contest proof exports.
         </p>
       </div>
 
       {reliabilitySampleLow ? (
-        <p className="text-muted-foreground border-border rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs leading-snug">
+        <p className="text-text-secondary border-border border-warning/20 bg-warning/5 rounded-lg border px-3 py-2 text-xs leading-snug">
           Low sample for 30d reliability stats — interpret exports carefully or
           pick a longer window in the admin range before sharing.
         </p>

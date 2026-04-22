@@ -73,7 +73,7 @@ export function ScheduleOverviewTargetModal({
 
         <div className="space-y-4 py-2">
           {fetcher.data?.error ? (
-            <p className="text-destructive text-sm" role="alert">
+            <p className="text-danger text-sm" role="alert">
               {fetcher.data.error}
             </p>
           ) : null}
@@ -88,7 +88,7 @@ export function ScheduleOverviewTargetModal({
               id="schedule-overview-target"
               value={value}
               onChange={(e) => setValue(Number(e.target.value))}
-              className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              className="focus-ring-offset border-border bg-canvas flex h-9 w-full rounded-md border px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               aria-describedby="schedule-overview-target-hint"
             >
               {Array.from({ length: MAX_TARGET - MIN_TARGET + 1 }, (_, i) => {
@@ -102,7 +102,7 @@ export function ScheduleOverviewTargetModal({
             </select>
             <p
               id="schedule-overview-target-hint"
-              className="text-muted-foreground text-xs"
+              className="text-text-secondary text-xs"
             >
               {value === 0
                 ? "Gap highlighting is off."

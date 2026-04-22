@@ -72,9 +72,9 @@ export function LookupReplyComposerDrawer({
         <SheetHeader className="border-border space-y-1 border-b px-4 py-3 text-left">
           <SheetTitle className="text-base">Reply</SheetTitle>
           <SheetDescription asChild>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Replying to{" "}
-              <span className="text-foreground font-medium">
+              <span className="text-text font-medium">
                 {authorDisplayName.trim() || "author"}
               </span>
             </p>
@@ -93,7 +93,7 @@ export function LookupReplyComposerDrawer({
             aria-invalid={!!sendError}
           />
           {sendError ? (
-            <p className="text-destructive mt-2 text-xs" role="alert">
+            <p className="text-danger mt-2 text-xs" role="alert">
               {sendError}
             </p>
           ) : null}
@@ -117,11 +117,11 @@ export function LookupReplyComposerDrawer({
             {isSending ? "Sending…" : "Send reply"}
           </Button>
         </SheetFooter>
-        <p className="text-muted-foreground px-4 pb-3 text-[11px]">
+        <p className="text-text-secondary px-4 pb-3 text-[11px]">
           Need relays or signing? Check{" "}
           <Link
             to="/dashboard/settings?tab=relays"
-            className="text-primary underline-offset-2 hover:underline"
+            className="text-brand underline-offset-2 hover:underline"
           >
             Settings
           </Link>

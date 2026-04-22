@@ -187,7 +187,7 @@ export default function TemplateNewLongformPage() {
       <div className="mb-4">
         <Link
           to="/dashboard/templates"
-          className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground text-sm"
+          className="text-brand hover:text-brand/90 dark:text-text-secondary dark:hover:text-text text-sm"
         >
           ← Back to Templates
         </Link>

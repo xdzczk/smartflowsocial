@@ -74,25 +74,23 @@ export function RelayDeliverySection({
           className={cn(
             "mt-4 rounded-xl border p-4",
             !canToggleBlastr
-              ? "border-muted-foreground/25 bg-muted/30"
-              : "border-border bg-card"
+              ? "border-muted-foreground/25 bg-surface-hover/30"
+              : "border-border bg-surface"
           )}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-foreground text-sm font-semibold">
-                  SFS Blastr
-                </h3>
+                <h3 className="text-text text-sm font-semibold">SFS Blastr</h3>
                 {blastrStatus.badge}
                 {!canToggleBlastr ? (
                   <Lock
-                    className="text-muted-foreground size-4 shrink-0"
+                    className="text-text-secondary size-4 shrink-0"
                     aria-hidden
                   />
                 ) : null}
               </div>
-              <p className="text-muted-foreground max-w-prose text-sm leading-relaxed">
+              <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
                 Optional {BRAND_NAME} relay fan-out for broader publish
                 delivery.
                 {!canToggleBlastr ? (
@@ -116,13 +114,13 @@ export function RelayDeliverySection({
                 </Button>
               ) : null}
               {canToggleBlastr && blastrRelay.enabled ? (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Last ACK: {blastrAckFormatted}
                 </p>
               ) : null}
               {canToggleBlastr ? (
                 <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:gap-4">
-                  <div className="flex items-center gap-2">
+                  <div className="cluster">
                     <Switch
                       id="blastr-relay-enabled"
                       checked={blastrRelayEnabled}
@@ -158,13 +156,13 @@ export function RelayDeliverySection({
                 </div>
               ) : null}
             </div>
-            <div className="text-muted-foreground font-mono text-xs break-all sm:max-w-[min(100%,20rem)] sm:text-right">
+            <div className="text-text-secondary font-mono text-xs break-all sm:max-w-[min(100%,20rem)] sm:text-right">
               {blastrRelay.relayUrl}
             </div>
           </div>
         </div>
       ) : null}
-      <p className="text-muted-foreground mt-4 border-t pt-3 text-sm leading-relaxed">
+      <p className="text-text-secondary mt-4 border-t pt-3 text-sm leading-relaxed">
         {publishSummaryLine}
       </p>
     </section>
@@ -197,19 +195,19 @@ export function RelaySourceSection({
           aria-checked={tabValue === "profile"}
           onClick={onSelectProfile}
           className={cn(
-            "flex flex-col rounded-lg border p-4 text-left transition-colors",
+            "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "profile"
-              ? "border-primary bg-primary/5 ring-primary ring-offset-background ring-2 ring-offset-2"
-              : "border-border/80 hover:bg-muted/40"
+              ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
+              : "border-border/80 hover:bg-surface-hover/40"
           )}
         >
-          <span className="flex items-center gap-2 font-medium">
+          <span className="cluster font-medium">
             {tabValue === "profile" ? (
-              <Check className="text-primary size-4 shrink-0" />
+              <Check className="text-brand size-4 shrink-0" />
             ) : null}
             Nostr profile relays
           </span>
-          <span className="text-muted-foreground mt-2 text-sm leading-snug">
+          <span className="text-text-secondary mt-2 text-sm leading-snug">
             Uses the relay list published on your Nostr profile.
           </span>
         </button>
@@ -219,36 +217,36 @@ export function RelaySourceSection({
           aria-checked={tabValue === "app"}
           onClick={onSelectApp}
           className={cn(
-            "flex flex-col rounded-lg border p-4 text-left transition-colors",
+            "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "app"
-              ? "border-primary bg-primary/5 ring-primary ring-offset-background ring-2 ring-offset-2"
-              : "border-border/80 hover:bg-muted/40"
+              ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
+              : "border-border/80 hover:bg-surface-hover/40"
           )}
         >
-          <span className="flex items-center gap-2 font-medium">
+          <span className="cluster font-medium">
             {tabValue === "app" ? (
-              <Check className="text-primary size-4 shrink-0" />
+              <Check className="text-brand size-4 shrink-0" />
             ) : null}
             {BRAND_NAME} app relays
           </span>
-          <span className="text-muted-foreground mt-2 text-sm leading-snug">
+          <span className="text-text-secondary mt-2 text-sm leading-snug">
             Uses a relay list stored only in {BRAND_NAME} for publishing from
             this app.
           </span>
         </button>
       </div>
-      <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+      <p className="text-text-secondary mt-4 text-sm leading-relaxed">
         Relay source and your {BRAND_NAME} app relay list are saved when you use{" "}
-        <span className="text-foreground font-medium">
+        <span className="text-text font-medium">
           Save {BRAND_NAME} preferences
         </span>{" "}
         below. Updating your Nostr profile relay list requires signing with{" "}
-        <span className="text-foreground font-medium">
+        <span className="text-text font-medium">
           Sign &amp; publish relay list to Nostr
         </span>{" "}
         when that source is selected.
       </p>
-      <p className="text-foreground mt-2 text-sm font-medium">
+      <p className="text-text mt-2 text-sm font-medium">
         {watchedSource === "nip65_profile"
           ? `${BRAND_NAME} will publish using your Nostr profile relay list once it is published to your profile.`
           : `${BRAND_NAME} will publish using your ${BRAND_NAME} app relay list.`}
@@ -333,12 +331,12 @@ export function RelayListSection({
       <div className="mt-4 space-y-3">
         {tabValue === "profile" ? (
           <>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-text-secondary text-sm leading-relaxed">
               Update the relay list published on your Nostr profile. Changes
               require signing before they take effect on the network.
             </p>
             {profileDirty ? (
-              <p className="text-xs text-amber-600/90 dark:text-amber-400/90">
+              <p className="text-warning dark:text-warning text-xs">
                 Unpublished changes — sign and publish to update your profile
                 relay list on Nostr.
               </p>
@@ -347,7 +345,7 @@ export function RelayListSection({
               {profileRows.map((row, index) => (
                 <div
                   key={row.clientId}
-                  className="border-border/60 bg-background/50 rounded-lg border p-3"
+                  className="border-border/60 bg-canvas/50 rounded-lg border p-3"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1 space-y-1">
@@ -359,9 +357,9 @@ export function RelayListSection({
                         }
                         placeholder="wss://relay.damus.io"
                         disabled={publishingProfile || isSubmitting}
-                        className="border-input/80 bg-muted/25 font-mono text-sm"
+                        className="border-border/80 bg-surface-hover/25 font-mono text-sm"
                       />
-                      <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                      <div className="text-text-secondary flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         {row.url.trim() ? (
                           <span>
                             Last ACK: {formatAck(relayAcks[row.url.trim()])}
@@ -369,7 +367,7 @@ export function RelayListSection({
                         ) : null}
                         <span>{scopeLabel(row.scope)}</span>
                         {profileDirty ? (
-                          <span className="text-amber-700/90 dark:text-amber-300/90">
+                          <span className="text-warning-text">
                             Pending publish
                           </span>
                         ) : (
@@ -417,12 +415,12 @@ export function RelayListSection({
           </>
         ) : (
           <>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-text-secondary text-sm leading-relaxed">
               Relays are stored in {BRAND_NAME}. Save when you are ready to use
               this list for publishing (with this source selected).
             </p>
             {hasChanged ? (
-              <p className="text-xs text-amber-600/90 dark:text-amber-400/90">
+              <p className="text-warning dark:text-warning text-xs">
                 Unsaved changes to app relays or relay source.
               </p>
             ) : null}
@@ -430,7 +428,7 @@ export function RelayListSection({
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="border-border/60 bg-background/50 rounded-lg border p-3"
+                  className="border-border/60 bg-canvas/50 rounded-lg border p-3"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1 space-y-1">
@@ -446,13 +444,13 @@ export function RelayListSection({
                           });
                         }}
                         className={cn(
-                          "border-input/80 bg-muted/25 font-mono text-sm",
+                          "border-border/80 bg-surface-hover/25 font-mono text-sm",
                           form.formState.errors.relays?.[index]
-                            ? "border-destructive"
+                            ? "border-danger"
                             : ""
                         )}
                       />
-                      <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                      <div className="text-text-secondary flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         {(() => {
                           const relayValue = watchedRelays[index] ?? "";
                           const ack = relayAcks[relayValue];
@@ -463,7 +461,7 @@ export function RelayListSection({
                         <span>Stored in {BRAND_NAME}</span>
                       </div>
                       {form.formState.errors.relays?.[index] ? (
-                        <p className="text-destructive text-sm">
+                        <p className="text-danger text-sm">
                           {form.formState.errors.relays[index].message}
                         </p>
                       ) : null}
@@ -485,7 +483,7 @@ export function RelayListSection({
             </div>
             {form.formState.errors.relays &&
             typeof form.formState.errors.relays.message === "string" ? (
-              <p className="text-destructive mt-2 text-sm">
+              <p className="text-danger mt-2 text-sm">
                 {form.formState.errors.relays.message}
               </p>
             ) : null}
@@ -496,17 +494,17 @@ export function RelayListSection({
       <div className="border-border/60 mt-6 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-[1.25rem] text-xs">
           {tabValue === "profile" && profileDirty ? (
-            <span className="text-amber-600/90 dark:text-amber-400/90">
+            <span className="text-warning dark:text-warning">
               Profile relay list not published to Nostr yet.
             </span>
           ) : null}
           {tabValue === "app" && hasChanged ? (
-            <span className="text-amber-600/90 dark:text-amber-400/90">
+            <span className="text-warning dark:text-warning">
               Relay preferences not saved.
             </span>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
+        <div className="stack-tight sm:flex-row sm:justify-end sm:gap-2">
           {tabValue === "profile" ? (
             <>
               <Button
@@ -548,7 +546,7 @@ export function RelayListSection({
         </p>
       ) : null}
       {fetcher.data?.error ? (
-        <p className="text-destructive mt-3 text-sm">{fetcher.data.error}</p>
+        <p className="text-danger mt-3 text-sm">{fetcher.data.error}</p>
       ) : null}
     </section>
   );

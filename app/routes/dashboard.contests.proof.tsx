@@ -4,11 +4,11 @@ import { Await, Link, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { ContestProofPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatContestStatusLabel,
   listContestsFiltered,
+  ContestProofPageSkeleton,
 } from "~/features/contest";
 import { summarizeContestProofSettlement } from "~/features/contest/contest-proof-settlement.server";
 import type { Contest } from "~/features/contest/data/contest-prisma-types.server";
@@ -116,10 +116,10 @@ export default function ContestProofPage() {
         {(loadedContests) => (
           <div className="space-y-6">
             <ContestProofStudio contests={loadedContests} />
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               <Link
                 to="/dashboard/contests"
-                className="text-primary hover:underline"
+                className="text-brand hover:underline"
               >
                 ← All contests
               </Link>

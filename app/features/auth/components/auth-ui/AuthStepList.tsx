@@ -27,13 +27,13 @@ function StepIcon({ status }: { status: AuthStepStatus }) {
       );
     case "failed":
       return (
-        <span className="bg-destructive/15 text-destructive flex size-7 shrink-0 items-center justify-center rounded-full">
+        <span className="bg-danger/15 text-danger flex size-7 shrink-0 items-center justify-center rounded-full">
           <X className={SMALL_ICON_SIZE_CLASS} aria-hidden />
         </span>
       );
     case "active":
       return (
-        <span className="bg-primary/15 text-primary flex size-7 shrink-0 items-center justify-center rounded-full">
+        <span className="bg-brand/15 text-brand flex size-7 shrink-0 items-center justify-center rounded-full">
           <Loader2
             className={cn(SMALL_ICON_SIZE_CLASS, "animate-spin")}
             aria-hidden
@@ -42,7 +42,7 @@ function StepIcon({ status }: { status: AuthStepStatus }) {
       );
     default:
       return (
-        <span className="text-muted-foreground/50 flex size-7 shrink-0 items-center justify-center">
+        <span className="text-text-secondary/50 flex size-7 shrink-0 items-center justify-center">
           <Circle className={SMALL_ICON_SIZE_CLASS} aria-hidden />
         </span>
       );
@@ -56,7 +56,7 @@ export function AuthStepList({ steps, className }: AuthStepListProps) {
         <li
           key={step.id}
           className={cn(
-            "flex gap-3 py-2.5 transition-colors duration-200",
+            "motion-base flex gap-3 py-2.5",
             index < steps.length - 1 &&
               "border-border/60 border-b border-dashed"
           )}
@@ -67,17 +67,17 @@ export function AuthStepList({ steps, className }: AuthStepListProps) {
           <div className="min-w-0 flex-1 space-y-0.5">
             <div
               className={cn(
-                "text-sm font-medium transition-colors duration-200",
-                step.status === "pending" && "text-muted-foreground",
-                step.status === "active" && "text-foreground",
-                step.status === "complete" && "text-foreground",
-                step.status === "failed" && "text-destructive"
+                "motion-base text-sm font-medium",
+                step.status === "pending" && "text-text-secondary",
+                step.status === "active" && "text-text",
+                step.status === "complete" && "text-text",
+                step.status === "failed" && "text-danger"
               )}
             >
               {step.label}
             </div>
             {step.description ? (
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-text-secondary text-xs leading-relaxed">
                 {step.description}
               </p>
             ) : null}

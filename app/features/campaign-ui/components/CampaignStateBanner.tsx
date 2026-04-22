@@ -3,18 +3,17 @@ export function CampaignStateBanner({
   tone,
 }: {
   title: string;
-  tone: "neutral" | "blue" | "amber" | "orange" | "green" | "muted";
+  tone: "neutral" | "blue" | "amber" | "green" | "muted";
 }) {
   const toneClass: Record<
-    "neutral" | "blue" | "amber" | "orange" | "green" | "muted",
+    "neutral" | "blue" | "amber" | "green" | "muted",
     string
   > = {
-    neutral: "border-border bg-muted/40 text-foreground",
-    blue: "border-blue-500/40 bg-blue-500/10 text-foreground",
-    amber: "border-amber-500/50 bg-amber-500/10 text-foreground",
-    orange: "border-orange-500/50 bg-orange-500/10 text-foreground",
-    green: "border-emerald-500/50 bg-emerald-500/10 text-foreground",
-    muted: "border-border bg-muted/30 text-muted-foreground",
+    neutral: "border-border bg-surface-hover/40 text-text",
+    blue: "border-info/40 bg-info/10 text-text",
+    amber: "border-warning/50 bg-warning/10 text-text",
+    green: "border-success/50 bg-success/10 text-text",
+    muted: "border-border bg-surface-hover/30 text-text-secondary",
   };
 
   return (

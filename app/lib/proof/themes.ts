@@ -23,7 +23,7 @@ export function proofCardShellSurfaceClass(
   variant: "campaign" | "admin"
 ): string {
   const base =
-    "absolute inset-0 box-border flex flex-col overflow-hidden rounded-2xl border border-l-4 border-l-primary bg-card text-card-foreground shadow-lg";
+    "absolute inset-0 box-border flex flex-col overflow-hidden rounded-xl border border-l-4 border-l-primary bg-surface text-text shadow-2";
   const campaignTint =
     variant === "campaign"
       ? "bg-gradient-to-br from-primary/[0.04] to-transparent"
@@ -38,7 +38,7 @@ export function proofCardInnerPadClass(ratio: ProofRatio): string {
 
 export function proofEyebrowClass(ratio: ProofRatio): string {
   return cn(
-    "font-medium uppercase tracking-widest text-muted-foreground",
+    "font-medium uppercase tracking-widest text-text-secondary",
     ratio === "square" ? "text-[10px]" : "text-[11px] sm:text-xs"
   );
 }
@@ -58,7 +58,7 @@ export function proofHeroClass(
 
 export function proofSubClass(ratio: ProofRatio): string {
   return cn(
-    "leading-snug text-muted-foreground",
+    "leading-snug text-text-secondary",
     ratio === "portrait" && "mt-2 text-sm sm:text-base",
     ratio === "square" && "mt-1.5 line-clamp-3 text-xs sm:text-sm",
     ratio === "landscape" && "mt-2 max-w-[20rem] text-sm"
@@ -66,11 +66,10 @@ export function proofSubClass(ratio: ProofRatio): string {
 }
 
 export function proofFooterTextClass(ratio: ProofRatio): string {
-  if (ratio === "square")
-    return "text-[10px] leading-snug text-muted-foreground";
+  if (ratio === "square") return "text-[10px] leading-snug text-text-secondary";
   if (ratio === "landscape")
-    return "text-[10px] leading-snug text-muted-foreground sm:text-[11px]";
-  return "text-[11px] leading-relaxed text-muted-foreground sm:text-xs";
+    return "text-[10px] leading-snug text-text-secondary sm:text-[11px]";
+  return "text-[11px] leading-relaxed text-text-secondary sm:text-xs";
 }
 
 export function statusBadgeClass(
@@ -78,10 +77,10 @@ export function statusBadgeClass(
 ): string {
   switch (tone) {
     case "success":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+      return "bg-success/15 text-success-text";
     case "warning":
-      return "bg-amber-500/15 text-amber-800 dark:text-amber-400";
+      return "bg-warning/15 text-warning-text";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }

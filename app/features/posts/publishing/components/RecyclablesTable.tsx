@@ -70,7 +70,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
+    className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -111,11 +111,11 @@ export function RecyclablesTable({
   );
 
   return (
-    <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+    <div className="border-border bg-surface min-w-full overflow-x-auto rounded-xs border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+            <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
               <Checkbox
                 id="recyclable-select-all"
                 checked={
@@ -124,7 +124,7 @@ export function RecyclablesTable({
                 onCheckedChange={() => onToggleSelectAll()}
               />
             </th>
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+            <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
               Media
             </th>
             <SortableHeader
@@ -187,7 +187,7 @@ export function RecyclablesTable({
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
             />
-            <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+            <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -212,7 +212,7 @@ export function RecyclablesTable({
             return (
               <tr
                 key={post.id}
-                className="group border-border dark:hover:bg-muted hover:bg-muted cursor-pointer border-b"
+                className="group border-border dark:hover:bg-surface-hover hover:bg-surface-hover cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3 text-center">
@@ -228,10 +228,10 @@ export function RecyclablesTable({
                     <img
                       src={getImageUrls(post.fileUrl)[0]}
                       alt="Post preview"
-                      className="h-12 w-12 rounded object-cover"
+                      className="h-12 w-12 rounded-xs object-cover"
                     />
                   ) : (
-                    <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                    <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                       {rowThumbBadge}
                     </div>
                   )}
@@ -286,7 +286,7 @@ export function RecyclablesTable({
                   )}
                 </td>
                 <td className="p-3">
-                  <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
+                  <span className="bg-surface-hover text-text-secondary inline-flex items-center rounded-full px-2 py-1 text-xs font-medium">
                     Recyclable
                   </span>
                 </td>
@@ -297,7 +297,7 @@ export function RecyclablesTable({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="font-montserrat bg-primary text-primary-foreground hover:bg-primary/90 inline-block rounded-full px-4 py-1 text-sm transition-colors duration-200"
+                      className="font-montserrat bg-brand text-brand-on hover:bg-brand/90 motion-base inline-block rounded-full px-4 py-1 text-sm"
                     >
                       Open on Nostr
                     </Link>
@@ -314,7 +314,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={recycleFetcher.state !== "idle"}
-                        className="border-border bg-card text-foreground hover:border-border hover:bg-muted focus:ring-ring active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold focus:ring active:shadow-none disabled:opacity-50"
+                        className="focus-ring border-border bg-surface text-text hover:border-border hover:bg-surface-hover active:border-border inline-flex items-center justify-center gap-2 rounded-lg border px-2 py-1 text-sm leading-5 font-semibold active:shadow-none disabled:opacity-50"
                       >
                         {recycleFetcher.state !== "idle"
                           ? "Recycling..."

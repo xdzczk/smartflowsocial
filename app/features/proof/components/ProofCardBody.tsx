@@ -21,8 +21,8 @@ function SupportLines({
 }) {
   const labelCls =
     ratio === "square"
-      ? "text-[10px] leading-tight text-muted-foreground"
-      : "text-xs leading-tight text-muted-foreground";
+      ? "text-[10px] leading-tight text-text-secondary"
+      : "text-xs leading-tight text-text-secondary";
   const valueCls =
     ratio === "square"
       ? "text-sm font-semibold tabular-nums"
@@ -37,7 +37,7 @@ function SupportLines({
             <p
               className={cn(
                 "mt-0.5 text-lg font-semibold tabular-nums",
-                s.emphasis && "text-primary"
+                s.emphasis && "text-brand"
               )}
             >
               {s.value}
@@ -53,7 +53,7 @@ function SupportLines({
   return (
     <ul
       className={cn(
-        isGrid ? "grid grid-cols-2 gap-x-4 gap-y-3" : "flex flex-col gap-2.5"
+        isGrid ? "grid grid-cols-2 gap-x-4 gap-y-3" : "stack-tight.5"
       )}
     >
       {items.map((s) => (
@@ -70,7 +70,7 @@ function SupportLines({
           <span
             className={cn(
               valueCls,
-              s.emphasis && "text-primary",
+              s.emphasis && "text-brand",
               isGrid && "text-base"
             )}
           >
@@ -116,11 +116,11 @@ function FooterBlock({
 
 function CampaignBrandingFoot({ domainLabel }: { domainLabel: string | null }) {
   return domainLabel ? (
-    <p className="text-muted-foreground mt-2 text-[10px] font-medium tracking-wider uppercase">
+    <p className="text-text-secondary mt-2 text-[10px] font-medium tracking-wider uppercase">
       {BRAND_NAME} · {domainLabel}
     </p>
   ) : (
-    <p className="text-muted-foreground mt-2 text-[10px] font-medium tracking-wider uppercase">
+    <p className="text-text-secondary mt-2 text-[10px] font-medium tracking-wider uppercase">
       {BRAND_NAME}
     </p>
   );
@@ -155,7 +155,7 @@ function ProofCardHead({
   const titleBlock = (
     <h2
       className={cn(
-        "text-foreground mt-1 leading-tight font-semibold tracking-tight",
+        "text-text mt-1 leading-tight font-semibold tracking-tight",
         ratio === "portrait" && "text-xl sm:text-2xl",
         ratio === "square" && "text-lg sm:text-xl",
         ratio === "landscape" && "text-xl sm:text-2xl",
@@ -199,7 +199,7 @@ function ProofCardHead({
           {payload.title.trim().length > 0 ? (
             <div
               className={cn(
-                "text-foreground mt-3 text-base leading-snug font-semibold",
+                "text-text mt-3 text-base leading-snug font-semibold",
                 "line-clamp-2 [overflow-wrap:anywhere] sm:text-lg"
               )}
             >

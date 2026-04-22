@@ -68,3 +68,5 @@ export {
   findContestCreationDraftByUserId,
   upsertContestCreationDraftPayload,
 } from "./repositories/contest-creation-draft.server";
+export { ContestDetailPageSkeleton } from "./components/ContestDetailPageSkeleton";
+export { ContestProofPageSkeleton } from "./components/ContestProofPageSkeleton";

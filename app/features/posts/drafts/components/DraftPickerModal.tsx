@@ -124,7 +124,7 @@ export function DraftPickerModal({
     type === "short" ? (
       <ul className="space-y-1">
         {posts.length === 0 ? (
-          <li className="text-muted-foreground text-sm">
+          <li className="text-text-secondary text-sm">
             {shortDraftsEmptyLabel}
           </li>
         ) : (
@@ -148,7 +148,7 @@ export function DraftPickerModal({
     ) : type === "longform" ? (
       <ul className="space-y-1">
         {longformPosts.length === 0 ? (
-          <li className="text-muted-foreground text-sm">No article drafts.</li>
+          <li className="text-text-secondary text-sm">No article drafts.</li>
         ) : (
           longformPosts.map((p) => (
             <li key={p.id}>
@@ -168,7 +168,7 @@ export function DraftPickerModal({
     ) : (
       <ul className="space-y-1">
         {bulkGroups.length === 0 ? (
-          <li className="text-muted-foreground text-sm">No bulk drafts.</li>
+          <li className="text-text-secondary text-sm">No bulk drafts.</li>
         ) : (
           bulkGroups.map((g) => (
             <li key={g.id}>
@@ -192,7 +192,7 @@ export function DraftPickerModal({
   const templatesPanel = (
     <ul className="space-y-1">
       {templatesList.length === 0 ? (
-        <li className="text-muted-foreground text-sm">No templates yet.</li>
+        <li className="text-text-secondary text-sm">No templates yet.</li>
       ) : (
         templatesList.map((t) => (
           <li key={t.id}>
@@ -214,7 +214,7 @@ export function DraftPickerModal({
   const body = templatesOnly ? (
     templatesPanel
   ) : fetcher.state === "loading" && !data ? (
-    <p className="text-muted-foreground text-sm">Loading drafts…</p>
+    <p className="text-text-secondary text-sm">Loading drafts…</p>
   ) : (
     draftsListContent
   );

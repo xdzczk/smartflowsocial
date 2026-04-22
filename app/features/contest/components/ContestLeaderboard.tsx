@@ -24,7 +24,7 @@ function MetricCells({
   >;
 }) {
   return (
-    <span className="text-muted-foreground text-xs">
+    <span className="text-text-secondary text-xs">
       {metric === "REACTIONS" ? <>R {row.reactionsCount}</> : null}
       {metric === "ZAPS" ? <>Z {row.zapCount}</> : null}
       {metric === "SATS_ZAPPED" ? <>⚡ {row.satsZapped}</> : null}
@@ -58,21 +58,19 @@ export function ContestLeaderboard({
 
   return (
     <div
-      className={`border-border bg-card overflow-hidden rounded-lg border ${mode === "live" ? "shadow-md shadow-blue-500/5" : ""}`}
+      className={`border-border bg-surface overflow-hidden rounded-lg border ${mode === "live" ? "shadow-2 shadow-blue-500/5" : ""}`}
     >
       <div className="border-border border-b px-4 py-3">
         <h2 className="text-sm font-semibold">{liveLeaderboardTitle}</h2>
         {mode === "live" ? (
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-text-secondary mt-0.5 text-xs">
             Positions update live; prize row highlights follow your winner
             count.
           </p>
         ) : null}
       </div>
       {rows.length === 0 ? (
-        <p className="text-muted-foreground px-4 py-6 text-sm">
-          No entries yet.
-        </p>
+        <p className="text-text-secondary px-4 py-6 text-sm">No entries yet.</p>
       ) : (
         <ul className="divide-border divide-y">
           {rows.map((row, idx) => {
@@ -99,7 +97,7 @@ export function ContestLeaderboard({
             return (
               <li key={row.entryEventId}>
                 {showCutoff ? (
-                  <div className="bg-muted/50 text-muted-foreground px-4 py-2 text-center text-xs">
+                  <div className="bg-surface-hover/50 text-text-secondary px-4 py-2 text-center text-xs">
                     {contestCopy.cutoffLine(winnerCount)}
                   </div>
                 ) : null}
@@ -108,7 +106,7 @@ export function ContestLeaderboard({
                     mode === "live" && inPrizeZone
                       ? "border-l-primary/50 from-primary/10 bg-gradient-to-r to-transparent"
                       : isTop3
-                        ? "bg-primary/5"
+                        ? "bg-brand/5"
                         : ""
                   }`}
                 >
@@ -121,10 +119,10 @@ export function ContestLeaderboard({
                         {medal}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">{rank}</span>
+                      <span className="text-text-secondary">{rank}</span>
                     )}
                   </div>
-                  <div className="bg-muted h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                  <div className="bg-surface-hover h-10 w-10 shrink-0 overflow-hidden rounded-full">
                     {prof?.picture ? (
                       <img
                         src={prof.picture}
@@ -142,26 +140,26 @@ export function ContestLeaderboard({
                       <span className="font-medium">
                         {prof?.displayName ?? npubShort}
                       </span>
-                      <span className="text-muted-foreground font-mono text-xs">
+                      <span className="text-text-secondary font-mono text-xs">
                         {npubShort}
                       </span>
                       {w?.isAlternate ? (
-                        <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs">
+                        <span className="bg-warning/20 rounded-xs px-1.5 py-0.5 text-xs">
                           Alternate
                         </span>
                       ) : null}
                       {isWinnerSlot && w ? (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs">
+                        <span className="bg-success/20 rounded-xs px-1.5 py-0.5 text-xs">
                           {w.rewardSats.toLocaleString()} sats
                         </span>
                       ) : null}
                       {isWinnerSlot ? (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs">
+                        <span className="bg-success/20 rounded-xs px-1.5 py-0.5 text-xs">
                           Winning
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-muted-foreground truncate text-sm">
+                    <p className="text-text-secondary truncate text-sm">
                       {row.replySnippet ?? "(no text)"}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -170,7 +168,7 @@ export function ContestLeaderboard({
                       </span>
                       <MetricCells metric={metric} row={row} />
                       {"createdAtUnix" in row ? (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-xs">
                           {new Date(row.createdAtUnix * 1000).toLocaleString()}
                         </span>
                       ) : null}
@@ -178,7 +176,7 @@ export function ContestLeaderboard({
                         href={`https://njump.me/${row.entryEventId}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-primary text-xs hover:underline"
+                        className="text-brand text-xs hover:underline"
                       >
                         Open reply
                       </a>
@@ -190,7 +188,7 @@ export function ContestLeaderboard({
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="text-primary text-xs hover:underline"
+                        className="text-brand text-xs hover:underline"
                       >
                         Open profile
                       </a>

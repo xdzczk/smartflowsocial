@@ -73,10 +73,10 @@ export function UnifiedComposerTagsSection({
 
   if (isContestSourcePostDensity) {
     return (
-      <details className="border-border/35 bg-muted/15 rounded-md border px-2 py-2">
-        <summary className="text-muted-foreground/90 cursor-pointer list-none text-[10px] font-medium tracking-wide uppercase select-none [&::-webkit-details-marker]:hidden">
+      <details className="border-border-subtle bg-surface-hover/40 rounded-md border px-2 py-2">
+        <summary className="text-text-secondary cursor-pointer list-none text-[10px] font-medium tracking-wide uppercase select-none [&::-webkit-details-marker]:hidden">
           Tags{" "}
-          <span className="text-muted-foreground/70 font-normal normal-case">
+          <span className="text-text-tertiary font-normal normal-case">
             optional
           </span>
         </summary>

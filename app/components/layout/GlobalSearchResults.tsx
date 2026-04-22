@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import type { DateDisplayLocale } from "~/lib/temporal";
@@ -148,12 +149,10 @@ export function GlobalSearchResults({
 
   if (isLoading) {
     return (
-      <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
+      <div className="border-border bg-surface shadow-2 max-h-96 overflow-y-auto rounded-lg border">
         <div className="flex items-center justify-center p-8">
-          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span className="text-muted-foreground ml-2 text-sm">
-            Searching...
-          </span>
+          <div className="border-brand h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-text-secondary ml-2 text-sm">Searching...</span>
         </div>
       </div>
     );
@@ -161,10 +160,8 @@ export function GlobalSearchResults({
 
   if (results.length === 0) {
     return (
-      <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
-        <div className="text-muted-foreground p-8 text-center text-sm">
-          No results found
-        </div>
+      <div className="border-border bg-surface shadow-2 max-h-96 overflow-y-auto rounded-lg border">
+        <EmptyState size="sm" title="No results found" />
       </div>
     );
   }
@@ -181,10 +178,10 @@ export function GlobalSearchResults({
   );
 
   return (
-    <div className="border-border bg-card max-h-96 overflow-y-auto rounded-lg border shadow-lg">
+    <div className="border-border bg-surface shadow-2 max-h-96 overflow-y-auto rounded-lg border">
       {Object.entries(groupedResults).map(([type, typeResults]) => (
         <div key={type} className="border-border border-b last:border-b-0">
-          <div className="bg-muted text-muted-foreground px-4 py-2 text-xs font-semibold tracking-wide uppercase">
+          <div className="bg-surface-hover text-text-secondary px-4 py-2 text-xs font-semibold tracking-wide uppercase">
             {getTypeLabel(type as GlobalSearchResult["type"])}
           </div>
           {typeResults.map((result) => (
@@ -192,24 +189,24 @@ export function GlobalSearchResults({
               key={result.id}
               to={result.url}
               onClick={onResultClick}
-              className="hover:bg-muted flex items-start gap-3 px-4 py-3"
+              className="hover:bg-surface-hover flex items-start gap-3 px-4 py-3"
             >
-              <div className="text-muted-foreground mt-0.5 flex-shrink-0">
+              <div className="text-text-secondary mt-0.5 flex-shrink-0">
                 {getTypeIcon(result.type)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-foreground text-sm font-medium">
+                <div className="cluster">
+                  <span className="text-text text-sm font-medium">
                     {getPreviewText(result)}
                   </span>
                   {result.type !== "feature" ? (
-                    <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
+                    <span className="bg-surface-hover text-text-secondary rounded-xs px-1.5 py-0.5 text-xs font-medium">
                       {getTypeLabel(result.type)}
                     </span>
                   ) : null}
                 </div>
                 {result.type !== "feature" ? (
-                  <div className="text-muted-foreground mt-1 text-xs">
+                  <div className="text-text-secondary mt-1 text-xs">
                     {formatDate(result.createdAt, dateLocale)}
                   </div>
                 ) : null}

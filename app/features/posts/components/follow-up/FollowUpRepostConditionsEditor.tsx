@@ -35,13 +35,13 @@ export function FollowUpRepostConditionsEditor({
   return (
     <div
       className={cn(
-        "border-border/60 bg-muted/15 space-y-2 rounded-md border px-2 py-2",
+        "border-border/60 bg-surface-hover/15 space-y-2 rounded-md border px-2 py-2",
         className
       )}
     >
       <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
         <div className="flex flex-col gap-0.5">
-          <Label className="text-muted-foreground text-[10px] font-medium">
+          <Label className="text-text-secondary text-[10px] font-medium">
             Reactions
           </Label>
           <Input
@@ -65,7 +65,7 @@ export function FollowUpRepostConditionsEditor({
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <Label className="text-muted-foreground text-[10px] font-medium">
+          <Label className="text-text-secondary text-[10px] font-medium">
             Zaps
           </Label>
           <Input
@@ -89,7 +89,7 @@ export function FollowUpRepostConditionsEditor({
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <Label className="text-muted-foreground text-[10px] font-medium">
+          <Label className="text-text-secondary text-[10px] font-medium">
             Comments
           </Label>
           <Input
@@ -113,7 +113,7 @@ export function FollowUpRepostConditionsEditor({
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <Label className="text-muted-foreground text-[10px] font-medium">
+          <Label className="text-text-secondary text-[10px] font-medium">
             Reposts
           </Label>
           <Input
@@ -137,7 +137,7 @@ export function FollowUpRepostConditionsEditor({
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <Label className="text-muted-foreground text-[10px] font-medium">
+          <Label className="text-text-secondary text-[10px] font-medium">
             Sats
           </Label>
           <Input

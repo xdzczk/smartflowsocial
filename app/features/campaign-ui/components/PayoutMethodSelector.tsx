@@ -21,7 +21,7 @@ export function PayoutMethodSelector({
           <select
             name="payoutWalletMode"
             defaultValue={walletMode}
-            className="border-border bg-background ml-2 rounded-md border px-2 py-1 text-sm"
+            className="border-border bg-canvas ml-2 rounded-md border px-2 py-1 text-sm"
           >
             <option value="manual">Manual payout</option>
             <option value="nwc_creator" disabled={!nwcEnabled}>
@@ -30,7 +30,7 @@ export function PayoutMethodSelector({
           </select>
         </label>
         {!nwcEnabled ? (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-text-secondary text-xs">
             Connect NWC in Settings to enable wallet payout.
           </span>
         ) : null}
@@ -55,7 +55,7 @@ export function PayoutMethodSelector({
             defaultValue={autoPayCapSats ?? ""}
             min={0}
             step={1}
-            className="border-border bg-background ml-2 w-40 rounded-md border px-2 py-1 text-sm"
+            className="border-border bg-canvas ml-2 w-40 rounded-md border px-2 py-1 text-sm"
           />
         </label>
       </div>

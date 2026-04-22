@@ -45,9 +45,9 @@ export function LongFormCoverImage({
           </ComposerCanvasSectionLabel>
         </div>
         {uploadProvider ? (
-          <div className="text-muted-foreground/45 flex shrink-0 items-center gap-1 text-[10px]">
+          <div className="text-text-secondary/45 flex shrink-0 items-center gap-1 text-[10px]">
             <span>via</span>
-            <span className="text-muted-foreground/70 rounded px-1 py-px font-medium">
+            <span className="text-text-secondary/70 rounded-xs px-1 py-px font-medium">
               {uploadProvider.includes("BLOSSOM")
                 ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : uploadProvider === "BLOSSOM_SFS" ? BRAND_BLOSSOM_LABEL : "Blosstr"}`
                 : "☁️ S3"}
@@ -57,14 +57,14 @@ export function LongFormCoverImage({
       </div>
 
       {uploadError ? (
-        <div className="border-destructive bg-destructive/10 text-destructive mt-1 rounded-md border p-2 text-sm">
+        <div className="border-danger bg-danger/10 text-danger mt-1 rounded-md border p-2 text-sm">
           {uploadError}
         </div>
       ) : null}
 
       {coverFileUploadDisabled && uploadProvider?.includes("BLOSSOM") ? (
         <div
-          className="mt-1 rounded-md border border-amber-500/55 bg-amber-500/10 px-2.5 py-2 text-[11px] leading-snug text-amber-950 dark:text-amber-50"
+          className="border-warning/55 bg-warning/10 text-warning-text mt-1 rounded-md border px-2.5 py-2 text-[11px] leading-snug"
           role="note"
         >
           Cover file upload needs a NIP-07 browser extension or connected remote
@@ -77,17 +77,17 @@ export function LongFormCoverImage({
       {!image ? (
         <div className="mt-2">
           {uploadFetcherState !== "idle" ? (
-            <div className="border-border/15 bg-muted/[0.02] flex min-h-[6.5rem] items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6">
-              <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-b-transparent" />
-              <p className="text-muted-foreground/80 text-sm">Uploading…</p>
+            <div className="border-border/15 bg-surface-hover/[0.02] flex min-h-[6.5rem] items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6">
+              <div className="border-brand h-5 w-5 animate-spin rounded-full border-2 border-b-transparent" />
+              <p className="text-text-secondary/80 text-sm">Uploading…</p>
             </div>
           ) : (
-            <div className="border-border/15 bg-muted/[0.015] flex min-h-[6.75rem] flex-col justify-center gap-4 rounded-xl border border-dashed px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-              <p className="text-muted-foreground/85 max-w-sm text-[13px] leading-relaxed">
+            <div className="border-border/15 bg-surface-hover/[0.015] flex min-h-[6.75rem] flex-col justify-center gap-4 rounded-xl border border-dashed px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <p className="text-text-secondary/85 max-w-sm text-[13px] leading-relaxed">
                 Optional hero for feeds and link cards.
               </p>
               <div
-                className="border-border/35 bg-background/60 flex h-9 shrink-0 overflow-hidden rounded-md border shadow-none"
+                className="border-border/35 bg-canvas/60 flex h-9 shrink-0 overflow-hidden rounded-md border shadow-none"
                 role="group"
                 aria-label="Cover image source"
               >
@@ -98,12 +98,12 @@ export function LongFormCoverImage({
                     document.getElementById("cover-image-input")?.click()
                   }
                   className={cn(
-                    "text-foreground/90 border-border/35 inline-flex items-center border-r px-3 text-xs font-medium transition-colors",
-                    "hover:bg-muted/40 disabled:pointer-events-none disabled:opacity-45"
+                    "text-text/90 border-border/35 motion-fast inline-flex items-center border-r px-3 text-xs font-medium",
+                    "hover:bg-surface-hover/40 disabled:pointer-events-none disabled:opacity-45"
                   )}
                 >
                   <Upload
-                    className="text-muted-foreground mr-1.5 h-3.5 w-3.5"
+                    className="text-text-secondary mr-1.5 h-3.5 w-3.5"
                     strokeWidth={INLINE_ICON_STROKE}
                     aria-hidden
                   />
@@ -112,14 +112,14 @@ export function LongFormCoverImage({
                 <button
                   type="button"
                   onClick={onOpenAssetBrowser}
-                  className="text-muted-foreground hover:text-foreground/90 hover:bg-muted/30 px-3 text-xs font-medium transition-colors"
+                  className="text-text-secondary hover:text-text/90 hover:bg-surface-hover/30 motion-fast px-3 text-xs font-medium"
                 >
                   From assets
                 </button>
               </div>
             </div>
           )}
-          <p className="text-muted-foreground/45 mt-2 max-w-xl text-[10px] leading-snug">
+          <p className="text-text-secondary/45 mt-2 max-w-xl text-[10px] leading-snug">
             ~1200×630 for link previews · PNG, JPG, or GIF up to 5MB
           </p>
           <input
@@ -149,7 +149,7 @@ export function LongFormCoverImage({
                 disabled={
                   uploadFetcherState !== "idle" || coverFileUploadDisabled
                 }
-                className="bg-background/90 text-foreground relative h-8 text-xs shadow-sm backdrop-blur-sm"
+                className="bg-canvas/90 text-text shadow-1 relative h-8 text-xs backdrop-blur-sm"
               >
                 Replace
                 <input
@@ -169,7 +169,7 @@ export function LongFormCoverImage({
                 size="sm"
                 onClick={onOpenAssetBrowser}
                 disabled={uploadFetcherState !== "idle"}
-                className="bg-background/85 text-foreground h-8 text-xs backdrop-blur-sm"
+                className="bg-canvas/85 text-text h-8 text-xs backdrop-blur-sm"
               >
                 Assets
               </Button>
@@ -179,7 +179,7 @@ export function LongFormCoverImage({
                 size="sm"
                 onClick={onRemove}
                 disabled={uploadFetcherState !== "idle"}
-                className="text-destructive hover:text-destructive h-8 text-xs"
+                className="text-danger hover:text-danger h-8 text-xs"
               >
                 Remove
               </Button>

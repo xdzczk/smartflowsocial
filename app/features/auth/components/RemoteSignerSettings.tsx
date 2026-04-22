@@ -302,7 +302,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
 
   return (
     <>
-      <div className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+      <div className="text-text-secondary max-w-2xl text-sm leading-relaxed">
         <p>
           Remote signers let {BRAND_NAME} publish and act on your behalf without
           storing your secret key. Connect a signer app to approve signing when
@@ -310,9 +310,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         </p>
         <p className="mt-2">
           Adding a{" "}
-          <span className="text-foreground font-medium">
-            primary fallback signer
-          </span>{" "}
+          <span className="text-text font-medium">primary fallback signer</span>{" "}
           below is optional but recommended if you use {BRAND_NAME} on more than
           one device, so you can recover if a local session goes stale.
         </p>
@@ -365,7 +363,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         title="Primary fallback signer"
         description={`Set an account-level fallback signer so ${BRAND_NAME} can recover from stale local sessions across devices.`}
         footer={
-          <div className="border-border/60 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="border-border/60 stack-tight border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               onClick={handleSaveActiveConnectionAsPrimary}
               disabled={
@@ -390,7 +388,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
             </Button>
             <Button
               variant="outline"
-              className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+              className="text-danger border-danger/30 hover:bg-danger/10 hover:text-danger"
               onClick={handleClearPrimaryProfile}
               disabled={
                 !primarySignerProfile || primarySignerFetcher.state !== "idle"
@@ -402,27 +400,25 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         }
       >
         {primarySignerProfile ? (
-          <div className="border-border/80 bg-muted/25 rounded-lg border p-5">
+          <div className="border-border/80 bg-surface-hover/25 rounded-lg border p-5">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="text-foreground text-base font-semibold">
+                <h3 className="text-text text-base font-semibold">
                   {primarySignerProfile.label ?? "Saved fallback signer"}
                 </h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-text-secondary mt-1 text-sm">
                   Saved on your account for recovery when a device session goes
                   stale.
                 </p>
               </div>
-              <span className="text-muted-foreground shrink-0 text-xs">
+              <span className="text-text-secondary shrink-0 text-xs">
                 Last updated{" "}
                 {new Date(primarySignerProfile.updatedAt).toLocaleString()}
               </span>
             </div>
-            <div className="text-muted-foreground mt-4 space-y-1 text-sm">
+            <div className="text-text-secondary mt-4 space-y-1 text-sm">
               <p>
-                <span className="text-foreground font-medium">
-                  Connection type:{" "}
-                </span>
+                <span className="text-text font-medium">Connection type: </span>
                 {primarySignerProfile.method === "bunker_input"
                   ? "Signer connection string"
                   : "Connection link"}{" "}
@@ -436,7 +432,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
               </p>
               {primarySignerProfile.method === "nostrconnect_uri" ? (
                 <p>
-                  <span className="text-foreground font-medium">Relays: </span>
+                  <span className="text-text font-medium">Relays: </span>
                   {primarySignerProfile.relays.length} configured for this
                   fallback
                 </p>
@@ -444,15 +440,15 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
             </div>
           </div>
         ) : (
-          <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed p-6">
-            <h3 className="text-foreground text-base font-semibold">
+          <div className="border-border/80 bg-surface-hover/20 rounded-lg border border-dashed p-6">
+            <h3 className="text-text text-base font-semibold">
               No primary fallback signer configured
             </h3>
-            <p className="text-muted-foreground mt-2 max-w-lg text-sm leading-relaxed">
+            <p className="text-text-secondary mt-2 max-w-lg text-sm leading-relaxed">
               Set one to recover publishing access across devices if a local
               signer session becomes stale.
             </p>
-            <p className="text-muted-foreground mt-3 text-xs">
+            <p className="text-text-secondary mt-3 text-xs">
               Recommended if you use {BRAND_NAME} on more than one device.
             </p>
           </div>

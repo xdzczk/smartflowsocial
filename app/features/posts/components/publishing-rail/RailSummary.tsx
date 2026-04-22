@@ -20,12 +20,12 @@ export function RailSummaryMetadataRow({
     <div
       className={cn(
         "text-[11px] leading-snug",
-        secondary ? "text-muted-foreground" : undefined,
+        secondary ? "text-text-secondary" : undefined,
         className
       )}
     >
-      <span className="text-muted-foreground font-medium">{label}</span>{" "}
-      <span className={cn(!secondary && "text-foreground")}>{children}</span>
+      <span className="text-text-secondary font-medium">{label}</span>{" "}
+      <span className={cn(!secondary && "text-text")}>{children}</span>
     </div>
   );
 }
@@ -41,8 +41,8 @@ export function RailSummaryToken({
   className?: string;
 }) {
   const cls = cn(
-    "border-border/80 bg-muted/30 text-foreground inline-flex h-5 max-w-full items-center truncate rounded px-1.5 text-[10px] font-medium",
-    onClick && "hover:bg-muted/50 cursor-pointer",
+    "border-border bg-surface-hover/40 text-text inline-flex h-5 max-w-full items-center truncate rounded-sm px-1.5 text-[10px] font-medium",
+    onClick && "hover:bg-surface-hover/70 cursor-pointer",
     className
   );
 
@@ -66,7 +66,7 @@ export function RailSummaryDeliveryRow({
 }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-1")}>
-      <span className="text-muted-foreground text-[11px] font-medium">
+      <span className="text-text-secondary text-[11px] font-medium">
         {label}
       </span>
       <div className="flex flex-wrap items-center gap-1">{children}</div>
@@ -88,14 +88,14 @@ export function RailSummaryOutcomeBlock({
   return (
     <div className={cn(RAIL_STACK_TIGHT, className)}>
       {pristineHint ? (
-        <p className="text-muted-foreground text-[11px] leading-snug">
+        <p className="text-text-secondary text-[11px] leading-snug">
           {pristineHint}
         </p>
       ) : null}
-      <p className="text-foreground text-[11px] leading-snug">
+      <p className="text-text text-[11px] leading-snug">
         <span className="font-medium">{headline}</span>
         {outcomeLine ? (
-          <span className="text-muted-foreground"> · {outcomeLine}</span>
+          <span className="text-text-secondary"> · {outcomeLine}</span>
         ) : null}
       </p>
     </div>

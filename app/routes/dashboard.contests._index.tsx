@@ -8,6 +8,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
+import { Trophy } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { requireUserId } from "~/features/auth";
 import {
   contestCopy,
@@ -138,31 +140,31 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 function contestStatusPillClass(status: string): string {
-  const amberStatusClass = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  const amberStatusClass = "bg-warning/15 text-warning-text";
   const map: Record<string, string> = {
-    DRAFT: "bg-muted text-muted-foreground",
-    LIVE: "bg-blue-500/15 text-blue-800 dark:text-blue-200",
+    DRAFT: "bg-surface-hover text-text-secondary",
+    LIVE: "bg-info/15 text-info-text",
     ENDED_REVIEW: amberStatusClass,
     LOCKED: amberStatusClass,
     PAYOUT_IN_PROGRESS: amberStatusClass,
-    COMPLETED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-    CANCELLED: "bg-destructive/15 text-destructive",
+    COMPLETED: "bg-success/15 text-success-text",
+    CANCELLED: "bg-danger/15 text-danger",
   };
-  return map[status] ?? "bg-muted text-muted-foreground";
+  return map[status] ?? "bg-surface-hover text-text-secondary";
 }
 
 function contestStatusDotClass(status: string): string {
-  const amber = "bg-amber-500";
+  const amber = "bg-warning";
   const map: Record<string, string> = {
-    DRAFT: "bg-muted-foreground",
-    LIVE: "bg-blue-500",
+    DRAFT: "bg-surface-hover-foreground",
+    LIVE: "bg-info",
     ENDED_REVIEW: amber,
     LOCKED: amber,
     PAYOUT_IN_PROGRESS: amber,
-    COMPLETED: "bg-emerald-500",
-    CANCELLED: "bg-destructive",
+    COMPLETED: "bg-success",
+    CANCELLED: "bg-danger",
   };
-  return map[status] ?? "bg-muted-foreground";
+  return map[status] ?? "bg-surface-hover-foreground";
 }
 
 function contestRowTitle(title: string | null | undefined, id: string): string {
@@ -214,17 +216,17 @@ export default function ContestsIndexRoute() {
       {actionData?.error ? (
         <div
           role="alert"
-          className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm"
+          className="border-danger/50 bg-danger/10 text-danger rounded-lg border px-4 py-3 text-sm"
         >
           {actionData.error}
         </div>
       ) : null}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="stack sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+          <h2 className="text-text text-2xl font-semibold tracking-tight">
             Contests
           </h2>
-          <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+          <p className="text-text-secondary mt-1 max-w-xl text-sm">
             Run live competitions, rank entries fairly, and track payout status.
           </p>
         </div>
@@ -273,13 +275,13 @@ export default function ContestsIndexRoute() {
       <Form
         method="get"
         replace
-        className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4"
+        className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="min-w-[200px] flex-1">
             <label
               htmlFor="c-q"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Search
             </label>
@@ -296,19 +298,19 @@ export default function ContestsIndexRoute() {
                 navigate(`/dashboard/contests?${next.toString()}`);
               }}
               placeholder="Search by title…"
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div>
             <label
               htmlFor="c-status"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Status
             </label>
             <select
               id="c-status"
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
               value={data.filters.status}
               onChange={(e) => {
                 setFilter("status", e.target.value);
@@ -327,13 +329,13 @@ export default function ContestsIndexRoute() {
           <div>
             <label
               htmlFor="c-metric"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Metric
             </label>
             <select
               id="c-metric"
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
               value={data.filters.metric}
               onChange={(e) => {
                 setFilter("metric", e.target.value);
@@ -350,13 +352,13 @@ export default function ContestsIndexRoute() {
           <div>
             <label
               htmlFor="c-sort"
-              className="text-muted-foreground mb-1 block text-xs font-medium"
+              className="text-text-secondary mb-1 block text-xs font-medium"
             >
               Sort
             </label>
             <select
               id="c-sort"
-              className="border-border bg-background rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
               value={data.filters.sort}
               onChange={(e) => {
                 setFilter("sort", e.target.value);
@@ -379,20 +381,22 @@ export default function ContestsIndexRoute() {
       </Form>
 
       {!hasAnyContests ? (
-        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-foreground font-medium">No contests yet</p>
-          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-            Create your first contest to rank entries and reward winners.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/contests/new">New contest</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          icon={<Trophy />}
+          title="No contests yet"
+          description="Create your first contest to rank entries and reward winners."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/contests/new">New contest</Link>
+            </Button>
+          }
+        />
       ) : data.contests.length > 0 ? (
         <>
-          <div className="border-border bg-card hidden overflow-x-auto rounded-lg border md:block">
+          <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/40 border-border text-muted-foreground border-b text-xs uppercase">
+              <thead className="bg-surface-hover/40 border-border text-text-secondary border-b text-xs uppercase">
                 <tr>
                   <th className="w-12 px-2 py-3 font-medium" aria-hidden>
                     <span className="sr-only">Source</span>
@@ -412,13 +416,13 @@ export default function ContestsIndexRoute() {
                   return (
                     <tr
                       key={contest.id}
-                      className="hover:bg-muted/40 cursor-pointer transition-colors"
+                      className="hover:bg-surface-hover/40 motion-fast cursor-pointer"
                       onClick={() => {
                         navigate(`/dashboard/contests/detail/${contest.id}`);
                       }}
                     >
                       <td className="w-12 px-2 py-2 align-middle">
-                        <div className="border-border bg-muted/50 size-9 overflow-hidden rounded-md border">
+                        <div className="border-border bg-surface-hover/50 size-9 overflow-hidden rounded-md border">
                           {contest.sourceThumbUrl ? (
                             <img
                               src={contest.sourceThumbUrl}
@@ -426,17 +430,17 @@ export default function ContestsIndexRoute() {
                               className="size-full object-cover"
                             />
                           ) : (
-                            <div className="text-muted-foreground flex size-full items-center justify-center text-[10px]">
+                            <div className="text-text-secondary flex size-full items-center justify-center text-[10px]">
                               —
                             </div>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-foreground font-medium">
+                        <span className="text-text font-medium">
                           {contestRowTitle(contest.title, contest.id)}
                         </span>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-text-secondary text-xs">
                           Ends{" "}
                           {new Date(contest.endAt).toLocaleDateString(
                             undefined,
@@ -449,7 +453,7 @@ export default function ContestsIndexRoute() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                          className={`inline-cluster-tight.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
                         >
                           <span
                             className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
@@ -458,7 +462,7 @@ export default function ContestsIndexRoute() {
                           {contest.statusLabel}
                         </span>
                       </td>
-                      <td className="text-muted-foreground px-4 py-3 text-xs">
+                      <td className="text-text-secondary px-4 py-3 text-xs">
                         {contest.metric.toLowerCase()}
                       </td>
                       <td className="px-4 py-3 text-xs tabular-nums">
@@ -467,12 +471,12 @@ export default function ContestsIndexRoute() {
                       <td className="px-4 py-3 text-xs tabular-nums">
                         {contest.winners} winners
                         <br />
-                        <span className="text-muted-foreground">
+                        <span className="text-text-secondary">
                           {contest.plannedPayoutSats.toLocaleString()} sats
                           planned
                         </span>
                       </td>
-                      <td className="text-muted-foreground px-4 py-3 text-xs">
+                      <td className="text-text-secondary px-4 py-3 text-xs">
                         {new Date(contest.updatedAt).toLocaleDateString(
                           undefined,
                           {
@@ -535,7 +539,7 @@ export default function ContestsIndexRoute() {
                                   ? undefined
                                   : "Cannot delete locked, payout-in-progress, or completed contests"
                               }
-                              className="text-destructive hover:text-destructive disabled:opacity-50"
+                              className="text-danger hover:text-danger disabled:opacity-50"
                             >
                               Delete
                             </Button>
@@ -549,20 +553,20 @@ export default function ContestsIndexRoute() {
             </table>
           </div>
 
-          <ul className="border-border bg-card divide-border divide-y rounded-lg border md:hidden">
+          <ul className="border-border bg-surface divide-border divide-y rounded-lg border md:hidden">
             {data.contests.map((contest) => {
               const canDelete = contestCanDeleteFromList(contest.status);
               return (
                 /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- whole card opens detail; action strip stops propagation */
                 <li
                   key={contest.id}
-                  className="hover:bg-muted/30 cursor-pointer p-4 transition-colors"
+                  className="hover:bg-surface-hover/30 motion-fast cursor-pointer p-4"
                   onClick={() => {
                     navigate(`/dashboard/contests/detail/${contest.id}`);
                   }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="border-border bg-muted/50 size-12 shrink-0 overflow-hidden rounded-full border">
+                    <div className="border-border bg-surface-hover/50 size-12 shrink-0 overflow-hidden rounded-full border">
                       {contest.sourceThumbUrl ? (
                         <img
                           src={contest.sourceThumbUrl}
@@ -570,18 +574,18 @@ export default function ContestsIndexRoute() {
                           className="size-full object-cover"
                         />
                       ) : (
-                        <div className="text-muted-foreground flex size-full items-center justify-center text-xs">
+                        <div className="text-text-secondary flex size-full items-center justify-center text-xs">
                           —
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <span className="text-foreground font-medium">
+                      <span className="text-text font-medium">
                         {contestRowTitle(contest.title, contest.id)}
                       </span>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
+                          className={`inline-cluster-tight.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${contestStatusPillClass(contest.status)}`}
                         >
                           <span
                             className={`size-1.5 shrink-0 rounded-full ${contestStatusDotClass(contest.status)}`}
@@ -590,11 +594,11 @@ export default function ContestsIndexRoute() {
                           {contest.statusLabel}
                         </span>
                       </div>
-                      <p className="text-muted-foreground mt-2 text-xs">
+                      <p className="text-text-secondary mt-2 text-xs">
                         {contest.metric.toLowerCase()} · Ends{" "}
                         {new Date(contest.endAt).toLocaleDateString()}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
+                      <p className="text-text-secondary mt-2 text-xs">
                         {contest.winners} winners ·{" "}
                         {contest.plannedPayoutSats.toLocaleString()} sats
                         planned · {contest.entries.toLocaleString()} entries
@@ -649,7 +653,7 @@ export default function ContestsIndexRoute() {
                             ? undefined
                             : "Cannot delete locked, payout-in-progress, or completed contests"
                         }
-                        className="text-destructive disabled:opacity-50"
+                        className="text-danger disabled:opacity-50"
                       >
                         Delete
                       </Button>
@@ -661,17 +665,17 @@ export default function ContestsIndexRoute() {
           </ul>
         </>
       ) : (
-        <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <p className="text-foreground font-medium">
-            No contests match filters
-          </p>
-          <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-            Try clearing filters or create a new contest to reward top replies.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/dashboard/contests/new">New contest</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          icon={<Trophy />}
+          title="No contests match filters"
+          description="Try clearing filters or create a new contest to reward top replies."
+          action={
+            <Button asChild>
+              <Link to="/dashboard/contests/new">New contest</Link>
+            </Button>
+          }
+        />
       )}
     </div>
   );

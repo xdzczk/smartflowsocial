@@ -46,9 +46,9 @@ export function PostDetailFooterBar({
   }
 
   return (
-    <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+    <div className="border-border/70 bg-surface/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="text-muted-foreground min-h-[36px] text-xs">
+        <div className="text-text-secondary min-h-[36px] text-xs">
           {deleteForm}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2.5">

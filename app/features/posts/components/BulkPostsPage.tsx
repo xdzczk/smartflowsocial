@@ -1,5 +1,6 @@
 import { useLoaderData, type FetcherWithComponents } from "@remix-run/react";
 import { Link } from "@remix-run/react";
+import { Inbox } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { EmptyState } from "~/components/ui/empty-state";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
 import { usePlanEntitlements } from "~/features/payments/types";
@@ -254,11 +256,11 @@ export default function BulkPostsPage() {
   return (
     <>
       {!canExecuteBulkActions ? (
-        <div className="border-border bg-muted/40 text-foreground mb-4 rounded-lg border px-4 py-3 text-sm leading-relaxed">
+        <div className="border-border bg-surface-hover/40 text-text mb-4 rounded-lg border px-4 py-3 text-sm leading-relaxed">
           Bulk publishing is a paid workflow designed for higher-volume
           operators. You can explore this page on Free; upgrade to sign and
           schedule in bulk.{" "}
-          <Link to="/plans" className="text-primary font-medium underline">
+          <Link to="/plans" className="text-brand font-medium underline">
             View plans
           </Link>
         </div>
@@ -288,22 +290,23 @@ export default function BulkPostsPage() {
             ) : null}
 
             {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
-              <div className="border-border bg-muted/30 rounded-lg border p-6 text-center">
-                <p className="text-foreground mb-2 font-medium">
-                  No posts to schedule.
-                </p>
-                <p className="text-muted-foreground mb-4 text-sm">
-                  Select regular posts (not articles) from Published and try
-                  &quot;Schedule {mode === "quote" ? "quote" : "repost"}&quot;
-                  again.
-                </p>
-                <a
-                  href="/dashboard/published"
-                  className="text-primary font-medium hover:underline"
-                >
-                  Go to Published
-                </a>
-              </div>
+              <EmptyState
+                className="border-border bg-surface-hover/30 rounded-lg border"
+                icon={<Inbox />}
+                title="No posts to schedule"
+                description={
+                  <>
+                    Select regular posts (not articles) from Published and try
+                    &quot;Schedule {mode === "quote" ? "quote" : "repost"}
+                    &quot; again.
+                  </>
+                }
+                action={
+                  <Button asChild variant="outline">
+                    <Link to="/dashboard/published">Go to Published</Link>
+                  </Button>
+                }
+              />
             ) : null}
 
             <Dialog

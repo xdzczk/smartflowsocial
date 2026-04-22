@@ -60,3 +60,4 @@ export {
   templatesKeys,
 } from "./hooks/useTemplatesQuery";
 export type { TemplatesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
+export { TemplatesPageSkeleton } from "./components/TemplatesPageSkeleton";

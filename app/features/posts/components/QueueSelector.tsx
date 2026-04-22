@@ -77,9 +77,9 @@ export function QueueSelector({
         </SelectContent>
       </Select>
       {nextSlot ? (
-        <p className="text-foreground mt-1.5 flex items-center gap-1.5 text-xs font-medium">
+        <p className="text-text cluster-tight.5 mt-1.5 text-xs font-medium">
           <Clock
-            className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+            className="text-text-secondary h-3.5 w-3.5 shrink-0"
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />

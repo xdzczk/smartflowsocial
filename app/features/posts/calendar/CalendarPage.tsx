@@ -46,10 +46,10 @@ export default function CalendarPage() {
   if (isDataLoading) {
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <div className="border-border/60 bg-muted/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3" />
-        <div className="bg-muted/20 flex min-h-0 flex-1 animate-pulse flex-col gap-4 p-4">
-          <div className="bg-muted h-8 w-48 rounded" />
-          <div className="bg-muted flex-1 rounded-lg" />
+        <div className="border-border/60 bg-surface-hover/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3" />
+        <div className="bg-surface-hover/20 flex min-h-0 flex-1 animate-pulse flex-col gap-4 p-4">
+          <div className="bg-surface-hover h-8 w-48 rounded-[var(--calendar-radius-sm)]" />
+          <div className="bg-surface-hover flex-1 rounded-lg" />
         </div>
       </div>
     );

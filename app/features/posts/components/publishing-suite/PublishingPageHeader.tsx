@@ -21,11 +21,9 @@ export function PublishingPageHeader({
       )}
     >
       <div className="min-w-0 flex-1 space-y-1">
-        <h1 className="text-foreground text-xl font-semibold tracking-tight">
-          {title}
-        </h1>
+        <h1 className="text-text text-h2">{title}</h1>
         {subtitle ? (
-          <p className="text-muted-foreground max-w-2xl text-sm">{subtitle}</p>
+          <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
         ) : null}
       </div>
       {actions ? (

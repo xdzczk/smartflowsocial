@@ -15,13 +15,11 @@ export function AuthProgressHeader({
 }: AuthProgressHeaderProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <h3 className="text-foreground text-base leading-snug font-semibold">
+      <h3 className="text-text text-base leading-snug font-semibold">
         {headline}
       </h3>
       {subcopy ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {subcopy}
-        </p>
+        <p className="text-text-secondary text-sm leading-relaxed">{subcopy}</p>
       ) : null}
     </div>
   );

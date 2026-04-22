@@ -3,7 +3,6 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { AdminAnalyticsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AdminChartCard,
   AdminLineChart,
@@ -12,6 +11,7 @@ import {
   AdminSection,
   MetricCard,
   useAdminCurrency,
+  AdminAnalyticsPageSkeleton,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,
@@ -144,9 +144,9 @@ function AdminAnalyticsPageLoaded({
           title="Insight summary"
           description="Rule-based read on this range — low volume stays intentionally cautious."
         >
-          <ul className="border-border bg-card/50 space-y-2 rounded-xl border p-4 text-sm">
+          <ul className="border-border bg-surface/50 space-y-2 rounded-xl border p-4 text-sm">
             {d.takeaways.map((t) => (
-              <li key={t} className="text-foreground/90 list-inside list-disc">
+              <li key={t} className="text-text/90 list-inside list-disc">
                 {t}
               </li>
             ))}
@@ -398,7 +398,7 @@ function AdminAnalyticsPageLoaded({
             />
           </div>
           {d.signerConnect.failuresByBucket.length > 0 ? (
-            <ul className="text-muted-foreground mt-3 text-xs">
+            <ul className="text-text-secondary mt-3 text-xs">
               {d.signerConnect.failuresByBucket.map((b) => (
                 <li key={b.bucket}>
                   <span className="font-mono">{b.bucket}</span>: {b.count}

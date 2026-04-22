@@ -25,5 +25,5 @@ export function scopeLabel(scope: Nip65RelayScope): string {
 }
 
 export function settingsSubsectionClassName(): string {
-  return "border-border/80 bg-muted/15 rounded-lg border px-4 py-4 sm:px-5 sm:py-5";
+  return "border-border/80 bg-surface-hover/15 rounded-lg border px-4 py-4 sm:px-5 sm:py-5";
 }

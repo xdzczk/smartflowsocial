@@ -4,7 +4,6 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { ContestDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   ContestDetailView,
@@ -22,6 +21,7 @@ import {
   updateContestPayoutSettings,
   rescheduleContestLaunchOrchestration,
   retryContestLaunchOrchestration,
+  ContestDetailPageSkeleton,
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import { requireAnySubscription } from "~/features/payments";

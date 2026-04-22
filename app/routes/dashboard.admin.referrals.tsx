@@ -175,7 +175,7 @@ export default function AdminReferralsPage() {
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
         {isActionError(actionData) ? (
           <div
-            className="border-destructive/50 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+            className="border-danger/50 bg-danger/10 text-danger rounded-md border px-3 py-2 text-sm"
             role="alert"
           >
             {actionData.error}
@@ -184,7 +184,7 @@ export default function AdminReferralsPage() {
 
         {isBatchActionOk(actionData) ? (
           <div
-            className="border-border bg-muted/40 rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-surface-hover/40 rounded-md border px-3 py-2 text-sm"
             role="status"
           >
             <p className="font-medium">Batch finished</p>
@@ -199,7 +199,7 @@ export default function AdminReferralsPage() {
 
         {isManualActionOk(actionData) ? (
           <div
-            className="border-border bg-muted/40 rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-surface-hover/40 rounded-md border px-3 py-2 text-sm"
             role="status"
           >
             Paid {formatSats(actionData.manual.paidSats, dateLocale)} to
@@ -212,10 +212,10 @@ export default function AdminReferralsPage() {
         ) : null}
 
         <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+          <h2 className="text-text-secondary text-sm font-semibold tracking-wide uppercase">
             Business value (selected range)
           </h2>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             Range: {data.rangePreset}. Adjust via admin tab range control.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -248,7 +248,7 @@ export default function AdminReferralsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+          <h2 className="text-text-secondary text-sm font-semibold tracking-wide uppercase">
             Referral performance
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -287,10 +287,10 @@ export default function AdminReferralsPage() {
         </section>
 
         <AdminCard variant="muted" className="space-y-2">
-          <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+          <p className="text-text-secondary text-[11px] font-semibold tracking-wide uppercase">
             Payout readiness
           </p>
-          <ul className="text-foreground/90 space-y-1 text-sm">
+          <ul className="text-text/90 space-y-1 text-sm">
             <li>
               Owner wallet (NWC):{" "}
               {payoutAvailable ? (
@@ -321,20 +321,20 @@ export default function AdminReferralsPage() {
           </ul>
         </AdminCard>
 
-        <section className="border-border bg-card/40 space-y-4 rounded-xl border p-5 shadow-sm">
+        <section className="border-border bg-surface/40 shadow-1 space-y-4 rounded-xl border p-5">
           <h2 className="text-lg font-semibold">Payout actions</h2>
           {!payoutAvailable ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Set <code className="text-xs">OWNER_NWC</code> to enable payouts.
             </p>
           ) : null}
 
           <div className="space-y-3">
             <h3 className="font-medium">Batch payout</h3>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-text-secondary text-xs leading-relaxed">
               Same rules as automation: ≥1000 sats pending per referrer and a
               valid https LNURL/LUD destination. Review the preview, then type{" "}
-              <span className="text-foreground font-mono">PAY</span> to arm the
+              <span className="text-text font-mono">PAY</span> to arm the
               confirm button.
             </p>
             <Button
@@ -350,18 +350,18 @@ export default function AdminReferralsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm batch payout</AlertDialogTitle>
                   <AlertDialogDescription asChild>
-                    <div className="text-muted-foreground space-y-3 text-sm">
+                    <div className="text-text-secondary space-y-3 text-sm">
                       <p>
                         Attempts Lightning payouts using{" "}
-                        <code className="text-foreground">OWNER_NWC</code> for
-                        each <strong>ready</strong> row below.
+                        <code className="text-text">OWNER_NWC</code> for each{" "}
+                        <strong>ready</strong> row below.
                       </p>
                     </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="border-border max-h-56 overflow-auto rounded-md border">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/50 sticky top-0">
+                    <thead className="bg-surface-hover/50 sticky top-0">
                       <tr>
                         <th className="p-2">Referrer</th>
                         <th className="p-2 text-right">{moneyColumnLabel}</th>
@@ -371,7 +371,7 @@ export default function AdminReferralsPage() {
                     <tbody>
                       {batchPreview.rows.length === 0 ? (
                         <tr>
-                          <td colSpan={3} className="text-muted-foreground p-3">
+                          <td colSpan={3} className="text-text-secondary p-3">
                             No referrers meet the ≥1000 sats threshold.
                           </td>
                         </tr>
@@ -388,7 +388,7 @@ export default function AdminReferralsPage() {
                               {row.ready ? (
                                 <Badge variant="secondary">Ready</Badge>
                               ) : (
-                                <span className="text-muted-foreground">
+                                <span className="text-text-secondary">
                                   Skipped — {row.skipReason}
                                 </span>
                               )}
@@ -435,7 +435,7 @@ export default function AdminReferralsPage() {
 
           <div className="border-border space-y-3 border-t pt-4">
             <h3 className="font-medium">Manual Lightning payout</h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Pay a specific BOLT11 against pending balance — opens a second
               confirmation step.
             </p>
@@ -490,7 +490,7 @@ export default function AdminReferralsPage() {
                       id="bolt11"
                       name="bolt11"
                       rows={3}
-                      className="border-input mt-1 w-full rounded-md border px-2 py-1 font-mono text-xs"
+                      className="border-border mt-1 w-full rounded-md border px-2 py-1 font-mono text-xs"
                       disabled={!payoutAvailable || busy}
                     />
                   </div>
@@ -519,7 +519,7 @@ export default function AdminReferralsPage() {
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/50 border-b">
+                <tr className="bg-surface-hover/50 border-b">
                   <th className="p-2 text-left">Time</th>
                   <th className="p-2 text-left">Channel</th>
                   <th className="p-2 text-left">Referrer</th>
@@ -531,7 +531,7 @@ export default function AdminReferralsPage() {
               <tbody>
                 {auditLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-muted-foreground p-4">
+                    <td colSpan={6} className="text-text-secondary p-4">
                       No payout activity logged yet.
                     </td>
                   </tr>
@@ -562,17 +562,17 @@ export default function AdminReferralsPage() {
                           {row.status}
                         </Badge>
                       </td>
-                      <td className="text-muted-foreground max-w-md p-2 text-xs">
+                      <td className="text-text-secondary max-w-md p-2 text-xs">
                         {row.errorMessage ? (
-                          <span className="text-destructive">
+                          <span className="text-danger">
                             {row.errorMessage}
                           </span>
                         ) : row.batchSummary ? (
                           <details>
-                            <summary className="text-foreground cursor-pointer text-[11px] font-medium">
+                            <summary className="text-text cursor-pointer text-[11px] font-medium">
                               View batch summary
                             </summary>
-                            <pre className="border-border bg-muted/30 mt-1 max-h-36 overflow-auto rounded border p-2 font-mono text-[10px] leading-snug">
+                            <pre className="border-border bg-surface-hover/30 mt-1 max-h-36 overflow-auto rounded-xs border p-2 font-mono text-[10px] leading-snug">
                               {JSON.stringify(row.batchSummary, null, 2)}
                             </pre>
                           </details>
@@ -593,12 +593,12 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Referrals table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export", "csv"]]).toString()}`}
-              className="text-primary text-sm hover:underline"
+              className="text-brand text-sm hover:underline"
             >
               Export CSV
             </a>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Page {referrals.page} of {totalRefPages || 1} · {referrals.total}{" "}
             total
           </p>
@@ -629,12 +629,12 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Earnings table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export_earnings", "csv"]]).toString()}`}
-              className="text-primary text-sm hover:underline"
+              className="text-brand text-sm hover:underline"
             >
               Export earnings CSV
             </a>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Page {earnings.page} of {totalEarnPages || 1} · {earnings.total}{" "}
             total
           </p>
@@ -674,7 +674,7 @@ export default function AdminReferralsPage() {
                           <input type="hidden" name="earning_id" value={e.id} />
                           <button
                             type="submit"
-                            className="text-primary text-xs hover:underline"
+                            className="text-brand text-xs hover:underline"
                           >
                             Retry
                           </button>
@@ -690,7 +690,7 @@ export default function AdminReferralsPage() {
 
         <Link
           to="/dashboard/admin"
-          className="text-primary text-sm hover:underline"
+          className="text-brand text-sm hover:underline"
         >
           ← Back to overview
         </Link>

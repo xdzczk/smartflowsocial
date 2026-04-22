@@ -11,7 +11,6 @@ import {
 import { Suspense, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { MediaSettingsPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -35,6 +34,7 @@ import {
   getSubscriptionData,
 } from "~/features/payments";
 import { getBlossomStorageLimitBytes } from "~/features/payments/blossom-storage-limits";
+import { MediaSettingsPageSkeleton } from "~/features/settings";
 import {
   deleteMediaById,
   deleteRemoteBlossomObject,
@@ -178,7 +178,7 @@ function SettingsMediaPageInner() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl space-y-2">
           <h1 className="text-xl font-semibold sm:text-2xl">Media</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-text-secondary text-sm leading-relaxed">
             Manage media uploaded through {BRAND_BLOSSOM_LABEL}. Deleting
             removes the library entry and the stored file when the server
             confirms removal. If deletion fails, the item stays and you will see
@@ -187,7 +187,7 @@ function SettingsMediaPageInner() {
         </div>
         <Link
           to="/dashboard/settings?tab=media"
-          className="text-primary shrink-0 text-sm hover:underline"
+          className="text-brand shrink-0 text-sm hover:underline"
         >
           Back to Media &amp; Storage
         </Link>
@@ -203,7 +203,7 @@ function SettingsMediaPageInner() {
                 {planName ? (
                   <>
                     {" "}
-                    <span className="text-foreground/80">
+                    <span className="text-text/80">
                       Included in your current plan ({planName}).
                     </span>
                   </>
@@ -215,7 +215,7 @@ function SettingsMediaPageInner() {
         <CardContent className="space-y-4">
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <dt className="text-text-secondary text-xs font-medium tracking-wide uppercase">
                 Files
               </dt>
               <dd className="text-lg font-semibold tabular-nums">
@@ -223,13 +223,13 @@ function SettingsMediaPageInner() {
               </dd>
             </div>
             <div className="col-span-2 sm:col-span-2">
-              <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <dt className="text-text-secondary text-xs font-medium tracking-wide uppercase">
                 Storage used
               </dt>
               <dd className="text-lg font-semibold tabular-nums">
                 {formatBytes(totalSize)}
                 {storageLimitBytes != null && storageLimitBytes > 0 ? (
-                  <span className="text-muted-foreground ml-1 text-base font-normal">
+                  <span className="text-text-secondary ml-1 text-base font-normal">
                     / {formatBytes(storageLimitBytes)}
                   </span>
                 ) : null}
@@ -238,20 +238,20 @@ function SettingsMediaPageInner() {
           </dl>
           {storageLimitBytes != null && storageLimitBytes > 0 ? (
             <div>
-              <div className="bg-muted mb-1 h-2 w-full overflow-hidden rounded-full">
+              <div className="bg-surface-hover mb-1 h-2 w-full overflow-hidden rounded-full">
                 <div
-                  className="bg-primary h-full rounded-full transition-all"
+                  className="bg-brand h-full rounded-full transition-all"
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 {usagePercent >= 95
                   ? `You are near your ${BRAND_BLOSSOM_LABEL} storage limit.`
                   : `Usage is counted for ${BRAND_BLOSSOM_LABEL} uploads only.`}
               </p>
             </div>
           ) : (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Storage limits apply when your plan includes a{" "}
               {BRAND_BLOSSOM_LABEL} quota.
             </p>
@@ -269,10 +269,10 @@ function SettingsMediaPageInner() {
         </CardHeader>
         <CardContent>
           {actionData?.error ? (
-            <p className="text-destructive mb-4 text-sm">{actionData.error}</p>
+            <p className="text-danger mb-4 text-sm">{actionData.error}</p>
           ) : null}
           {items.length === 0 ? (
-            <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+            <div className="text-text-secondary space-y-2 text-sm leading-relaxed">
               <p>No media yet.</p>
               <p>
                 Upload with {BRAND_BLOSSOM_LABEL} as your media provider in
@@ -282,7 +282,7 @@ function SettingsMediaPageInner() {
               <p>
                 <Link
                   to="/dashboard/settings?tab=media"
-                  className="text-primary font-medium hover:underline"
+                  className="text-brand font-medium hover:underline"
                 >
                   Media &amp; Storage settings
                 </Link>
@@ -297,13 +297,13 @@ function SettingsMediaPageInner() {
                   return (
                     <li
                       key={m.id}
-                      className="border-border bg-card flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-stretch"
+                      className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-stretch"
                     >
                       <a
                         href={m.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-muted relative h-36 w-full shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-40"
+                        className="bg-surface-hover relative h-36 w-full shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-40"
                       >
                         {isImage ? (
                           <img
@@ -321,19 +321,19 @@ function SettingsMediaPageInner() {
                             preload="metadata"
                           />
                         ) : (
-                          <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+                          <div className="text-text-secondary flex h-full items-center justify-center text-xs">
                             File
                           </div>
                         )}
                       </a>
                       <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
                         <div className="min-w-0 space-y-1">
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-text-secondary text-xs">
                             {m.mimeType ?? "Unknown type"} ·{" "}
                             {m.size != null ? formatBytes(m.size) : "—"} ·{" "}
                             {new Date(m.createdAt).toLocaleString()}
                           </p>
-                          <p className="text-muted-foreground truncate text-xs">
+                          <p className="text-text-secondary truncate text-xs">
                             {BRAND_BLOSSOM_LABEL}
                           </p>
                         </div>
@@ -342,7 +342,7 @@ function SettingsMediaPageInner() {
                             href={m.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary text-sm font-medium hover:underline"
+                            className="text-brand text-sm font-medium hover:underline"
                           >
                             Open
                           </a>
@@ -350,7 +350,7 @@ function SettingsMediaPageInner() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="text-destructive hover:text-destructive h-auto px-0"
+                            className="text-danger hover:text-danger h-auto px-0"
                             disabled={!!submittingMediaId}
                             onClick={() => setDeleteTargetId(m.id)}
                           >
@@ -363,26 +363,26 @@ function SettingsMediaPageInner() {
                 })}
               </ul>
               {totalPages > 1 ? (
-                <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="stack-tight pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <Link
                     to={`/dashboard/settings/media?page=${page - 1}`}
                     className={
                       page <= 1
-                        ? "text-muted-foreground pointer-events-none"
-                        : "text-primary hover:underline"
+                        ? "text-text-secondary pointer-events-none"
+                        : "text-brand hover:underline"
                     }
                   >
                     Previous
                   </Link>
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-text-secondary text-sm">
                     Page {page} of {totalPages}
                   </span>
                   <Link
                     to={`/dashboard/settings/media?page=${page + 1}`}
                     className={
                       page >= totalPages
-                        ? "text-muted-foreground pointer-events-none"
-                        : "text-primary hover:underline"
+                        ? "text-text-secondary pointer-events-none"
+                        : "text-brand hover:underline"
                     }
                   >
                     Next

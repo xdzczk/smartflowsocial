@@ -58,16 +58,16 @@ export function ProofCampaignControlRail({
   actionBar: ReactNode;
 }) {
   return (
-    <div className="border-border bg-card/30 flex flex-col gap-6 rounded-xl border p-4">
+    <div className="border-border bg-surface/30 stack-loose rounded-xl border p-4">
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Selected
         </p>
         {selectedSummary}
       </div>
 
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Card type
         </p>
         <div className="flex flex-col gap-1.5">
@@ -89,7 +89,7 @@ export function ProofCampaignControlRail({
       </div>
 
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Ratio
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -111,7 +111,7 @@ export function ProofCampaignControlRail({
       </div>
 
       <div className="border-border/60 space-y-3 border-t pt-4">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Options
         </p>
         <div className="flex items-center justify-between gap-2">

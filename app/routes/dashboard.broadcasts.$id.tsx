@@ -11,8 +11,8 @@ import {
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 
+import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastDetailPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { requireUserId } from "~/features/auth";
 import {
@@ -232,17 +232,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 function badgeClass(kind: string) {
   switch (kind) {
     case "success":
-      return "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200";
+      return "bg-success/15 text-success-text";
     case "danger":
-      return "bg-destructive/15 text-destructive";
+      return "bg-danger/15 text-danger";
     case "warn":
-      return "bg-amber-500/15 text-amber-900 dark:text-amber-100";
+      return "bg-warning/15 text-warning-text";
     case "info":
-      return "bg-blue-500/15 text-blue-900 dark:text-blue-100";
+      return "bg-info/15 text-info-text";
     case "mixed":
-      return "bg-violet-500/15 text-violet-900 dark:text-violet-100";
+      return "bg-brand/12 text-brand-text";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }
 
@@ -331,7 +331,7 @@ function BroadcastDetailRouteLoaded({
         <div>
           <Link
             to="/dashboard/broadcasts"
-            className="text-muted-foreground text-sm hover:underline"
+            className="text-text-secondary text-sm hover:underline"
           >
             ← All broadcasts
           </Link>
@@ -348,14 +348,14 @@ function BroadcastDetailRouteLoaded({
               {formatBroadcastCampaignStatus(campaign.status)}
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-text-secondary mt-1 text-sm">
             {formatBroadcastAudienceLabel(
               campaign.audienceType,
               campaign.totalRecipients
             )}{" "}
             · {formatBroadcastDeliveryMode(campaign.deliveryMode)}
           </p>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-text-secondary mt-1 text-xs">
             Created {new Date(campaign.createdAt).toLocaleString()}
             {campaign.scheduledFor
               ? ` · Scheduled ${new Date(campaign.scheduledFor).toLocaleString()}`
@@ -373,7 +373,7 @@ function BroadcastDetailRouteLoaded({
             <input type="hidden" name="intent" value="duplicate" />
             <button
               type="submit"
-              className="border-input bg-background hover:bg-muted rounded-md border px-3 py-2 text-sm font-medium"
+              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
             >
               Duplicate
             </button>
@@ -385,7 +385,7 @@ function BroadcastDetailRouteLoaded({
               <input type="hidden" name="intent" value="retry_failed" />
               <button
                 type="submit"
-                className="border-input bg-background hover:bg-muted rounded-md border px-3 py-2 text-sm font-medium"
+                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
               >
                 Retry failed
               </button>
@@ -398,7 +398,7 @@ function BroadcastDetailRouteLoaded({
               <input type="hidden" name="intent" value="cancel" />
               <button
                 type="submit"
-                className="rounded-md border border-amber-500/50 px-3 py-2 text-sm font-medium text-amber-800 dark:text-amber-200"
+                className="border-warning/50 text-warning-text rounded-md border px-3 py-2 text-sm font-medium"
               >
                 Cancel
               </button>
@@ -408,7 +408,7 @@ function BroadcastDetailRouteLoaded({
             <input type="hidden" name="intent" value="export_csv" />
             <button
               type="submit"
-              className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm font-medium"
+              className="bg-brand text-brand-on rounded-md px-3 py-2 text-sm font-medium"
             >
               Export CSV
             </button>
@@ -417,7 +417,7 @@ function BroadcastDetailRouteLoaded({
             <input type="hidden" name="intent" value="export_json" />
             <button
               type="submit"
-              className="border-input bg-background hover:bg-muted rounded-md border px-3 py-2 text-sm font-medium"
+              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
             >
               Export JSON
             </button>
@@ -427,13 +427,13 @@ function BroadcastDetailRouteLoaded({
 
       <section className="border-border rounded-lg border p-4">
         <h2 className="font-medium">Progress</h2>
-        <div className="bg-muted mt-3 h-2 overflow-hidden rounded-full">
+        <div className="bg-surface-hover mt-3 h-2 overflow-hidden rounded-full">
           <div
-            className="bg-primary h-full transition-all"
+            className="bg-brand h-full transition-all"
             style={{ width: `${String(progressPct)}%` }}
           />
         </div>
-        <p className="text-muted-foreground mt-3 text-sm">
+        <p className="text-text-secondary mt-3 text-sm">
           {campaign.sentCount} / {campaign.totalRecipients} delivered ·{" "}
           {campaign.failedCount} failed · {campaign.suppressedCount} suppressed
           (pre-send)
@@ -445,7 +445,7 @@ function BroadcastDetailRouteLoaded({
 
       <section className="border-border rounded-lg border p-4">
         <h2 className="font-medium">Performance</h2>
-        <ul className="text-muted-foreground mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="text-text-secondary mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <li>Success rate (of attempts): {successPct}%</li>
           <li>Failures: {campaign.failedCount}</li>
           <li>
@@ -486,12 +486,12 @@ function BroadcastDetailRouteLoaded({
         <ul className="divide-border max-h-72 divide-y overflow-y-auto text-sm">
           {campaign.eventLogs.map((log) => (
             <li key={log.id} className="flex gap-3 py-3">
-              <div className="text-muted-foreground w-36 shrink-0 text-xs whitespace-nowrap">
+              <div className="text-text-secondary w-36 shrink-0 text-xs whitespace-nowrap">
                 {new Date(log.createdAt).toLocaleString()}
               </div>
               <div>
                 <div className="font-medium">{log.eventType}</div>
-                <div className="text-muted-foreground">{log.message}</div>
+                <div className="text-text-secondary">{log.message}</div>
               </div>
             </li>
           ))}
@@ -512,7 +512,7 @@ function BroadcastDetailRouteLoaded({
             <select
               name="rstatus"
               defaultValue={data.statusFilter}
-              className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
             >
               <option value="ALL">All</option>
               <option value="SENT">Sent</option>
@@ -527,11 +527,11 @@ function BroadcastDetailRouteLoaded({
               name="rq"
               placeholder="Search pubkey…"
               defaultValue={data.search}
-              className="border-input bg-background min-w-[160px] rounded-md border px-2 py-1 text-sm"
+              className="border-border bg-canvas min-w-[160px] rounded-md border px-2 py-1 text-sm"
             />
             <button
               type="submit"
-              className="text-primary text-sm font-medium hover:underline"
+              className="text-brand text-sm font-medium hover:underline"
             >
               Apply
             </button>
@@ -539,7 +539,7 @@ function BroadcastDetailRouteLoaded({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-xs">
-            <thead className="bg-muted/50 border-b font-medium">
+            <thead className="bg-surface-hover/50 border-b font-medium">
               <tr>
                 <th className="px-2 py-2">Status</th>
                 <th className="px-2 py-2">Recipient</th>
@@ -552,7 +552,7 @@ function BroadcastDetailRouteLoaded({
             </thead>
             <tbody className="divide-y">
               {recipients.map((r) => (
-                <tr key={r.id} className="hover:bg-muted/20">
+                <tr key={r.id} className="hover:bg-surface-hover/20">
                   <td className="px-2 py-2 font-mono">{r.status}</td>
                   <td className="px-2 py-2" title={r.recipientPubkey}>
                     {(() => {
@@ -560,7 +560,7 @@ function BroadcastDetailRouteLoaded({
                       const label =
                         p?.name ?? formatNpubShort(r.recipientPubkey);
                       return (
-                        <div className="flex items-center gap-2">
+                        <div className="cluster">
                           <Avatar className="h-6 w-6">
                             <AvatarImage
                               src={p?.picture ?? undefined}
@@ -574,7 +574,7 @@ function BroadcastDetailRouteLoaded({
                             <p className="truncate text-xs font-medium">
                               {label}
                             </p>
-                            <p className="text-muted-foreground truncate font-mono text-[11px]">
+                            <p className="text-text-secondary truncate font-mono text-[11px]">
                               {formatNpubShort(r.recipientPubkey)}
                             </p>
                           </div>
@@ -582,21 +582,21 @@ function BroadcastDetailRouteLoaded({
                       );
                     })()}
                   </td>
-                  <td className="text-muted-foreground px-2 py-2">
+                  <td className="text-text-secondary px-2 py-2">
                     {r.deliveryMethodUsed ?? "—"}
                   </td>
                   <td className="px-2 py-2 tabular-nums">{r.attemptCount}</td>
-                  <td className="text-muted-foreground px-2 py-2 whitespace-nowrap">
+                  <td className="text-text-secondary px-2 py-2 whitespace-nowrap">
                     {r.sentAt ? new Date(r.sentAt).toLocaleString() : "—"}
                   </td>
-                  <td className="text-destructive max-w-[200px] truncate px-2 py-2">
+                  <td className="text-danger max-w-[200px] truncate px-2 py-2">
                     {r.failureReason ?? r.skipReason ?? "—"}
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex flex-wrap gap-1">
                       <button
                         type="button"
-                        className="text-primary hover:underline"
+                        className="text-brand hover:underline"
                         onClick={() => {
                           void navigator.clipboard.writeText(r.recipientPubkey);
                           setCopiedRecipientId(r.id);
@@ -614,7 +614,7 @@ function BroadcastDetailRouteLoaded({
                           />
                           <button
                             type="submit"
-                            className="text-muted-foreground hover:underline"
+                            className="text-text-secondary hover:underline"
                           >
                             Suppress
                           </button>
@@ -627,7 +627,7 @@ function BroadcastDetailRouteLoaded({
             </tbody>
           </table>
         </div>
-        <div className="text-muted-foreground mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="text-text-secondary mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
           <span>
             Page {page} / {totalPages} · {recipientTotal} matching
           </span>
@@ -635,7 +635,7 @@ function BroadcastDetailRouteLoaded({
             <button
               type="button"
               disabled={page <= 1}
-              className="hover:text-foreground disabled:opacity-40"
+              className="hover:text-text disabled:opacity-40"
               onClick={() => {
                 const next = new URLSearchParams(searchParams);
                 next.set("page", String(page - 1));
@@ -647,7 +647,7 @@ function BroadcastDetailRouteLoaded({
             <button
               type="button"
               disabled={page >= totalPages}
-              className="hover:text-foreground disabled:opacity-40"
+              className="hover:text-text disabled:opacity-40"
               onClick={() => {
                 const next = new URLSearchParams(searchParams);
                 next.set("page", String(page + 1));

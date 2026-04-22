@@ -98,8 +98,8 @@ export function UploadProviderSettings({
 
   const primaryAccentColor = "hsl(var(--primary))";
   const optionRowBase =
-    "flex items-start space-x-3 rounded-lg border p-3 transition-colors";
-  const optionRowSelected = "border-primary bg-muted/30";
+    "flex items-start space-x-3 rounded-lg border p-3 motion-fast";
+  const optionRowSelected = "border-brand bg-surface-hover/30";
 
   const ctaLabel = (() => {
     if (!isDirty) return "Save provider";
@@ -135,17 +135,17 @@ export function UploadProviderSettings({
                 selectedProvider === "BLOSSOM"
               }
               onChange={() => setSelectedProvider("BLOSSOM_PRIMAL")}
-              className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
               <label
                 htmlFor="blossom-primal"
-                className="text-foreground block text-sm font-medium"
+                className="text-text block text-sm font-medium"
               >
                 Primal Blossom (NOSTR)
               </label>
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-text-secondary mt-1 text-xs">
                 primal.net · default for Free
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -168,17 +168,17 @@ export function UploadProviderSettings({
               value="BLOSSOM_BLOSSTR"
               checked={selectedProvider === "BLOSSOM_BLOSSTR"}
               onChange={() => setSelectedProvider("BLOSSOM_BLOSSTR")}
-              className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
               <label
                 htmlFor="blossom-blosstr"
-                className="text-foreground block text-sm font-medium"
+                className="text-text block text-sm font-medium"
               >
                 Blosstr Blossom (NOSTR)
               </label>
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-text-secondary mt-1 text-xs">
                 blosstr.com — third-party Blosstr account
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -191,25 +191,25 @@ export function UploadProviderSettings({
             <div
               className={cn(
                 optionRowBase,
-                "border-muted-foreground/25 bg-muted/20"
+                "border-muted-foreground/25 bg-surface-hover/20"
               )}
             >
-              <div className="text-muted-foreground mt-0.5">
+              <div className="text-text-secondary mt-0.5">
                 <Lock className="h-4 w-4" aria-hidden />
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-foreground text-sm font-medium">
+                  <span className="text-text text-sm font-medium">
                     {BRAND_BLOSSOM_LABEL} (NOSTR)
                   </span>
                   <Badge variant="secondary">Paid feature</Badge>
                   <Badge variant="outline">Locked on Free plan</Badge>
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   blossom-api.smartflow.social · blossom.smartflow.social
                 </p>
                 {isLegacyStoredSfs ? (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-text-secondary text-xs">
                     Previously selected — unavailable on your current plan.
                     Uploads use your effective provider above until you upgrade.
                   </p>
@@ -237,17 +237,17 @@ export function UploadProviderSettings({
                 value="BLOSSOM_SFS"
                 checked={selectedProvider === "BLOSSOM_SFS"}
                 onChange={() => setSelectedProvider("BLOSSOM_SFS")}
-                className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4"
+                className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
                 style={{ accentColor: primaryAccentColor }}
               />
               <div className="flex-1">
                 <label
                   htmlFor="blossom-sfs"
-                  className="text-foreground block text-sm font-medium"
+                  className="text-text block text-sm font-medium"
                 >
                   {BRAND_BLOSSOM_LABEL} (NOSTR)
                 </label>
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className="text-text-secondary mt-1 text-xs">
                   blossom-api.smartflow.social · blossom.smartflow.social
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -271,20 +271,20 @@ export function UploadProviderSettings({
               value="BLOSSOM_CUSTOM"
               checked={selectedProvider === "BLOSSOM_CUSTOM"}
               onChange={() => setSelectedProvider("BLOSSOM_CUSTOM")}
-              className="border-border accent-checkbox focus:ring-ring mt-1 h-4 w-4"
+              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
               style={{ accentColor: primaryAccentColor }}
             />
             <div className="flex-1">
               <label
                 htmlFor="blossom-custom"
-                className="text-foreground block text-sm font-medium"
+                className="text-text block text-sm font-medium"
               >
                 Custom Blossom provider
               </label>
-              <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              <p className="text-text-secondary mt-2 text-xs leading-relaxed">
                 Use your own trusted HTTPS Blossom endpoint for uploads from
                 {BRAND_NAME}. Only HTTPS URLs are accepted;{" "}
-                <span className="text-foreground/90">
+                <span className="text-text/90">
                   format is validated when you save
                 </span>
                 . Uploads use this endpoint as the primary media server.
@@ -299,17 +299,17 @@ export function UploadProviderSettings({
                 disabled={!isCustomSelected}
                 placeholder="https://your-blossom.example.com"
                 className={cn(
-                  "border-input bg-background ring-offset-background mt-3 w-full rounded-md border px-3 py-2 text-sm",
-                  customUrlError && "border-destructive"
+                  "border-border bg-canvas ring-offset-canvas mt-3 w-full rounded-md border px-3 py-2 text-sm",
+                  customUrlError && "border-danger"
                 )}
                 aria-invalid={customUrlError ? true : undefined}
               />
               {customUrlError ? (
-                <p className="text-destructive mt-1 text-xs">
+                <p className="text-danger mt-1 text-xs">
                   Enter a valid HTTPS URL.
                 </p>
               ) : (
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Must start with https://
                 </p>
               )}
@@ -318,18 +318,18 @@ export function UploadProviderSettings({
         </div>
 
         {fetcher.state === "idle" && fetcher.data?.error ? (
-          <p className="text-destructive mt-4 text-sm">{fetcher.data.error}</p>
+          <p className="text-danger mt-4 text-sm">{fetcher.data.error}</p>
         ) : null}
 
         {isDirty ? (
-          <p className="text-muted-foreground mt-4 text-xs">Unsaved changes</p>
+          <p className="text-text-secondary mt-4 text-xs">Unsaved changes</p>
         ) : null}
 
         <div className="mt-6 flex justify-end">
           <button
             type="submit"
             disabled={submitDisabled}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-brand text-brand-on hover:bg-brand/90 motion-fast rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Saving…" : ctaLabel}
           </button>

@@ -36,7 +36,7 @@ export function MediaPreviewCollage({
   className = "",
   thumbnailClassName = "h-full w-full object-cover object-center",
   hidePlayButton = false,
-  fallback = <div className="bg-muted h-full w-full flex-shrink-0" />,
+  fallback = <div className="bg-surface-hover h-full w-full flex-shrink-0" />,
   twoItemLayout = "horizontal",
 }: MediaPreviewCollageProps) {
   const slice = urls.slice(0, MAX_PREVIEWS);

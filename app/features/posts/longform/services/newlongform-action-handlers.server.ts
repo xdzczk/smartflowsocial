@@ -420,6 +420,7 @@ export async function handlePublish(
       postId: result.post.id,
       userId,
       signedEvent: signedEventJson,
+      nostrEvent: nostrEventJson,
       relays: sanitizedRelays,
     });
 

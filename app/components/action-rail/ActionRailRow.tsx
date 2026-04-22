@@ -30,25 +30,25 @@ export function ActionRailRow({
 }) {
   const valueTone =
     placeholder || tone === "muted"
-      ? "text-muted-foreground"
+      ? "text-text-secondary"
       : tone === "warning"
-        ? "text-amber-950 dark:text-amber-100"
+        ? "text-warning-text"
         : tone === "success"
-          ? "text-emerald-900 dark:text-emerald-100"
+          ? "text-success-text"
           : tone === "destructive"
-            ? "text-destructive"
-            : "text-foreground font-medium";
+            ? "text-danger-text"
+            : "text-text font-medium";
 
   const labelClass =
     emphasis === "primary"
-      ? "text-muted-foreground shrink-0 font-semibold"
+      ? "text-text-secondary shrink-0 font-semibold"
       : emphasis === "muted"
-        ? "text-muted-foreground/65 shrink-0 text-[10px] font-normal tracking-wide uppercase"
-        : "text-muted-foreground shrink-0 font-medium";
+        ? "text-text-secondary/65 shrink-0 text-[10px] font-normal tracking-wide uppercase"
+        : "text-text-secondary shrink-0 font-medium";
 
   const valueClass = cn(
     "min-w-0 text-right",
-    placeholder ? "text-muted-foreground font-normal" : valueTone,
+    placeholder ? "text-text-secondary font-normal" : valueTone,
     emphasis === "primary" && !placeholder && "font-semibold",
     emphasis === "muted" && !placeholder && "text-[10px] font-normal"
   );

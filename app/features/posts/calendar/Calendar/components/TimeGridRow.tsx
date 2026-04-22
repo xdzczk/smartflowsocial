@@ -103,7 +103,7 @@ export function TimeGridRow({
         style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
         <div
-          className={`text-muted-foreground/85 border-border/30 w-16 flex-shrink-0 border-r pr-2 text-right text-xs leading-none ${
+          className={`text-text-secondary/85 border-border/30 w-16 flex-shrink-0 border-r pr-2 text-right text-xs leading-none ${
             isMobile
               ? "hidden"
               : "sticky left-0 bg-[hsl(var(--calendar-surface-2-bg))]"

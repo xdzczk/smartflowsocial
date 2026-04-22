@@ -166,10 +166,10 @@ export function ReplyTemplatesSettings({
       >
         {templates.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-            <p className="text-foreground text-sm font-medium">
+            <p className="text-text text-sm font-medium">
               No reply templates yet
             </p>
-            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+            <p className="text-text-secondary max-w-sm text-sm leading-relaxed">
               Create reusable snippets for faster replies in the engagement
               feed.
             </p>
@@ -186,7 +186,7 @@ export function ReplyTemplatesSettings({
               >
                 <div className="min-w-0 flex-1">
                   <div className="font-mono text-sm font-medium">/{t.slug}</div>
-                  <p className="text-muted-foreground mt-0.5 truncate text-sm">
+                  <p className="text-text-secondary mt-0.5 truncate text-sm">
                     {t.body}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export function ReplyTemplatesSettings({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="text-muted-foreground hover:text-destructive h-8 w-8"
+                    className="text-text-secondary hover:text-danger h-8 w-8"
                     aria-label={`Delete template /${t.slug}`}
                     onClick={() => setDeleteTarget(t)}
                   >
@@ -236,7 +236,7 @@ export function ReplyTemplatesSettings({
                 className="font-mono text-sm"
                 disabled={busy}
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 In the reply box, type /slug to insert this template.
               </p>
             </div>
@@ -252,7 +252,7 @@ export function ReplyTemplatesSettings({
               />
             </div>
             {templateFetcher.data?.error ? (
-              <p className="text-destructive text-sm">
+              <p className="text-danger text-sm">
                 {templateFetcher.data.error}
               </p>
             ) : null}
@@ -298,7 +298,7 @@ export function ReplyTemplatesSettings({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
             >
               Delete
             </AlertDialogAction>

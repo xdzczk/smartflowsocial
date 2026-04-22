@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
+
 import type { EngagementItemStateMap } from "../engagement-filter";
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
@@ -138,10 +140,8 @@ export function EngagementContent({
         ) : null}
 
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
-              No engagement found for your posts yet.
-            </p>
+          <div className="border-border bg-surface rounded-lg border">
+            <EmptyState title="No engagement found for your posts yet." />
           </div>
         ) : null}
       </div>
@@ -159,13 +159,11 @@ export function EngagementContent({
             listVariant="replies"
           />
         ) : (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
-              No replies found for your posts.
-            </p>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Posts fetched: {postsCount}
-            </p>
+          <div className="border-border bg-surface rounded-lg border">
+            <EmptyState
+              title="No replies found for your posts."
+              description={`Posts fetched: ${postsCount}`}
+            />
           </div>
         )}
       </>
@@ -192,10 +190,8 @@ export function EngagementContent({
           />
         ) : null}
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
-              Nothing needs response right now.
-            </p>
+          <div className="border-border bg-surface rounded-lg border">
+            <EmptyState title="Nothing needs response right now." />
           </div>
         ) : null}
       </div>
@@ -212,10 +208,8 @@ export function EngagementContent({
           listVariant="mentions"
         />
       ) : (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground">
-            No mentions or quote reposts found for your posts.
-          </p>
+        <div className="border-border bg-surface rounded-lg border">
+          <EmptyState title="No mentions or quote reposts found for your posts." />
         </div>
       )}
     </>

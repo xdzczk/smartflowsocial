@@ -122,7 +122,7 @@ export function LookupInspectorRail({
             trailing={null}
           />
           <div className="flex items-start justify-between gap-2 py-1.5">
-            <span className="text-muted-foreground shrink-0 text-xs">
+            <span className="text-text-secondary shrink-0 text-xs">
               Event ID
             </span>
             <div className="min-w-0 text-right">
@@ -130,7 +130,7 @@ export function LookupInspectorRail({
               <Button
                 type="button"
                 variant="link"
-                className="text-muted-foreground h-auto p-0 pl-2 text-[11px]"
+                className="text-text-secondary h-auto p-0 pl-2 text-[11px]"
                 onClick={() => setIdExpanded((v) => !v)}
               >
                 {idExpanded ? "Short" : "Full"}
@@ -142,24 +142,24 @@ export function LookupInspectorRail({
 
       <div className={`${RAIL_PAD_X} ${RAIL_ZONE_PY} border-border border-t`}>
         <RailSectionHeader>Thread / load</RailSectionHeader>
-        <p className="text-foreground text-xs font-medium">
+        <p className="text-text text-xs font-medium">
           Top-level replies loaded: {topReplies}
         </p>
-        <p className="text-muted-foreground mt-1 text-xs leading-snug">
+        <p className="text-text-secondary mt-1 text-xs leading-snug">
           Nested replies load on demand.
         </p>
         {resolution?.threadPartial ? (
-          <p className="text-muted-foreground mt-2 text-xs">
+          <p className="text-text-secondary mt-2 text-xs">
             Thread data may be incomplete (timeout or limited relay data).
           </p>
         ) : null}
         {resolution?.statsUnavailable ? (
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-text-secondary mt-1 text-xs">
             Engagement stats could not be loaded.
           </p>
         ) : null}
         {stats ? (
-          <p className="text-muted-foreground mt-2 text-[11px]">
+          <p className="text-text-secondary mt-2 text-[11px]">
             Counters reflect index/cache when available.
           </p>
         ) : null}

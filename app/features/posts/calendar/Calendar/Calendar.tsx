@@ -149,7 +149,7 @@ function CalendarToolbar({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg"
+              className="h-9 w-9"
               onClick={onPrevious}
               aria-label="Previous"
             >
@@ -164,7 +164,7 @@ function CalendarToolbar({
               type="button"
               variant="secondary"
               size="sm"
-              className="h-9 rounded-lg px-3 text-sm shadow-none"
+              className="h-9 px-3 text-sm shadow-none"
               onClick={onToday}
               title="Today (T)"
             >
@@ -175,7 +175,7 @@ function CalendarToolbar({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg"
+              className="h-9 w-9"
               onClick={onNext}
               aria-label="Next"
             >
@@ -198,7 +198,7 @@ function CalendarToolbar({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 rounded-lg"
+                      className="h-9 w-9"
                       aria-label="Pick a date"
                     >
                       <CalendarDays
@@ -237,7 +237,7 @@ function CalendarToolbar({
           />
 
           {periodLabel ? (
-            <h2 className="text-foreground min-w-0 truncate text-sm leading-tight font-medium">
+            <h2 className="text-text min-w-0 truncate text-sm leading-tight font-medium">
               {periodLabel}
             </h2>
           ) : null}
@@ -956,7 +956,7 @@ function MiniCalendarGrid({
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="stack-tight">
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -965,7 +965,7 @@ function MiniCalendarGrid({
               toDate(addMonths(fromDate(displayedMonth, "UTC"), -1))
             )
           }
-          className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1"
+          className="text-text-secondary hover:text-text rounded-[var(--calendar-radius-sm)] p-1"
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
@@ -984,7 +984,7 @@ function MiniCalendarGrid({
           onClick={() =>
             onMonthChange(toDate(addMonths(fromDate(displayedMonth, "UTC"), 1)))
           }
-          className="text-muted-foreground hover:text-foreground rounded-[var(--calendar-radius-sm)] p-1"
+          className="text-text-secondary hover:text-text rounded-[var(--calendar-radius-sm)] p-1"
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" strokeWidth={INLINE_ICON_STROKE} />
@@ -994,7 +994,7 @@ function MiniCalendarGrid({
         {weekdays.map((d) => (
           <div
             key={d}
-            className="text-muted-foreground py-0.5 text-xs font-medium"
+            className="text-text-secondary py-0.5 text-xs font-medium"
           >
             {d}
           </div>
@@ -1005,13 +1005,13 @@ function MiniCalendarGrid({
             type="button"
             onClick={() => onSelectDate(date)}
             className={`min-w-[28px] rounded-[var(--calendar-radius-sm)] py-1 text-xs ${
-              !isCurrentMonth ? "text-muted-foreground/70" : "text-foreground"
+              !isCurrentMonth ? "text-text-secondary/70" : "text-text"
             } ${
               isSelected
-                ? "bg-primary text-primary-foreground"
+                ? "bg-brand text-brand-on"
                 : isToday
-                  ? "ring-primary bg-primary/10 ring-1"
-                  : "hover:bg-muted"
+                  ? "ring-brand bg-brand/10 ring-1"
+                  : "hover:bg-surface-hover"
             }`}
           >
             {date.getDate()}

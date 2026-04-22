@@ -167,7 +167,7 @@ export function RegionalDisplaySettings({
           <Label htmlFor="regional-timezone" className="text-sm font-medium">
             Timezone
           </Label>
-          <p className="text-muted-foreground text-xs leading-snug">
+          <p className="text-text-secondary text-xs leading-snug">
             Used for scheduling posts and calendar views.
           </p>
         </div>
@@ -181,7 +181,7 @@ export function RegionalDisplaySettings({
           disabled={tzSubmitting}
         />
         {tzForm.formState.errors.timezone ? (
-          <p className="text-destructive text-sm">
+          <p className="text-danger text-sm">
             {tzForm.formState.errors.timezone.message}
           </p>
         ) : null}
@@ -192,7 +192,7 @@ export function RegionalDisplaySettings({
           <Label htmlFor="regional-time-format" className="text-sm font-medium">
             Time format
           </Label>
-          <p className="text-muted-foreground text-xs leading-snug">
+          <p className="text-text-secondary text-xs leading-snug">
             Choose how time appears across {BRAND_NAME}.
           </p>
         </div>
@@ -220,7 +220,7 @@ export function RegionalDisplaySettings({
           <Label htmlFor="regional-date-format" className="text-sm font-medium">
             Date format
           </Label>
-          <p className="text-muted-foreground text-xs leading-snug">
+          <p className="text-text-secondary text-xs leading-snug">
             Choose how dates appear in lists and previews.
           </p>
         </div>

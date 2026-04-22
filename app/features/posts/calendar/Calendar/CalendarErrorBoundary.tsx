@@ -44,13 +44,13 @@ export class CalendarErrorBoundary extends Component<
           className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-[hsl(var(--calendar-surface-2-bg))] p-6"
           role="alert"
         >
-          <p className="text-muted-foreground text-center text-sm">
+          <p className="text-text-secondary text-center text-sm">
             Something went wrong loading the calendar view.
           </p>
           <button
             type="button"
             onClick={this.handleTryAgain}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-[var(--calendar-radius-sm)] px-4 py-2 text-sm font-medium transition-colors"
+            className="bg-brand text-brand-on hover:bg-brand/90 motion-fast rounded-[var(--calendar-radius-md)] px-4 py-2 text-sm font-medium"
           >
             Try again
           </button>

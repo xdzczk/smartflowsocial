@@ -541,7 +541,7 @@ export default function NostrLoginPanel() {
       queryClient.clear();
       clearPersistedState();
       const nextUrl = verify.redirectTo;
-      // NIP-07: full navigation avoids a long blank "authenticated" state if SPA transition waits on loaders.
+      // NIP-07: full navigation avoids a long blank "authenticated" state if SPA motion-fast waits on loaders.
       // NIP-46: keep client-side navigation so in-memory signer survives.
       if (signer.type === "nip07" && typeof window !== "undefined") {
         window.location.assign(nextUrl);

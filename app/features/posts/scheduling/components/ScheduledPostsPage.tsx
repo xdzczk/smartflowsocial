@@ -459,11 +459,9 @@ export default function ScheduledPostsPage() {
 
       <div className="flex min-h-0 flex-1 flex-col">
         {currentTab === "all" && scheduledContestLaunches.length > 0 ? (
-          <div className="border-border bg-muted/20 mb-4 rounded-lg border px-3 py-2 text-sm">
-            <p className="text-foreground font-medium">
-              Scheduled contest launches
-            </p>
-            <ul className="text-muted-foreground mt-2 list-inside list-disc space-y-1">
+          <div className="border-border bg-surface-hover/20 mb-4 rounded-lg border px-3 py-2 text-sm">
+            <p className="text-text font-medium">Scheduled contest launches</p>
+            <ul className="text-text-secondary mt-2 list-inside list-disc space-y-1">
               {scheduledContestLaunches.map((row) => {
                 const when = row.scheduledFor
                   ? new Date(row.scheduledFor).toLocaleString(undefined, {
@@ -480,11 +478,11 @@ export default function ScheduledPostsPage() {
                   <li key={row.id}>
                     <Link
                       to={`/dashboard/contests/detail/${row.contestId}`}
-                      className="text-primary font-medium underline-offset-2 hover:underline"
+                      className="text-brand font-medium underline-offset-2 hover:underline"
                     >
                       {row.title}
                     </Link>
-                    <span className="text-muted-foreground">
+                    <span className="text-text-secondary">
                       {" "}
                       · {when} · {state}
                       {row.sourceMode === "new_post"
@@ -645,7 +643,7 @@ export default function ScheduledPostsPage() {
           <div ref={prefetchSentinelRef} className="h-4 w-full" />
           <div ref={sentinelRef} className="h-4 w-full" />
           {isFetchingNextPage ? (
-            <div className="text-muted-foreground mt-4 text-center text-sm">
+            <div className="text-text-secondary mt-4 text-center text-sm">
               Loading more posts...
             </div>
           ) : null}

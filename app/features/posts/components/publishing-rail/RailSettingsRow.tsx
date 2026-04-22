@@ -25,7 +25,7 @@ export function RailSettingsRow({
         <Label
           htmlFor={labelFor}
           className={cn(
-            "text-foreground text-xs leading-none font-medium",
+            "text-text text-xs leading-none font-medium",
             labelFor && "cursor-pointer"
           )}
         >
@@ -34,7 +34,7 @@ export function RailSettingsRow({
         <div className="flex shrink-0 items-center">{control}</div>
       </div>
       {helperText ? (
-        <p className="text-muted-foreground text-[10px] leading-snug">
+        <p className="text-text-secondary text-[10px] leading-snug">
           {helperText}
         </p>
       ) : null}
@@ -60,10 +60,10 @@ export function RailSettingsValueRow({
 }) {
   const inner = (
     <>
-      <span className="text-foreground w-24 shrink-0 text-xs font-medium">
+      <span className="text-text w-24 shrink-0 text-xs font-medium">
         {label}
       </span>
-      <span className="text-muted-foreground min-w-0 flex-1 truncate text-right text-xs">
+      <span className="text-text-secondary min-w-0 flex-1 truncate text-right text-xs">
         {value}
       </span>
       <span className="flex shrink-0 items-center">{trailing}</span>
@@ -76,7 +76,7 @@ export function RailSettingsValueRow({
         type="button"
         className={cn(
           RAIL_SETTINGS_ROW,
-          "hover:bg-muted/30 w-full cursor-pointer rounded-sm text-left transition-colors",
+          "hover:bg-surface-hover/60 motion-fast w-full cursor-pointer rounded-sm text-left",
           className
         )}
         onClick={onClick}

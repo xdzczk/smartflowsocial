@@ -7,14 +7,14 @@ export const MOBILE_FILTER_INPUT_CLASS =
 
 /** Mobile-only classes for SelectTrigger to match content type / queue filter triggers. */
 export const MOBILE_FILTER_SELECT_TRIGGER_CLASS =
-  "max-md:h-7 max-md:border-0 max-md:border-b-2 max-md:border-transparent max-md:bg-transparent max-md:px-1 max-md:py-1.5 max-md:text-xs max-md:font-medium max-md:shadow-none max-md:focus:ring-0 max-md:focus:ring-offset-0 max-md:[&>svg]:ml-0";
+  "max-md:h-7 max-md:border-0 max-md:border-b-2 max-md:border-transparent max-md:bg-transparent max-md:px-1 max-md:py-1.5 max-md:text-xs max-md:font-medium max-md:shadow-none max-md:focus-visible:ring-0 max-md:focus-visible:ring-offset-0 max-md:[&>svg]:ml-0";
 
 /** Mobile-only label style to match content type / queue filter (same color and size). */
 export const MOBILE_FILTER_LABEL_CLASS =
-  "max-md:text-xs max-md:font-medium max-md:text-foreground";
+  "max-md:text-xs max-md:font-medium max-md:text-text";
 
-/** Desktop: label style to match content type tabs (text-sm font-medium text-foreground). */
-export const DESKTOP_FILTER_LABEL_CLASS = "md:font-medium md:text-foreground";
+/** Desktop: label style to match content type tabs (text-sm font-medium text-text). */
+export const DESKTOP_FILTER_LABEL_CLASS = "md:font-medium md:text-text";
 
 /** Desktop: date input style to match content type / queue filter (underline, same text size, compact height). */
 export const DESKTOP_FILTER_INPUT_CLASS =

@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 
-const TEXT_PRIMARY = "text-primary";
+const TEXT_PRIMARY = "text-brand";
 // Inactive nav icons: slightly higher contrast than inactive text; match link hover so icon and text react together
-const TEXT_NAV_ICON_INACTIVE = "text-foreground/70 group-hover:text-foreground";
+const TEXT_NAV_ICON_INACTIVE = "text-text/70 group-hover:text-text";
 const NAV_ICON_STROKE = 2.25;
 
 /** Pathname only (no search or hash) so active state matches when link has query params e.g. /dashboard/giveaway?days=7 */
@@ -69,14 +69,14 @@ function NavigationChildItemComponent({
 
   const title = !hasAccess ? "Subscription required" : child.label;
 
-  const childLinkClass = `group flex items-center rounded-lg border border-transparent text-sm font-medium relative focus:outline-none focus:ring-2 focus:ring-ring ${
+  const childLinkClass = `focus-ring group flex items-center rounded-lg border border-transparent text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
-      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
+      ? "bg-surface-selected text-text border-border-subtle"
       : hasAccess
-        ? "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
-        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
+        ? "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
+        : "text-text-secondary/50 cursor-not-allowed opacity-60"
   }`;
 
   return (
@@ -89,7 +89,7 @@ function NavigationChildItemComponent({
       tabIndex={sectionExpanded ? undefined : -1}
     >
       <span
-        className={`flex flex-none shrink-0 items-center ${isActive ? "text-foreground dark:text-primary" : TEXT_NAV_ICON_INACTIVE}`}
+        className={`flex flex-none shrink-0 items-center ${isActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE}`}
       >
         {child.icon}
       </span>
@@ -98,7 +98,7 @@ function NavigationChildItemComponent({
           <span className="grow py-2">{child.label}</span>
           {!hasAccess ? (
             <Lock
-              className="h-4 w-4 flex-shrink-0 text-amber-500"
+              className="text-warning h-4 w-4 flex-shrink-0"
               strokeWidth={NAV_ICON_STROKE}
             />
           ) : null}
@@ -200,10 +200,10 @@ export function ExpandableNavigationSection({
     }, 0);
   };
 
-  const parentClass = `group flex items-center gap-2 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
+  const parentClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
     isAnyChildActive
-      ? "bg-muted text-foreground border-border dark:bg-muted dark:text-primary dark:border-border"
-      : "text-muted-foreground hover:bg-muted hover:text-foreground active:border-border"
+      ? "bg-surface-selected text-text border-border-subtle"
+      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
   }`;
 
   return (
@@ -222,16 +222,16 @@ export function ExpandableNavigationSection({
         aria-controls={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}
       >
         <span
-          className={`flex flex-none items-center ${isAnyChildActive ? "text-foreground dark:text-primary" : TEXT_NAV_ICON_INACTIVE}`}
+          className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE}`}
         >
           {icon}
         </span>
         <span className="grow py-2 text-left">
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-cluster-tight.5">
             <span>{title}</span>
             {showSubtleHint ? (
               <span
-                className="bg-primary/70 inline-block h-1.5 w-1.5 rounded-full"
+                className="bg-brand/70 inline-block h-1.5 w-1.5 rounded-full"
                 aria-hidden
               />
             ) : null}

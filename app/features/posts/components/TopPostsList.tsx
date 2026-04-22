@@ -90,9 +90,9 @@ export default function TopPostsList({
   };
 
   return (
-    <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
+    <Card className="bg-surface-hover/30 shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
-        <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
+        <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
           Top Posts
         </h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
@@ -102,13 +102,13 @@ export default function TopPostsList({
             aria-label="Last 7 days"
             className={
               timeframeDays === 7
-                ? "text-foreground focus:ring-ring rounded font-medium underline focus:ring-2 focus:outline-none"
-                : "text-muted-foreground/80 hover:text-muted-foreground focus:ring-ring rounded focus:ring-2 focus:outline-none"
+                ? "focus-ring text-text rounded-xs font-medium underline"
+                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
             }
           >
             7d
           </Link>
-          <span className="text-muted-foreground/60" aria-hidden>
+          <span className="text-text-secondary/60" aria-hidden>
             |
           </span>
           <Link
@@ -117,8 +117,8 @@ export default function TopPostsList({
             aria-label="Last 30 days"
             className={
               timeframeDays === 30
-                ? "text-foreground focus:ring-ring rounded font-medium underline focus:ring-2 focus:outline-none"
-                : "text-muted-foreground/80 hover:text-muted-foreground focus:ring-ring rounded focus:ring-2 focus:outline-none"
+                ? "focus-ring text-text rounded-xs font-medium underline"
+                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
             }
           >
             30d
@@ -128,10 +128,10 @@ export default function TopPostsList({
       <CardContent className="px-4 pt-0 pb-3">
         {topPosts.length === 0 ? (
           <div className="space-y-1">
-            <p className="text-muted-foreground/80 text-[11px]">
+            <p className="text-text-secondary/80 text-[11px]">
               No posted content in this period.
             </p>
-            <p className="text-muted-foreground/60 text-[10px]">
+            <p className="text-text-secondary/60 text-[10px]">
               Posted content in the last {timeframeDays}d will appear here by
               engagement.
             </p>
@@ -151,10 +151,10 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="border-border/60 hover:bg-muted/50 focus:ring-ring flex w-full flex-row items-center gap-3 rounded border p-2 text-left text-[11px] transition-colors focus:ring-2 focus:outline-none"
+                    className="focus-ring border-border/60 hover:bg-surface-hover/50 motion-fast flex w-full flex-row items-center gap-3 rounded-xs border p-2 text-left text-[11px]"
                     aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
-                    <div className="bg-muted/50 flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
+                    <div className="bg-surface-hover/50 flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
                       {firstImage ? (
                         <MediaThumbnail
                           src={firstImage}
@@ -165,7 +165,7 @@ export default function TopPostsList({
                           }
                           hidePlayButton={true}
                           fallback={
-                            <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                            <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-[10px]">
                               {item.post.postType === "VIDEO"
                                 ? "Video"
                                 : "Image"}
@@ -173,41 +173,41 @@ export default function TopPostsList({
                           }
                         />
                       ) : (
-                        <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]">
+                        <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-[10px]">
                           {item.post.postType === "TEXT" ? "Text" : "Post"}
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-muted-foreground/90 min-w-0 truncate text-[11px] leading-snug font-medium">
+                      <p className="text-text-secondary/90 min-w-0 truncate text-[11px] leading-snug font-medium">
                         {preview}
                       </p>
                       <p
-                        className="text-muted-foreground/80 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] leading-snug"
+                        className="text-text-secondary/80 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] leading-snug"
                         aria-hidden
                       >
                         <span className="inline-flex items-center gap-0.5">
-                          <Heart className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <Heart className="text-text-secondary/80 size-3.5 shrink-0" />
                           {likes}
                         </span>
-                        <span className="text-muted-foreground/60" aria-hidden>
+                        <span className="text-text-secondary/60" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <MessageCircle className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <MessageCircle className="text-text-secondary/80 size-3.5 shrink-0" />
                           {replies}
                         </span>
-                        <span className="text-muted-foreground/60" aria-hidden>
+                        <span className="text-text-secondary/60" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <Zap className="text-muted-foreground/80 size-3.5 shrink-0" />
+                          <Zap className="text-text-secondary/80 size-3.5 shrink-0" />
                           {zaps}
                         </span>
                         {relativeTime ? (
                           <>
                             <span
-                              className="text-muted-foreground/60"
+                              className="text-text-secondary/60"
                               aria-hidden
                             >
                               ·

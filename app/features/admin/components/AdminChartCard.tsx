@@ -43,16 +43,16 @@ export function AdminChartCard({
         <div>
           <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
           {subtitle ? (
-            <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>
+            <p className="text-text-secondary mt-0.5 text-xs">{subtitle}</p>
           ) : null}
           {confidenceHint ? (
-            <p className="text-muted-foreground/90 mt-1 text-[11px] leading-snug">
+            <p className="text-text-secondary/90 mt-1 text-[11px] leading-snug">
               {confidenceHint}
             </p>
           ) : null}
         </div>
         {legend ? (
-          <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
+          <div className="text-text-secondary flex flex-wrap gap-2 text-xs">
             {legend}
           </div>
         ) : null}
@@ -65,8 +65,8 @@ export function AdminChartCard({
         )}
       >
         {empty ? (
-          <div className="text-muted-foreground max-w-md px-2 text-center text-sm">
-            <p className="text-foreground/90 font-medium">{emptyHeading}</p>
+          <div className="text-text-secondary max-w-md px-2 text-center text-sm">
+            <p className="text-text/90 font-medium">{emptyHeading}</p>
             {emptyDescription ? (
               <p className="mt-2 text-xs leading-relaxed">{emptyDescription}</p>
             ) : null}

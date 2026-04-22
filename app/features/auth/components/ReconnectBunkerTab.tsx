@@ -13,7 +13,7 @@ export function ReconnectBunkerTab({
 }: ReconnectBunkerTabProps) {
   return (
     <div className="space-y-2">
-      <p className="text-muted-foreground text-xs">
+      <p className="text-text-secondary text-xs">
         Paste a bunker or NIP-46 connection string from your signer app.
       </p>
       <div className="space-y-1">

@@ -235,7 +235,7 @@ export function LongFormPublishingOptions({
       <RailSectionHeader>Timing</RailSectionHeader>
       <Label
         htmlFor="scheduledFor"
-        className="text-muted-foreground text-xs font-medium"
+        className="text-text-secondary text-xs font-medium"
       >
         When should this enter the network?
       </Label>
@@ -288,12 +288,12 @@ export function LongFormPublishingOptions({
     </div>
   ) : (
     <div className="space-y-3">
-      <p className="text-muted-foreground text-[11px] font-medium uppercase">
+      <p className="text-text-secondary text-[11px] font-medium uppercase">
         Timing
       </p>
       <Label
         htmlFor="scheduledFor"
-        className="text-muted-foreground dark:text-foreground text-xs font-medium"
+        className="text-text-secondary dark:text-text text-xs font-medium"
       >
         When should this enter the network?
       </Label>
@@ -313,7 +313,7 @@ export function LongFormPublishingOptions({
             onScheduledForChange(clampDateTimeLocalToMin(v, min));
           }}
           min={getNowForDateTimeLocal(userTimezone)}
-          className="bg-background flex-1"
+          className="bg-canvas flex-1"
           placeholder="Select date and time"
         />
       </div>
@@ -326,7 +326,7 @@ export function LongFormPublishingOptions({
             variant="outline"
             size="sm"
             onClick={onNextSlotClick}
-            className="border-primary text-foreground hover:bg-muted"
+            className="border-brand text-text hover:bg-surface-hover"
           >
             Next Slot
           </Button>
@@ -362,7 +362,7 @@ export function LongFormPublishingOptions({
     <>
       <Separator className="my-4" />
       <div className="border-border/50 space-y-6">
-        <h3 className="text-muted-foreground text-sm font-medium">Publish</h3>
+        <h3 className="text-text-secondary text-sm font-medium">Publish</h3>
         {queueBlock}
         {hashtagBlock}
         {scheduleBlock}

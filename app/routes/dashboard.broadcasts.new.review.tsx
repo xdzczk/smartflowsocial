@@ -3,8 +3,8 @@ import { defer, json, redirect } from "@remix-run/node";
 import { Await, Form, Link, useLoaderData } from "@remix-run/react";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
+import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { BroadcastReviewPageSkeleton } from "~/components/skeletons/RoutePageSkeletons";
 import { requireUserId } from "~/features/auth";
 import {
   formatBroadcastAudienceLabel,
@@ -286,16 +286,16 @@ function BroadcastNewReviewRouteLoaded({
       <div>
         <Link
           to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}
-          className="text-muted-foreground text-sm hover:underline"
+          className="text-text-secondary text-sm hover:underline"
         >
           ← Back to edit
         </Link>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           Review broadcast
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           You are about to enqueue delivery to{" "}
-          <strong className="text-foreground">
+          <strong className="text-text">
             {String(pendingRecipients.length)}
           </strong>{" "}
           recipients. Review audience, compatibility, and schedule carefully
@@ -308,41 +308,41 @@ function BroadcastNewReviewRouteLoaded({
         <div className="space-y-6">
           <section className="border-border rounded-lg border p-4">
             <h2 className="font-medium">Campaign summary</h2>
-            <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
+            <ul className="text-text-secondary mt-3 space-y-2 text-sm">
               <li>
-                <span className="text-foreground font-medium">Name:</span>{" "}
+                <span className="text-text font-medium">Name:</span>{" "}
                 {campaign.name}{" "}
                 <span className="text-xs">
                   (internal only; recipients will not see this)
                 </span>
               </li>
               <li>
-                <span className="text-foreground font-medium">Status:</span>{" "}
+                <span className="text-text font-medium">Status:</span>{" "}
                 {formatBroadcastCampaignStatus(campaign.status)}
               </li>
               <li>
-                <span className="text-foreground font-medium">Audience:</span>{" "}
+                <span className="text-text font-medium">Audience:</span>{" "}
                 {formatBroadcastAudienceLabel(
                   campaign.audienceType,
                   campaign.totalRecipients
                 )}
               </li>
               <li>
-                <span className="text-foreground font-medium">Delivery:</span>{" "}
+                <span className="text-text font-medium">Delivery:</span>{" "}
                 {formatBroadcastDeliveryMode(campaign.deliveryMode)}
               </li>
               <li>
-                <span className="text-foreground font-medium">Strategy:</span>{" "}
+                <span className="text-text font-medium">Strategy:</span>{" "}
                 {campaign.sendStrategy === "STAGGERED"
                   ? "Staggered pacing (slight delay between jobs)"
                   : "Standard concurrency"}
               </li>
               <li>
-                <span className="text-foreground font-medium">Schedule:</span>{" "}
+                <span className="text-text font-medium">Schedule:</span>{" "}
                 {scheduleSentence}
               </li>
               <li>
-                <span className="text-foreground font-medium">Signer:</span>{" "}
+                <span className="text-text font-medium">Signer:</span>{" "}
                 <span className="font-mono text-xs break-all">
                   {signerNpub ?? "Connect your Nostr signer to finalize"}
                 </span>
@@ -350,11 +350,11 @@ function BroadcastNewReviewRouteLoaded({
             </ul>
             <div className="border-border mt-4 border-t pt-4">
               <h3 className="text-sm font-medium">Message preview</h3>
-              <p className="text-muted-foreground mt-2 max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
+              <p className="text-text-secondary mt-2 max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
                 {previewMessage}
               </p>
               {sampleUnsubscribeUrl ? (
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Preview includes a sample unsubscribe link. Each recipient
                   gets their own unique link.
                 </p>
@@ -364,7 +364,7 @@ function BroadcastNewReviewRouteLoaded({
 
           <section className="border-border rounded-lg border p-4">
             <h2 className="font-medium">Recipient resolution</h2>
-            <ul className="text-muted-foreground mt-3 space-y-1 text-sm">
+            <ul className="text-text-secondary mt-3 space-y-1 text-sm">
               <li>Final send count: {campaign.totalRecipients}</li>
               <li>
                 Suppressed (pre-send): {campaign.suppressedCount}
@@ -373,7 +373,7 @@ function BroadcastNewReviewRouteLoaded({
                     {" "}
                     <Link
                       to="/dashboard/broadcasts/suppression"
-                      className="text-primary font-medium hover:underline"
+                      className="text-brand font-medium hover:underline"
                     >
                       View suppression list
                     </Link>
@@ -387,7 +387,7 @@ function BroadcastNewReviewRouteLoaded({
               </li>
               <li>Pending signatures: {pendingRecipients.length}</li>
             </ul>
-            <p className="text-muted-foreground mt-3 text-xs">
+            <p className="text-text-secondary mt-3 text-xs">
               Suppressed recipients are excluded from delivery based on your
               list and self-send rules. You can add or remove entries anytime
               before signing.
@@ -397,18 +397,18 @@ function BroadcastNewReviewRouteLoaded({
           {snapshotSummary || snapshotSourceTab ? (
             <section className="border-border rounded-lg border p-4">
               <h2 className="font-medium">Composer snapshot</h2>
-              <p className="text-muted-foreground mt-2 text-sm">
+              <p className="text-text-secondary mt-2 text-sm">
                 {snapshotSourceTab ? (
                   <>
                     Source tab when drafted:{" "}
-                    <span className="text-foreground font-medium">
+                    <span className="text-text font-medium">
                       {snapshotSourceTab}
                     </span>
                   </>
                 ) : null}
               </p>
               {snapshotSummary ? (
-                <ul className="text-muted-foreground mt-2 space-y-1 text-sm">
+                <ul className="text-text-secondary mt-2 space-y-1 text-sm">
                   {typeof snapshotSummary["parsed"] === "number" ? (
                     <li>
                       Parsed (from composer):{" "}
@@ -440,7 +440,7 @@ function BroadcastNewReviewRouteLoaded({
                   ) : null}
                 </ul>
               ) : null}
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-text-secondary mt-2 text-xs">
                 Final counts above reflect server resolution (suppression,
                 exclusions, graph).
               </p>
@@ -449,14 +449,14 @@ function BroadcastNewReviewRouteLoaded({
 
           <section className="border-border rounded-lg border p-4">
             <h2 className="font-medium">Save audience</h2>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               Save this audience definition to your library for reuse (same type
               and recipient lines as this draft).
             </p>
             <Form
               method="post"
               action="/dashboard/broadcasts/audiences"
-              className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+              className="stack-tight mt-3 sm:flex-row sm:flex-wrap sm:items-end"
             >
               <input type="hidden" name="intent" value="save_from_review" />
               <input type="hidden" name="campaignId" value={campaign.id} />
@@ -471,12 +471,12 @@ function BroadcastNewReviewRouteLoaded({
                   id="save-audience-name"
                   name="name"
                   defaultValue={`${campaign.name} audience`}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
                 />
               </div>
               <button
                 type="submit"
-                className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+                className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
               >
                 Save as audience
               </button>
@@ -487,14 +487,14 @@ function BroadcastNewReviewRouteLoaded({
         <div className="space-y-6">
           <section className="border-border rounded-lg border p-4">
             <h2 className="font-medium">Compatibility forecast</h2>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               {broadcastCompatibilityForecastNote(campaign.deliveryMode)}
             </p>
           </section>
 
           <section className="border-border rounded-lg border p-4">
             <h2 className="font-medium">Plan limits</h2>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               Plan: {planType} · up to {limits.maxRecipientsPerCampaign}{" "}
               recipients per broadcast
               {limits.maxDailyBroadcastRecipients > 0
@@ -514,8 +514,8 @@ function BroadcastNewReviewRouteLoaded({
                     className={cn(
                       "rounded-md px-3 py-2",
                       w.level === "warning"
-                        ? "bg-amber-500/10 text-amber-950 dark:text-amber-100"
-                        : "bg-muted/50 text-muted-foreground"
+                        ? "bg-warning/10 text-warning-text"
+                        : "bg-surface-hover/50 text-text-secondary"
                     )}
                   >
                     {w.message}
@@ -525,15 +525,15 @@ function BroadcastNewReviewRouteLoaded({
             </section>
           ) : null}
 
-          <section className="border-border bg-muted/20 rounded-lg border p-4">
-            <p className="text-muted-foreground text-xs">
+          <section className="border-border bg-surface-hover/20 rounded-lg border p-4">
+            <p className="text-text-secondary text-xs">
               Use broadcasts for relevant updates. Repeated unsolicited DMs can
               damage sender reputation on the network.
             </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <div className="stack-tight mt-4 sm:flex-row sm:flex-wrap">
               <Link
                 to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}
-                className="border-input bg-background hover:bg-muted inline-flex justify-center rounded-md border px-4 py-2 text-sm font-medium"
+                className="border-border bg-canvas hover:bg-surface-hover inline-flex justify-center rounded-md border px-4 py-2 text-sm font-medium"
               >
                 Back to edit
               </Link>
@@ -543,18 +543,18 @@ function BroadcastNewReviewRouteLoaded({
                   void runFinalize();
                 }}
                 disabled={!!finalizeProgress}
-                className="bg-primary text-primary-foreground inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-brand-on inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {scheduledIsFuture ? "Sign and schedule" : "Sign and send now"}
               </button>
             </div>
             {finalizeProgress ? (
-              <p className="text-muted-foreground mt-2 text-sm">
+              <p className="text-text-secondary mt-2 text-sm">
                 {finalizeProgress}
               </p>
             ) : null}
             {finalizeError ? (
-              <p className="text-destructive mt-2 text-sm">{finalizeError}</p>
+              <p className="text-danger mt-2 text-sm">{finalizeError}</p>
             ) : null}
           </section>
         </div>

@@ -48,8 +48,8 @@ export function TextPostPreview({
   const pad = ultraCompact ? "py-0.5" : compact ? "py-1" : "py-2";
   const primaryClass =
     bodyEmphasis === "strong"
-      ? "text-foreground text-[15px] font-medium leading-relaxed whitespace-pre-wrap"
-      : "text-foreground text-[15px] leading-relaxed whitespace-pre-wrap";
+      ? "text-text text-[15px] font-medium leading-relaxed whitespace-pre-wrap"
+      : "text-text text-[15px] leading-relaxed whitespace-pre-wrap";
 
   const isRepost = relationshipType === "repost";
   const isQuote = relationshipType === "quote";
@@ -67,7 +67,7 @@ export function TextPostPreview({
     <div className="space-y-3">
       <PostPreviewSurface className={pad}>
         {isReply && replyParentHint ? (
-          <p className="text-muted-foreground mb-2 text-[11px] font-medium">
+          <p className="text-text-secondary mb-2 text-[11px] font-medium">
             Replying to {replyParentHint}
           </p>
         ) : null}
@@ -78,7 +78,7 @@ export function TextPostPreview({
 
         {isQuote ? (
           <div className="mt-3">
-            <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
+            <p className="text-text-secondary/90 mb-1.5 text-[10px] font-medium tracking-tight">
               Quoted post
             </p>
             <QuotedPostBlock
@@ -95,7 +95,7 @@ export function TextPostPreview({
             {repostHero ? (
               <>
                 <div>
-                  <p className="text-muted-foreground/90 mb-1.5 text-[10px] font-medium tracking-tight">
+                  <p className="text-text-secondary/90 mb-1.5 text-[10px] font-medium tracking-tight">
                     Reposted post
                   </p>
                   <QuotedPostBlock
@@ -107,7 +107,7 @@ export function TextPostPreview({
                 </div>
                 {primary ? (
                   <div>
-                    <p className="text-muted-foreground/90 mb-1 text-[10px] font-medium">
+                    <p className="text-text-secondary/90 mb-1 text-[10px] font-medium">
                       Added text
                     </p>
                     <p className={primaryClass + " " + primaryBodyClass}>
@@ -115,7 +115,7 @@ export function TextPostPreview({
                     </p>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm italic">
+                  <p className="text-text-secondary text-sm italic">
                     No added text
                   </p>
                 )}
@@ -123,7 +123,7 @@ export function TextPostPreview({
             ) : primary ? (
               <p className={primaryClass + " " + primaryBodyClass}>{primary}</p>
             ) : (
-              <p className="text-muted-foreground text-sm italic">Repost</p>
+              <p className="text-text-secondary text-sm italic">Repost</p>
             )}
           </div>
         ) : null}
@@ -132,7 +132,7 @@ export function TextPostPreview({
           primary ? (
             <p className={primaryClass + " " + primaryBodyClass}>{primary}</p>
           ) : showEmptyBody ? (
-            <p className="text-muted-foreground text-sm italic">
+            <p className="text-text-secondary text-sm italic">
               {detailType === "scheduled" ? "No caption" : "Empty post"}
             </p>
           ) : null
@@ -141,7 +141,7 @@ export function TextPostPreview({
         {shouldClampPrimary ? (
           <button
             type="button"
-            className="text-primary mt-1 text-xs font-medium hover:underline"
+            className="text-brand mt-1 text-xs font-medium hover:underline"
             onClick={() => setExpanded((value) => !value)}
           >
             {expanded ? "Show less" : "Read more"}
@@ -149,7 +149,7 @@ export function TextPostPreview({
         ) : null}
 
         {secondary && !isRepost ? (
-          <p className="text-muted-foreground border-border mt-3 border-t pt-3 text-sm leading-relaxed whitespace-pre-wrap">
+          <p className="text-text-secondary border-border mt-3 border-t pt-3 text-sm leading-relaxed whitespace-pre-wrap">
             {secondary}
           </p>
         ) : null}
@@ -158,8 +158,8 @@ export function TextPostPreview({
         <p
           className={
             ultraCompact
-              ? "text-muted-foreground/70 mt-1.5 text-[10px] leading-snug"
-              : "text-muted-foreground/80 mt-2 text-xs leading-snug"
+              ? "text-text-secondary/70 mt-1.5 text-[10px] leading-snug"
+              : "text-text-secondary/80 mt-2 text-xs leading-snug"
           }
         >
           {contextLine}

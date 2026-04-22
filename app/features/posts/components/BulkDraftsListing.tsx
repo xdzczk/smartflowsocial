@@ -26,13 +26,13 @@ function formatUpdatedAt(iso: string): string {
 export function BulkDraftsListing({ groups }: BulkDraftsListingProps) {
   if (groups.length === 0) {
     return (
-      <div className="text-muted-foreground p-6 text-center">
+      <div className="text-text-secondary p-6 text-center">
         <p className="mb-3">No bulk drafts.</p>
         <p className="mb-4">
           Save a batch of posts as a draft from{" "}
           <Link
             to="/dashboard/bulkposts"
-            className="text-primary font-medium hover:underline"
+            className="text-brand font-medium hover:underline"
           >
             Bulk Posts
           </Link>{" "}
@@ -48,12 +48,12 @@ export function BulkDraftsListing({ groups }: BulkDraftsListingProps) {
         <li key={g.id}>
           <Link
             to={`/dashboard/bulkposts?groupId=${encodeURIComponent(g.id)}`}
-            className="hover:bg-muted/50 flex items-center justify-between gap-4 px-4 py-3 transition-colors"
+            className="hover:bg-surface-hover/50 motion-fast flex items-center justify-between gap-4 px-4 py-3"
           >
             <span className="font-medium">
               {g.postCount} {g.postCount === 1 ? "post" : "posts"}
             </span>
-            <span className="text-muted-foreground text-sm">
+            <span className="text-text-secondary text-sm">
               Last saved {formatUpdatedAt(g.updatedAt)}
             </span>
           </Link>

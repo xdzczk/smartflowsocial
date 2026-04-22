@@ -90,10 +90,10 @@ export function BulkPostCard({
             <MediaThumbnail
               src={imageUrl}
               alt="Original post preview"
-              className="h-24 w-24 rounded object-cover"
+              className="h-24 w-24 rounded-xs object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
-            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+            <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
               <Share2
                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                 strokeWidth={INLINE_ICON_STROKE}
@@ -104,7 +104,7 @@ export function BulkPostCard({
         );
       }
       return (
-        <div className="bg-muted text-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
+        <div className="bg-surface-hover text-text flex h-24 w-24 items-center justify-center rounded-xs text-xs font-medium">
           REPOST
         </div>
       );
@@ -119,7 +119,7 @@ export function BulkPostCard({
             <MediaThumbnail
               src={imageUrl}
               alt="Quote post preview"
-              className="h-24 w-24 rounded object-cover"
+              className="h-24 w-24 rounded-xs object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
             <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
@@ -133,7 +133,7 @@ export function BulkPostCard({
         );
       }
       return (
-        <div className="bg-success/20 text-success dark:bg-success dark:text-success flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
+        <div className="bg-success/20 text-success dark:bg-success dark:text-success flex h-24 w-24 items-center justify-center rounded-xs text-xs font-medium">
           QUOTE
         </div>
       );
@@ -148,7 +148,7 @@ export function BulkPostCard({
         <MediaThumbnail
           src={repostUrl}
           alt="Preview"
-          className="h-24 w-24 rounded object-cover"
+          className="h-24 w-24 rounded-xs object-cover"
           onClick={() => onMediaClick(repostUrl)}
         />
       );
@@ -172,7 +172,7 @@ export function BulkPostCard({
         <MediaThumbnail
           src={previewInfo.url}
           alt="Preview"
-          className="h-24 w-24 rounded object-cover"
+          className="h-24 w-24 rounded-xs object-cover"
           onClick={() => onMediaClick(previewInfo.url)}
           forceType={previewInfo.isVideo ? "video" : "image"}
         />
@@ -181,7 +181,7 @@ export function BulkPostCard({
 
     // Fallback: TEXT placeholder
     return (
-      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
+      <div className="dark:bg-surface-hover dark:text-text-secondary bg-surface-hover text-text flex h-24 w-24 items-center justify-center rounded-xs text-xs font-medium">
         TEXT
       </div>
     );
@@ -201,7 +201,7 @@ export function BulkPostCard({
             value={post.caption}
             onChange={(e) => onCaptionChange(index, e.target.value)}
             disabled={post.isKind6Repost}
-            className={`dark:bg-card dark:text-foreground text-foreground w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-muted bg-muted cursor-not-allowed" : ""}`}
+            className={`dark:bg-surface dark:text-text text-text w-full rounded-lg border p-2 ${post.isKind6Repost ? "dark:bg-surface-hover bg-surface-hover cursor-not-allowed" : ""}`}
             rows={3}
             placeholder={
               post.isKind6Repost
@@ -212,7 +212,7 @@ export function BulkPostCard({
             }
           />
           {(post.isKind6Repost ?? post.isQuotePost) && post.originalCaption ? (
-            <div className="dark:bg-card bg-muted text-muted-foreground dark:text-foreground rounded border p-2 text-xs">
+            <div className="dark:bg-surface bg-surface-hover text-text-secondary dark:text-text rounded-xs border p-2 text-xs">
               <strong>Original:</strong>{" "}
               {post.originalCaption.length > 100
                 ? post.originalCaption.substring(0, 100) + "..."
@@ -255,7 +255,7 @@ export function BulkPostCard({
           value={post.scheduledFor}
           onChange={(e) => onDateChange(index, e.target.value)}
           min={getNowForDateTimeLocal(userTimezone)}
-          className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
+          className="dark:bg-surface text-text dark:text-text rounded-lg border p-2"
         />
       </td>
       <td className="p-4">
@@ -267,7 +267,7 @@ export function BulkPostCard({
           />
           <label
             htmlFor={`recyclable-${index}`}
-            className="text-muted-foreground dark:text-foreground ml-2 text-sm"
+            className="text-text-secondary dark:text-text ml-2 text-sm"
           >
             Recyclable
           </label>
@@ -277,7 +277,7 @@ export function BulkPostCard({
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="bg-destructive hover:bg-destructive rounded px-3 py-1 text-white"
+          className="bg-danger hover:bg-danger rounded-xs px-3 py-1 text-white"
         >
           Remove
         </button>

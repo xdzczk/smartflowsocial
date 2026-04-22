@@ -14,7 +14,7 @@ export function GiveawayDetailExcludeWinnerForm({
       <input type="hidden" name="winnerPubkey" value={winnerPubkey} />
       <button
         type="submit"
-        className="text-muted-foreground hover:text-destructive text-xs"
+        className="text-text-secondary hover:text-danger text-xs"
         disabled={fetcher.state !== "idle"}
       >
         Exclude

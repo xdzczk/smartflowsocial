@@ -38,7 +38,7 @@ export function RemoteSignerSessionList({
     return (
       <div
         className={cn(
-          "border-destructive bg-destructive/10 text-destructive rounded-md border p-3 text-sm",
+          "border-danger bg-danger/10 text-danger rounded-md border p-3 text-sm",
           className
         )}
       >
@@ -51,7 +51,7 @@ export function RemoteSignerSessionList({
     return (
       <div
         className={cn(
-          "text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm",
+          "text-text-secondary rounded-md border border-dashed p-4 text-center text-sm",
           className
         )}
       >
@@ -64,7 +64,7 @@ export function RemoteSignerSessionList({
     return (
       <div
         className={cn(
-          "text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm",
+          "text-text-secondary rounded-md border border-dashed p-4 text-center text-sm",
           className
         )}
       >
@@ -87,20 +87,20 @@ export function RemoteSignerSessionList({
               type="button"
               onClick={() => onSelect(session.id)}
               className={cn(
-                "hover:bg-muted/50 focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                "focus-ring hover:bg-surface-hover/50 motion-fast w-full rounded-md border px-3 py-2 text-left text-sm",
                 isSelected
-                  ? "border-primary bg-primary/5"
+                  ? "border-brand bg-brand/5"
                   : "border-transparent bg-transparent"
               )}
             >
               <span className="font-medium">{session.label}</span>
               {session.signerAppName ? (
-                <span className="text-muted-foreground ml-2 text-xs">
+                <span className="text-text-secondary ml-2 text-xs">
                   {session.signerAppName}
                 </span>
               ) : null}
               {session.status ? (
-                <span className="text-muted-foreground ml-2 text-xs">
+                <span className="text-text-secondary ml-2 text-xs">
                   {session.status}
                 </span>
               ) : null}

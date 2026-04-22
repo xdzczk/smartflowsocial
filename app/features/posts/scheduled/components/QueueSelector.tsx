@@ -24,10 +24,7 @@ export function QueueSelector({
     <div className={cn("space-y-2", className)}>
       <label
         htmlFor={id}
-        className={cn(
-          "text-foreground block text-sm font-medium",
-          labelClassName
-        )}
+        className={cn("text-text block text-sm font-medium", labelClassName)}
       >
         Queue
       </label>
@@ -36,7 +33,7 @@ export function QueueSelector({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "border-border bg-background text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2",
+          "focus-ring border-border bg-canvas text-text focus:border-brand w-full rounded-md border px-3 py-2 text-sm",
           selectClassName
         )}
       >

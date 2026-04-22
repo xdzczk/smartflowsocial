@@ -38,7 +38,7 @@ function groupAlerts(
 export function AdminAlertList({ alerts }: { alerts: AdminAlertItem[] }) {
   if (alerts.length === 0) {
     return (
-      <div className="border-border bg-muted/20 text-muted-foreground rounded-lg border px-4 py-3 text-sm">
+      <div className="border-border bg-surface-hover/20 text-text-secondary rounded-lg border px-4 py-3 text-sm">
         No active issues detected for the current checks.
       </div>
     );
@@ -53,7 +53,7 @@ export function AdminAlertList({ alerts }: { alerts: AdminAlertItem[] }) {
         if (!items?.length) return null;
         return (
           <div key={cat}>
-            <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
+            <p className="text-text-secondary mb-2 text-[11px] font-semibold tracking-wide uppercase">
               {CATEGORY_LABEL[cat]}
             </p>
             <ul className="space-y-2">
@@ -62,14 +62,14 @@ export function AdminAlertList({ alerts }: { alerts: AdminAlertItem[] }) {
                   <Link
                     to={a.href}
                     className={cn(
-                      "hover:bg-muted/50 block rounded-lg border px-3 py-2 text-sm transition-colors",
+                      "hover:bg-surface-hover/50 motion-fast block rounded-lg border px-3 py-2 text-sm",
                       a.severity === "danger"
-                        ? "border-red-500/40 bg-red-500/5"
-                        : "border-amber-500/40 bg-amber-500/5"
+                        ? "border-danger/40 bg-danger/5"
+                        : "border-warning/40 bg-warning/5"
                     )}
                   >
                     <span className="font-medium">{a.message}</span>
-                    <span className="text-muted-foreground ml-2 text-xs">
+                    <span className="text-text-secondary ml-2 text-xs">
                       View →
                     </span>
                   </Link>

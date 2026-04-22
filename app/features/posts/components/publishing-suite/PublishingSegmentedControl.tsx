@@ -11,10 +11,10 @@ import {
 const segmentClass = (active: boolean, rowHeightClassName?: string) =>
   cn(
     rowHeightClassName ?? PUBLISHING_SEGMENTED_ROW_H,
-    "focus-visible:ring-ring flex min-w-0 flex-1 items-center justify-center px-2 text-center text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none sm:min-w-[3.5rem] sm:px-2.5",
+    "focus-ring flex min-w-0 flex-1 items-center justify-center px-2 text-center text-xs font-medium motion-fast sm:min-w-[3.5rem] sm:px-2.5",
     active
-      ? "bg-muted/40 text-foreground relative z-[1] font-semibold"
-      : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
+      ? "bg-surface-selected text-text relative z-[1] font-semibold"
+      : "text-text-secondary hover:bg-surface-hover/20 hover:text-text"
   );
 
 export interface PublishingSegmentLinkItem {

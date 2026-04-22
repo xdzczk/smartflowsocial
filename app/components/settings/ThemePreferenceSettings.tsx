@@ -137,13 +137,13 @@ export function ThemePreferenceSettings({
             <SelectItem value="dark">Dark</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-muted-foreground text-xs">{helper}</p>
-        <div className="text-muted-foreground flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs">
+        <p className="text-text-secondary text-xs">{helper}</p>
+        <div className="text-text-secondary flex min-h-[1.25rem] flex-wrap items-center gap-2 text-xs">
           {fetcher.data?.success ? (
             <span className="text-success">Saved.</span>
           ) : null}
           {fetcher.data?.error ? (
-            <span className="text-destructive">{fetcher.data.error}</span>
+            <span className="text-danger">{fetcher.data.error}</span>
           ) : null}
         </div>
       </div>
