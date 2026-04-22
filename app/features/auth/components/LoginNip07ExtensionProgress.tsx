@@ -53,10 +53,10 @@ export function LoginNip07ExtensionProgress({
     if (showStrongAssist) {
       setRightPanel(
         <div className="text-center sm:text-left">
-          <p className="text-foreground mb-2 text-sm font-semibold">
+          <p className="text-text mb-2 text-sm font-semibold">
             Still no prompt?
           </p>
-          <ul className="text-muted-foreground list-disc space-y-1.5 pl-4 text-left text-xs leading-relaxed">
+          <ul className="text-text-secondary list-disc space-y-1.5 pl-4 text-left text-xs leading-relaxed">
             <li>Unlock your extension and check the toolbar icon.</li>
             <li>Pop-ups may be blocked — allow them for this site.</li>
             <li>Try another browser profile if you use multiple.</li>
@@ -69,10 +69,10 @@ export function LoginNip07ExtensionProgress({
     if (showAssist) {
       setRightPanel(
         <div className="text-center sm:text-left">
-          <p className="text-foreground text-sm font-semibold">
+          <p className="text-text text-sm font-semibold">
             Check your extension
           </p>
-          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+          <p className="text-text-secondary mt-2 text-sm leading-relaxed">
             A signing prompt may be open behind this window or in the extension
             menu. Look for your Nostr signer in the browser toolbar.
           </p>
@@ -160,7 +160,7 @@ export function LoginNip07ExtensionProgress({
     >
       <div className="flex items-start gap-3">
         <Loader2
-          className="text-primary mt-0.5 h-5 w-5 shrink-0 animate-spin"
+          className="text-brand mt-0.5 h-5 w-5 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-3">
@@ -175,7 +175,7 @@ export function LoginNip07ExtensionProgress({
       ) : null}
 
       {nip07Available === false ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           No NIP-07 extension was detected. Install a signer or use remote
           signer instead.
         </p>
@@ -196,7 +196,7 @@ export function LoginNip07ExtensionProgress({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-text-secondary hover:text-text"
             onClick={() => onUseRemoteSigner()}
           >
             Use remote signer instead
@@ -210,7 +210,7 @@ export function LoginNip07ExtensionProgress({
             type="button"
             variant="default"
             size="sm"
-            className="shadow-md"
+            className="shadow-2"
             onClick={() => onUseRemoteSigner()}
           >
             Use remote signer

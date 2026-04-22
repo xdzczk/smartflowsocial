@@ -92,7 +92,7 @@ export function TemplateSettingsRail({
       <div className={cn(RAIL_PAD_X, RAIL_ZONE_PY, "space-y-4")}>
         <div>
           <RailSectionHeader>Template</RailSectionHeader>
-          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+          <p className="text-text-secondary mt-1 text-xs leading-relaxed">
             Reusable blueprint — not a live post. Publishing happens when you
             use this template in the composer.
           </p>
@@ -117,7 +117,7 @@ export function TemplateSettingsRail({
           </div>
           <Button
             variant="link"
-            className="text-muted-foreground mt-2 h-auto px-0 py-0 text-xs"
+            className="text-text-secondary mt-2 h-auto px-0 py-0 text-xs"
             asChild
           >
             <Link to={cancelHref}>Back to Templates</Link>
@@ -152,7 +152,7 @@ export function TemplateSettingsRail({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive h-8 px-2"
+              className="text-danger hover:text-danger h-8 px-2"
               onClick={onDeleteTemplate}
               disabled={deleteDisabled}
             >

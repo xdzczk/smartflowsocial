@@ -49,7 +49,7 @@ export function ResolvedPostCard({
   return (
     <article
       className={cn(
-        "border-border bg-card overflow-hidden rounded-xl border shadow-sm",
+        "border-border bg-surface shadow-1 overflow-hidden rounded-xl border",
         className
       )}
     >
@@ -61,7 +61,7 @@ export function ResolvedPostCard({
             className="h-10 w-10 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <div className="bg-muted text-muted-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+          <div className="bg-surface-hover text-text-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
             <User
               className={INLINE_ICON_SIZE_CLASS}
               strokeWidth={INLINE_ICON_STROKE}
@@ -71,10 +71,10 @@ export function ResolvedPostCard({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-foreground text-sm font-semibold">
+            <span className="text-text text-sm font-semibold">
               {displayName}
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-text-secondary text-xs">
               {formatDate(result.created_at * 1000, {
                 isUnixTimestamp: false,
               })}{" "}
@@ -86,7 +86,7 @@ export function ResolvedPostCard({
           to={eventUrl(result.id, nostrClientConfig)}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1.5"
+          className="text-text-secondary hover:text-text shrink-0 rounded-md p-1.5"
           title={`View on ${viewEventLabel}`}
         >
           <ExternalLink
@@ -99,11 +99,11 @@ export function ResolvedPostCard({
 
       <div className="px-4 py-3">
         {showMediaAttachedFallback ? (
-          <p className="text-muted-foreground mb-2 text-sm italic">
+          <p className="text-text-secondary mb-2 text-sm italic">
             Media attached
           </p>
         ) : bodyDisplay ? (
-          <p className="text-foreground text-[15px] leading-relaxed break-words whitespace-pre-wrap">
+          <p className="text-text text-[15px] leading-relaxed break-words whitespace-pre-wrap">
             {bodyDisplay}
           </p>
         ) : null}
@@ -130,7 +130,7 @@ export function ResolvedPostCard({
               </div>
             )}
             {result.mediaUrls.length > 6 ? (
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-text-secondary mt-2 text-xs">
                 +{result.mediaUrls.length - 6} more
               </p>
             ) : null}

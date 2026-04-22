@@ -66,24 +66,24 @@ export default function LongFormPreviewModal({
       />
 
       {/* Modal */}
-      <div className="bg-card relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg shadow-xl">
+      <div className="bg-surface-overlay shadow-3 relative mx-4 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-xl">
         {/* Header */}
         <div className="border-border dark:border-border flex items-center justify-between border-b p-6">
-          <h2 className="text-foreground text-lg font-semibold">
+          <h2 className="text-text text-lg font-semibold">
             Preview: How your post will look
           </h2>
           <Button
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="text-muted-foreground hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground"
+            className="text-text-secondary hover:text-text-secondary dark:text-text dark:hover:text-text"
           >
             ✕ Close
           </Button>
         </div>
 
         {/* Content */}
-        <div className="bg-card max-h-[calc(90vh-120px)] overflow-y-auto">
+        <div className="bg-surface max-h-[calc(90vh-120px)] overflow-y-auto">
           {/* Article Card Preview - matches the Primal/Nostr style */}
           <div className="mx-auto max-w-2xl p-6">
             {/* Author Header */}
@@ -92,11 +92,11 @@ export default function LongFormPreviewModal({
                 {author.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="text-foreground font-semibold">{author}</div>
+                <div className="text-text font-semibold">{author}</div>
               </div>
               <div className="ml-auto">
                 <MoreVertical
-                  className="text-foreground h-6 w-6"
+                  className="text-text h-6 w-6"
                   strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
@@ -104,7 +104,7 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Date and Source */}
-            <div className="text-muted-foreground dark:text-foreground mb-4 flex items-center gap-2 text-sm">
+            <div className="text-text-secondary dark:text-text mb-4 flex items-center gap-2 text-sm">
               <span>{formatDate()}</span>
               <span>•</span>
               <span>via {BRAND_NAME}</span>
@@ -118,13 +118,13 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Title */}
-            <h1 className="text-foreground mb-4 text-2xl leading-tight font-bold">
+            <h1 className="text-text mb-4 text-2xl leading-tight font-bold">
               {title || "Untitled Post"}
             </h1>
 
             {/* Cover Image */}
             {image ? (
-              <div className="mb-4 overflow-hidden rounded-2xl">
+              <div className="mb-4 overflow-hidden rounded-xl">
                 <img
                   src={image}
                   alt="Cover"
@@ -135,8 +135,8 @@ export default function LongFormPreviewModal({
 
             {/* Summary */}
             {summary ? (
-              <div className="dark:bg-card bg-muted mb-6 rounded-xl p-6">
-                <p className="text-muted-foreground dark:text-foreground text-lg leading-relaxed font-medium">
+              <div className="dark:bg-surface bg-surface-hover mb-6 rounded-xl p-6">
+                <p className="text-text-secondary dark:text-text text-lg leading-relaxed font-medium">
                   {summary}
                 </p>
               </div>
@@ -144,7 +144,7 @@ export default function LongFormPreviewModal({
 
             {/* Full Content */}
             <div
-              className="text-foreground mb-6"
+              className="text-text mb-6"
               style={{
                 fontSize: "1.1rem",
                 lineHeight: "1.7",
@@ -159,7 +159,7 @@ export default function LongFormPreviewModal({
               {/* Hashtags */}
               {displayedHashtags ? (
                 <div className="ml-auto flex items-center gap-2">
-                  <span className="text-muted-foreground dark:text-foreground text-xs">
+                  <span className="text-text-secondary dark:text-text text-xs">
                     {displayedHashtags}
                   </span>
                 </div>

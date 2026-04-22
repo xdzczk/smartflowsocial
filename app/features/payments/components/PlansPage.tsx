@@ -320,7 +320,7 @@ export function PlansPage(): ReactNode {
 
   return (
     <>
-      <div className="bg-background relative min-h-screen overflow-hidden">
+      <div className="bg-canvas relative min-h-screen overflow-hidden">
         <div className="from-secondary/25 via-background to-background dark:from-background/30 absolute inset-0 bg-gradient-to-b" />
 
         <Header />
@@ -332,24 +332,24 @@ export function PlansPage(): ReactNode {
               (B) H1: "Operator pricing for Nostr publishing" /
                   Lead: "Clear economics. Non-custodial Bitcoin and Lightning. Scale when you are ready." */}
           <div className="mx-auto mb-5 max-w-3xl text-center">
-            <div className="border-border bg-muted/70 text-muted-foreground mb-2 inline-flex rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-wide">
+            <div className="border-border bg-surface-hover/70 text-text-secondary mb-2 inline-flex rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-wide">
               Nostr-native publishing infrastructure
             </div>
-            <h1 className="text-foreground mb-2 text-4xl font-extrabold tracking-[-0.02em] sm:text-5xl sm:leading-[1.06]">
+            <h1 className="text-text mb-2 text-4xl font-extrabold tracking-[-0.02em] sm:text-5xl sm:leading-[1.06]">
               Simple pricing for serious Nostr publishing
             </h1>
-            <p className="text-muted-foreground/90 mx-auto max-w-2xl text-base leading-relaxed font-medium sm:text-lg">
+            <p className="text-text-secondary/90 mx-auto max-w-2xl text-base leading-relaxed font-medium sm:text-lg">
               Start free, then upgrade when you need more accounts, more
               workflow capacity, and hosted infrastructure.
             </p>
-            <p className="text-muted-foreground mt-3 text-sm">
+            <p className="text-text-secondary mt-3 text-sm">
               Yearly billing is available for Starter, Creator, and Pro at the
               equivalent of 10 months.
             </p>
           </div>
 
           <div className="mb-7 flex items-center justify-center">
-            <div className="border-border bg-background/75 inline-flex rounded-xl border p-1 shadow-sm backdrop-blur">
+            <div className="border-border bg-canvas/75 shadow-1 inline-flex rounded-xl border p-1 backdrop-blur">
               <button
                 type="button"
                 aria-pressed={billingCadence === "monthly"}
@@ -365,10 +365,10 @@ export function PlansPage(): ReactNode {
                     )
                   );
                 }}
-                className={`focus-visible:ring-primary/40 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
+                className={`focus-visible:ring-focus-ring/40 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
                   billingCadence === "monthly"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-surface text-text shadow-1"
+                    : "text-text-secondary hover:bg-surface-hover/60 hover:text-text"
                 }`}
               >
                 Monthly
@@ -388,10 +388,10 @@ export function PlansPage(): ReactNode {
                     )
                   );
                 }}
-                className={`focus-visible:ring-primary/40 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
+                className={`focus-visible:ring-focus-ring/40 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
                   billingCadence === "yearly"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-surface text-text shadow-1"
+                    : "text-text-secondary hover:bg-surface-hover/60 hover:text-text"
                 }`}
               >
                 Yearly
@@ -437,39 +437,39 @@ export function PlansPage(): ReactNode {
           </div>
 
           {founderOffering ? (
-            <section className="border-border from-card via-card to-muted/20 mb-7 rounded-2xl border bg-gradient-to-r p-4 shadow-md md:p-5">
-              <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
+            <section className="border-border from-card via-card to-muted/20 shadow-2 mb-7 rounded-xl border bg-gradient-to-r p-4 md:p-5">
+              <p className="text-brand text-[11px] font-semibold tracking-[0.14em] uppercase">
                 LIMITED ALLOCATION — LIFETIME ACCESS
               </p>
               <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-start lg:gap-5">
                 <div className="md:col-span-1 lg:col-span-4">
-                  <h2 className="text-foreground text-2xl font-bold tracking-tight md:text-[1.9rem]">
+                  <h2 className="text-text text-2xl font-bold tracking-tight md:text-[1.9rem]">
                     Founder
                   </h2>
-                  <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                  <p className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                     One-time purchase for permanent access to the top individual
                     tier. Limited to 21 seats.
                   </p>
-                  <p className="text-foreground mt-3 text-3xl font-bold tabular-nums">
+                  <p className="text-text mt-3 text-3xl font-bold tabular-nums">
                     ${founderOffering.oneTimePriceUsd}{" "}
-                    <span className="text-muted-foreground text-base font-medium">
+                    <span className="text-text-secondary text-base font-medium">
                       one-time
                     </span>
                   </p>
                 </div>
 
                 <div className="md:col-span-1 lg:col-span-5">
-                  <ul className="text-muted-foreground space-y-1.5 text-sm">
+                  <ul className="text-text-secondary space-y-1.5 text-sm">
                     {founderHighlights.map((benefit) => (
                       <li key={benefit} className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5 shrink-0 text-xs">
+                        <span className="text-brand mt-0.5 shrink-0 text-xs">
                           ✓
                         </span>
                         <span>{benefit}</span>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-muted-foreground/80 mt-2.5 text-xs">
+                  <p className="text-text-secondary/80 mt-2.5 text-xs">
                     Tied to one account owner. Not a shared workspace seat.
                   </p>
                 </div>
@@ -479,7 +479,7 @@ export function PlansPage(): ReactNode {
                     {isFounderCurrent ? (
                       <Link
                         to="/dashboard"
-                        className="bg-secondary text-secondary-foreground hover:bg-secondary/90 focus-visible:ring-primary/40 flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none"
+                        className="bg-surface-hover text-text hover:bg-surface-active focus-visible:ring-focus-ring/40 flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none"
                       >
                         You have Founder access
                       </Link>
@@ -494,7 +494,7 @@ export function PlansPage(): ReactNode {
                           }
                           openCheckoutForPlan(founderOffering.id);
                         }}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/40 rounded-lg px-4 py-3 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                        className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring/40 rounded-lg px-4 py-3 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
                       >
                         {isLoading && selectedPlan === founderOffering.id
                           ? "Processing…"
@@ -504,23 +504,23 @@ export function PlansPage(): ReactNode {
                       <button
                         type="button"
                         disabled
-                        className="bg-muted text-muted-foreground cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium"
+                        className="bg-surface-hover text-text-secondary cursor-not-allowed rounded-lg px-4 py-3 text-sm font-medium"
                       >
                         Sold out
                       </button>
                     )}
 
-                    <div className="border-border bg-background/70 rounded-lg border px-3 py-2.5">
-                      <p className="text-foreground text-sm font-semibold tabular-nums">
+                    <div className="border-border bg-canvas/70 rounded-lg border px-3 py-2.5">
+                      <p className="text-text text-sm font-semibold tabular-nums">
                         {founderOffering.seatsRemaining} seats remaining
                       </p>
-                      <p className="text-muted-foreground mt-0.5 text-xs tabular-nums">
+                      <p className="text-text-secondary mt-0.5 text-xs tabular-nums">
                         {founderOffering.seatsClaimed} claimed ·{" "}
                         {founderOffering.seatCap} total
                       </p>
                     </div>
 
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-text-secondary text-xs">
                       One-time purchase
                     </p>
                   </div>
@@ -530,10 +530,10 @@ export function PlansPage(): ReactNode {
           ) : null}
 
           <div className="mb-7">
-            <h2 className="text-foreground mb-2 text-center text-2xl font-bold tracking-tight">
+            <h2 className="text-text mb-2 text-center text-2xl font-bold tracking-tight">
               Compare plans
             </h2>
-            <p className="text-muted-foreground mx-auto mb-4 max-w-3xl text-center text-sm leading-relaxed">
+            <p className="text-text-secondary mx-auto mb-4 max-w-3xl text-center text-sm leading-relaxed">
               Compare strict-cap Free, Starter, Creator, and Pro, including
               workflow limits vs infrastructure access (e.g. Blossom-compatible
               hosted media and Blastr fanout). Founder is one-time, permanent
@@ -543,67 +543,67 @@ export function PlansPage(): ReactNode {
           </div>
 
           <div className="mx-auto mb-8 max-w-2xl">
-            <h2 className="text-foreground mb-1.5 text-center text-2xl font-bold tracking-tight">
+            <h2 className="text-text mb-1.5 text-center text-2xl font-bold tracking-tight">
               FAQ
             </h2>
-            <p className="text-muted-foreground mx-auto mb-4 max-w-xl text-center text-sm leading-relaxed">
+            <p className="text-text-secondary mx-auto mb-4 max-w-xl text-center text-sm leading-relaxed">
               Practical answers. This section does not replace the comparison
               table or checkout terms.
             </p>
             <dl className="space-y-4 text-sm">
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   How many accounts can I use on each plan?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   Free and Starter include one account. Creator includes up to
                   two. Pro includes up to five.
                 </dd>
               </div>
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   Can I change plans later?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   Yes. Move between Free, Starter, Creator, and Pro anytime.
                   Founder remains a separate one-time purchase while seats
                   remain.
                 </dd>
               </div>
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   Can I pay yearly?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   Yes. Starter, Creator, and Pro support yearly billing at the
                   equivalent of 10 months. Founder is one-time only.
                 </dd>
               </div>
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   What is hosted media?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   Starter, Creator, and Pro include uploads on
                   SmartFlowSocial&apos;s Blossom-compatible media
                   infrastructure. Storage and file-size limits vary by plan.
                 </dd>
               </div>
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   What is Blastr fanout distribution?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   Pro includes access to SmartFlowSocial&apos;s Blastr fanout
                   relay distribution layer for stronger publishing distribution
                   where supported.
                 </dd>
               </div>
               <div>
-                <dt className="text-foreground text-base font-semibold">
+                <dt className="text-text text-base font-semibold">
                   Do I need a wallet connection?
                 </dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dd className="text-text-secondary mt-1.5 text-sm leading-relaxed">
                   No. Lightning and on-chain checkout work without NWC. Add
                   Nostr Wallet Connect later if you want smoother recurring
                   wallet-driven flows.

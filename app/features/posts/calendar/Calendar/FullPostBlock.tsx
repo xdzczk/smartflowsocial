@@ -66,7 +66,7 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
-      className={`focus:ring-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] focus:ring-2 focus:outline-none ${
+      className={`focus-visible:ring-focus-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] focus-visible:ring-2 focus-visible:outline-none ${
         queueColorStyle ? "border-0" : "border-opacity-20 border border-current"
       } ${isPast ? "cursor-default" : "cursor-pointer"} ${
         isDragging
@@ -84,11 +84,11 @@ export function FullPostBlock({
               <MediaThumbnail
                 src={firstImage}
                 alt="Post thumbnail"
-                className="h-5 w-5 flex-shrink-0 rounded"
+                className="h-5 w-5 flex-shrink-0 rounded-[var(--calendar-radius-sm)]"
                 forceType={isVideoFile(firstImage) ? "video" : "image"}
                 hidePlayButton={hideVideoPlayButton}
                 fallback={
-                  <div className="bg-muted h-5 w-5 flex-shrink-0 rounded" />
+                  <div className="bg-surface-hover h-5 w-5 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
                 }
               />
               <PostBadges post={post} size="md" />
@@ -118,7 +118,7 @@ export function FullPostBlock({
               forceType={isVideoFile(firstImage) ? "video" : "image"}
               hidePlayButton={hideVideoPlayButton}
               fallback={
-                <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+                <div className="bg-surface-hover text-text-secondary flex h-full w-full items-center justify-center text-xs font-medium">
                   {post.postType === "VIDEO" || isVideoFile(firstImage)
                     ? "VIDEO"
                     : "MEDIA"}
@@ -130,13 +130,13 @@ export function FullPostBlock({
         </div>
       ) : null}
 
-      <p className="text-muted-foreground text-sm">
+      <p className="text-text-secondary text-sm">
         {isLongform ? (post.summary ?? postPreview) : postPreview}
       </p>
 
       {!isLongform && post.fileUrl.length > 0 ? (
         <div className="mt-2">
-          <div className="text-muted-foreground text-xs">
+          <div className="text-text-secondary text-xs">
             {post.fileUrl.length} file{post.fileUrl.length > 1 ? "s" : ""}
             {post.fileUrl.length > 1 ? " (carousel)" : null}
           </div>

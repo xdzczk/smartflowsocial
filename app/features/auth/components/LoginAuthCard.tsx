@@ -9,31 +9,31 @@ function DefaultRightPanel() {
   return (
     <div className="relative z-10 space-y-4 text-center sm:text-left">
       <div className="space-y-2">
-        <h2 className="text-foreground text-lg font-bold tracking-tight sm:text-xl">
+        <h2 className="text-text text-lg font-bold tracking-tight sm:text-xl">
           Sign in with your Nostr signer
         </h2>
-        <p className="text-foreground/90 text-sm leading-relaxed sm:text-base">
+        <p className="text-text/90 text-sm leading-relaxed sm:text-base">
           Your keys stay with your extension or remote signer.
         </p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-text-secondary text-sm leading-relaxed">
           SmartFlowSocial never asks for your private key.
         </p>
       </div>
-      <ul className="text-foreground/85 space-y-2.5 text-sm leading-snug">
+      <ul className="text-text/85 space-y-2.5 text-sm leading-snug">
         <li className="flex gap-2">
-          <span className="text-primary font-bold" aria-hidden>
+          <span className="text-brand font-bold" aria-hidden>
             ·
           </span>
           <span>Native Nostr authentication</span>
         </li>
         <li className="flex gap-2">
-          <span className="text-primary font-bold" aria-hidden>
+          <span className="text-brand font-bold" aria-hidden>
             ·
           </span>
           <span>Browser extension and remote signer supported</span>
         </li>
         <li className="flex gap-2">
-          <span className="text-primary font-bold" aria-hidden>
+          <span className="text-brand font-bold" aria-hidden>
             ·
           </span>
           <span>Fast access to your publishing dashboard</span>
@@ -49,7 +49,7 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
   return (
     <Card
       className={cn(
-        "border-border ring-border/45 flex min-h-0 w-full min-w-0 flex-col overflow-hidden ring-1 shadow-xl md:min-h-[min(440px,70vh)] md:flex-row dark:ring-0 dark:shadow-2xl",
+        "border-border ring-border/45 shadow-3 dark:shadow-3 flex min-h-0 w-full min-w-0 flex-col overflow-hidden ring-1 md:min-h-[min(440px,70vh)] md:flex-row dark:ring-0",
         /* Mobile: show QR / approval block first when waiting for NIP-46 */
         isAwaitingApproval && "max-md:flex-col-reverse"
       )}
@@ -70,7 +70,7 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
           "min-h-[200px] md:min-h-full",
           !isAwaitingApproval && "max-md:max-h-[min(40vh,320px)]",
           isAwaitingApproval &&
-            "border-border/60 bg-muted/25 dark:bg-muted/10 md:border-border/60 border-t md:border-t-0 md:border-l"
+            "border-border/60 bg-surface-hover/25 dark:bg-surface-hover/10 md:border-border/60 border-t md:border-t-0 md:border-l"
         )}
       >
         {isAwaitingApproval ? (

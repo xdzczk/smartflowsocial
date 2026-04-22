@@ -29,14 +29,14 @@ export function ScheduledTimeField({
       className={cn(
         "space-y-2",
         emphasis === "primary" &&
-          "bg-muted/20 border-border/70 rounded-xl border p-4",
+          "bg-surface-hover/20 border-border/70 rounded-xl border p-4",
         className
       )}
     >
       <label
         htmlFor={id}
         className={cn(
-          "text-foreground block text-sm font-medium",
+          "text-text block text-sm font-medium",
           emphasis === "primary" && "text-base"
         )}
       >
@@ -44,7 +44,7 @@ export function ScheduledTimeField({
       </label>
       <div className="flex items-center gap-2">
         <CalendarDays
-          className="text-muted-foreground h-4 w-4 shrink-0"
+          className="text-text-secondary h-4 w-4 shrink-0"
           strokeWidth={INLINE_ICON_STROKE}
           aria-hidden
         />
@@ -54,14 +54,14 @@ export function ScheduledTimeField({
           value={valueDatetimeLocal}
           min={minDatetimeLocal}
           onChange={onChange}
-          className="border-border bg-background text-foreground focus:border-primary focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2"
+          className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring flex-1 rounded-md border px-3 py-2 text-sm focus-visible:ring-2"
         />
       </div>
       {humanReadableLine ? (
         <p
           className={cn(
-            "text-muted-foreground text-xs",
-            emphasis === "primary" && "text-foreground text-sm font-medium"
+            "text-text-secondary text-xs",
+            emphasis === "primary" && "text-text text-sm font-medium"
           )}
         >
           {humanReadableLine}

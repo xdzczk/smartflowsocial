@@ -60,7 +60,7 @@ export function ActionRailActions({
     ) : null);
 
   return (
-    <div className="border-border/60 bg-card/80 shrink-0 overflow-hidden border-t">
+    <div className="border-border/60 bg-surface/80 shrink-0 overflow-hidden border-t">
       {firstSecondary}
       {secondSecondaryLabel && onSecondSecondaryClick ? (
         <Button
@@ -82,10 +82,12 @@ export function ActionRailActions({
             variant="default"
             aria-disabled={blocked}
             className={cn(
-              "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
+              // rounded-b-lg matches parent ActionRail's rounded-lg (was -xl mismatched).
+              // bg-brand-strong is the action-saturation brand (matches the global Button default).
+              "h-12 w-full rounded-none rounded-b-lg border-0 text-xs font-semibold shadow-none",
               blocked
-                ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "bg-brand-strong/80 text-brand-on hover:bg-brand-strong/80 pointer-events-auto cursor-not-allowed opacity-95"
+                : "bg-brand-strong text-brand-on hover:bg-brand-strong/92"
             )}
             onClick={() => {
               if (primaryInert) return;

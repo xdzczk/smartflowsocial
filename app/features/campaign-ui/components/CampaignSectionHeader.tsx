@@ -15,14 +15,11 @@ export function CampaignSectionHeader({
 }) {
   return (
     <div className={cn("space-y-1", className)}>
-      <h2
-        id={id}
-        className="text-foreground text-lg font-semibold tracking-tight"
-      >
+      <h2 id={id} className="text-text text-h3">
         {title}
       </h2>
       {description ? (
-        <p className="text-muted-foreground max-w-prose text-sm leading-snug">
+        <p className="text-text-secondary max-w-prose text-sm leading-snug">
           {description}
         </p>
       ) : null}

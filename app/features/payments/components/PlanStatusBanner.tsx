@@ -27,8 +27,8 @@ export function PlanStatusBanner({
 }) {
   const surface =
     variant === "muted"
-      ? "border-border bg-muted/30 text-muted-foreground"
-      : "border-border bg-card text-foreground";
+      ? "border-border bg-surface-hover/30 text-text-secondary"
+      : "border-border bg-surface text-text";
 
   return (
     <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
@@ -43,12 +43,12 @@ export function PlanStatusBanner({
       >
         <div className="min-w-0">
           {label ? (
-            <p className="text-muted-foreground text-xs font-medium tracking-wide">
+            <p className="text-text-secondary text-xs font-medium tracking-wide">
               {label}
             </p>
           ) : null}
           <p className="mt-0.5 text-sm font-semibold">{headline}</p>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          <p className="text-text-secondary mt-1 text-sm leading-relaxed">
             {body}
           </p>
           {chips && chips.length > 0 ? (
@@ -57,7 +57,7 @@ export function PlanStatusBanner({
                 <Badge
                   key={chip}
                   variant="default"
-                  className="bg-muted text-muted-foreground hover:bg-muted/80"
+                  className="bg-surface-hover text-text-secondary hover:bg-surface-hover/80"
                 >
                   {chip}
                 </Badge>

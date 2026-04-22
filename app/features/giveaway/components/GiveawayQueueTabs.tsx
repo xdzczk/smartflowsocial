@@ -33,8 +33,8 @@ export function GiveawayQueueTabs({
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             !currentQueueType
-              ? "border-border text-foreground dark:border-primary dark:text-primary"
-              : "text-muted-foreground hover:border-border hover:text-foreground border-transparent"
+              ? "border-border text-text dark:border-brand dark:text-brand"
+              : "text-text-secondary hover:border-border hover:text-text border-transparent"
           }`}
         >
           All Queues
@@ -52,7 +52,7 @@ export function GiveawayQueueTabs({
           const baseClasses =
             "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
           const unselectedClasses =
-            "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
+            "border-transparent text-text-secondary hover:border-border hover:text-text";
 
           if (isSelected && colorToken) {
             const accentHex = getQueueAccentHex(colorToken);
@@ -81,7 +81,7 @@ export function GiveawayQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `dark:border-primary dark:text-primary border-border text-foreground ${colors.text}`
+                  ? `dark:border-brand dark:text-brand border-border text-text ${colors.text}`
                   : unselectedClasses
               }`}
             >

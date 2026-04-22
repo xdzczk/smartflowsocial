@@ -70,17 +70,17 @@ const SEGMENTS: Array<{ id: AdminUserSegment | "all"; label: string }> = [
 function segmentBadgeClass(s: AdminUserSegment): string {
   switch (s) {
     case "power":
-      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100";
+      return "border-success/40 bg-success/10 text-success-text";
     case "at_risk":
-      return "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-50";
+      return "border-warning/50 bg-warning/10 text-warning-text";
     case "dormant":
-      return "border-border bg-muted text-muted-foreground";
+      return "border-border bg-surface-hover text-text-secondary";
     case "new":
-      return "border-sky-500/40 bg-sky-500/10 text-sky-950 dark:text-sky-50";
+      return "border-info/40 bg-info/10 text-info-text dark:text-info";
     case "activating":
-      return "border-violet-500/40 bg-violet-500/10 text-violet-950 dark:text-violet-50";
+      return "border-brand/40 bg-brand/12 text-brand-text";
     default:
-      return "border-border bg-card";
+      return "border-border bg-surface";
   }
 }
 
@@ -201,7 +201,7 @@ function AdminUsersPageLoaded({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs">Segment</span>
+          <span className="text-text-secondary text-xs">Segment</span>
           {SEGMENTS.map((s) => (
             <Button
               key={s.id}
@@ -217,9 +217,7 @@ function AdminUsersPageLoaded({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <span className="text-muted-foreground self-center text-xs">
-            Sort
-          </span>
+          <span className="text-text-secondary self-center text-xs">Sort</span>
           {[
             { id: "createdAt", label: "Signup" },
             { id: "lastActive", label: "Last active" },
@@ -247,7 +245,7 @@ function AdminUsersPageLoaded({
             name="q"
             defaultValue={d.search}
             placeholder="Search npub or id"
-            className="border-input min-w-[200px] flex-1 rounded-md border px-2 py-1 text-sm"
+            className="border-border min-w-[200px] flex-1 rounded-md border px-2 py-1 text-sm"
           />
           <Button type="submit" size="sm">
             Search
@@ -282,7 +280,7 @@ function AdminUsersPageLoaded({
                 visibleUsers.map((u) => (
                   <tr
                     key={u.id}
-                    className="hover:bg-muted/30 cursor-pointer"
+                    className="hover:bg-surface-hover/30 cursor-pointer"
                     onClick={() => setSheetUserId(u.id)}
                   >
                     <td className="p-2">
@@ -302,11 +300,11 @@ function AdminUsersPageLoaded({
                         <div className="min-w-0">
                           <p className="font-medium">
                             {u.displayName ?? "—"}{" "}
-                            <span className="text-muted-foreground text-xs font-normal">
+                            <span className="text-text-secondary text-xs font-normal">
                               {u.isEnabled ? "" : "(disabled)"}
                             </span>
                           </p>
-                          <p className="text-muted-foreground font-mono text-[10px] break-all">
+                          <p className="text-text-secondary font-mono text-[10px] break-all">
                             {u.npub}
                           </p>
                         </div>
@@ -327,7 +325,7 @@ function AdminUsersPageLoaded({
                     <td className="p-2 text-center">
                       {u.isEnabled ? "Yes" : "No"}
                     </td>
-                    <td className="text-muted-foreground p-2 text-right text-xs tabular-nums">
+                    <td className="text-text-secondary p-2 text-right text-xs tabular-nums">
                       {formatDateTime(u.lastActivityAt)}
                     </td>
                     <td className="p-2 text-right tabular-nums">
@@ -345,12 +343,12 @@ function AdminUsersPageLoaded({
                     <td className="p-2 text-right tabular-nums">
                       {u.referralCount}
                       {u.referralAttributed ? (
-                        <span className="text-muted-foreground ml-1 text-[10px]">
+                        <span className="text-text-secondary ml-1 text-[10px]">
                           (in)
                         </span>
                       ) : null}
                     </td>
-                    <td className="text-muted-foreground p-2 text-xs">
+                    <td className="text-text-secondary p-2 text-xs">
                       {u.signerModality === "nip46"
                         ? "Remote (NIP-46)"
                         : "Ext / unset"}
@@ -360,7 +358,7 @@ function AdminUsersPageLoaded({
                     </td>
                     <td className="p-2 text-right tabular-nums">
                       {u.reconnectFailures30d > 0 ? (
-                        <span className="text-amber-700 dark:text-amber-300">
+                        <span className="text-warning-text">
                           {u.reconnectFailures30d}
                         </span>
                       ) : (
@@ -412,7 +410,7 @@ function AdminUsersPageLoaded({
                 </SheetHeader>
                 <div className="mt-6 space-y-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium uppercase">
+                    <p className="text-text-secondary text-xs font-medium uppercase">
                       Segment
                     </p>
                     <Badge
@@ -424,25 +422,25 @@ function AdminUsersPageLoaded({
                     >
                       {sheetUser.segment.replace("_", " ")}
                     </Badge>
-                    <p className="text-muted-foreground mt-2 text-xs">
+                    <p className="text-text-secondary mt-2 text-xs">
                       Heuristic only — based on recency, volume, and plan.
                     </p>
                   </div>
                   <dl className="grid gap-2 sm:grid-cols-2">
                     <div>
-                      <dt className="text-muted-foreground text-xs">User id</dt>
+                      <dt className="text-text-secondary text-xs">User id</dt>
                       <dd className="font-mono text-xs break-all">
                         {sheetUser.id}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">Signup</dt>
+                      <dt className="text-text-secondary text-xs">Signup</dt>
                       <dd className="tabular-nums">
                         {formatDateTime(sheetUser.createdAt)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         Last activity
                       </dt>
                       <dd className="tabular-nums">
@@ -450,7 +448,7 @@ function AdminUsersPageLoaded({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         First publish
                       </dt>
                       <dd className="tabular-nums">
@@ -458,7 +456,7 @@ function AdminUsersPageLoaded({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         Subscription started
                       </dt>
                       <dd className="tabular-nums">
@@ -466,13 +464,13 @@ function AdminUsersPageLoaded({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         7d publishes
                       </dt>
                       <dd>{sheetUser.recent7dPublishes}</dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         Signer modality
                       </dt>
                       <dd>
@@ -482,20 +480,20 @@ function AdminUsersPageLoaded({
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         Product sessions (30d)
                       </dt>
                       <dd>{sheetUser.sessionsIn30d}</dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground text-xs">
+                      <dt className="text-text-secondary text-xs">
                         Reconnect failures (30d)
                       </dt>
                       <dd>{sheetUser.reconnectFailures30d}</dd>
                     </div>
                   </dl>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium uppercase">
+                    <p className="text-text-secondary text-xs font-medium uppercase">
                       Output
                     </p>
                     <ul className="mt-1 space-y-1">
@@ -519,12 +517,12 @@ function AdminUsersPageLoaded({
         </Sheet>
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-muted-foreground">
+          <span className="text-text-secondary">
             Page {d.page} / {totalPages || 1} · {d.total} users
           </span>
           {d.page > 1 ? (
             <Link
-              className="text-primary hover:underline"
+              className="text-brand hover:underline"
               to={`?${new URLSearchParams({
                 ...Object.fromEntries(searchParams),
                 page: String(d.page - 1),
@@ -535,7 +533,7 @@ function AdminUsersPageLoaded({
           ) : null}
           {d.page < totalPages ? (
             <Link
-              className="text-primary hover:underline"
+              className="text-brand hover:underline"
               to={`?${new URLSearchParams({
                 ...Object.fromEntries(searchParams),
                 page: String(d.page + 1),
@@ -548,7 +546,7 @@ function AdminUsersPageLoaded({
 
         <Link
           to="/dashboard/admin"
-          className="text-primary text-sm hover:underline"
+          className="text-brand text-sm hover:underline"
         >
           ← Overview
         </Link>

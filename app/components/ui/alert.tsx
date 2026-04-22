@@ -4,17 +4,19 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-text",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: "bg-surface text-text border-border-subtle",
+        // Status variants pair tinted wash + saturated dark/light text token
+        // (`text-*-text`) for AA legibility; icon keeps the vivid hue.
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "border-danger/40 bg-danger/10 text-danger-text [&>svg]:text-danger",
         success:
-          "border-green-500/50 text-green-700 dark:text-green-400 dark:border-green-500/50 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+          "border-success/40 bg-success/10 text-success-text [&>svg]:text-success",
         warning:
-          "border-amber-500/50 text-amber-700 dark:text-amber-400 dark:border-amber-500/50 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400",
+          "border-warning/45 bg-warning/12 text-warning-text [&>svg]:text-warning",
       },
     },
     defaultVariants: {

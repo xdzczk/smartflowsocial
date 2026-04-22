@@ -9,8 +9,8 @@ export function TemplatesHeader() {
   return (
     <div className="mb-6 flex items-center justify-between">
       <div>
-        <h1 className="text-2xl font-bold">Templates</h1>
-        <p className="dark:text-muted-foreground text-foreground">
+        <h1 className="text-h1">Templates</h1>
+        <p className="dark:text-text-secondary text-text">
           Reusable blueprints for posts and articles.
         </p>
       </div>

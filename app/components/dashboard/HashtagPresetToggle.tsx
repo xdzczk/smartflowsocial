@@ -11,7 +11,7 @@ import {
 import { cn } from "~/lib/utils";
 
 /** Shared label emphasis (sonarjs/no-duplicate-string). */
-const CN_MUTED_EMPHASIS = "text-muted-foreground dark:text-foreground";
+const CN_MUTED_EMPHASIS = "text-text-secondary dark:text-text";
 const CN_TEXT_SM_MEDIUM = "text-sm font-medium";
 
 function queuePresetLabelTypography(subdued: boolean): string {
@@ -96,8 +96,8 @@ export function HashtagPresetToggle({
           subdued ? "border-border/35 p-2.5" : "p-3",
           useHashtagPresets
             ? subdued
-              ? "dark:bg-card/50 bg-muted/25 dark:border-border/60 border"
-              : "dark:bg-card border-border bg-muted dark:border-border border"
+              ? "dark:bg-surface/50 bg-surface-hover/25 dark:border-border/60 border"
+              : "dark:bg-surface border-border bg-surface-hover dark:border-border border"
             : subdued
               ? "border-success/35 bg-success/[0.06] dark:border-success/40 dark:bg-success/[0.08] border"
               : "border-success bg-success/10 dark:border-success dark:bg-success/20/20 border"
@@ -174,10 +174,10 @@ export function HashtagPresetToggle({
     return (
       <div
         className={cn(
-          "dark:bg-card rounded-lg border",
+          "dark:bg-surface rounded-lg border",
           subdued
-            ? "border-border/35 bg-muted/20 dark:border-border/50 p-2.5"
-            : "border-border bg-muted dark:border-border p-3"
+            ? "border-border/35 bg-surface-hover/20 dark:border-border/50 p-2.5"
+            : "border-border bg-surface-hover dark:border-border p-3"
         )}
       >
         <div
@@ -253,7 +253,7 @@ export function HashtagPresetToggle({
           className={cn(
             `${CN_MUTED_EMPHASIS} cursor-pointer`,
             subdued
-              ? "text-muted-foreground/80 text-[11px] font-normal"
+              ? "text-text-secondary/80 text-[11px] font-normal"
               : CN_TEXT_SM_MEDIUM
           )}
         >
@@ -270,13 +270,15 @@ export function HashtagPresetToggle({
           {presets.length === 0 ? (
             <div
               className={cn(
-                "dark:border-border rounded-lg border border-yellow-200 bg-yellow-50",
-                subdued ? "dark:bg-muted/40 p-2" : "dark:bg-muted p-3"
+                "dark:border-border border-warning/40 bg-warning/12 rounded-lg border",
+                subdued
+                  ? "dark:bg-surface-hover/40 p-2"
+                  : "dark:bg-surface-hover p-3"
               )}
             >
               <p
                 className={cn(
-                  "dark:text-foreground text-yellow-700",
+                  "dark:text-text text-warning-text",
                   subdued ? "text-[11px] leading-snug" : "text-sm"
                 )}
               >
@@ -292,7 +294,7 @@ export function HashtagPresetToggle({
                   className={cn(
                     CN_MUTED_EMPHASIS,
                     subdued
-                      ? "text-muted-foreground/75 text-[11px] font-normal"
+                      ? "text-text-secondary/75 text-[11px] font-normal"
                       : CN_TEXT_SM_MEDIUM
                   )}
                 >
@@ -312,7 +314,7 @@ export function HashtagPresetToggle({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      <span className="text-muted-foreground">
+                      <span className="text-text-secondary">
                         No hashtag preset
                       </span>
                     </SelectItem>

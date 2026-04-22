@@ -97,7 +97,7 @@ export function LongFormActionButtons({
   return (
     <div className="pt-4">
       {statusLine || showWordCount ? (
-        <div className="text-muted-foreground mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="text-text-secondary mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
           {statusLine ? <span>{statusLine}</span> : null}
           {showWordCount ? (
             <span>
@@ -139,7 +139,7 @@ export function LongFormActionButtons({
             type="button"
             onClick={onSchedule}
             disabled={isDisabled}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 px-8 font-medium"
+            className="bg-brand text-brand-on hover:bg-brand/90 flex-1 px-8 font-medium"
           >
             {getSigningButtonLabel(
               isSigning,

@@ -169,7 +169,7 @@ export function LongFormCardListMobile({
         ) : null}
         {sentinelRef ? <div ref={sentinelRef} className="h-4 w-full" /> : null}
         {isFetchingNextPage ? (
-          <div className="text-muted-foreground py-4 text-center text-sm">
+          <div className="text-text-secondary py-4 text-center text-sm">
             Loading more...
           </div>
         ) : null}
@@ -180,7 +180,7 @@ export function LongFormCardListMobile({
     <div className="block flex min-h-0 flex-1 flex-col md:hidden">
       <div className="mt-3 flex items-center gap-2">
         <span
-          className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+          className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
         >
           Sort:
         </span>

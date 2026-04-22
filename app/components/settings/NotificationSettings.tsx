@@ -433,7 +433,7 @@ export function NotificationSettings({
         title="Push notifications"
         description={`Choose which ${BRAND_NAME} events send push notifications on this device.`}
       >
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           Push notifications are not supported in this browser.
         </p>
       </PreferenceSection>
@@ -484,7 +484,7 @@ export function NotificationSettings({
         <Separator className="my-4" />
 
         {!isSubscribed ? (
-          <p className="text-muted-foreground mb-4 text-xs leading-snug">
+          <p className="text-text-secondary mb-4 text-xs leading-snug">
             Enable push notifications to manage notification types on this
             device.
           </p>
@@ -547,7 +547,7 @@ export function NotificationSettings({
                 >
                   Notify when runway is below (days)
                 </Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Use dashboard red threshold if left empty
                 </p>
               </div>
@@ -568,7 +568,7 @@ export function NotificationSettings({
                     handleRunwayNotifyBelowDaysChange(v === "" ? null : n);
                   }
                 }}
-                className="border-input bg-background w-20 rounded-md border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-border bg-canvas w-20 rounded-md border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           ) : null}

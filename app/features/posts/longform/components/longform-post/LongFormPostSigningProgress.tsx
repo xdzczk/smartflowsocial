@@ -29,7 +29,7 @@ export function LongFormPostSigningProgress({
   return (
     <>
       {isSigning ? (
-        <div className="bg-muted/30 text-muted-foreground flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+        <div className="bg-surface-hover/30 text-text-secondary flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
           <span>
             Waiting for signer approval…
             {phaseStatus ? <> {phaseStatus}</> : null}
@@ -41,7 +41,7 @@ export function LongFormPostSigningProgress({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground shrink-0"
+            className="text-text-secondary hover:text-text shrink-0"
             onClick={cancelSigning}
           >
             Cancel
@@ -49,7 +49,7 @@ export function LongFormPostSigningProgress({
         </div>
       ) : null}
       {signingError ? (
-        <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+        <div className="border-danger bg-danger/10 text-danger dark:border-danger/60 dark:bg-danger/10 dark:text-danger rounded-md border p-3 text-sm">
           {signingError}
         </div>
       ) : null}

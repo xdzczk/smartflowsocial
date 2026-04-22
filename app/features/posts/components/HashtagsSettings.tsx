@@ -83,7 +83,7 @@ export function HashtagsSettings({ tags }: HashtagsSettingsProps) {
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-destructive text-sm">{fetcher.data.error}</p>
+            <p className="text-danger text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

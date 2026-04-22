@@ -53,16 +53,16 @@ function ToolbarButton({
       className={cn(
         "transition-colors",
         editorial
-          ? "text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-md px-1.5 py-1 text-xs"
+          ? "text-text-secondary hover:bg-surface-hover/50 hover:text-text rounded-md px-1.5 py-1 text-xs"
           : "rounded-md px-2 py-1.5 text-sm",
         !editorial &&
           (active
-            ? "bg-primary/15 text-primary"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"),
+            ? "bg-brand/15 text-brand"
+            : "text-text-secondary hover:bg-surface-hover hover:text-text"),
         editorial &&
           (active
-            ? "bg-muted/45 text-foreground/95"
-            : "text-muted-foreground/85 hover:bg-muted/40 hover:text-foreground"),
+            ? "bg-surface-hover/45 text-text/95"
+            : "text-text-secondary/85 hover:bg-surface-hover/40 hover:text-text"),
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
@@ -101,13 +101,13 @@ export function TiptapToolbar({
       className={cn(
         "flex flex-wrap items-center",
         editorialInCanvas
-          ? "border-border/25 bg-muted/10 gap-x-1 gap-y-0.5 border-t px-2.5 py-2 sm:px-3"
+          ? "border-border/25 bg-surface-hover/10 gap-x-1 gap-y-0.5 border-t px-2.5 py-2 sm:px-3"
           : editorialEmbedded
             ? "border-border/10 gap-x-1 gap-y-0.5 border-t bg-transparent px-2 py-1.5 sm:px-2.5"
             : "gap-0.5 border-b",
         editorial && !editorialEmbedded && !editorialInCanvas
           ? "border-border/15 bg-transparent px-2 py-1"
-          : !editorial && "border-border bg-muted/40 px-2 py-1.5"
+          : !editorial && "border-border bg-surface-hover/40 px-2 py-1.5"
       )}
     >
       <ToolbarButton

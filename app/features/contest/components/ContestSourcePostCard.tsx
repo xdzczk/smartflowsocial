@@ -15,15 +15,15 @@ export function ContestSourcePostCard({
 }) {
   const thumb = fileUrl[0];
   return (
-    <div className="border-border bg-card overflow-hidden rounded-lg border">
+    <div className="border-border bg-surface overflow-hidden rounded-lg border">
       <div className="border-border border-b px-4 py-2">
         <h3 className="text-sm font-semibold">{contestCopy.sourcePost}</h3>
       </div>
       <div className="flex flex-col gap-3 p-4 sm:flex-row">
         {thumb ? (
-          <div className="bg-muted shrink-0 overflow-hidden rounded-md sm:h-24 sm:w-32">
+          <div className="bg-surface-hover shrink-0 overflow-hidden rounded-md sm:h-24 sm:w-32">
             {thumb.match(/\.(mp4|webm)$/i) ? (
-              <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+              <div className="text-text-secondary flex h-full items-center justify-center text-xs">
                 Video
               </div>
             ) : (
@@ -39,7 +39,7 @@ export function ContestSourcePostCard({
           <p className="text-sm whitespace-pre-wrap">
             {caption?.trim() ? caption.trim() : "(No caption)"}
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             {publishedAt
               ? new Date(publishedAt).toLocaleString()
               : "Not published"}
@@ -54,7 +54,7 @@ export function ContestSourcePostCard({
             <button
               type="button"
               onClick={onOpenNostr}
-              className="text-primary text-sm font-medium hover:underline"
+              className="text-brand text-sm font-medium hover:underline"
             >
               {contestCopy.openSourcePost}
             </button>

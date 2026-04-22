@@ -240,7 +240,7 @@ export default function DraftEditPage() {
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-foreground text-2xl font-bold">Edit Draft</h1>
+        <h1 className="text-text text-2xl font-bold">Edit Draft</h1>
         <div className="flex items-center gap-2">
           <DraftVersionHistory
             versions={versions}
@@ -249,7 +249,7 @@ export default function DraftEditPage() {
           />
           <Link
             to="/dashboard/drafts"
-            className="text-primary hover:text-primary/90 dark:text-muted-foreground dark:hover:text-foreground"
+            className="text-brand hover:text-brand/90 dark:text-text-secondary dark:hover:text-text"
           >
             ← Back to Drafts
           </Link>

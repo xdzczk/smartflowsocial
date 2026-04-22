@@ -31,20 +31,20 @@ export function ThreadExplorer({
   }
 
   return (
-    <section className="border-border bg-card rounded-xl border shadow-sm">
+    <section className="border-border bg-surface shadow-1 rounded-xl border">
       <div className="border-border flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <MessageCircle
-              className="text-muted-foreground h-4 w-4 shrink-0"
+              className="text-text-secondary h-4 w-4 shrink-0"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
-            <h3 className="text-foreground text-sm font-semibold">
+            <h3 className="text-text text-sm font-semibold">
               Thread · {n} top-level {n === 1 ? "reply" : "replies"}
             </h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-text-secondary mt-0.5 text-xs">
             Nested replies load on demand.
           </p>
         </div>

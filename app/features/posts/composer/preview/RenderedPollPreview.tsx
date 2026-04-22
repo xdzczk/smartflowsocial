@@ -22,10 +22,10 @@ export function RenderedPollPreview({
     <article className="space-y-2.5">
       <PreviewAccountHeader user={user} />
       <div>
-        <h3 className="text-foreground text-lg leading-snug font-semibold tracking-tight">
+        <h3 className="text-text text-lg leading-snug font-semibold tracking-tight">
           {data.question}
         </h3>
-        <p className="text-muted-foreground/80 mt-1.5 text-[11px] font-normal">
+        <p className="text-text-tertiary mt-1.5 text-[11px] font-normal">
           Poll · {modeLabel}
         </p>
         <ul className="mt-3 space-y-1.5">
@@ -33,12 +33,12 @@ export function RenderedPollPreview({
             <li
               key={optionKeys[i] ?? `poll-opt-${i}`}
               className={cn(
-                "bg-muted/30 flex items-center gap-3 rounded-md px-3 py-2 text-sm",
-                "border-border/35 border"
+                "bg-surface-hover/50 flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                "border-border-subtle border"
               )}
             >
               <span
-                className="bg-muted/60 text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium tabular-nums"
+                className="bg-surface-hover text-text-secondary flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium tabular-nums"
                 aria-hidden
               >
                 {i + 1}
@@ -48,14 +48,14 @@ export function RenderedPollPreview({
           ))}
         </ul>
         {data.hasPollEndDate ? (
-          <p className="text-muted-foreground/75 mt-2.5 text-[11px] leading-snug">
+          <p className="text-text-tertiary mt-2.5 text-[11px] leading-snug">
             {data.endLabel}
           </p>
         ) : null}
       </div>
       {data.hideTags ? (
         data.tags.length > 0 ? (
-          <p className="text-muted-foreground/75 text-xs">
+          <p className="text-text-tertiary text-xs">
             {data.tags.length} hidden topic tag
             {data.tags.length === 1 ? "" : "s"} included
           </p>

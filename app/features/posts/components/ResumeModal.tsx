@@ -49,32 +49,32 @@ export function ResumeModal({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="bg-card max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg p-6">
+      <div className="bg-surface max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Resume Draft</h2>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground"
+            className="text-text-secondary hover:text-text-secondary dark:text-text dark:hover:text-text"
           >
             ✕
           </button>
         </div>
 
         <div className="space-y-4">
-          <div className="dark:bg-muted rounded-lg bg-yellow-50 p-4">
+          <div className="dark:bg-surface-hover bg-warning/12 rounded-lg p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <AlertTriangle
-                  className="h-5 w-5 text-yellow-400"
+                  className="text-warning h-5 w-5"
                   strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
               </div>
               <div className="ml-3">
-                <h3 className="dark:text-foreground text-sm font-medium text-yellow-800">
+                <h3 className="dark:text-text text-warning-text text-sm font-medium">
                   Signing Required
                 </h3>
-                <div className="dark:text-foreground mt-2 text-sm text-yellow-700">
+                <div className="dark:text-text text-warning-text mt-2 text-sm">
                   <p>
                     This draft needs to be signed before it can be scheduled.
                     The signing process will create a cryptographic signature
@@ -124,7 +124,7 @@ export function ResumeModal({
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="bg-card border-border text-muted-foreground hover:bg-muted rounded-lg border px-4 py-2 text-sm font-medium"
+              className="bg-surface border-border text-text-secondary hover:bg-surface-hover rounded-lg border px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>

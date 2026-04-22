@@ -25,15 +25,14 @@ export function ActionRailNotice({
       <div
         className={cn(
           shell,
-          "border-destructive/45 bg-destructive/10 text-red-950",
-          /* Dark: stronger surface + light text so body copy stays readable on near-black UI */
-          "dark:border-red-500/45 dark:bg-red-950/55 dark:text-red-50",
+          // Wash + saturated dark/light text token (--danger-text adapts per scheme).
+          "border-danger/40 bg-danger/12 text-danger-text",
           className
         )}
       >
         <p className="font-semibold">{title}</p>
         {lines.map((line) => (
-          <p key={line} className="text-red-950/95 dark:text-red-50/95">
+          <p key={line} className="text-danger-text/90">
             {line}
           </p>
         ))}
@@ -46,13 +45,13 @@ export function ActionRailNotice({
       <div
         className={cn(
           shell,
-          "border-primary/30 bg-primary/5 text-foreground dark:border-primary/40 dark:bg-primary/10",
+          "border-brand/30 bg-brand/8 text-brand-text",
           className
         )}
       >
         <p className="font-semibold">{title}</p>
         {lines.map((line) => (
-          <p key={line} className="text-muted-foreground">
+          <p key={line} className="text-brand-text/85">
             {line}
           </p>
         ))}
@@ -64,14 +63,13 @@ export function ActionRailNotice({
     <div
       className={cn(
         shell,
-        "border-amber-200/80 bg-amber-500/[0.12] text-amber-950",
-        "dark:border-amber-500/45 dark:bg-amber-950/50 dark:text-amber-50",
+        "border-warning/45 bg-warning/12 text-warning-text",
         className
       )}
     >
       <p className="font-semibold">{title}</p>
       {lines.map((line) => (
-        <p key={line} className="text-amber-950/95 dark:text-amber-50/95">
+        <p key={line} className="text-warning-text/90">
           {line}
         </p>
       ))}

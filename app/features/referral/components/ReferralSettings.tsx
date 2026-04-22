@@ -58,46 +58,46 @@ export function ReferralSettings({
         summary={
           <div className="space-y-4">
             {zeroEarnings ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 No referral earnings yet. Share your referral link below—when
                 referred users upgrade to a paid plan, you earn sats.
               </p>
             ) : null}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="bg-muted/40 rounded-lg border p-4">
-                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <div className="bg-surface-hover/40 rounded-lg border p-4">
+                <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
                   Total earned
                 </p>
-                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                <p className="text-text mt-2 text-2xl font-semibold tabular-nums">
                   {totalEarnedSats.toLocaleString()}{" "}
-                  <span className="text-muted-foreground text-base font-normal">
+                  <span className="text-text-secondary text-base font-normal">
                     sats
                   </span>
                 </p>
               </div>
-              <div className="bg-muted/40 rounded-lg border p-4">
-                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <div className="bg-surface-hover/40 rounded-lg border p-4">
+                <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
                   Paid out
                 </p>
-                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                <p className="text-text mt-2 text-2xl font-semibold tabular-nums">
                   {paidSats.toLocaleString()}
                 </p>
               </div>
-              <div className="bg-muted/40 rounded-lg border p-4">
-                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              <div className="bg-surface-hover/40 rounded-lg border p-4">
+                <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
                   Pending
                 </p>
-                <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
+                <p className="text-text mt-2 text-2xl font-semibold tabular-nums">
                   {pendingSats.toLocaleString()}
                 </p>
               </div>
             </div>
             {failedSats > 0 ? (
-              <div className="border-destructive/30 bg-destructive/5 rounded-lg border p-3">
-                <p className="text-destructive text-xs font-medium uppercase">
+              <div className="border-danger/30 bg-danger/5 rounded-lg border p-3">
+                <p className="text-danger text-xs font-medium uppercase">
                   Failed payout
                 </p>
-                <p className="text-destructive mt-1 text-lg font-semibold tabular-nums">
+                <p className="text-danger mt-1 text-lg font-semibold tabular-nums">
                   {failedSats.toLocaleString()} sats
                 </p>
               </div>
@@ -135,17 +135,17 @@ export function ReferralSettings({
         description="Lightning payout URL (LNURL-pay, Lightning address, or compatible HTTPS endpoint). Pending earnings are held until you save a valid destination."
       >
         {!payoutDestination ? (
-          <p className="text-muted-foreground mb-3 text-sm">
+          <p className="text-text-secondary mb-3 text-sm">
             Pending earnings cannot be paid out until you add a payout
             destination.
           </p>
         ) : (
-          <div className="bg-muted/30 mb-3 rounded-md border border-dashed px-3 py-2">
-            <p className="text-muted-foreground text-xs font-medium uppercase">
+          <div className="bg-surface-hover/30 mb-3 rounded-md border border-dashed px-3 py-2">
+            <p className="text-text-secondary text-xs font-medium uppercase">
               Saved
             </p>
             <p
-              className="text-foreground mt-0.5 font-mono text-sm break-all"
+              className="text-text mt-0.5 font-mono text-sm break-all"
               title={payoutDestination}
             >
               {truncateMiddle(payoutDestination)}

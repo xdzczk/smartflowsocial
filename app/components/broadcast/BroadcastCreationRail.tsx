@@ -42,13 +42,13 @@ const BROADCAST_QUICK_SCHEDULE_INTERVALS_HOURS = [
 function riskBadgeClass(level: AudienceRiskLevel): string {
   switch (level) {
     case "low":
-      return "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200";
+      return "bg-success/15 text-success-text";
     case "moderate":
-      return "bg-amber-500/15 text-amber-900 dark:text-amber-100";
+      return "bg-warning/15 text-warning-text";
     case "curated":
-      return "bg-blue-500/15 text-blue-900 dark:text-blue-100";
+      return "bg-info/15 text-info-text";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }
 
@@ -170,8 +170,8 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
           className={cn(
             "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             primaryDisabled
-              ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+              ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-brand text-brand-on hover:bg-brand/90"
           )}
         >
           <span className="inline-flex items-center justify-center gap-1.5">
@@ -215,7 +215,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
         <div className={cn("flex flex-col", RAIL_MAJOR_DIVIDE)}>
           {!limits.allowSchedule ? (
             <div className={zoneClass}>
-              <p className="text-muted-foreground text-[11px] leading-snug">
+              <p className="text-text-secondary text-[11px] leading-snug">
                 Scheduling is not available on your plan.
               </p>
             </div>
@@ -227,7 +227,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
               <div className="space-y-1.5 py-2 first:pt-0">
                 <label
                   htmlFor="broadcast-rail-delivery-mode"
-                  className="text-muted-foreground text-[11px] font-medium"
+                  className="text-text-secondary text-[11px] font-medium"
                 >
                   Routing
                 </label>
@@ -255,7 +255,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
               <div className="space-y-1.5 py-2">
                 <label
                   htmlFor="broadcast-rail-send-strategy"
-                  className="text-muted-foreground text-[11px] font-medium"
+                  className="text-text-secondary text-[11px] font-medium"
                 >
                   Strategy
                 </label>
@@ -279,7 +279,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
                     <div className="min-w-0 flex-1 space-y-1">
                       <label
                         htmlFor="broadcast-rail-scheduled-for"
-                        className="text-muted-foreground block text-[11px] font-medium"
+                        className="text-text-secondary block text-[11px] font-medium"
                       >
                         Send time ({userTimezone})
                       </label>
@@ -435,7 +435,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
                     <span className="block">Active (automatic)</span>
                     <Link
                       to="/dashboard/broadcasts/suppression"
-                      className="text-primary mt-0.5 inline-block text-[10px] font-medium hover:underline"
+                      className="text-brand mt-0.5 inline-block text-[10px] font-medium hover:underline"
                     >
                       Suppression list
                     </Link>

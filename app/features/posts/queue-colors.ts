@@ -154,9 +154,9 @@ export function hexToNearestQueueColorToken(
 
 // Name-based fallback for unassigned / legacy display
 const UNASSIGNED_MAP = {
-  bg: "bg-muted",
-  text: "text-muted-foreground",
-  hover: "hover:bg-muted/80",
+  bg: "bg-surface-hover",
+  text: "text-text-secondary",
+  hover: "hover:bg-surface-hover/80",
   border: "border-border",
 } as const;
 
@@ -184,10 +184,10 @@ export const getQueueColor = (
     { bg: string; text: string; hover: string; border: string }
   > = {
     main: {
-      bg: "bg-primary/[0.06]",
-      text: "text-primary",
-      hover: "hover:bg-primary/15",
-      border: "border-primary/20",
+      bg: "bg-brand/[0.06]",
+      text: "text-brand",
+      hover: "hover:bg-brand/15",
+      border: "border-brand/20",
     },
     memes: {
       bg: "bg-success/[0.06]",
@@ -196,9 +196,9 @@ export const getQueueColor = (
       border: "border-success/20",
     },
     quotes: {
-      bg: "bg-accent/[0.06]",
-      text: "text-accent-foreground",
-      hover: "hover:bg-muted",
+      bg: "bg-brand/[0.06]",
+      text: "text-text",
+      hover: "hover:bg-surface-hover",
       border: "border-accent/20",
     },
     unassigned: UNASSIGNED_MAP,
@@ -224,9 +224,9 @@ export const getSelectedQueueStyle = (
       );
 
   if (isSelected) {
-    return `${colors.bg} ${colors.text} ${colors.border} border-2 ring-2 ring-primary font-medium`;
+    return `${colors.bg} ${colors.text} ${colors.border} border-2 ring-2 ring-brand font-medium`;
   }
-  return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
+  return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-1`;
 };
 
 /** Dynamic queue style: token → bundle accent for inline styles; null → unassigned. */
@@ -243,14 +243,14 @@ export const getDynamicQueueStyle = (
   }
   const baseStyle = "transition-all duration-200";
   if (isSelected) {
-    return `${baseStyle} border-2 ring-2 ring-primary font-medium`;
+    return `${baseStyle} border-2 ring-2 ring-brand font-medium`;
   }
-  return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-sm`;
+  return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-1`;
 };
 
-/** Rectangle pill with minimal rounded corners for queue labels (use across app). */
+/** Rectangle pill with minimal rounded-xs corners for queue labels (use across app). */
 export const QUEUE_PILL_SHAPE_CLASS =
-  "inline-flex rounded-md border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm";
+  "inline-flex rounded-md border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-1";
 
 /** Opacity for queue pills in tables/lists: lower by default, full on hover/focus/touch (match Queue Health). */
 export const QUEUE_PILL_OPACITY_CLASS =

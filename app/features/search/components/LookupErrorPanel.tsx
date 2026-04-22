@@ -42,23 +42,23 @@ export function LookupErrorPanel({
   return (
     <div
       className={cn(
-        "border-border bg-card rounded-xl border p-6 shadow-sm",
+        "border-border bg-surface shadow-1 rounded-xl border p-6",
         className
       )}
       role="alert"
     >
       <div className="flex gap-3">
         <AlertCircle
-          className="text-destructive mt-0.5 h-5 w-5 shrink-0"
+          className="text-danger mt-0.5 h-5 w-5 shrink-0"
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <h2 className="text-foreground text-base font-semibold">{title}</h2>
-          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+          <h2 className="text-text text-base font-semibold">{title}</h2>
+          <p className="text-text-secondary mt-2 text-sm leading-relaxed">
             {body}
           </p>
           {code === "NOT_FOUND" ? (
-            <ul className="text-muted-foreground mt-3 list-inside list-disc text-sm">
+            <ul className="text-text-secondary mt-3 list-inside list-disc text-sm">
               <li>Deleted or not yet propagated</li>
               <li>Unavailable on connected relays / cache</li>
               <li>Unsupported or private source</li>

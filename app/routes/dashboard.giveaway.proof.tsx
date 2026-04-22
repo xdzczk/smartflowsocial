@@ -120,10 +120,10 @@ export default function GiveawayProofPage() {
         {(loadedGiveaways) => (
           <div className="space-y-6">
             <GiveawayProofStudio giveaways={loadedGiveaways} />
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               <Link
                 to="/dashboard/giveaway"
-                className="text-primary hover:underline"
+                className="text-brand hover:underline"
               >
                 ← All giveaways
               </Link>

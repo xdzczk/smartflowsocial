@@ -31,15 +31,15 @@ export function getStatusColor(status: string) {
     case "ACTIVE":
       return "text-success bg-success/20 dark:text-success dark:bg-success/20/20";
     case "EXPIRED":
-      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
+      return "text-danger bg-danger/10 dark:text-danger dark:bg-danger/20/20";
     case "CANCELED":
-      return "text-destructive bg-destructive/10 dark:text-destructive dark:bg-destructive/20/20";
+      return "text-danger bg-danger/10 dark:text-danger dark:bg-danger/20/20";
     case "PAST_DUE":
-      return "text-yellow-600 bg-yellow-100 dark:text-foreground dark:bg-muted";
+      return "text-warning-text bg-warning/12 dark:text-text dark:bg-surface-hover";
     case "INACTIVE":
-      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
+      return "text-text bg-surface-hover dark:text-text-secondary dark:bg-surface/20";
     default:
-      return "text-foreground bg-muted dark:text-muted-foreground dark:bg-card/20";
+      return "text-text bg-surface-hover dark:text-text-secondary dark:bg-surface/20";
   }
 }
 

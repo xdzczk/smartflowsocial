@@ -138,7 +138,7 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
   return (
     <div className="flex flex-col text-xs">
       {stage === "review" && isSigning ? (
-        <div className="bg-muted/35 text-muted-foreground border-border/70 mx-4 mt-3 mb-1.5 flex flex-col gap-1.5 rounded-lg border p-2.5 text-[11px] leading-snug">
+        <div className="bg-surface-hover/35 text-text-secondary border-border/70 mx-4 mt-3 mb-1.5 flex flex-col gap-1.5 rounded-lg border p-2.5 text-[11px] leading-snug">
           <span>
             Signer approval required.
             {signingProgress ? (
@@ -162,7 +162,7 @@ export function BulkSettingsRailBody(props: BulkSettingsRailBodyProps) {
         </div>
       ) : null}
       {stage === "review" && signingError ? (
-        <div className="border-destructive bg-destructive/10 text-destructive mx-4 mt-3 mb-1.5 rounded-md border px-2.5 py-2 text-[11px] leading-snug">
+        <div className="border-danger bg-danger/10 text-danger mx-4 mt-3 mb-1.5 rounded-md border px-2.5 py-2 text-[11px] leading-snug">
           {signingError}
         </div>
       ) : null}
@@ -355,8 +355,8 @@ export function BulkSettingsRailFooter({
           className={cn(
             "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             signBlocked
-              ? "bg-primary/80 text-primary-foreground hover:bg-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+              ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-brand text-brand-on hover:bg-brand/90"
           )}
           onClick={() => {
             if (!signBlocked) onSign();

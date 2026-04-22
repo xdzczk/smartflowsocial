@@ -7,8 +7,7 @@ export const RAIL_PAD_X = "px-3";
 export const RAIL_ZONE_PY = "py-3";
 
 /** Divider between major rail sections */
-export const RAIL_MAJOR_DIVIDE =
-  "divide-y divide-border/75 dark:divide-white/12";
+export const RAIL_MAJOR_DIVIDE = "divide-y divide-border";
 
 /** Spacing between header and first row in a zone */
 export const RAIL_HEADER_TO_BODY = "mb-2";
@@ -27,11 +26,10 @@ export const RAIL_SUMMARY_TO_FEEDBACK = "pt-2";
 
 /** Primary field: datetime-local and queue select (shared grammar) */
 export const railFieldClassNames = cn(
-  "border-input bg-background text-foreground placeholder:text-muted-foreground",
+  "border-border bg-surface text-text placeholder:text-text-tertiary",
   "h-9 w-full rounded-md border px-3 text-xs font-normal shadow-none",
-  "dark:border-white/14",
   "transition-colors",
-  "focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-1",
+  "focus-visible:ring-focus-ring focus-visible:outline-none focus-visible:ring-2",
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 
@@ -47,4 +45,4 @@ export const RAIL_SETTINGS_ROW =
 
 /** Sticky secondary action (Save draft) */
 export const RAIL_SECONDARY_ACTION =
-  "text-muted-foreground hover:bg-muted/60 hover:text-foreground h-9 w-full rounded-none border-0 border-b border-border/75 bg-transparent text-[11px] font-semibold shadow-none dark:border-b-white/12";
+  "text-text-secondary hover:bg-surface-hover hover:text-text h-9 w-full rounded-none border-0 border-b border-border bg-transparent text-[11px] font-semibold shadow-none";

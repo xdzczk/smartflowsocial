@@ -65,7 +65,7 @@ export function EngagementFilter() {
           onValueChange={(v) => handleTypeChange(v === "none" ? "" : v)}
         >
           <SelectTrigger
-            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-0"
+            className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:ml-0"
             aria-label="Engagement type"
           >
             <SelectValue placeholder="Engagement" />

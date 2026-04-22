@@ -55,18 +55,17 @@ export function ReferredByBanner({
   return (
     <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
       <div
-        className="border-muted bg-muted/30 mb-4 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm"
+        className="border-muted bg-surface-hover/30 mb-4 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm"
         role="status"
       >
-        <p className="text-muted-foreground">
-          You were referred by{" "}
-          <strong className="text-foreground">{display}</strong>. This supports
-          the operator who invited you.{" "}
+        <p className="text-text-secondary">
+          You were referred by <strong className="text-text">{display}</strong>.
+          This supports the operator who invited you.{" "}
           <a
             href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline"
+            className="text-brand hover:underline"
           >
             View profile
           </a>
@@ -74,7 +73,7 @@ export function ReferredByBanner({
         <button
           type="button"
           onClick={dismiss}
-          className="text-muted-foreground hover:text-foreground shrink-0 rounded p-1"
+          className="text-text-secondary hover:text-text shrink-0 rounded-xs p-1"
           aria-label="Dismiss"
         >
           ×

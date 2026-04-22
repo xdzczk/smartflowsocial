@@ -231,7 +231,7 @@ function LongFormDetailRail({
   return (
     <aside
       className={cn(
-        "border-border/70 bg-background/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
+        "border-border/70 bg-canvas/60 flex max-h-full min-w-0 flex-col overflow-y-auto md:w-[34%] md:max-w-[380px] md:min-w-[320px]",
         "border-t md:border-t-0 md:border-l"
       )}
     >
@@ -251,7 +251,7 @@ function LongFormDetailRail({
           />
           {queueType && "name" in queueType ? (
             <div className="flex flex-col gap-1">
-              <span className="text-foreground text-xs font-medium">Queue</span>
+              <span className="text-text text-xs font-medium">Queue</span>
               <QueueTypeCalm
                 queueType={
                   queueType as {
@@ -265,12 +265,12 @@ function LongFormDetailRail({
           ) : null}
           {post.tags.length > 0 ? (
             <div className="flex flex-col gap-1">
-              <span className="text-foreground text-xs font-medium">Tags</span>
+              <span className="text-text text-xs font-medium">Tags</span>
               <div className="flex flex-wrap gap-1">
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="bg-muted text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium"
+                    className="bg-surface-hover text-text rounded-xs px-1.5 py-0.5 text-[10px] font-medium"
                   >
                     #{tag}
                   </span>
@@ -312,7 +312,7 @@ function LongFormDetailRail({
                   trailing={null}
                 />
               ) : null}
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 {type === "scheduled"
                   ? "Use Edit and Reschedule to verify this article before publishing."
                   : "Performance metrics are only available once published."}
@@ -328,44 +328,44 @@ function LongFormDetailRail({
             {engagementStats ? (
               <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-2 text-xs">
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.replies}
                   </p>
-                  <p className="text-muted-foreground">Replies</p>
+                  <p className="text-text-secondary">Replies</p>
                 </div>
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.likes}
                   </p>
-                  <p className="text-muted-foreground">Likes</p>
+                  <p className="text-text-secondary">Likes</p>
                 </div>
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.reposts}
                   </p>
-                  <p className="text-muted-foreground">Reposts</p>
+                  <p className="text-text-secondary">Reposts</p>
                 </div>
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.zaps}
                   </p>
-                  <p className="text-muted-foreground">Zaps</p>
+                  <p className="text-text-secondary">Zaps</p>
                 </div>
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.mentions}
                   </p>
-                  <p className="text-muted-foreground">Mentions</p>
+                  <p className="text-text-secondary">Mentions</p>
                 </div>
                 <div>
-                  <p className="text-foreground font-semibold tabular-nums">
+                  <p className="text-text font-semibold tabular-nums">
                     {engagementStats.satszapped}
                   </p>
-                  <p className="text-muted-foreground">Sats</p>
+                  <p className="text-text-secondary">Sats</p>
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-text-secondary mt-2 text-xs">
                 Performance metrics are not available yet.
               </p>
             )}
@@ -375,7 +375,7 @@ function LongFormDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -389,7 +389,7 @@ function LongFormDetailRail({
                   to={openOnNostrUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   Open on Nostr
                   <ChevronRight
@@ -414,7 +414,7 @@ function LongFormDetailRail({
               aria-busy={isThreadLoading}
             >
               {isThreadLoading ? (
-                <p className="text-muted-foreground text-xs">Loading…</p>
+                <p className="text-text-secondary text-xs">Loading…</p>
               ) : previewReplies.length > 0 ? (
                 previewReplies.map((r) => (
                   <DetailModalReplySnippet
@@ -424,7 +424,7 @@ function LongFormDetailRail({
                   />
                 ))
               ) : (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Replies: {directReplies.length}
                 </p>
               )}
@@ -433,7 +433,7 @@ function LongFormDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -458,7 +458,7 @@ function LongFormDetailRail({
                 onClick={onToggleEventData}
                 aria-expanded={showEventData}
                 aria-controls="longform-signed-event-data"
-                className="text-muted-foreground hover:text-foreground text-[10px] font-medium"
+                className="text-text-secondary hover:text-text text-[10px] font-medium"
               >
                 {showEventData ? "Hide" : "Show"}
               </button>
@@ -466,7 +466,7 @@ function LongFormDetailRail({
             {showEventData ? (
               <pre
                 id="longform-signed-event-data"
-                className="bg-muted/40 text-foreground mt-2 max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
+                className="bg-surface-hover/40 text-text mt-2 max-h-48 overflow-auto rounded-md p-2 text-[10px] break-words whitespace-pre-wrap"
               >
                 {JSON.stringify(post.signedEvent, null, 2)}
               </pre>
@@ -627,7 +627,7 @@ export default function LongFormDetailsModal({
       variant="ghost"
       size="sm"
       disabled={isDeleting}
-      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      className="text-danger/85 hover:bg-danger/10 hover:text-danger"
       onClick={(e) => {
         e.stopPropagation();
         handleDelete();
@@ -655,7 +655,7 @@ export default function LongFormDetailsModal({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideCloseButton
-        className="bg-card text-card-foreground border-border/80 flex max-h-[86dvh] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl"
+        className="bg-surface-overlay text-text border-border/80 shadow-3 flex max-h-[86dvh] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden rounded-xl p-0"
       >
         <PostDetailHeader
           typeLabel="Article"
@@ -673,19 +673,19 @@ export default function LongFormDetailsModal({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row md:items-stretch">
           <div className="border-border/70 min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-6 md:w-[66%] md:max-w-[68%] md:border-r">
             <div className="mx-auto max-w-3xl">
-              <div className="border-border/70 bg-muted/20 rounded-2xl border p-5 md:p-6">
-                <p className="text-muted-foreground mb-4 text-sm">
+              <div className="border-border/70 bg-surface-hover/20 rounded-xl border p-5 md:p-6">
+                <p className="text-text-secondary mb-4 text-sm">
                   {metaLine}
                   <span className="mx-2">·</span>
                   {getLongFormReadingTime(post.content ?? undefined)}
                 </p>
 
-                <h1 className="text-foreground mb-6 text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
+                <h1 className="text-text mb-6 text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
                   {post.title ?? "Untitled Article"}
                 </h1>
 
                 {post.image ? (
-                  <div className="border-border/60 bg-muted/35 mb-6 overflow-hidden rounded-xl border">
+                  <div className="border-border/60 bg-surface-hover/35 mb-6 overflow-hidden rounded-xl border">
                     <img
                       src={post.image}
                       alt=""
@@ -695,14 +695,14 @@ export default function LongFormDetailsModal({
                 ) : null}
 
                 {post.summary ? (
-                  <div className="border-border/60 bg-background/55 mb-6 rounded-lg border px-4 py-3">
-                    <p className="text-muted-foreground text-base leading-relaxed">
+                  <div className="border-border/60 bg-canvas/55 mb-6 rounded-lg border px-4 py-3">
+                    <p className="text-text-secondary text-base leading-relaxed">
                       {post.summary}
                     </p>
                   </div>
                 ) : null}
 
-                <div className="text-foreground text-[1.05rem] leading-relaxed">
+                <div className="text-text text-[1.05rem] leading-relaxed">
                   <MarkdownPreview source={post.content ?? ""} />
                 </div>
 
@@ -711,10 +711,7 @@ export default function LongFormDetailsModal({
                     <Separator className="mt-8 mb-3" />
                     <div className="flex flex-wrap gap-2">
                       {post.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-muted-foreground text-sm"
-                        >
+                        <span key={tag} className="text-text-secondary text-sm">
                           #{tag}
                         </span>
                       ))}
@@ -755,9 +752,9 @@ export default function LongFormDetailsModal({
             deleteForm={deleteForm}
           />
         ) : (
-          <div className="border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
+          <div className="border-border/70 bg-surface/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="text-muted-foreground min-h-[36px] text-xs">
+              <div className="text-text-secondary min-h-[36px] text-xs">
                 {deleteForm}
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2.5">

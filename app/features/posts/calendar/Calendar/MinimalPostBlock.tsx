@@ -62,7 +62,7 @@ function getClassName(
   isLongform: boolean
 ): string {
   const baseClasses =
-    "rounded-[var(--calendar-radius-sm)] text-xs transition-opacity focus:outline-none";
+    "rounded-[var(--calendar-radius-sm)] text-xs transition-opacity focus-visible:outline-none";
   const cursorClass = isPast
     ? "cursor-default"
     : "cursor-pointer hover:opacity-80";
@@ -102,7 +102,7 @@ function PostThumbnail({
           hidePlayButton={size === "xs" ? true : hideVideoPlayButton}
           fallback={
             <div
-              className={`${sizeClasses} bg-muted flex-shrink-0 rounded-[var(--calendar-radius-sm)]`}
+              className={`${sizeClasses} bg-surface-hover flex-shrink-0 rounded-[var(--calendar-radius-sm)]`}
             />
           }
         />
@@ -162,7 +162,7 @@ function UltraCompactLayout({
 }: UltraCompactLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-ring`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus-visible:ring-1 focus-visible:ring-focus-ring`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -247,7 +247,7 @@ function RegularLayout({
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-ring`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus-visible:ring-2 focus-visible:ring-focus-ring`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,

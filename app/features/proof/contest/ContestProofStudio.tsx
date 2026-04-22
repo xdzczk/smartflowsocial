@@ -58,8 +58,8 @@ export function ContestProofStudio({
 
   const header = (
     <div>
-      <h1 className="text-foreground text-2xl font-semibold">Proof Studio</h1>
-      <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+      <h1 className="text-text text-2xl font-semibold">Proof Studio</h1>
+      <p className="text-text-secondary mt-1 max-w-2xl text-sm">
         Create shareable proof cards for completed contests — preview, switch
         templates, and export PNGs.
       </p>
@@ -70,15 +70,12 @@ export function ContestProofStudio({
     return (
       <div className="space-y-6">
         {header}
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           No completed contests yet. Mark a contest complete from its detail
           page, then return here.
         </p>
-        <p className="text-muted-foreground text-sm">
-          <Link
-            to="/dashboard/contests"
-            className="text-primary hover:underline"
-          >
+        <p className="text-text-secondary text-sm">
+          <Link to="/dashboard/contests" className="text-brand hover:underline">
             ← All contests
           </Link>
         </p>
@@ -107,28 +104,28 @@ export function ContestProofStudio({
                     setSelectedId(c.id);
                   }}
                   className={cn(
-                    "hover:bg-muted/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    "hover:bg-surface-hover/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
                     selected?.id === c.id
-                      ? "border-primary bg-muted/40"
-                      : "border-border bg-card/50"
+                      ? "border-brand bg-surface-hover/40"
+                      : "border-border bg-surface/50"
                   )}
                 >
-                  <p className="text-foreground line-clamp-2 text-sm font-medium">
+                  <p className="text-text line-clamp-2 text-sm font-medium">
                     {c.title}
                   </p>
-                  <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                  <p className="text-text-secondary mt-0.5 line-clamp-1 text-xs">
                     {c.rankingMetric.toLowerCase()} · {c.durationLabel}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Badge variant="secondary" className="text-[10px]">
                       {c.statusLabel}
                     </Badge>
-                    <span className="text-muted-foreground text-[11px]">
+                    <span className="text-text-secondary text-[11px]">
                       {c.winnerCount} winners · {c.satsPlanned.toLocaleString()}{" "}
                       sats
                     </span>
                   </div>
-                  <p className="text-muted-foreground mt-1 text-[10px]">
+                  <p className="text-text-secondary mt-1 text-[10px]">
                     {c.completedAtLabel}
                   </p>
                 </button>
@@ -143,7 +140,7 @@ export function ContestProofStudio({
               <ProofCardRenderer payload={payload} ratio={ratio} />
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Select a contest to preview.
             </p>
           )}
@@ -154,7 +151,7 @@ export function ContestProofStudio({
           <ProofCampaignControlRail
             selectedSummary={
               <div className="space-y-1">
-                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                <p className="text-text line-clamp-2 text-sm font-medium">
                   {selected.title}
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -162,7 +159,7 @@ export function ContestProofStudio({
                     {selected.statusLabel}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   {selected.winnerCount} winners ·{" "}
                   {selected.satsPlanned.toLocaleString()} sats ·{" "}
                   {selected.completedAtLabel}
@@ -190,7 +187,7 @@ export function ContestProofStudio({
             }
           />
         ) : (
-          <div className="text-muted-foreground border-border rounded-xl border p-4 text-sm">
+          <div className="text-text-secondary border-border rounded-xl border p-4 text-sm">
             Select a contest to configure the card.
           </div>
         )

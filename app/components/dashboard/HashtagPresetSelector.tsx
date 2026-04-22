@@ -107,7 +107,7 @@ export function HashtagPresetSelector({
         </div>
 
         {selectedPreset && !isExpanded ? (
-          <div className="bg-muted/50 mt-3 rounded-lg p-3">
+          <div className="bg-surface-hover/50 mt-3 rounded-lg p-3">
             <div className="mb-2 flex items-center gap-2">
               <h4 className="text-sm font-medium">{selectedPreset.name}</h4>
               <Badge variant="secondary" className="text-xs">
@@ -116,7 +116,7 @@ export function HashtagPresetSelector({
             </div>
 
             {selectedPreset.description ? (
-              <p className="text-muted-foreground mb-2 text-xs">
+              <p className="text-text-secondary mb-2 text-xs">
                 {selectedPreset.description}
               </p>
             ) : null}
@@ -186,8 +186,8 @@ export function HashtagPresetSelector({
                     key={preset.id}
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       selectedPresetId === preset.id
-                        ? "border-border bg-muted dark:border-primary dark:bg-primary/10"
-                        : "hover:bg-muted"
+                        ? "border-border bg-surface-hover dark:border-brand dark:bg-brand/10"
+                        : "hover:bg-surface-hover"
                     } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
                     onClick={() => !disabled && handlePresetClick(preset)}
                     onKeyDown={handleKeyDown}
@@ -202,12 +202,12 @@ export function HashtagPresetSelector({
                             {countHashtags(preset.tags)} tags
                           </Badge>
                           {selectedPresetId === preset.id ? (
-                            <Check className="text-foreground dark:text-primary h-4 w-4" />
+                            <Check className="text-text dark:text-brand h-4 w-4" />
                           ) : null}
                         </div>
 
                         {preset.description ? (
-                          <p className="text-muted-foreground mb-2 text-xs">
+                          <p className="text-text-secondary mb-2 text-xs">
                             {preset.description}
                           </p>
                         ) : null}

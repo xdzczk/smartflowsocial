@@ -173,17 +173,15 @@ export default function GroupedNotificationList({
   if (groupedNotifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="text-muted-foreground mb-4">
+        <div className="text-text-secondary mb-4">
           <Bell
             className="h-16 w-16"
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
         </div>
-        <p className="text-foreground text-lg font-medium">
-          No notifications yet
-        </p>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text text-lg font-medium">No notifications yet</p>
+        <p className="text-text-secondary text-sm">
           When you get replies or mentions, they&apos;ll show up here
         </p>
       </div>
@@ -331,7 +329,7 @@ function GroupedNotificationCard({
   };
 
   return (
-    <div className="border-border bg-card overflow-hidden rounded-lg border">
+    <div className="border-border bg-surface overflow-hidden rounded-lg border">
       <div className="flex flex-col items-stretch lg:flex-row lg:items-start">
         <div className="border-border flex flex-shrink-0 flex-col border-b p-2 lg:w-[30%] lg:border-r lg:border-b-0 lg:py-2 lg:pr-2 lg:pl-2.5">
           <div className="mb-1.5 flex gap-2">
@@ -343,28 +341,29 @@ function GroupedNotificationCard({
                   className="h-9 w-9 rounded-full object-cover"
                 />
               ) : (
-                <div className="bg-muted h-9 w-9 rounded-full" aria-hidden />
+                <div
+                  className="bg-surface-hover h-9 w-9 rounded-full"
+                  aria-hidden
+                />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-muted-foreground mb-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-tight">
+              <div className="text-text-secondary mb-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-tight">
                 <MessageCircle
                   className="h-3.5 w-3.5 shrink-0 translate-y-px"
                   strokeWidth={INLINE_ICON_STROKE}
                   aria-hidden
                 />
                 <div className="min-w-0">
-                  <span className="text-foreground font-medium">
-                    {contextTitle}
-                  </span>
+                  <span className="text-text font-medium">{contextTitle}</span>
                   {contextSublabel ? (
-                    <span className="text-muted-foreground/85 mt-0.5 block text-[10px] leading-snug">
+                    <span className="text-text-secondary/85 mt-0.5 block text-[10px] leading-snug">
                       {contextSublabel}
                     </span>
                   ) : null}
                 </div>
                 {parentPost.publishedAt ? (
-                  <span className="text-muted-foreground/80 text-[10px] whitespace-nowrap">
+                  <span className="text-text-secondary/80 text-[10px] whitespace-nowrap">
                     · {formatDate(parentPost.publishedAt)}
                   </span>
                 ) : null}
@@ -374,7 +373,7 @@ function GroupedNotificationCard({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground h-7 w-7"
+                      className="text-text-secondary h-7 w-7"
                       aria-label="Post actions"
                     >
                       <MoreHorizontal className="h-4 w-4" aria-hidden />
@@ -402,7 +401,7 @@ function GroupedNotificationCard({
                           : parentPost.fileUrl
                       }
                       alt="Post media"
-                      className="aspect-square max-h-28 w-full rounded object-cover sm:max-h-32"
+                      className="aspect-square max-h-28 w-full rounded-xs object-cover sm:max-h-32"
                     />
                   </div>
                 ) : null}
@@ -414,14 +413,14 @@ function GroupedNotificationCard({
                         {parentPost.isLongform ? (
                           <>
                             {parentPost.title ? (
-                              <h4 className="text-foreground mb-0.5 text-sm leading-snug font-semibold">
+                              <h4 className="text-text mb-0.5 text-sm leading-snug font-semibold">
                                 {parentPost.title.length > 100
                                   ? parentPost.title.substring(0, 100) + "..."
                                   : parentPost.title}
                               </h4>
                             ) : null}
                             {parentPost.content ? (
-                              <p className="text-muted-foreground text-xs leading-snug">
+                              <p className="text-text-secondary text-xs leading-snug">
                                 {parentPost.content.length > 150
                                   ? parentPost.content.substring(0, 150) + "..."
                                   : parentPost.content}
@@ -430,7 +429,7 @@ function GroupedNotificationCard({
                           </>
                         ) : (
                           parentPost.caption && (
-                            <p className="text-foreground text-sm leading-snug whitespace-pre-wrap">
+                            <p className="text-text text-sm leading-snug whitespace-pre-wrap">
                               {parentPost.caption.length > 200
                                 ? parentPost.caption.substring(0, 200) + "..."
                                 : parentPost.caption}
@@ -459,7 +458,7 @@ function GroupedNotificationCard({
                   </Tooltip>
 
                   {parentPost.stats ? (
-                    <div className="text-muted-foreground/90 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px]">
+                    <div className="text-text-secondary/90 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px]">
                       <span className="inline-flex items-center gap-1">
                         <MessageCircle
                           className={INLINE_ICON_SIZE_CLASS}
@@ -498,12 +497,12 @@ function GroupedNotificationCard({
                   ) : null}
 
                   {summary ? (
-                    <div className="text-muted-foreground/80 mt-0.5 text-[11px] leading-tight tracking-tight">
-                      <span className="text-foreground/75 font-medium tabular-nums">
+                    <div className="text-text-secondary/80 mt-0.5 text-[11px] leading-tight tracking-tight">
+                      <span className="text-text/75 font-medium tabular-nums">
                         {summary.total} total
                       </span>
                       <span className="text-border/80 mx-1">·</span>
-                      <span className="text-foreground font-semibold tabular-nums">
+                      <span className="text-text font-semibold tabular-nums">
                         {summary.needResponse} need response
                       </span>
                       <span className="text-border/80 mx-1">·</span>
@@ -517,7 +516,7 @@ function GroupedNotificationCard({
                     to={eventUrl(parentPost.eventId, nostrClientConfig)}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-muted-foreground/70 hover:text-foreground/85 mt-0.5 inline-block text-[11px] hover:underline"
+                    className="text-text-secondary/70 hover:text-text/85 mt-0.5 inline-block text-[11px] hover:underline"
                   >
                     View original post →
                   </Link>
@@ -531,7 +530,7 @@ function GroupedNotificationCard({
               className={`mt-2 rounded-md border px-2 py-1.5 text-xs ${
                 parentToast.type === "success"
                   ? "border-success/30 bg-success/10 text-success"
-                  : "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-danger/30 bg-danger/10 text-danger"
               }`}
             >
               {parentToast.message}

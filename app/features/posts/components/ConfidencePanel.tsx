@@ -148,7 +148,7 @@ function FollowUpRailCollapsible({
             <ChevronUp
               className={cn(
                 INLINE_ICON_SIZE_CLASS,
-                "text-muted-foreground shrink-0"
+                "text-text-secondary shrink-0"
               )}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
@@ -157,7 +157,7 @@ function FollowUpRailCollapsible({
             <ChevronDown
               className={cn(
                 INLINE_ICON_SIZE_CLASS,
-                "text-muted-foreground shrink-0"
+                "text-text-secondary shrink-0"
               )}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
@@ -211,9 +211,7 @@ function SectionBlockFallback({
   return (
     <div className={RAIL_STACK_TIGHT}>
       {title ? (
-        <span className="text-muted-foreground text-xs font-medium">
-          {title}
-        </span>
+        <span className="text-text-secondary text-xs font-medium">{title}</span>
       ) : null}
       {compacted.map((line) => (
         <p key={line} className="text-[11px] leading-snug">
@@ -277,10 +275,10 @@ function PublishSummarySection({
       <div className={RAIL_STACK_ROWS}>
         {useStacked ? (
           <div className={RAIL_STACK_TIGHT}>
-            <span className="text-muted-foreground text-[11px] font-medium">
+            <span className="text-text-secondary text-[11px] font-medium">
               Content
             </span>
-            <ul className="text-foreground list-none space-y-0.5 pl-0 text-[11px] leading-snug">
+            <ul className="text-text list-none space-y-0.5 pl-0 text-[11px] leading-snug">
               {contentSummaryLines.map((line) => {
                 const isTags = /^tags:/i.test(line.trim());
                 return (
@@ -288,7 +286,7 @@ function PublishSummarySection({
                     key={line}
                     className={cn(
                       "border-border/40 border-b border-dotted pb-0.5 last:border-0",
-                      isTags && "text-muted-foreground"
+                      isTags && "text-text-secondary"
                     )}
                   >
                     {line}
@@ -303,7 +301,7 @@ function PublishSummarySection({
           </RailSummaryMetadataRow>
         )}
         {!useStacked && contentSummaryLines.length > 3 ? (
-          <ul className="text-muted-foreground list-none space-y-0.5 pl-0 text-[10px] leading-snug">
+          <ul className="text-text-secondary list-none space-y-0.5 pl-0 text-[10px] leading-snug">
             {contentSummaryLines.slice(3).map((line) => (
               <li key={line}>{line}</li>
             ))}
@@ -401,7 +399,7 @@ function ModeAndThreadZones({
               {compactLines(modeLines, SECTION_LINE_LIMIT).map((line) => (
                 <p
                   key={line}
-                  className="text-muted-foreground text-[11px] leading-snug"
+                  className="text-text-secondary text-[11px] leading-snug"
                 >
                   {line}
                 </p>
@@ -421,7 +419,7 @@ function ModeAndThreadZones({
               {threadLines.map((line) => (
                 <p
                   key={line}
-                  className="text-muted-foreground text-[11px] leading-snug"
+                  className="text-text-secondary text-[11px] leading-snug"
                 >
                   {line}
                 </p>

@@ -44,7 +44,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, from: e.target.value })
               }
-              className="border-border bg-background text-foreground focus:border-primary focus:ring-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
+              className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -59,14 +59,14 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, to: e.target.value })
               }
-              className="border-border bg-background text-foreground focus:border-primary focus:ring-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus:ring focus:outline-none"
+              className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
             />
           </div>
         </div>
 
         {/* Search input */}
         <div className="relative w-full">
-          <div className="text-muted-foreground pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
+          <div className="text-text-secondary pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l">
             <Search
               className="inline-block size-5"
               strokeWidth={INLINE_ICON_STROKE}
@@ -79,7 +79,7 @@ export function GiveawayFilters({
             name="search"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus:ring focus:outline-none"
+            className="border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
             placeholder="Search posts.."
           />
         </div>
@@ -90,7 +90,7 @@ export function GiveawayFilters({
         <div className="mb-4 flex justify-end">
           <button
             onClick={onClearFilters}
-            className="text-primary hover:text-primary/80 text-sm"
+            className="text-brand hover:text-brand/80 text-sm"
           >
             Clear filters
           </button>

@@ -152,7 +152,7 @@ export default function DraftsPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="text-muted-foreground hover:text-foreground border-border/60 h-9 shrink-0 px-3 text-sm font-normal"
+                className="text-text-secondary hover:text-text border-border/60 h-9 shrink-0 px-3 text-sm font-normal"
                 onClick={resumeLatestDraft}
               >
                 Resume latest
@@ -219,7 +219,7 @@ export default function DraftsPage() {
           <div ref={prefetchSentinelRef} className="h-4 w-full" />
           <div ref={sentinelRef} className="h-4 w-full" />
           {isFetchingNextPage ? (
-            <div className="text-muted-foreground mt-4 text-center text-sm">
+            <div className="text-text-secondary mt-4 text-center text-sm">
               Loading more drafts...
             </div>
           ) : null}

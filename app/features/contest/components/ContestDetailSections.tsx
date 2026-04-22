@@ -52,16 +52,16 @@ export function ContestDetailCancelledLayout({
       <div className="flex items-center gap-4">
         <Link
           to="/dashboard/contests"
-          className="text-muted-foreground hover:text-foreground text-sm"
+          className="text-text-secondary hover:text-text text-sm"
         >
           ← Back to Contests
         </Link>
       </div>
-      <div className="border-border bg-card rounded-lg border p-5">
-        <h1 className="text-foreground text-2xl font-bold tracking-tight">
+      <div className="border-border bg-surface rounded-lg border p-5">
+        <h1 className="text-text text-2xl font-bold tracking-tight">
           {contest.title}
         </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-text-secondary mt-2 text-sm">
           {contest.statusLabel} · {metric.toLowerCase()}
         </p>
       </div>
@@ -75,7 +75,7 @@ export function ContestDetailBackLink() {
     <div className="flex items-center gap-4">
       <Link
         to="/dashboard/contests"
-        className="text-muted-foreground hover:text-foreground text-sm"
+        className="text-text-secondary hover:text-text text-sm"
       >
         ← Back to Contests
       </Link>
@@ -94,8 +94,8 @@ export function ContestPublicShareRow({ contestId }: { contestId: string }) {
   }, [isCopied]);
 
   return (
-    <div className="border-border bg-muted/15 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
-      <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+    <div className="border-border bg-surface-hover/15 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm">
+      <span className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
         Public results
       </span>
       <Button variant="outline" size="sm" asChild>
@@ -119,7 +119,7 @@ export function ContestPublicShareRow({ contestId }: { contestId: string }) {
         {isCopied ? "Copied" : "Copy public link"}
       </Button>
       <span
-        className="text-muted-foreground text-xs"
+        className="text-text-secondary text-xs"
         role="status"
         aria-live="polite"
       >
@@ -148,21 +148,21 @@ export function ContestDetailHeroHeader({
     <div className={`rounded-lg border p-5 ${headerToneClass}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-foreground text-2xl font-bold tracking-tight">
+          <h1 className="text-text text-2xl font-bold tracking-tight">
             {contest.title}
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">{stateSummary}</p>
+          <p className="text-text-secondary mt-2 text-sm">{stateSummary}</p>
         </div>
         <div className="flex flex-col items-end gap-1 text-right text-xs">
-          <span className="bg-muted text-foreground inline-flex rounded-full px-3 py-1 text-xs font-semibold">
+          <span className="bg-surface-hover text-text inline-flex rounded-full px-3 py-1 text-xs font-semibold">
             {phaseLabel}
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-text-secondary">
             Updated {new Date(statusTimestamp).toLocaleString()}
           </span>
         </div>
       </div>
-      <p className="text-muted-foreground mt-3 text-sm">
+      <p className="text-text-secondary mt-3 text-sm">
         Ranked by {metric.toLowerCase()} · Ends{" "}
         {new Date(contest.contestEndAt).toLocaleString()}
       </p>
@@ -191,8 +191,8 @@ export function ContestDetailSourceSection({
     );
   }
   return (
-    <div className="border-border bg-muted/30 rounded-lg border p-4 text-sm">
-      <p className="text-muted-foreground text-xs">
+    <div className="border-border bg-surface-hover/30 rounded-lg border p-4 text-sm">
+      <p className="text-text-secondary text-xs">
         {sourceNoteId
           ? `Source note: ${sourceNoteId}`
           : "Source note will be set when the entry post is published."}
@@ -240,8 +240,8 @@ export function ContestDetailLiveSection({
         leadingScore={data.liveStats.leadingScore}
         aggregates={data.aggregates}
       />
-      <div className="border-border bg-muted/15 rounded-lg border p-3">
-        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+      <div className="border-border bg-surface-hover/15 rounded-lg border p-3">
+        <p className="text-text-secondary mb-2 text-xs font-semibold tracking-wide uppercase">
           {contestCopy.shareActions}
         </p>
         <ContestShareActions
@@ -254,7 +254,7 @@ export function ContestDetailLiveSection({
           <input type="hidden" name="intent" value="freeze" />
           <button
             type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
           >
             {contestCopy.freezeLeaderboard}
           </button>
@@ -322,17 +322,17 @@ export function ContestDetailExcludedSection({
     return null;
   }
   return (
-    <div className="border-border bg-card rounded-lg border p-4">
+    <div className="border-border bg-surface rounded-lg border p-4">
       <h2 className="mb-2 text-sm font-semibold">
         {contestCopy.excludedSection}
       </h2>
       <div className="space-y-4">
         {excludedByReason.map(([reason, rows]) => (
           <div key={reason}>
-            <p className="text-muted-foreground mb-1 text-xs font-medium">
+            <p className="text-text-secondary mb-1 text-xs font-medium">
               {reason}
             </p>
-            <ul className="text-muted-foreground space-y-1 text-sm">
+            <ul className="text-text-secondary space-y-1 text-sm">
               {rows.map((e) => (
                 <li key={e.entryEventId}>
                   {e.authorPubkey.slice(0, 12)}… · score {e.score}
@@ -453,7 +453,7 @@ export function ContestDetailFormsSection({
           <input type="hidden" name="intent" value="launch" />
           <button
             type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
           >
             {contestCopy.launchContest}
           </button>
@@ -462,10 +462,10 @@ export function ContestDetailFormsSection({
 
       {isDraft && canUsePresets ? (
         <div className="border-border space-y-2 rounded-lg border p-4">
-          <p className="text-foreground text-sm font-medium">
+          <p className="text-text text-sm font-medium">
             {contestCopy.savePresetSectionTitle}
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             {contestCopy.savePresetHint}
           </p>
           <Form method="post" className="flex flex-wrap items-end gap-2">
@@ -474,11 +474,11 @@ export function ContestDetailFormsSection({
               name="presetName"
               required
               placeholder={contestCopy.presetNamePlaceholder}
-              className="border-border bg-background min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
             />
             <button
               type="submit"
-              className="border-border bg-background hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium"
+              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-4 py-2 text-sm font-medium"
             >
               Save
             </button>
@@ -494,17 +494,17 @@ export function ContestDetailFormsSection({
             name="lockConfigHash"
             value={contest.lockConfigHash ?? ""}
           />
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Locking makes final placements immutable for payout and proof.
             {BRAND_NAME} does not hold prize funds.
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             {feeLabel} · Planned {data.quote.plannedPayoutSats.toLocaleString()}{" "}
             sats · Fee {data.quote.feeSats.toLocaleString()} sats
           </p>
           <button
             type="submit"
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
           >
             {contestCopy.lockWinners}
           </button>
@@ -516,7 +516,7 @@ export function ContestDetailFormsSection({
           <input type="hidden" name="intent" value="exportCsv" />
           <button
             type="submit"
-            className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+            className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
           >
             {contestCopy.proofExport}
           </button>
@@ -527,20 +527,20 @@ export function ContestDetailFormsSection({
         <div className="space-y-4">
           <Form
             method="post"
-            className="border-border bg-card space-y-3 rounded-lg border p-4"
+            className="border-border bg-surface space-y-3 rounded-lg border p-4"
           >
             <input type="hidden" name="intent" value="updatePayoutSettings" />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Payout settings</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   {payoutCopy.lockTrustNote} Manual payout remains available as
                   fallback.
                 </p>
               </div>
               <button
                 type="submit"
-                className="border-border bg-background hover:bg-muted rounded-md border px-3 py-1.5 text-sm"
+                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
               >
                 Save
               </button>
@@ -565,7 +565,7 @@ export function ContestDetailFormsSection({
                   fd.set("stepIndex", "0");
                   batchPayoutFetcher.submit(fd, { method: "post" });
                 }}
-                className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+                className="bg-brand text-brand-on disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
                 title={
                   data.nwc.enabled
                     ? "Pay all winners using your connected wallet"
@@ -585,7 +585,7 @@ export function ContestDetailFormsSection({
                 )}
               </button>
               {!data.nwc.enabled ? (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Auto payout requires NWC. Manual zaps still work.
                 </p>
               ) : null}
@@ -597,7 +597,7 @@ export function ContestDetailFormsSection({
             {batchPayoutFetcher.data &&
             batchPayoutFetcher.data.success === false &&
             batchPayoutFetcher.data.error ? (
-              <p className="text-destructive text-xs">
+              <p className="text-danger text-xs">
                 {batchPayoutFetcher.data.error}
               </p>
             ) : null}
@@ -606,13 +606,13 @@ export function ContestDetailFormsSection({
             summary={data.payoutSummary}
             feeLabel={feeLabel}
           />
-          <div className="border-border bg-card space-y-2 rounded-lg border p-3 text-sm">
+          <div className="border-border bg-surface space-y-2 rounded-lg border p-3 text-sm">
             <p className="font-medium">
               {data.payoutSummary.paidOrSent} paid · {data.payoutSummary.failed}{" "}
               failed · {data.payoutSummary.needsReview} needs review ·{" "}
               {data.payoutSummary.skipped} skipped
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Retry failed payouts from recipient actions or switch to manual
               fallback in payout settings.
             </p>
@@ -645,12 +645,12 @@ export function ContestDetailFormsSection({
             <input type="hidden" name="intent" value="complete" />
             <textarea
               name="completeOverrideReason"
-              className="border-border bg-background min-h-20 w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas min-h-20 w-full rounded-md border px-3 py-2 text-sm"
               placeholder="Override reason if completing with pending payouts"
             />
             <button
               type="submit"
-              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+              className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
             >
               Finish campaign
             </button>
@@ -665,7 +665,7 @@ export function ContestDetailFormsSection({
             <div className="space-y-3 text-sm">
               {data.payoutSummary.failed > 0 ||
               data.payoutSummary.needsReview > 0 ? (
-                <p className="text-amber-700 dark:text-amber-300">
+                <p className="text-warning-text">
                   Completed with issues: {data.payoutSummary.failed} failed ·{" "}
                   {data.payoutSummary.needsReview} needs review.
                 </p>
@@ -673,35 +673,35 @@ export function ContestDetailFormsSection({
               <p>{data.receiptSummaryLine}</p>
               <dl className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                 <div>
-                  <dt className="text-muted-foreground">Source</dt>
+                  <dt className="text-text-secondary">Source</dt>
                   <dd className="font-mono">{contest.sourceNoteId}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Metric</dt>
+                  <dt className="text-text-secondary">Metric</dt>
                   <dd>{metric.toLowerCase()}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Winners</dt>
+                  <dt className="text-text-secondary">Winners</dt>
                   <dd>{winners.filter((w) => !w.isAlternate).length}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Prize pool</dt>
+                  <dt className="text-text-secondary">Prize pool</dt>
                   <dd>{data.quote.plannedPayoutSats.toLocaleString()} sats</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Paid via wallet</dt>
+                  <dt className="text-text-secondary">Paid via wallet</dt>
                   <dd>{data.payoutSummary.paidViaWallet}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Paid manually</dt>
+                  <dt className="text-text-secondary">Paid manually</dt>
                   <dd>{data.payoutSummary.paidManually}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Failed</dt>
+                  <dt className="text-text-secondary">Failed</dt>
                   <dd>{data.payoutSummary.failed}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Needs review</dt>
+                  <dt className="text-text-secondary">Needs review</dt>
                   <dd>{data.payoutSummary.needsReview}</dd>
                 </div>
               </dl>
@@ -710,12 +710,12 @@ export function ContestDetailFormsSection({
           proofTitle={contestCopy.publicProof}
           proofBody={
             <div className="space-y-3">
-              <pre className="text-muted-foreground overflow-x-auto text-xs whitespace-pre-wrap">
+              <pre className="text-text-secondary overflow-x-auto text-xs whitespace-pre-wrap">
                 {data.publicSummaryText}
               </pre>
               <div className="space-y-1">
                 <p className="text-xs font-medium">Winners</p>
-                <ul className="text-muted-foreground space-y-1 text-xs">
+                <ul className="text-text-secondary space-y-1 text-xs">
                   {winners
                     .filter((w) => !w.isAlternate)
                     .map((winner) => (
@@ -733,7 +733,7 @@ export function ContestDetailFormsSection({
               {data.winnerAnnouncementText ? (
                 <button
                   type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.winnerAnnouncementText ?? ""
@@ -746,7 +746,7 @@ export function ContestDetailFormsSection({
               {data.publicSummaryText ? (
                 <button
                   type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.publicSummaryText ?? ""
@@ -759,7 +759,7 @@ export function ContestDetailFormsSection({
               {data.fairnessProofText ? (
                 <button
                   type="button"
-                  className="border-border bg-background rounded-md border px-3 py-1.5 text-sm"
+                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.fairnessProofText ?? ""
@@ -789,10 +789,7 @@ export function ContestDetailCancelSection({
     <Form method="post" className="pt-2">
       <input type="hidden" name="intent" value="cancel" />
       <input type="hidden" name="reason" value="Cancelled by creator" />
-      <button
-        type="submit"
-        className="text-destructive text-sm hover:underline"
-      >
+      <button type="submit" className="text-danger text-sm hover:underline">
         {contestCopy.cancelContest}
       </button>
     </Form>

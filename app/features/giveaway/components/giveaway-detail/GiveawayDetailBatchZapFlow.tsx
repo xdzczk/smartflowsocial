@@ -144,9 +144,9 @@ export function GiveawayDetailBatchZapFlow({
 
   return (
     <div className="space-y-4">
-      <div className="border-border rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-        <p className="text-foreground font-semibold">Winners locked</p>
-        <p className="text-muted-foreground mt-1 text-sm">
+      <div className="border-border border-warning/30 bg-warning/10 rounded-lg border p-4">
+        <p className="text-text font-semibold">Winners locked</p>
+        <p className="text-text-secondary mt-1 text-sm">
           Winners fixed at{" "}
           {lockedAt ? new Date(lockedAt).toLocaleString() : "—"}.{" "}
           {payoutCopy.lockTrustNote}
@@ -161,7 +161,7 @@ export function GiveawayDetailBatchZapFlow({
               fd.set("stepIndex", "0");
               batchPayoutFetcher.submit(fd, { method: "post" });
             }}
-            className="bg-primary text-primary-foreground disabled:bg-muted disabled:text-muted-foreground inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
+            className="bg-brand text-brand-on disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
             title={
               nwcEnabled
                 ? "Pay all winners using your connected wallet"
@@ -181,7 +181,7 @@ export function GiveawayDetailBatchZapFlow({
             )}
           </button>
           {!nwcEnabled ? (
-            <span className="text-muted-foreground text-xs">
+            <span className="text-text-secondary text-xs">
               Auto payout requires NWC. Manual zaps still work.
             </span>
           ) : null}
@@ -193,7 +193,7 @@ export function GiveawayDetailBatchZapFlow({
         {batchPayoutFetcher.data &&
         batchPayoutFetcher.data.success === false &&
         batchPayoutFetcher.data.error ? (
-          <p className="text-destructive mt-2 text-xs">
+          <p className="text-danger mt-2 text-xs">
             {batchPayoutFetcher.data.error}
           </p>
         ) : null}
@@ -204,14 +204,14 @@ export function GiveawayDetailBatchZapFlow({
                 Progress: {payoutProgress.settledCount}/
                 {payoutProgress.totalWinners} marked sent or paid
               </span>
-              <span className="text-muted-foreground">
+              <span className="text-text-secondary">
                 {payoutProgress.settledSats.toLocaleString()} /{" "}
                 {payoutProgress.budgetSats.toLocaleString()} sats (budget)
               </span>
             </div>
-            <div className="bg-muted h-2 overflow-hidden rounded-full">
+            <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
               <div
-                className="bg-primary h-full transition-all"
+                className="bg-brand h-full transition-all"
                 style={{
                   width: `${payoutProgress.totalWinners > 0 ? (100 * payoutProgress.settledCount) / payoutProgress.totalWinners : 0}%`,
                 }}
@@ -220,7 +220,7 @@ export function GiveawayDetailBatchZapFlow({
           </div>
         ) : null}
       </div>
-      <div className="border-border bg-card space-y-2 rounded-lg border p-3 text-sm">
+      <div className="border-border bg-surface space-y-2 rounded-lg border p-3 text-sm">
         <p className="font-medium">
           {payoutTally.paid} paid · {payoutTally.failed} failed ·{" "}
           {payoutTally.needsReview} needs review · {payoutTally.skipped} skipped
@@ -271,7 +271,7 @@ export function GiveawayDetailBatchZapFlow({
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <GiveawayDetailPayoutStatusBadge status={st} />
                   {w.satsPerWinner != null && w.satsPerWinner > 0 ? (
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-text-secondary text-xs">
                       {w.satsPerWinner.toLocaleString()} sats
                     </span>
                   ) : null}
@@ -353,7 +353,7 @@ export function GiveawayDetailBatchZapFlow({
         typeof paidFetcher.data === "object" &&
         "error" in paidFetcher.data &&
         paidFetcher.data.error ? (
-          <p className="text-destructive text-sm">
+          <p className="text-danger text-sm">
             {String(paidFetcher.data.error)}
           </p>
         ) : null}
@@ -379,7 +379,7 @@ export function GiveawayDetailBatchZapFlow({
               setOverrideReason(e.target.value);
             }}
             rows={3}
-            className="border-border bg-background w-full rounded-md border p-2 text-sm"
+            className="border-border bg-canvas w-full rounded-md border p-2 text-sm"
             placeholder="Reason for completing before all payouts are marked…"
           />
           <AlertDialogFooter>

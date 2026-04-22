@@ -9,11 +9,11 @@ export function DeferredRouteAwaitError({ retryTo }: { retryTo: string }) {
 
   return (
     <div className="mx-auto w-full max-w-5xl p-4 sm:p-6">
-      <div className="border-destructive/30 bg-destructive/5 rounded-lg border p-6 text-center">
-        <p className="text-destructive mb-4 text-sm font-medium">{message}</p>
+      <div className="border-danger/30 bg-danger/5 rounded-lg border p-6 text-center">
+        <p className="text-danger mb-4 text-sm font-medium">{message}</p>
         <Link
           to={retryTo}
-          className="text-primary text-sm font-medium underline underline-offset-4"
+          className="text-brand text-sm font-medium underline underline-offset-4"
         >
           Try again
         </Link>

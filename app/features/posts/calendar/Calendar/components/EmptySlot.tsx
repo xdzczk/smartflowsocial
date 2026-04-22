@@ -87,7 +87,7 @@ export function EmptySlotCreateMenu({
       }}
     >
       <DropdownMenuTrigger
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/50 inline-flex size-8 shrink-0 items-center justify-center rounded transition-colors"
+        className="text-text-secondary hover:text-text hover:bg-surface-hover/50 inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--calendar-radius-sm)] transition-colors"
         onClick={(e) => e.stopPropagation()}
         aria-label="Create in this slot"
       >

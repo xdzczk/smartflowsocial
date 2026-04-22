@@ -316,7 +316,7 @@ function renderSettingsPanel(
       return (
         <div className="flex min-w-0 flex-col gap-8">
           <div className="flex flex-col gap-4">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Engagement defaults
             </p>
             <div className="flex flex-col gap-4 sm:gap-6">
@@ -332,7 +332,7 @@ function renderSettingsPanel(
             hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsersValue}
           />
           <div className="flex flex-col gap-4">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Participation safety
             </p>
             <GiveawayBlacklistSettings
@@ -364,7 +364,7 @@ function renderSettingsPanel(
             <p className="text-sm">
               <Link
                 to="/dashboard/settings/media"
-                className="text-primary font-medium hover:underline"
+                className="text-brand font-medium hover:underline"
               >
                 Open media library
               </Link>
@@ -405,7 +405,7 @@ function renderSettingsPanel(
               parentUser={accounts.parentUser}
             />
           ) : (
-            <div className="text-muted-foreground text-sm">
+            <div className="text-text-secondary text-sm">
               Your account npub is not available.
             </div>
           )}

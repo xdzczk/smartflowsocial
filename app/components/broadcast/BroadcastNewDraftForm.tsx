@@ -60,15 +60,15 @@ function FormSection(props: {
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-foreground text-lg font-semibold tracking-tight">
-          <span className="text-muted-foreground mr-2 font-mono text-base tabular-nums">
+        <h2 className="text-text text-lg font-semibold tracking-tight">
+          <span className="text-text-secondary mr-2 font-mono text-base tabular-nums">
             {props.step}
           </span>
           {props.title}
         </h2>
-        <p className="text-muted-foreground mt-1.5 text-sm">{props.purpose}</p>
+        <p className="text-text-secondary mt-1.5 text-sm">{props.purpose}</p>
       </div>
-      <div className="border-border bg-card/40 rounded-xl border p-5 shadow-sm">
+      <div className="border-border bg-surface/40 shadow-1 rounded-xl border p-5">
         {props.children}
       </div>
     </section>
@@ -350,7 +350,7 @@ export function BroadcastNewDraftForm({
         {actionError ? (
           <div
             role="alert"
-            className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm"
+            className="border-danger/40 bg-danger/10 text-danger rounded-lg border px-3 py-2 text-sm"
           >
             {actionError}
           </div>
@@ -372,11 +372,11 @@ export function BroadcastNewDraftForm({
             />
 
             {audienceMode === "mutuals" && allowMutuals ? (
-              <div className="border-border bg-muted/10 space-y-3 rounded-xl border p-4">
-                <p className="text-muted-foreground text-sm">
+              <div className="border-border bg-surface-hover/10 space-y-3 rounded-xl border p-4">
+                <p className="text-text-secondary text-sm">
                   Resolved at send time from two-way follow relationships.
                 </p>
-                <span className="inline-block rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-900 dark:text-emerald-100">
+                <span className="bg-success/15 text-success-text inline-block rounded-md px-2 py-0.5 text-[11px] font-medium">
                   Lower spam risk
                 </span>
                 <AudienceGraphPanel onEstimateStats={onGraphEstimateStats} />
@@ -395,19 +395,19 @@ export function BroadcastNewDraftForm({
 
             <div className="border-border space-y-3 rounded-xl border p-4">
               <p className="text-sm font-medium">Audience exclusions</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 Applied when the final audience is resolved.
               </p>
               <div>
                 <label
                   htmlFor="broadcast-exclude-recent-days-global"
-                  className="text-muted-foreground text-xs font-medium"
+                  className="text-text-secondary text-xs font-medium"
                 >
                   Exclude recipients messaged in the last
                 </label>
                 <select
                   id="broadcast-exclude-recent-days-global"
-                  className="border-input bg-background mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
+                  className="border-border bg-canvas mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
                   value={String(excludeMessagedDays)}
                   onChange={(e) => {
                     setExcludeMessagedDays(Number(e.target.value));
@@ -423,7 +423,7 @@ export function BroadcastNewDraftForm({
               <label className="flex cursor-pointer items-start gap-2 text-sm">
                 <input
                   type="checkbox"
-                  className="border-input mt-0.5 rounded"
+                  className="border-border mt-0.5 rounded-xs"
                   checked={excludePriorBroadcastRecipients}
                   onChange={(e) => {
                     setExcludePriorBroadcastRecipients(e.target.checked);
@@ -443,7 +443,7 @@ export function BroadcastNewDraftForm({
                   name="intent"
                   value="save_audience"
                   disabled={busy}
-                  className="border-input bg-background hover:bg-muted rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+                  className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                 >
                   Save audience
                 </button>
@@ -470,10 +470,10 @@ export function BroadcastNewDraftForm({
                 name="name"
                 required
                 defaultValue={savedForNew?.name ?? ""}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="March update · Beta list · Team note"
               />
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-text-secondary mt-1 text-xs">
                 For your workspace only. Recipients won’t see this.
               </p>
             </div>
@@ -496,17 +496,17 @@ export function BroadcastNewDraftForm({
                   setMessageBody(e.target.value);
                   setMessageLen(e.target.value.length);
                 }}
-                className="border-input bg-background focus-visible:ring-primary min-h-[220px] w-full rounded-md border px-3 py-3 text-sm leading-relaxed shadow-inner focus-visible:ring-2 focus-visible:outline-none"
+                className="border-border bg-canvas focus-visible:ring-focus-ring min-h-[220px] w-full rounded-md border px-3 py-3 text-sm leading-relaxed shadow-inner focus-visible:ring-2 focus-visible:outline-none"
               />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-muted-foreground text-xs tabular-nums">
+                <p className="text-text-secondary text-xs tabular-nums">
                   {messageLen} / 8000 characters ·{" "}
                   {messageBody ? messageBody.split(/\r?\n/).length : 0} lines
                 </p>
-                <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+                <label className="text-text-secondary flex cursor-pointer items-center gap-2 text-xs">
                   <input
                     type="checkbox"
-                    className="border-input rounded"
+                    className="border-border rounded-xs"
                     checked={showMessagePreview}
                     onChange={(e) => {
                       setShowMessagePreview(e.target.checked);
@@ -517,20 +517,20 @@ export function BroadcastNewDraftForm({
               </div>
               {showMessagePreview && hasMessage ? (
                 <div
-                  className="border-border bg-muted/30 mt-3 rounded-lg border p-4 text-sm whitespace-pre-wrap"
+                  className="border-border bg-surface-hover/30 mt-3 rounded-lg border p-4 text-sm whitespace-pre-wrap"
                   aria-live="polite"
                 >
                   {messagePreviewText}
                 </div>
               ) : null}
               {showMessagePreview && hasMessage ? (
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-text-secondary mt-2 text-xs">
                   Preview uses a sample unsubscribe link. Final send uses a
                   unique per-recipient link.
                 </p>
               ) : null}
               {messageLint.length > 0 ? (
-                <ul className="mt-3 space-y-1 text-xs text-amber-800 dark:text-amber-200">
+                <ul className="text-warning-text mt-3 space-y-1 text-xs">
                   {messageLint.map((w) => (
                     <li key={`${w.level}:${w.message}`}>{w.message}</li>
                   ))}

@@ -166,7 +166,7 @@ export function DraftsBulkActions({
         size="default"
         onClick={onBulkDelete}
         disabled={isDeleting}
-        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="border-danger/40 text-danger hover:bg-danger/10 hover:text-danger"
       >
         {isDeleting ? "Deleting..." : "Delete"}
       </Button>

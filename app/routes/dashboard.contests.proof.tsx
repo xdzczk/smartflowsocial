@@ -116,10 +116,10 @@ export default function ContestProofPage() {
         {(loadedContests) => (
           <div className="space-y-6">
             <ContestProofStudio contests={loadedContests} />
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               <Link
                 to="/dashboard/contests"
-                className="text-primary hover:underline"
+                className="text-brand hover:underline"
               >
                 ← All contests
               </Link>

@@ -209,7 +209,7 @@ export function BulkComposerModalContent({
   if (isLoadingContext) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Loader2 className="text-text-secondary h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -217,7 +217,7 @@ export function BulkComposerModalContent({
   return (
     <>
       {displayedHashtags && String(displayedHashtags).length <= 80 ? (
-        <div className="bg-muted text-foreground mb-3 inline-flex items-center gap-1 rounded px-2 py-1 text-xs leading-4 font-semibold">
+        <div className="bg-surface-hover text-text mb-3 inline-flex items-center gap-1 rounded-xs px-2 py-1 text-xs leading-4 font-semibold">
           <Hash
             className="inline-block size-4 opacity-75"
             strokeWidth={INLINE_ICON_STROKE}

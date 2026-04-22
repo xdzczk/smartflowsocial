@@ -54,8 +54,8 @@ export function AdminTabNav() {
                 cn(
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
                   isActive
-                    ? "bg-muted text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-surface-hover text-text shadow-1"
+                    : "text-text-secondary hover:text-text hover:bg-surface-hover/60"
                 )
               }
             >
@@ -65,7 +65,7 @@ export function AdminTabNav() {
         </nav>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-xs">Range</span>
+            <span className="text-text-secondary text-xs">Range</span>
             <div className="flex flex-wrap gap-1">
               {RANGE_OPTIONS.map((r) => (
                 <button
@@ -75,8 +75,8 @@ export function AdminTabNav() {
                   className={cn(
                     "rounded-md px-2 py-1 text-xs font-medium",
                     range === r
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? "bg-brand text-brand-on"
+                      : "bg-surface-hover text-text-secondary hover:bg-surface-hover/80"
                   )}
                 >
                   {r}
@@ -85,7 +85,7 @@ export function AdminTabNav() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-xs">Display</span>
+            <span className="text-text-secondary text-xs">Display</span>
             <div
               className="flex flex-wrap gap-1"
               role="group"
@@ -99,8 +99,8 @@ export function AdminTabNav() {
                   className={cn(
                     "rounded-md px-2 py-1 text-xs font-medium",
                     unit === u
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? "bg-brand text-brand-on"
+                      : "bg-surface-hover text-text-secondary hover:bg-surface-hover/80"
                   )}
                 >
                   {u}
@@ -109,7 +109,7 @@ export function AdminTabNav() {
             </div>
           </div>
           {unit === "USD" || unit === "EUR" ? (
-            <p className="text-muted-foreground max-w-md text-right text-[11px] leading-snug">
+            <p className="text-text-secondary max-w-md text-right text-[11px] leading-snug">
               {fx.status === "loading" || fx.status === "idle"
                 ? "Loading spot…"
                 : spotFootnote}

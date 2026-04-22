@@ -32,7 +32,7 @@ export function RenderedThreadPreview({
       <PreviewAccountHeader user={user} className="mb-2" />
       <div className="relative pl-3">
         <div
-          className="bg-border/45 absolute top-2 bottom-2 left-[0.45rem] w-px"
+          className="bg-border-subtle absolute top-2 bottom-2 left-[0.45rem] w-px"
           aria-hidden
         />
         <div className="relative z-[1] flex flex-col gap-2 pl-4">
@@ -47,7 +47,7 @@ export function RenderedThreadPreview({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-muted-foreground h-8 text-xs"
+            className="text-text-secondary h-8 text-xs"
             onClick={() => setCollapsed((c) => !c)}
           >
             {collapsed
@@ -58,7 +58,7 @@ export function RenderedThreadPreview({
       ) : null}
       {hideTags ? (
         tags.length > 0 ? (
-          <p className="text-muted-foreground/75 mt-2.5 text-xs">
+          <p className="text-text-tertiary mt-2.5 text-xs">
             {tags.length} hidden topic tag{tags.length === 1 ? "" : "s"}{" "}
             included (applied to each note)
           </p>

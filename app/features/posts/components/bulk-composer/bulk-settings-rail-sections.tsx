@@ -148,7 +148,7 @@ export function BulkSettingsRailBuildDefaultsBlock({
           />
         ) : (
           <div className="space-y-2">
-            <p className="text-muted-foreground text-[11px] leading-snug">
+            <p className="text-text-secondary text-[11px] leading-snug">
               Set all to a queue, or use Advanced on each card.
             </p>
             <QueueSelector
@@ -254,7 +254,7 @@ export function BulkSettingsRepostAllPopover({
           <div className="space-y-3">
             <div className="flex flex-wrap items-end gap-2">
               <div className="flex flex-col gap-1">
-                <Label className="text-muted-foreground text-xs">Delay</Label>
+                <Label className="text-text-secondary text-xs">Delay</Label>
                 <Input
                   type="number"
                   min={1}
@@ -268,7 +268,7 @@ export function BulkSettingsRepostAllPopover({
                 />
               </div>
               <div className="flex min-w-[7rem] flex-col gap-1">
-                <Label className="text-muted-foreground text-xs">Unit</Label>
+                <Label className="text-text-secondary text-xs">Unit</Label>
                 <Select
                   value={repostAllUnit}
                   onValueChange={(v) =>
@@ -346,7 +346,7 @@ export function BulkSettingsRepostConditionsFields({
             <ChevronUp
               className={cn(
                 INLINE_ICON_SIZE_CLASS,
-                "text-muted-foreground shrink-0"
+                "text-text-secondary shrink-0"
               )}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
@@ -355,7 +355,7 @@ export function BulkSettingsRepostConditionsFields({
             <ChevronDown
               className={cn(
                 INLINE_ICON_SIZE_CLASS,
-                "text-muted-foreground shrink-0"
+                "text-text-secondary shrink-0"
               )}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
@@ -365,7 +365,7 @@ export function BulkSettingsRepostConditionsFields({
       />
       {open ? (
         <div className="divide-border/60 border-border/50 mt-2 space-y-2 border-t pt-2">
-          <p className="text-muted-foreground text-[10px] leading-snug">
+          <p className="text-text-secondary text-[10px] leading-snug">
             Only repost if the original reaches these minimums (all reposts in
             this batch).
           </p>
@@ -598,7 +598,7 @@ export function BulkSettingsRailBuildValidationBlock({
     return (
       <ActionRailSection className="space-y-2">
         <ActionRailLabel>Validation</ActionRailLabel>
-        <p className="text-muted-foreground text-[11px] leading-snug">
+        <p className="text-text-secondary text-[11px] leading-snug">
           Add posts to validate this batch.
         </p>
       </ActionRailSection>
@@ -609,7 +609,7 @@ export function BulkSettingsRailBuildValidationBlock({
     <ActionRailSection className="space-y-2">
       <ActionRailLabel>Validation</ActionRailLabel>
       {validationResult.isValid ? (
-        <p className="text-muted-foreground text-[11px] leading-snug">
+        <p className="text-text-secondary text-[11px] leading-snug">
           Ready to review.
         </p>
       ) : (
@@ -626,7 +626,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -643,7 +643,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -660,7 +660,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex(
                     (p) => !p.queueType || p.queueType === "unassigned"
@@ -725,7 +725,7 @@ export function BulkSettingsRailReviewReadinessBlock({
     return (
       <ActionRailSection className="space-y-2">
         <ActionRailLabel>Readiness</ActionRailLabel>
-        <p className="text-muted-foreground text-[11px] leading-snug">
+        <p className="text-text-secondary text-[11px] leading-snug">
           Add posts to see signing readiness.
         </p>
       </ActionRailSection>
@@ -736,7 +736,7 @@ export function BulkSettingsRailReviewReadinessBlock({
     <ActionRailSection className="space-y-2">
       <ActionRailLabel>Readiness</ActionRailLabel>
       {validationResult.isValid ? (
-        <p className="text-foreground text-[11px] leading-snug font-medium">
+        <p className="text-text text-[11px] leading-snug font-medium">
           Ready to sign and schedule {postsCount} post
           {postsCount !== 1 ? "s" : ""}.
         </p>
@@ -753,7 +753,7 @@ export function BulkSettingsRailReviewReadinessBlock({
             <Button
               type="button"
               variant="link"
-              className="text-primary h-auto justify-start px-0 py-0 text-[11px]"
+              className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
               onClick={() => onJumpToPost(firstIssue)}
             >
               Jump to first issue

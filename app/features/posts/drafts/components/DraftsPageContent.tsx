@@ -230,7 +230,7 @@ export function DraftsPageContent({
             showMobileSortControl={false}
           />
           {showAdvancedBulkResume ? (
-            <div className="bg-background fixed inset-0 z-50">
+            <div className="bg-canvas fixed inset-0 z-50">
               <DraftBulkResume
                 selectedDrafts={convertDraftsPostsToPostDataArray(
                   filteredPosts.filter((post) => selectedPosts.has(post.id)),

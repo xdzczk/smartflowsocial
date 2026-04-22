@@ -23,7 +23,7 @@ export function RenderedPostPreview({
       />
       {data.hideTags ? (
         data.tags.length > 0 ? (
-          <p className="text-muted-foreground/75 mt-2.5 text-xs">
+          <p className="text-text-tertiary mt-2.5 text-xs">
             {data.tags.length} hidden topic tag
             {data.tags.length === 1 ? "" : "s"} included
           </p>

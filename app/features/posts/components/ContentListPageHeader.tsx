@@ -55,7 +55,7 @@ export function ContentListPageHeader({
     >
       <h3 className="font-semibold">{title}</h3>
       {subtitle ? (
-        <p className="text-muted-foreground max-w-2xl text-sm">{subtitle}</p>
+        <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
       ) : null}
     </div>
   );

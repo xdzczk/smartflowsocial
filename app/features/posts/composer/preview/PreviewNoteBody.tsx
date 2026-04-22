@@ -37,7 +37,7 @@ function renderPreviewNoteTokens(tokens: PreviewNoteToken[]) {
             href={t.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary decoration-primary/40 hover:decoration-primary font-medium underline underline-offset-2"
+            className="text-brand decoration-brand/40 hover:decoration-brand font-medium underline underline-offset-2"
           >
             {t.label}
           </a>
@@ -49,18 +49,18 @@ function renderPreviewNoteTokens(tokens: PreviewNoteToken[]) {
             href={t.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary decoration-primary/40 hover:decoration-primary font-medium underline underline-offset-2"
+            className="text-brand decoration-brand/40 hover:decoration-brand font-medium underline underline-offset-2"
           >
             {t.label}
           </a>
         ) : (
-          <span key={key} className="text-primary font-medium">
+          <span key={key} className="text-brand font-medium">
             {t.label}
           </span>
         );
       case "hashtag":
         return (
-          <span key={key} className="text-primary font-medium">
+          <span key={key} className="text-brand font-medium">
             {t.label}
           </span>
         );
@@ -85,7 +85,7 @@ export function PreviewNoteBody({
   return (
     <div
       className={cn(
-        "text-foreground wrap-break-word text-[15px] leading-[1.55] whitespace-pre-wrap",
+        "text-text wrap-break-word text-[15px] leading-[1.55] whitespace-pre-wrap",
         className
       )}
     >

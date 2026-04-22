@@ -35,7 +35,7 @@ export function GiveawayEmbeddedComposer({
 
   return (
     <div className="min-w-0 space-y-2">
-      <p className="text-muted-foreground text-xs">{embedHint}</p>
+      <p className="text-text-secondary text-xs">{embedHint}</p>
       <UnifiedComposer
         key={composerKey}
         queueTypes={parsed.typedQueueTypes}

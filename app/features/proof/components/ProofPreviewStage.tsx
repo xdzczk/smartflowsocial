@@ -12,7 +12,7 @@ export function ProofPreviewStage({
   return (
     <div
       className={cn(
-        "bg-muted/20 flex min-h-[280px] flex-1 items-center justify-center rounded-xl p-6 sm:min-h-[360px]",
+        "bg-surface-hover/20 flex min-h-[280px] flex-1 items-center justify-center rounded-xl p-6 sm:min-h-[360px]",
         className
       )}
     >

@@ -263,17 +263,17 @@ export function DraftEditForm({
               onScheduledForChange(clampDateTimeLocalToMin(v, min));
             }}
             min={getNowForDateTimeLocal(userTimezone)}
-            className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 block w-full rounded-lg border p-2"
+            className="dark:bg-surface dark:text-text border-border text-text mt-1 block w-full rounded-lg border p-2"
             disabled={isSubmitting}
           />
-          <p className="text-muted-foreground dark:text-foreground mt-1 text-sm">
+          <p className="text-text-secondary dark:text-text mt-1 text-sm">
             Set a schedule time to resume this draft as a scheduled post
           </p>
         </div>
 
         {/* Also schedule repost/quote */}
-        <div className="border-border bg-muted/30 space-y-3 rounded-lg border p-4">
-          <div className="text-foreground text-sm font-medium">
+        <div className="border-border bg-surface-hover/30 space-y-3 rounded-lg border p-4">
+          <div className="text-text text-sm font-medium">
             Also schedule when resuming
           </div>
           {onAlsoScheduleRepostChange ? (
@@ -293,7 +293,7 @@ export function DraftEditForm({
               </label>
               {alsoScheduleRepost && onRepostDelayListChange ? (
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-xs">
+                  <Label className="text-text-secondary text-xs">
                     When after main post (one per repost)
                   </Label>
                   {repostDelayList.map((item, idx) => (
@@ -316,7 +316,7 @@ export function DraftEditForm({
                             )
                           );
                         }}
-                        className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
+                        className="dark:bg-surface dark:text-text border-border text-text w-20 rounded-lg border p-2 text-sm"
                         disabled={isSubmitting}
                         aria-label="Delay value"
                       />
@@ -330,7 +330,7 @@ export function DraftEditForm({
                             )
                           );
                         }}
-                        className="dark:bg-card dark:text-foreground border-border text-foreground w-24 rounded-lg border p-2 text-sm"
+                        className="dark:bg-surface dark:text-text border-border text-text w-24 rounded-lg border p-2 text-sm"
                         disabled={isSubmitting}
                         aria-label="Hours or minutes"
                       >
@@ -347,7 +347,7 @@ export function DraftEditForm({
                           )
                         }
                         disabled={isSubmitting || repostDelayList.length <= 1}
-                        className="text-muted-foreground hover:text-foreground text-xs"
+                        className="text-text-secondary hover:text-text text-xs"
                         aria-label="Remove repost"
                       >
                         Remove
@@ -363,13 +363,13 @@ export function DraftEditForm({
                       ])
                     }
                     disabled={isSubmitting}
-                    className="text-primary text-xs hover:underline"
+                    className="text-brand text-xs hover:underline"
                   >
                     Add another repost
                   </button>
                   {onRepostConditionsChange ? (
-                    <div className="border-border mt-3 space-y-1.5 rounded border p-3">
-                      <span className="text-muted-foreground text-xs">
+                    <div className="border-border mt-3 space-y-1.5 rounded-xs border p-3">
+                      <span className="text-text-secondary text-xs">
                         Only repost if original gets (optional)
                       </span>
                       <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
@@ -381,7 +381,7 @@ export function DraftEditForm({
                           { key: "minSats" as const, label: "Sats" },
                         ].map(({ key, label }) => (
                           <div key={key} className="flex items-center gap-1.5">
-                            <label className="text-muted-foreground text-xs whitespace-nowrap">
+                            <label className="text-text-secondary text-xs whitespace-nowrap">
                               {label}
                             </label>
                             <input
@@ -410,7 +410,7 @@ export function DraftEditForm({
                                 );
                               }}
                               disabled={isSubmitting}
-                              className="bg-card border-border text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                              className="bg-surface border-border text-text w-20 rounded-md border px-2 py-1.5 text-sm"
                               aria-label={`Min ${label.toLowerCase()}`}
                             />
                           </div>
@@ -435,16 +435,16 @@ export function DraftEditForm({
               </label>
               {alsoScheduleQuote && onQuoteEntriesChange ? (
                 <div className="space-y-3">
-                  <Label className="text-muted-foreground text-xs">
+                  <Label className="text-text-secondary text-xs">
                     Quote times and captions (one per quote)
                   </Label>
                   {quoteEntries.map((entry, idx) => (
                     <div
                       key={entry.id}
-                      className="border-border space-y-2 rounded border p-3"
+                      className="border-border space-y-2 rounded-xs border p-3"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <Label className="text-muted-foreground text-xs">
+                        <Label className="text-text-secondary text-xs">
                           When after main
                         </Label>
                         <button
@@ -457,7 +457,7 @@ export function DraftEditForm({
                             )
                           }
                           disabled={isSubmitting || quoteEntries.length <= 1}
-                          className="text-muted-foreground hover:text-foreground text-xs"
+                          className="text-text-secondary hover:text-text text-xs"
                           aria-label="Remove quote"
                         >
                           Remove
@@ -479,7 +479,7 @@ export function DraftEditForm({
                               )
                             );
                           }}
-                          className="dark:bg-card dark:text-foreground border-border text-foreground w-20 rounded-lg border p-2 text-sm"
+                          className="dark:bg-surface dark:text-text border-border text-text w-20 rounded-lg border p-2 text-sm"
                           disabled={isSubmitting}
                           aria-label="Delay value"
                         />
@@ -493,7 +493,7 @@ export function DraftEditForm({
                               )
                             );
                           }}
-                          className="dark:bg-card dark:text-foreground border-border text-foreground w-24 rounded-lg border p-2 text-sm"
+                          className="dark:bg-surface dark:text-text border-border text-text w-24 rounded-lg border p-2 text-sm"
                           disabled={isSubmitting}
                           aria-label="Hours or minutes"
                         >
@@ -502,7 +502,7 @@ export function DraftEditForm({
                         </select>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground text-xs">
+                        <Label className="text-text-secondary text-xs">
                           Caption (optional)
                         </Label>
                         <Textarea
@@ -518,7 +518,7 @@ export function DraftEditForm({
                           }
                           placeholder="Add your comment..."
                           rows={2}
-                          className="dark:bg-card dark:text-foreground border-border text-foreground mt-1 w-full rounded-lg border p-2 text-sm"
+                          className="dark:bg-surface dark:text-text border-border text-text mt-1 w-full rounded-lg border p-2 text-sm"
                           disabled={isSubmitting}
                         />
                       </div>
@@ -538,7 +538,7 @@ export function DraftEditForm({
                       ])
                     }
                     disabled={isSubmitting}
-                    className="text-primary text-xs hover:underline"
+                    className="text-brand text-xs hover:underline"
                   >
                     Add another quote
                   </button>
@@ -575,20 +575,20 @@ export function DraftEditForm({
       </fetcher.Form>
 
       {/* Draft Info */}
-      <div className="dark:bg-muted rounded-lg bg-yellow-50 p-4">
+      <div className="dark:bg-surface-hover bg-warning/12 rounded-lg p-4">
         <div className="flex">
           <div className="flex-shrink-0">
             <AlertTriangle
-              className="h-5 w-5 text-yellow-400"
+              className="text-warning h-5 w-5"
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />
           </div>
           <div className="ml-3">
-            <h3 className="dark:text-foreground text-sm font-medium text-yellow-800">
+            <h3 className="dark:text-text text-warning-text text-sm font-medium">
               Draft Status
             </h3>
-            <div className="dark:text-foreground mt-2 text-sm text-yellow-700">
+            <div className="dark:text-text text-warning-text mt-2 text-sm">
               <p>
                 This post is saved as a draft and is not signed. It cannot be
                 published until you resume it and provide a schedule time.

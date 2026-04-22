@@ -25,11 +25,11 @@ export function SettingsSectionHeader({
       )}
     >
       <div className="min-w-0 flex-1">
-        <h2 className="text-foreground text-base font-semibold tracking-tight">
+        <h2 className="text-text text-base font-semibold tracking-tight">
           {title}
         </h2>
         {description ? (
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          <p className="text-text-secondary mt-1 text-sm leading-relaxed">
             {description}
           </p>
         ) : null}

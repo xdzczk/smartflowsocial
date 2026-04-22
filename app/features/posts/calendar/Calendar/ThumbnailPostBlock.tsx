@@ -52,7 +52,7 @@ export function ThumbnailPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "article" : "post"}: ${postPreview}, ${isPast ? "published" : isLongform ? "published" : "scheduled"} for ${formattedTime}`}
-      className={`focus:ring-ring relative overflow-hidden rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity focus:ring-2 focus:outline-none ${
+      className={`focus-visible:ring-focus-ring relative overflow-hidden rounded-[var(--calendar-radius-sm)] p-1 text-xs transition-opacity focus-visible:ring-2 focus-visible:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""
@@ -69,7 +69,7 @@ export function ThumbnailPostBlock({
             forceType={isVideoFile(firstImage) ? "video" : "image"}
             hidePlayButton={true}
             fallback={
-              <div className="bg-muted h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
+              <div className="bg-surface-hover h-4 w-4 flex-shrink-0 rounded-[var(--calendar-radius-sm)]" />
             }
           />
           <PostBadges post={post} size="sm" />

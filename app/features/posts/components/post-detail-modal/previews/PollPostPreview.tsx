@@ -46,7 +46,7 @@ export function PollPostPreview({
       <PostPreviewSurface>
         <div className="space-y-3">
           {showIntro ? (
-            <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
+            <p className="text-text text-[15px] leading-relaxed whitespace-pre-wrap">
               {primary}
             </p>
           ) : null}
@@ -60,7 +60,7 @@ export function PollPostPreview({
         </div>
       </PostPreviewSurface>
       {contextLine ? (
-        <p className="text-muted-foreground/80 text-xs leading-snug">
+        <p className="text-text-secondary/80 text-xs leading-snug">
           {contextLine}
         </p>
       ) : null}

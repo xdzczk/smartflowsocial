@@ -31,7 +31,7 @@ export function ProofEntitySelector({
       />
       <div className="max-h-[min(60vh,520px)] space-y-1 overflow-y-auto pr-1">
         {emptyMessage != null && children == null ? (
-          <p className="text-muted-foreground text-sm">{emptyMessage}</p>
+          <p className="text-text-secondary text-sm">{emptyMessage}</p>
         ) : (
           children
         )}

@@ -96,13 +96,13 @@ export function AlsoScheduleBlock({
               {repostDelayList.map((item, idx) => (
                 <li key={item.id} className="space-y-1.5 py-2 first:pt-0">
                   <div className={followUpSettingsRowClass}>
-                    <span className="text-foreground text-xs font-medium">
+                    <span className="text-text text-xs font-medium">
                       Repost #{idx + 1}
                     </span>
                     <Button
                       type="button"
                       variant="link"
-                      className="text-muted-foreground hover:text-foreground h-auto p-0 text-xs font-normal"
+                      className="text-text-secondary hover:text-text h-auto p-0 text-xs font-normal"
                       disabled={disabled}
                       onClick={() =>
                         onRepostDelayListChange((prev) =>
@@ -114,7 +114,7 @@ export function AlsoScheduleBlock({
                     </Button>
                   </div>
                   <div className={followUpSettingsRowClass}>
-                    <span className="text-muted-foreground w-12 shrink-0 text-xs">
+                    <span className="text-text-secondary w-12 shrink-0 text-xs">
                       After
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -156,17 +156,17 @@ export function AlsoScheduleBlock({
             {onRepostConditionsChange ? (
               <div className="space-y-1.5">
                 <div className={followUpSettingsRowClass}>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-text-secondary text-xs">
                     Conditions
                   </span>
-                  <span className="text-foreground min-w-0 flex-1 truncate text-right text-xs">
+                  <span className="text-text min-w-0 flex-1 truncate text-right text-xs">
                     {ruleCount === 0 ? "None" : `${ruleCount} rules`}
                   </span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground h-7 shrink-0 px-2 text-xs"
+                    className="text-text-secondary h-7 shrink-0 px-2 text-xs"
                     disabled={disabled}
                     onClick={() => setConditionsOpen((o) => !o)}
                   >
@@ -222,13 +222,13 @@ export function AlsoScheduleBlock({
                 return (
                   <li key={entry.id} className="space-y-1.5 py-2 first:pt-0">
                     <div className={followUpSettingsRowClass}>
-                      <span className="text-foreground text-xs font-medium">
+                      <span className="text-text text-xs font-medium">
                         Quote #{idx + 1}
                       </span>
                       <Button
                         type="button"
                         variant="link"
-                        className="text-muted-foreground hover:text-foreground h-auto p-0 text-xs font-normal"
+                        className="text-text-secondary hover:text-text h-auto p-0 text-xs font-normal"
                         disabled={disabled}
                         onClick={() =>
                           onQuoteEntriesChange((prev) =>
@@ -240,7 +240,7 @@ export function AlsoScheduleBlock({
                       </Button>
                     </div>
                     <div className={followUpSettingsRowClass}>
-                      <span className="text-muted-foreground w-12 shrink-0 text-xs">
+                      <span className="text-text-secondary w-12 shrink-0 text-xs">
                         After
                       </span>
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -280,17 +280,17 @@ export function AlsoScheduleBlock({
                     </div>
                     <div className="space-y-1.5">
                       <div className={followUpSettingsRowClass}>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-text-secondary text-xs">
                           Caption
                         </span>
-                        <span className="text-foreground min-w-0 flex-1 truncate text-right text-xs">
+                        <span className="text-text min-w-0 flex-1 truncate text-right text-xs">
                           {captionAdded ? "Added" : "None"}
                         </span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="text-muted-foreground h-7 shrink-0 px-2 text-xs"
+                          className="text-text-secondary h-7 shrink-0 px-2 text-xs"
                           disabled={disabled}
                           onClick={() =>
                             setEditingCaptionId((id) =>

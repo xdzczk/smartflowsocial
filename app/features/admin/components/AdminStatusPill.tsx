@@ -6,12 +6,10 @@ import { cn } from "~/lib/utils";
 export type AdminHealthTone = "healthy" | "degraded" | "unknown" | "failing";
 
 const toneStyles: Record<AdminHealthTone, string> = {
-  healthy:
-    "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30",
-  degraded:
-    "bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/35",
-  unknown: "bg-muted text-muted-foreground border-border",
-  failing: "bg-red-500/15 text-red-800 dark:text-red-200 border-red-500/35",
+  healthy: "bg-success/15 text-success-text border-success/30",
+  degraded: "bg-warning/15 text-warning-text border-warning/35",
+  unknown: "bg-surface-hover text-text-secondary border-border",
+  failing: "bg-danger/15 text-danger-text border-danger/35",
 };
 
 const icons: Record<AdminHealthTone, typeof CheckCircle2> = {
@@ -56,9 +54,8 @@ export function AdminStatusPill({
 export type AlertSeverity = "warning" | "danger";
 
 const alertStyles: Record<AlertSeverity, string> = {
-  warning:
-    "bg-amber-500/12 text-amber-950 dark:text-amber-50 border-amber-500/35",
-  danger: "bg-red-500/12 text-red-950 dark:text-red-50 border-red-500/35",
+  warning: "bg-warning/12 text-warning-text border-warning/35",
+  danger: "bg-danger/12 text-danger-text border-danger/35",
 };
 
 export function AdminAlertSeverityPill({

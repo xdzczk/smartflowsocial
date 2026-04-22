@@ -16,9 +16,9 @@ export function AuthInlineTipList({
   return (
     <div className={cn("space-y-2", className)}>
       {intro ? (
-        <p className="text-muted-foreground text-xs font-medium">{intro}</p>
+        <p className="text-text-secondary text-xs font-medium">{intro}</p>
       ) : null}
-      <ul className="text-muted-foreground list-disc space-y-1 pl-4 text-xs leading-relaxed">
+      <ul className="text-text-secondary list-disc space-y-1 pl-4 text-xs leading-relaxed">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}

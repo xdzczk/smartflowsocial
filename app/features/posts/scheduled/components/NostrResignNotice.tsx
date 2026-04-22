@@ -25,14 +25,12 @@ export function NostrResignNotice({
   return (
     <div
       className={cn(
-        "border-border bg-muted/40 rounded-lg border px-3 py-2.5",
+        "border-border bg-surface-hover/40 rounded-lg border px-3 py-2.5",
         className
       )}
     >
-      <p className="text-foreground text-sm font-medium">{title}</p>
-      <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-        {body}
-      </p>
+      <p className="text-text text-sm font-medium">{title}</p>
+      <p className="text-text-secondary mt-1 text-xs leading-relaxed">{body}</p>
     </div>
   );
 }

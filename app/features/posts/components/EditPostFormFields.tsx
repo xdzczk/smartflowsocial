@@ -60,7 +60,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-images"
-          className="text-muted-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary mb-2 block text-sm font-medium"
         >
           Images / Media
         </label>
@@ -71,12 +71,12 @@ export function EditPostFormFields({
               <img
                 src={url}
                 alt="Existing"
-                className="h-24 w-24 rounded object-cover"
+                className="h-24 w-24 rounded-xs object-cover"
               />
               <button
                 type="button"
                 onClick={() => onRemoveExistingImage(idx)}
-                className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
+                className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
               >
                 ×
               </button>
@@ -90,12 +90,12 @@ export function EditPostFormFields({
                 <img
                   src={objectURL}
                   alt="New"
-                  className="h-24 w-24 rounded object-cover"
+                  className="h-24 w-24 rounded-xs object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}
-                  className="bg-destructive hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1 text-white"
+                  className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
                 >
                   ×
                 </button>
@@ -105,7 +105,7 @@ export function EditPostFormFields({
           <label
             htmlFor="edit-post-file-input"
             className={cn(
-              "border-border flex h-24 w-24 items-center justify-center rounded border-2 border-dashed",
+              "border-border flex h-24 w-24 items-center justify-center rounded-xs border-2 border-dashed",
               mediaAddDisabled
                 ? "pointer-events-none cursor-not-allowed opacity-50"
                 : "hover:border-border cursor-pointer"
@@ -121,7 +121,7 @@ export function EditPostFormFields({
               disabled={mediaAddDisabled}
               onChange={onFileChange}
             />
-            <span className="text-muted-foreground text-3xl">+</span>
+            <span className="text-text-secondary text-3xl">+</span>
           </label>
         </div>
       </div>
@@ -130,7 +130,7 @@ export function EditPostFormFields({
       <div>
         <label
           htmlFor="edit-post-caption"
-          className="text-muted-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary mb-2 block text-sm font-medium"
         >
           Caption
         </label>
@@ -140,7 +140,7 @@ export function EditPostFormFields({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
-          className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-surface border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
           placeholder="What's on your mind?"
         />
       </div>
@@ -159,7 +159,7 @@ export function EditPostFormFields({
         <div>
           <label
             htmlFor="edit-post-hashtags"
-            className="text-muted-foreground mb-2 block text-sm font-medium"
+            className="text-text-secondary mb-2 block text-sm font-medium"
           >
             Hashtags (space-separated, e.g. #nostr #bitcoin)
           </label>
@@ -169,7 +169,7 @@ export function EditPostFormFields({
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
-            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+            className="bg-surface border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
             placeholder="#tag1 #tag2 #tag3"
           />
         </div>
@@ -184,14 +184,14 @@ export function EditPostFormFields({
           checked={includeHashtagsInNoteBody === false}
           onCheckedChange={(c) => setIncludeHashtagsInNoteBody(c !== true)}
         />
-        <span className="text-muted-foreground text-sm">Hide tags</span>
+        <span className="text-text-secondary text-sm">Hide tags</span>
       </label>
 
       {hideQueueField ? null : (
         <div>
           <label
             htmlFor="edit-post-queue-type"
-            className="text-muted-foreground mb-2 block text-sm font-medium"
+            className="text-text-secondary mb-2 block text-sm font-medium"
           >
             Queue
           </label>
@@ -200,7 +200,7 @@ export function EditPostFormFields({
             name="edit-post-queue-type"
             value={selectedQueueType}
             onChange={(e) => setSelectedQueueType(e.target.value)}
-            className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+            className="bg-surface border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
           >
             <option value="">Manual (No Queue)</option>
             {queueTypes.map((queueType) => (

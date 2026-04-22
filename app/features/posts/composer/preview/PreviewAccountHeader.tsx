@@ -64,18 +64,18 @@ export function PreviewAccountHeader({
   const picture = previewPicture(user);
   return (
     <div className={cn("mb-2.5 flex items-center gap-2.5", className)}>
-      <Avatar className="border-border/50 h-9 w-9 border">
+      <Avatar className="border-border-subtle h-9 w-9 border">
         {picture ? <AvatarImage src={picture} alt="" /> : null}
         <AvatarFallback className="text-xs font-medium">
           {initials(name)}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-sm leading-tight font-semibold">
+        <p className="text-text truncate text-sm leading-tight font-semibold">
           {name}
         </p>
         {timeLabel != null && timeLabel !== "" ? (
-          <p className="text-muted-foreground/70 mt-0.5 text-[11px] leading-tight">
+          <p className="text-text-tertiary mt-0.5 text-[11px] leading-tight">
             {timeLabel}
           </p>
         ) : null}

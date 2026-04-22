@@ -61,8 +61,8 @@ export function GiveawayProofStudio({
 
   const header = (
     <div>
-      <h1 className="text-foreground text-2xl font-semibold">Proof Studio</h1>
-      <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+      <h1 className="text-text text-2xl font-semibold">Proof Studio</h1>
+      <p className="text-text-secondary mt-1 max-w-2xl text-sm">
         Create shareable proof cards for completed giveaways — preview, switch
         templates, and export PNGs.
       </p>
@@ -73,15 +73,12 @@ export function GiveawayProofStudio({
     return (
       <div className="space-y-6">
         {header}
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           No completed giveaways yet. Finish and pay out a giveaway from its
           detail page, then return here to generate proof cards.
         </p>
-        <p className="text-muted-foreground text-sm">
-          <Link
-            to="/dashboard/giveaway"
-            className="text-primary hover:underline"
-          >
+        <p className="text-text-secondary text-sm">
+          <Link to="/dashboard/giveaway" className="text-brand hover:underline">
             ← All giveaways
           </Link>
         </p>
@@ -112,28 +109,28 @@ export function GiveawayProofStudio({
                     setSelectedId(g.id);
                   }}
                   className={cn(
-                    "hover:bg-muted/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    "hover:bg-surface-hover/80 w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
                     selected?.id === g.id
-                      ? "border-primary bg-muted/40"
-                      : "border-border bg-card/50"
+                      ? "border-brand bg-surface-hover/40"
+                      : "border-border bg-surface/50"
                   )}
                 >
-                  <p className="text-foreground line-clamp-2 text-sm font-medium">
+                  <p className="text-text line-clamp-2 text-sm font-medium">
                     {g.title}
                   </p>
-                  <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                  <p className="text-text-secondary mt-0.5 line-clamp-1 text-xs">
                     {g.scopeSummaryLabel}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Badge variant="secondary" className="text-[10px]">
                       {g.statusLabel}
                     </Badge>
-                    <span className="text-muted-foreground text-[11px]">
+                    <span className="text-text-secondary text-[11px]">
                       {g.winnerCount} winners · {g.satsPlanned.toLocaleString()}{" "}
                       sats
                     </span>
                   </div>
-                  <p className="text-muted-foreground mt-1 text-[10px]">
+                  <p className="text-text-secondary mt-1 text-[10px]">
                     {g.completedAtLabel}
                   </p>
                 </button>
@@ -148,7 +145,7 @@ export function GiveawayProofStudio({
               <ProofCardRenderer payload={payload} ratio={ratio} />
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               Select a giveaway to preview.
             </p>
           )}
@@ -159,7 +156,7 @@ export function GiveawayProofStudio({
           <ProofCampaignControlRail
             selectedSummary={
               <div className="space-y-1">
-                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                <p className="text-text line-clamp-2 text-sm font-medium">
                   {selected.title}
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -167,7 +164,7 @@ export function GiveawayProofStudio({
                     {selected.statusLabel}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   {selected.winnerCount} winners ·{" "}
                   {selected.satsPlanned.toLocaleString()} sats ·{" "}
                   {selected.completedAtLabel}
@@ -195,7 +192,7 @@ export function GiveawayProofStudio({
             }
           />
         ) : (
-          <div className="text-muted-foreground border-border rounded-xl border p-4 text-sm">
+          <div className="text-text-secondary border-border rounded-xl border p-4 text-sm">
             Select a campaign to configure the card.
           </div>
         )

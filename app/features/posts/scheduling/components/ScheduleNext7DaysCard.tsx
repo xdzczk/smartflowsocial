@@ -92,7 +92,7 @@ export function ScheduleNext7DaysCard({
 
   return (
     <div
-      className={`group focus-visible:ring-ring flex min-w-0 flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
+      className={`group focus-visible:ring-focus-ring flex min-w-0 flex-1 flex-col focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
       role="button"
       aria-label="Next 7 days schedule"
@@ -123,15 +123,15 @@ export function ScheduleNext7DaysCard({
         }
       }}
     >
-      <Card className="bg-muted/30 flex min-w-0 flex-1 flex-col shadow-sm dark:shadow-none">
+      <Card className="bg-surface-hover/30 shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h3 className="text-foreground text-[11px] font-medium tracking-tight uppercase">
+            <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
               Next 7 days
             </h3>
             {allSet ? (
               <span
-                className="text-muted-foreground flex items-center gap-1 text-xs"
+                className="text-text-secondary flex items-center gap-1 text-xs"
                 aria-label="All days meet your target"
               >
                 <Check className="text-success size-3.5 shrink-0" />
@@ -142,7 +142,7 @@ export function ScheduleNext7DaysCard({
           <button
             type="button"
             onClick={onOpenTargetModal}
-            className="text-muted-foreground hover:text-foreground focus:ring-ring inline-flex flex-shrink-0 items-center gap-1 rounded p-1 text-xs focus:ring-2 focus:outline-none"
+            className="text-text-secondary hover:text-text focus-visible:ring-focus-ring inline-flex flex-shrink-0 items-center gap-1 rounded-xs p-1 text-xs focus-visible:ring-2 focus-visible:outline-none"
             title="Set target per day"
             aria-label="Set target posts per day"
           >
@@ -153,7 +153,7 @@ export function ScheduleNext7DaysCard({
         <CardContent className="px-4 pt-0 pb-4">
           {isPostActivationEmpty ? (
             <div className="flex min-h-[12rem] flex-col justify-center gap-3">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 No scheduled posts yet. Schedule your first post to start
                 building your flow across the week. Your flow starts once
                 content is scheduled.
@@ -161,13 +161,13 @@ export function ScheduleNext7DaysCard({
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   to="/dashboard/compose?type=post"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-md px-3 py-1.5 text-xs font-medium focus:ring-2 focus:outline-none"
+                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring rounded-md px-3 py-1.5 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
                 >
                   Schedule first post
                 </Link>
                 <Link
                   to="/dashboard/compose"
-                  className="border-border-subtle text-foreground hover:bg-muted/50 focus:ring-ring rounded-md border px-3 py-1.5 text-xs font-medium focus:ring-2 focus:outline-none"
+                  className="border-border-subtle text-text hover:bg-surface-hover/50 focus-visible:ring-focus-ring rounded-md border px-3 py-1.5 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
                 >
                   Open composer
                 </Link>
@@ -197,10 +197,10 @@ export function ScheduleNext7DaysCard({
                   <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus:ring-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow focus:ring-2 focus:outline-none ${
+                      className={`focus-visible:ring-focus-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow focus-visible:ring-2 focus-visible:outline-none ${
                         gap
-                          ? "border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
-                          : "border-border/60 bg-muted/20 hover:bg-muted/50"
+                          ? "border-warning/50 bg-warning/10 hover:bg-warning/20 dark:border-warning/40 dark:bg-warning/10 dark:hover:bg-warning/20"
+                          : "border-border/60 bg-surface-hover/20 hover:bg-surface-hover/50"
                       }`}
                       style={
                         // CSS custom property not in React.CSSProperties; assertion required
@@ -212,7 +212,7 @@ export function ScheduleNext7DaysCard({
                       title={`View ${label} in Calendar`}
                     >
                       <span
-                        className="text-foreground min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"
+                        className="text-text min-w-0 shrink-0 truncate font-medium sm:min-w-[10rem]"
                         title={label}
                         style={{ maxWidth: "12rem" }}
                       >
@@ -305,7 +305,7 @@ export function ScheduleNext7DaysCard({
                                 parts.push(
                                   <span
                                     key="more"
-                                    className="text-muted-foreground text-[10px]"
+                                    className="text-text-secondary text-[10px]"
                                     aria-hidden
                                   >
                                     +{totalBlocks - MAX_BLOCKS}
@@ -319,9 +319,7 @@ export function ScheduleNext7DaysCard({
                       </div>
                       <span
                         className={`shrink-0 whitespace-nowrap tabular-nums ${
-                          gap
-                            ? "text-amber-700 dark:text-amber-400"
-                            : "text-muted-foreground"
+                          gap ? "text-warning-text" : "text-text-secondary"
                         }`}
                         style={{ minWidth: "4rem" }}
                       >

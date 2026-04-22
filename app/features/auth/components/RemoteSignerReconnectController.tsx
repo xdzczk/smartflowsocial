@@ -159,13 +159,13 @@ export function RemoteSignerReconnectDialog(props: {
         </DialogHeader>
 
         {error ? (
-          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-md border p-3 text-sm">
+          <div className="border-danger bg-danger/10 text-danger dark:border-danger/60 dark:bg-danger/10 dark:text-danger rounded-md border p-3 text-sm">
             {error}
           </div>
         ) : null}
 
         {isReconnectingExisting ? (
-          <div className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
+          <div className="text-text-secondary rounded-md border border-dashed p-4 text-center text-sm">
             Start a new session in your signer app (e.g. Primal) first, then
             we’ll connect. Reconnecting (attempt{" "}
             {Math.max(existingReconnectAttempt, 1)}/
@@ -185,7 +185,7 @@ export function RemoteSignerReconnectDialog(props: {
                 placeholder="e.g., Primal on iPhone"
                 disabled={state === "waiting" || isReconnectingExisting}
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 Give this signer session a label so you can identify it later.
                 Optional.
               </p>
@@ -194,7 +194,7 @@ export function RemoteSignerReconnectDialog(props: {
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Connection method</h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Nostr Connect (NIP-46) links your {BRAND_NAME} session to a signer
               app—pick how you want to provide the connection.
             </p>
@@ -246,7 +246,7 @@ export function RemoteSignerReconnectDialog(props: {
             <Button
               type="button"
               variant="outline"
-              className="text-muted-foreground sm:mr-auto"
+              className="text-text-secondary sm:mr-auto"
               onClick={clearSavedSigner}
               disabled={state === "waiting"}
             >

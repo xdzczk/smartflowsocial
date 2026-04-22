@@ -15,8 +15,8 @@ export function TemplatesTabs({ activeTab, onTabChange }: TemplatesTabsProps) {
           onClick={() => onTabChange("assets")}
           className={`border-b-2 px-1 pb-4 text-sm font-medium ${
             activeTab === "assets"
-              ? "border-primary text-muted-foreground"
-              : "dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:border-border hover:text-muted-foreground border-transparent"
+              ? "border-brand text-text-secondary"
+              : "dark:text-text-secondary dark:hover:text-text text-text-secondary hover:border-border hover:text-text-secondary border-transparent"
           }`}
         >
           Templates
@@ -25,8 +25,8 @@ export function TemplatesTabs({ activeTab, onTabChange }: TemplatesTabsProps) {
           onClick={() => onTabChange("upload")}
           className={`border-b-2 px-1 pb-4 text-sm font-medium ${
             activeTab === "upload"
-              ? "border-primary text-muted-foreground"
-              : "dark:text-muted-foreground dark:hover:text-foreground text-muted-foreground hover:border-border hover:text-muted-foreground border-transparent"
+              ? "border-brand text-text-secondary"
+              : "dark:text-text-secondary dark:hover:text-text text-text-secondary hover:border-border hover:text-text-secondary border-transparent"
           }`}
         >
           Upload

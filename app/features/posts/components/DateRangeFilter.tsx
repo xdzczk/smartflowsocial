@@ -76,7 +76,7 @@ export function DateRangeFilter({
       <div className="flex items-center gap-2">
         <Label
           htmlFor={`${idPrefix}-from`}
-          className={`text-muted-foreground text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
+          className={`text-text-secondary text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
         >
           From
         </Label>
@@ -93,7 +93,7 @@ export function DateRangeFilter({
       <div className="flex items-center gap-2">
         <Label
           htmlFor={`${idPrefix}-to`}
-          className={`text-muted-foreground text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
+          className={`text-text-secondary text-sm whitespace-nowrap ${MOBILE_FILTER_LABEL_CLASS} ${DESKTOP_FILTER_LABEL_CLASS}`}
         >
           To
         </Label>
@@ -108,7 +108,7 @@ export function DateRangeFilter({
         />
       </div>
       {formattedRangeLabel ? (
-        <span className="text-muted-foreground text-xs" aria-hidden>
+        <span className="text-text-secondary text-xs" aria-hidden>
           {formattedRangeLabel}
         </span>
       ) : null}
@@ -116,7 +116,7 @@ export function DateRangeFilter({
         <button
           type="button"
           onClick={() => onDateRangeChange({ from: "", to: "" })}
-          className="text-primary hover:text-primary/80 focus:ring-ring rounded text-sm underline focus:ring-2 focus:outline-none"
+          className="text-brand hover:text-brand/80 focus-visible:ring-focus-ring rounded-xs text-sm underline focus-visible:ring-2 focus-visible:outline-none"
         >
           Clear dates
         </button>

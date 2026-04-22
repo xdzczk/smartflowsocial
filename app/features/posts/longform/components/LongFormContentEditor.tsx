@@ -77,8 +77,8 @@ function EditorialLongFormContentEditor({
   const showPlaceholder = !editor;
   const uploadHint =
     uploadProvider != null ? (
-      <div className="text-muted-foreground/40 hidden items-center gap-1.5 text-[10px] sm:flex">
-        <span className="text-muted-foreground/50">Images</span>
+      <div className="text-text-secondary/40 hidden items-center gap-1.5 text-[10px] sm:flex">
+        <span className="text-text-secondary/50">Images</span>
         <span className="font-medium tabular-nums">
           {blossomOrS3BadgeLabel(uploadProvider)}
         </span>
@@ -91,7 +91,7 @@ function EditorialLongFormContentEditor({
     "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:pointer-events-none " +
     "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:float-left " +
     "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:h-0 " +
-    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:text-muted-foreground/45 " +
+    "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:text-text-secondary/45 " +
     "[&_.ProseMirror_p.is-empty[data-placeholder]::before]:content-[attr(data-placeholder)]";
 
   return (
@@ -100,10 +100,10 @@ function EditorialLongFormContentEditor({
         className={cn(
           "overflow-hidden",
           containedInComposerCard
-            ? "border-border/20 bg-muted/[0.04] rounded-lg border"
+            ? "border-border/20 bg-surface-hover/[0.04] rounded-lg border"
             : [
-                "border-border/35 bg-card/40 rounded-xl border",
-                "shadow-sm shadow-black/[0.02] dark:shadow-black/20",
+                "border-border/35 bg-surface/40 rounded-xl border",
+                "shadow-1 shadow-black/[0.02] dark:shadow-black/20",
                 "focus-within:border-border/55 focus-within:ring-border/20 focus-within:ring-1",
               ]
         )}
@@ -112,8 +112,8 @@ function EditorialLongFormContentEditor({
           className={cn(
             "border-b",
             containedInComposerCard
-              ? "border-border/20 bg-muted/10"
-              : "border-border/15 bg-muted/[0.06]"
+              ? "border-border/20 bg-surface-hover/10"
+              : "border-border/15 bg-surface-hover/[0.06]"
           )}
         >
           <div className="flex min-h-[2.35rem] flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 sm:px-3">
@@ -144,21 +144,21 @@ function EditorialLongFormContentEditor({
               ? EDITORIAL_PLACEHOLDER_MIN_HEIGHT
               : EDITORIAL_EDITOR_MIN_HEIGHT,
             !editorReady && "pointer-events-none select-none",
-            containedInComposerCard ? "bg-background/60" : "bg-background/50"
+            containedInComposerCard ? "bg-canvas/60" : "bg-canvas/50"
           )}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}
         >
           {showPlaceholder ? (
             <div
-              className="text-muted-foreground/70 flex h-full flex-col justify-center px-6 py-8 text-sm leading-relaxed"
+              className="text-text-secondary/70 flex h-full flex-col justify-center px-6 py-8 text-sm leading-relaxed"
               role="status"
               aria-label="Article content"
             >
-              <p className="text-foreground/80 font-medium tracking-tight">
+              <p className="text-text/80 font-medium tracking-tight">
                 Preparing your writing surface…
               </p>
-              <p className="text-muted-foreground/65 mt-1 max-w-md text-[13px]">
+              <p className="text-text-secondary/65 mt-1 max-w-md text-[13px]">
                 The editor loads in a moment. Your draft stays in this page.
               </p>
             </div>
@@ -210,9 +210,9 @@ function LegacyLongFormContentEditor({
               Content *
             </span>
             {uploadProvider ? (
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <div className="text-text-secondary flex items-center gap-1 text-xs">
                 <span>Images upload via:</span>
-                <span className="bg-muted text-foreground rounded px-2 py-1 text-xs font-medium">
+                <span className="bg-surface-hover text-text rounded-xs px-2 py-1 text-xs font-medium">
                   {blossomOrS3BadgeLabel(uploadProvider)}
                 </span>
               </div>
@@ -238,7 +238,7 @@ function LegacyLongFormContentEditor({
           <button
             type="button"
             onClick={onOpenAssetBrowser}
-            className="text-muted-foreground hover:text-foreground text-xs underline focus:ring-0 focus:outline-none"
+            className="text-text-secondary hover:text-text text-xs underline focus-visible:ring-0 focus-visible:outline-none"
           >
             Insert Assets
           </button>
@@ -247,7 +247,7 @@ function LegacyLongFormContentEditor({
       <div
         className={
           showLabel
-            ? "border-border dark:border-border focus-within:border-primary focus-within:ring-ring mt-1 rounded-lg border focus-within:ring-1"
+            ? "border-border dark:border-border focus-within:border-brand focus-within:ring-focus-ring mt-1 rounded-lg border focus-within:ring-1"
             : "border-border/50 border-b pt-1"
         }
       >
@@ -258,7 +258,7 @@ function LegacyLongFormContentEditor({
         >
           {showPlaceholder ? (
             <div
-              className="prose prose-lg dark:prose-invert text-muted-foreground max-w-none"
+              className="prose prose-lg dark:prose-invert text-text-secondary max-w-none"
               role="textbox"
               aria-labelledby={showLabel ? "content-label" : undefined}
               aria-label={showLabel ? undefined : "Article content"}

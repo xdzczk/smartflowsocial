@@ -19,8 +19,8 @@ export function RailChip({
       className={cn(
         "inline-flex h-7 min-w-0 shrink-0 items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors",
         selected
-          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-          : "border-border bg-background text-foreground hover:bg-muted/50",
+          ? "border-brand bg-brand text-brand-on hover:bg-brand/90"
+          : "border-border bg-canvas text-text hover:bg-surface-hover/60",
         disabled && "pointer-events-none opacity-50",
         className
       )}

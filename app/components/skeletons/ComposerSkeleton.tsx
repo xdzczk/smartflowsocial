@@ -13,7 +13,7 @@ export function ComposerSkeleton() {
       aria-label="Loading composer"
     >
       <div className="mb-4 min-w-0 flex-1">
-        <div className="border-border bg-card rounded-xl border shadow-sm">
+        <div className="border-border bg-surface shadow-1 rounded-xl border">
           <div className="px-5 py-5 sm:px-6 sm:py-6">
             <div className="flex flex-col gap-5 sm:gap-6">
               <Skeleton className="h-40 w-full rounded-lg sm:h-44" />
@@ -37,7 +37,7 @@ export function ComposerSkeleton() {
         className="border-border flex w-full shrink-0 flex-col bg-transparent lg:sticky lg:top-[4.75rem] lg:max-h-[calc(100vh-5.75rem)] lg:w-[312px] xl:w-[344px]"
         aria-hidden
       >
-        <div className="border-border bg-card flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+        <div className="border-border bg-surface shadow-1 flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <Skeleton className="h-11 w-full rounded-none rounded-t-xl" />
             <div className="space-y-3 p-3">

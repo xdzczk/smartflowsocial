@@ -14,13 +14,13 @@ export function DashboardSkeleton() {
           {Array.from({ length: 4 }, (_, i) => (
             <div
               key={`kpi-${i}`}
-              className="border-border bg-card min-h-[64px] rounded-xl border p-3 shadow"
+              className="border-border bg-surface shadow-1 min-h-[64px] rounded-xl border p-3"
             >
               <div className="flex min-h-[48px] items-center justify-between">
                 <Skeleton className="size-12 rounded-lg" />
                 <div className="flex flex-col items-end gap-1">
-                  <Skeleton className="h-6 w-16 rounded" />
-                  <Skeleton className="h-3 w-20 rounded" />
+                  <Skeleton className="h-6 w-16 rounded-xs" />
+                  <Skeleton className="h-3 w-20 rounded-xs" />
                 </div>
               </div>
             </div>
@@ -31,10 +31,10 @@ export function DashboardSkeleton() {
       {/* Header row: title + tabs */}
       <div className="mt-2 flex flex-col gap-0 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
         <div className="mb-2 flex flex-col gap-1">
-          <Skeleton className="h-5 w-24 rounded" />
-          <Skeleton className="h-4 w-40 rounded" />
+          <Skeleton className="h-5 w-24 rounded-xs" />
+          <Skeleton className="h-4 w-40 rounded-xs" />
         </div>
-        <Skeleton className="h-9 w-48 rounded" />
+        <Skeleton className="h-9 w-48 rounded-xs" />
       </div>
 
       {/* Flow section */}
@@ -44,13 +44,13 @@ export function DashboardSkeleton() {
             {Array.from({ length: 4 }, (_, i) => (
               <div
                 key={`flow-${i}`}
-                className="border-border bg-card flex h-[232px] w-[352px] flex-shrink-0 overflow-hidden rounded-lg border"
+                className="border-border bg-surface flex h-[232px] w-[352px] flex-shrink-0 overflow-hidden rounded-lg border"
               >
                 <Skeleton className="w-24 flex-shrink-0 rounded-l-md" />
                 <div className="flex flex-1 flex-col justify-center gap-2 p-4">
-                  <Skeleton className="h-4 w-20 rounded" />
-                  <Skeleton className="h-4 w-32 rounded" />
-                  <Skeleton className="h-3 w-24 rounded" />
+                  <Skeleton className="h-4 w-20 rounded-xs" />
+                  <Skeleton className="h-4 w-32 rounded-xs" />
+                  <Skeleton className="h-3 w-24 rounded-xs" />
                 </div>
               </div>
             ))}
@@ -60,33 +60,33 @@ export function DashboardSkeleton() {
 
       {/* Bottom row: Next 7 days + Queue Health */}
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-4">
-        <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
+        <div className="border-border bg-surface shadow-1 min-w-0 flex-1 flex-col rounded-xl border">
           <div className="flex flex-row items-center justify-between gap-1.5 px-4 pt-3 pb-1">
-            <Skeleton className="h-3 w-20 rounded" />
-            <Skeleton className="h-4 w-16 rounded" />
+            <Skeleton className="h-3 w-20 rounded-xs" />
+            <Skeleton className="h-4 w-16 rounded-xs" />
           </div>
           <div className="flex flex-col gap-0.5 px-4 pt-0 pb-4">
             {Array.from({ length: 7 }, (_, i) => (
               <div
                 key={`n7-${i}`}
-                className="border-border/60 flex items-center justify-between rounded border px-2 py-1.5"
+                className="border-border/60 flex items-center justify-between rounded-xs border px-2 py-1.5"
               >
-                <Skeleton className="h-3 w-12 rounded" />
-                <Skeleton className="h-3 w-10 rounded" />
+                <Skeleton className="h-3 w-12 rounded-xs" />
+                <Skeleton className="h-3 w-10 rounded-xs" />
               </div>
             ))}
           </div>
         </div>
-        <div className="border-border bg-card min-w-0 flex-1 flex-col rounded-xl border shadow">
+        <div className="border-border bg-surface shadow-1 min-w-0 flex-1 flex-col rounded-xl border">
           <div className="px-4 pt-3 pb-1">
-            <Skeleton className="h-3 w-24 rounded" />
+            <Skeleton className="h-3 w-24 rounded-xs" />
           </div>
           <div className="flex flex-col gap-1.5 px-4 pt-0 pb-4">
             {Array.from({ length: 3 }, (_, i) => (
               <div key={`qh-${i}`} className="flex flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-3 w-6 rounded" />
+                  <Skeleton className="h-3 w-20 rounded-xs" />
+                  <Skeleton className="h-3 w-6 rounded-xs" />
                 </div>
                 <Skeleton className="h-1 w-full rounded-full" />
               </div>

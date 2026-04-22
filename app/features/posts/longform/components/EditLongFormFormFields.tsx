@@ -66,7 +66,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-title"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
         >
           Title
         </label>
@@ -76,7 +76,7 @@ export function EditLongFormFormFields({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
           placeholder="Article title..."
         />
       </div>
@@ -84,7 +84,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-summary"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
         >
           Summary
         </label>
@@ -94,7 +94,7 @@ export function EditLongFormFormFields({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           rows={3}
-          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
           placeholder="Article summary..."
         />
       </div>
@@ -102,7 +102,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-content"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
         >
           Content
         </label>
@@ -114,7 +114,7 @@ export function EditLongFormFormFields({
           editor={editor}
         />
         {!editorReady ? (
-          <div className="text-muted-foreground dark:text-foreground mt-2 text-sm">
+          <div className="text-text-secondary dark:text-text mt-2 text-sm">
             Loading editor...
           </div>
         ) : null}
@@ -123,7 +123,7 @@ export function EditLongFormFormFields({
       <div>
         <label
           htmlFor="longform-cover-image"
-          className="text-muted-foreground dark:text-foreground mb-2 block text-sm font-medium"
+          className="text-text-secondary dark:text-text mb-2 block text-sm font-medium"
         >
           Cover Image URL (optional)
         </label>
@@ -133,7 +133,7 @@ export function EditLongFormFormFields({
           type="url"
           value={image}
           onChange={(e) => setImage(e.target.value)}
-          className="bg-background border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+          className="bg-canvas border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
           placeholder="https://example.com/image.jpg"
         />
       </div>

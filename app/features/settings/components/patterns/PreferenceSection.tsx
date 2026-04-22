@@ -30,7 +30,7 @@ export function PreferenceSection({
   return (
     <section
       className={cn(
-        "border-border/80 bg-muted/20 rounded-lg border px-4 py-4 sm:px-5 sm:py-5",
+        "border-border/80 bg-surface-hover/20 rounded-lg border px-4 py-4 sm:px-5 sm:py-5",
         className
       )}
     >

@@ -27,7 +27,7 @@ export function MediaPostPreview({
           {singleImageUrl ? (
             <button
               type="button"
-              className="bg-muted/30 border-border/60 relative mx-auto block max-h-[min(54vh,560px)] w-full overflow-hidden rounded-xl border"
+              className="bg-surface-hover/30 border-border/60 relative mx-auto block max-h-[min(54vh,560px)] w-full overflow-hidden rounded-xl border"
               onClick={() => onImageClick(singleImageUrl)}
             >
               <MediaThumbnail
@@ -49,7 +49,7 @@ export function MediaPostPreview({
                   key={url}
                   type="button"
                   className={cn(
-                    "bg-muted/35 border-border/60 relative aspect-square overflow-hidden rounded-lg border",
+                    "bg-surface-hover/35 border-border/60 relative aspect-square overflow-hidden rounded-lg border",
                     n === 3 &&
                       index === 0 &&
                       "col-span-2 aspect-[16/9] max-h-72"
@@ -66,7 +66,7 @@ export function MediaPostPreview({
             </div>
           )}
           {caption ? (
-            <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
+            <p className="text-text text-[15px] leading-relaxed whitespace-pre-wrap">
               {caption}
             </p>
           ) : null}
@@ -74,10 +74,10 @@ export function MediaPostPreview({
       </PostPreviewSurface>
       <div>
         {!caption ? (
-          <p className="text-muted-foreground text-sm italic">No caption</p>
+          <p className="text-text-secondary text-sm italic">No caption</p>
         ) : null}
         {contextLine ? (
-          <p className="text-muted-foreground/80 mt-1.5 text-xs leading-snug">
+          <p className="text-text-secondary/80 mt-1.5 text-xs leading-snug">
             {contextLine}
           </p>
         ) : null}

@@ -30,9 +30,9 @@ function statusBadgeClass(status: RelayCheckStatusType): string {
     case "connected":
       return "border-success/35 bg-success/10 text-success dark:text-success";
     case "failed":
-      return "border-destructive/35 bg-destructive/10 text-destructive";
+      return "border-danger/35 bg-danger/10 text-danger";
     default:
-      return "text-muted-foreground border-border/80 bg-muted/50";
+      return "text-text-secondary border-border/80 bg-surface-hover/50";
   }
 }
 
@@ -55,14 +55,14 @@ export function RelayCheckStatus({
 
   const defaultShell =
     presentation === "product"
-      ? "bg-muted/30 dark:bg-muted/20 space-y-2.5 rounded-lg p-3 text-xs"
-      : "border-border bg-muted/50 dark:bg-muted/30 space-y-2 rounded-md border p-3 pt-2 text-xs";
+      ? "bg-surface-hover/30 dark:bg-surface-hover/20 space-y-2.5 rounded-lg p-3 text-xs"
+      : "border-border bg-surface-hover/50 dark:bg-surface-hover/30 space-y-2 rounded-md border p-3 pt-2 text-xs";
 
   return (
     <div className={cn(defaultShell, className)}>
       <div
         className={cn(
-          "text-foreground font-medium",
+          "text-text font-medium",
           presentation === "product" && "text-sm"
         )}
       >
@@ -103,8 +103,8 @@ export function RelayCheckStatus({
             status === "connected"
               ? "text-success dark:text-success"
               : status === "failed"
-                ? "text-destructive dark:text-destructive"
-                : "text-muted-foreground";
+                ? "text-danger dark:text-danger"
+                : "text-text-secondary";
           return (
             <div key={url} className="flex items-start justify-between gap-2">
               <div className="truncate font-mono text-xs">{url}</div>
@@ -114,12 +114,12 @@ export function RelayCheckStatus({
         })}
       </div>
       {hiddenCount > 0 ? (
-        <div className="text-muted-foreground text-[11px]">
+        <div className="text-text-secondary text-[11px]">
           +{hiddenCount} more relay{hiddenCount === 1 ? "" : "s"} not shown
         </div>
       ) : null}
       {children ? (
-        <div className="text-muted-foreground mt-1 text-xs">{children}</div>
+        <div className="text-text-secondary mt-1 text-xs">{children}</div>
       ) : null}
     </div>
   );

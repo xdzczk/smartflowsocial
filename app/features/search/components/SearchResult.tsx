@@ -62,8 +62,8 @@ function MobileRailCard({
   children: ReactNode;
 }) {
   return (
-    <div className="border-border bg-card rounded-xl border p-4 shadow-sm">
-      <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
+    <div className="border-border bg-surface shadow-1 rounded-xl border p-4">
+      <p className="text-text-secondary mb-3 text-xs font-medium tracking-wide uppercase">
         {title}
       </p>
       {children}

@@ -138,8 +138,8 @@ export function EngagementContent({
         ) : null}
 
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
+          <div className="border-border bg-surface rounded-lg border p-8 text-center">
+            <p className="text-text-secondary">
               No engagement found for your posts yet.
             </p>
           </div>
@@ -159,11 +159,11 @@ export function EngagementContent({
             listVariant="replies"
           />
         ) : (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
+          <div className="border-border bg-surface rounded-lg border p-8 text-center">
+            <p className="text-text-secondary">
               No replies found for your posts.
             </p>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-text-secondary mt-2 text-sm">
               Posts fetched: {postsCount}
             </p>
           </div>
@@ -192,8 +192,8 @@ export function EngagementContent({
           />
         ) : null}
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
+          <div className="border-border bg-surface rounded-lg border p-8 text-center">
+            <p className="text-text-secondary">
               Nothing needs response right now.
             </p>
           </div>
@@ -212,8 +212,8 @@ export function EngagementContent({
           listVariant="mentions"
         />
       ) : (
-        <div className="border-border bg-card rounded-lg border p-8 text-center">
-          <p className="text-muted-foreground">
+        <div className="border-border bg-surface rounded-lg border p-8 text-center">
+          <p className="text-text-secondary">
             No mentions or quote reposts found for your posts.
           </p>
         </div>

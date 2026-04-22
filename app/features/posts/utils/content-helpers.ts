@@ -88,11 +88,11 @@ export function getContentPreview(item: CombinedContent): string | null {
 // Status color constants - neutral outline style for light mode
 const STATUS_OUTLINE_BASE = "border bg-transparent dark:border-transparent";
 const STATUS_BORDER_DEFAULT = "border-border";
-const STATUS_DARK_BG_MUTED = "dark:bg-muted";
+const STATUS_DARK_BG_MUTED = "dark:bg-surface-hover";
 
-const DRAFT_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-foreground ${STATUS_DARK_BG_MUTED} dark:text-foreground`;
+const DRAFT_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-text ${STATUS_DARK_BG_MUTED} dark:text-text`;
 const PUBLISHED_COLOR = `${STATUS_OUTLINE_BASE} border-success text-success dark:bg-success/20 dark:text-success`;
-const SCHEDULED_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-muted-foreground ${STATUS_DARK_BG_MUTED} dark:text-muted-foreground`;
+const SCHEDULED_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-text-secondary ${STATUS_DARK_BG_MUTED} dark:text-text-secondary`;
 
 export function getStatusColor(item: CombinedContent): string {
   // Use currentState as single source of truth
@@ -127,17 +127,17 @@ export function getStatusColor(item: CombinedContent): string {
     }
 
     if (state === "FAILED") {
-      return "border border-destructive bg-transparent text-destructive dark:bg-destructive/20 dark:text-destructive dark:border-transparent";
+      return "border border-danger bg-transparent text-danger dark:bg-danger/20 dark:text-danger dark:border-transparent";
     }
     if (state === "CANCELLED") {
-      return "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+      return "border border-border bg-transparent text-text-secondary dark:bg-surface-hover dark:text-text-secondary dark:border-transparent";
     }
   }
 
-  return "border border-border bg-transparent text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent";
+  return "border border-border bg-transparent text-text-secondary dark:bg-surface-hover dark:text-text-secondary dark:border-transparent";
 }
 
-const STATUS_TONE_MUTED = "text-muted-foreground";
+const STATUS_TONE_MUTED = "text-text-secondary";
 
 /** Text-only classes for lifecycle status (distinct from queue chips). */
 export function getStatusTextToneClass(item: CombinedContent): string {
@@ -148,16 +148,16 @@ export function getStatusTextToneClass(item: CombinedContent): string {
     const state = currentState;
 
     if (item.type === "longform") {
-      if (deriveIsDraftLongForm(state)) return "text-foreground";
+      if (deriveIsDraftLongForm(state)) return "text-text";
       if (deriveIsPublishedLongForm(state)) return "text-success";
       if (deriveIsScheduledLongForm(state)) return STATUS_TONE_MUTED;
     } else {
-      if (deriveIsDraft(state)) return "text-foreground";
+      if (deriveIsDraft(state)) return "text-text";
       if (deriveIsPublished(state)) return "text-success";
       if (deriveIsScheduled(state)) return STATUS_TONE_MUTED;
     }
 
-    if (state === "FAILED") return "text-destructive";
+    if (state === "FAILED") return "text-danger";
     if (state === "CANCELLED") return STATUS_TONE_MUTED;
   }
 
@@ -310,7 +310,7 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
 }
 
 const POST_KIND_BADGE_CLASS =
-  "inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground";
+  "inline-flex rounded-full bg-surface-hover px-2 py-1 text-xs font-medium text-text dark:text-text";
 
 /**
  * True if the post is a repost (kind 6). Quotes are treated as normal posts (posts with links to other content).

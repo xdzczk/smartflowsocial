@@ -484,7 +484,7 @@ export function CalendarPageSkeleton() {
       className="flex h-full min-h-0 animate-pulse flex-col"
       aria-busy="true"
     >
-      <div className="border-border/60 bg-muted/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3">
+      <div className="border-border/60 bg-surface-hover/30 flex min-h-14 flex-shrink-0 items-center border-b px-2 py-3 sm:px-3">
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <div className="flex gap-2">
             <Skeleton className="h-9 w-24 rounded-md" />
@@ -494,7 +494,7 @@ export function CalendarPageSkeleton() {
           <Skeleton className="h-9 w-40 rounded-md" />
         </div>
       </div>
-      <div className="bg-muted/20 flex min-h-0 flex-1 flex-col gap-4 p-4">
+      <div className="bg-surface-hover/20 flex min-h-0 flex-1 flex-col gap-4 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:hidden">
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="border-border rounded-lg border p-3">
@@ -525,7 +525,7 @@ export function CalendarQueuePageSkeleton() {
           ))}
         </div>
       </div>
-      <div className="border-border/60 bg-muted/30 flex min-h-14 items-center border px-2 py-3 sm:px-3">
+      <div className="border-border/60 bg-surface-hover/30 flex min-h-14 items-center border px-2 py-3 sm:px-3">
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <div className="flex gap-2">
             <Skeleton className="h-9 w-24 rounded-md" />

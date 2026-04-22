@@ -40,8 +40,8 @@ export function ComposerCanvasSectionLabel({
       className={cn(
         "mb-1 text-xs",
         tone === "article"
-          ? "text-muted-foreground/80 font-medium tracking-normal"
-          : "text-muted-foreground font-semibold tracking-wide uppercase",
+          ? "text-text-tertiary font-medium tracking-normal"
+          : "text-text-secondary font-semibold tracking-wide uppercase",
         className
       )}
     >

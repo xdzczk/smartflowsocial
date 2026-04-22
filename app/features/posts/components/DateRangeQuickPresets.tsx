@@ -65,7 +65,7 @@ export function DateRangeQuickPresets({
     )?.id ?? null;
 
   const basePillClass =
-    "focus-visible:ring-ring inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none";
+    "focus-visible:ring-focus-ring inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none";
 
   return (
     <div
@@ -93,8 +93,8 @@ export function DateRangeQuickPresets({
             className={cn(
               basePillClass,
               active
-                ? "border-border bg-muted/50 text-foreground ring-border/60 ring-1 ring-inset"
-                : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                ? "border-border bg-surface-hover/50 text-text ring-border/60 ring-1 ring-inset"
+                : "border-border/60 bg-surface-hover/20 text-text-secondary hover:bg-surface-hover/30 hover:text-text"
             )}
           >
             {p.label}

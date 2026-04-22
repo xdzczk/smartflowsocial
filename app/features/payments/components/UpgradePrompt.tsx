@@ -21,36 +21,36 @@ export default function UpgradePrompt({
 
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="bg-card mx-4 max-w-md rounded-lg p-6 shadow-xl">
+      <div className="bg-surface-overlay shadow-3 mx-4 max-w-md rounded-xl p-6">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
-              <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="bg-warning/12 dark:bg-warning/15 flex h-10 w-10 items-center justify-center rounded-full">
+              <Lock className="text-warning dark:text-warning h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-foreground text-lg font-semibold">
+              <h3 className="text-text text-lg font-semibold">
                 Feature Locked
               </h3>
-              <p className="text-foreground text-sm">Upgrade required</p>
+              <p className="text-text text-sm">Upgrade required</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-foreground hover:text-foreground dark:hover:text-foreground"
+            className="text-text hover:text-text dark:hover:text-text"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="mb-6">
-          <p className="text-muted-foreground">
+          <p className="text-text-secondary">
             <strong>{featureName}</strong> requires a{" "}
-            <span className="text-foreground font-semibold capitalize">
+            <span className="text-text font-semibold capitalize">
               {minPlan}
             </span>{" "}
             plan or higher.
           </p>
-          <p className="text-foreground mt-2 text-sm">
+          <p className="text-text mt-2 text-sm">
             Upgrade your plan to unlock this feature and many more advanced
             tools for your social media automation.
           </p>
@@ -59,13 +59,13 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring flex-1 rounded-lg px-4 py-2 text-center font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+            className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring flex-1 rounded-lg px-4 py-2 text-center font-medium focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
           >
             View Plans
           </Link>
           <button
             onClick={onClose}
-            className="border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted focus:ring-ring flex-1 rounded-lg border px-4 py-2 font-medium focus:ring-2 focus:ring-offset-0 focus:outline-none"
+            className="border-border text-text-secondary hover:bg-surface-hover dark:border-border dark:text-text dark:hover:bg-surface-hover focus-visible:ring-focus-ring flex-1 rounded-lg border px-4 py-2 font-medium focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
           >
             Cancel
           </button>

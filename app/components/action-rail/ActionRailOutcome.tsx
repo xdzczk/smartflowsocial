@@ -18,12 +18,12 @@ export function ActionRailOutcome({
   return (
     <div className={cn(RAIL_STACK_TIGHT, className)}>
       {hint ? (
-        <p className="text-muted-foreground text-[11px] leading-snug">{hint}</p>
+        <p className="text-text-secondary text-[11px] leading-snug">{hint}</p>
       ) : null}
-      <p className="text-foreground text-[11px] leading-snug">
+      <p className="text-text text-[11px] leading-snug">
         {headline ? <span className="font-medium">{headline}</span> : null}
         {outcomeLine ? (
-          <span className="text-muted-foreground">
+          <span className="text-text-secondary">
             {headline ? " · " : null}
             {outcomeLine}
           </span>

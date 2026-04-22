@@ -37,7 +37,7 @@ export function PostBadges({
   return (
     <>
       {post.repost ? (
-        <div className={`${positionClass} bg-primary rounded-full p-0.5`}>
+        <div className={`${positionClass} bg-brand rounded-full p-0.5`}>
           <Repeat
             className={`${sizeClass} text-white`}
             strokeWidth={strokeWidth}

@@ -15,12 +15,12 @@ export function ThreadSegmentPreviewCard({
   return (
     <div
       className={cn(
-        "border-border/35 bg-muted/10 relative rounded-md border px-2.5 pt-2 pb-2.5",
+        "border-border-subtle bg-surface-hover/40 relative rounded-md border px-2.5 pt-2 pb-2.5",
         className
       )}
     >
       <span
-        className="text-muted-foreground/60 absolute top-2 right-2 text-[10px] tabular-nums"
+        className="text-text-tertiary absolute top-2 right-2 text-[10px] tabular-nums"
         aria-label={`Segment ${segment.index}`}
       >
         {segment.index}

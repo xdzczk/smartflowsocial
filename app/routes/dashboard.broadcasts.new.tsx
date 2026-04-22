@@ -368,14 +368,14 @@ function BroadcastNewCampaignPhase({
       {notice ? (
         <div
           role="status"
-          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+          className="border-warning/40 bg-warning/10 text-warning-text rounded-md border px-3 py-2 text-sm"
         >
           {notice}
         </div>
       ) : null}
       <div className="border-border rounded-lg border p-4">
         <h2 className="font-medium">{campaign.name}</h2>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-text-secondary mt-2 text-sm">
           Status: {campaign.status} · Audience: {campaign.audienceType} ·
           Recipients: {campaign.totalRecipients} (suppressed{" "}
           {campaign.suppressedCount})
@@ -394,7 +394,7 @@ function BroadcastNewCampaignPhase({
           <button
             type="submit"
             disabled={busy}
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             Resolve audience
           </button>
@@ -404,25 +404,25 @@ function BroadcastNewCampaignPhase({
       {(campaign.status === "DRAFT" ||
         campaign.status === "AWAITING_SIGNATURE") &&
       pendingRecipients.length > 0 ? (
-        <div className="space-y-3 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
+        <div className="border-info/30 bg-info/5 space-y-3 rounded-lg border p-4">
           <p className="text-sm font-medium">
             {pendingRecipients.length} recipient
             {pendingRecipients.length === 1 ? "" : "s"} ready for delivery.
           </p>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             Continue to the pre-flight review to see audience breakdown,
             compatibility notes, and sign. Sending is blocked until you complete
             that step.
           </p>
           {pendingRecipients.length > 40 ? (
-            <p className="text-sm text-amber-600 dark:text-amber-400">
+            <p className="text-warning dark:text-warning text-sm">
               Large send: you will approve many signatures. Consider smaller
               audiences on lower tiers.
             </p>
           ) : null}
           <Link
             to={`/dashboard/broadcasts/new/review?campaignId=${encodeURIComponent(campaign.id)}`}
-            className="bg-primary text-primary-foreground inline-flex rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on inline-flex rounded-md px-4 py-2 text-sm font-medium"
           >
             Continue to review
           </Link>
@@ -433,7 +433,7 @@ function BroadcastNewCampaignPhase({
       campaign.status !== "AWAITING_SIGNATURE" ? (
         <Link
           to={`/dashboard/broadcasts/${campaign.id}`}
-          className="text-primary text-sm font-medium"
+          className="text-brand text-sm font-medium"
         >
           Open campaign →
         </Link>
@@ -441,7 +441,7 @@ function BroadcastNewCampaignPhase({
 
       <Link
         to="/dashboard/broadcasts/new"
-        className="text-muted-foreground text-sm hover:underline"
+        className="text-text-secondary text-sm hover:underline"
       >
         Start over
       </Link>
@@ -528,7 +528,7 @@ function BroadcastNewRouteLoaded({
     <div className="w-full min-w-0 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">New broadcast</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           Send signed Nostr direct messages to selected audiences.
         </p>
       </div>

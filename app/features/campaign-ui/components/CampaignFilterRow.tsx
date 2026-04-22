@@ -12,7 +12,7 @@ export function CampaignFilterRow({
     <Form
       method={method}
       replace={method === "get"}
-      className="border-border bg-card flex flex-col gap-3 rounded-lg border p-4"
+      className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
         {children}

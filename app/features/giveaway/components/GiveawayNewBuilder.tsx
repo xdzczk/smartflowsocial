@@ -266,7 +266,7 @@ export function GiveawayNewBuilder({
       <div className="flex items-center gap-4">
         <Link
           to="/dashboard/giveaway"
-          className="text-muted-foreground hover:text-foreground text-sm"
+          className="text-text-secondary hover:text-text text-sm"
         >
           ← Back to Giveaways
         </Link>
@@ -283,10 +283,10 @@ export function GiveawayNewBuilder({
 
         <div className="min-w-0 space-y-10">
           <div>
-            <h1 className="text-foreground text-2xl font-bold tracking-tight">
+            <h1 className="text-text text-2xl font-bold tracking-tight">
               New giveaway
             </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-text-secondary mt-1 text-sm">
               Draft first, preview winners, then lock or pay.
             </p>
             <label htmlFor="giveaway-name" className="sr-only">
@@ -323,7 +323,7 @@ export function GiveawayNewBuilder({
             {scopeType === "PERIOD" ? (
               <div className="border-border/60 space-y-3 border-t pt-4">
                 <div className="flex flex-wrap gap-4">
-                  <label className="text-foreground flex items-center gap-2 text-sm">
+                  <label className="text-text flex items-center gap-2 text-sm">
                     <input
                       type="radio"
                       name="periodModeUi"
@@ -334,7 +334,7 @@ export function GiveawayNewBuilder({
                     />
                     Last N days
                   </label>
-                  <label className="text-foreground flex items-center gap-2 text-sm">
+                  <label className="text-text flex items-center gap-2 text-sm">
                     <input
                       type="radio"
                       name="periodModeUi"
@@ -351,7 +351,7 @@ export function GiveawayNewBuilder({
                     <div className="flex min-w-0 flex-col gap-1 sm:w-[min(100%,14rem)]">
                       <label
                         htmlFor="periodDays"
-                        className="text-muted-foreground text-xs font-medium"
+                        className="text-text-secondary text-xs font-medium"
                       >
                         Period
                       </label>
@@ -372,7 +372,7 @@ export function GiveawayNewBuilder({
                       <div className="flex min-w-0 flex-col gap-1 sm:w-[min(100%,16rem)]">
                         <label
                           htmlFor="queueId"
-                          className="text-muted-foreground text-xs font-medium"
+                          className="text-text-secondary text-xs font-medium"
                         >
                           Queue
                         </label>
@@ -396,7 +396,7 @@ export function GiveawayNewBuilder({
                     <div>
                       <label
                         htmlFor="periodFrom"
-                        className="text-muted-foreground mb-1 block text-xs"
+                        className="text-text-secondary mb-1 block text-xs"
                       >
                         From
                       </label>
@@ -410,7 +410,7 @@ export function GiveawayNewBuilder({
                     <div>
                       <label
                         htmlFor="periodTo"
-                        className="text-muted-foreground mb-1 block text-xs"
+                        className="text-text-secondary mb-1 block text-xs"
                       >
                         To
                       </label>
@@ -425,7 +425,7 @@ export function GiveawayNewBuilder({
                       <div>
                         <label
                           htmlFor="queueId2"
-                          className="text-muted-foreground mb-1 block text-xs"
+                          className="text-text-secondary mb-1 block text-xs"
                         >
                           Queue (optional)
                         </label>
@@ -528,15 +528,13 @@ export function GiveawayNewBuilder({
             />
             {canPickEngagementEntryTypes ? (
               <>
-                <p className="text-foreground text-sm font-medium">
-                  Entry methods
-                </p>
+                <p className="text-text text-sm font-medium">Entry methods</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {ENGAGEMENT_META.map((m) => (
                     <label
                       key={m.value}
                       htmlFor={`giveaway-engagement-${m.value}`}
-                      className="border-border bg-card flex cursor-pointer gap-3 rounded-lg border p-3"
+                      className="border-border bg-surface flex cursor-pointer gap-3 rounded-lg border p-3"
                     >
                       <input
                         id={`giveaway-engagement-${m.value}`}
@@ -550,10 +548,8 @@ export function GiveawayNewBuilder({
                         }}
                       />
                       <span>
-                        <span className="text-foreground font-medium">
-                          {m.label}
-                        </span>
-                        <span className="text-muted-foreground block text-xs">
+                        <span className="text-text font-medium">{m.label}</span>
+                        <span className="text-text-secondary block text-xs">
                           {m.hint}
                         </span>
                       </span>
@@ -562,13 +558,13 @@ export function GiveawayNewBuilder({
                 </div>
               </>
             ) : isFollowGraphScope ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 Random from your follower or following list at lock (not from
                 note engagement). Use exclusions below to narrow the pool.
               </p>
             ) : (
               <>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   For this scope, reactions, reposts, comments, and zaps can
                   count as entries. You can narrow types only for period or
                   single-post giveaways.
@@ -585,21 +581,21 @@ export function GiveawayNewBuilder({
             )}
 
             <div className="border-border/60 space-y-2 border-t pt-4">
-              <p className="text-foreground text-sm font-medium">Exclusions</p>
+              <p className="text-text text-sm font-medium">Exclusions</p>
               <div className="flex flex-wrap gap-4">
-                <label className="text-foreground flex items-center gap-2 text-sm">
+                <label className="text-text flex items-center gap-2 text-sm">
                   <input type="checkbox" name="excludeMuted" value="true" />
                   Muted
                 </label>
-                <label className="text-foreground flex items-center gap-2 text-sm">
+                <label className="text-text flex items-center gap-2 text-sm">
                   <input type="checkbox" name="excludeBlocked" value="true" />
                   Blacklisted
                 </label>
-                <label className="text-foreground flex items-center gap-2 text-sm">
+                <label className="text-text flex items-center gap-2 text-sm">
                   <input type="checkbox" name="excludeLowTrust" value="true" />
                   Low trust
                 </label>
-                <label className="text-foreground flex items-center gap-2 text-sm">
+                <label className="text-text flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     name="excludeNonFollowers"
@@ -611,14 +607,14 @@ export function GiveawayNewBuilder({
             </div>
 
             <details className="border-border/60 group border-t pt-4">
-              <summary className="text-muted-foreground marker:text-muted-foreground cursor-pointer text-sm font-medium">
+              <summary className="text-text-secondary marker:text-text-secondary cursor-pointer text-sm font-medium">
                 Advanced fairness (optional)
               </summary>
               <div className="mt-3 flex flex-wrap gap-4">
                 <div>
                   <label
                     htmlFor="minAccountAgeDays"
-                    className="text-muted-foreground text-xs"
+                    className="text-text-secondary text-xs"
                   >
                     Min account age (days)
                   </label>
@@ -634,7 +630,7 @@ export function GiveawayNewBuilder({
                 <div>
                   <label
                     htmlFor="minFollowers"
-                    className="text-muted-foreground text-xs"
+                    className="text-text-secondary text-xs"
                   >
                     Min followers
                   </label>
@@ -666,12 +662,12 @@ export function GiveawayNewBuilder({
                   }}
                   className={
                     rewardMode === "simple"
-                      ? "border-primary bg-primary/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
-                      : "border-border bg-card hover:border-primary/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      ? "border-brand bg-brand/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      : "border-border bg-surface hover:border-brand/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
                   }
                 >
-                  <p className="text-foreground font-medium">Simple payout</p>
-                  <p className="text-muted-foreground mt-1 text-sm">
+                  <p className="text-text font-medium">Simple payout</p>
+                  <p className="text-text-secondary mt-1 text-sm">
                     Same sats per winner.
                   </p>
                 </button>
@@ -682,14 +678,14 @@ export function GiveawayNewBuilder({
                   }}
                   className={
                     rewardMode === "advanced"
-                      ? "border-primary bg-primary/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
-                      : "border-border bg-card hover:border-primary/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      ? "border-brand bg-brand/5 cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                      : "border-border bg-surface hover:border-brand/40 cursor-pointer rounded-lg border p-4 text-left transition-colors"
                   }
                 >
-                  <p className="text-foreground font-medium">
+                  <p className="text-text font-medium">
                     Customize by entry type
                   </p>
-                  <p className="text-muted-foreground mt-1 text-sm">
+                  <p className="text-text-secondary mt-1 text-sm">
                     Per-type winners and sats.
                   </p>
                 </button>
@@ -702,7 +698,7 @@ export function GiveawayNewBuilder({
                   <div className="flex flex-col gap-1">
                     <label
                       htmlFor="winnerCount"
-                      className="text-muted-foreground text-xs font-medium"
+                      className="text-text-secondary text-xs font-medium"
                     >
                       Winners
                     </label>
@@ -727,7 +723,7 @@ export function GiveawayNewBuilder({
                   <div className="flex flex-col gap-1">
                     <label
                       htmlFor="simpleSatsPerWinner"
-                      className="text-muted-foreground text-xs font-medium"
+                      className="text-text-secondary text-xs font-medium"
                     >
                       Sats per winner
                     </label>
@@ -748,38 +744,36 @@ export function GiveawayNewBuilder({
                 </div>
                 <RewardSummaryLine>
                   Max payout{" "}
-                  <span className="text-foreground font-semibold tabular-nums">
+                  <span className="text-text font-semibold tabular-nums">
                     {(winnerCount * simpleSats).toLocaleString()}
                   </span>{" "}
                   sats
                 </RewardSummaryLine>
                 {simpleSats === 0 ? (
-                  <p className="text-muted-foreground/85 text-[11px] leading-snug">
+                  <p className="text-text-secondary/85 text-[11px] leading-snug">
                     Selection-only — no payout.
                   </p>
                 ) : null}
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Set winners and sats per selected engagement type. Totals must
                   stay within your plan limit ({planLimits.maxWinnerCount} max).
                 </p>
                 <input type="hidden" name="winnerCount" value="1" />
                 <div className="border-border/60 grid max-w-xl gap-2 border-t pt-4 text-sm sm:grid-cols-[auto_1fr_1fr]">
-                  <span className="text-muted-foreground font-medium">
-                    Type
-                  </span>
-                  <span className="text-muted-foreground font-medium">
+                  <span className="text-text-secondary font-medium">Type</span>
+                  <span className="text-text-secondary font-medium">
                     Winners
                   </span>
-                  <span className="text-muted-foreground font-medium">
+                  <span className="text-text-secondary font-medium">
                     Sats each
                   </span>
                   {ENGAGEMENT_META.map((opt) => (
                     <div
                       key={opt.value}
-                      className="text-foreground grid grid-cols-[auto_1fr_1fr] gap-2 sm:contents"
+                      className="text-text grid grid-cols-[auto_1fr_1fr] gap-2 sm:contents"
                     >
                       <span className="flex items-center">{opt.label}</span>
                       <input
@@ -800,7 +794,7 @@ export function GiveawayNewBuilder({
                     </div>
                   ))}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Winner count for selection uses the sum of per-type winners
                   above (or the simple field if all zero — keep advanced rows
                   filled).

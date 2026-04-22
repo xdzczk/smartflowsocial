@@ -57,7 +57,7 @@ export default function BroadcastSettingsRoute() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Broadcast settings
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           Defaults for new campaigns (plan limits still apply).
         </p>
       </div>
@@ -76,7 +76,7 @@ export default function BroadcastSettingsRoute() {
             defaultValue={String(
               settings["defaultDeliveryMode"] ?? "BEST_COMPATIBILITY"
             )}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
           >
             <option value="BEST_COMPATIBILITY">Best compatibility</option>
             <option value="NIP04_ONLY">NIP-04 only</option>
@@ -96,7 +96,7 @@ export default function BroadcastSettingsRoute() {
             id="broadcast-default-strategy"
             name="defaultSendStrategy"
             defaultValue={String(settings["defaultSendStrategy"] ?? "STANDARD")}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
           >
             <option value="STANDARD">Standard</option>
             <option value="STAGGERED">Staggered</option>
@@ -116,7 +116,7 @@ export default function BroadcastSettingsRoute() {
             min={0}
             max={100}
             defaultValue={String(settings["failurePausePercent"] ?? 50)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
           />
         </div>
         <div>
@@ -133,12 +133,12 @@ export default function BroadcastSettingsRoute() {
             min={0}
             max={365}
             defaultValue={String(settings["minDaysBetweenRemessage"] ?? 7)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
           />
         </div>
         <button
           type="submit"
-          className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+          className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
         >
           Save
         </button>

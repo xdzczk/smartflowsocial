@@ -4,9 +4,9 @@
 
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
 
-const ACTIVE_TAB_CLASSES = "border-primary text-foreground font-semibold";
+const ACTIVE_TAB_CLASSES = "border-brand text-text font-semibold";
 const INACTIVE_TAB_CLASSES =
-  "border-transparent text-muted-foreground hover:border-border hover:text-foreground";
+  "border-transparent text-text-secondary hover:border-border hover:text-text";
 
 interface EngagementTabsProps {
   activeTab: EngagementTypeTab;

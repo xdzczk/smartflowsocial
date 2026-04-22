@@ -20,18 +20,17 @@ export function ConnectionStatusBadge({
       case "disconnected":
         return {
           label: "Inactive",
-          className: "bg-muted text-muted-foreground",
+          className: "bg-surface-hover text-text-secondary",
         };
       case "stale":
         return {
           label: "Needs reconnection",
-          className:
-            "bg-destructive/10 text-destructive border border-destructive/20",
+          className: "bg-danger/10 text-danger border border-danger/20",
         };
       case "inactive":
         return {
           label: "Inactive",
-          className: "bg-muted/50 text-muted-foreground",
+          className: "bg-surface-hover/50 text-text-secondary",
         };
     }
   };

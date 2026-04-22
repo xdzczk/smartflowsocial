@@ -103,14 +103,14 @@ export function getStatusBadge(
 ): React.ReactNode {
   if (type === "draft") {
     return (
-      <div className="bg-muted text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
+      <div className="bg-surface-hover text-text inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
         Draft
       </div>
     );
   }
   if (type === "scheduled") {
     return (
-      <div className="bg-muted text-foreground dark:border-border/75 dark:bg-primary/90/10 dark:text-foreground inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
+      <div className="bg-surface-hover text-text dark:border-border/75 dark:bg-brand/90/10 dark:text-text inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold">
         Scheduled
       </div>
     );

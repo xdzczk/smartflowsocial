@@ -31,19 +31,16 @@ export function RailSegmentedTabGroup({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-t-xl border-x border-t",
-        /* Frame the mode strip; dark needs stronger edge vs canvas */
-        "border-border/85 dark:border-white/20"
+        // rounded-t-lg (14px) matches the rail body's rounded-lg below.
+        "overflow-hidden rounded-t-lg border-x border-t",
+        /* Strengthened global --border (14% in dark) reads on both modes — no override needed. */
+        "border-border-strong"
       )}
     >
       <div
         role="radiogroup"
         aria-label={radiogroupAriaLabel}
-        className={cn(
-          "relative grid divide-x",
-          "divide-border/80 dark:divide-white/18",
-          COLS[columns]
-        )}
+        className={cn("divide-border relative grid divide-x", COLS[columns])}
       >
         {items.map((item) => {
           const active = value === item.id;
@@ -61,8 +58,8 @@ export function RailSegmentedTabGroup({
                 disabled && "pointer-events-none opacity-90",
                 /* Active: no bottom rule so it reads as one surface with the rail body below */
                 active
-                  ? "bg-card text-foreground relative z-[1] border-b border-b-transparent font-semibold"
-                  : "bg-muted/30 text-muted-foreground border-border/85 hover:bg-muted/45 hover:text-foreground border-b font-medium dark:border-b-white/18 dark:bg-white/[0.05]"
+                  ? "bg-surface text-text relative z-[1] border-b border-b-transparent font-semibold"
+                  : "bg-surface-hover/40 text-text-secondary border-border hover:bg-surface-hover/70 hover:text-text border-b font-medium"
               )}
               onClick={() => {
                 if (!disabled) onValueChange(item.id);

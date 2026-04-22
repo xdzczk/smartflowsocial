@@ -65,7 +65,7 @@ export function RemoteSignerConnectionList({
         >
           {showSearch ? (
             <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
+              <Search className="text-text-secondary absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
               <Input
                 id="remote-signer-sessions-search"
                 name="remote-signer-sessions-search"
@@ -97,11 +97,11 @@ export function RemoteSignerConnectionList({
 
       {filteredConnections.length === 0 ? (
         connections.length === 0 ? (
-          <div className="border-border/80 bg-muted/20 rounded-lg border border-dashed px-6 py-10 text-center">
-            <h3 className="text-foreground text-base font-semibold">
+          <div className="border-border/80 bg-surface-hover/20 rounded-lg border border-dashed px-6 py-10 text-center">
+            <h3 className="text-text text-base font-semibold">
               No remote signer connections yet
             </h3>
-            <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
+            <p className="text-text-secondary mx-auto mt-2 max-w-md text-sm">
               Connect a signer app to publish securely without exposing your key
               to {BRAND_NAME}.
             </p>
@@ -114,12 +114,12 @@ export function RemoteSignerConnectionList({
               <Plus className="mr-1.5 h-4 w-4" />
               Add connection
             </Button>
-            <p className="text-muted-foreground mt-4 text-xs">
+            <p className="text-text-secondary mt-4 text-xs">
               You can add more than one signer and switch between them later.
             </p>
           </div>
         ) : (
-          <div className="text-muted-foreground rounded-md border p-8 text-center text-sm">
+          <div className="text-text-secondary rounded-md border p-8 text-center text-sm">
             No connections match your search
           </div>
         )

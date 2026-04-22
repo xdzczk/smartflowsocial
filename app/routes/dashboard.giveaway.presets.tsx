@@ -68,26 +68,26 @@ export default function GiveawayPresetsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-foreground text-2xl font-semibold">Presets</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <h1 className="text-text text-2xl font-semibold">Presets</h1>
+        <p className="text-text-secondary mt-1 text-sm">
           Reuse scope, filters, and reward settings. Start a giveaway from a
           preset in one click.
         </p>
       </div>
 
       {!canUsePresets ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           Upgrade to a paid plan to save and manage giveaway presets.
         </p>
       ) : presets.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           No presets yet. On a giveaway detail page, use{" "}
-          <span className="text-foreground font-medium">Save as preset</span>.
+          <span className="text-text font-medium">Save as preset</span>.
         </p>
       ) : (
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-muted-foreground text-xs uppercase">
+            <thead className="bg-surface-hover/40 text-text-secondary text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Scope</th>
@@ -98,13 +98,13 @@ export default function GiveawayPresetsPage() {
             </thead>
             <tbody className="divide-border divide-y">
               {presets.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/20">
+                <tr key={p.id} className="hover:bg-surface-hover/20">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="text-muted-foreground px-4 py-3">
+                  <td className="text-text-secondary px-4 py-3">
                     {p.scopeType}
                   </td>
                   <td className="px-4 py-3 tabular-nums">{p.winnerCount}</td>
-                  <td className="text-muted-foreground px-4 py-3 text-xs">
+                  <td className="text-text-secondary px-4 py-3 text-xs">
                     {p.lastUsedAt
                       ? new Date(p.lastUsedAt).toLocaleDateString()
                       : "—"}
@@ -129,7 +129,7 @@ export default function GiveawayPresetsPage() {
                           type="submit"
                           size="sm"
                           variant="ghost"
-                          className="text-destructive"
+                          className="text-danger"
                           onClick={(e) => {
                             if (!confirm(`Delete preset “${p.name}”?`)) {
                               e.preventDefault();
@@ -148,8 +148,8 @@ export default function GiveawayPresetsPage() {
         </div>
       )}
 
-      <p className="text-muted-foreground text-sm">
-        <Link to="/dashboard/giveaway" className="text-primary hover:underline">
+      <p className="text-text-secondary text-sm">
+        <Link to="/dashboard/giveaway" className="text-brand hover:underline">
           ← All giveaways
         </Link>
       </p>

@@ -61,8 +61,8 @@ export function ComposerErrors({
         <div
           className={
             inRail
-              ? "bg-muted/35 text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-2.5 text-xs"
-              : "bg-muted/30 text-muted-foreground mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm"
+              ? "bg-surface-hover/60 text-text-secondary flex items-center justify-between gap-2 rounded-lg border p-2.5 text-xs"
+              : "bg-surface-hover/50 text-text-secondary mb-3 flex items-center justify-between gap-2 rounded-md border p-3 text-sm"
           }
         >
           <span>
@@ -77,7 +77,7 @@ export function ComposerErrors({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground shrink-0"
+            className="text-text-secondary hover:text-text shrink-0"
             onClick={() => {
               onCancelSigning();
               cancelSignerInFlight();

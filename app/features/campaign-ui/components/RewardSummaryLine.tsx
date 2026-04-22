@@ -10,7 +10,7 @@ export function RewardSummaryLine({
   return (
     <p
       className={cn(
-        "text-muted-foreground text-sm leading-snug tabular-nums",
+        "text-text-secondary text-sm leading-snug tabular-nums",
         className
       )}
     >

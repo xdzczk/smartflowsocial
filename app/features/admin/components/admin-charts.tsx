@@ -46,15 +46,15 @@ function AdminTooltipContent({
   const day =
     typeof label === "string" ? formatDay(label) : String(label ?? "");
   return (
-    <div className="border-border bg-popover text-popover-foreground rounded-lg border px-3 py-2 text-xs shadow-md">
-      <p className="text-muted-foreground mb-1 font-medium">{day}</p>
+    <div className="border-border bg-surface-overlay text-text shadow-2 rounded-lg border px-3 py-2 text-xs">
+      <p className="text-text-secondary mb-1 font-medium">{day}</p>
       <ul className="space-y-0.5">
         {items.map((p) => (
           <li
             key={String(p.dataKey)}
             className="flex justify-between gap-4 tabular-nums"
           >
-            <span className="text-muted-foreground">{p.name ?? p.dataKey}</span>
+            <span className="text-text-secondary">{p.name ?? p.dataKey}</span>
             <span className="font-medium">{p.value}</span>
           </li>
         ))}

@@ -368,7 +368,7 @@ export default function EngagementFeedPage() {
 
       {/* Loading indicator for next page */}
       {isFetchingNextPage ? (
-        <div className="text-muted-foreground mt-4 text-center text-sm">
+        <div className="text-text-secondary mt-4 text-center text-sm">
           Loading more notifications...
         </div>
       ) : null}

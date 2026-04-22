@@ -319,10 +319,10 @@ export default function UserMenu() {
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{currentLabel}</div>
-              <div className="text-muted-foreground truncate text-xs">
+              <div className="text-text-secondary truncate text-xs">
                 {formatNpubShort(user.npub)}
               </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-text-secondary text-xs">
                 Currently signed in
               </div>
             </div>
@@ -334,7 +334,7 @@ export default function UserMenu() {
               <div className="mb-2 text-sm font-medium">Child accounts</div>
               <div className="divide-y rounded-md border">
                 {children.length === 0 ? (
-                  <div className="text-muted-foreground p-3 text-sm">
+                  <div className="text-text-secondary p-3 text-sm">
                     No child accounts linked
                   </div>
                 ) : (
@@ -358,7 +358,7 @@ export default function UserMenu() {
                           </Avatar>
                           <div className="min-w-0">
                             <div className="truncate font-medium">{label}</div>
-                            <div className="text-muted-foreground truncate text-xs">
+                            <div className="text-text-secondary truncate text-xs">
                               {formatNpubShort(c.npub)}
                             </div>
                           </div>

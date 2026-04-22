@@ -32,23 +32,23 @@ function getDisplayStatus(
 function Nip46Status({ status }: { status: ConnectionStatus }) {
   if (status === "active") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircle className="h-3 w-3 text-green-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <CheckCircle className="text-success h-3 w-3" />
         <span className="hidden sm:inline">Active</span>
       </div>
     );
   }
   if (status === "stale") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <TriangleAlert className="h-3 w-3 text-yellow-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <TriangleAlert className="text-warning h-3 w-3" />
         <span className="hidden sm:inline">Stale</span>
       </div>
     );
   }
   if (status === "disconnected") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
         <Ban className="h-3 w-3 opacity-60" />
         <span className="hidden sm:inline">Disconnected</span>
       </div>
@@ -56,7 +56,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
   }
   // status is "inactive" (only remaining ConnectionStatus after active, stale, disconnected)
   return (
-    <div className="text-muted-foreground flex items-center gap-1 text-xs">
+    <div className="text-text-secondary flex items-center gap-1 text-xs">
       <Ban className="h-3 w-3 opacity-60" />
       <span className="hidden sm:inline">Inactive</span>
     </div>
@@ -66,32 +66,32 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
 function Nip07Status({ readiness }: { readiness: Nip07Readiness }) {
   if (readiness === "ready") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircle className="h-3 w-3 text-green-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <CheckCircle className="text-success h-3 w-3" />
         <span className="hidden sm:inline">Extension ready</span>
       </div>
     );
   }
   if (readiness === "unresponsive") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <TriangleAlert className="h-3 w-3 text-yellow-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <TriangleAlert className="text-warning h-3 w-3" />
         <span className="hidden sm:inline">Extension unresponsive</span>
       </div>
     );
   }
   if (readiness === "account_mismatch") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <TriangleAlert className="h-3 w-3 text-amber-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <TriangleAlert className="text-warning h-3 w-3" />
         <span className="hidden sm:inline">Wrong account</span>
       </div>
     );
   }
   // unknown or any other state
   return (
-    <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      <div className="bg-muted-foreground/40 h-3 w-3 rounded-full" />
+    <div className="text-text-secondary flex items-center gap-1 text-xs">
+      <div className="bg-surface-hover-foreground/40 h-3 w-3 rounded-full" />
       <span className="hidden sm:inline">Extension…</span>
     </div>
   );
@@ -116,8 +116,8 @@ export function SignerStatusIndicator() {
 
   if (!mounted) {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <div className="bg-muted-foreground/40 h-3 w-3 rounded-full" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <div className="bg-surface-hover-foreground/40 h-3 w-3 rounded-full" />
       </div>
     );
   }
@@ -125,7 +125,7 @@ export function SignerStatusIndicator() {
   const config = getActiveSignerConfig();
   if (!config) {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
         <Ban className="h-3 w-3 opacity-50" />
         <span className="hidden sm:inline">No signer</span>
       </div>

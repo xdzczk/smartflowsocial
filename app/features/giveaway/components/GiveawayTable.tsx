@@ -68,7 +68,7 @@ const SortableHeader = ({
   onRequestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
+    className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => onRequestSort(sortKey)}
   >
     {label}{" "}
@@ -106,15 +106,15 @@ export function GiveawayTable({
   return (
     <>
       {/* Results count */}
-      <div className="text-muted-foreground mb-2 text-sm">
+      <div className="text-text-secondary mb-2 text-sm">
         Showing {posts.length} posts with engagement
       </div>
 
-      <div className="border-border bg-card min-w-full overflow-x-auto rounded border">
+      <div className="border-border bg-surface min-w-full overflow-x-auto rounded-xs border">
         <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <thead>
             <tr>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Media
               </th>
               <SortableHeader
@@ -135,22 +135,22 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Likes
               </th>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Replies
               </th>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Mentions
               </th>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Reposts
               </th>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Zaps
               </th>
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Zapped
               </th>
               <SortableHeader
@@ -159,7 +159,7 @@ export function GiveawayTable({
                 sortConfig={sortConfig}
                 onRequestSort={onRequestSort}
               />
-              <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+              <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                 Actions
               </th>
             </tr>
@@ -168,7 +168,7 @@ export function GiveawayTable({
             {posts.map((post) => (
               <tr
                 key={post.id}
-                className="border-border hover:bg-muted cursor-pointer border-b"
+                className="border-border hover:bg-surface-hover cursor-pointer border-b"
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3">
@@ -177,15 +177,15 @@ export function GiveawayTable({
                       <MediaThumbnail
                         src={getImageUrls(post.fileUrl)[0]}
                         alt="Post preview"
-                        className="h-12 w-12 rounded object-cover"
+                        className="h-12 w-12 rounded-xs object-cover"
                         fallback={
-                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                          <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                             TEXT
                           </div>
                         }
                       />
                       {post.repost ? (
-                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                        <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                             strokeWidth={INLINE_ICON_STROKE}
@@ -205,11 +205,11 @@ export function GiveawayTable({
                     </div>
                   ) : (
                     <div className="relative">
-                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                      <div className="dark:bg-surface-hover dark:text-text-secondary bg-surface-hover text-text flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                        <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                             strokeWidth={INLINE_ICON_STROKE}
@@ -284,7 +284,7 @@ export function GiveawayTable({
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
-                        className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                        className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
                         aria-label="Actions"
                       >
                         <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />

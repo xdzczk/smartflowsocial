@@ -17,7 +17,7 @@ export function MarkdownPreview({
   if (!source || typeof source !== "string") {
     return (
       <div className={className}>
-        <p className="text-muted-foreground italic">No content available</p>
+        <p className="text-text-secondary italic">No content available</p>
       </div>
     );
   }

@@ -3,16 +3,16 @@
 export function giveawayStatusPillClass(status: string): string {
   switch (status) {
     case "DRAFT":
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
     case "PREVIEWED":
-      return "bg-blue-500/15 text-blue-800 dark:text-blue-200";
+      return "bg-info/15 text-info-text";
     case "LOCKED":
-      return "bg-amber-500/15 text-amber-900 dark:text-amber-200";
+      return "bg-warning/15 text-warning-text";
     case "PAID_OUT":
-      return "bg-emerald-500/15 text-emerald-900 dark:text-emerald-200";
+      return "bg-success/15 text-success-text";
     case "CANCELLED":
-      return "bg-destructive/15 text-destructive";
+      return "bg-danger/15 text-danger";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-surface-hover text-text-secondary";
   }
 }

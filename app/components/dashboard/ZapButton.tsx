@@ -66,7 +66,7 @@ export default function ZapButton({
       onClick={() => void handleClick()}
     >
       {loading ? (
-        <span className="text-muted-foreground">Opening wallet…</span>
+        <span className="text-text-secondary">Opening wallet…</span>
       ) : (
         <>
           <span aria-hidden>⚡</span>

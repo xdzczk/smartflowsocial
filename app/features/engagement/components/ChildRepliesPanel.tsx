@@ -20,12 +20,12 @@ export function ChildRepliesPanel({
   if (isLoading) {
     return (
       <div
-        className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3"
+        className="dark:border-brand/30 border-border mt-3 border-l-2 pl-3"
         role="status"
         aria-live="polite"
         aria-busy="true"
       >
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <div className="text-text-secondary flex items-center gap-2 text-xs">
           <Loader2
             className={`${INLINE_ICON_SIZE_CLASS} animate-spin`}
             aria-hidden
@@ -39,16 +39,16 @@ export function ChildRepliesPanel({
   if (replies.length === 0) {
     return (
       <div
-        className="dark:border-primary/30 border-border mt-3 border-l-2 pl-3"
+        className="dark:border-brand/30 border-border mt-3 border-l-2 pl-3"
         role="status"
       >
-        <div className="text-muted-foreground text-xs">No replies yet</div>
+        <div className="text-text-secondary text-xs">No replies yet</div>
       </div>
     );
   }
 
   return (
-    <div className="border-primary/30 mt-3 space-y-2 border-l-2 pl-3">
+    <div className="border-brand/30 mt-3 space-y-2 border-l-2 pl-3">
       {replies.map((reply) => {
         const replyMetadata = metadata[reply.pubkey];
         let replyAuthorName =
@@ -88,7 +88,7 @@ export function ChildRepliesPanel({
         return (
           <div
             key={reply.id}
-            className="border-border bg-muted dark:bg-secondary/30 rounded-lg border p-2"
+            className="border-border bg-surface-hover rounded-lg border p-2"
           >
             <div className="mb-1 flex items-center gap-2">
               {replyAuthorPicture ? (
@@ -98,18 +98,18 @@ export function ChildRepliesPanel({
                   className="h-6 w-6 rounded-full"
                 />
               ) : (
-                <div className="bg-muted h-6 w-6 rounded-full" />
+                <div className="bg-surface-hover h-6 w-6 rounded-full" />
               )}
-              <span className="text-foreground text-xs font-semibold">
+              <span className="text-text text-xs font-semibold">
                 {replyAuthorName}
               </span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-text-secondary text-xs">
                 {formatDate(reply.created_at, {
                   isUnixTimestamp: true,
                 })}
               </span>
             </div>
-            <p className="text-foreground text-xs break-words whitespace-pre-wrap">
+            <p className="text-text text-xs break-words whitespace-pre-wrap">
               {reply.content}
             </p>
           </div>

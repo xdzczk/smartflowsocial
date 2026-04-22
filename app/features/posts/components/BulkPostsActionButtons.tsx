@@ -82,14 +82,14 @@ export default function BulkPostsActionButtons({
                 type="button"
                 variant="secondary"
                 disabled={isProcessing}
-                className="bg-muted text-foreground hover:bg-muted/80"
+                className="bg-surface-hover text-text hover:bg-surface-hover/80"
               >
                 Repost all {repostAllLabel}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64" align="center">
               <div className="space-y-3">
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-text-secondary text-sm font-medium">
                   Set repost delay for all posts
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -110,7 +110,7 @@ export default function BulkPostsActionButtons({
                     onChange={(e) =>
                       setRepostAllUnit(e.target.value as "hours" | "minutes")
                     }
-                    className="border-border bg-background text-foreground h-9 w-24 rounded border px-2 text-sm"
+                    className="border-border bg-canvas text-text h-9 w-24 rounded-xs border px-2 text-sm"
                     aria-label="Unit"
                   >
                     <option value="hours">hours</option>
@@ -139,7 +139,7 @@ export default function BulkPostsActionButtons({
                   type="button"
                   onClick={() => handleScheduleIntervalClick(interval)}
                   disabled={isProcessing}
-                  className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                  className="dark:bg-surface bg-surface-hover text-text-secondary hover:bg-surface-hover dark:text-text dark:hover:bg-surface-hover shadow-2 mx-2 rounded-md px-4 py-2 text-sm font-medium transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {formatIntervalLabel(interval, { compact: true })}
                 </button>
@@ -192,7 +192,7 @@ export default function BulkPostsActionButtons({
               );
             })}
         </div>
-        <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
+        <p className="text-text-secondary dark:text-text mt-2 text-center text-xs">
           Click a queue to assign; click again to leave all unassigned
         </p>
       </div>
@@ -219,14 +219,14 @@ export default function BulkPostsActionButtons({
             type="button"
             onClick={handleBulkRecyclableToggle}
             disabled={isProcessing}
-            className="bg-muted text-foreground hover:bg-muted/80 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="bg-surface-hover text-text hover:bg-surface-hover/80 shadow-2 rounded-md px-4 py-2 text-sm font-medium transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {posts.every((post) => post.isRecyclable)
               ? "Mark All Non-Recyclable"
               : "Mark All Recyclable"}
           </button>
         </div>
-        <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
+        <p className="text-text-secondary dark:text-text mt-2 text-center text-xs">
           Toggle recyclable status for all posts
         </p>
       </div>

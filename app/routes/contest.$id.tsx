@@ -83,7 +83,7 @@ export default function PublicContestPageRoute() {
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">{data.title}</h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           {data.status} · ranked by {data.rankingMetric.toLowerCase()} · ends{" "}
           {new Date(data.contestEndAt).toLocaleString()}
         </p>
@@ -95,21 +95,21 @@ export default function PublicContestPageRoute() {
         {data.sourceNoteId ? (
           <a
             href={`https://njump.me/${data.sourceNoteId}`}
-            className="text-primary text-sm hover:underline"
+            className="text-brand text-sm hover:underline"
             target="_blank"
             rel="noreferrer"
           >
             Open source post
           </a>
         ) : (
-          <span className="text-muted-foreground text-sm">
+          <span className="text-text-secondary text-sm">
             No source post linked
           </span>
         )}
       </header>
 
       {isCompleted && data.publicSummaryLines ? (
-        <section className="border-border bg-card space-y-3 rounded-lg border p-4">
+        <section className="border-border bg-surface space-y-3 rounded-lg border p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Public summary</h2>
             <div className="flex flex-wrap gap-2">
@@ -138,32 +138,32 @@ export default function PublicContestPageRoute() {
             </div>
           </div>
           {data.eligibleEntries != null ? (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Eligible entries (snapshot):{" "}
               {data.eligibleEntries.toLocaleString()}
             </p>
           ) : null}
-          <pre className="bg-muted/30 max-h-48 overflow-auto rounded-md p-3 text-xs whitespace-pre-wrap">
+          <pre className="bg-surface-hover/30 max-h-48 overflow-auto rounded-md p-3 text-xs whitespace-pre-wrap">
             {data.publicSummaryLines.join("\n")}
           </pre>
         </section>
       ) : null}
 
-      <section className="border-border bg-card rounded-lg border p-4">
+      <section className="border-border bg-surface rounded-lg border p-4">
         <h2 className="mb-3 text-sm font-semibold">Leaderboard</h2>
         {data.rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No entries yet.</p>
+          <p className="text-text-secondary text-sm">No entries yet.</p>
         ) : (
           <ul className="space-y-2">
             {data.rows.map((row) => (
               <li
                 key={row.entryEventId}
-                className="border-border bg-background rounded-md border p-3"
+                className="border-border bg-canvas rounded-md border p-3"
               >
                 <p className="text-sm font-medium">
                   #{row.rank} · {row.authorPubkey.slice(0, 12)}…
                 </p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   score {row.score} · {row.replySnippet ?? "(no text)"}
                 </p>
               </li>
@@ -172,7 +172,7 @@ export default function PublicContestPageRoute() {
         )}
       </section>
 
-      <footer className="text-muted-foreground text-xs">
+      <footer className="text-text-secondary text-xs">
         {poweredByBrand} ·{" "}
         <Link to="/dashboard/contests" className="hover:underline">
           Create your own contest

@@ -125,7 +125,7 @@ export default function BulkPostsSchedulingPanel({
         <div className="flex flex-col gap-1">
           <Label
             htmlFor="bulk-schedule-start-time"
-            className="text-muted-foreground text-xs font-medium"
+            className="text-text-secondary text-xs font-medium"
           >
             Start time
           </Label>
@@ -143,7 +143,7 @@ export default function BulkPostsSchedulingPanel({
             aria-label="Start time for first post"
           />
           {scheduleOverlapWarning ? (
-            <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+            <p className="text-warning dark:text-warning text-[11px] leading-snug">
               {scheduleOverlapWarning}
             </p>
           ) : null}
@@ -151,7 +151,7 @@ export default function BulkPostsSchedulingPanel({
         <div className="flex flex-col gap-1">
           <Label
             htmlFor="bulk-schedule-interval"
-            className="text-muted-foreground text-xs font-medium"
+            className="text-text-secondary text-xs font-medium"
           >
             Interval
           </Label>
@@ -191,7 +191,7 @@ export default function BulkPostsSchedulingPanel({
 
       {onScheduleIntervalChipClick != null && chipIntervals.length > 0 ? (
         <div className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs font-medium">
+          <span className="text-text-secondary text-xs font-medium">
             Quick spacing
           </span>
           <RailChipGroup>

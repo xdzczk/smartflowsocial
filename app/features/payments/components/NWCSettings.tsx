@@ -102,7 +102,7 @@ export function NWCSettings({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 space-y-0.5">
             <Label htmlFor="nwc-enabled">Enable auto-renew</Label>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               When on, renewals can be charged via your connected wallet.
               {BRAND_NAME} never holds your funds.
             </p>
@@ -122,14 +122,14 @@ export function NWCSettings({
         </div>
 
         {!connected && !watchedEnabled && !showInput ? (
-          <div className="border-border/60 bg-muted/20 rounded-lg border border-dashed p-5">
+          <div className="border-border/60 bg-surface-hover/20 rounded-lg border border-dashed p-5">
             <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
-              <Wallet className="text-muted-foreground mb-3 h-10 w-10 shrink-0 sm:mr-4 sm:mb-0" />
+              <Wallet className="text-text-secondary mb-3 h-10 w-10 shrink-0 sm:mr-4 sm:mb-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-foreground mb-1 text-sm font-medium">
+                <p className="text-text mb-1 text-sm font-medium">
                   No wallet connected
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-text-secondary text-sm">
                   Turn on auto-renew above, or use Connect wallet to paste your
                   NWC string.
                 </p>
@@ -150,7 +150,7 @@ export function NWCSettings({
         {connected && maskedNwcString && !showInput ? (
           <div className="space-y-2">
             <Label>Connected wallet</Label>
-            <div className="bg-muted space-y-2 rounded-md p-3">
+            <div className="bg-surface-hover space-y-2 rounded-md p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="min-w-0 font-mono text-sm break-all">
                   {maskedNwcString}
@@ -169,14 +169,14 @@ export function NWCSettings({
                 </Button>
               </div>
               <p
-                className="text-muted-foreground text-xs"
+                className="text-text-secondary text-xs"
                 role="status"
                 aria-live="polite"
               >
                 {isCopied ? "Wallet string copied to clipboard." : "\u00A0"}
               </p>
               {nwcLastUsed ? (
-                <p className="text-muted-foreground text-xs">
+                <p className="text-text-secondary text-xs">
                   Last used: {new Date(nwcLastUsed).toLocaleString()}
                 </p>
               ) : null}
@@ -195,7 +195,7 @@ export function NWCSettings({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                className="text-danger hover:text-danger"
                 onClick={handleClear}
                 disabled={isSubmitting}
               >
@@ -225,7 +225,7 @@ export function NWCSettings({
               autoCapitalize="off"
               spellCheck="false"
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Encrypted and stored securely. Used for renewal payments when
               auto-renew is on.
             </p>
@@ -243,7 +243,7 @@ export function NWCSettings({
           <p className="text-success text-sm">Wallet settings updated.</p>
         ) : null}
         {fetcher.data?.error ? (
-          <p className="text-destructive text-sm">{fetcher.data.error}</p>
+          <p className="text-danger text-sm">{fetcher.data.error}</p>
         ) : null}
       </div>
     </PreferenceSection>

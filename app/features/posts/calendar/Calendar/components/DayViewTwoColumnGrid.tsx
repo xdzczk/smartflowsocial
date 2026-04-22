@@ -281,7 +281,7 @@ export function DayViewTwoColumnGrid({
           {hours.map((_, index) => (
             <div
               key={hours[index]}
-              className="text-muted-foreground flex shrink-0 items-start justify-end pr-1 text-xs"
+              className="text-text-secondary flex shrink-0 items-start justify-end pr-1 text-xs"
               style={{
                 height: ROW_HEIGHT_PX,
                 lineHeight: `${ROW_HEIGHT_PX}px`,
@@ -678,7 +678,7 @@ export function DayViewTwoColumnGrid({
                     );
                   })}
                   {row.overflowCount > 0 ? (
-                    <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
+                    <div className="bg-surface-hover text-text-secondary flex flex-1 items-center justify-center rounded-[var(--calendar-radius-sm)] text-xs">
                       +{row.overflowCount}
                     </div>
                   ) : null}
@@ -769,7 +769,7 @@ export function DayViewTwoColumnGrid({
                   data-slot={slotKey}
                 >
                   {isDragOver ? (
-                    <div className="bg-primary/10 border-primary/50 absolute inset-0 rounded border-2 border-dashed" />
+                    <div className="bg-brand/10 border-brand/50 absolute inset-0 rounded-[var(--calendar-radius-sm)] border-2 border-dashed" />
                   ) : null}
                 </div>
               );

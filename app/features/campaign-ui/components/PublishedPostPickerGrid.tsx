@@ -80,7 +80,7 @@ export function PublishedPostPickerGrid({
 
   return (
     <div className="space-y-2">
-      <label htmlFor={searchInputId} className="text-muted-foreground text-sm">
+      <label htmlFor={searchInputId} className="text-text-secondary text-sm">
         Search posts
       </label>
       <input
@@ -92,29 +92,29 @@ export function PublishedPostPickerGrid({
           setListPage(1);
         }}
         placeholder="Filter by caption…"
-        className="border-border bg-background mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
+        className="border-border bg-canvas mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
       />
       {filteredPosts.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-text-secondary text-sm">
           {posts.length === 0 ? emptyPostsMessage : emptyFilterMessage}
         </p>
       ) : (
         <div className="space-y-3">
-          <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="text-text-secondary flex flex-wrap items-center justify-between gap-2 text-xs">
             <span>
               Showing{" "}
-              <span className="text-foreground font-medium tabular-nums">
+              <span className="text-text font-medium tabular-nums">
                 {rangeStart}–{rangeEnd}
               </span>{" "}
               of{" "}
-              <span className="text-foreground font-medium tabular-nums">
+              <span className="text-text font-medium tabular-nums">
                 {filteredPosts.length}
               </span>
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="border-border bg-background hover:bg-muted rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
+                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
                 disabled={safePage <= 1}
                 onClick={() => {
                   setListPage((p) => Math.max(1, Math.min(p, pageCount) - 1));
@@ -122,12 +122,12 @@ export function PublishedPostPickerGrid({
               >
                 Previous
               </button>
-              <span className="text-muted-foreground tabular-nums">
+              <span className="text-text-secondary tabular-nums">
                 Page {safePage} of {pageCount}
               </span>
               <button
                 type="button"
-                className="border-border bg-background hover:bg-muted rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
+                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
                 disabled={safePage >= pageCount}
                 onClick={() => {
                   setListPage((p) => {
@@ -154,9 +154,9 @@ export function PublishedPostPickerGrid({
                   onClick={() => {
                     onValueChange(p.id);
                   }}
-                  className={`border-border bg-background flex flex-col overflow-hidden rounded-lg border text-left transition-colors ${selected ? "border-primary bg-primary/5 ring-primary/20 ring-2" : "hover:border-primary/40"}`}
+                  className={`border-border bg-canvas flex flex-col overflow-hidden rounded-lg border text-left transition-colors ${selected ? "bg-surface-selected border-brand ring-brand/20 ring-2" : "hover:border-brand/40"}`}
                 >
-                  <div className="bg-muted relative aspect-video w-full overflow-hidden">
+                  <div className="bg-surface-hover relative aspect-video w-full overflow-hidden">
                     {firstUrl ? (
                       <MediaThumbnail
                         src={firstUrl}
@@ -165,24 +165,24 @@ export function PublishedPostPickerGrid({
                         forceType={isVideoFile(firstUrl) ? "video" : undefined}
                         hidePlayButton={false}
                         fallback={
-                          <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+                          <div className="text-text-secondary flex h-full w-full items-center justify-center text-xs font-medium">
                             {badge}
                           </div>
                         }
                       />
                     ) : (
-                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+                      <div className="text-text-secondary flex h-full w-full items-center justify-center text-xs font-medium">
                         {badge}
                       </div>
                     )}
                   </div>
                   <div className="flex min-h-0 flex-1 flex-col gap-1 p-3">
                     <p
-                      className={`line-clamp-3 text-sm leading-snug ${p.caption?.trim() ? "text-foreground font-medium" : "text-muted-foreground italic"}`}
+                      className={`line-clamp-3 text-sm leading-snug ${p.caption?.trim() ? "text-text font-medium" : "text-text-secondary italic"}`}
                     >
                       {p.caption?.trim() ? p.caption.trim() : "No caption"}
                     </p>
-                    <p className="text-muted-foreground mt-auto text-xs">
+                    <p className="text-text-secondary mt-auto text-xs">
                       {new Date(p.publishedAt).toLocaleString()}
                     </p>
                   </div>

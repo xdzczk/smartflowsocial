@@ -1,6 +1,6 @@
 /**
  * Single left-column composer surface: matches publishing rail card grammar
- * (rounded-xl border bg-card shadow-sm). Sections use dividers, not nested cards.
+ * (rounded-lg border bg-surface shadow-1). Sections use dividers, not nested cards.
  */
 
 import { cn } from "~/lib/utils";
@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils";
 export function ComposerCanvasDivider({ className }: { className?: string }) {
   return (
     <div
-      className={cn("bg-border/50 h-px w-full shrink-0", className)}
+      className={cn("bg-border-subtle h-px w-full shrink-0", className)}
       role="separator"
     />
   );
@@ -34,14 +34,14 @@ export function ComposerLeftCanvas({
   return (
     <div
       className={cn(
-        "border-border bg-card rounded-xl border shadow-sm",
+        "border-border bg-surface shadow-1 rounded-lg border",
         className
       )}
     >
       <div className="px-5 py-5 sm:px-6 sm:py-6">
         {showHeader ? (
           <div className="mb-5 flex min-h-8 items-center justify-between gap-3 sm:mb-6">
-            <div className="text-muted-foreground min-w-0 text-xs leading-snug">
+            <div className="text-text-secondary min-w-0 text-xs leading-snug">
               {headerLeading}
             </div>
             <div className="shrink-0">{headerTrailing}</div>

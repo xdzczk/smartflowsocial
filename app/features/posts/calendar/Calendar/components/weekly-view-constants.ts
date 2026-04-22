@@ -59,7 +59,7 @@ export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 
 /** Class for expanded post block wrapper: fully opaque and on top so grid/content behind don't show through. */
 export const EXPANDED_BLOCK_WRAPPER_CLASS =
-  "opacity-100 overflow-hidden bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-sm";
+  "opacity-100 overflow-hidden bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-1";
 
 export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =

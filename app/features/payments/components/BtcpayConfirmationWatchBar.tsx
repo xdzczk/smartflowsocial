@@ -156,15 +156,15 @@ export function BtcpayConfirmationWatchBar() {
 
   return (
     <div
-      className="border-border fixed top-0 right-0 left-0 z-[100] border-b bg-amber-950/90 px-3 py-2 text-amber-50 shadow-md backdrop-blur-sm dark:bg-amber-950/80"
+      className="border-warning/40 bg-warning text-warning-foreground shadow-2 fixed top-0 right-0 left-0 z-[100] border-b px-3 py-2 backdrop-blur-sm"
       role="status"
     >
       <div className="mx-auto flex max-w-4xl items-center justify-center gap-3 text-center text-sm">
         <Loader2
-          className="h-4 w-4 shrink-0 animate-spin text-amber-200"
+          className="text-warning-foreground/80 h-4 w-4 shrink-0 animate-spin"
           aria-hidden
         />
-        <p className="min-w-0 flex-1 text-amber-50/95">
+        <p className="text-warning-foreground min-w-0 flex-1">
           Bitcoin payment seen — waiting for the first on-chain confirmation.
           Your plan activates after one block. You can keep using the app; we
           will update automatically.
@@ -174,7 +174,7 @@ export function BtcpayConfirmationWatchBar() {
           onClick={() => {
             clearBtcpayConfirmationWatch();
           }}
-          className="shrink-0 rounded p-1 text-amber-200 hover:text-amber-50 focus:ring-2 focus:ring-amber-300 focus:outline-none"
+          className="text-warning-foreground/80 hover:text-warning-foreground focus-visible:ring-warning-foreground/60 focus-visible:ring-offset-warning shrink-0 rounded-xs p-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label="Dismiss payment status bar"
         >
           <X className="h-4 w-4" />

@@ -51,12 +51,12 @@ export function ScheduledPostActionBar({
   return (
     <div
       className={cn(
-        "border-border/70 bg-card/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm",
+        "border-border/70 bg-surface/95 shrink-0 border-t px-6 py-4 backdrop-blur-sm",
         className
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="text-muted-foreground min-h-[36px] min-w-0 text-xs">
+        <div className="text-text-secondary min-h-[36px] min-w-0 text-xs">
           {deleteForm}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2.5">
@@ -64,7 +64,7 @@ export function ScheduledPostActionBar({
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-text-secondary hover:text-text"
               asChild
             >
               <Link to={openFullEditorHref}>{openFullEditorLabel}</Link>

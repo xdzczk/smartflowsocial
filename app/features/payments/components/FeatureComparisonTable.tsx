@@ -201,7 +201,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
 function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
   if (plan.isTeamsPlaceholder) {
     return (
-      <span className="text-muted-foreground text-center text-xs font-medium">
+      <span className="text-text-secondary text-center text-xs font-medium">
         Coming soon
       </span>
     );
@@ -211,13 +211,13 @@ function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
     return value ? (
       <Check className="text-success dark:text-success mx-auto h-[18px] w-[18px]" />
     ) : (
-      <X className="text-muted-foreground mx-auto h-[18px] w-[18px]" />
+      <X className="text-text-secondary mx-auto h-[18px] w-[18px]" />
     );
   }
 
   if (typeof value === "string") {
     return (
-      <span className="text-foreground px-2 text-center text-sm leading-relaxed">
+      <span className="text-text px-2 text-center text-sm leading-relaxed">
         {value}
       </span>
     );
@@ -225,13 +225,13 @@ function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
 
   if (typeof value === "number") {
     return (
-      <span className="text-foreground px-2 text-center text-sm font-medium tabular-nums">
+      <span className="text-text px-2 text-center text-sm font-medium tabular-nums">
         {value}
       </span>
     );
   }
 
-  return <span className="text-muted-foreground">-</span>;
+  return <span className="text-text-secondary">-</span>;
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
@@ -240,22 +240,22 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
   ] as string[];
 
   return (
-    <div className="border-border bg-card overflow-hidden rounded-xl border shadow-md">
+    <div className="border-border bg-surface shadow-2 overflow-hidden rounded-xl border">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-border border-b">
-              <th className="text-foreground w-[30%] px-4 py-3.5 text-left text-sm font-semibold">
+              <th className="text-text w-[30%] px-4 py-3.5 text-left text-sm font-semibold">
                 Features
               </th>
               {plans.map((plan) => (
                 <th
                   key={plan.id}
-                  className="text-foreground px-4 py-3.5 text-center text-sm font-semibold"
+                  className="text-text px-4 py-3.5 text-center text-sm font-semibold"
                 >
                   {plan.name}
                   {plan.isComingSoon ? (
-                    <span className="text-muted-foreground mt-0.5 block text-xs font-medium">
+                    <span className="text-text-secondary mt-0.5 block text-xs font-medium">
                       Coming soon
                     </span>
                   ) : null}
@@ -270,10 +270,10 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
               );
               return (
                 <Fragment key={groupTitle}>
-                  <tr className="border-border bg-muted/35 border-y">
+                  <tr className="border-border bg-surface-hover/35 border-y">
                     <td
                       colSpan={plans.length + 1}
-                      className="text-foreground/90 px-4 py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase"
+                      className="text-text/90 px-4 py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase"
                     >
                       {groupTitle}
                     </td>
@@ -282,10 +282,10 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                     <tr
                       key={`${groupTitle}-${feature.label}`}
                       className={`border-border border-b ${
-                        index % 2 === 0 ? "bg-muted/10" : "bg-card"
+                        index % 2 === 0 ? "bg-surface-hover/10" : "bg-surface"
                       }`}
                     >
-                      <td className="text-foreground px-4 py-3 text-sm font-medium">
+                      <td className="text-text px-4 py-3 text-sm font-medium">
                         <span className="inline-flex items-center gap-1.5">
                           {feature.label}
                           {feature.tooltip ? (
@@ -293,7 +293,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  className="text-muted-foreground hover:text-foreground hidden shrink-0 transition md:inline-flex"
+                                  className="text-text-secondary hover:text-text hidden shrink-0 transition md:inline-flex"
                                   aria-label={`More about ${feature.label}`}
                                 >
                                   <HelpCircle className="h-3.5 w-3.5" />

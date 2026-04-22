@@ -16,8 +16,9 @@ import type { EngagementSortBy } from "../engagement-filter";
 
 const FILTER_BUTTON_BASE =
   "rounded-full px-3 py-1 text-xs font-medium transition-colors";
-const FILTER_ACTIVE = "bg-primary text-primary-foreground";
-const FILTER_INACTIVE = "bg-muted text-muted-foreground hover:bg-muted/80";
+const FILTER_ACTIVE = "bg-brand text-brand-on";
+const FILTER_INACTIVE =
+  "bg-surface-hover text-text-secondary hover:bg-surface-hover/80";
 
 const SORT_OPTIONS: Array<{ value: EngagementSortBy; label: string }> = [
   { value: "newest", label: "Newest first" },
@@ -103,7 +104,7 @@ export function EngagementFilterBar({
             variant="outline"
             size="sm"
             className={`h-8 gap-1 text-xs ${
-              moreFiltersActive ? "border-primary/50" : ""
+              moreFiltersActive ? "border-brand/50" : ""
             }`}
           >
             More filters
@@ -134,14 +135,14 @@ export function EngagementFilterBar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <span className="text-muted-foreground border-border ml-1 border-l pl-2 text-xs font-medium">
+      <span className="text-text-secondary border-border ml-1 border-l pl-2 text-xs font-medium">
         Sort
       </span>
       <select
         data-testid="engagement-sort"
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value as EngagementSortBy)}
-        className="bg-muted border-border text-foreground rounded-lg border px-2 py-1 text-xs"
+        className="bg-surface-hover border-border text-text rounded-lg border px-2 py-1 text-xs"
         aria-label="Sort order"
       >
         {SORT_OPTIONS.map((opt) => (

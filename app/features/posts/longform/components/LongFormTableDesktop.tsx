@@ -77,11 +77,11 @@ export function LongFormTableDesktop({
   const dateSortKey = getDefaultSortKey(type);
 
   return (
-    <div className="dark:border-border bg-card border-border min-w-full overflow-x-auto rounded border">
+    <div className="dark:border-border bg-surface border-border min-w-full overflow-x-auto rounded-xs border">
       <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
-            <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+            <th className="dark:bg-surface dark:border-border dark:text-text bg-surface-hover text-text px-3 py-4 text-center font-semibold">
               <Checkbox
                 id="longform-select-all"
                 checked={
@@ -92,11 +92,11 @@ export function LongFormTableDesktop({
                 onCheckedChange={() => toggleSelectAll()}
               />
             </th>
-            <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+            <th className="dark:bg-surface dark:border-border bg-surface-hover/75 text-text dark:text-text px-3 py-4 text-left font-semibold">
               Cover
             </th>
             <th
-              className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+              className="dark:bg-surface dark:border-border bg-surface-hover/75 text-text dark:text-text cursor-pointer px-3 py-4 text-left font-semibold"
               onClick={() => requestSort("title")}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -115,11 +115,11 @@ export function LongFormTableDesktop({
                   : "↓"
                 : null}
             </th>
-            <th className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground px-3 py-4 text-left font-semibold">
+            <th className="dark:bg-surface dark:border-border bg-surface-hover/75 text-text dark:text-text px-3 py-4 text-left font-semibold">
               Summary
             </th>
             <th
-              className="dark:bg-card dark:border-border bg-muted/75 text-foreground dark:text-foreground cursor-pointer px-3 py-4 text-left font-semibold"
+              className="dark:bg-surface dark:border-border bg-surface-hover/75 text-text dark:text-text cursor-pointer px-3 py-4 text-left font-semibold"
               onClick={() => requestSort(dateSortKey)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -142,18 +142,18 @@ export function LongFormTableDesktop({
                   : "↓"
                 : null}
             </th>
-            <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+            <th className="dark:bg-surface dark:border-border dark:text-text bg-surface-hover text-text px-3 py-4 text-center font-semibold">
               Reading Time
             </th>
             {type === "scheduled" ? (
-              <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+              <th className="dark:bg-surface dark:border-border dark:text-text bg-surface-hover text-text px-3 py-4 text-center font-semibold">
                 Time Remaining
               </th>
             ) : null}
-            <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+            <th className="dark:bg-surface dark:border-border dark:text-text bg-surface-hover text-text px-3 py-4 text-center font-semibold">
               Status
             </th>
-            <th className="dark:bg-card dark:border-border dark:text-foreground bg-muted text-foreground px-3 py-4 text-center font-semibold">
+            <th className="dark:bg-surface dark:border-border dark:text-text bg-surface-hover text-text px-3 py-4 text-center font-semibold">
               Actions
             </th>
           </tr>
@@ -177,7 +177,7 @@ export function LongFormTableDesktop({
             return (
               <tr
                 key={post.id}
-                className="dark:even:bg-muted/35 dark:hover:bg-muted even:bg-muted/50 hover:bg-muted cursor-pointer"
+                className="dark:even:bg-surface-hover/35 dark:hover:bg-surface-hover even:bg-surface-hover/50 hover:bg-surface-hover cursor-pointer"
                 onClick={() => onPostSelect?.(post)}
                 onKeyDown={(e) => {
                   if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
@@ -202,10 +202,10 @@ export function LongFormTableDesktop({
                     <img
                       src={post.image}
                       alt="Cover"
-                      className="h-12 w-16 rounded object-cover"
+                      className="h-12 w-16 rounded-xs object-cover"
                     />
                   ) : (
-                    <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-12 w-16 items-center justify-center rounded text-xs font-medium">
+                    <div className="dark:bg-surface-hover dark:text-text-secondary bg-surface-hover text-text-secondary flex h-12 w-16 items-center justify-center rounded-xs text-xs font-medium">
                       ARTICLE
                     </div>
                   )}
@@ -218,7 +218,7 @@ export function LongFormTableDesktop({
                   </p>
                 </td>
                 <td className="max-w-xs p-3">
-                  <p className="dark:text-muted-foreground text-foreground line-clamp-2 text-sm">
+                  <p className="dark:text-text-secondary text-text line-clamp-2 text-sm">
                     {post.summary && post.summary.length > 60
                       ? post.summary.substring(0, 60) + "..."
                       : (post.summary ?? "No summary")}
@@ -233,13 +233,13 @@ export function LongFormTableDesktop({
                   )}
                 </td>
                 <td className="p-3 text-center">
-                  <span className="dark:text-muted-foreground text-muted-foreground text-sm">
+                  <span className="dark:text-text-secondary text-text-secondary text-sm">
                     {getReadingTime(post.content ?? undefined)}
                   </span>
                 </td>
                 {type === "scheduled" ? (
                   <td className="p-3 text-center">
-                    <div className="text-muted-foreground text-sm font-medium">
+                    <div className="text-text-secondary text-sm font-medium">
                       {countdowns[post.id] ?? "—"}
                     </div>
                   </td>
@@ -251,7 +251,7 @@ export function LongFormTableDesktop({
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
-                        className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                        className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
                         aria-label="Actions"
                       >
                         <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
@@ -425,7 +425,7 @@ export function LongFormTableDesktop({
                               deleteFetcher.state !== "idle" ||
                               bulkDeleteFetcher.state !== "idle"
                             }
-                            className="text-destructive focus:text-destructive"
+                            className="text-danger focus:text-danger"
                           >
                             {deleteFetcher.state !== "idle" &&
                             deleteFetcher.formData?.get("postId") === post.id

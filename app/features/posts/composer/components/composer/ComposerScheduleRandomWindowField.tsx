@@ -69,7 +69,7 @@ export function ComposerScheduleRandomWindowField({
         }
       />
       {description ? (
-        <p className="text-muted-foreground text-xs leading-snug">
+        <p className="text-text-secondary text-xs leading-snug">
           {description}
         </p>
       ) : null}
@@ -77,7 +77,7 @@ export function ComposerScheduleRandomWindowField({
         <div className="space-y-1.5">
           <Label
             htmlFor={selectId}
-            className="text-muted-foreground text-xs font-medium"
+            className="text-text-secondary text-xs font-medium"
           >
             Window
           </Label>

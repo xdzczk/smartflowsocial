@@ -118,14 +118,14 @@ export function getStatusColor(
 ): string {
   // Past posts get grayed out styling regardless of other conditions
   if (isPast) {
-    return "bg-muted text-muted-foreground opacity-60";
+    return "bg-surface-hover text-text-secondary opacity-60";
   }
 
   if (isLongform) {
     if (post.signedEvent) {
       return "bg-success/10 text-success dark:text-success";
     }
-    return "bg-secondary text-secondary-foreground";
+    return "bg-surface-hover text-text";
   }
 
   // Fallback to original logic for regular posts
@@ -133,11 +133,11 @@ export function getStatusColor(
 
   if (post.signedEvent) {
     return wasAutoScheduled
-      ? "bg-muted text-muted-foreground"
-      : "bg-muted text-muted-foreground";
+      ? "bg-surface-hover text-text-secondary"
+      : "bg-surface-hover text-text-secondary";
   }
 
-  return "bg-secondary text-secondary-foreground";
+  return "bg-surface-hover text-text";
 }
 
 /** Opacity for past (older) posts so they stay queue-colored but visually recede (same idea as Queue Health without hover). */

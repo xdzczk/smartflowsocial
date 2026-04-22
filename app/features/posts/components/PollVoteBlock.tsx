@@ -95,14 +95,14 @@ export function PollVoteBlock({
     layout === "inline"
       ? cn(
           "flex items-center justify-between gap-2 rounded-md px-3 py-2",
-          "bg-muted/20 ring-border/50 ring-1 ring-inset"
+          "bg-surface-hover/20 ring-border/50 ring-1 ring-inset"
         )
       : "flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2";
 
   const inner = (
     <>
       {showQuestionLine ? (
-        <p className="text-foreground mb-2.5 text-base leading-snug font-semibold">
+        <p className="text-text mb-2.5 text-base leading-snug font-semibold">
           {questionText}
         </p>
       ) : null}
@@ -132,7 +132,7 @@ export function PollVoteBlock({
                   />
                   <span>{opt.label}</span>
                 </label>
-                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                <span className="text-text-secondary shrink-0 text-xs tabular-nums">
                   {tallyLoading ? "…" : `${c} (${pct}%)`}
                 </span>
               </li>
@@ -146,14 +146,14 @@ export function PollVoteBlock({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-foreground hover:bg-muted/35 h-auto min-h-8 w-full flex-1 justify-between gap-2 rounded-sm px-0 font-normal shadow-none"
+                  className="text-text hover:bg-surface-hover/35 h-auto min-h-8 w-full flex-1 justify-between gap-2 rounded-sm px-0 font-normal shadow-none"
                   disabled={closed || voting}
                   onClick={() => void submitVotes([opt.id])}
                 >
                   <span className="min-w-0 flex-1 truncate text-left text-sm">
                     {opt.label}
                   </span>
-                  <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                  <span className="text-text-secondary shrink-0 text-xs tabular-nums">
                     {tallyLoading ? "…" : `${c} (${pct}%)`}
                   </span>
                 </Button>
@@ -167,12 +167,12 @@ export function PollVoteBlock({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="hover:bg-muted/40 h-auto min-h-9 w-full justify-start rounded-lg px-3 py-2 text-left font-normal"
+                className="hover:bg-surface-hover/40 h-auto min-h-9 w-full justify-start rounded-lg px-3 py-2 text-left font-normal"
                 disabled={closed || voting}
                 onClick={() => void submitVotes([opt.id])}
               >
                 <span className="min-w-0 flex-1 truncate">{opt.label}</span>
-                <span className="text-muted-foreground ml-2 shrink-0 text-xs tabular-nums">
+                <span className="text-text-secondary ml-2 shrink-0 text-xs tabular-nums">
                   {tallyLoading ? "…" : `${c} (${pct}%)`}
                 </span>
               </Button>
@@ -192,11 +192,11 @@ export function PollVoteBlock({
         </Button>
       ) : null}
       {closed ? (
-        <p className="text-muted-foreground/70 mt-1.5 text-[10px] leading-snug">
+        <p className="text-text-secondary/70 mt-1.5 text-[10px] leading-snug">
           Poll closed
         </p>
       ) : (
-        <p className="text-muted-foreground/70 mt-1.5 text-[10px] leading-snug">
+        <p className="text-text-secondary/70 mt-1.5 text-[10px] leading-snug">
           Results load from the poll&apos;s relays (NIP-88).
         </p>
       )}
@@ -206,7 +206,7 @@ export function PollVoteBlock({
   if (layout === "card") {
     return (
       <div className="border-border mt-4 rounded-lg border p-4">
-        <h3 className="text-muted-foreground mb-2 text-sm font-medium">Poll</h3>
+        <h3 className="text-text-secondary mb-2 text-sm font-medium">Poll</h3>
         {inner}
       </div>
     );

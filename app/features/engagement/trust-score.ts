@@ -127,25 +127,25 @@ export function getTrustLevel(score: number): {
   } else if (score >= 60) {
     return {
       level: "Trusted",
-      color: "text-muted-foreground",
+      color: "text-text-secondary",
       description: "Active profile with good community standing",
     };
   } else if (score >= 40) {
     return {
       level: "Developing",
-      color: "text-yellow-600 dark:text-foreground",
+      color: "text-warning-text dark:text-text",
       description: "Growing profile building community presence",
     };
   } else if (score >= 20) {
     return {
       level: "New",
-      color: "text-foreground dark:text-foreground",
+      color: "text-text dark:text-text",
       description: "Recently created or limited activity profile",
     };
   } else {
     return {
       level: "Unverified",
-      color: "text-muted-foreground",
+      color: "text-text-secondary",
       description: "Minimal profile information or activity",
     };
   }
@@ -158,12 +158,12 @@ export function getTrustScoreBadgeColor(score: number): string {
   if (score >= 80) {
     return "bg-success/20 dark:bg-success/20 text-success dark:text-success border-success dark:border-success";
   } else if (score >= 60) {
-    return "bg-muted dark:bg-muted/20 text-foreground dark:text-foreground border-border dark:border-border";
+    return "bg-surface-hover dark:bg-surface-hover/20 text-text dark:text-text border-border dark:border-border";
   } else if (score >= 40) {
-    return "bg-yellow-100 dark:bg-muted text-yellow-800 dark:text-foreground border-yellow-200 dark:border-border";
+    return "bg-warning/12 dark:bg-surface-hover text-warning-text dark:text-text border-warning/40 dark:border-border";
   } else if (score >= 20) {
-    return "bg-muted dark:bg-muted text-foreground dark:text-foreground border-border dark:border-border";
+    return "bg-surface-hover dark:bg-surface-hover text-text dark:text-text border-border dark:border-border";
   } else {
-    return "bg-muted/40 dark:bg-card text-foreground border-border";
+    return "bg-surface-hover/40 dark:bg-surface text-text border-border";
   }
 }

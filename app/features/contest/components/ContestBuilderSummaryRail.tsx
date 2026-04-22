@@ -271,7 +271,7 @@ export function ContestBuilderSummaryRail({
           columns={2}
           radiogroupAriaLabel="Contest launch timing"
         />
-        <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug">
+        <p className="text-text-secondary mt-1.5 text-[11px] leading-snug">
           {launchHintLine(launchMode, sourceMode)}
         </p>
       </ActionRailSection>
@@ -283,7 +283,7 @@ export function ContestBuilderSummaryRail({
           </ActionRailLabel>
           <Label
             htmlFor="contest-rail-scheduled-activation"
-            className="text-muted-foreground text-[11px] font-medium"
+            className="text-text-secondary text-[11px] font-medium"
           >
             {contestCopy.railDateTimeLabel}
           </Label>
@@ -300,7 +300,7 @@ export function ContestBuilderSummaryRail({
               );
             }}
           />
-          <p className="text-muted-foreground text-[11px] leading-snug">
+          <p className="text-text-secondary text-[11px] leading-snug">
             {userTimezone} · {scheduleHelper}
           </p>
         </ActionRailSection>

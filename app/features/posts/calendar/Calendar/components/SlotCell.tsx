@@ -82,8 +82,8 @@ export function SlotCell({
         isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
       } ${
         slotState.isDragOver
-          ? "bg-primary/5 border-primary/20"
-          : "dark:hover:bg-muted hover:bg-muted"
+          ? "bg-brand/5 border-brand/20"
+          : "dark:hover:bg-surface-hover hover:bg-surface-hover"
       }`}
       style={cellStyle}
       onDragOver={onDragOver}

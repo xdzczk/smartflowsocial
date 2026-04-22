@@ -75,7 +75,7 @@ export function ContentStatusChip({ item }: { item: CombinedContent }) {
 }
 
 const META_CHIP_CLASS =
-  "text-muted-foreground inline-flex items-center rounded-full border border-border/60 bg-muted/20 px-2 py-1 text-xs font-medium";
+  "text-text-secondary inline-flex items-center rounded-full border border-border/60 bg-surface-hover/20 px-2 py-1 text-xs font-medium";
 
 export function AttachmentCountChip({ count }: { count: number }) {
   if (count <= 0) return null;

@@ -52,10 +52,7 @@ export function SubtleSignPending({
       role="status"
       aria-live="polite"
       aria-label={`${accessibleLabel} pending`}
-      className={cn(
-        "text-muted-foreground inline-flex items-center",
-        className
-      )}
+      className={cn("text-text-secondary inline-flex items-center", className)}
       data-testid="subtle-sign-pending"
       data-state={attempt.state}
     >

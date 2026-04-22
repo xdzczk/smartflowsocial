@@ -427,7 +427,7 @@ export function EditPostModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div
           className={cn(
-            "bg-card max-h-[90vh] w-full overflow-hidden rounded-xl shadow-xl",
+            "bg-surface-overlay shadow-3 max-h-[90vh] w-full overflow-hidden rounded-xl",
             isMini ? "max-w-4xl" : "max-w-2xl"
           )}
         >
@@ -445,7 +445,7 @@ export function EditPostModal({
             >
               {/* Header */}
               <div className="mb-6 flex items-center justify-between">
-                <h3 className="text-foreground text-xl font-semibold">
+                <h3 className="text-text text-xl font-semibold">
                   {isMini
                     ? "Edit Post"
                     : `Edit ${isLongform ? "Article" : "Post"}`}
@@ -453,7 +453,7 @@ export function EditPostModal({
                 <button
                   type="button"
                   onClick={isMini ? requestClose : onClose}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-text-secondary hover:text-text"
                   aria-label="Close"
                 >
                   <X
@@ -510,7 +510,7 @@ export function EditPostModal({
                   <div>
                     <label
                       htmlFor="edit-post-scheduled-for"
-                      className="text-muted-foreground mb-2 block text-sm font-medium"
+                      className="text-text-secondary mb-2 block text-sm font-medium"
                     >
                       Scheduled For
                     </label>
@@ -548,15 +548,15 @@ export function EditPostModal({
                           setScheduledFor(null);
                         }
                       }}
-                      className="bg-card border-border text-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 focus:ring-2"
+                      className="bg-surface border-border text-text focus:border-brand focus-visible:ring-focus-ring w-full rounded-md border px-3 py-2 focus-visible:ring-2"
                     />
                   </div>
                 ) : null}
 
                 {/* Also schedule repost/quote - only for regular posts */}
                 {!isLongform ? (
-                  <div className="border-border bg-muted/30 space-y-3 rounded-lg border p-4">
-                    <div className="text-foreground text-sm font-medium">
+                  <div className="border-border bg-surface-hover/30 space-y-3 rounded-lg border p-4">
+                    <div className="text-text text-sm font-medium">
                       Also schedule
                     </div>
                     <label
@@ -574,7 +574,7 @@ export function EditPostModal({
                     </label>
                     {alsoScheduleRepost ? (
                       <div className="space-y-2">
-                        <span className="text-muted-foreground mb-1 block text-xs">
+                        <span className="text-text-secondary mb-1 block text-xs">
                           When after main post (one per repost)
                         </span>
                         {repostDelayList.map((item, idx) => (
@@ -598,7 +598,7 @@ export function EditPostModal({
                                   return next;
                                 });
                               }}
-                              className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
+                              className="bg-surface border-border text-text w-20 rounded-md border px-3 py-2 text-sm"
                             />
                             <select
                               value={item.unit}
@@ -611,7 +611,7 @@ export function EditPostModal({
                                   return next;
                                 });
                               }}
-                              className="bg-card border-border text-foreground w-24 rounded-md border px-2 py-2 text-sm"
+                              className="bg-surface border-border text-text w-24 rounded-md border px-2 py-2 text-sm"
                               aria-label="Hours or minutes"
                             >
                               <option value="hours">hours</option>
@@ -628,7 +628,7 @@ export function EditPostModal({
                               }
                               disabled={repostDelayList.length <= 1}
                               aria-label="Remove repost"
-                              className="text-muted-foreground hover:text-foreground text-xs"
+                              className="text-text-secondary hover:text-text text-xs"
                             >
                               Remove
                             </button>
@@ -646,12 +646,12 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-primary text-xs hover:underline"
+                          className="text-brand text-xs hover:underline"
                         >
                           Add another repost
                         </button>
-                        <div className="border-border mt-3 space-y-1.5 rounded border p-3">
-                          <span className="text-muted-foreground text-xs">
+                        <div className="border-border mt-3 space-y-1.5 rounded-xs border p-3">
+                          <span className="text-text-secondary text-xs">
                             Only repost if original gets (optional)
                           </span>
                           <div className="flex flex-wrap items-center gap-3 gap-y-1.5">
@@ -672,7 +672,7 @@ export function EditPostModal({
                                 key={key}
                                 className="flex items-center gap-1.5"
                               >
-                                <label className="text-muted-foreground text-xs whitespace-nowrap">
+                                <label className="text-text-secondary text-xs whitespace-nowrap">
                                   {label}
                                 </label>
                                 <input
@@ -697,7 +697,7 @@ export function EditPostModal({
                                       return { ...prev, [key]: v };
                                     });
                                   }}
-                                  className="bg-card border-border text-foreground w-20 rounded-md border px-2 py-1.5 text-sm"
+                                  className="bg-surface border-border text-text w-20 rounded-md border px-2 py-1.5 text-sm"
                                   aria-label={`Min ${label.toLowerCase()}`}
                                 />
                               </div>
@@ -721,18 +721,18 @@ export function EditPostModal({
                     </label>
                     {alsoScheduleQuote ? (
                       <div className="space-y-3">
-                        <span className="text-muted-foreground mb-1 block text-xs">
+                        <span className="text-text-secondary mb-1 block text-xs">
                           Quote times and captions (one per quote)
                         </span>
                         {quoteEntries.map((entry, idx) => (
                           <div
                             key={entry.id}
-                            className="border-border space-y-2 rounded border p-3"
+                            className="border-border space-y-2 rounded-xs border p-3"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <label
                                 htmlFor={`edit-quote-value-${idx}`}
-                                className="text-muted-foreground text-xs"
+                                className="text-text-secondary text-xs"
                               >
                                 When after main
                               </label>
@@ -746,7 +746,7 @@ export function EditPostModal({
                                   )
                                 }
                                 disabled={quoteEntries.length <= 1}
-                                className="text-muted-foreground hover:text-foreground text-xs"
+                                className="text-text-secondary hover:text-text text-xs"
                               >
                                 Remove
                               </button>
@@ -769,7 +769,7 @@ export function EditPostModal({
                                     return next;
                                   });
                                 }}
-                                className="bg-card border-border text-foreground w-20 rounded-md border px-3 py-2 text-sm"
+                                className="bg-surface border-border text-text w-20 rounded-md border px-3 py-2 text-sm"
                                 aria-label="Delay value"
                               />
                               <select
@@ -784,7 +784,7 @@ export function EditPostModal({
                                     return next;
                                   });
                                 }}
-                                className="bg-card border-border text-foreground w-24 rounded-md border px-2 py-2 text-sm"
+                                className="bg-surface border-border text-text w-24 rounded-md border px-2 py-2 text-sm"
                                 aria-label="Hours or minutes"
                               >
                                 <option value="hours">hours</option>
@@ -794,7 +794,7 @@ export function EditPostModal({
                             <div>
                               <label
                                 htmlFor={`edit-quote-caption-${idx}`}
-                                className="text-muted-foreground text-xs"
+                                className="text-text-secondary text-xs"
                               >
                                 Caption (optional)
                               </label>
@@ -814,7 +814,7 @@ export function EditPostModal({
                                 }
                                 placeholder="Add your comment..."
                                 rows={2}
-                                className="bg-card border-border text-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                                className="bg-surface border-border text-text mt-1 w-full rounded-md border px-3 py-2 text-sm"
                               />
                             </div>
                           </div>
@@ -832,7 +832,7 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-primary text-xs hover:underline"
+                          className="text-brand text-xs hover:underline"
                         >
                           Add another quote
                         </button>
@@ -845,15 +845,15 @@ export function EditPostModal({
                 {isMini ? (
                   <NostrResignNotice variant="contentChange" />
                 ) : (
-                  <div className="border-border bg-muted dark:border-border dark:bg-muted/20 rounded-lg border p-4">
+                  <div className="border-border bg-surface-hover dark:border-border dark:bg-surface-hover/20 rounded-lg border p-4">
                     <div className="flex items-start space-x-2">
                       <Info
-                        className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0"
+                        className="text-text-secondary mt-0.5 h-5 w-5 flex-shrink-0"
                         strokeWidth={INLINE_ICON_STROKE}
                         aria-hidden
                       />
                       <div>
-                        <div className="text-foreground text-sm font-medium">
+                        <div className="text-text text-sm font-medium">
                           Editing this {isLongform ? "article" : "post"}{" "}
                           requires re-signing the Nostr event
                         </div>
@@ -862,7 +862,7 @@ export function EditPostModal({
                   </div>
                 )}
                 {isSigningEvent ? (
-                  <div className="bg-muted text-muted-foreground flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+                  <div className="bg-surface-hover text-text-secondary flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                     <span>
                       Waiting for signer approval…
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}
@@ -872,7 +872,7 @@ export function EditPostModal({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="text-muted-foreground hover:text-foreground shrink-0"
+                      className="text-text-secondary hover:text-text shrink-0"
                       onClick={() => {
                         cancelSigningState();
                         cancelSignerInFlight();
@@ -903,7 +903,7 @@ export function EditPostModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="text-muted-foreground hover:text-foreground px-4 py-2 text-sm font-medium"
+                    className="text-text-secondary hover:text-text px-4 py-2 text-sm font-medium"
                   >
                     Cancel
                   </button>
@@ -915,7 +915,7 @@ export function EditPostModal({
                       isSigningEvent ||
                       isUploadingImages
                     }
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isUploadingImages
                       ? "Uploading Images..."
@@ -932,24 +932,22 @@ export function EditPostModal({
               <aside className="border-border flex w-full shrink-0 flex-col justify-between gap-4 border-t p-4 md:w-72 md:border-t-0 md:border-l">
                 <div className="space-y-3">
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="text-text-secondary text-xs font-medium">
                       Status
                     </p>
-                    <p className="text-foreground text-sm">Scheduled</p>
+                    <p className="text-text text-sm">Scheduled</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="text-text-secondary text-xs font-medium">
                       Scheduled for
                     </p>
-                    <p className="text-foreground text-sm">
-                      {scheduledSummary}
-                    </p>
+                    <p className="text-text text-sm">{scheduledSummary}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="text-text-secondary text-xs font-medium">
                       Queue
                     </p>
-                    <p className="text-foreground text-sm">{queueSummary}</p>
+                    <p className="text-text text-sm">{queueSummary}</p>
                   </div>
                   <Separator />
                   <Button
@@ -1001,7 +999,7 @@ export function EditPostModal({
                     <Button
                       type="submit"
                       variant="ghost"
-                      className="text-destructive hover:text-destructive w-full"
+                      className="text-danger hover:text-danger w-full"
                       disabled={deleteFetcher.state !== "idle"}
                     >
                       {deleteFetcher.state !== "idle"

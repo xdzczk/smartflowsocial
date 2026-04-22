@@ -21,14 +21,14 @@ export function PublishingEmptyState({
     <div
       data-testid={dataTestId}
       className={cn(
-        "text-muted-foreground flex flex-col items-center justify-center gap-3 px-4 py-16 text-center",
+        "text-text-secondary flex flex-col items-center justify-center gap-3 px-4 py-16 text-center",
         className
       )}
     >
       {icon ? (
-        <div className="text-muted-foreground/80 [&_svg]:size-12">{icon}</div>
+        <div className="text-text-secondary/80 [&_svg]:size-12">{icon}</div>
       ) : null}
-      <h2 className="text-foreground text-base font-semibold">{title}</h2>
+      <h2 className="text-text text-base font-semibold">{title}</h2>
       {description ? (
         <p className="max-w-sm text-sm leading-relaxed">{description}</p>
       ) : null}

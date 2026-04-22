@@ -397,7 +397,7 @@ export default function DashboardIndexPage() {
                   <button
                     type="button"
                     onClick={() => flowViewRef.current?.scrollToNext()}
-                    className="text-muted-foreground hover:text-foreground focus:ring-ring flex-shrink-0 rounded text-xs underline focus:ring-2 focus:outline-none"
+                    className="text-text-secondary hover:text-text focus-visible:ring-focus-ring flex-shrink-0 rounded-xs text-xs underline focus-visible:ring-2 focus-visible:outline-none"
                     aria-label="Scroll timeline to next posts or schedule"
                   >
                     Scroll to next
@@ -430,7 +430,7 @@ export default function DashboardIndexPage() {
             </div>
 
             {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-            <div className="flow-zone bg-muted/40 dark:bg-muted/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
+            <div className="flow-zone bg-surface-hover/40 dark:bg-surface-hover/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
               {flowError ? (
                 <Alert
                   variant="destructive"
@@ -441,7 +441,7 @@ export default function DashboardIndexPage() {
                     <button
                       type="button"
                       onClick={() => revalidator.revalidate()}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
+                      className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring w-fit rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                     >
                       Retry
                     </button>
@@ -457,7 +457,7 @@ export default function DashboardIndexPage() {
                   aria-label="Loading timeline"
                   aria-live="polite"
                 >
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-text-secondary text-sm">
                     Loading timeline…
                   </p>
                 </div>

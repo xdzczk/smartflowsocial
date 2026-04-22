@@ -144,7 +144,7 @@ export function RelaySelectorModal({
           </DialogDescription>
         </DialogHeader>
 
-        <p className="text-muted-foreground text-xs">{defaultHint}</p>
+        <p className="text-text-secondary text-xs">{defaultHint}</p>
 
         <div className="flex flex-wrap gap-2">
           <Button
@@ -189,7 +189,7 @@ export function RelaySelectorModal({
 
         <div className="space-y-2">
           {relayList.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-text-secondary text-sm">
               No relays in this list.
             </p>
           ) : (
@@ -198,7 +198,7 @@ export function RelaySelectorModal({
               return (
                 <div
                   key={url}
-                  className="flex items-center gap-2 rounded border p-2"
+                  className="flex items-center gap-2 rounded-xs border p-2"
                 >
                   <Checkbox
                     id={inputId}
@@ -207,7 +207,7 @@ export function RelaySelectorModal({
                   />
                   <Label
                     htmlFor={inputId}
-                    className="text-muted-foreground cursor-pointer truncate text-sm"
+                    className="text-text-secondary cursor-pointer truncate text-sm"
                   >
                     {formatRelayUrl(url)}
                   </Label>

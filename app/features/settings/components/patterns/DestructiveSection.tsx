@@ -19,14 +19,14 @@ export function DestructiveSection({
   return (
     <section
       className={cn(
-        "border-destructive/50 bg-destructive/5 rounded-lg border px-4 py-4 sm:px-5 sm:py-5",
+        "border-danger/50 bg-danger/5 rounded-lg border px-4 py-4 sm:px-5 sm:py-5",
         className
       )}
     >
-      <h2 className="text-destructive text-base font-semibold tracking-tight">
+      <h2 className="text-danger text-base font-semibold tracking-tight">
         {title}
       </h2>
-      <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+      <p className="text-text-secondary mt-2 text-sm leading-relaxed">
         {description}
       </p>
       <div className="mt-4">{children}</div>

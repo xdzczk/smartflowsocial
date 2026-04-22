@@ -58,9 +58,9 @@ export function ProofAdminControlRail({
   actionBar: ReactNode;
 }) {
   return (
-    <div className="border-border bg-card/30 flex flex-col gap-5 rounded-xl border p-4">
+    <div className="border-border bg-surface/30 flex flex-col gap-5 rounded-xl border p-4">
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Scope
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -82,7 +82,7 @@ export function ProofAdminControlRail({
       </div>
 
       <div className="space-y-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Card type
         </p>
         <div className="flex flex-col gap-1.5">
@@ -104,7 +104,7 @@ export function ProofAdminControlRail({
       </div>
 
       <div className="space-y-1">
-        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
           Ratio
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -123,7 +123,7 @@ export function ProofAdminControlRail({
             </Button>
           ))}
         </div>
-        <p className="text-muted-foreground max-w-xs text-xs">
+        <p className="text-text-secondary max-w-xs text-xs">
           {ratioHint(cardType)}
         </p>
       </div>

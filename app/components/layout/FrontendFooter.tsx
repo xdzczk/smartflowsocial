@@ -22,7 +22,7 @@ export default function Footer({
   return (
     <footer
       id="page-footer"
-      className={cn("border-border bg-card border-t", className)}
+      className={cn("border-border bg-surface border-t", className)}
     >
       <div className="container mx-auto px-4 py-8 text-center sm:py-9 lg:px-8 lg:py-10 xl:max-w-7xl">
         <div className="mb-5 flex justify-center sm:mb-6">
@@ -37,7 +37,7 @@ export default function Footer({
           {marketingHome ? (
             <a
               href={BRAND_MARKETING_URL}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-text-secondary hover:text-text transition-colors"
               rel="noopener noreferrer"
             >
               Home
@@ -45,14 +45,14 @@ export default function Footer({
           ) : (
             <Link
               to="/"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-text-secondary hover:text-text transition-colors"
             >
               Home
             </Link>
           )}
           <Link
             to="/plans"
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-text-secondary hover:text-text transition-colors"
           >
             Plans
           </Link>
@@ -60,12 +60,12 @@ export default function Footer({
             href={PRIMAL_NOSTR_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-text-secondary hover:text-text transition-colors"
           >
             Nostr
           </a>
         </nav>
-        <div className="text-muted-foreground text-sm">
+        <div className="text-text-secondary text-sm">
           <span className="font-medium">{BRAND_NAME}</span> ©{" "}
           {new Date().getFullYear()}
         </div>

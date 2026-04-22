@@ -20,7 +20,7 @@ export default function CalendarQueuePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-foreground text-2xl font-semibold">
+        <h1 className="text-text text-2xl font-semibold">
           Calendar -{" "}
           {selectedQueueType === "all"
             ? "All Queues"
@@ -38,8 +38,8 @@ export default function CalendarQueuePage() {
             onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               !params["queueType"]
-                ? "border-primary text-muted-foreground"
-                : "text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground border-transparent"
+                ? "border-brand text-text-secondary"
+                : "text-text-secondary hover:border-border hover:text-text-secondary dark:text-text dark:hover:text-text border-transparent"
             }`}
           >
             All Queues
@@ -66,7 +66,7 @@ export default function CalendarQueuePage() {
               const baseClasses =
                 "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
               const unselectedClasses =
-                "border-transparent text-muted-foreground hover:border-border hover:text-muted-foreground dark:text-foreground dark:hover:text-foreground";
+                "border-transparent text-text-secondary hover:border-border hover:text-text-secondary dark:text-text dark:hover:text-text";
 
               if (isSelected && colorToken) {
                 const accentHex = getQueueAccentHex(colorToken);
@@ -97,7 +97,7 @@ export default function CalendarQueuePage() {
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
                     isSelected
-                      ? `border-primary ${colors.text}`
+                      ? `border-brand ${colors.text}`
                       : unselectedClasses
                   }`}
                 >

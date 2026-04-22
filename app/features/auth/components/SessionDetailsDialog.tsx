@@ -243,7 +243,7 @@ export function SessionDetailsDialog({
                     </>
                   ) : (
                     <>
-                      <span className="text-muted-foreground">
+                      <span className="text-text-secondary">
                         {connection.metadata.signerAppName ?? "Unknown signer"}
                       </span>
                       <Button
@@ -299,17 +299,17 @@ export function SessionDetailsDialog({
               </div>
 
               {connection.metadata.lastError ? (
-                <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-md border p-3">
+                <div className="bg-danger/10 border-danger/20 text-danger rounded-md border p-3">
                   <Label className="mb-1 block">Last Error</Label>
                   <p className="text-sm">{connection.metadata.lastError}</p>
                 </div>
               ) : null}
 
-              <div className="bg-muted rounded-md p-4">
+              <div className="bg-surface-hover rounded-md p-4">
                 <Label className="mb-2 block">Runtime Snapshot</Label>
                 <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                   <div>
-                    <div className="text-muted-foreground">Latest Outcome</div>
+                    <div className="text-text-secondary">Latest Outcome</div>
                     <div className="text-sm font-semibold">
                       {latestEvent
                         ? `${latestEvent.status} (${latestEvent.type})`
@@ -317,7 +317,7 @@ export function SessionDetailsDialog({
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Last Success</div>
+                    <div className="text-text-secondary">Last Success</div>
                     <div className="text-sm font-semibold">
                       {lastSuccessEvent
                         ? format(new Date(lastSuccessEvent.timestamp), "PPp")
@@ -325,11 +325,11 @@ export function SessionDetailsDialog({
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Failures</div>
+                    <div className="text-text-secondary">Failures</div>
                     <div className="text-lg font-semibold">{failureCount}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Timeouts</div>
+                    <div className="text-text-secondary">Timeouts</div>
                     <div className="text-lg font-semibold">{timeoutCount}</div>
                   </div>
                 </div>
@@ -353,7 +353,7 @@ export function SessionDetailsDialog({
               {connectionUri ? (
                 <div>
                   <Label>Connection URI (Masked)</Label>
-                  <div className="bg-muted flex items-center justify-between rounded-md p-3">
+                  <div className="bg-surface-hover flex items-center justify-between rounded-md p-3">
                     <code className="text-sm">
                       {maskConnectionUri(connectionUri)}
                     </code>
@@ -374,7 +374,7 @@ export function SessionDetailsDialog({
               {connection.metadata.relays.length > 0 ? (
                 <div>
                   <Label>Relays</Label>
-                  <div className="bg-muted rounded-md p-3">
+                  <div className="bg-surface-hover rounded-md p-3">
                     <ul className="list-inside list-disc space-y-1">
                       {connection.metadata.relays.map((relay) => (
                         <li key={relay} className="font-mono text-sm">
@@ -392,12 +392,12 @@ export function SessionDetailsDialog({
             {recentSessions.length > 0 ? (
               <div className="space-y-2">
                 <Label>Recent sessions</Label>
-                <ul className="bg-muted divide-y rounded-md border">
+                <ul className="bg-surface-hover divide-y rounded-md border">
                   <li>
                     <button
                       type="button"
                       onClick={() => setSelectedSessionId(null)}
-                      className={`hover:bg-muted/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === null ? "bg-muted/80 font-medium" : ""}`}
+                      className={`hover:bg-surface-hover/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === null ? "bg-surface-hover/80 font-medium" : ""}`}
                     >
                       Current session
                     </button>
@@ -407,7 +407,7 @@ export function SessionDetailsDialog({
                       <button
                         type="button"
                         onClick={() => setSelectedSessionId(s.id)}
-                        className={`hover:bg-muted/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === s.id ? "bg-muted/80 font-medium" : ""}`}
+                        className={`hover:bg-surface-hover/80 w-full px-3 py-2 text-left text-sm ${selectedSessionId === s.id ? "bg-surface-hover/80 font-medium" : ""}`}
                       >
                         {format(new Date(s.startedAt), "PPp")}
                         {s.endedAt != null

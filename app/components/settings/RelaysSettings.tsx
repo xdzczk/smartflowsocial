@@ -195,7 +195,7 @@ export function RelaysSettings({
         badge: (
           <Badge
             variant="default"
-            className="bg-emerald-600 font-normal hover:bg-emerald-600"
+            className="bg-success hover:bg-success font-normal"
           >
             Enabled
           </Badge>

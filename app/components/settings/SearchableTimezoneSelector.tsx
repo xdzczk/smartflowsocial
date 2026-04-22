@@ -168,7 +168,7 @@ export function SearchableTimezoneSelector({
             disabled={disabled}
             className={cn(
               "w-full justify-between",
-              !selectedOption && "text-muted-foreground"
+              !selectedOption && "text-text-secondary"
             )}
           >
             <span className="truncate">{displayValue}</span>
@@ -191,7 +191,7 @@ export function SearchableTimezoneSelector({
           <div className="border-b p-2">
             <div className="relative">
               <Search
-                className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2"
+                className="text-text-secondary absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2"
                 aria-hidden="true"
               />
               <Input
@@ -224,7 +224,7 @@ export function SearchableTimezoneSelector({
           >
             {filteredOptions.length === 0 ? (
               <div
-                className="text-muted-foreground py-6 text-center text-sm"
+                className="text-text-secondary py-6 text-center text-sm"
                 role="status"
                 aria-live="polite"
               >
@@ -252,15 +252,15 @@ export function SearchableTimezoneSelector({
                     onMouseEnter={() => setFocusedIndex(index)}
                     className={cn(
                       "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      "focus-visible:bg-accent focus-visible:text-accent-foreground",
-                      isFocused && "bg-accent text-accent-foreground",
+                      "hover:bg-surface-hover hover:text-text",
+                      "focus-visible:bg-surface-hover focus-visible:text-text",
+                      isFocused && "bg-surface-hover text-text",
                       isSelected && "font-medium"
                     )}
                   >
                     <div className="flex flex-1 flex-col">
                       <span className="font-medium">{option.label}</span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-text-secondary text-xs">
                         {option.offset} • {option.region}
                       </span>
                     </div>

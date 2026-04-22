@@ -17,22 +17,20 @@ function PostStatusBadge({
     "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium";
   if (type === "draft")
     return (
-      <span className={`${base} border-border bg-muted/50 text-foreground`}>
+      <span className={`${base} border-border bg-surface-hover/50 text-text`}>
         Draft
       </span>
     );
   if (type === "scheduled")
     return (
       <span
-        className={`${base} border-border bg-muted/50 text-muted-foreground`}
+        className={`${base} border-border bg-surface-hover/50 text-text-secondary`}
       >
         Scheduled
       </span>
     );
   return (
-    <span
-      className={`${base} border-success/40 bg-success/10 text-foreground/90`}
-    >
+    <span className={`${base} border-success/40 bg-success/10 text-text/90`}>
       {publishedLabel}
     </span>
   );
@@ -55,14 +53,11 @@ export function PostDetailHeader({
   subtitle?: string | null;
 }) {
   return (
-    <div className="border-border/70 bg-card/95 shrink-0 border-b px-6 py-4 backdrop-blur-sm">
+    <div className="border-border/70 bg-surface/95 shrink-0 border-b px-6 py-4 backdrop-blur-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-            <DialogTitle
-              id={titleId}
-              className="text-foreground text-xl font-semibold tracking-tight"
-            >
+            <DialogTitle id={titleId} className="text-text text-h2">
               {typeLabel}
             </DialogTitle>
             <PostStatusBadge
@@ -71,7 +66,7 @@ export function PostDetailHeader({
             />
             {relationshipChipLabel ? (
               <span
-                className="border-border bg-muted/40 text-foreground inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium"
+                className="border-border bg-surface-hover/40 text-text inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium"
                 data-testid="post-detail-relationship-chip"
               >
                 {relationshipChipLabel}
@@ -79,15 +74,15 @@ export function PostDetailHeader({
             ) : null}
           </div>
           {subtitle ? (
-            <p className="text-muted-foreground mt-1.5 text-xs">{subtitle}</p>
+            <p className="text-text-secondary mt-1.5 text-xs">{subtitle}</p>
           ) : null}
         </div>
         <DialogPrimitive.Close
           type="button"
           className={cn(
-            "ring-offset-background focus:ring-ring text-muted-foreground hover:text-foreground rounded-md border border-transparent p-1.5 transition-colors",
-            "focus:ring-2 focus:ring-offset-0 focus:outline-none",
-            "hover:bg-muted/50 shrink-0"
+            "ring-offset-canvas focus-visible:ring-focus-ring text-text-secondary hover:text-text rounded-md border border-transparent p-1.5 transition-colors focus-visible:ring-2",
+            "focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none",
+            "hover:bg-surface-hover/50 shrink-0"
           )}
           aria-label="Close"
         >

@@ -69,7 +69,7 @@ export function BulkAlsoScheduleCell({
         />
         <Label
           htmlFor={`${rowLabelId}-repost`}
-          className="text-muted-foreground cursor-pointer text-xs"
+          className="text-text-secondary cursor-pointer text-xs"
         >
           Also repost
         </Label>
@@ -107,7 +107,7 @@ export function BulkAlsoScheduleCell({
                     );
                   }}
                   disabled={disabled}
-                  className="border-border bg-background text-foreground h-8 w-20 rounded border px-1.5 text-xs"
+                  className="border-border bg-canvas text-text h-8 w-20 rounded-xs border px-1.5 text-xs"
                   aria-label="Unit"
                 >
                   <option value="hours">hours</option>
@@ -164,7 +164,7 @@ export function BulkAlsoScheduleCell({
         />
         <Label
           htmlFor={`${rowLabelId}-quote`}
-          className="text-muted-foreground cursor-pointer text-xs"
+          className="text-text-secondary cursor-pointer text-xs"
         >
           Also quote
         </Label>
@@ -176,7 +176,7 @@ export function BulkAlsoScheduleCell({
             return (
               <div
                 key={key}
-                className="border-border space-y-1 rounded border p-2"
+                className="border-border space-y-1 rounded-xs border p-2"
               >
                 <div className="flex flex-wrap items-center gap-1">
                   <Input
@@ -206,7 +206,7 @@ export function BulkAlsoScheduleCell({
                       );
                     }}
                     disabled={disabled}
-                    className="border-border bg-background text-foreground h-8 w-20 rounded border px-1.5 text-xs"
+                    className="border-border bg-canvas text-text h-8 w-20 rounded-xs border px-1.5 text-xs"
                     aria-label="Quote delay unit"
                   />
                   <Button

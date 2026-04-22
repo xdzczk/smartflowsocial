@@ -102,12 +102,12 @@ export default function BroadcastSuppressionRoute() {
       {notice ? (
         <div
           role="status"
-          className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
+          className="border-success/40 bg-success/10 text-success-text rounded-md border px-3 py-2 text-sm"
         >
           {notice}{" "}
           <Link
             to="/dashboard/broadcasts/suppression"
-            className="text-muted-foreground text-xs underline"
+            className="text-text-secondary text-xs underline"
           >
             Dismiss
           </Link>
@@ -117,7 +117,7 @@ export default function BroadcastSuppressionRoute() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Suppression list
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-text-secondary mt-1 text-sm">
           Suppressed recipients are excluded from every broadcast based on
           opt-out, policy, or import rules.
         </p>
@@ -153,7 +153,7 @@ export default function BroadcastSuppressionRoute() {
             <select
               id="broadcast-suppression-reason-code"
               name="reasonCode"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             >
               {(
                 Object.entries(REASON_LABELS) as Array<
@@ -176,7 +176,7 @@ export default function BroadcastSuppressionRoute() {
             <input
               id="broadcast-suppression-reason"
               name="reason"
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
           <div className="flex flex-wrap gap-4">
@@ -185,18 +185,18 @@ export default function BroadcastSuppressionRoute() {
               Permanent
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Or expire after</span>
+              <span className="text-text-secondary">Or expire after</span>
               <input
                 type="datetime-local"
                 name="expiresAt"
-                className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+                className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
               />
             </label>
           </div>
           <button
             type="submit"
             disabled={selectedPubkeys.length === 0}
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
           >
             Add{" "}
             {selectedPubkeys.length > 0 ? `(${selectedPubkeys.length})` : ""}
@@ -208,7 +208,7 @@ export default function BroadcastSuppressionRoute() {
         <h2 className="mb-2 font-medium">Active suppressions</h2>
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 border-b text-xs font-medium">
+            <thead className="bg-surface-hover/50 border-b text-xs font-medium">
               <tr>
                 <th className="px-3 py-2">Recipient</th>
                 <th className="px-3 py-2">Reason</th>
@@ -224,7 +224,7 @@ export default function BroadcastSuppressionRoute() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="text-muted-foreground px-3 py-4 text-sm"
+                    className="text-text-secondary px-3 py-4 text-sm"
                   >
                     No suppressions.
                   </td>
@@ -255,7 +255,7 @@ export default function BroadcastSuppressionRoute() {
                               <p className="truncate text-xs font-medium">
                                 {label}
                               </p>
-                              <p className="text-muted-foreground truncate font-mono text-[11px]">
+                              <p className="text-text-secondary truncate font-mono text-[11px]">
                                 {formatNpubShort(r.recipientPubkey)}
                               </p>
                             </div>
@@ -263,19 +263,19 @@ export default function BroadcastSuppressionRoute() {
                         );
                       })()}
                     </td>
-                    <td className="text-muted-foreground max-w-[160px] truncate px-3 py-2 text-xs">
+                    <td className="text-text-secondary max-w-[160px] truncate px-3 py-2 text-xs">
                       {r.reason ?? "—"}
                     </td>
                     <td className="px-3 py-2 text-xs">
                       {REASON_LABELS[r.reasonCode]}
                     </td>
-                    <td className="text-muted-foreground px-3 py-2 text-xs">
+                    <td className="text-text-secondary px-3 py-2 text-xs">
                       {r.source}
                     </td>
-                    <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                    <td className="text-text-secondary px-3 py-2 text-xs whitespace-nowrap">
                       {new Date(r.createdAt).toLocaleString()}
                     </td>
-                    <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                    <td className="text-text-secondary px-3 py-2 text-xs whitespace-nowrap">
                       {r.permanent
                         ? "Never"
                         : r.expiresAt
@@ -292,7 +292,7 @@ export default function BroadcastSuppressionRoute() {
                         />
                         <button
                           type="submit"
-                          className="text-destructive text-xs hover:underline"
+                          className="text-danger text-xs hover:underline"
                         >
                           Remove
                         </button>

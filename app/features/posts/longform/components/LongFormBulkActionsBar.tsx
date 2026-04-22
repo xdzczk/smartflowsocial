@@ -38,7 +38,7 @@ export function LongFormBulkActionsBar({
         size="default"
         onClick={onBulkDelete}
         disabled={deleteFetcherState !== "idle"}
-        className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="border-danger/40 text-danger hover:bg-danger/10 hover:text-danger"
       >
         {deleteFetcherState !== "idle" ? "Deleting..." : "Delete"}
       </Button>

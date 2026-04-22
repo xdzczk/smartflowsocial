@@ -19,7 +19,8 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/75 backdrop-blur-[2px]",
+      // Overlay opacity unified with sheet/alert-dialog at /80.
+      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80 backdrop-blur-[2px]",
       className
     )}
     {...props}
@@ -51,14 +52,16 @@ const DialogContent = React.forwardRef<
         <DialogPrimitive.Content
           ref={ref}
           className={cn(
-            "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] relative z-10 grid max-h-[90dvh] w-full max-w-lg gap-4 overflow-hidden border p-6 shadow-lg duration-200 sm:rounded-lg",
+            // Dialog content uses --surface-overlay so it actually lifts above
+            // the page surface in dark mode (was --background = canvas, no lift).
+            "bg-surface-overlay text-text border-border data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] shadow-3 relative z-10 grid max-h-[90dvh] w-full max-w-lg gap-4 overflow-hidden border p-6 duration-200 sm:rounded-xl",
             className
           )}
           {...props}
         >
           {children}
           {hideCloseButton ? null : (
-            <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-muted data-[state=open]:text-foreground absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:pointer-events-none">
+            <DialogPrimitive.Close className="focus-visible:ring-focus-ring data-[state=open]:bg-surface-hover data-[state=open]:text-text absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:pointer-events-none">
               <X className={INLINE_ICON_SIZE_CLASS} />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
@@ -104,10 +107,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      "text-lg leading-none font-semibold tracking-tight",
-      className
-    )}
+    className={cn("text-h2", className)}
     {...props}
   />
 ));
@@ -119,7 +119,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-muted-foreground text-sm", className)}
+    className={cn("text-text-secondary text-body-sm", className)}
     {...props}
   />
 ));

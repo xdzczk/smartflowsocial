@@ -57,21 +57,21 @@ export function Nip46QrUri({
         )}
       >
         <div className="space-y-2">
-          <div className="text-foreground flex items-center justify-center gap-2 text-lg font-semibold tracking-tight sm:text-xl">
+          <div className="text-text flex items-center justify-center gap-2 text-lg font-semibold tracking-tight sm:text-xl">
             <ScanLine
-              className="text-primary size-5 shrink-0 opacity-90"
+              className="text-brand size-5 shrink-0 opacity-90"
               aria-hidden
             />
             <span>{approvalHeading}</span>
           </div>
-          <p className="text-muted-foreground max-w-sm text-sm leading-snug">
+          <p className="text-text-secondary max-w-sm text-sm leading-snug">
             {approvalSubtext}
           </p>
         </div>
 
         <div
           className={cn(
-            "border-border flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-4 shadow-md sm:min-h-[min(320px,85vw)] sm:p-6",
+            "border-border shadow-2 flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-4 sm:min-h-[min(320px,85vw)] sm:p-6",
             "dark:border-white/10 dark:bg-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_8px_40px_-12px_rgba(0,0,0,0.45)]"
           )}
         >
@@ -83,7 +83,7 @@ export function Nip46QrUri({
             />
           ) : (
             <div
-              className="bg-muted/80 flex aspect-square w-full max-w-[280px] animate-pulse rounded-md"
+              className="bg-surface-hover/80 flex aspect-square w-full max-w-[280px] animate-pulse rounded-md"
               aria-hidden
             />
           )}
@@ -92,7 +92,7 @@ export function Nip46QrUri({
         <div className="w-full max-w-md space-y-3 text-left">
           <Label
             htmlFor={textareaId}
-            className="text-foreground text-xs font-semibold"
+            className="text-text text-xs font-semibold"
           >
             {label}
           </Label>
@@ -101,23 +101,23 @@ export function Nip46QrUri({
               id={textareaId}
               readOnly
               value={uri}
-              className="border-input bg-background focus-visible:ring-ring w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+              className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs focus-visible:ring-1 focus-visible:outline-none"
             />
           ) : (
             <div
-              className="border-input bg-muted/40 h-10 w-full animate-pulse rounded-md border"
+              className="border-border bg-surface-hover/40 h-10 w-full animate-pulse rounded-md border"
               aria-hidden
             />
           )}
           {helperText ? (
-            <div className="text-muted-foreground text-xs">{helperText}</div>
+            <div className="text-text-secondary text-xs">{helperText}</div>
           ) : null}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="border-border bg-background/80 hover:bg-muted hover:text-foreground"
+              className="border-border bg-canvas/80 hover:bg-surface-hover hover:text-text"
               onClick={onCopy}
               disabled={!uri}
             >
@@ -135,7 +135,7 @@ export function Nip46QrUri({
   return (
     <div className={className ?? "space-y-4 pt-2"}>
       <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-        <div className="border-border flex justify-center rounded-lg border bg-white p-4 shadow-md dark:bg-white dark:shadow-sm">
+        <div className="border-border shadow-2 dark:shadow-1 flex justify-center rounded-lg border bg-white p-4 dark:bg-white">
           <QRCode value={uri} size={QR_INLINE_SIZE} />
         </div>
         <div className="space-y-3">
@@ -145,17 +145,17 @@ export function Nip46QrUri({
           <textarea
             id={textareaId}
             readOnly
-            className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+            className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-3 text-sm focus-visible:ring-1 focus-visible:outline-none"
             value={uri}
           />
           {helperText ? (
-            <div className="text-muted-foreground text-xs">{helperText}</div>
+            <div className="text-text-secondary text-xs">{helperText}</div>
           ) : null}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button
               type="button"
               variant="outline"
-              className="border-border bg-card hover:bg-muted hover:text-foreground"
+              className="border-border bg-surface hover:bg-surface-hover hover:text-text"
               onClick={onCopy}
             >
               {copyOk ? "Copied" : "Copy"}

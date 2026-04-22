@@ -81,7 +81,7 @@ export function SessionCard({
 
   return (
     <Card
-      className={`min-w-0 overflow-hidden ${isActive ? "border-primary" : ""} ${isRemoving ? "opacity-50" : ""}`}
+      className={`min-w-0 overflow-hidden ${isActive ? "border-brand" : ""} ${isRemoving ? "opacity-50" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -89,7 +89,7 @@ export function SessionCard({
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="text-base">{connection.label}</CardTitle>
               {isActive ? (
-                <Badge className="bg-primary text-primary-foreground text-xs">
+                <Badge className="bg-brand text-brand-on text-xs">
                   Active signer
                 </Badge>
               ) : null}
@@ -137,7 +137,7 @@ export function SessionCard({
               variant="ghost"
               size="sm"
               onClick={() => setShowRemoveConfirm(true)}
-              className="text-destructive hover:text-destructive h-8"
+              className="text-danger hover:text-danger h-8"
               aria-label="Remove connection"
             >
               <Trash2 className="h-3 w-3" />
@@ -160,7 +160,7 @@ export function SessionCard({
             <AlertDialogAction
               onClick={handleRemove}
               disabled={isRemoving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
             >
               Remove
             </AlertDialogAction>
@@ -169,34 +169,32 @@ export function SessionCard({
       </AlertDialog>
       <CardContent className="space-y-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
-          <span className="text-muted-foreground text-sm">Status</span>
+          <span className="text-text-secondary text-sm">Status</span>
           <ConnectionStatusBadge status={connection.metadata.status} />
         </div>
 
         <div className="space-y-2">
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-muted-foreground text-sm">Relays</span>
+            <span className="text-text-secondary text-sm">Relays</span>
             <span className="text-sm">{relaySummary}</span>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-muted-foreground text-sm">Pubkey</span>
+            <span className="text-text-secondary text-sm">Pubkey</span>
             <span className="min-w-0 font-mono text-sm break-all">
               {formatPubkey(connection.metadata.pubkey)}
             </span>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-muted-foreground text-sm">
-              Last Connected
-            </span>
+            <span className="text-text-secondary text-sm">Last Connected</span>
             <span className="text-sm">
               {formatTimestamp(connection.metadata.connectedAt)}
             </span>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-muted-foreground text-sm">Last Activity</span>
+            <span className="text-text-secondary text-sm">Last Activity</span>
             <span className="text-sm">
               {formatTimestamp(connection.metadata.lastActivityAt)}
             </span>
@@ -204,7 +202,7 @@ export function SessionCard({
         </div>
 
         {connection.metadata.lastError ? (
-          <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-md border p-2 text-xs">
+          <div className="bg-danger/10 border-danger/20 text-danger rounded-md border p-2 text-xs">
             {connection.metadata.lastError}
           </div>
         ) : null}

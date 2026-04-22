@@ -549,7 +549,7 @@ export default function PostDetailsModal({
       variant="ghost"
       size="sm"
       disabled={isDeleting}
-      className="text-destructive/85 hover:bg-destructive/10 hover:text-destructive"
+      className="text-danger/85 hover:bg-danger/10 hover:text-danger"
       onClick={(e) => {
         e.stopPropagation();
         handleDelete();
@@ -565,7 +565,7 @@ export default function PostDetailsModal({
         <DialogContent
           hideCloseButton
           className={cn(
-            "bg-card text-card-foreground border-border/80 flex max-h-[86dvh] w-full flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl",
+            "bg-surface-overlay text-text border-border/80 shadow-3 flex max-h-[86dvh] w-full flex-col gap-0 overflow-hidden rounded-xl p-0",
             useUltra
               ? "max-w-[min(980px,calc(100vw-2rem))]"
               : "max-w-[min(1200px,calc(100vw-2rem))]"

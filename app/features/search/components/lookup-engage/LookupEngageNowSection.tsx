@@ -87,7 +87,7 @@ export function LookupEngageNowSection({
         className={cn(
           "h-9 w-full justify-start gap-2 px-3 text-xs font-medium",
           engagement.isLiked &&
-            "border-primary/50 bg-primary/10 text-primary hover:bg-primary/15"
+            "border-brand/50 bg-brand/10 text-brand hover:bg-brand/15"
         )}
         disabled={engagement.isLikeSending || engagement.isLiked}
         onClick={() => void engagement.likeNote()}
@@ -124,7 +124,7 @@ export function LookupEngageNowSection({
         type="button"
         variant="outline"
         size="sm"
-        className="h-9 w-full justify-start gap-2 border-amber-500/35 bg-amber-500/[0.07] px-3 text-xs font-medium text-amber-950 hover:bg-amber-500/15 dark:text-amber-100"
+        className="border-warning/35 bg-warning/[0.07] text-warning-text hover:bg-warning/15 dark:text-warning h-9 w-full justify-start gap-2 px-3 text-xs font-medium"
         disabled={!authorNpub}
         onClick={() => setZapOpen(true)}
       >
@@ -144,7 +144,7 @@ export function LookupEngageNowSection({
       ) : null}
 
       {engagement.likeError ? (
-        <p className="text-destructive text-[11px]" role="alert">
+        <p className="text-danger text-[11px]" role="alert">
           {engagement.likeError}
         </p>
       ) : null}

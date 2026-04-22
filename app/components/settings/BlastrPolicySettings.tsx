@@ -123,7 +123,7 @@ export function BlastrPolicySettings({
           {mode === "blacklist" ? "Blocked relays" : "Allowed relays"}
         </div>
         {relays.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
+          <p className="text-text-secondary text-sm">
             {mode === "blacklist"
               ? "No relays blocked; Blastr will use all system relays."
               : "No relays allowed; add relays to whitelist."}
@@ -177,7 +177,7 @@ export function BlastrPolicySettings({
       {policyFetcher.data?.error ||
       addFetcher.data?.error ||
       removeFetcher.data?.error ? (
-        <p className="text-destructive text-sm">
+        <p className="text-danger text-sm">
           {policyFetcher.data?.error ??
             addFetcher.data?.error ??
             removeFetcher.data?.error}

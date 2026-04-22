@@ -71,7 +71,7 @@ export function CompactSignStatus({
         data-testid="compact-sign-status"
         data-state="awaiting_signer"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-900 dark:text-amber-200",
+          "border-warning/40 bg-warning/10 text-warning-text inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs",
           className
         )}
       >
@@ -114,7 +114,7 @@ export function CompactSignStatus({
         data-testid="compact-sign-status"
         data-state={attempt.state}
         className={cn(
-          "text-muted-foreground inline-flex items-center text-xs",
+          "text-text-secondary inline-flex items-center text-xs",
           className
         )}
       >
@@ -131,7 +131,7 @@ export function CompactSignStatus({
         data-testid="compact-sign-status"
         data-state="expired"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-xs text-red-700 dark:text-red-300",
+          "border-danger/40 bg-danger/10 text-danger-text inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs",
           className
         )}
       >

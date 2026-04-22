@@ -461,7 +461,7 @@ function renderMultiPostSlotContent(
           {...multiPostBlockProps}
         />
       ))}
-      <div className="bg-muted text-muted-foreground flex flex-1 items-center justify-center rounded text-xs">
+      <div className="bg-surface-hover text-text-secondary flex flex-1 items-center justify-center rounded-[var(--calendar-radius-sm)] text-xs">
         +{posts.length - 5}
       </div>
     </div>

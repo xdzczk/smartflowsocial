@@ -44,14 +44,13 @@ export function ContestPayoutOverview({
         {
           label: "Paid / sent",
           value: summary.paidOrSent,
-          valueClassName:
-            "font-semibold text-emerald-600 dark:text-emerald-400",
+          valueClassName: "font-semibold text-success dark:text-success",
         },
         { label: "Pending", value: summary.pending },
         {
           label: "Failed",
           value: summary.failed,
-          valueClassName: "font-semibold text-destructive",
+          valueClassName: "font-semibold text-danger",
         },
         { label: NEEDS_REVIEW_PHASE, value: summary.needsReview },
       ]}
@@ -73,12 +72,12 @@ function PayoutStatusBadge({ status }: { status: string }) {
   const label = phase;
   const cls =
     phase === PAID_VIA_WALLET_PHASE || phase === PAID_MANUALLY_PHASE
-      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+      ? "bg-success/15 text-success-text"
       : phase === "Failed"
-        ? "bg-destructive/15 text-destructive"
+        ? "bg-danger/15 text-danger"
         : phase === NEEDS_REVIEW_PHASE
-          ? "bg-amber-500/15 text-amber-900 dark:text-amber-200"
-          : "bg-muted text-muted-foreground";
+          ? "bg-warning/15 text-warning-text"
+          : "bg-surface-hover text-text-secondary";
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -172,7 +171,7 @@ export function ContestPayoutWinnerRow({
             />
           ) : (
             <div
-              className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+              className="bg-surface-hover text-text-secondary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
               aria-hidden
             >
               {primaryLabel.slice(0, 1).toUpperCase() || "?"}
@@ -180,12 +179,12 @@ export function ContestPayoutWinnerRow({
           )}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="text-foreground truncate text-sm font-medium">
+              <span className="text-text truncate text-sm font-medium">
                 #{winner.rank} · {primaryLabel}
               </span>
               {showNpubSecondary ? (
                 <span
-                  className="text-muted-foreground truncate font-mono text-xs"
+                  className="text-text-secondary truncate font-mono text-xs"
                   title={npub}
                 >
                   {npubShort}
@@ -196,7 +195,7 @@ export function ContestPayoutWinnerRow({
                   <button
                     type="button"
                     onClick={() => void handleCopyNpub()}
-                    className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
+                    className="text-text-secondary hover:text-text shrink-0 text-xs"
                     aria-label="Copy npub"
                   >
                     {copied ? "Copied" : "Copy"}
@@ -205,7 +204,7 @@ export function ContestPayoutWinnerRow({
                     href={profileHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary shrink-0 text-xs"
+                    className="text-brand shrink-0 text-xs"
                   >
                     Profile
                   </a>
@@ -215,11 +214,11 @@ export function ContestPayoutWinnerRow({
             <div className="flex flex-wrap items-center gap-2">
               <PayoutStatusBadge status={st} />
               {winner.rewardSats > 0 ? (
-                <span className="text-muted-foreground text-xs tabular-nums">
+                <span className="text-text-secondary text-xs tabular-nums">
                   {winner.rewardSats.toLocaleString()} sats
                 </span>
               ) : null}
-              <span className="text-muted-foreground text-xs">
+              <span className="text-text-secondary text-xs">
                 score {winner.score}
               </span>
             </div>

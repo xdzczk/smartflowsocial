@@ -65,35 +65,35 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
         tabIndex={-1}
         aria-live="assertive"
         variant="default"
-        className="animate-in fade-in slide-in-from-bottom-1 border-destructive/45 bg-destructive/5 dark:bg-destructive/10 space-y-4 p-5 text-sm shadow-lg duration-200"
+        className="animate-in fade-in slide-in-from-bottom-1 border-danger/45 bg-danger/5 dark:bg-danger/10 shadow-2 space-y-4 p-5 text-sm duration-200"
       >
-        <AlertTitle className="text-destructive text-base">
+        <AlertTitle className="text-danger text-base">
           {getErrorTitle(error.code)}
         </AlertTitle>
         <AlertDescription className="space-y-4">
-          <p className="text-foreground/95 leading-relaxed">{error.message}</p>
+          <p className="text-text/95 leading-relaxed">{error.message}</p>
 
           {cappedTips.length > 0 ? (
             <AuthInlineTipList intro="What to try" items={cappedTips} />
           ) : null}
 
           <details className="text-xs">
-            <summary className="hover:text-foreground cursor-pointer font-medium select-none">
+            <summary className="hover:text-text cursor-pointer font-medium select-none">
               Technical details
             </summary>
             <div className="mt-3 space-y-3">
               {error.details ? (
-                <pre className="border-border bg-background dark:bg-card max-h-40 overflow-x-auto overflow-y-auto rounded-md border p-3 text-[11px] whitespace-pre-wrap">
+                <pre className="border-border bg-canvas dark:bg-surface max-h-40 overflow-x-auto overflow-y-auto rounded-md border p-3 text-[11px] whitespace-pre-wrap">
                   {error.details}
                 </pre>
               ) : (
-                <p className="text-muted-foreground">No extra details.</p>
+                <p className="text-text-secondary">No extra details.</p>
               )}
 
               {relayUrls.length > 0 ? (
                 <div>
                   <div className="mb-1.5 font-medium">Relays last checked</div>
-                  <div className="border-border bg-muted/40 space-y-1 rounded-md border p-2 text-[11px]">
+                  <div className="border-border bg-surface-hover/40 space-y-1 rounded-md border p-2 text-[11px]">
                     {relayUrls.map((url) => {
                       const status = relayStatuses[url];
                       return (
@@ -113,7 +113,7 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
                 </div>
               ) : null}
 
-              <div className="text-muted-foreground border-border/60 border-t pt-2 text-[11px]">
+              <div className="text-text-secondary border-border/60 border-t pt-2 text-[11px]">
                 Retry:{" "}
                 {classification.shouldRetry ? "recommended" : "may not help"} ·
                 Strategy: {classification.retryStrategy.replace(/_/g, " ")}
@@ -144,7 +144,7 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
                 {copiedForSupport ? "Copied for support" : "Copy for support"}
               </Button>
               <p
-                className="text-muted-foreground text-[11px]"
+                className="text-text-secondary text-[11px]"
                 role="status"
                 aria-live="polite"
               >
@@ -169,7 +169,7 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
               <>
                 <Button
                   type="button"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                  className="bg-brand text-brand-on hover:bg-brand/90 shadow-2"
                   onClick={onTryAgain}
                 >
                   Try again

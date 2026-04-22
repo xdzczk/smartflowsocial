@@ -31,7 +31,7 @@ export function RecyclablesPagination({
 
   return (
     <div className="mt-4 flex items-center justify-between">
-      <div className="text-muted-foreground text-sm">
+      <div className="text-text-secondary text-sm">
         Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
         {Math.min(pagination.currentPage * pagination.limit, pagination.total)}{" "}
         of {pagination.total} posts
@@ -42,7 +42,7 @@ export function RecyclablesPagination({
           className={`rounded-lg border px-3 py-1 ${
             pagination.currentPage === 1
               ? "pointer-events-none opacity-50"
-              : "hover:bg-muted"
+              : "hover:bg-surface-hover"
           }`}
         >
           Previous
@@ -52,7 +52,7 @@ export function RecyclablesPagination({
           className={`rounded-lg border px-3 py-1 ${
             pagination.currentPage === pagination.pages
               ? "pointer-events-none opacity-50"
-              : "hover:bg-muted"
+              : "hover:bg-surface-hover"
           }`}
         >
           Next

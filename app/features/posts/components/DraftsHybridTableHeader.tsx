@@ -26,7 +26,7 @@ export function DraftsHybridTableHeader({
     <thead>
       <tr>
         {showBulkActions ? (
-          <th className="bg-card border-border text-foreground w-12 border-b px-3 py-4 text-center font-semibold">
+          <th className="bg-surface border-border text-text w-12 border-b px-3 py-4 text-center font-semibold">
             <Checkbox
               id="drafts-hybrid-select-all"
               checked={
@@ -38,11 +38,11 @@ export function DraftsHybridTableHeader({
             />
           </th>
         ) : null}
-        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left text-sm font-semibold">
+        <th className="bg-surface border-border text-text border-b px-3 py-4 text-left text-sm font-semibold">
           Type
         </th>
         <th
-          className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left text-sm font-semibold"
+          className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left text-sm font-semibold"
           onClick={() => onRequestSort("caption")}
         >
           Title{" "}
@@ -53,7 +53,7 @@ export function DraftsHybridTableHeader({
             : null}
         </th>
         <th
-          className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left text-sm font-semibold whitespace-nowrap"
+          className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left text-sm font-semibold whitespace-nowrap"
           onClick={() => onRequestSort(dateSortKey)}
         >
           Updated{" "}
@@ -63,10 +63,10 @@ export function DraftsHybridTableHeader({
               : "↓"
             : null}
         </th>
-        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center text-sm font-semibold">
+        <th className="bg-surface border-border text-text border-b px-3 py-4 text-center text-sm font-semibold">
           Queue
         </th>
-        <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center text-sm font-semibold">
+        <th className="bg-surface border-border text-text border-b px-3 py-4 text-center text-sm font-semibold">
           Actions
         </th>
       </tr>

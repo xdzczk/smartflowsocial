@@ -30,12 +30,12 @@ export function ReconnectNostrConnectTab({
         <h4 className="text-sm font-semibold">Relay routing</h4>
         <div className="space-y-1">
           <div className="text-sm font-medium">Connection relays</div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-text-secondary text-xs">
             These relays are used to establish and maintain the signer
             connection.
           </p>
           <textarea
-            className="border-input bg-background focus-visible:ring-ring min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+            className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
             value={relayList}
             onChange={(e) => onRelayListChange(e.target.value)}
             disabled={disabled}
@@ -48,7 +48,7 @@ export function ReconnectNostrConnectTab({
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Connection link</h4>
           <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
-            <div className="bg-card flex justify-center rounded-md border p-3">
+            <div className="bg-surface flex justify-center rounded-md border p-3">
               <QRCode value={nostrConnectUri} size={176} />
             </div>
             <div className="space-y-2">
@@ -57,7 +57,7 @@ export function ReconnectNostrConnectTab({
               </div>
               <textarea
                 readOnly
-                className="border-input bg-background min-h-[88px] w-full rounded-md border p-2 text-sm shadow-sm"
+                className="border-border bg-canvas shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm"
                 value={nostrConnectUri}
               />
               <div className="flex flex-wrap items-center gap-2">
@@ -77,7 +77,7 @@ export function ReconnectNostrConnectTab({
                   </Button>
                 ) : null}
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-text-secondary text-xs">
                 Scan the QR code or paste the link into your signer app (Nostr
                 Connect) to approve.
               </p>

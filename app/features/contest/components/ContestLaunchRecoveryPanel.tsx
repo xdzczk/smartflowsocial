@@ -68,11 +68,9 @@ export function ContestLaunchRecoveryPanel({
   return (
     <div className="space-y-3">
       {showScheduledInfo && scheduledLabel ? (
-        <div className="border-border bg-muted/30 rounded-md border p-3 text-sm">
-          <p className="text-foreground font-medium">
-            Scheduled contest launch
-          </p>
-          <p className="text-muted-foreground">
+        <div className="border-border bg-surface-hover/30 rounded-md border p-3 text-sm">
+          <p className="text-text font-medium">Scheduled contest launch</p>
+          <p className="text-text-secondary">
             Activates at {scheduledLabel}
             {launchOrchestration.sourceMode === "new_post"
               ? " (after the linked post publishes, when applicable)."
@@ -82,7 +80,7 @@ export function ContestLaunchRecoveryPanel({
       ) : null}
 
       {isFailure ? (
-        <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
+        <div className="border-danger/40 bg-danger/10 text-danger rounded-md border p-3 text-sm">
           <p className="font-medium">Launch issue</p>
           <p className="mb-3">
             {launchOrchestration.lastErrorMessage ??
@@ -108,13 +106,13 @@ export function ContestLaunchRecoveryPanel({
                 }}
               >
                 <input type="hidden" name="intent" value="rescheduleLaunch" />
-                <label className="text-foreground flex flex-col gap-1 text-xs">
+                <label className="text-text flex flex-col gap-1 text-xs">
                   New time
                   <input
                     name="scheduledFor"
                     type="datetime-local"
                     required
-                    className="border-border bg-background text-foreground rounded border px-2 py-1"
+                    className="border-border bg-canvas text-text rounded-xs border px-2 py-1"
                     value={
                       rescheduleValue ||
                       toDateTimeLocalValue(launchOrchestration.scheduledFor)
@@ -140,11 +138,11 @@ export function ContestLaunchRecoveryPanel({
             </Form>
           </div>
           {launchOrchestration.sourcePostId ? (
-            <p className="text-muted-foreground mt-3 text-xs">
+            <p className="text-text-secondary mt-3 text-xs">
               If the source post publish failed, fix or reschedule it from{" "}
               <Link
                 to="/dashboard/scheduled"
-                className="text-primary underline-offset-2 hover:underline"
+                className="text-brand underline-offset-2 hover:underline"
               >
                 Scheduled
               </Link>
@@ -156,7 +154,7 @@ export function ContestLaunchRecoveryPanel({
 
       {!isFailure && canReschedule ? (
         <div className="border-border rounded-md border p-3 text-sm">
-          <p className="text-foreground mb-2 font-medium">Change launch time</p>
+          <p className="text-text mb-2 font-medium">Change launch time</p>
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
@@ -167,7 +165,7 @@ export function ContestLaunchRecoveryPanel({
             <input type="hidden" name="intent" value="rescheduleLaunch" />
             <label
               htmlFor="contest-recovery-reschedule-time"
-              className="text-foreground flex flex-col gap-1 text-xs"
+              className="text-text flex flex-col gap-1 text-xs"
             >
               <span>New launch time</span>
               <input
@@ -175,7 +173,7 @@ export function ContestLaunchRecoveryPanel({
                 name="scheduledFor"
                 type="datetime-local"
                 required
-                className="border-border bg-background text-foreground rounded border px-2 py-1"
+                className="border-border bg-canvas text-text rounded-xs border px-2 py-1"
                 defaultValue={toDateTimeLocalValue(
                   launchOrchestration.scheduledFor
                 )}

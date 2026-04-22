@@ -74,27 +74,27 @@ export function CheckoutSummary({
     : planLineLabel(planLabel, billingCadence);
 
   return (
-    <div className="border-border bg-muted/30 rounded-xl border px-5 py-5">
-      <p className="text-muted-foreground mb-4 text-xs font-semibold tracking-wide uppercase">
+    <div className="border-border bg-surface-hover/30 rounded-xl border px-5 py-5">
+      <p className="text-text-secondary mb-4 text-xs font-semibold tracking-wide uppercase">
         Order summary
       </p>
       <dl className="space-y-3 text-sm">
         <div className="flex justify-between gap-6">
-          <dt className="text-muted-foreground shrink-0">Plan</dt>
-          <dd className="text-foreground text-right leading-snug font-medium">
+          <dt className="text-text-secondary shrink-0">Plan</dt>
+          <dd className="text-text text-right leading-snug font-medium">
             {planLine}
           </dd>
         </div>
         <div className="flex justify-between gap-6">
-          <dt className="text-muted-foreground shrink-0">Payment</dt>
-          <dd className="text-foreground text-right leading-snug font-medium">
+          <dt className="text-text-secondary shrink-0">Payment</dt>
+          <dd className="text-text text-right leading-snug font-medium">
             {paymentMethodLabel(method)}
           </dd>
         </div>
         {method === "lightning_one_time" ? (
           <div className="flex justify-between gap-6">
-            <dt className="text-muted-foreground shrink-0">Access</dt>
-            <dd className="text-foreground text-right leading-snug font-medium">
+            <dt className="text-text-secondary shrink-0">Access</dt>
+            <dd className="text-text text-right leading-snug font-medium">
               {lifetimeOneTime
                 ? "Lifetime"
                 : accessPeriodLabel(billingCadence, accessDurationMonths)}
@@ -103,21 +103,21 @@ export function CheckoutSummary({
         ) : null}
         {lifetimeOneTime && method === "btc_onchain" ? (
           <div className="flex justify-between gap-6">
-            <dt className="text-muted-foreground shrink-0">Access</dt>
-            <dd className="text-foreground text-right leading-snug font-medium">
+            <dt className="text-text-secondary shrink-0">Access</dt>
+            <dd className="text-text text-right leading-snug font-medium">
               Lifetime
             </dd>
           </div>
         ) : null}
         <div className="border-border flex justify-between gap-6 border-t pt-3">
-          <dt className="text-muted-foreground shrink-0 pt-0.5">Due now</dt>
-          <dd className="text-foreground text-right text-lg font-semibold tabular-nums">
+          <dt className="text-text-secondary shrink-0 pt-0.5">Due now</dt>
+          <dd className="text-text text-right text-lg font-semibold tabular-nums">
             {due != null && due > 0 ? `$${due}` : due === 0 ? "Free" : "-"}
           </dd>
         </div>
         <div className="flex justify-between gap-6">
-          <dt className="text-muted-foreground shrink-0">Billing</dt>
-          <dd className="text-foreground text-right leading-snug font-medium">
+          <dt className="text-text-secondary shrink-0">Billing</dt>
+          <dd className="text-text text-right leading-snug font-medium">
             {renewal}
           </dd>
         </div>

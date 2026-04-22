@@ -99,7 +99,7 @@ export function ForegroundSignRecoveryBanner({
       <div
         role="status"
         aria-live="polite"
-        className={`${containerBaseClass} flex items-center justify-between gap-2 border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200`}
+        className={`${containerBaseClass} border-warning/50 bg-warning/10 text-warning-text flex items-center justify-between gap-2`}
       >
         <span className="flex-1">
           Signer unavailable — we&rsquo;ll resume this publish automatically
@@ -136,7 +136,7 @@ export function ForegroundSignRecoveryBanner({
       <div
         role="status"
         aria-live="polite"
-        className={`${containerBaseClass} bg-muted/30 text-muted-foreground flex items-center gap-2`}
+        className={`${containerBaseClass} bg-surface-hover/30 text-text-secondary flex items-center gap-2`}
       >
         <span>Reconnected — completing your publish…</span>
       </div>

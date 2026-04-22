@@ -932,14 +932,14 @@ export function PollComposer({
             >
               Question
             </ComposerCanvasSectionLabel>
-            <div className="focus-within:bg-muted/[0.07] focus-within:ring-border/25 rounded-md transition-colors focus-within:ring-1">
+            <div className="focus-within:bg-surface-hover/50 focus-within:ring-border-subtle rounded-md transition-colors focus-within:ring-1">
               <textarea
                 id="poll-question"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 disabled={disabled}
                 rows={4}
-                className="text-foreground placeholder:text-muted-foreground/65 min-h-[7.5rem] w-full resize-y border-0 bg-transparent px-0.5 pt-0.5 pb-1 text-base leading-relaxed shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text placeholder:text-text-tertiary/85 min-h-[7.5rem] w-full resize-y border-0 bg-transparent px-0.5 pt-0.5 pb-1 text-base leading-relaxed shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="What do you want to ask?"
               />
             </div>
@@ -952,20 +952,20 @@ export function PollComposer({
               <ComposerCanvasSectionLabel as="span" className="mb-0">
                 Options
               </ComposerCanvasSectionLabel>
-              <p className="text-muted-foreground/80 text-[10px] leading-snug">
+              <p className="text-text-tertiary text-[10px] leading-snug">
                 {options.length} of {POLL_COMPOSER_MAX_OPTIONS} · paste multiple
                 lines to fill options
               </p>
             </div>
-            <div className="border-border/35 bg-muted/[0.06] border-l-primary/30 overflow-hidden rounded-lg border border-l-2">
-              <ul className="divide-border/25 divide-y">
+            <div className="border-border-subtle bg-surface-hover/40 border-l-brand/30 overflow-hidden rounded-lg border border-l-2">
+              <ul className="divide-border-subtle divide-y">
                 {options.map((opt, i) => (
                   <li
                     key={optionRowIds[i] ?? `opt-fallback-${i}`}
                     className="flex items-center gap-2 py-2 pr-1 pl-2 sm:pl-2.5"
                   >
                     <span
-                      className="text-muted-foreground/45 w-5 shrink-0 text-center text-[11px] tabular-nums"
+                      className="text-text-tertiary/70 w-5 shrink-0 text-center text-[11px] tabular-nums"
                       aria-hidden
                     >
                       {i + 1}
@@ -1004,7 +1004,7 @@ export function PollComposer({
                       }}
                       disabled={disabled}
                       placeholder={`Option ${i + 1}`}
-                      className="border-border/40 bg-background/70 h-8 flex-1 border text-sm shadow-none"
+                      className="border-border-subtle bg-canvas/70 h-8 flex-1 border text-sm shadow-none"
                       aria-label={`Poll option ${i + 1}`}
                     />
                     {options.length > POLL_COMPOSER_MIN_OPTIONS ? (
@@ -1014,7 +1014,7 @@ export function PollComposer({
                         size="icon"
                         disabled={disabled}
                         aria-label={`Remove option ${i + 1}`}
-                        className="text-muted-foreground h-8 w-8 shrink-0 opacity-70 hover:opacity-100"
+                        className="text-text-secondary h-8 w-8 shrink-0 opacity-70 hover:opacity-100"
                         onClick={() => {
                           setOptions((prev) => prev.filter((_, j) => j !== i));
                           setOptionRowIds((prev) =>
@@ -1037,7 +1037,7 @@ export function PollComposer({
                 disabled={
                   disabled || options.length >= POLL_COMPOSER_MAX_OPTIONS
                 }
-                className="text-muted-foreground hover:text-foreground border-border/30 h-9 w-full rounded-none rounded-b-lg border-t border-dashed text-xs font-normal"
+                className="text-text-secondary hover:text-text border-border-subtle h-9 w-full rounded-none rounded-b-lg border-t border-dashed text-xs font-normal"
                 onClick={() => {
                   setOptions((o) => [...o, ""]);
                   setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
@@ -1055,7 +1055,7 @@ export function PollComposer({
             <div className={composerCanvasFieldStackClass}>
               <label
                 htmlFor="poll-type"
-                className="text-muted-foreground text-xs font-medium"
+                className="text-text-secondary text-xs font-medium"
               >
                 Voting mode
               </label>
@@ -1070,7 +1070,7 @@ export function PollComposer({
                   )
                 }
                 disabled={disabled}
-                className="border-border/50 bg-muted/10 text-muted-foreground h-9 w-full rounded-md border px-2.5 text-xs shadow-sm"
+                className="border-border bg-surface-hover/40 text-text-secondary shadow-1 h-9 w-full rounded-md border px-2.5 text-xs"
               >
                 <option value="singlechoice">Single choice</option>
                 <option value="multiplechoice">Multiple choice</option>
@@ -1079,7 +1079,7 @@ export function PollComposer({
             <div className={composerCanvasFieldStackClass}>
               <label
                 htmlFor="poll-end-mode"
-                className="text-muted-foreground text-xs font-medium"
+                className="text-text-secondary text-xs font-medium"
               >
                 Poll end
               </label>
@@ -1092,7 +1092,7 @@ export function PollComposer({
                   )
                 }
                 disabled={disabled}
-                className="border-border/50 bg-muted/10 text-muted-foreground h-9 w-full rounded-md border px-2.5 text-xs shadow-sm"
+                className="border-border bg-surface-hover/40 text-text-secondary shadow-1 h-9 w-full rounded-md border px-2.5 text-xs"
               >
                 <option value="relative">Hours after publish</option>
                 <option value="absolute">Date and time</option>
@@ -1103,7 +1103,7 @@ export function PollComposer({
             <div className={composerCanvasFieldStackClass}>
               <label
                 htmlFor="poll-ends"
-                className="text-muted-foreground text-xs font-medium"
+                className="text-text-secondary text-xs font-medium"
               >
                 Closes at
               </label>
@@ -1114,9 +1114,9 @@ export function PollComposer({
                 min={pollEndDatetimeLocalMin}
                 onChange={(e) => setEndsAtLocal(e.target.value)}
                 disabled={disabled}
-                className="border-border/50 bg-muted/10 h-9 text-xs shadow-sm"
+                className="border-border bg-surface-hover/40 shadow-1 h-9 text-xs"
               />
-              <p className="text-muted-foreground/80 text-[10px] leading-snug">
+              <p className="text-text-tertiary text-[10px] leading-snug">
                 Must be after publish time from the rail (Now, Schedule, or
                 Queue), including any schedule random window.
               </p>
@@ -1125,7 +1125,7 @@ export function PollComposer({
             <div className={composerCanvasFieldStackClass}>
               <label
                 htmlFor="poll-ends-hours"
-                className="text-muted-foreground text-xs font-medium"
+                className="text-text-secondary text-xs font-medium"
               >
                 Hours after publish
               </label>
@@ -1145,12 +1145,12 @@ export function PollComposer({
                   setPollEndHoursAfterPublish(n);
                 }}
                 disabled={disabled}
-                className="border-border/50 bg-muted/10 h-9 text-xs shadow-sm"
+                className="border-border bg-surface-hover/40 shadow-1 h-9 text-xs"
               />
               {relativePollEndPreviewLabel ? (
-                <p className="text-muted-foreground text-[10px] leading-snug">
+                <p className="text-text-secondary text-[10px] leading-snug">
                   Estimated close (from current publish time):{" "}
-                  <span className="text-foreground font-medium tabular-nums">
+                  <span className="text-text font-medium tabular-nums">
                     {relativePollEndPreviewLabel.replace("T", " ")}
                   </span>
                   {publishMode !== "now" && scheduleRandomWindowMinutes > 0 ? (
@@ -1163,7 +1163,7 @@ export function PollComposer({
                   ) : null}
                 </p>
               ) : (
-                <p className="text-muted-foreground/80 text-[10px] leading-snug">
+                <p className="text-text-tertiary text-[10px] leading-snug">
                   Uses the same publish time as in the rail (Now, Schedule, or
                   Queue). The poll closes this many hours after the post goes
                   live.

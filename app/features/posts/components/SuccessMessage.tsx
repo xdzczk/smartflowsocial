@@ -31,7 +31,7 @@ export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
           <div className="-mx-1.5 -my-1.5">
             <button
               onClick={onDismiss}
-              className="bg-success/20 text-success hover:bg-success/30 focus:ring-ring inline-flex rounded-md p-1.5 focus:ring-2 focus:ring-offset-0 focus:outline-none"
+              className="bg-success/20 text-success hover:bg-success/30 focus-visible:ring-focus-ring inline-flex rounded-md p-1.5 focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
             >
               <span className="sr-only">Dismiss</span>
               <X

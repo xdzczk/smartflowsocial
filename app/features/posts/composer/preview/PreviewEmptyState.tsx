@@ -10,7 +10,7 @@ export function PreviewEmptyState({
   return (
     <div
       className={cn(
-        "text-muted-foreground/80 border-border/35 rounded-lg border border-dashed px-4 py-5 text-center text-sm leading-relaxed",
+        "text-text-tertiary border-border-subtle rounded-lg border border-dashed px-4 py-5 text-center text-sm leading-relaxed",
         className
       )}
       role="status"

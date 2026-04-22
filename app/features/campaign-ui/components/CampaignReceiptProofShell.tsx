@@ -15,11 +15,11 @@ export function CampaignReceiptProofShell({
 }) {
   return (
     <div className="space-y-3">
-      <div className="border-border bg-card rounded-lg border p-4">
+      <div className="border-border bg-surface rounded-lg border p-4">
         <h2 className="mb-2 text-sm font-semibold">{receiptTitle}</h2>
         {receiptBody}
       </div>
-      <div className="border-border bg-card rounded-lg border p-4">
+      <div className="border-border bg-surface rounded-lg border p-4">
         <h2 className="mb-2 text-sm font-semibold">{proofTitle}</h2>
         {proofBody}
       </div>

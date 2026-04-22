@@ -825,8 +825,8 @@ export default function LongFormPost({
         className={cn(
           "pb-1 text-[10px] font-medium tracking-wide transition-colors",
           bodyView === "edit"
-            ? "text-foreground/90 border-foreground/35 -mb-px border-b-2"
-            : "text-muted-foreground/55 hover:text-muted-foreground/85 border-b-2 border-transparent"
+            ? "text-text/90 border-foreground/35 -mb-px border-b-2"
+            : "text-text-secondary/55 hover:text-text-secondary/85 border-b-2 border-transparent"
         )}
         onClick={() => setBodyView("edit")}
         aria-pressed={bodyView === "edit"}
@@ -838,8 +838,8 @@ export default function LongFormPost({
         className={cn(
           "pb-1 text-[10px] font-medium tracking-wide transition-colors",
           bodyView === "preview"
-            ? "text-foreground/90 border-foreground/35 -mb-px border-b-2"
-            : "text-muted-foreground/55 hover:text-muted-foreground/85 border-b-2 border-transparent"
+            ? "text-text/90 border-foreground/35 -mb-px border-b-2"
+            : "text-text-secondary/55 hover:text-text-secondary/85 border-b-2 border-transparent"
         )}
         onClick={() => {
           flushSync();
@@ -914,7 +914,7 @@ export default function LongFormPost({
                   id="article-composer-custom-tags"
                   {...form.register("customTags")}
                   placeholder="e.g. bitcoin, nostr, technology"
-                  className="border-border/30 bg-background/40 mt-1.5 text-sm shadow-none"
+                  className="border-border/30 bg-canvas/40 mt-1.5 text-sm shadow-none"
                 />
               </div>
 
@@ -979,11 +979,11 @@ export default function LongFormPost({
                 <div className="min-w-0 space-y-0.5">
                   <Label
                     htmlFor="longform-include-tags-in-body"
-                    className="text-muted-foreground/75 text-[11px] leading-snug font-normal"
+                    className="text-text-secondary/75 text-[11px] leading-snug font-normal"
                   >
                     Hide tags
                   </Label>
-                  <p className="text-muted-foreground/50 text-[10px] leading-snug">
+                  <p className="text-text-secondary/50 text-[10px] leading-snug">
                     Off by default. Turn on to keep tags out of the article text
                     (event tags only).
                   </p>

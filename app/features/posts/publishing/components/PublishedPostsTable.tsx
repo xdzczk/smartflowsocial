@@ -95,7 +95,7 @@ const SortableHeader = ({
   requestSort,
 }: SortableHeaderProps) => (
   <th
-    className="bg-card border-border text-foreground cursor-pointer border-b px-3 py-4 text-left font-semibold"
+    className="bg-surface border-border text-text cursor-pointer border-b px-3 py-4 text-left font-semibold"
     onClick={() => requestSort(sortKey)}
   >
     {label}{" "}
@@ -197,7 +197,7 @@ export default function PublishedPostsTable({
           <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   <Checkbox
                     id="published-select-all"
                     checked={
@@ -208,7 +208,7 @@ export default function PublishedPostsTable({
                     onCheckedChange={() => toggleSelectAll()}
                   />
                 </th>
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-left font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-left font-semibold">
                   Media
                 </th>
                 <SortableHeader
@@ -271,7 +271,7 @@ export default function PublishedPostsTable({
                   sortConfig={sortConfig}
                   requestSort={requestSort}
                 />
-                <th className="bg-card border-border text-foreground border-b px-3 py-4 text-center font-semibold">
+                <th className="bg-surface border-border text-text border-b px-3 py-4 text-center font-semibold">
                   Actions
                 </th>
               </tr>
@@ -294,7 +294,7 @@ export default function PublishedPostsTable({
                     className={cn(
                       PUBLISHING_TABLE_ROW_CLASS,
                       selectedPosts.has(post.id) &&
-                        "bg-muted/40 hover:bg-muted/50"
+                        "bg-surface-hover/40 hover:bg-surface-hover/50"
                     )}
                     onClick={() => setSelectedPost(post)}
                   >
@@ -312,15 +312,15 @@ export default function PublishedPostsTable({
                           <MediaThumbnail
                             src={getImageUrls(post.fileUrl)[0]}
                             alt="Post preview"
-                            className="h-12 w-12 rounded object-cover"
+                            className="h-12 w-12 rounded-xs object-cover"
                             fallback={
-                              <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                              <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                                 {rowThumbBadge}
                               </div>
                             }
                           />
                           {post.repost ? (
-                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                            <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                               <Repeat
                                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                 strokeWidth={INLINE_ICON_STROKE}
@@ -340,11 +340,11 @@ export default function PublishedPostsTable({
                         </div>
                       ) : (
                         <div className="relative">
-                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded text-xs font-medium">
+                          <div className="bg-surface-hover text-text-secondary flex h-12 w-12 items-center justify-center rounded-xs text-xs font-medium">
                             {rowThumbBadge}
                           </div>
                           {post.repost ? (
-                            <div className="bg-primary absolute -top-1 -right-1 rounded-full p-1">
+                            <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                               <Repeat
                                 className={`${SMALL_ICON_SIZE_CLASS} text-white`}
                                 strokeWidth={INLINE_ICON_STROKE}
@@ -407,7 +407,7 @@ export default function PublishedPostsTable({
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="border-border bg-card text-foreground hover:bg-muted focus:ring-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus:ring-2 focus:outline-none"
+                            className="border-border bg-surface text-text hover:bg-surface-hover focus-visible:ring-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border focus-visible:ring-2 focus-visible:outline-none"
                             aria-label="Actions"
                           >
                             <MoreHorizontal
@@ -539,7 +539,7 @@ export default function PublishedPostsTable({
                               deleteFetcher.state !== "idle" ||
                               bulkDeleteFetcher.state !== "idle"
                             }
-                            className="text-destructive focus:text-destructive"
+                            className="text-danger focus:text-danger"
                             onSelect={() => {
                               onBeforeDelete?.(post.id);
                               const fd = new FormData();
@@ -569,7 +569,7 @@ export default function PublishedPostsTable({
           {onSortChange ? (
             <div className="mb-3 flex items-center gap-2">
               <span
-                className={`text-muted-foreground text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
+                className={`text-text-secondary text-sm ${MOBILE_FILTER_LABEL_CLASS}`}
               >
                 Sort:
               </span>
@@ -679,7 +679,7 @@ export default function PublishedPostsTable({
                     <div ref={sentinelRef} className="h-4 w-full" />
                   ) : null}
                   {isFetchingNextPage ? (
-                    <div className="text-muted-foreground py-4 text-center text-sm">
+                    <div className="text-text-secondary py-4 text-center text-sm">
                       Loading more...
                     </div>
                   ) : null}

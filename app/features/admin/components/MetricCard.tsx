@@ -10,9 +10,9 @@ import { AdminMetricTitleRow, AdminMetricValue } from "./AdminMetricValue";
 export type MetricTone = "neutral" | "positive" | "warning" | "danger";
 
 const confidenceBadgeClass: Record<MetricConfidence, string> = {
-  confident: "bg-muted text-muted-foreground",
-  directional: "bg-amber-500/15 text-amber-800 dark:text-amber-200",
-  insufficient_sample: "bg-muted text-muted-foreground",
+  confident: "bg-surface-hover text-text-secondary",
+  directional: "bg-warning/15 text-warning-text",
+  insufficient_sample: "bg-surface-hover text-text-secondary",
 };
 
 function ConfidenceBadge({
@@ -27,7 +27,7 @@ function ConfidenceBadge({
   return (
     <span
       className={cn(
-        "mt-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
+        "mt-1.5 inline-block rounded-xs px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
         confidenceBadgeClass[confidence]
       )}
       title={note}
@@ -39,14 +39,14 @@ function ConfidenceBadge({
 
 const toneExtra: Record<MetricTone, string> = {
   neutral: "",
-  positive: "border-emerald-500/30 bg-emerald-500/5",
-  warning: "border-amber-500/30 bg-amber-500/5",
-  danger: "border-red-500/30 bg-red-500/5",
+  positive: "border-success/30 bg-success/5",
+  warning: "border-warning/30 bg-warning/5",
+  danger: "border-danger/30 bg-danger/5",
 };
 
 /** Matches AdminCard default variant shell for link-wrapped KPI drilldowns. */
 const metricCardShell =
-  "border-border bg-card/60 border shadow-sm transition-shadow hover:shadow-md rounded-xl p-4";
+  "border-border bg-surface/60 border shadow-1 transition-shadow hover:shadow-2 rounded-xl p-4";
 
 export function MetricCard({
   title,
@@ -90,12 +90,12 @@ export function MetricCard({
       />
       <ConfidenceBadge confidence={confidence} note={confidenceNote} />
       {interpretation ? (
-        <p className="text-muted-foreground mt-2 text-xs leading-snug">
+        <p className="text-text-secondary mt-2 text-xs leading-snug">
           {interpretation}
         </p>
       ) : null}
       {footnote ? (
-        <details className="text-muted-foreground mt-2 text-xs">
+        <details className="text-text-secondary mt-2 text-xs">
           <summary className="cursor-pointer text-[11px] font-medium tracking-wide uppercase">
             Details
           </summary>

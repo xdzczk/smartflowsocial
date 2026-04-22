@@ -326,32 +326,32 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body className="h-full">
-        <div className="bg-background flex min-h-full flex-col">
+        <div className="bg-canvas flex min-h-full flex-col">
           <main className="mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-4 py-24 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
-              <h1 className="dark:text-foreground text-foreground text-6xl font-semibold">
+              <h1 className="dark:text-text text-text text-6xl font-semibold">
                 {statusCode}
               </h1>
-              <h2 className="dark:text-foreground text-foreground mt-4 text-2xl font-semibold">
+              <h2 className="dark:text-text text-text mt-4 text-2xl font-semibold">
                 {errorTitle}
               </h2>
-              <p className="dark:text-muted-foreground text-foreground mt-4 text-lg">
+              <p className="dark:text-text-secondary text-text mt-4 text-lg">
                 {errorMessage}
               </p>
               <div className="mt-10 flex justify-center">
                 <a
                   href="/"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring rounded-md px-6 py-3 text-base font-semibold shadow-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
+                  className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring shadow-1 rounded-md px-6 py-3 text-base font-semibold focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none"
                 >
                   Go back home
                 </a>
               </div>
               {isDevelopment && error != null ? (
                 <details className="mt-10 text-left">
-                  <summary className="text-foreground cursor-pointer text-sm font-semibold">
+                  <summary className="text-text cursor-pointer text-sm font-semibold">
                     Error Details (Development Only)
                   </summary>
-                  <pre className="bg-card text-foreground mt-4 overflow-auto rounded-lg p-4 text-xs">
+                  <pre className="bg-surface text-text mt-4 overflow-auto rounded-lg p-4 text-xs">
                     {error instanceof Error
                       ? (error.stack ?? error.toString())
                       : JSON.stringify(error, null, 2)}

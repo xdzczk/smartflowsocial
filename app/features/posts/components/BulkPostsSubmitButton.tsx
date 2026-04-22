@@ -45,9 +45,9 @@ export function BulkPostsSubmitButton({
                 Step {preparationProgress.current} of{" "}
                 {preparationProgress.total}
               </div>
-              <div className="bg-background/20 h-2 w-full rounded-full">
+              <div className="bg-canvas/20 h-2 w-full rounded-full">
                 <div
-                  className="bg-background h-2 rounded-full transition-all duration-300"
+                  className="bg-canvas h-2 rounded-full transition-all duration-300"
                   style={{
                     width: `${
                       (preparationProgress.current /
@@ -80,7 +80,7 @@ export function BulkPostsSubmitButton({
     <button
       type="submit"
       disabled={disabled}
-      className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
+      className="bg-brand text-brand-on hover:bg-brand/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
     >
       {getButtonContent()}
     </button>

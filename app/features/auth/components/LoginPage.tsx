@@ -25,7 +25,7 @@ export default function LoginPage() {
   return (
     <div
       id="page-container"
-      className="bg-background landing-texture relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
+      className="bg-canvas landing-texture relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
     >
       {/* Decorative layer only — must not capture clicks above header/main/footer */}
       <div
@@ -49,7 +49,7 @@ export default function LoginPage() {
                   <NostrLoginPanel />
                 ) : (
                   <div
-                    className="text-muted-foreground animate-pulse text-sm"
+                    className="text-text-secondary animate-pulse text-sm"
                     aria-live="polite"
                   >
                     Preparing sign-in…

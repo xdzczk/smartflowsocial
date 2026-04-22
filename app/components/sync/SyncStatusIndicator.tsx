@@ -41,8 +41,8 @@ export function SyncStatusIndicator() {
 
   if (syncState === "synced") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <CheckCircle className="h-3 w-3 text-green-500" />
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
+        <CheckCircle className="text-success h-3 w-3" />
         <span className="hidden sm:inline">Synced</span>
       </div>
     );
@@ -50,7 +50,7 @@ export function SyncStatusIndicator() {
 
   if (syncState === "syncing") {
     return (
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+      <div className="text-text-secondary flex items-center gap-1 text-xs">
         <Skeleton className="h-3 w-3 rounded-full" />
         <span className="hidden sm:inline">Syncing...</span>
       </div>
@@ -59,8 +59,8 @@ export function SyncStatusIndicator() {
 
   // needs_attention
   return (
-    <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      <TriangleAlert className="h-3 w-3 text-yellow-500" />
+    <div className="text-text-secondary flex items-center gap-1 text-xs">
+      <TriangleAlert className="text-warning h-3 w-3" />
       <span className="hidden sm:inline">Needs attention</span>
     </div>
   );

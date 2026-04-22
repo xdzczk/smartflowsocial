@@ -130,7 +130,7 @@ export function RunwaySettingsModal({
 
         <div className="space-y-4 py-2">
           {fetcher.data?.error ? (
-            <p className="text-destructive text-sm" role="alert">
+            <p className="text-danger text-sm" role="alert">
               {fetcher.data.error}
             </p>
           ) : null}
@@ -141,22 +141,22 @@ export function RunwaySettingsModal({
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="text-muted-foreground hover:text-foreground underline"
+                  className="text-text-secondary hover:text-text underline"
                 >
                   Select all
                 </button>
-                <span className="text-muted-foreground">|</span>
+                <span className="text-text-secondary">|</span>
                 <button
                   type="button"
                   onClick={deselectAll}
-                  className="text-muted-foreground hover:text-foreground underline"
+                  className="text-text-secondary hover:text-text underline"
                 >
                   Deselect all
                 </button>
               </div>
             </div>
             {queueTypes.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-text-secondary text-sm">
                 No queues yet. Create a queue to filter Runway.
               </p>
             ) : (
@@ -217,7 +217,7 @@ export function RunwaySettingsModal({
             <Label className="text-sm font-medium">
               KPI color thresholds (days)
             </Label>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-text-secondary text-xs">
               Runway card is red when ≤ first value, orange when ≤ second value,
               amber otherwise.
             </p>
@@ -225,7 +225,7 @@ export function RunwaySettingsModal({
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor="runway-red-threshold"
-                  className="text-muted-foreground shrink-0 text-sm"
+                  className="text-text-secondary shrink-0 text-sm"
                 >
                   Red when ≤
                 </Label>
@@ -243,14 +243,14 @@ export function RunwaySettingsModal({
                       )
                     )
                   }
-                  className="border-input bg-background w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                  className="border-border bg-canvas w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
                 />
-                <span className="text-muted-foreground text-sm">days</span>
+                <span className="text-text-secondary text-sm">days</span>
               </div>
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor="runway-orange-threshold"
-                  className="text-muted-foreground shrink-0 text-sm"
+                  className="text-text-secondary shrink-0 text-sm"
                 >
                   Orange when ≤
                 </Label>
@@ -268,13 +268,13 @@ export function RunwaySettingsModal({
                       )
                     )
                   }
-                  className="border-input bg-background w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                  className="border-border bg-canvas w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
                 />
-                <span className="text-muted-foreground text-sm">days</span>
+                <span className="text-text-secondary text-sm">days</span>
               </div>
             </div>
             {orangeThresholdDays < redThresholdDays ? (
-              <p className="text-destructive text-xs" role="alert">
+              <p className="text-danger text-xs" role="alert">
                 Orange threshold should be ≥ red threshold.
               </p>
             ) : null}

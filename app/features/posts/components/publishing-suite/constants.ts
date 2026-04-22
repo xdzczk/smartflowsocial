@@ -8,7 +8,7 @@ export const PUBLISHING_SEGMENTED_ROW_H = "h-10";
 export const PUBLISHING_FILTER_CONTROL_H = "h-9";
 export const PUBLISHING_FILTER_CONTROL_RADIUS = "rounded-lg";
 export const PUBLISHING_FILTER_CONTROL_BASE_CLASS =
-  "border-border/60 bg-background text-foreground shadow-none focus:ring-ring focus:ring-2 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
+  "border-border/60 bg-canvas text-text shadow-none focus-visible:ring-focus-ring focus-visible:ring-2 focus-visible:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Width tokens: type + queue should match; From/To should match. */
 export const PUBLISHING_FILTER_WIDTH_STANDARD =
@@ -17,7 +17,7 @@ export const PUBLISHING_FILTER_WIDTH_DATE = "w-full min-w-[9rem] sm:w-[12rem]";
 
 /** Shared with `content-helpers` post-kind badges for suite consistency. */
 export const PUBLISHING_CONTENT_KIND_BADGE_CLASS =
-  "inline-flex shrink-0 rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground dark:text-foreground";
+  "inline-flex shrink-0 rounded-full bg-surface-hover px-2 py-1 text-xs font-medium text-text dark:text-text";
 
 /** Outer layout for Drafts, Templates, Scheduled, Published, Recyclables. */
 export const PUBLISHING_LIBRARY_SHELL_CLASS =
@@ -25,26 +25,26 @@ export const PUBLISHING_LIBRARY_SHELL_CLASS =
 
 /** Table/list surface inside library pages. */
 export const PUBLISHING_LIST_SURFACE_CLASS =
-  "border-border bg-card min-w-full overflow-x-auto rounded-xl border";
+  "border-border bg-surface min-w-full overflow-x-auto rounded-xl border";
 
 /** Batch selection bar: same radius family as list surfaces; calm, inline (not sticky). */
 export const PUBLISHING_BATCH_SELECTION_BAR_CLASS =
-  "border-border bg-muted/30 text-foreground animate-in fade-in-0 duration-150 mb-4 flex w-full max-w-full flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between";
+  "border-border bg-surface-hover/30 text-text animate-in fade-in-0 duration-150 mb-4 flex w-full max-w-full flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between";
 
 /** Gap between adjacent metadata chips in a row. */
 export const PUBLISHING_METADATA_CHIP_GAP_CLASS = "gap-1.5";
 
 /** Unassigned / no queue — intentional neutral, same footprint as assigned queue chips. */
 export const PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS =
-  "inline-flex max-w-[12rem] truncate rounded-full border border-border/60 bg-muted/25 px-2 py-1 text-xs font-medium text-muted-foreground";
+  "inline-flex max-w-[12rem] truncate rounded-full border border-border/60 bg-surface-hover/25 px-2 py-1 text-xs font-medium text-text-secondary";
 
 /** Interactive data row hover (tables). */
 export const PUBLISHING_TABLE_ROW_CLASS =
-  "group border-border cursor-pointer border-b transition-colors last:border-b-0 hover:bg-muted/35";
+  "group border-border cursor-pointer border-b transition-colors last:border-b-0 hover:bg-surface-hover/35";
 
 /** Emphasized datetime cells (Scheduled / Published tables). */
 export const PUBLISHING_DATETIME_CELL_CLASS =
-  "text-foreground min-w-[9rem] font-semibold tabular-nums";
+  "text-text min-w-[9rem] font-semibold tabular-nums";
 
 /**
  * Shared sort / queue / type filter trigger.

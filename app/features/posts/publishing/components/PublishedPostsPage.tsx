@@ -358,7 +358,7 @@ export default function PublishedPostsPage() {
   // Handle nullable user - if user is null, we should not render the component
   if (!user) {
     return (
-      <div className="text-destructive p-4 text-center">
+      <div className="text-danger p-4 text-center">
         Error: User data not available. Please refresh the page.
       </div>
     );
@@ -597,7 +597,7 @@ export default function PublishedPostsPage() {
             <div ref={prefetchSentinelRef} className="h-4 w-full shrink-0" />
             <div ref={sentinelRef} className="h-4 w-full shrink-0" />
             {isFetchingNextPage ? (
-              <div className="text-muted-foreground mt-4 text-center text-sm">
+              <div className="text-text-secondary mt-4 text-center text-sm">
                 Loading more posts...
               </div>
             ) : null}

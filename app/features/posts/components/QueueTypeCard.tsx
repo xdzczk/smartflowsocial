@@ -49,7 +49,7 @@ export function QueueTypeCard({
   const chips = getQueueMetadataChips(queueType);
 
   return (
-    <div className="border-border/80 hover:bg-muted/40 flex flex-col gap-2 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="border-border/80 hover:bg-surface-hover/40 flex flex-col gap-2 rounded-lg border px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <div
           className="mt-1.5 h-3 w-3 shrink-0 rounded-full"
@@ -67,11 +67,11 @@ export function QueueTypeCard({
               {queueType.name}
             </h4>
           </div>
-          <p className="text-foreground/90 text-sm leading-snug font-medium">
+          <p className="text-text/90 text-sm leading-snug font-medium">
             {primaryLine}
           </p>
           {queueType.description ? (
-            <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+            <p className="text-text-secondary line-clamp-2 text-xs leading-relaxed">
               {queueType.description}
             </p>
           ) : null}
@@ -80,7 +80,7 @@ export function QueueTypeCard({
               {chips.map((c) => (
                 <span
                   key={c.key}
-                  className="bg-muted text-muted-foreground inline-flex max-w-full truncate rounded-md px-2 py-0.5 text-[11px] leading-tight"
+                  className="bg-surface-hover text-text-secondary inline-flex max-w-full truncate rounded-md px-2 py-0.5 text-[11px] leading-tight"
                 >
                   {c.label}
                 </span>
@@ -104,7 +104,7 @@ export function QueueTypeCard({
           type="button"
           variant="ghost"
           size="icon"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+          className="text-danger hover:bg-danger/10 hover:text-danger h-9 w-9"
           onClick={handleDeleteClick}
           disabled={isDeletingQueueType}
           aria-label={`Delete ${queueType.name}`}

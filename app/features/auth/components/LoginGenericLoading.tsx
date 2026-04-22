@@ -12,8 +12,8 @@ export function LoginGenericLoading({ message }: LoginGenericLoadingProps) {
       aria-live="polite"
       aria-busy="true"
     >
-      <Loader2 className="text-primary h-5 w-5 shrink-0 animate-spin" />
-      <div className="text-foreground text-base font-semibold">{message}</div>
+      <Loader2 className="text-brand h-5 w-5 shrink-0 animate-spin" />
+      <div className="text-text text-base font-semibold">{message}</div>
     </div>
   );
 }

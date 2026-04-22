@@ -5,15 +5,15 @@ import { cn } from "~/lib/utils";
 export type CompactStatusVariant = "info" | "warning" | "error";
 
 const shells: Record<CompactStatusVariant, string> = {
-  info: cn("border-border/80 bg-muted/30 text-foreground", "dark:bg-muted/20"),
+  info: cn(
+    "border-border/80 bg-surface-hover/30 text-text",
+    "dark:bg-surface-hover/20"
+  ),
   warning: cn(
-    "border-amber-500/35 bg-amber-500/[0.08] text-amber-950",
-    "dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-100"
+    "border-warning/35 bg-warning/[0.08] text-warning-text",
+    "dark:border-warning/40 dark:bg-warning/20 dark:text-warning"
   ),
-  error: cn(
-    "border-destructive/40 bg-destructive/10 text-destructive",
-    "dark:bg-destructive/15"
-  ),
+  error: cn("border-danger/40 bg-danger/10 text-danger", "dark:bg-danger/15"),
 };
 
 /**

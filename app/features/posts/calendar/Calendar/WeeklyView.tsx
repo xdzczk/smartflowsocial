@@ -396,7 +396,7 @@ export function WeeklyView({
               {hourLabels.map((label, index) => (
                 <div
                   key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
-                  className="text-muted-foreground/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
+                  className="text-text-secondary/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
                   style={{ height: ROW_HEIGHT_PX - 1 }}
                 >
                   {label}

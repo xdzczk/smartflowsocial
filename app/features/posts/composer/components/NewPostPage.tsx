@@ -589,7 +589,7 @@ export default function NewPostPage() {
             variant="ghost"
             size="sm"
             onClick={() => setShortDraftPicker({ open: true, mode: "drafts" })}
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
             aria-label="Open drafts"
           >
             Drafts
@@ -601,7 +601,7 @@ export default function NewPostPage() {
             onClick={() =>
               setShortDraftPicker({ open: true, mode: "templates" })
             }
-            className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
             aria-label="Open templates"
           >
             Templates
@@ -612,12 +612,12 @@ export default function NewPostPage() {
     >
       <div>
         {isEditMode && editingMeta ? (
-          <div className="bg-muted/40 border-border mb-4 rounded-md border px-3 py-2 text-sm">
+          <div className="bg-surface-hover/60 border-border mb-4 rounded-md border px-3 py-2 text-sm">
             <p className="font-medium">{editingMeta.modeLabel}</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-text-secondary mt-1 text-xs">
               Changes update the existing item. A new post will not be created.
             </p>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-text-secondary mt-1">
               Account: {editingMeta.accountLabel}
               {editingMeta.scheduledForLabel
                 ? ` · Scheduled for: ${editingMeta.scheduledForLabel}`
@@ -630,14 +630,14 @@ export default function NewPostPage() {
                 : ""}
             </p>
             {editingMeta.parentActionId ? (
-              <p className="text-muted-foreground mt-1">
+              <p className="text-text-secondary mt-1">
                 Parent action: {editingMeta.parentActionId}
               </p>
             ) : null}
           </div>
         ) : null}
         {showHydrationHardError ? (
-          <div className="bg-destructive/10 border-destructive/30 text-destructive mb-4 rounded-md border px-3 py-2 text-sm">
+          <div className="bg-danger/10 border-danger/40 text-danger-text mb-4 rounded-md border px-3 py-2 text-sm">
             {hydrationError ??
               "This item is no longer editable. Open the parent or return to scheduled posts."}
             <div className="mt-3">

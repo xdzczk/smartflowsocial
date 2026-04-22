@@ -11,7 +11,7 @@ export function ErrorMessage({ error, success }: ErrorMessageProps) {
   if (!error || success) return null;
 
   return (
-    <div className="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded border p-3">
+    <div className="border-danger/30 bg-danger/10 text-danger mb-4 rounded-xs border p-3">
       {error}
     </div>
   );

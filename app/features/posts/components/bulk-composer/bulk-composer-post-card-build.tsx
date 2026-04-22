@@ -26,7 +26,7 @@ import type { BulkPost, QueueType } from "../BulkPostCard";
 import { followUpSummaryLine } from "./bulk-composer-post-card-utils";
 
 const REMOVE_MEDIA_BTN_CLASS =
-  "bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex size-6 items-center justify-center rounded-full text-xs";
+  "bg-danger text-danger-foreground absolute -top-1 -right-1 flex size-6 items-center justify-center rounded-full text-xs";
 
 function BulkComposerPostAdvancedBlock({
   index,
@@ -79,7 +79,7 @@ function BulkComposerPostAdvancedBlock({
         <div className="max-h-56 space-y-1 overflow-y-auto">
           <button
             type="button"
-            className="hover:bg-muted w-full rounded px-2 py-1.5 text-left text-sm"
+            className="hover:bg-surface-hover w-full rounded-xs px-2 py-1.5 text-left text-sm"
             onClick={() => onQueueTypeChange(index, "unassigned")}
           >
             Unassigned
@@ -96,7 +96,7 @@ function BulkComposerPostAdvancedBlock({
               <button
                 key={name}
                 type="button"
-                className={`w-full rounded px-2 py-1.5 text-left text-sm ${getDynamicQueueStyle(colorToken ?? null, post.queueType === name)}`}
+                className={`w-full rounded-xs px-2 py-1.5 text-left text-sm ${getDynamicQueueStyle(colorToken ?? null, post.queueType === name)}`}
                 style={{
                   backgroundColor: post.queueType === name ? accent : undefined,
                 }}
@@ -137,7 +137,7 @@ function BulkComposerPostAdvancedBlock({
                   )}
                 />
                 {scheduleOverlapWarning ? (
-                  <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
+                  <p className="text-warning dark:text-warning text-[11px] leading-snug">
                     {scheduleOverlapWarning}
                   </p>
                 ) : null}
@@ -149,7 +149,7 @@ function BulkComposerPostAdvancedBlock({
 
       <div className="border-border space-y-1.5 border-t pt-2">
         <ActionRailLabel className="normal-case">Follow-up</ActionRailLabel>
-        <p className="text-foreground text-xs leading-snug font-medium">
+        <p className="text-text text-xs leading-snug font-medium">
           {followUpSummaryLine(
             post,
             bulkRepostConditions,
@@ -317,7 +317,7 @@ export function BulkComposerPostCardBuildBody({
           {onRowFileSelect ? (
             <label
               className={cn(
-                "border-muted-foreground/30 text-muted-foreground flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
+                "border-muted-foreground/30 text-text-secondary flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
                 rowMediaUploadDisabled && "pointer-events-none opacity-50"
               )}
             >

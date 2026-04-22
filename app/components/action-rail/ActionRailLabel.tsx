@@ -14,7 +14,7 @@ export function ActionRailLabel({
   return (
     <p
       className={cn(
-        "text-muted-foreground text-[10px] font-medium tracking-wide uppercase",
+        "text-text-secondary text-[10px] font-medium tracking-wide uppercase",
         RAIL_HEADER_TO_BODY,
         className
       )}

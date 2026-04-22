@@ -28,8 +28,9 @@ export type EngagementComposerMode = "reply" | "quote";
 
 const POSTING_LABEL = "Posting...";
 
-const PUBLISH_TOGGLE_ACTIVE = "bg-primary text-primary-foreground shadow-sm";
-const PUBLISH_TOGGLE_IDLE = "bg-muted/60 text-muted-foreground hover:bg-muted";
+const PUBLISH_TOGGLE_ACTIVE = "bg-brand text-brand-on shadow-1";
+const PUBLISH_TOGGLE_IDLE =
+  "bg-surface-hover/60 text-text-secondary hover:bg-surface-hover";
 
 function useCancelOnEscape(onCancel: () => void) {
   React.useEffect(() => {
@@ -111,31 +112,31 @@ export function ReplyInputPanel({
   };
 
   return (
-    <div className="border-border bg-secondary/30 mt-2 rounded-lg border p-2">
+    <div className="border-border bg-surface-hover/60 mt-2 rounded-lg border p-2">
       <div className="relative">
         <textarea
           ref={textareaRef}
           value={replyContent}
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder="Write your reply... (type / for templates)"
-          className="text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
+          className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm focus-visible:ring-2"
           rows={3}
         />
         {showSlashMenu && filteredBySlash.length > 0 ? (
           <ul
-            className="bg-popover text-popover-foreground border-border absolute top-12 right-2 left-2 z-10 max-h-40 overflow-auto rounded-md border py-1 shadow-md"
+            className="bg-surface-overlay text-text border-border shadow-2 absolute top-12 right-2 left-2 z-10 max-h-40 overflow-auto rounded-md border py-1"
             role="listbox"
           >
             {filteredBySlash.map((t) => (
               <li key={t.id} role="option" aria-selected={false}>
                 <button
                   type="button"
-                  className="hover:bg-muted w-full px-3 py-1.5 text-left text-sm"
+                  className="hover:bg-surface-hover w-full px-3 py-1.5 text-left text-sm"
                   onClick={() => insertBody(t.body, true)}
                 >
                   <span className="font-medium">/{t.slug}</span>
                   {t.body.length > 40 ? (
-                    <span className="text-muted-foreground ml-1">
+                    <span className="text-text-secondary ml-1">
                       — {t.body.slice(0, 40)}…
                     </span>
                   ) : null}
@@ -151,7 +152,7 @@ export function ReplyInputPanel({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg px-2 py-1 text-xs font-medium"
+                className="text-text-secondary hover:bg-surface-hover hover:text-text rounded-lg px-2 py-1 text-xs font-medium"
               >
                 Insert template
               </button>
@@ -170,14 +171,14 @@ export function ReplyInputPanel({
         ) : null}
         <button
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium"
+          className="text-text-secondary hover:bg-surface-hover hover:text-text rounded-lg px-3 py-1 text-xs font-medium"
         >
           Cancel
         </button>
         <button
           onClick={onSubmit}
           disabled={isReplying || !replyContent.trim()}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
+          className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
         >
           {isReplying ? POSTING_LABEL : "Post Reply"}
         </button>
@@ -217,13 +218,13 @@ export function QuoteInputPanel({
         value={quoteContent}
         onChange={(e) => onContentChange(e.target.value)}
         placeholder="Add your thoughts on this reply..."
-        className="text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded border-0 bg-transparent p-2 text-sm focus:ring-2"
+        className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring w-full resize-none rounded-xs border-0 bg-transparent p-2 text-sm focus-visible:ring-2"
         rows={3}
       />
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg px-3 py-1 text-xs font-medium"
+          className="text-text-secondary hover:bg-surface-hover hover:text-text rounded-lg px-3 py-1 text-xs font-medium"
         >
           Cancel
         </button>
@@ -304,7 +305,7 @@ export function UnifiedEngagementComposer({
     <div
       ref={trayRef}
       data-testid="engagement-response-tray"
-      className="border-border/70 bg-muted/15 mt-1 border-t px-3 pt-2 pb-3"
+      className="border-border/70 bg-surface-hover/15 mt-1 border-t px-3 pt-2 pb-3"
       role="region"
       aria-label="Response tray"
     >
@@ -312,7 +313,7 @@ export function UnifiedEngagementComposer({
         <button
           type="button"
           onClick={() => onModeChange("reply")}
-          className={`rounded px-2.5 py-1 text-xs font-medium ${
+          className={`rounded-xs px-2.5 py-1 text-xs font-medium ${
             mode === "reply" ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
           }`}
         >
@@ -321,7 +322,7 @@ export function UnifiedEngagementComposer({
         <button
           type="button"
           onClick={() => onModeChange("quote")}
-          className={`rounded px-2.5 py-1 text-xs font-medium ${
+          className={`rounded-xs px-2.5 py-1 text-xs font-medium ${
             mode === "quote" ? PUBLISH_TOGGLE_ACTIVE : PUBLISH_TOGGLE_IDLE
           }`}
         >
@@ -349,7 +350,7 @@ export function UnifiedEngagementComposer({
         ))}
       </div>
 
-      <div className="border-border/80 bg-background/80 rounded-md border px-2 py-2">
+      <div className="border-border/80 bg-canvas/80 rounded-md border px-2 py-2">
         <textarea
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
@@ -362,7 +363,7 @@ export function UnifiedEngagementComposer({
             }
           }}
           placeholder={placeholder}
-          className="text-foreground placeholder:text-muted-foreground focus-visible:ring-ring min-h-[88px] w-full resize-y rounded-sm border-0 bg-transparent px-1.5 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
+          className="text-text placeholder:text-text-tertiary focus-visible:ring-focus-ring min-h-[88px] w-full resize-y rounded-sm border-0 bg-transparent px-1.5 py-1.5 text-sm focus-visible:ring-2 focus-visible:outline-none"
           rows={4}
         />
       </div>
@@ -374,7 +375,7 @@ export function UnifiedEngagementComposer({
             value={scheduleLocal}
             min={getNowForDateTimeLocal(tz)}
             onChange={(e) => setScheduleLocal(e.target.value)}
-            className="bg-muted/40 border-border h-9 max-w-xs text-sm"
+            className="bg-surface-hover/40 border-border h-9 max-w-xs text-sm"
             aria-label="Schedule for"
           />
         </div>
@@ -393,7 +394,7 @@ export function UnifiedEngagementComposer({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-muted-foreground"
+          className="text-text-secondary"
           onClick={() => onSaveDraft()}
           disabled={!canSubmit}
         >
@@ -406,7 +407,7 @@ export function UnifiedEngagementComposer({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground gap-1"
+                className="text-text-secondary gap-1"
               >
                 <FileText className="h-3.5 w-3.5" aria-hidden />
                 Templates
@@ -428,13 +429,13 @@ export function UnifiedEngagementComposer({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-muted-foreground ml-auto"
+          className="text-text-secondary ml-auto"
           onClick={onCancel}
         >
           Cancel
         </Button>
       </div>
-      <p className="text-muted-foreground/80 mt-1.5 text-[10px] leading-tight">
+      <p className="text-text-secondary/80 mt-1.5 text-[10px] leading-tight">
         {publishMode === "now" ? "⌘/Ctrl+Enter to post now" : null}
       </p>
     </div>
@@ -485,7 +486,7 @@ export function RepostEngagementTray({
     <div
       ref={trayRef}
       data-testid="engagement-repost-tray"
-      className="border-border/70 bg-muted/10 mt-1 border-t px-3 pt-2 pb-3"
+      className="border-border/70 bg-surface-hover/10 mt-1 border-t px-3 pt-2 pb-3"
       role="region"
       aria-label="Repost tray"
     >
@@ -516,7 +517,7 @@ export function RepostEngagementTray({
             value={scheduleLocal}
             min={getNowForDateTimeLocal(tz)}
             onChange={(e) => setScheduleLocal(e.target.value)}
-            className="bg-muted/40 border-border h-9 max-w-xs text-sm"
+            className="bg-surface-hover/40 border-border h-9 max-w-xs text-sm"
             aria-label="Schedule repost for"
           />
         </div>
@@ -535,7 +536,7 @@ export function RepostEngagementTray({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-muted-foreground ml-auto"
+          className="text-text-secondary ml-auto"
           onClick={onCancel}
         >
           Cancel

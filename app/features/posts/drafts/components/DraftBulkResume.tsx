@@ -53,27 +53,25 @@ export default function DraftBulkResume({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 dark:from-gray-900 dark:to-gray-800">
+    <div className="bg-canvas min-h-screen p-6">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-foreground text-3xl font-bold">
-            Resume Draft Posts
-          </h1>
-          <p className="text-foreground dark:text-foreground mt-2">
+          <h1 className="text-text text-3xl font-bold">Resume Draft Posts</h1>
+          <p className="text-text dark:text-text mt-2">
             Configure and sign {posts.length} draft posts before scheduling
           </p>
         </div>
         {isSubmitting ? (
-          <div className="bg-muted/50 dark:bg-muted/20 mx-auto mb-6 max-w-3xl rounded-lg border p-4 text-center">
-            <p className="text-foreground dark:text-foreground mb-3 flex items-center justify-center gap-2">
+          <div className="bg-surface-hover/50 dark:bg-surface-hover/20 mx-auto mb-6 max-w-3xl rounded-lg border p-4 text-center">
+            <p className="text-text dark:text-text mb-3 flex items-center justify-center gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
               Signing draft posts...
             </p>
             <Button
               variant="outline"
               size="sm"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-text-secondary hover:text-text"
               onClick={() => {
                 handlers.cancelSigningState();
                 cancelSignerInFlight();
@@ -84,7 +82,7 @@ export default function DraftBulkResume({
           </div>
         ) : null}
         {signingError ? (
-          <div className="border-destructive bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
+          <div className="border-danger bg-danger/10 text-danger dark:border-danger/60 dark:bg-danger/10 dark:text-danger mx-auto mb-4 max-w-3xl rounded-md border p-3 text-sm">
             {signingError}
           </div>
         ) : null}
@@ -105,7 +103,7 @@ export default function DraftBulkResume({
                       )
                     }
                     disabled={isSubmitting}
-                    className="dark:bg-card bg-muted text-muted-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted mx-2 rounded-md px-4 py-2 text-sm font-medium shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                    className="dark:bg-surface bg-surface-hover text-text-secondary hover:bg-surface-hover dark:text-text dark:hover:bg-surface-hover shadow-2 mx-2 rounded-md px-4 py-2 text-sm font-medium transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                   >
                     {formatIntervalLabel(
                       typeof interval === "string"
@@ -122,7 +120,7 @@ export default function DraftBulkResume({
         {/* Bulk Queue Selection */}
         {posts.length > 0 ? (
           <div className="mb-6">
-            <h3 className="text-muted-foreground dark:text-foreground mb-3 text-sm font-medium">
+            <h3 className="text-text-secondary dark:text-text mb-3 text-sm font-medium">
               Bulk Queue Selection
             </h3>
             <div className="flex flex-wrap justify-center gap-2">
@@ -171,7 +169,7 @@ export default function DraftBulkResume({
                   );
                 })}
             </div>
-            <p className="text-muted-foreground dark:text-foreground mt-2 text-center text-xs">
+            <p className="text-text-secondary dark:text-text mt-2 text-center text-xs">
               Click a queue to assign; click again to leave all unassigned
             </p>
           </div>
@@ -197,17 +195,17 @@ export default function DraftBulkResume({
                       <img
                         src={getImageUrls(post.fileUrl)[0]}
                         alt="Preview"
-                        className="h-24 w-24 rounded object-cover"
+                        className="h-24 w-24 rounded-xs object-cover"
                       />
                     ) : (
-                      <div className="dark:bg-muted dark:text-muted-foreground bg-muted text-muted-foreground flex h-24 w-24 items-center justify-center rounded text-xs font-medium">
+                      <div className="dark:bg-surface-hover dark:text-text-secondary bg-surface-hover text-text-secondary flex h-24 w-24 items-center justify-center rounded-xs text-xs font-medium">
                         TEXT
                       </div>
                     )}
                   </td>
                   <td className="p-4">
                     <div className="max-h-20 overflow-y-auto">
-                      <p className="text-muted-foreground dark:text-foreground text-sm">
+                      <p className="text-text-secondary dark:text-text text-sm">
                         {post.content?.substring(0, 150) ?? ""}
                         {(post.content?.length ?? 0) > 150 ? "..." : null}
                       </p>
@@ -277,7 +275,7 @@ export default function DraftBulkResume({
                         }
                         disabled={isSubmitting}
                       />
-                      <span className="text-muted-foreground dark:text-foreground">
+                      <span className="text-text-secondary dark:text-text">
                         Hide tags
                       </span>
                     </label>
@@ -291,7 +289,7 @@ export default function DraftBulkResume({
                       }
                       min={getNowForDateTimeLocal(user?.timezone ?? "UTC")}
                       disabled={isSubmitting}
-                      className="dark:bg-card text-foreground dark:text-foreground rounded-lg border p-2"
+                      className="dark:bg-surface text-text dark:text-text rounded-lg border p-2"
                     />
                   </td>
                 </tr>
@@ -305,14 +303,14 @@ export default function DraftBulkResume({
           <button
             onClick={onCancel}
             disabled={isSubmitting}
-            className="bg-card border-border text-muted-foreground hover:bg-muted rounded-lg border px-6 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md"
+            className="bg-surface border-border text-text-secondary hover:bg-surface-hover shadow-1 hover:shadow-2 rounded-lg border px-6 py-3 text-sm font-medium transition-all"
           >
             Cancel
           </button>
           <button
             onClick={() => void handlers.handleSignAndResume()}
             disabled={isSubmitting}
-            className="rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-green-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
+            className="bg-success text-success-foreground hover:bg-success/90 shadow-2 rounded-lg px-8 py-3 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">

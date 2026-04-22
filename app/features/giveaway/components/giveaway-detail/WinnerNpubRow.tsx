@@ -46,7 +46,7 @@ export function WinnerNpubRow({
         />
       ) : (
         <div
-          className="bg-muted text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+          className="bg-surface-hover text-text-secondary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
           aria-hidden
         >
           {(displayName?.trim() ?? "").slice(0, 1).toUpperCase() || "?"}
@@ -54,14 +54,14 @@ export function WinnerNpubRow({
       )}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <span
-          className="text-foreground truncate text-sm font-medium"
+          className="text-text truncate text-sm font-medium"
           title={showNpubSecondary ? npub : undefined}
         >
           {primaryLabel}
         </span>
         {showNpubSecondary ? (
           <span
-            className="text-muted-foreground truncate font-mono text-xs"
+            className="text-text-secondary truncate font-mono text-xs"
             title={npub}
           >
             {npub.length > 24 ? `${npub.slice(0, 12)}…${npub.slice(-8)}` : npub}
@@ -72,7 +72,7 @@ export function WinnerNpubRow({
           onClick={() => {
             void handleCopy();
           }}
-          className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
+          className="text-text-secondary hover:text-text shrink-0 text-xs"
           aria-label="Copy npub"
         >
           {copied ? "Copied" : "Copy"}
@@ -81,7 +81,7 @@ export function WinnerNpubRow({
           href={profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary shrink-0 text-xs"
+          className="text-brand shrink-0 text-xs"
         >
           Profile
         </a>

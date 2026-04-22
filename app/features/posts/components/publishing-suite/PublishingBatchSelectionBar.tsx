@@ -36,14 +36,14 @@ export const PublishingBatchSelectionBar = forwardRef<
       aria-label="Bulk selection"
     >
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-foreground text-sm font-medium tabular-nums">
+        <span className="text-text text-sm font-medium tabular-nums">
           {summary}
         </span>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="text-muted-foreground hover:text-foreground h-8 px-2"
+          className="text-text-secondary hover:text-text h-8 px-2"
           onClick={onClearSelection}
         >
           Clear

@@ -10,16 +10,16 @@ export interface ChoiceTileOption<T extends string = string> {
 }
 
 const tileBase = cn(
-  "border-border bg-card cursor-pointer rounded-lg border transition-colors",
-  "hover:border-primary/40",
-  "focus-within:ring-ring focus-within:ring-1",
+  "border-border bg-surface cursor-pointer rounded-lg border transition-colors",
+  "hover:border-brand/40",
+  "focus-within:ring-focus-ring focus-within:ring-1",
   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
 );
 
-const tileSelected = "border-primary bg-primary/5";
+const tileSelected = "border-brand bg-brand/5";
 
 /**
- * Single-select choice tiles (radio). Selected state uses border-primary, no glow ring.
+ * Single-select choice tiles (radio). Selected state uses border-brand, no glow ring.
  */
 export function ChoiceTileGroup<T extends string>({
   name,
@@ -64,7 +64,7 @@ export function ChoiceTileGroup<T extends string>({
           />
           <p
             className={cn(
-              "text-foreground font-medium",
+              "text-text font-medium",
               compact && "text-sm leading-snug"
             )}
           >
@@ -73,7 +73,7 @@ export function ChoiceTileGroup<T extends string>({
           {opt.description ? (
             <p
               className={cn(
-                "text-muted-foreground leading-snug",
+                "text-text-secondary leading-snug",
                 compact ? "mt-0.5 text-xs" : "mt-1 text-sm"
               )}
             >

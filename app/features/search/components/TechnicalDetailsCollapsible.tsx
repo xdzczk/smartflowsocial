@@ -50,14 +50,14 @@ export function TechnicalDetailsCollapsible({
   return (
     <details
       className={cn(
-        "border-border bg-card group rounded-xl border shadow-sm",
+        "border-border bg-surface group shadow-1 rounded-xl border",
         className
       )}
     >
-      <summary className="text-muted-foreground hover:bg-muted/40 cursor-pointer list-none px-4 py-3 text-sm font-medium transition-colors marker:hidden [&::-webkit-details-marker]:hidden">
+      <summary className="text-text-secondary hover:bg-surface-hover/40 cursor-pointer list-none px-4 py-3 text-sm font-medium transition-colors marker:hidden [&::-webkit-details-marker]:hidden">
         <span className="flex items-center justify-between gap-2">
           Technical details
-          <span className="text-muted-foreground/80 text-xs font-normal">
+          <span className="text-text-secondary/80 text-xs font-normal">
             {copiedKey ? "Copied" : "Show"}
           </span>
         </span>
@@ -65,10 +65,10 @@ export function TechnicalDetailsCollapsible({
       <div className="border-border space-y-3 border-t px-4 py-3">
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
+            <p className="text-text-secondary mb-1 text-[10px] font-semibold uppercase">
               Event ID (hex)
             </p>
-            <code className="bg-muted block rounded-md px-2 py-1.5 font-mono text-xs break-all">
+            <code className="bg-surface-hover block rounded-md px-2 py-1.5 font-mono text-xs break-all">
               {eventId}
             </code>
           </div>
@@ -89,10 +89,10 @@ export function TechnicalDetailsCollapsible({
         {noteOrNevent ? (
           <div className="flex flex-wrap items-start gap-2">
             <div className="min-w-0 flex-1">
-              <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
+              <p className="text-text-secondary mb-1 text-[10px] font-semibold uppercase">
                 Note / nevent
               </p>
-              <code className="bg-muted block rounded-md px-2 py-1.5 font-mono text-xs break-all">
+              <code className="bg-surface-hover block rounded-md px-2 py-1.5 font-mono text-xs break-all">
                 {noteOrNevent}
               </code>
             </div>
@@ -113,10 +113,10 @@ export function TechnicalDetailsCollapsible({
 
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
+            <p className="text-text-secondary mb-1 text-[10px] font-semibold uppercase">
               Author pubkey (hex)
             </p>
-            <code className="bg-muted block rounded-md px-2 py-1.5 font-mono text-xs break-all">
+            <code className="bg-surface-hover block rounded-md px-2 py-1.5 font-mono text-xs break-all">
               {pubkey}
             </code>
           </div>
@@ -136,13 +136,13 @@ export function TechnicalDetailsCollapsible({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
-            <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold uppercase">
+            <p className="text-text-secondary mb-0.5 text-[10px] font-semibold uppercase">
               Kind
             </p>
             <p className="font-mono text-sm">{kind}</p>
           </div>
           <div>
-            <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold uppercase">
+            <p className="text-text-secondary mb-0.5 text-[10px] font-semibold uppercase">
               created_at
             </p>
             <p className="font-mono text-sm">{createdAtUnix}</p>
@@ -150,10 +150,10 @@ export function TechnicalDetailsCollapsible({
         </div>
 
         <div>
-          <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase">
+          <p className="text-text-secondary mb-1 text-[10px] font-semibold uppercase">
             Tags (preview)
           </p>
-          <code className="bg-muted block max-h-32 overflow-auto rounded-md px-2 py-1.5 font-mono text-[11px] leading-relaxed break-all">
+          <code className="bg-surface-hover block max-h-32 overflow-auto rounded-md px-2 py-1.5 font-mono text-[11px] leading-relaxed break-all">
             {tagSummary}
           </code>
         </div>
