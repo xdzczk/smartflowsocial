@@ -41,15 +41,14 @@ export function DaysHeader({
       style={{ zIndex: CALENDAR_DAYS_HEADER_Z }}
     >
       {showTimeSpacer ? (
+        // Sticky in BOTH axes so the top-left corner stays pinned while the
+        // user pans horizontally (mobile) or scrolls vertically (any device).
+        // `sticky top-0` is inherited from the parent row; `sticky left-0`
+        // keeps this cell glued to the left edge. Higher z-index than the
+        // day-label cells so they slide under it cleanly.
         <div
-          className={`border-border/40 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] ${
-            isMobile ? "" : "sticky left-0"
-          }`}
-          style={
-            isMobile
-              ? undefined
-              : { zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }
-          }
+          className="border-border/40 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
+          style={{ zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }}
         />
       ) : null}
       {weekDays.map((day) => {

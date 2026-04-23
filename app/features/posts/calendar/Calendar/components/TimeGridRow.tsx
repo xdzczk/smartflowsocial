@@ -103,10 +103,8 @@ export function TimeGridRow({
         style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
         <div
-          className={`text-text-secondary/85 border-border/30 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none ${
-            isMobile ? "" : "sticky left-0"
-          }`}
-          style={isMobile ? undefined : { zIndex: CALENDAR_TIME_RAIL_STICKY_Z }}
+          className="text-text-secondary/85 border-border/30 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none"
+          style={{ zIndex: CALENDAR_TIME_RAIL_STICKY_Z }}
         >
           {hourLabel}
         </div>

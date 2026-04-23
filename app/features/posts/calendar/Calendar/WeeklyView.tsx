@@ -468,12 +468,11 @@ export function WeeklyView({
         - Do NOT add `scroll-snap-type` here. It interacts badly with
           sticky descendants on Android Chrome and iOS Safari and silently
           locks horizontal touch panning.
-        - On mobile, `DaysHeader` is rendered non-sticky (`stickyTop={false}`).
-          Position-sticky on a descendant of a two-axis `overflow: auto`
-          container is a known cause of lost horizontal touch panning on
-          Android Chrome (bug https://crbug.com/1156075 and related) and
-          on older iOS WebKit builds. We give up the pinned weekday row on
-          phones to guarantee horizontal scroll always works.
+        - `DaysHeader` (top) and `TimeGridRow` time rail (left) are BOTH
+          `position: sticky` on every device. Older engines (pre ~2022)
+          had bugs where sticky descendants of a two-axis `overflow: auto`
+          container could break horizontal touch panning, but current iOS
+          Safari and Android Chrome handle this correctly.
         - `touch-action: pan-x pan-y` is set explicitly so the browser
           promises both pan directions to this element even if an ancestor
           has a more restrictive computed value.
@@ -504,7 +503,7 @@ export function WeeklyView({
             user={user}
             dateLocale={dateLocale}
             isMobile={isMobile}
-            stickyTop={!isMobile}
+            stickyTop={true}
           />
           <TimeGrid {...commonTimeGridProps} isMobile={isMobile} />
         </div>
