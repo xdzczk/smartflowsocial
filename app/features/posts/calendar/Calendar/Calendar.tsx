@@ -715,20 +715,27 @@ export function Calendar({
             establishes a new block-formatting context that changes how
             flex widths are resolved down the chain, which broke the
             horizontal scroll sizing on iOS. */}
-      <div className="flex min-h-0 flex-1 overflow-visible">
+      {/* `min-w-0` below is critical: without it, a flex item's default
+          `min-width: auto` pins the item to its min-content width, and the
+          Week view's inner grid (explicitly sized to ~233vw on mobile to
+          force horizontal overflow) would push these wrappers to 918px on
+          a 430px viewport. That defeats the inner scroll container — its
+          `clientWidth` matches its `scrollWidth`, so there is nothing to
+          pan. See crbug.com/1110989 and related. */}
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-visible">
         <CalendarErrorBoundary>
           <div
             data-testid={`calendar-view-${view}`}
-            className={`flex min-h-0 flex-1 transition-opacity duration-200 ${
-              view === "day" ? "lg:min-w-0 lg:flex-row" : ""
+            className={`flex min-h-0 min-w-0 flex-1 transition-opacity duration-200 ${
+              view === "day" ? "lg:flex-row" : ""
             } flex-col`}
             style={{
               transitionTimingFunction: "var(--calendar-transition-ease)",
             }}
           >
             <div
-              className={`flex min-h-0 flex-1 flex-col ${
-                view === "day" ? "lg:min-w-0" : "min-w-0"
+              className={`flex min-h-0 min-w-0 flex-1 flex-col ${
+                view === "day" ? "lg:min-w-0" : ""
               }`}
             >
               {view === "day" ? (
