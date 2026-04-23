@@ -291,7 +291,7 @@ export default function UserMenu() {
               src={currentAvatar}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 h-full w-full scale-[1.5] object-cover object-center sm:hidden"
+              className="absolute inset-0 h-full w-full object-cover object-center sm:hidden"
             />
           ) : (
             <span
