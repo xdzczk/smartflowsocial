@@ -699,7 +699,15 @@ export function Calendar({
       />
 
       {/* Calendar content: Day view on lg shows main + right sidebar */}
-      <div className="flex min-h-0 flex-1 overflow-x-visible overflow-y-auto">
+      {/*
+        NOTE: `overflow-x-hidden` is intentional. Using `overflow-x-visible`
+        here triggers the CSS spec quirk where `overflow-x: visible` is
+        computed to `auto` when `overflow-y` is not `visible`, turning this
+        wrapper into a silent two-axis scroll container. On Android Chrome,
+        that intercepts horizontal touch pans before they reach the Week
+        view's own horizontal scroll container (see WeeklyView.tsx).
+      */}
+      <div className="flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
         <CalendarErrorBoundary>
           <div
             data-testid={`calendar-view-${view}`}

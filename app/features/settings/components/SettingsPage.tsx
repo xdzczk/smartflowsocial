@@ -76,7 +76,6 @@ function renderSettingsPanel(
   tab: SettingsTabId,
   ctx: {
     isChildBool: boolean;
-    hasAccountsAccessBool: boolean;
     timezoneValue: string | null;
     timeFormatRaw: unknown;
     dateFormatRaw: unknown;
@@ -136,7 +135,6 @@ function renderSettingsPanel(
 ) {
   const {
     isChildBool,
-    hasAccountsAccessBool,
     timezoneValue,
     timeFormatRaw,
     dateFormatRaw,
@@ -393,7 +391,6 @@ function renderSettingsPanel(
         />
       );
     case "accounts":
-      if (!hasAccountsAccessBool) return null;
       return (
         <div className="flex min-w-0 flex-col gap-6">
           {accounts ? (
@@ -447,7 +444,6 @@ export default function SettingsPage() {
     availablePlans?: unknown;
     paymentHistory?: unknown;
     isChild?: unknown;
-    hasAccountsAccess?: unknown;
     accounts?: unknown;
     mutedList?: unknown;
     replyTemplates?: unknown;
@@ -507,7 +503,6 @@ export default function SettingsPage() {
     availablePlans: availablePlansRaw,
     paymentHistory: paymentHistoryRaw,
     isChild,
-    hasAccountsAccess,
     accounts: accountsRaw,
     mutedList: mutedListRaw,
     replyTemplates: replyTemplatesRaw,
@@ -570,15 +565,12 @@ export default function SettingsPage() {
     (billingContextRaw as BillingContext | null | undefined) ?? null;
 
   const isChildBool = asBoolean(isChild);
-  const hasAccountsAccessBool = asBoolean(hasAccountsAccess);
   const activeTab = resolveSettingsTab({
     tabParam: searchParams.get("tab"),
     isChild: isChildBool,
-    hasAccountsAccess: hasAccountsAccessBool,
   });
   const settingsSections = getVisibleSettingsSections({
     isChild: isChildBool,
-    hasAccountsAccess: hasAccountsAccessBool,
   });
 
   const isLoadingNextTab =
@@ -594,7 +586,6 @@ export default function SettingsPage() {
     ? resolveSettingsTab({
         tabParam: nextTabParam,
         isChild: isChildBool,
-        hasAccountsAccess: hasAccountsAccessBool,
       })
     : activeTab;
 
@@ -687,7 +678,6 @@ export default function SettingsPage() {
       ) : (
         renderSettingsPanel(activeTab, {
           isChildBool,
-          hasAccountsAccessBool,
           timezoneValue,
           timeFormatRaw,
           dateFormatRaw,

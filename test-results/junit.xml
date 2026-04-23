@@ -1,57 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="49" failures="0" errors="0" time="0.044260208">
-    <testsuite name="tests/integration/calendar-action.test.ts" timestamp="2026-04-23T05:28:32.339Z" hostname="Ivans-MacBook-Pro.local" tests="18" failures="0" errors="0" skipped="0" time="0.007456209">
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarReschedule for &apos;reschedule&apos; action" time="0.002170417">
+<testsuites name="vitest tests" tests="49" failures="0" errors="0" time="0.046242208">
+    <testsuite name="tests/integration/calendar-action.test.ts" timestamp="2026-04-23T06:27:25.059Z" hostname="Ivans-MacBook-Pro.local" tests="18" failures="0" errors="0" skipped="0" time="0.008175584">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarReschedule for &apos;reschedule&apos; action" time="0.002696625">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarRescheduleLongform for &apos;rescheduleLongform&apos; action" time="0.0003655">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to handleCalendarRescheduleLongform for &apos;rescheduleLongform&apos; action" time="0.0004">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to legacy delete action" time="0.000699334">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to legacy delete action" time="0.000728958">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to legacy delete longform action" time="0.000208083">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should route to legacy delete longform action" time="0.000219584">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should return error for invalid action" time="0.000126625">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarAction &gt; should return error for invalid action" time="0.000141167">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule a post successfully" time="0.000324541">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule a post successfully" time="0.000360416">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule with signed events" time="0.000991791">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should reschedule with signed events" time="0.000979208">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle overrideQueue flag" time="0.000189875">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle overrideQueue flag" time="0.000195083">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing postId" time="0.000522708">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing postId" time="0.00053475">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing newTime" time="0.000214458">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error for missing newTime" time="0.000198125">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error if post not found" time="0.000131584">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should return error if post not found" time="0.000120375">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle invalid JSON in signed events gracefully" time="0.000134958">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarReschedule &gt; should handle invalid JSON in signed events gracefully" time="0.0001295">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule a longform post successfully" time="0.000162042">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule a longform post successfully" time="0.00017475">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule with signed events" time="0.000208958">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should reschedule with signed events" time="0.000214958">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing postId" time="0.000145875">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing postId" time="0.000163875">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing newTime" time="0.00011725">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error for missing newTime" time="0.000123916">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error if longform post not found" time="0.000065417">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should return error if longform post not found" time="0.000066875">
         </testcase>
-        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should handle invalid JSON in signed events gracefully" time="0.000083333">
+        <testcase classname="tests/integration/calendar-action.test.ts" name="Calendar Action Handler &gt; handleCalendarRescheduleLongform &gt; should handle invalid JSON in signed events gracefully" time="0.00008275">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/calendar-loader.test.ts" timestamp="2026-04-23T05:28:32.340Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.011424166">
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should load calendar data for authenticated user" time="0.003933667">
+    <testsuite name="tests/integration/calendar-loader.test.ts" timestamp="2026-04-23T06:27:25.061Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.0123075">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should load calendar data for authenticated user" time="0.003861667">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should handle queue type parameter" time="0.001185542">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should handle queue type parameter" time="0.001216125">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter posts by queue type when specified" time="0.000366584">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter posts by queue type when specified" time="0.000378375">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should return all posts when queueType is &apos;all&apos;" time="0.000374833">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should return all posts when queueType is &apos;all&apos;" time="0.000387334">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should include schedule intervals from user" time="0.000322583">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should include schedule intervals from user" time="0.000326875">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter queue types to only enabled ones" time="0.000198375">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Calendar Loader &gt; should filter queue types to only enabled ones" time="0.000207875">
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.003912333">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.004819416">
             <system-err>
 
 ❌ Error: {
@@ -66,7 +66,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.000544417">
+        <testcase classname="tests/integration/calendar-loader.test.ts" name="Calendar Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.000537875">
             <system-err>
 
 ❌ Error: {
@@ -82,58 +82,58 @@
             </system-err>
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-04-23T05:28:32.341Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001581">
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000489041">
+    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-04-23T06:27:25.061Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001558916">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000506542">
         </testcase>
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000559625">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" timestamp="2026-04-23T05:28:32.341Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.004533042">
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns null for non-string" time="0.000529542">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; parses JSON array and returns first element" time="0.000102041">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns string as-is when not JSON array" time="0.00006175">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns string on parse error" time="0.000058">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns null when post has no fileUrl" time="0.000067292">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns parsed first URL from fileUrl[0]" time="0.000049625">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns fileUrl[0] when it is a plain string" time="0.00004075">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; formatDateTime &gt; returns formatted string with weekday and time" time="0.00083125">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; returns false and sets error when dateTime is null" time="0.0003165">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; sets &apos;Cannot schedule posts in the past&apos; when date is in the past" time="0.000597791">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; returns true and clears error when date is in the future" time="0.000127917">
-        </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; formatDateTimeForInput &gt; returns datetime-local format string" time="0.001071584">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000554792">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" timestamp="2026-04-23T05:28:32.342Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.002149458">
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when isLongform is true" time="0.000582">
+    <testsuite name="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" timestamp="2026-04-23T06:27:25.061Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.005250958">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns null for non-string" time="0.000604875">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when post has no signedEvent" time="0.000093834">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; parses JSON array and returns first element" time="0.000113333">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when signedEvent is not an object" time="0.000059833">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns string as-is when not JSON array" time="0.000073583">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when signedEvent lacks id or pubkey" time="0.000082292">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; parseFileUrl &gt; returns string on parse error" time="0.000077792">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns true when not longform and signedEvent has id and pubkey" time="0.000074708">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns null when post has no fileUrl" time="0.000088833">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; submitRepostSchedule &gt; signs repost event and submits all condition fields" time="0.000496583">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns parsed first URL from fileUrl[0]" time="0.000052333">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; submitQuoteSchedule &gt; signs quote event and includes caption when provided" time="0.000141625">
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; getFirstMediaFromFileUrl &gt; returns fileUrl[0] when it is a plain string" time="0.000044042">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; formatDateTime &gt; returns formatted string with weekday and time" time="0.000957834">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; returns false and sets error when dateTime is null" time="0.000412542">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; sets &apos;Cannot schedule posts in the past&apos; when date is in the past" time="0.000754208">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; validateDateTime &gt; returns true and clears error when date is in the future" time="0.000162083">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-modal.utils.test.ts" name="reschedule-modal.utils &gt; formatDateTimeForInput &gt; returns datetime-local format string" time="0.001232375">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" timestamp="2026-04-23T05:28:32.342Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.017116333">
-        <testcase classname="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" name="SlotCellContent mobile open behavior &gt; opens details on single post tap in mobile week slot" time="0.014307583">
+    <testsuite name="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" timestamp="2026-04-23T06:27:25.062Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.002142833">
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when isLongform is true" time="0.000547958">
         </testcase>
-        <testcase classname="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" name="SlotCellContent mobile open behavior &gt; opens details on multi-post tap in mobile week slot" time="0.002263041">
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when post has no signedEvent" time="0.000123833">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when signedEvent is not an object" time="0.000072375">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns false when signedEvent lacks id or pubkey" time="0.000093875">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; canScheduleRepostQuoteForPost &gt; returns true when not longform and signedEvent has id and pubkey" time="0.000067625">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; submitRepostSchedule &gt; signs repost event and submits all condition fields" time="0.00049975">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/reschedule-repost-quote.utils.test.ts" name="reschedule-repost-quote.utils &gt; submitQuoteSchedule &gt; signs quote event and includes caption when provided" time="0.000138458">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" timestamp="2026-04-23T06:27:25.062Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.016806417">
+        <testcase classname="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" name="SlotCellContent mobile open behavior &gt; opens details on single post tap in mobile week slot" time="0.01399925">
+        </testcase>
+        <testcase classname="tests/unit/posts/calendar/slot-cell-content.mobile-open.test.tsx" name="SlotCellContent mobile open behavior &gt; opens details on multi-post tap in mobile week slot" time="0.002296125">
         </testcase>
     </testsuite>
 </testsuites>
