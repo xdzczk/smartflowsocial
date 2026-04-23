@@ -81,6 +81,11 @@ export function WeeklyView({
   );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
+  const [scrollDebugMetrics, setScrollDebugMetrics] = useState<{
+    scrollWidth: number;
+    clientWidth: number;
+    scrollLeft: number;
+  } | null>(null);
 
   const getDaysHeaderHeight = (container: HTMLDivElement): number => {
     const header = container.querySelector<HTMLElement>(
@@ -204,6 +209,42 @@ export function WeeklyView({
     setDragOverSlot(null);
   };
 
+  // Diagnostic overlay: measure the scroll container so we can verify on-
+  // device whether the Week view is actually horizontally overflowing. If
+  // `scrollWidth > clientWidth` but the user can't pan, the layout is fine
+  // and the problem is a touch-gesture or ancestor issue; if they're equal,
+  // the layout itself is broken and no amount of touch-action tweaking helps.
+  //
+  // Enabled in local dev automatically, or anywhere (including staging) by
+  // appending `?debugWeekScroll=1` to the URL. Kept off by default in
+  // production so users never see it.
+  useEffect(() => {
+    const debugEnabled =
+      process.env.NODE_ENV === "development" ||
+      (typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).has("debugWeekScroll"));
+    if (!debugEnabled) return;
+    const el = gridScrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      setScrollDebugMetrics({
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+        scrollLeft: el.scrollLeft,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    el.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
     const el = gridScrollRef.current;
@@ -319,8 +360,28 @@ export function WeeklyView({
     ? MOBILE_WEEK_GRID_MIN_WIDTH
     : WEEK_VIEW_MIN_WIDTH;
 
+  const overflowsHorizontally = scrollDebugMetrics
+    ? scrollDebugMetrics.scrollWidth > scrollDebugMetrics.clientWidth
+    : false;
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {scrollDebugMetrics ? (
+        <div
+          className="pointer-events-none absolute top-1 right-1 z-[60] rounded-md border border-white/30 bg-black/70 px-2 py-1 font-mono text-[10px] leading-tight text-white"
+          data-testid="weekly-view-scroll-debug"
+        >
+          <div>
+            sw:{scrollDebugMetrics.scrollWidth} / cw:
+            {scrollDebugMetrics.clientWidth}
+          </div>
+          <div>
+            sl:{scrollDebugMetrics.scrollLeft} · overflow:
+            {overflowsHorizontally ? "YES" : "NO"} · mobile:
+            {isMobile ? "Y" : "N"}
+          </div>
+        </div>
+      ) : null}
       {/*
         Scroll container notes:
         - This element is intentionally a plain block (NOT flex). Making it
