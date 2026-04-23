@@ -280,9 +280,9 @@ export default function UserMenu() {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 w-9 rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:px-2 sm:py-1.5"
+          className="h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
         >
-          <Avatar className="h-7 w-7 sm:h-6 sm:w-6">
+          <Avatar className="h-9 w-9 flex-none rounded-none sm:h-6 sm:w-6 sm:rounded-full">
             {currentAvatar ? (
               <AvatarImage
                 src={currentAvatar}

@@ -447,7 +447,7 @@ function PageHeaderBar({
       id="page-header"
       className={`bg-canvas border-border h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
     >
-      <div className="max-w-10xl safe-x mx-auto flex w-full min-w-0 items-center justify-between px-3 sm:px-4 lg:px-8">
+      <div className="max-w-10xl safe-x-4 mx-auto flex w-full min-w-0 items-center justify-between sm:px-5 lg:px-8">
         <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button

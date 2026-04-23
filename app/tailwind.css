@@ -1419,6 +1419,9 @@ body.has-btcpay-confirmation-bar {
   .safe-pb-2 { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
   .safe-pb-3 { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
   .safe-pb-4 { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .safe-x-3 { padding-left: max(0.75rem, env(safe-area-inset-left)); padding-right: max(0.75rem, env(safe-area-inset-right)); }
+  .safe-x-4 { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+  .safe-x-5 { padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
 
   /* Headers / body that should push *content* below the inset but still have
      a coloured surface extending to the true top of the viewport. */

@@ -93,7 +93,7 @@ export default function Footer() {
   return (
     <footer
       id="page-footer"
-      className="border-border bg-surface safe-pb-2 safe-x sticky bottom-0 z-10 flex flex-none items-center border-t"
+      className="border-border bg-surface safe-pb-2 safe-x-4 sticky bottom-0 z-10 flex flex-none items-center border-t"
     >
       <div className="max-w-10xl mx-auto flex w-full flex-col gap-2 px-3 pt-2 text-center text-xs sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:pt-2.5 sm:text-left sm:text-sm md:px-6 lg:px-8">
         <div className="text-text-secondary shrink-0">

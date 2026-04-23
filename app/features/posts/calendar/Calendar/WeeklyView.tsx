@@ -322,29 +322,44 @@ export function WeeklyView({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {/*
-        NOTE: Do NOT add `scroll-snap-type` here. The DaysHeader row is
-        `position: sticky; top: 0` inside this scroll container, which on
-        Android Chrome and iOS Safari can cause horizontal touch scrolling
-        to lock up or be silently cancelled when snap targets are present
-        on sticky descendants. See DaysHeader.tsx for the matching note.
+        Scroll container notes:
+        - This element is intentionally a plain block (NOT flex). Making it
+          `display: flex; flex-direction: column` causes iOS Safari and
+          Android Chrome to ignore the inner child's `min-width` as a
+          horizontal overflow trigger (flex cross-axis `stretch` clamps
+          the child back to container width), which kills horizontal touch
+          scrolling on phones.
+        - The inner `gridContent` wrapper gets an explicit `width` (not just
+          `min-width`) wider than the viewport on mobile. That is what makes
+          the scroll container actually overflow horizontally so mobile
+          browsers expose horizontal panning.
+        - Do NOT add `scroll-snap-type` here. The DaysHeader row is
+          `position: sticky; top: 0` inside this scroll container, which on
+          Android Chrome and iOS Safari can cause horizontal touch scrolling
+          to lock up or be silently cancelled when snap targets are present
+          on sticky descendants. See DaysHeader.tsx for the matching note.
+        - Do NOT set `touch-action` here. The default `auto` allows both
+          horizontal and vertical panning; explicit values like `pan-x pan-y`
+          are intersected with ancestor/descendant values and can silently
+          disable horizontal scrolling on some Android builds.
       */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
-        style={{
-          WebkitOverflowScrolling: "touch",
-          touchAction: "pan-x pan-y",
-          overscrollBehaviorX: "contain",
-        }}
+        className="relative min-h-0 min-w-0 flex-1 overflow-auto"
+        style={{ WebkitOverflowScrolling: "touch" }}
         onMouseLeave={() => {
           setHoveredPostKey(null);
           setHoverOverlayPayload(null);
         }}
       >
         <div
-          className="flex min-h-[40vh] min-w-0 flex-none flex-col select-none"
-          style={{ minWidth: gridMinWidth }}
+          className="flex min-h-[40vh] flex-col select-none"
+          style={
+            isMobile
+              ? { width: gridMinWidth, minWidth: gridMinWidth }
+              : { minWidth: gridMinWidth, width: "100%" }
+          }
         >
           <DaysHeader
             weekDays={weekDays}
