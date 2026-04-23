@@ -104,9 +104,7 @@ function MonthlyPostTile({
   const statusClass = queueColorStyle
     ? ""
     : getStatusColor(post, postIsLongform, postIsPast);
-  const borderClass = queueColorStyle
-    ? "border-0"
-    : "border border-current border-opacity-20";
+  const borderClass = queueColorStyle ? "border-0" : "border border-current/20";
   const cursorClass = postIsPast ? "cursor-default" : "cursor-pointer";
   const interactionClass = postIsPast
     ? "opacity-70 hover:opacity-100 focus-visible:opacity-100"

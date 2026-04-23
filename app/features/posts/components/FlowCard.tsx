@@ -231,7 +231,7 @@ function FlowCardInner({
     : undefined;
 
   // Coloured shadow-1 on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
-  const shadowColor = queueColor ?? "hsl(var(--primary))";
+  const shadowColor = queueColor ?? "hsl(var(--brand))";
 
   const isPublished = Boolean(item.publishedAt);
   /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */

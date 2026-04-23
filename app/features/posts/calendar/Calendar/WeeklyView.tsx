@@ -15,9 +15,9 @@ import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
-  CALENDAR_MOBILE_HEADER_Z,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
+  MOBILE_WEEK_GRID_MIN_WIDTH,
   ROW_HEIGHT_PX,
   WEEK_VIEW_MIN_WIDTH,
 } from "./components/weekly-view-constants";
@@ -70,7 +70,6 @@ export function WeeklyView({
   isLongform = false,
   isAll = false,
 }: WeeklyViewProps) {
-  const MOBILE_DAY_COLUMNS_WIDTH = "calc(7 * ((100vw - 4rem) / 3))";
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
@@ -82,9 +81,6 @@ export function WeeklyView({
   );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
-  const mobileHeaderScrollRef = useRef<HTMLDivElement>(null);
-  const mobileBodyScrollRef = useRef<HTMLDivElement>(null);
-  const mobileScrollSyncSourceRef = useRef<"header" | "body" | null>(null);
 
   const getDaysHeaderHeight = (container: HTMLDivElement): number => {
     const header = container.querySelector<HTMLElement>(
@@ -319,124 +315,9 @@ export function WeeklyView({
     setHoverOverlayPayload,
   };
 
-  if (isMobile) {
-    const syncHorizontalScroll = (
-      source: "header" | "body",
-      scrollLeft: number
-    ) => {
-      if (
-        mobileScrollSyncSourceRef.current &&
-        mobileScrollSyncSourceRef.current !== source
-      ) {
-        mobileScrollSyncSourceRef.current = null;
-        return;
-      }
-      mobileScrollSyncSourceRef.current = source;
-      const target =
-        source === "header"
-          ? mobileBodyScrollRef.current
-          : mobileHeaderScrollRef.current;
-      if (!target) {
-        mobileScrollSyncSourceRef.current = null;
-        return;
-      }
-      if (Math.abs(target.scrollLeft - scrollLeft) > 0.5) {
-        target.scrollLeft = scrollLeft;
-      }
-      requestAnimationFrame(() => {
-        mobileScrollSyncSourceRef.current = null;
-      });
-    };
-
-    return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
-        <div
-          ref={gridScrollRef}
-          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
-          style={{
-            WebkitOverflowScrolling: "touch",
-            touchAction: "pan-y",
-          }}
-          onMouseLeave={() => {
-            setHoveredPostKey(null);
-            setHoverOverlayPayload(null);
-          }}
-        >
-          <div
-            className="border-border/40 sticky top-0 flex min-w-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
-            style={{ zIndex: CALENDAR_MOBILE_HEADER_Z }}
-          >
-            <div className="border-border/40 w-16 shrink-0 border-r" />
-            {}
-            <div
-              ref={mobileHeaderScrollRef}
-              className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-              style={{
-                WebkitOverflowScrolling: "touch",
-                touchAction: "pan-x",
-              }}
-              onScroll={(e) =>
-                syncHorizontalScroll("header", e.currentTarget.scrollLeft)
-              }
-            >
-              <div
-                style={{
-                  width: MOBILE_DAY_COLUMNS_WIDTH,
-                  minWidth: MOBILE_DAY_COLUMNS_WIDTH,
-                }}
-              >
-                <DaysHeader
-                  weekDays={weekDays}
-                  user={user}
-                  dateLocale={dateLocale}
-                  isMobile={true}
-                  showTimeSpacer={false}
-                  stickyTop={false}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex min-h-[40vh] min-w-0 flex-none select-none">
-            <div className="w-16 shrink-0">
-              {hourLabels.map((label, index) => (
-                <div
-                  key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
-                  className="text-text-secondary/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
-                  style={{ height: ROW_HEIGHT_PX - 1 }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-            {}
-            <div
-              ref={mobileBodyScrollRef}
-              className="min-w-0 flex-1 overflow-x-auto overflow-y-visible"
-              style={{
-                WebkitOverflowScrolling: "touch",
-                overscrollBehaviorX: "contain",
-                touchAction: "pan-x",
-              }}
-              onScroll={(e) =>
-                syncHorizontalScroll("body", e.currentTarget.scrollLeft)
-              }
-            >
-              <div
-                className="min-h-[40vh] min-w-0"
-                style={{
-                  width: MOBILE_DAY_COLUMNS_WIDTH,
-                  minWidth: MOBILE_DAY_COLUMNS_WIDTH,
-                }}
-              >
-                <TimeGrid {...commonTimeGridProps} isMobile={true} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const gridMinWidth = isMobile
+    ? MOBILE_WEEK_GRID_MIN_WIDTH
+    : WEEK_VIEW_MIN_WIDTH;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -456,15 +337,15 @@ export function WeeklyView({
       >
         <div
           className="flex min-h-[40vh] min-w-0 flex-none flex-col select-none"
-          style={{ minWidth: WEEK_VIEW_MIN_WIDTH }}
+          style={{ minWidth: gridMinWidth }}
         >
           <DaysHeader
             weekDays={weekDays}
             user={user}
             dateLocale={dateLocale}
-            isMobile={false}
+            isMobile={isMobile}
           />
-          <TimeGrid {...commonTimeGridProps} isMobile={false} />
+          <TimeGrid {...commonTimeGridProps} isMobile={isMobile} />
         </div>
       </div>
     </div>

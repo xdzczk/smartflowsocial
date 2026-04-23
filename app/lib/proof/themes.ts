@@ -23,10 +23,10 @@ export function proofCardShellSurfaceClass(
   variant: "campaign" | "admin"
 ): string {
   const base =
-    "absolute inset-0 box-border flex flex-col overflow-hidden rounded-xl border border-l-4 border-l-primary bg-surface text-text shadow-2";
+    "absolute inset-0 box-border flex flex-col overflow-hidden rounded-xl border border-l-4 border-l-brand bg-surface text-text shadow-2";
   const campaignTint =
     variant === "campaign"
-      ? "bg-gradient-to-br from-primary/[0.04] to-transparent"
+      ? "bg-gradient-to-br from-brand/[0.04] to-transparent"
       : "";
   return cn(base, campaignTint);
 }

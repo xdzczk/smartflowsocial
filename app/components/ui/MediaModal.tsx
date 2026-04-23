@@ -50,7 +50,7 @@ const MediaModal: React.FC<MediaModalProps> = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="bg-opacity-75 absolute inset-0 bg-black"
+        className="absolute inset-0 bg-black/75"
         onClick={onClose}
         onKeyDown={handleBackdropKeyDown}
         role="button"

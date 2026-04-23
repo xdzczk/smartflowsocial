@@ -78,7 +78,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       </video>
       {!isPlaying ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="bg-opacity-50 rounded-full bg-black p-3">
+          <div className="rounded-full bg-black/50 p-3">
             <Play className="h-8 w-8 text-white" />
           </div>
         </div>

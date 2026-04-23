@@ -96,7 +96,7 @@ export function UploadProviderSettings({
     (isCustomSelected && !customUrlValid) ||
     (isSfsLocked && selectedProvider === "BLOSSOM_SFS");
 
-  const primaryAccentColor = "hsl(var(--primary))";
+  const primaryAccentColor = "hsl(var(--brand))";
   const optionRowBase =
     "flex items-start space-x-3 rounded-lg border p-3 motion-fast";
   const optionRowSelected = "border-brand bg-surface-hover/30";
@@ -191,7 +191,7 @@ export function UploadProviderSettings({
             <div
               className={cn(
                 optionRowBase,
-                "border-muted-foreground/25 bg-surface-hover/20"
+                "border-text-secondary/25 bg-surface-hover/20"
               )}
             >
               <div className="text-text-secondary mt-0.5">

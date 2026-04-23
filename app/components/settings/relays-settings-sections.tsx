@@ -74,7 +74,7 @@ export function RelayDeliverySection({
           className={cn(
             "mt-4 rounded-xl border p-4",
             !canToggleBlastr
-              ? "border-muted-foreground/25 bg-surface-hover/30"
+              ? "border-text-secondary/25 bg-surface-hover/30"
               : "border-border bg-surface"
           )}
         >

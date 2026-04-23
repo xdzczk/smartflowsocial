@@ -160,7 +160,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
       />
       {!hidePlayButton ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-opacity-60 shadow-2 rounded-full bg-black p-2">
+          <div className="shadow-2 rounded-full bg-black/60 p-2">
             <Play className="h-6 w-6 text-white drop-shadow-sm" />
           </div>
         </div>

@@ -187,18 +187,6 @@ body.has-btcpay-confirmation-bar {
   --color-surface-selected: hsl(var(--surface-selected));
   --color-surface-selected-foreground: hsl(var(--surface-selected-foreground));
 
-  /* Legacy surface aliases (kept until Phase 1c finishes consumer rename) */
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
   /* ---------- Text ---------- */
   --color-text: hsl(var(--text));
   --color-text-secondary: hsl(var(--text-secondary));
@@ -216,13 +204,6 @@ body.has-btcpay-confirmation-bar {
   --color-brand-strong: hsl(var(--brand-strong));
   --color-brand-soft: hsl(var(--brand-soft));
   --color-brand-on: hsl(var(--brand-on));
-
-  /* Legacy brand aliases */
-  --color-primary: hsl(var(--primary));
-  --color-primary-action: hsl(var(--primary-action));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
 
   /* ---------- Status ----------
    * Two foreground families:
@@ -244,10 +225,6 @@ body.has-btcpay-confirmation-bar {
   --color-info-foreground: hsl(var(--info-foreground));
   --color-info-text: hsl(var(--info-text));
   --color-brand-text: hsl(var(--brand-text));
-
-  /* Legacy danger aliases */
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
 
   /* ---------- Misc ---------- */
   --color-checkbox: hsl(var(--checkbox));
@@ -361,25 +338,11 @@ body.has-btcpay-confirmation-bar {
     --surface-selected: 255 60% 96%;  /* subtle brand wash for selected items */
     --surface-selected-foreground: 255 77% 35%;
 
-    /* Legacy surface aliases (point to new tokens) */
-    --background: var(--canvas);
-    --card: var(--surface);
-    --popover: var(--surface-overlay);
-    --muted: var(--surface-hover);     /* "muted" was used as hover-bg; aligns intent */
-    --secondary: 0 0% 95%;             /* retired lavender; neutral elevated grey */
-
     /* ---------- Text ---------- */
     --text: 0 0% 9%;                   /* primary text (slightly softer than 5%) */
     --text-secondary: 25 8% 38%;       /* same as old --muted-foreground */
     --text-tertiary: 0 0% 50%;         /* helper / placeholder / timestamps */
     --text-on-brand: 0 0% 100%;
-
-    /* Legacy text aliases */
-    --foreground: var(--text);
-    --card-foreground: var(--text);
-    --popover-foreground: var(--text);
-    --muted-foreground: var(--text-secondary);
-    --secondary-foreground: var(--text);
 
     /* ---------- Borders ---------- */
     --border-subtle: 0 0% 93%;         /* hairline on cards; lift carries the rest */
@@ -393,16 +356,8 @@ body.has-btcpay-confirmation-bar {
     --brand-soft: 255 60% 70%;         /* lavender — accent fill / hover wash */
     --brand-on: 0 0% 100%;
 
-    /* Legacy brand aliases */
-    --primary: var(--brand);
-    --primary-action: var(--brand-strong);
-    --primary-foreground: var(--brand-on);
-    --accent: var(--brand-soft);
-    --accent-foreground: var(--brand-on);
-
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    --ring: var(--focus-ring);         /* legacy alias */
 
     /* ---------- Status ---------- */
     --success: 142 70% 36%;
@@ -423,10 +378,6 @@ body.has-btcpay-confirmation-bar {
     --info-text: 217 80% 28%;          /* AA on alpha-tinted bg */
 
     --brand-text: 255 70% 30%;         /* dark brand for use on brand-soft washes */
-
-    /* Legacy danger aliases */
-    --destructive: var(--danger);
-    --destructive-foreground: var(--danger-foreground);
 
     /* ---------- Misc ---------- */
     --checkbox: 0 0% 50%;
@@ -508,25 +459,11 @@ body.has-btcpay-confirmation-bar {
     --surface-selected: 255 30% 14%;   /* brand-tinted selection wash */
     --surface-selected-foreground: 0 0% 98%;
 
-    /* Legacy surface aliases */
-    --background: var(--canvas);
-    --card: var(--surface);
-    --popover: var(--surface-overlay);
-    --muted: var(--surface-hover);
-    --secondary: 0 0% 12%;             /* unchanged from prior dark value */
-
     /* ---------- Text ---------- */
     --text: 0 0% 98%;
     --text-secondary: 30 5% 65%;       /* slightly stronger than prior 60% for legibility */
     --text-tertiary: 0 0% 52%;
     --text-on-brand: 0 0% 100%;
-
-    /* Legacy text aliases */
-    --foreground: var(--text);
-    --card-foreground: var(--text);
-    --popover-foreground: var(--text);
-    --muted-foreground: var(--text-secondary);
-    --secondary-foreground: var(--text);
 
     /* ---------- Borders ----------
        Strengthened from prior 9.5% → 14% so borders read on cards/rails and the
@@ -542,15 +479,8 @@ body.has-btcpay-confirmation-bar {
     --brand-soft: 255 60% 70%;
     --brand-on: 0 0% 100%;
 
-    --primary: var(--brand);
-    --primary-action: var(--brand-strong);
-    --primary-foreground: var(--brand-on);
-    --accent: var(--brand-soft);
-    --accent-foreground: var(--brand-on);
-
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    --ring: var(--focus-ring);
 
     /* ---------- Status ---------- */
     --success: 142 50% 40%;            /* unchanged */

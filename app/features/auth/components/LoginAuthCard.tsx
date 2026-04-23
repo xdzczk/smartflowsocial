@@ -75,7 +75,7 @@ export function LoginAuthCard({ children }: { children: ReactNode }) {
       >
         {isAwaitingApproval ? (
           <div
-            className="from-background/50 to-background/80 dark:from-background/40 dark:to-background/70 pointer-events-none absolute inset-0 bg-gradient-to-b"
+            className="from-canvas/50 to-canvas/80 dark:from-canvas/40 dark:to-canvas/70 pointer-events-none absolute inset-0 bg-gradient-to-b"
             aria-hidden
           />
         ) : null}

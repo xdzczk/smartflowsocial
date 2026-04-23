@@ -104,7 +104,7 @@ export function ContestLeaderboard({
                 <div
                   className={`flex gap-3 px-4 py-3 ${
                     mode === "live" && inPrizeZone
-                      ? "border-l-primary/50 from-primary/10 bg-gradient-to-r to-transparent"
+                      ? "border-l-brand/50 from-brand/10 bg-gradient-to-r to-transparent"
                       : isTop3
                         ? "bg-brand/5"
                         : ""

@@ -192,7 +192,7 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "users",
                   name: "New users",
-                  stroke: "hsl(var(--primary))",
+                  stroke: "hsl(var(--brand))",
                 },
                 {
                   dataKey: "posts",
@@ -299,7 +299,7 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "subscriptions",
                   name: "Subscriptions started",
-                  stroke: "hsl(var(--primary))",
+                  stroke: "hsl(var(--brand))",
                 },
                 {
                   dataKey: "posts",
