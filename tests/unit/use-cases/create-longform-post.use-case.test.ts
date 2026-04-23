@@ -324,9 +324,9 @@ describe("CreateLongFormPostUseCase", () => {
         string,
         unknown
       >;
-      expect(createCall.signedEvent).toBeUndefined();
-      expect(createCall.nostrEvent).toBeUndefined();
-      expect(createCall.scheduledAtUtc).toBeUndefined();
+      expect(createCall["signedEvent"]).toBeUndefined();
+      expect(createCall["nostrEvent"]).toBeUndefined();
+      expect(createCall["scheduledAtUtc"]).toBeUndefined();
       // No PUBLISHED state-machine transition in this use case — that belongs
       // to PublishLongFormNowUseCase after relays accept the event.
       expect(mockTransition).not.toHaveBeenCalledWith(

@@ -354,7 +354,10 @@ export function WeeklyView({
         <div
           ref={gridScrollRef}
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          style={{
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
+          }}
           onMouseLeave={() => {
             setHoveredPostKey(null);
             setHoverOverlayPayload(null);
@@ -369,7 +372,10 @@ export function WeeklyView({
             <div
               ref={mobileHeaderScrollRef}
               className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-              style={{ WebkitOverflowScrolling: "touch" }}
+              style={{
+                WebkitOverflowScrolling: "touch",
+                touchAction: "pan-x",
+              }}
               onScroll={(e) =>
                 syncHorizontalScroll("header", e.currentTarget.scrollLeft)
               }
@@ -410,6 +416,7 @@ export function WeeklyView({
               style={{
                 WebkitOverflowScrolling: "touch",
                 overscrollBehaviorX: "contain",
+                touchAction: "pan-x",
               }}
               onScroll={(e) =>
                 syncHorizontalScroll("body", e.currentTarget.scrollLeft)

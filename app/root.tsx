@@ -156,9 +156,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       : "http://localhost";
   return [
     ...buildRootDefaultMeta(siteOrigin),
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
+    // viewport-fit=cover lets us opt into the unsafe area (notch / gesture bar);
+    // safe-area-inset utilities in tailwind.css re-pad fixed/sticky UI.
+    // interactive-widget=resizes-content keeps the viewport stable when the
+    // mobile keyboard opens over composers (Chrome/Android).
+    {
+      name: "viewport",
+      content:
+        "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+    },
     { name: "mobile-web-app-capable", content: "yes" },
-    { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+    // `black-translucent` lets the installed PWA paint under the iOS status bar.
+    // Our safe-area utilities re-pad it; pairs with viewport-fit=cover above.
+    { name: "apple-mobile-web-app-capable", content: "yes" },
+    {
+      name: "apple-mobile-web-app-status-bar-style",
+      content: "black-translucent",
+    },
     { name: "apple-mobile-web-app-title", content: BRAND_NAME },
     // Match browser/PWA chrome to page canvas (not brand purple — Android paints a strip from theme-color).
     // Client overrides via `syncThemeColorMeta` for in-app theme vs OS mismatch.
@@ -212,7 +226,10 @@ export default function App() {
       <head>
         <meta charSet="utf-8" />
         {/* Early viewport for mobile Safari / installed PWA (keep in sync with meta export below). */}
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+        />
         <Meta />
         <Links />
         <script

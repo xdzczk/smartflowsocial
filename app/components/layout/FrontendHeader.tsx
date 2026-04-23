@@ -7,7 +7,7 @@ export default function Header() {
   return (
     <header
       id="page-header"
-      className="relative flex flex-none items-center py-4 sm:py-6 lg:py-8"
+      className="pt-safe-top safe-x relative flex flex-none items-center py-4 sm:py-6 lg:py-8"
     >
       <div className="container mx-auto flex flex-row items-center justify-between gap-3 px-4 sm:gap-4 lg:px-8 xl:max-w-7xl">
         <div>

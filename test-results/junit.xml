@@ -1,23 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.009546625">
-    <testsuite name="tests/unit/lib/theme.client.test.ts" timestamp="2026-04-22T15:24:22.923Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.009546625">
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads and writes stored theme preferences" time="0.003347917">
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.001546417">
+    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-04-23T04:23:51.163Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001546417">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000513292">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; handles session override lifecycle" time="0.00039275">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; notifies and subscribes theme session changes" time="0.000680833">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; resolves and applies effective themes" time="0.001761042">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; syncs theme-color meta and removes SSR media variants" time="0.001111666">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads system effective theme from matchMedia" time="0.000254125">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to system theme changes with modern and legacy listeners" time="0.000528583">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; applies system preference and reacts to future changes" time="0.00036025">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to document theme class changes" time="0.000527959">
+        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000541375">
         </testcase>
     </testsuite>
 </testsuites>

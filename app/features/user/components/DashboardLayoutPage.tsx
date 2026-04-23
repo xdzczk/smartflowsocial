@@ -24,6 +24,7 @@ import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPag
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
+import { InstallPromptBanner } from "~/components/pwa/InstallPromptBanner";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -440,10 +441,11 @@ export function DashboardLayoutPage(): ReactNode {
           isOperatorAdmin={isOperatorAdmin}
         />
 
-        {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders. */}
+        {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders.
+            pt-header = h-16 + env(safe-area-inset-top) so content clears the notch on installed iOS PWAs. */}
         <main
           id="page-content"
-          className={`flex min-h-0 max-w-full min-w-0 flex-1 flex-col pt-16 ${
+          className={`pt-header flex min-h-0 max-w-full min-w-0 flex-1 flex-col ${
             isCalendar ? "overflow-hidden" : ""
           }`}
         >
@@ -543,7 +545,7 @@ export function DashboardLayoutPage(): ReactNode {
                     type="button"
                     aria-label="Dismiss subscription expired banner"
                     onClick={handleDismissSubscriptionExpiredBanner}
-                    className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
+                    className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
                   >
                     <X
                       className={INLINE_ICON_SIZE_CLASS}
@@ -581,7 +583,7 @@ export function DashboardLayoutPage(): ReactNode {
                       type="button"
                       aria-label="Dismiss free plan banner"
                       onClick={handleDismissFreePlanBanner}
-                      className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
+                      className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
                     >
                       <X
                         className={INLINE_ICON_SIZE_CLASS}
@@ -635,6 +637,9 @@ export function DashboardLayoutPage(): ReactNode {
         </main>
 
         <Footer />
+        {/* PWA install affordance (Chromium native prompt + iOS A2HS walkthrough).
+            Self-hides when already standalone / dismissed within the last 30 days. */}
+        <InstallPromptBanner />
       </div>
     </>
   );

@@ -171,7 +171,7 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -228,7 +228,7 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -445,9 +445,9 @@ function PageHeaderBar({
   return (
     <header
       id="page-header"
-      className={`bg-canvas border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
+      className={`bg-canvas border-border h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
     >
-      <div className="max-w-10xl mx-auto flex w-full min-w-0 justify-between px-3 sm:px-4 lg:px-8">
+      <div className="max-w-10xl safe-x mx-auto flex w-full min-w-0 justify-between px-3 sm:px-4 lg:px-8">
         <div className="flex shrink-0 items-center gap-2">
           <div className="hidden lg:block">
             <Button
@@ -574,7 +574,7 @@ export default function Header({
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`border-border bg-surface text-text fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
+        className={`border-border bg-surface text-text pt-safe-top safe-pb-2 fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
           isDesktopExpanded ? "lg:w-64" : "lg:w-16"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >

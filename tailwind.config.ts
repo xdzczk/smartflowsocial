@@ -1,5 +1,9 @@
-// Minimal config for Tailwind v4
-// Most configuration is now in CSS using @theme directive
+// Minimal config for Tailwind v4.
+// Most of the design system lives in CSS via the `@theme` directive
+// (see app/tailwind.css). This config only exists to scope content
+// scanning and to safelist the few classes that the scanner cannot
+// see — primarily the per-queue hex color utilities built from the
+// `QUEUE_COLOR_ACCENTS` map at runtime (see app/features/posts/queue-colors.ts).
 import type { Config } from "tailwindcss";
 
 export default {
@@ -8,202 +12,33 @@ export default {
     "./tests/**/*.{ts,tsx}",
     "./server.ts",
     "./worker.ts",
-    // Explicitly include all route files to ensure they're scanned
-    "./app/routes/**/*.{ts,tsx}",
-    "./app/components/**/*.{ts,tsx}",
-    "./app/features/**/*.{ts,tsx}",
   ],
-  // Safelist for dynamic classes (critical for dynamic color generation)
-  // Also includes Plans page classes to ensure they're generated in Docker builds
+  // Keep this list short. Anything added here ships in every build —
+  // prefer literal class strings in source over adding here. We only safelist
+  // classes whose *full string* is assembled at runtime from data we control
+  // (hex color palette, percentage opacities). Everything else — including the
+  // PlansPage, PricingCard, and FeatureComparisonTable — now uses design tokens
+  // (`bg-surface`, `text-text`, `border-border`…) and is picked up by content
+  // scanning automatically.
   safelist: [
-    // Dynamic color classes from getDynamicQueueStyle
+    // Queue color utilities: `bg-[#2563EB]`, `text-[#2563EB]`, `border-[#2563EB]`
+    // with optional `/NN` or `/[0.NN]` opacity suffix, plus hover/dark variants.
+    // Produced by getQueueColor() from the 12-token palette in queue-colors.ts.
     {
-      pattern: /^(bg|text|border)-\[#[0-9A-Fa-f]{6}\]$/,
+      pattern:
+        /^(bg|text|border)-\[#[0-9A-Fa-f]{6}\](\/(?:\d{1,3}|\[0\.\d+\]))?$/,
       variants: ["dark", "hover", "dark:hover"],
     },
-    // Dynamic opacity classes
+    // Legacy arbitrary opacity helpers used by a few media-player overlays
+    // (MediaModal, MediaPlayer, MediaThumbnail). These are literal in source
+    // but the regex shape keeps us covered if we add more of the same family.
     {
       pattern: /^(bg-opacity|text-opacity|border-opacity)-(20|30|50|70|100)$/,
-      variants: ["dark", "hover", "dark:hover"],
+      variants: ["dark", "hover", "dark:hover", "group-hover"],
     },
-    // Scale transforms used in queue styles
-    "scale-105",
-    "transform",
-    // Plans page classes - ensure these are always generated
-    "container",
-    "mx-auto",
-    "px-4",
-    "py-16",
-    "lg:px-8",
-    "lg:py-32",
-    "xl:max-w-7xl",
-    "mb-16",
-    "text-center",
-    "mb-2",
-    "inline-flex",
-    "rounded",
-    "border",
-    "px-2",
-    "py-1",
-    "text-sm",
-    "leading-4",
-    "font-medium",
-    "mb-4",
-    "text-4xl",
-    "font-black",
-    "mx-auto",
-    "max-w-2xl",
-    "text-xl",
-    "leading-relaxed",
-    "font-medium",
-    "grid",
-    "grid-cols-1",
-    "gap-8",
-    "md:grid-cols-2",
-    "lg:grid-cols-4",
-    // Color classes used on Plans page
-    "bg-white",
-    "dark:bg-gray-900",
-    "dark:text-gray-100",
-    "bg-amber-200",
-    "bg-amber-300",
-    "text-amber-700",
-    "dark:border-amber-800",
-    "dark:bg-amber-950",
-    "dark:text-amber-200",
-    "text-black",
-    "dark:text-white",
-    "text-gray-700",
-    "dark:text-gray-300",
-    // PricingCard component classes
-    "rounded-lg",
-    "p-6",
-    "shadow-lg",
-    "dark:bg-gray-800",
-    "ring-2",
-    "ring-green-500",
-    "absolute",
-    "-top-3",
-    "left-1/2",
-    "-translate-x-1/2",
-    "transform",
-    "rounded-full",
-    "bg-green-500",
-    "px-3",
-    "py-1",
-    "text-white",
-    "mb-6",
-    "text-2xl",
-    "font-bold",
-    "mb-2",
-    "ml-2",
-    "text-gray-500",
-    "dark:text-gray-400",
-    "text-gray-600",
-    "dark:text-gray-300",
-    "w-full",
-    "px-4",
-    "py-3",
-    "transition-colors",
-    "disabled:opacity-50",
-    "bg-green-500",
-    "hover:bg-green-600",
-    "bg-blue-700",
-    "hover:bg-blue-600",
-    "dark:bg-gray-700",
-    "dark:hover:bg-gray-600",
-    "flex",
-    "items-center",
-    "justify-center",
-    "mr-2",
-    "h-4",
-    "w-4",
-    "animate-spin",
-    // FeatureComparisonTable classes
-    "overflow-hidden",
-    "overflow-x-auto",
-    "w-full",
-    "border-b",
-    "border-gray-200",
-    "dark:border-gray-700",
-    "p-4",
-    "text-left",
-    "text-center",
-    "bg-gray-50",
-    "dark:bg-gray-750",
-    "dark:bg-gray-800",
-    // Plans page gradient classes
-    "relative",
-    "overflow-hidden",
-    "absolute",
-    "top-0",
-    "right-0",
-    "left-0",
-    "flex",
-    "h-64",
-    "opacity-70",
-    "dark:opacity-50",
-    "inset-0",
-    "bg-gradient-to-b",
-    "from-transparent",
-    "to-white",
-    "dark:to-gray-900",
-    "grow",
-    "bg-gradient-to-r",
-    "from-green-100",
-    "to-emerald-100",
-    "dark:from-green-900",
-    "dark:to-emerald-900",
-    "from-emerald-100",
-    "to-teal-100",
-    "dark:from-emerald-900",
-    "dark:to-teal-900",
-    "from-teal-100",
-    "to-cyan-100",
-    "dark:from-teal-900",
-    "dark:to-cyan-900",
-    "from-cyan-100",
-    "to-sky-100",
-    "dark:from-cyan-900",
-    "dark:to-sky-900",
-    "from-sky-100",
-    "to-blue-100",
-    "dark:from-sky-900",
-    "dark:to-blue-900",
-    "from-blue-100",
-    "to-indigo-100",
-    "dark:from-blue-900",
-    "dark:to-indigo-900",
-    "from-indigo-100",
-    "to-violet-100",
-    "dark:from-indigo-900",
-    "dark:to-violet-900",
-    "from-violet-100",
-    "to-purple-100",
-    "dark:from-violet-900",
-    "dark:to-purple-900",
-    "from-purple-100",
-    "to-fuchsia-100",
-    "dark:from-purple-900",
-    "dark:to-fuchsia-900",
-    "from-fuchsia-100",
-    "to-pink-100",
-    "dark:from-fuchsia-900",
-    "dark:to-pink-900",
-    "from-pink-100",
-    "to-rose-100",
-    "dark:from-pink-900",
-    "dark:to-rose-900",
-    "text-green-500",
-    "text-gray-400",
-    "h-5",
-    "w-5",
-    // Login page background images (light + dark)
-    "bg-[url('/motifflightmode.webp')]",
-    "dark:bg-[url('/motiffdarkmode.webp')]",
   ],
   // Note: tailwindcss-animate plugin generates CSS with nesting syntax
   // This may cause harmless CSS syntax warnings from esbuild about `:where(& > ...)`
-  // These warnings can be safely ignored - the CSS works correctly in browsers
+  // These warnings can be safely ignored - the CSS works correctly in browsers.
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
