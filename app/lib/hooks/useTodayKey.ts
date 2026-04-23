@@ -26,9 +26,11 @@ export interface TodayKey {
 
 const TODAY_POLL_INTERVAL_MS = 5 * 60 * 1000;
 
-function subscribeToday(callback: () => void): () => void {
+function subscribeToday(onStoreChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const id = window.setInterval(callback, TODAY_POLL_INTERVAL_MS);
+  const id = window.setInterval(() => {
+    onStoreChange();
+  }, TODAY_POLL_INTERVAL_MS);
   return () => window.clearInterval(id);
 }
 

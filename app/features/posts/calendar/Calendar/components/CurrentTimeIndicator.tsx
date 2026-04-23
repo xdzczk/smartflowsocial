@@ -28,9 +28,11 @@ export interface CurrentTimeIndicatorProps {
   isMobile?: boolean;
 }
 
-function subscribeMinute(callback: () => void): () => void {
+function subscribeMinute(onStoreChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const id = window.setInterval(callback, 30_000);
+  const id = window.setInterval(() => {
+    onStoreChange();
+  }, 30_000);
   return () => window.clearInterval(id);
 }
 
