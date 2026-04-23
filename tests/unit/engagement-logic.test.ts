@@ -650,24 +650,24 @@ describe("Engagement Logic Unit Tests", () => {
       expect(getTrustScoreBadgeColor(100)).toContain("success");
     });
 
-    it("should return muted/foreground classes for scores 60-79", () => {
-      expect(getTrustScoreBadgeColor(60)).toContain("muted");
-      expect(getTrustScoreBadgeColor(79)).toContain("muted");
+    it("should return neutral surface/text classes for scores 60-79", () => {
+      expect(getTrustScoreBadgeColor(60)).toContain("surface-hover");
+      expect(getTrustScoreBadgeColor(79)).toContain("text-text");
     });
 
-    it("should return yellow classes for scores 40-59", () => {
-      expect(getTrustScoreBadgeColor(40)).toContain("yellow");
-      expect(getTrustScoreBadgeColor(59)).toContain("yellow");
+    it("should return warning token classes for scores 40-59", () => {
+      expect(getTrustScoreBadgeColor(40)).toContain("warning");
+      expect(getTrustScoreBadgeColor(59)).toContain("warning");
     });
 
-    it("should return muted classes for scores 20-39", () => {
-      expect(getTrustScoreBadgeColor(20)).toContain("muted");
-      expect(getTrustScoreBadgeColor(39)).toContain("muted");
+    it("should return neutral surface/text classes for scores 20-39", () => {
+      expect(getTrustScoreBadgeColor(20)).toContain("surface-hover");
+      expect(getTrustScoreBadgeColor(39)).toContain("text-text");
     });
 
-    it("should return muted classes for scores < 20", () => {
-      expect(getTrustScoreBadgeColor(0)).toContain("muted");
-      expect(getTrustScoreBadgeColor(19)).toContain("muted");
+    it("should return subdued surface classes for scores < 20", () => {
+      expect(getTrustScoreBadgeColor(0)).toContain("surface-hover");
+      expect(getTrustScoreBadgeColor(19)).toContain("border-border");
     });
   });
 });

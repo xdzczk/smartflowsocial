@@ -236,6 +236,8 @@ interface UseLongFormSubmissionProps {
   /** When set (user picked relays in composer), sent as `relays` JSON on submit. */
   relayOverride?: string[] | null;
   includeHashtagsInNoteBody: boolean;
+  /** Fires immediately on publish-now intent before signing. */
+  onPublishIntent?: () => void;
 }
 
 export function useLongFormSubmission({
@@ -256,6 +258,7 @@ export function useLongFormSubmission({
   calculateQueueScheduleTime,
   relayOverride = null,
   includeHashtagsInNoteBody,
+  onPublishIntent,
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
@@ -425,6 +428,10 @@ export function useLongFormSubmission({
         }
       }
     };
+
+    if (actionType === "publish") {
+      onPublishIntent?.();
+    }
 
     pendingPublish.start({ performSignAndSubmit });
   };

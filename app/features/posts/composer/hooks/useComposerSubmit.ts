@@ -85,6 +85,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     publishMode = "now",
     calculateQueueScheduleTime,
     onBeginSaveDraft,
+    onPublishIntent,
     composerContext = { mode: "create" },
   } = options;
 
@@ -704,6 +705,12 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         await runSinglePostSubmit();
       };
 
+      // Signal publish intent immediately so the parent can open progress UI
+      // before any async signing or network work begins.
+      if (submitType === ACTION_POST_TEXT) {
+        onPublishIntent?.();
+      }
+
       // Single entry point: every publish click — fresh or partial-thread
       // retry — hands off to the signing-attempts state machine. The store
       // owns the resumable-attempt lifecycle (awaiting_signer / resuming /
@@ -758,6 +765,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       publishMode,
       calculateQueueScheduleTime,
       onBeginSaveDraft,
+      onPublishIntent,
       appendComposerContextFormData,
       buildAttachmentMetaForSubmit,
       buildAttachmentDiffJson,

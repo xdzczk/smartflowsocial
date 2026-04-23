@@ -173,6 +173,12 @@ export interface UnifiedComposerProps {
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   /**
+   * Fires immediately when the user commits a "Publish now" action, before
+   * any signing or async work. Used by the parent to open publish progress UI
+   * immediately so the user sees progress without waiting on the button alone.
+   */
+  onPublishIntent?: () => void;
+  /**
    * When true, omit built-in draft/template picker UI and modal (e.g. New Post page uses shell actions).
    */
   suppressBuiltInDraftPicker?: boolean;
@@ -214,6 +220,7 @@ export function UnifiedComposer({
   publishMode = "now",
   onPublishModeChange,
   onDraftStateLabelChange,
+  onPublishIntent,
   onRelayClick,
   templateLastUpdatedLabel = null,
   onTemplateDeleteClick,
@@ -864,6 +871,7 @@ export function UnifiedComposer({
     publishMode: contestSubmitMode,
     calculateQueueScheduleTime,
     onBeginSaveDraft,
+    onPublishIntent,
     composerContext,
   });
 

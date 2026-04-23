@@ -77,6 +77,10 @@ export default function NewLongFormPostPage() {
     searchParams.get("published") ?? searchParams.get("scheduled");
   const navigate = useNavigate();
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishIntentActive, setPublishIntentActive] = useState(false);
+  const [publishIntentStartedAt, setPublishIntentStartedAt] = useState<
+    number | null
+  >(null);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<{
     id: string;
@@ -105,13 +109,31 @@ export default function NewLongFormPostPage() {
     setRelaySelectorOpen(true);
   }, []);
 
-  // Check for published/scheduled URL param
+  const handlePublishIntent = useCallback(() => {
+    setPublishIntentActive(true);
+    setPublishIntentStartedAt(Date.now());
+    setShowPublishModal(true);
+  }, []);
+
+  const resetPublishModalState = useCallback(() => {
+    setShowPublishModal(false);
+    setModalPostId(null);
+    setModalPost(null);
+    setModalLongFormPost(null);
+    setPublishIntentActive(false);
+    setPublishIntentStartedAt(null);
+  }, []);
+
+  // Check for published/scheduled URL param. Note: do NOT skip when
+  // showPublishModal is already true — the modal may be open from an
+  // immediate publish intent and still needs to be hydrated with the real
+  // postId once the server redirect arrives.
   useEffect(() => {
     const publishedPostId = searchParams.get("published");
     const scheduledPostId = searchParams.get("scheduled");
     const postId = publishedPostId ?? scheduledPostId;
 
-    if (postId && !modalPostId && !showPublishModal) {
+    if (postId && !modalPostId) {
       // Use setTimeout to avoid setState in effect warning
       setTimeout(() => {
         setModalPostId(postId);
@@ -175,13 +197,7 @@ export default function NewLongFormPostPage() {
         }
       })();
     }
-  }, [
-    searchParams,
-    modalPostId,
-    showPublishModal,
-    setSearchParams,
-    queryClient,
-  ]);
+  }, [searchParams, modalPostId, setSearchParams, queryClient]);
 
   useEffect(() => {
     if (!publishResultToken) return;
@@ -276,6 +292,7 @@ export default function NewLongFormPostPage() {
           defaultRelays={defaultRelays}
           relayOverride={selectedRelayUrls ?? undefined}
           onRelayClick={openRelaySelector}
+          onPublishIntent={handlePublishIntent}
         />
       </Form>
 
@@ -331,28 +348,31 @@ export default function NewLongFormPostPage() {
         displayedHashtags={displayedHashtags}
       />
 
-      {showPublishModal && modalPostId && (modalPost || modalLongFormPost) ? (
+      {showPublishModal ? (
         <PublishResultModal
           isOpen={showPublishModal}
-          postId={modalPostId}
+          postId={modalPostId ?? ""}
           publishAttemptId={
             modalPost?.publishAttemptId ??
             modalLongFormPost?.publishAttemptId ??
             null
           }
-          action={determineModalAction(modalPost, modalLongFormPost)}
+          action={
+            publishIntentActive && !modalPost && !modalLongFormPost
+              ? "publish"
+              : determineModalAction(modalPost, modalLongFormPost)
+          }
           postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
           scheduledFor={
             modalPost?.scheduledAtUtc ??
             modalLongFormPost?.scheduledAtUtc ??
             null
           }
+          immediateProgress={Boolean(publishIntentActive && !modalPostId)}
+          intentStartedAt={publishIntentStartedAt}
           onCreateNew={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
+            resetPublishModalState();
             try {
               localStorage.removeItem("longform-draft-new");
             } catch {
@@ -361,20 +381,14 @@ export default function NewLongFormPostPage() {
             navigate(getNewPostUrl(postType));
           }}
           onGoToDashboard={() => {
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
+            resetPublishModalState();
             navigate("/dashboard");
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
             const action = determineModalAction(modalPost, modalLongFormPost);
 
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
+            resetPublishModalState();
 
             if (action === "schedule") {
               if (postType === "longform") {

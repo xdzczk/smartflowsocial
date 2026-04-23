@@ -5,7 +5,7 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Button } from "~/components/ui/button";
@@ -459,6 +459,12 @@ export default function NewPostPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showPublishModal, setShowPublishModal] = useState(false);
+  // When the user clicks "Publish now", this fires immediately so the modal
+  // can open before any signing or server round-trip completes.
+  const [publishIntentActive, setPublishIntentActive] = useState(false);
+  const [publishIntentStartedAt, setPublishIntentStartedAt] = useState<
+    number | null
+  >(null);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<{
     id: string;
@@ -547,11 +553,28 @@ export default function NewPostPage() {
         ? "thread"
         : "all";
 
+  // Opens the publish progress modal immediately on publish-now click, before
+  // signing or server round-trip completes. The modal then hydrates with real
+  // post data when the URL param arrives via useNewPostPublishModalEffect.
+  const handlePublishIntent = useCallback(() => {
+    setPublishIntentActive(true);
+    setPublishIntentStartedAt(Date.now());
+    setShowPublishModal(true);
+  }, []);
+
+  const resetPublishModalState = useCallback(() => {
+    setShowPublishModal(false);
+    setModalPostId(null);
+    setModalPost(null);
+    setModalLongFormPost(null);
+    setPublishIntentActive(false);
+    setPublishIntentStartedAt(null);
+  }, []);
+
   useNewPostPublishModalEffect({
     searchParams,
     setSearchParams,
     modalPostId,
-    showPublishModal,
     setModalPostId,
     setModalPost,
     setModalLongFormPost,
@@ -703,6 +726,7 @@ export default function NewPostPage() {
                   initialPollRestore={initialPollRestore}
                   initialDraftId={initialDraftId}
                   onDraftStateLabelChange={setSaveStateLabel}
+                  onPublishIntent={handlePublishIntent}
                 />
               ) : (
                 <LazyUnifiedComposer
@@ -742,6 +766,7 @@ export default function NewPostPage() {
                   composerTemplates={templates}
                   suppressBuiltInDraftPicker
                   onDraftStateLabelChange={setSaveStateLabel}
+                  onPublishIntent={handlePublishIntent}
                 />
               )}
             </Suspense>
@@ -788,33 +813,34 @@ export default function NewPostPage() {
               }
             />
 
-            {showPublishModal &&
-            modalPostId &&
-            (modalPost || modalLongFormPost) ? (
+            {showPublishModal ? (
               <PublishResultModal
                 isOpen={showPublishModal}
-                postId={modalPostId}
+                postId={modalPostId ?? ""}
                 publishAttemptId={
                   modalPost?.publishAttemptId ??
                   modalLongFormPost?.publishAttemptId ??
                   null
                 }
-                action={determineModalAction(modalPost, modalLongFormPost)}
+                action={
+                  publishIntentActive && !modalPost && !modalLongFormPost
+                    ? "publish"
+                    : determineModalAction(modalPost, modalLongFormPost)
+                }
                 postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
                 scheduledFor={
                   modalPost?.scheduledAtUtc ??
                   modalLongFormPost?.scheduledAtUtc ??
                   null
                 }
+                immediateProgress={Boolean(publishIntentActive && !modalPostId)}
+                intentStartedAt={publishIntentStartedAt}
                 onCreateNew={() => {
                   const postType = getPostTypeFromPost(
                     modalPost,
                     modalLongFormPost
                   );
-                  setShowPublishModal(false);
-                  setModalPostId(null);
-                  setModalPost(null);
-                  setModalLongFormPost(null);
+                  resetPublishModalState();
                   setComposerSessionKey((k) => k + 1);
                   // Clear composer localStorage so the new post page shows an empty composer
                   try {
@@ -828,10 +854,7 @@ export default function NewPostPage() {
                   navigate(getNewPostUrl(postType), { replace: true });
                 }}
                 onGoToDashboard={() => {
-                  setShowPublishModal(false);
-                  setModalPostId(null);
-                  setModalPost(null);
-                  setModalLongFormPost(null);
+                  resetPublishModalState();
                   navigate("/dashboard");
                 }}
                 onViewPage={() => {
@@ -844,10 +867,7 @@ export default function NewPostPage() {
                     modalLongFormPost
                   );
 
-                  setShowPublishModal(false);
-                  setModalPostId(null);
-                  setModalPost(null);
-                  setModalLongFormPost(null);
+                  resetPublishModalState();
 
                   if (action === "schedule") {
                     if (postType === "longform") {

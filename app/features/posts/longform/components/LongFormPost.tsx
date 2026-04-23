@@ -88,6 +88,7 @@ export default function LongFormPost({
   onRelayClick,
   templateLastUpdatedLabel = null,
   onTemplateDeleteClick,
+  onPublishIntent,
 }: LongFormPostProps) {
   const { mediaUploadBlocked } = useBlossomUploadGate();
   const fetcher = useFetcher();
@@ -565,6 +566,7 @@ export default function LongFormPost({
       calculateQueueScheduleTime,
       relayOverride,
       includeHashtagsInNoteBody: Boolean(includeHashtagsInNoteBody),
+      onPublishIntent,
     });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
 

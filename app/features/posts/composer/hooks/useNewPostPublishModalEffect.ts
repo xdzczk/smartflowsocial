@@ -36,7 +36,6 @@ export function useNewPostPublishModalEffect(input: {
     opts?: { replace?: boolean }
   ) => void;
   modalPostId: string | null;
-  showPublishModal: boolean;
   setModalPostId: (id: string | null) => void;
   setModalPost: (p: ModalPostShape | null) => void;
   setModalLongFormPost: (p: ModalPostShape | null) => void;
@@ -47,7 +46,6 @@ export function useNewPostPublishModalEffect(input: {
     searchParams,
     setSearchParams,
     modalPostId,
-    showPublishModal,
     setModalPostId,
     setModalPost,
     setModalLongFormPost,
@@ -60,7 +58,11 @@ export function useNewPostPublishModalEffect(input: {
     const scheduledPostId = searchParams.get("scheduled");
     const postId = publishedPostId ?? scheduledPostId;
 
-    if (!postId || modalPostId || showPublishModal) {
+    // No URL param to process, or we already handled this postId.
+    // Note: we intentionally do NOT skip when showPublishModal is true —
+    // the modal may already be open from an immediate publish intent, and
+    // we still need to hydrate it with the real postId and post data.
+    if (!postId || modalPostId) {
       return;
     }
 
@@ -95,6 +97,7 @@ export function useNewPostPublishModalEffect(input: {
         setTimeout(() => {
           setModalPost(data.post ?? null);
           setModalLongFormPost(data.longFormPost ?? null);
+          // Ensure modal is open (may already be from publish intent; this is idempotent).
           setShowPublishModal(true);
         }, 0);
 
@@ -116,7 +119,6 @@ export function useNewPostPublishModalEffect(input: {
   }, [
     searchParams,
     modalPostId,
-    showPublishModal,
     setSearchParams,
     queryClient,
     setModalPostId,
