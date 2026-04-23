@@ -38,6 +38,14 @@ export const CALENDAR_HOVER_OVERLAY_Z = 46;
 /** Sticky layers for weekly headers/rails (above hover overlay so day strip is never covered). */
 export const CALENDAR_DAYS_HEADER_Z = 47;
 export const CALENDAR_DAYS_HEADER_TIME_SPACER_Z = 48;
+/**
+ * Single sticky time-rail overlay rendered in TimeGrid ABOVE the
+ * rows-wrapper stacking context (TIME_GRID_ROWS_LAYER_Z = 1).
+ * Must be > rows-wrapper but well below the hover overlay (46) and
+ * DaysHeader (47) so those elements are never covered.
+ */
+export const CALENDAR_TIME_RAIL_OVERLAY_Z = 2;
+/** @deprecated kept only for DayViewTwoColumnGrid; WeeklyView uses CALENDAR_TIME_RAIL_OVERLAY_Z */
 export const CALENDAR_TIME_RAIL_STICKY_Z = 22;
 export const CALENDAR_MOBILE_HEADER_Z = 23;
 /** Post block wrapper z-levels inside local cell contexts. */

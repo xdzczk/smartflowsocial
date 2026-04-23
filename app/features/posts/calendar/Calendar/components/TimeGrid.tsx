@@ -6,6 +6,7 @@ import { PostBlock } from "../PostBlock";
 import { TimeGridRow, type TimeGridRowProps } from "./TimeGridRow";
 import {
   CALENDAR_HOVER_OVERLAY_Z,
+  CALENDAR_TIME_RAIL_OVERLAY_Z,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
   TIME_GRID_LINES_Z,
@@ -15,7 +16,7 @@ import {
 
 export interface TimeGridProps extends Omit<
   TimeGridRowProps,
-  "time" | "index" | "hourLabel"
+  "time" | "index"
 > {
   hours: string[];
   hourLabels: string[];
@@ -103,6 +104,46 @@ export function TimeGrid({
       className="relative min-h-0 w-full flex-none"
       data-calendar-week-grid="true"
     >
+      {/*
+       * Sticky time-label overlay — rendered as a SIBLING of the scroll
+       * content, NOT inside the rows-wrapper stacking context (z=1).
+       *
+       * Why this is necessary:
+       *   Each TimeGridRow has `position:relative; z-index:rowZIndex`
+       *   (48 → 1).  An expanded post block from a higher row (higher
+       *   rowZIndex) overflows downward via `overflow-visible` and paints
+       *   above the time rail cells of lower rows, because all comparisons
+       *   happen inside the rows-wrapper stacking context.
+       *   Moving the labels to a sticky element at z=CALENDAR_TIME_RAIL_OVERLAY_Z
+       *   (above the rows-wrapper z=1, below hover-overlay z=46) ensures no
+       *   post block can ever cover them, regardless of rowZIndex values.
+       *
+       * Layout trick:
+       *   height:0 + overflow:visible keeps this element out of the flex
+       *   column flow while still allowing its absolutely-positioned children
+       *   to render at top = N × ROW_HEIGHT_PX (matching each row's y).
+       *   position:sticky left:0 makes the whole strip stick to the
+       *   viewport's left edge during horizontal panning.
+       */}
+      <div
+        aria-hidden
+        className="pointer-events-none sticky left-0 w-16 overflow-visible"
+        style={{ height: 0, zIndex: CALENDAR_TIME_RAIL_OVERLAY_Z }}
+      >
+        {hourLabels.map((label, index) => (
+          <div
+            key={index}
+            className="border-border/30 text-text-secondary/85 absolute right-0 left-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none"
+            style={{
+              top: index * ROW_HEIGHT_PX,
+              height: ROW_HEIGHT_PX,
+              boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+            }}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Root drag surface maps pointer coordinates to calendar slots */}
       <div
         className="relative flex w-full flex-col flex-nowrap"
@@ -152,7 +193,6 @@ export function TimeGrid({
               key={time}
               time={time}
               index={index}
-              hourLabel={hourLabels[index] ?? ""}
               weekDays={weekDays}
               hours={hours}
               getSlotState={getSlotState}
@@ -181,15 +221,6 @@ export function TimeGrid({
             />
           ))}
         </div>
-        {/* Permanent separator at the time-column/day-columns boundary.
-            Drawn above the rows-wrapper stacking context (z=1) so it stays
-            visible even when overflow-visible post blocks expand across rows
-            and would otherwise cover the per-row border-r lines. */}
-        <div
-          aria-hidden
-          className="border-border/40 pointer-events-none absolute inset-y-0 border-r"
-          style={{ left: "calc(4rem - 1px)", width: "1px", zIndex: 3 }}
-        />
         {!isMobile && hoverOverlayPayload ? (
           <div
             className="pointer-events-none absolute inset-0"
