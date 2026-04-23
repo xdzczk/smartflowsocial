@@ -226,8 +226,8 @@ describe("W1 proof coverage", () => {
       expect(proofCardAspectOuterClass("square")).toContain("aspect-square");
       expect(proofCardAspectOuterClass("landscape")).toContain("aspect-video");
 
-      expect(proofCardShellSurfaceClass("campaign")).toContain("from-primary");
-      expect(proofCardShellSurfaceClass("admin")).not.toContain("from-primary");
+      expect(proofCardShellSurfaceClass("campaign")).toContain("from-brand");
+      expect(proofCardShellSurfaceClass("admin")).not.toContain("from-brand");
 
       expect(proofCardInnerPadClass("portrait")).toContain("p-5");
       expect(proofCardInnerPadClass("square")).toContain("p-4");
@@ -245,9 +245,9 @@ describe("W1 proof coverage", () => {
       expect(proofFooterTextClass("landscape")).toContain("sm:text-[11px]");
       expect(proofFooterTextClass("portrait")).toContain("sm:text-xs");
 
-      expect(statusBadgeClass("success")).toContain("emerald");
-      expect(statusBadgeClass("warning")).toContain("amber");
-      expect(statusBadgeClass("neutral")).toContain("bg-muted");
+      expect(statusBadgeClass("success")).toContain("success-text");
+      expect(statusBadgeClass("warning")).toContain("warning-text");
+      expect(statusBadgeClass("neutral")).toContain("surface-hover");
     });
   });
 

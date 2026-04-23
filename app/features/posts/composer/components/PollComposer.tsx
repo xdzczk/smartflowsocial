@@ -92,6 +92,8 @@ export interface PollComposerProps {
   scheduleIntervals?: number[];
   initialScheduledFor?: string | null;
   publishMode?: ComposerPublishMode;
+  /** Fires immediately when the user commits a "Publish now" poll action. */
+  onPublishIntent?: () => void;
   onPublishModeChange?: (next: ComposerPublishMode) => void;
   onDraftStateLabelChange?: (label: string) => void;
   skipLocalDraftRestore?: boolean;
@@ -123,6 +125,7 @@ export function PollComposer({
   initialQueue = "unassigned",
   initialPollRestore = null,
   initialDraftId = null,
+  onPublishIntent,
 }: PollComposerProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
@@ -399,6 +402,10 @@ export function PollComposer({
     if (relayUrls.length === 0) {
       toast.error("Select at least one relay for the poll.");
       return;
+    }
+
+    if (actionType === ACTION_POST_POLL) {
+      onPublishIntent?.();
     }
 
     let scheduledTimeMs: number;

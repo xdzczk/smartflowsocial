@@ -5,8 +5,9 @@ import { useEffect, useMemo } from "react";
 
 import { Button } from "~/components/ui/button";
 import type { RelayStatus } from "~/features/auth/login-flow.client";
-import { isMobile } from "~/lib/is-mobile";
+import { isAndroid, isMobile } from "~/lib/is-mobile";
 
+import { AmberLoginIcon } from "./AmberLoginIcon";
 import { AuthProgressHeader, AuthStepList, type AuthStepItem } from "./auth-ui";
 import { useLoginAuthShell } from "./LoginAuthShellContext";
 import { Nip46QrUri } from "./Nip46QrUri";
@@ -23,6 +24,7 @@ export interface LoginAwaitingProfileSelectionProps {
   onCopyUri: () => void;
   copyOk: boolean;
   onLoginWithPrimal: () => void;
+  onLoginWithAmber: () => void;
   onCancel: () => void;
 }
 
@@ -36,6 +38,7 @@ export function LoginAwaitingProfileSelection({
   onCopyUri,
   copyOk,
   onLoginWithPrimal,
+  onLoginWithAmber,
   onCancel,
 }: LoginAwaitingProfileSelectionProps) {
   const { setRightPanel, setAwaitingApproval } = useLoginAuthShell();
@@ -53,7 +56,32 @@ export function LoginAwaitingProfileSelection({
         approvalHeading="Scan to approve"
         approvalSubtext="Use your remote signer to scan or paste the URI below."
       >
-        {isMobile() ? (
+        {isMobile() && isAndroid() ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="default"
+              className="bg-canvas text-text hover:bg-surface-hover border-border border"
+              onClick={onLoginWithAmber}
+            >
+              <span className="cluster">
+                <AmberLoginIcon className="size-5 shrink-0" />
+                Login with Amber
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              className="bg-canvas text-text hover:bg-surface-hover border-border border"
+              onClick={onLoginWithPrimal}
+            >
+              <span className="cluster">
+                <PrimalLogoIcon className="size-5 shrink-0" />
+                Login with Primal
+              </span>
+            </Button>
+          </div>
+        ) : isMobile() ? (
           <Button
             type="button"
             variant="default"
@@ -77,6 +105,7 @@ export function LoginAwaitingProfileSelection({
     copyOk,
     onCopyUri,
     onLoginWithPrimal,
+    onLoginWithAmber,
     setRightPanel,
     setAwaitingApproval,
   ]);

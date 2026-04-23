@@ -30,7 +30,10 @@ import {
 import { BRAND_NAME } from "~/lib/brand";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
-import { appendPrimalCallback } from "../reconnect-uri.client";
+import {
+  appendAmberIntentUrl,
+  appendPrimalCallback,
+} from "../reconnect-uri.client";
 import { useLoginPanelState } from "../useLoginPanelState.client";
 import { useRelayCheck } from "../useRelayCheck.client";
 
@@ -366,6 +369,62 @@ export default function NostrLoginPanel() {
     setState,
   ]);
 
+  // When true, open Amber via intent:// as soon as nip46.nostrConnectUri is set.
+  const shouldOpenAmberRef = useRef(false);
+  // When true, we have opened Amber via intent:// and the page is still alive.
+  // Used to suppress the visibilitychange-triggered cancel so the relay
+  // subscription stays open while the user approves in Amber.
+  const amberIntentActiveRef = useRef(false);
+
+  const handleLoginWithAmber = useCallback(() => {
+    if (nip46.nostrConnectUri) {
+      // URI already exists (session in progress). Open Amber directly.
+      amberIntentActiveRef.current = true;
+      window.location.href = appendAmberIntentUrl(nip46.nostrConnectUri);
+      return;
+    }
+    const relays = parseRelayList(relayList);
+    if (relays.length === 0) return;
+    // Unlike the Primal flow (which navigates the page away so Primal can
+    // re-send its connect event on resume), intent:// keeps the page alive.
+    // We therefore must keep the relay subscription alive too. We do this by
+    // starting the normal NIP-46 connect flow (which subscribes to the relay)
+    // and then signalling the useEffect below to open Amber once the URI is
+    // ready. That way Amber's one-time connect event arrives on the still-open
+    // WebSocket rather than being missed by a late resume().
+    shouldOpenAmberRef.current = true;
+    setNip46AttemptCount((c) => c + 1);
+    setActiveSignerFlow("nip46");
+    setState("awaiting_profile_selection");
+    setConnectionStartTime(Date.now());
+    setConnectionTimeout(120_000);
+    void nip46.connect({
+      relayList,
+      nip46Tab: "nostrconnect",
+      nip46Input: "",
+      retryCount: 0,
+      currentUri: null,
+      currentState: "signer_selection",
+    });
+  }, [
+    nip46,
+    relayList,
+    setNip46AttemptCount,
+    setActiveSignerFlow,
+    setConnectionStartTime,
+    setConnectionTimeout,
+    setState,
+  ]);
+
+  // Open Amber via intent:// once the nostrconnect URI becomes available.
+  useEffect(() => {
+    if (!shouldOpenAmberRef.current) return;
+    if (!nip46.nostrConnectUri) return;
+    shouldOpenAmberRef.current = false;
+    amberIntentActiveRef.current = true;
+    window.location.href = appendAmberIntentUrl(nip46.nostrConnectUri);
+  }, [nip46.nostrConnectUri]);
+
   // Detect app switching on mobile during connection
   useEffect(() => {
     if (
@@ -380,10 +439,17 @@ export default function NostrLoginPanel() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setWasHiddenDuringConnection(true);
-        if (state === "awaiting_profile_selection") {
+        if (
+          state === "awaiting_profile_selection" &&
+          !amberIntentActiveRef.current
+        ) {
+          // Don't cancel the relay subscription when the page is hidden because
+          // the user opened Amber via intent://. The page stays alive and we need
+          // the subscription open so Amber's one-time connect event is received.
           nip46.cancelRef.current?.cancel();
         }
       } else if (wasHiddenDuringConnection) {
+        amberIntentActiveRef.current = false;
         setWasHiddenDuringConnection(false);
         if (
           nip46.nostrConnectUri &&
@@ -701,6 +767,7 @@ export default function NostrLoginPanel() {
             setState("signer_initializing");
           }}
           onPrimal={handleLoginWithPrimal}
+          onAmber={handleLoginWithAmber}
           nip07Available={nip07.available}
         />
       ) : null}
@@ -753,6 +820,7 @@ export default function NostrLoginPanel() {
           onCopyUri={copyNostrConnectUriForAwaitingPanel}
           copyOk={copyOk}
           onLoginWithPrimal={handleLoginWithPrimal}
+          onLoginWithAmber={handleLoginWithAmber}
           onCancel={cancelAwaitingProfileSelection}
         />
       ) : null}

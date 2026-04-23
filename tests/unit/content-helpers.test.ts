@@ -153,14 +153,14 @@ describe("Content Helpers", () => {
   });
 
   describe("getStatusColor", () => {
-    it("should return neutral border/foreground for drafts", () => {
+    it("should return neutral border/primary text for drafts", () => {
       const item = combinedContentFactory.post({
         id: "1",
         currentState: "DRAFT",
       });
       const result = getStatusColor(item);
       expect(result).toContain("border");
-      expect(result).toContain("foreground");
+      expect(result).toContain("text-text");
     });
 
     it("should return success styling for posted items", () => {
@@ -181,55 +181,55 @@ describe("Content Helpers", () => {
       expect(result).toContain("success");
     });
 
-    it("should return muted styling for scheduled items", () => {
+    it("should return secondary text styling for scheduled items", () => {
       const item = combinedContentFactory.post({
         id: "1",
         currentState: "SCHEDULED",
       });
       const result = getStatusColor(item);
-      expect(result).toContain("muted");
+      expect(result).toContain("text-text-secondary");
     });
 
-    it("should return muted styling for unknown status", () => {
+    it("should return secondary text styling for unknown status", () => {
       const item = combinedContentFactory.post({ id: "1" });
       const result = getStatusColor(item);
-      expect(result).toContain("muted");
+      expect(result).toContain("text-text-secondary");
     });
 
-    it("should return destructive for FAILED state", () => {
+    it("should return danger tokens for FAILED state", () => {
       const item = combinedContentFactory.post({
         id: "1",
         currentState: "FAILED",
       });
       const result = getStatusColor(item);
-      expect(result).toContain("destructive");
+      expect(result).toContain("danger");
     });
 
-    it("should return muted for CANCELLED state", () => {
+    it("should return secondary text for CANCELLED state", () => {
       const item = combinedContentFactory.post({
         id: "1",
         currentState: "CANCELLED",
       });
       const result = getStatusColor(item);
-      expect(result).toContain("muted");
+      expect(result).toContain("text-text-secondary");
     });
 
-    it("should return destructive for longform FAILED state", () => {
+    it("should return danger tokens for longform FAILED state", () => {
       const item = combinedContentFactory.longform({
         id: "1",
         currentState: "FAILED",
       });
       const result = getStatusColor(item);
-      expect(result).toContain("destructive");
+      expect(result).toContain("danger");
     });
 
-    it("should return muted for longform CANCELLED state", () => {
+    it("should return secondary text for longform CANCELLED state", () => {
       const item = combinedContentFactory.longform({
         id: "1",
         currentState: "CANCELLED",
       });
       const result = getStatusColor(item);
-      expect(result).toContain("muted");
+      expect(result).toContain("text-text-secondary");
     });
 
     it("should use currentState from originalData when item.currentState missing", () => {

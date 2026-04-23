@@ -160,7 +160,7 @@ export function TimeGrid({
         >
           {hourLabels.map((label, index) => (
             <div
-              key={index}
+              key={hours[index] ?? label}
               className="border-border/30 text-text-secondary/85 absolute right-0 left-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none"
               style={{
                 top: index * ROW_HEIGHT_PX,

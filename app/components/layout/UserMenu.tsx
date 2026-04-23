@@ -301,19 +301,21 @@ export default function UserMenu() {
               {avatarFallback}
             </span>
           )}
-          {/* Desktop: rounded-square avatar + display name */}
-          <Avatar className="hidden h-7 w-7 rounded-md sm:flex">
-            {currentAvatar ? (
-              <AvatarImage
+          {/* Desktop: rounded-square avatar — plain img/span avoids Avatar's
+              hardcoded rounded-full base class */}
+          {currentAvatar ? (
+            <span className="hidden h-7 w-7 shrink-0 overflow-hidden rounded-md sm:inline-flex">
+              <img
                 src={currentAvatar}
                 alt={displayName || currentLabel}
+                className="h-full w-full object-cover object-center"
               />
-            ) : (
-              <AvatarFallback className="text-xs">
-                {avatarFallback}
-              </AvatarFallback>
-            )}
-          </Avatar>
+            </span>
+          ) : (
+            <span className="bg-surface-hover text-text-secondary hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-medium sm:inline-flex">
+              {avatarFallback}
+            </span>
+          )}
           <span className="hidden sm:ml-2 sm:inline">
             {displayName || currentLabel}
           </span>

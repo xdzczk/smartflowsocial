@@ -14,6 +14,25 @@ import { StatusIcon } from "~/components/ui/status-icon";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useOptionalUser } from "~/lib/remix-utils";
 
+// Staged substatus messages shown while waiting for server/relay data.
+// These rotate based on elapsed time from publish intent click.
+const STAGED_SUBSTATUS: Array<{ afterMs: number; label: string }> = [
+  { afterMs: 0, label: "Signing event…" },
+  { afterMs: 700, label: "Connecting to relays…" },
+  { afterMs: 1800, label: "Broadcasting to relays…" },
+  { afterMs: 4000, label: "Waiting for relay acknowledgements…" },
+];
+
+function stagedSubstatusLabelFromElapsed(elapsedMs: number): string {
+  for (let i = STAGED_SUBSTATUS.length - 1; i >= 0; i--) {
+    const entry = STAGED_SUBSTATUS[i];
+    if (entry && elapsedMs >= entry.afterMs) {
+      return entry.label;
+    }
+  }
+  return STAGED_SUBSTATUS[0]?.label ?? "Initializing publish…";
+}
+
 import { formatRelayUrl } from "../utils/publish-result.utils";
 
 /**
@@ -50,7 +69,7 @@ function StatusTitle({ status }: { status: StatusType }) {
     return (
       <>
         <StatusIcon tone="pending" size="xl" className="text-info" />
-        Publishing...
+        Publishing post
       </>
     );
   }
@@ -58,7 +77,7 @@ function StatusTitle({ status }: { status: StatusType }) {
     return (
       <>
         <StatusIcon tone="success" size="xl" />
-        Published Successfully
+        Published
       </>
     );
   }
@@ -73,7 +92,7 @@ function StatusTitle({ status }: { status: StatusType }) {
   return (
     <>
       <StatusIcon tone="danger" size="xl" />
-      Publishing Failed
+      Publish Failed
     </>
   );
 }
@@ -164,17 +183,14 @@ function StatusDescription({
   if (status === "publishing") {
     return (
       <span>
-        Your {contentType} is being published to relays. This may take a few
-        moments...
+        Sending your {contentType} to relays. This may take a few moments.
       </span>
     );
   }
 
   if (status === "success") {
     return (
-      <span>
-        Your {contentType} has been successfully published to all relays.
-      </span>
+      <span>Your {contentType} was published to relays successfully.</span>
     );
   }
 
@@ -189,14 +205,18 @@ function StatusDescription({
 
   // status must be "failed" at this point
   return (
-    <span>
-      Your {contentType} failed to publish to any relays. Please try again.
-    </span>
+    <span>Your {contentType} could not be published. Please try again.</span>
   );
 }
 
 // Helper component for relay status badge
-function RelayStatusBadge({ status }: { status: RelayAck["status"] }) {
+function RelayStatusBadge({
+  status,
+  substatus,
+}: {
+  status: RelayAck["status"];
+  substatus?: "connecting";
+}) {
   if (status === "ACCEPTED") {
     return (
       <span className="bg-success/12 text-success-text dark:bg-success/15 dark:text-success rounded-full px-2 py-1 text-xs font-medium">
@@ -214,7 +234,14 @@ function RelayStatusBadge({ status }: { status: RelayAck["status"] }) {
   if (status === "TIMEOUT") {
     return (
       <span className="bg-warning/12 text-warning-text dark:bg-warning/15 dark:text-warning rounded-full px-2 py-1 text-xs font-medium">
-        Timeout
+        Timed out
+      </span>
+    );
+  }
+  if (substatus === "connecting") {
+    return (
+      <span className="bg-info/10 text-info rounded-full px-2 py-1 text-xs font-medium">
+        Connecting
       </span>
     );
   }
@@ -250,8 +277,20 @@ interface PublishResultModalProps {
   lastScheduledAt?: string | null;
   /** For bulk schedule: queue name -> count. */
   queueSummary?: Record<string, number> | string;
+  /**
+   * When true, the modal was opened immediately on publish intent — before
+   * a postId or relay data is available. Shows staged substatus copy and a
+   * relay skeleton placeholder. Transitions automatically when postId arrives.
+   */
+  immediateProgress?: boolean;
+  /**
+   * Unix timestamp (Date.now()) when the publish intent fired.
+   * Used to calculate staged substatus messages during the wait.
+   */
+  intentStartedAt?: number | null;
 }
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity -- single dialog covers publish, schedule, bulk schedule, and relay polling */
 export default function PublishResultModal({
   isOpen,
   postId,
@@ -265,12 +304,36 @@ export default function PublishResultModal({
   bulkCount,
   lastScheduledAt,
   queueSummary,
+  immediateProgress = false,
+  intentStartedAt,
 }: PublishResultModalProps) {
   const [relayAcks, setRelayAcks] = useState<RelayAck[]>([]);
   const [relayResultsVisible, setRelayResultsVisible] = useState(false);
   const modalOpenedAtRef = useRef<number>(0);
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  // Elapsed ms since publish intent, updated on an interval — never read
+  // Date.now() during render (react-hooks/purity).
+  const [stagedElapsedMs, setStagedElapsedMs] = useState(0);
+  const runStagedSubstatusTicker =
+    immediateProgress && intentStartedAt != null && relayAcks.length === 0;
+
+  useEffect(() => {
+    if (!runStagedSubstatusTicker) return;
+    const startMs = intentStartedAt;
+    const tick = (): void => {
+      setStagedElapsedMs(Date.now() - startMs);
+    };
+    const id = setInterval(tick, 250);
+    queueMicrotask(tick);
+    return () => clearInterval(id);
+  }, [runStagedSubstatusTicker, intentStartedAt]);
+
+  const currentStagedSubstatus =
+    immediateProgress && relayAcks.length === 0 && intentStartedAt != null
+      ? stagedSubstatusLabelFromElapsed(stagedElapsedMs)
+      : null;
   // When parent passes null (e.g. race after redirect), we may resolve via fetch
   const [resolvedPublishAttemptId, setResolvedPublishAttemptId] = useState<
     string | null
@@ -745,7 +808,17 @@ export default function PublishResultModal({
 
         {action === "publish" && relayAcksForUi.length > 0 ? (
           <div className="max-h-96 space-y-2 overflow-y-auto">
-            <h3 className="text-sm font-semibold">Relay Status</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Relay Status</h3>
+              {relayStatusCounts.acceptedCount > 0 &&
+              relayAcksForUi.length > 0 ? (
+                <span className="text-text-secondary text-xs">
+                  Accepted by {relayStatusCounts.acceptedCount} of{" "}
+                  {relayAcksForUi.length}{" "}
+                  {relayAcksForUi.length === 1 ? "relay" : "relays"}
+                </span>
+              ) : null}
+            </div>
             {relayAcksForUi.map((ack) => (
               <div
                 key={ack.relayUrl}
@@ -771,11 +844,10 @@ export default function PublishResultModal({
           <div className="flex flex-col items-center justify-center gap-2 py-8">
             <StatusIcon tone="pending" size="xl" className="text-info" />
             <span className="text-text-secondary text-center text-sm">
-              {resolvedPublishAttemptId
-                ? relayAcks.length > 0
-                  ? "Preparing relay status…"
-                  : "Waiting for relay responses..."
-                : "Checking publish status..."}
+              {currentStagedSubstatus ??
+                (resolvedPublishAttemptId
+                  ? "Waiting for relay responses…"
+                  : "Connecting to relays…")}
             </span>
             {hasTimedOut ? (
               <span className="text-text-secondary text-center text-sm">
@@ -786,36 +858,44 @@ export default function PublishResultModal({
           </div>
         ) : null}
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCreateNew}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create New {postType === "longform" ? "Article" : "Post"}
-          </Button>
-          <Button
-            type="button"
-            onClick={onViewPage}
-            className="w-full sm:w-auto"
-          >
-            <CheckSquare className="mr-2 h-4 w-4" />
-            View {action === "schedule" ? "Scheduled" : "Published"}
-          </Button>
-          {onGoToDashboard ? (
+        {/* Hide action buttons during the immediate progress phase — no postId
+            means there's nothing to navigate to yet. Show them once the post
+            is known or when a terminal state is reached. */}
+        {!immediateProgress ||
+        status === "success" ||
+        status === "partial" ||
+        status === "failed" ? (
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             <Button
               type="button"
               variant="outline"
-              onClick={onGoToDashboard}
+              onClick={onCreateNew}
               className="w-full sm:w-auto"
             >
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Go to Dashboard
+              <Plus className="mr-2 h-4 w-4" />
+              Create New {postType === "longform" ? "Article" : "Post"}
             </Button>
-          ) : null}
-        </DialogFooter>
+            <Button
+              type="button"
+              onClick={onViewPage}
+              className="w-full sm:w-auto"
+            >
+              <CheckSquare className="mr-2 h-4 w-4" />
+              View {action === "schedule" ? "Scheduled" : "Published"}
+            </Button>
+            {onGoToDashboard ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onGoToDashboard}
+                className="w-full sm:w-auto"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Go to Dashboard
+              </Button>
+            ) : null}
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

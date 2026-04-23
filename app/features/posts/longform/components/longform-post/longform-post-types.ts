@@ -71,4 +71,10 @@ export interface LongFormPostProps {
   templateLastUpdatedLabel?: string | null;
   /** Template edit: parent opens delete confirmation */
   onTemplateDeleteClick?: () => void;
+  /**
+   * Fires immediately when the user commits a "Publish now" action, before
+   * signing or network work. Used by the parent page to open publish progress
+   * UI right away.
+   */
+  onPublishIntent?: () => void;
 }
