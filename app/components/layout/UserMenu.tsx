@@ -281,15 +281,17 @@ export default function UserMenu() {
           variant="outline"
           size="sm"
           aria-label={`Account: ${displayName || currentLabel}`}
-          className="h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
+          className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
         >
-          {/* Mobile: raw img fills the button — Button's overflow-hidden+rounded-lg clips it */}
+          {/* Mobile: absolutely fill the button then scale-150 so the circular
+              logo overflows the button bounds; overflow-hidden+rounded-lg clips
+              it back, leaving a fully-filled rounded-rectangle with no gaps. */}
           {currentAvatar ? (
             <img
               src={currentAvatar}
               alt=""
               aria-hidden="true"
-              className="block h-full w-full object-cover sm:hidden"
+              className="absolute inset-0 h-full w-full scale-[1.5] object-cover object-center sm:hidden"
             />
           ) : (
             <span
@@ -299,8 +301,8 @@ export default function UserMenu() {
               {avatarFallback}
             </span>
           )}
-          {/* Desktop: standard circular avatar + display name */}
-          <Avatar className="hidden h-6 w-6 sm:flex">
+          {/* Desktop: rounded-square avatar + display name */}
+          <Avatar className="hidden h-7 w-7 rounded-md sm:flex">
             {currentAvatar ? (
               <AvatarImage
                 src={currentAvatar}
