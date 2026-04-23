@@ -3,7 +3,8 @@
  */
 
 import type { UserData } from "~/features/posts/types";
-import { fromDate, nowInTimezone } from "~/lib/temporal";
+import { useTodayKey } from "~/lib/hooks/useTodayKey";
+import { fromDate } from "~/lib/temporal";
 
 import {
   CALENDAR_DAYS_HEADER_TIME_SPACER_Z,
@@ -29,7 +30,7 @@ export function DaysHeader({
   stickyTop = true,
 }: DaysHeaderProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
-  const todayZoned = nowInTimezone(userTimezone);
+  const today = useTodayKey(userTimezone);
 
   return (
     <div
@@ -53,10 +54,11 @@ export function DaysHeader({
       ) : null}
       {weekDays.map((day) => {
         const dayZoned = fromDate(day, userTimezone);
-        const isToday =
-          dayZoned.year === todayZoned.year &&
-          dayZoned.month === todayZoned.month &&
-          dayZoned.day === todayZoned.day;
+        const isToday = today
+          ? dayZoned.year === today.year &&
+            dayZoned.month === today.month &&
+            dayZoned.day === today.day
+          : false;
         // NOTE: Do NOT add `scroll-snap-align` here. These columns live
         // inside the sticky `DaysHeader` row, and both Chromium and
         // WebKit have bugs where snap targets on sticky descendants

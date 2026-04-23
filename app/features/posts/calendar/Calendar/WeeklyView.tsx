@@ -1,4 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "~/features/posts/components/constants";
 import type { QueueType, UserData } from "~/features/posts/types";
@@ -38,6 +44,42 @@ interface WeeklyViewProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+}
+
+const WEEK_SCROLL_DEBUG_STORAGE_KEY = "debugWeekScroll";
+
+function subscribeNoop(): () => void {
+  return () => {};
+}
+
+function getWeekScrollDebugEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV === "development") return true;
+  if (
+    new URLSearchParams(window.location.search).has(
+      WEEK_SCROLL_DEBUG_STORAGE_KEY
+    )
+  ) {
+    return true;
+  }
+  try {
+    return window.localStorage.getItem(WEEK_SCROLL_DEBUG_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Client-only opt-in flag that toggles the WeeklyView diagnostic overlay.
+ * Returns `false` during SSR and the first client render so the overlay
+ * never appears in server HTML (preventing hydration mismatches).
+ */
+function useWeekScrollDebugEnabled(): boolean {
+  return useSyncExternalStore(
+    subscribeNoop,
+    getWeekScrollDebugEnabled,
+    () => false
+  );
 }
 
 function getSlotState(
@@ -81,10 +123,12 @@ export function WeeklyView({
   );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
+  const debugEnabled = useWeekScrollDebugEnabled();
   const [scrollDebugMetrics, setScrollDebugMetrics] = useState<{
     scrollWidth: number;
     clientWidth: number;
     scrollLeft: number;
+    viewportInnerWidth: number;
   } | null>(null);
 
   const getDaysHeaderHeight = (container: HTMLDivElement): number => {
@@ -210,40 +254,56 @@ export function WeeklyView({
   };
 
   // Diagnostic overlay: measure the scroll container so we can verify on-
-  // device whether the Week view is actually horizontally overflowing. If
-  // `scrollWidth > clientWidth` but the user can't pan, the layout is fine
-  // and the problem is a touch-gesture or ancestor issue; if they're equal,
-  // the layout itself is broken and no amount of touch-action tweaking helps.
+  // device whether the Week view is actually horizontally overflowing.
+  //
+  // If `scrollWidth > clientWidth` but the user can't pan, the layout is
+  // fine and the problem is a touch-gesture or ancestor issue; if they're
+  // equal, the layout itself is broken and no amount of touch-action
+  // tweaking helps.
   //
   // Enabled in local dev automatically, or anywhere (including staging) by
-  // appending `?debugWeekScroll=1` to the URL. Kept off by default in
+  // appending `?debugWeekScroll=1` to the URL, OR by setting
+  // `localStorage.setItem("debugWeekScroll","1")`. Kept off by default in
   // production so users never see it.
   useEffect(() => {
-    const debugEnabled =
-      process.env.NODE_ENV === "development" ||
-      (typeof window !== "undefined" &&
-        new URLSearchParams(window.location.search).has("debugWeekScroll"));
     if (!debugEnabled) return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).has("debugWeekScroll")) {
+      window.localStorage.setItem("debugWeekScroll", "1");
+    }
     const el = gridScrollRef.current;
-    if (!el) return;
     const measure = () => {
+      const inner = window.innerWidth;
+      if (!el) {
+        setScrollDebugMetrics({
+          scrollWidth: 0,
+          clientWidth: 0,
+          scrollLeft: 0,
+          viewportInnerWidth: inner,
+        });
+        return;
+      }
       setScrollDebugMetrics({
         scrollWidth: el.scrollWidth,
         clientWidth: el.clientWidth,
         scrollLeft: el.scrollLeft,
+        viewportInnerWidth: inner,
       });
     };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    el.addEventListener("scroll", measure, { passive: true });
+    // First measure scheduled in the next microtask so we don't call
+    // setState synchronously in the effect body (lint rule).
+    const raf = window.requestAnimationFrame(measure);
+    const ro = el ? new ResizeObserver(measure) : null;
+    if (el && ro) ro.observe(el);
+    if (el) el.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
     return () => {
-      ro.disconnect();
-      el.removeEventListener("scroll", measure);
+      window.cancelAnimationFrame(raf);
+      ro?.disconnect();
+      if (el) el.removeEventListener("scroll", measure);
       window.removeEventListener("resize", measure);
     };
-  }, []);
+  }, [debugEnabled]);
 
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
@@ -366,20 +426,31 @@ export function WeeklyView({
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {scrollDebugMetrics ? (
+      {debugEnabled ? (
         <div
-          className="pointer-events-none absolute top-1 right-1 z-[60] rounded-md border border-white/30 bg-black/70 px-2 py-1 font-mono text-[10px] leading-tight text-white"
+          className="pointer-events-none fixed top-2 right-2 rounded-md border-2 border-lime-300 bg-black/90 px-3 py-2 font-mono text-[11px] leading-tight text-lime-200 shadow-lg"
+          style={{ zIndex: 2147483646 }}
           data-testid="weekly-view-scroll-debug"
         >
-          <div>
-            sw:{scrollDebugMetrics.scrollWidth} / cw:
-            {scrollDebugMetrics.clientWidth}
-          </div>
-          <div>
-            sl:{scrollDebugMetrics.scrollLeft} · overflow:
-            {overflowsHorizontally ? "YES" : "NO"} · mobile:
-            {isMobile ? "Y" : "N"}
-          </div>
+          <div className="mb-1 font-bold text-lime-300">WEEK SCROLL DEBUG</div>
+          {scrollDebugMetrics ? (
+            <>
+              <div>
+                vw:{scrollDebugMetrics.viewportInnerWidth} mobile:
+                {isMobile ? "Y" : "N"}
+              </div>
+              <div>
+                sw:{scrollDebugMetrics.scrollWidth} cw:
+                {scrollDebugMetrics.clientWidth}
+              </div>
+              <div>
+                sl:{scrollDebugMetrics.scrollLeft} overflow:
+                {overflowsHorizontally ? "YES" : "NO"}
+              </div>
+            </>
+          ) : (
+            <div>measuring… (ref not ready)</div>
+          )}
         </div>
       ) : null}
       {/*
