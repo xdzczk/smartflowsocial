@@ -8,15 +8,17 @@ import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
-import { isMobile } from "~/lib/is-mobile";
+import { isAndroid, isMobile } from "~/lib/is-mobile";
 import { cn } from "~/lib/utils";
 
+import { AmberLoginIcon } from "./AmberLoginIcon";
 import { PrimalLogoIcon } from "./PrimalLogoIcon";
 
 export interface LoginSignerSelectionProps {
   onNip07: () => void;
   onNip46: () => void;
   onPrimal?: () => void;
+  onAmber?: () => void;
   /** false = extension not detected (show install links); null = still checking */
   nip07Available: boolean | null;
 }
@@ -25,6 +27,7 @@ export function LoginSignerSelection({
   onNip07,
   onNip46,
   onPrimal,
+  onAmber,
   nip07Available,
 }: LoginSignerSelectionProps) {
   const [highlighted, setHighlighted] = useState<"nip07" | "nip46" | null>(
@@ -133,17 +136,44 @@ export function LoginSignerSelection({
       </div>
 
       {isMobile() && onPrimal ? (
-        <Button
-          type="button"
-          variant="default"
-          className="bg-canvas text-text hover:bg-surface-hover border-border shadow-2 hover:shadow-3 h-auto w-full border py-3 text-base font-semibold transition-all sm:col-span-2"
-          onClick={onPrimal}
-        >
-          <span className="flex items-center justify-center gap-2">
-            <PrimalLogoIcon className="size-5 shrink-0" />
-            Login with Primal
-          </span>
-        </Button>
+        isAndroid() && onAmber ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="default"
+              className="bg-canvas text-text hover:bg-surface-hover border-border shadow-2 hover:shadow-3 h-auto min-w-0 border py-3 text-sm font-semibold transition-all sm:text-base"
+              onClick={onAmber}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <AmberLoginIcon className="size-5 shrink-0" />
+                <span className="truncate">Login with Amber</span>
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              className="bg-canvas text-text hover:bg-surface-hover border-border shadow-2 hover:shadow-3 h-auto min-w-0 border py-3 text-sm font-semibold transition-all sm:text-base"
+              onClick={onPrimal}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <PrimalLogoIcon className="size-5 shrink-0" />
+                <span className="truncate">Login with Primal</span>
+              </span>
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="default"
+            className="bg-canvas text-text hover:bg-surface-hover border-border shadow-2 hover:shadow-3 h-auto w-full border py-3 text-base font-semibold transition-all sm:col-span-2"
+            onClick={onPrimal}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <PrimalLogoIcon className="size-5 shrink-0" />
+              Login with Primal
+            </span>
+          </Button>
+        )
       ) : null}
     </div>
   );

@@ -93,3 +93,54 @@ describe("isMobile", () => {
     expect(isMobile()).toBe(false);
   });
 });
+
+describe("isAndroid", () => {
+  let originalNavigator: typeof navigator;
+
+  beforeEach(() => {
+    originalNavigator = globalThis.navigator;
+  });
+
+  afterEach(() => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: originalNavigator,
+      writable: true,
+      configurable: true,
+    });
+    vi.resetModules();
+  });
+
+  it("returns true when userAgent contains Android", async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36",
+      },
+      writable: true,
+      configurable: true,
+    });
+    const { isAndroid } = await import("~/lib/is-mobile");
+    expect(isAndroid()).toBe(true);
+  });
+
+  it("returns false for iPhone", async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+      },
+      writable: true,
+      configurable: true,
+    });
+    const { isAndroid } = await import("~/lib/is-mobile");
+    expect(isAndroid()).toBe(false);
+  });
+
+  it("returns false when navigator is undefined", async () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+    const { isAndroid } = await import("~/lib/is-mobile");
+    expect(isAndroid()).toBe(false);
+  });
+});

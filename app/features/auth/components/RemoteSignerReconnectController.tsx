@@ -131,6 +131,7 @@ export function RemoteSignerReconnectDialog(props: {
     existingReconnectAttempt,
     copyUri,
     handleLoginWithPrimal,
+    handleLoginWithAmber,
     isReconnectingExisting,
     clearSavedSigner,
     handlePrimaryAction,
@@ -216,6 +217,7 @@ export function RemoteSignerReconnectDialog(props: {
                   onCopyUri={() => void copyUri()}
                   copyOk={copyOk}
                   onLoginWithPrimal={handleLoginWithPrimal}
+                  onLoginWithAmber={handleLoginWithAmber}
                   disabled={state === "waiting" || isReconnectingExisting}
                 />
               </TabsContent>

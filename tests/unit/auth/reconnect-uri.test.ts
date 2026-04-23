@@ -43,6 +43,8 @@ vi.mock("~/features/auth/nostr-signer.client", () => ({
 }));
 
 import {
+  AMBER_ANDROID_PACKAGE_ID,
+  appendAmberIntentUrl,
   bunkerCanonicalKey,
   parseRelayList,
   appendPrimalCallback,
@@ -208,6 +210,31 @@ describe("reconnect-uri", () => {
       const out = appendPrimalCallback(uri);
       expect(out).toContain("&callback=");
       expect(out).toContain(encodeURIComponent("https://a.com/"));
+    });
+  });
+
+  describe("appendAmberIntentUrl", () => {
+    it("wraps appendPrimalCallback output in an Android intent targeting Amber", () => {
+      (
+        globalThis as unknown as {
+          window?: {
+            location: { origin: string; pathname: string; search: string };
+          };
+        }
+      ).window = {
+        location: {
+          origin: "https://app.com",
+          pathname: "/auth/login",
+          search: "",
+        },
+      };
+      const uri = "nostrconnect://deadbeef?relay=wss%3A%2F%2Fr.com";
+      const out = appendAmberIntentUrl(uri);
+      expect(out).toContain("#Intent;");
+      expect(out).toContain(`scheme=nostrconnect`);
+      expect(out).toContain(`package=${AMBER_ANDROID_PACKAGE_ID}`);
+      expect(out.startsWith("intent://deadbeef")).toBe(true);
+      expect(out).toContain("callback=");
     });
   });
 

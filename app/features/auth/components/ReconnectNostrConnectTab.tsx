@@ -1,8 +1,9 @@
 import QRCode from "react-qr-code";
 
 import { Button } from "~/components/ui/button";
-import { isMobile } from "~/lib/is-mobile";
+import { isAndroid, isMobile } from "~/lib/is-mobile";
 
+import { AmberLoginIcon } from "./AmberLoginIcon";
 import { PrimalLogoIcon } from "./PrimalLogoIcon";
 
 export interface ReconnectNostrConnectTabProps {
@@ -12,6 +13,7 @@ export interface ReconnectNostrConnectTabProps {
   onCopyUri: () => void;
   copyOk: boolean;
   onLoginWithPrimal: () => void;
+  onLoginWithAmber: () => void;
   disabled: boolean;
 }
 
@@ -22,6 +24,7 @@ export function ReconnectNostrConnectTab({
   onCopyUri,
   copyOk,
   onLoginWithPrimal,
+  onLoginWithAmber,
   disabled,
 }: ReconnectNostrConnectTabProps) {
   return (
@@ -68,7 +71,22 @@ export function ReconnectNostrConnectTab({
                 >
                   {copyOk ? "Copied" : "Copy"}
                 </Button>
-                {isMobile() ? (
+                {isMobile() && isAndroid() ? (
+                  <>
+                    <Button type="button" onClick={onLoginWithAmber}>
+                      <span className="cluster">
+                        <AmberLoginIcon className="size-5 shrink-0" />
+                        Login with Amber
+                      </span>
+                    </Button>
+                    <Button type="button" onClick={onLoginWithPrimal}>
+                      <span className="cluster">
+                        <PrimalLogoIcon className="size-5 shrink-0" />
+                        Login with Primal
+                      </span>
+                    </Button>
+                  </>
+                ) : isMobile() ? (
                   <Button type="button" onClick={onLoginWithPrimal}>
                     <span className="cluster">
                       <PrimalLogoIcon className="size-5 shrink-0" />

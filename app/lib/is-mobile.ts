@@ -12,3 +12,9 @@ export function isMobile(): boolean {
     ) || !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 1)
   );
 }
+
+/** True when the browser reports Android (typical phones/tablets & WebView). On the server, false. */
+export function isAndroid(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}

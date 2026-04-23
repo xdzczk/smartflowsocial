@@ -68,6 +68,34 @@ export function appendPrimalCallback(uri: string): string {
   return `${uri}${separator}callback=${encodeURIComponent(callbackUrl)}`;
 }
 
+/** Amber Android app id (F-Droid / GitHub releases). Used to target Amber via VIEW intent. */
+export const AMBER_ANDROID_PACKAGE_ID = "com.greenart7c3.nostrsigner";
+
+/**
+ * Wrap a Nostr Connect URI so Chrome/Android opens Amber specifically via intent://
+ * (same callback behavior as {@link appendPrimalCallback}). Falls back to `appendPrimalCallback`
+ * output if the URI cannot be parsed.
+ *
+ * @see https://developer.chrome.com/docs/android/intents
+ */
+export function appendAmberIntentUrl(uri: string): string {
+  const withCallback = appendPrimalCallback(uri);
+  if (typeof window === "undefined") return withCallback;
+
+  try {
+    const u = new URL(withCallback);
+    const scheme = u.protocol.replace(/:$/, "");
+    if (!scheme) return withCallback;
+
+    const host = u.hostname;
+    const path = u.pathname && u.pathname !== "/" ? u.pathname : "";
+    const payload = `${host}${path}${u.search}`;
+    return `intent://${payload}#Intent;scheme=${scheme};package=${AMBER_ANDROID_PACKAGE_ID};end`;
+  } catch {
+    return withCallback;
+  }
+}
+
 /** Create NIP-46 Nostr Connect URI with app metadata. */
 export function createNip46NostrConnectUri(relays: string[]) {
   return createUriFromSigner({

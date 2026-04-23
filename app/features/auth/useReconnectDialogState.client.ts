@@ -36,6 +36,7 @@ import {
 import { useRemoteSignerHealthPolling } from "./reconnect-health.client";
 import type { ReconnectState } from "./reconnect-state.client";
 import {
+  appendAmberIntentUrl,
   appendPrimalCallback,
   clearPendingReconnectStorage,
   getPendingReconnect,
@@ -321,6 +322,11 @@ export function useReconnectDialogState({
     window.location.href = appendPrimalCallback(nostrConnectUri);
   }, [nostrConnectUri]);
 
+  const handleLoginWithAmber = useCallback(() => {
+    if (!nostrConnectUri || typeof window === "undefined") return;
+    window.location.href = appendAmberIntentUrl(nostrConnectUri);
+  }, [nostrConnectUri]);
+
   const canRetryExisting = useMemo(
     () =>
       getCanRetryExisting(state, error, getActiveSession, getPendingReconnect),
@@ -385,6 +391,7 @@ export function useReconnectDialogState({
     resetLocal,
     copyUri,
     handleLoginWithPrimal,
+    handleLoginWithAmber,
     connect,
     tryReconnectWithExistingConnection:
       existingFlow.tryReconnectWithExistingConnection,

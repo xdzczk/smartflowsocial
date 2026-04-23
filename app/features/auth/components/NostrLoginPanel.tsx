@@ -30,7 +30,10 @@ import {
 import { BRAND_NAME } from "~/lib/brand";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
-import { appendPrimalCallback } from "../reconnect-uri.client";
+import {
+  appendAmberIntentUrl,
+  appendPrimalCallback,
+} from "../reconnect-uri.client";
 import { useLoginPanelState } from "../useLoginPanelState.client";
 import { useRelayCheck } from "../useRelayCheck.client";
 
@@ -357,6 +360,43 @@ export default function NostrLoginPanel() {
     setConnectionStartTime(Date.now());
     setConnectionTimeout(120_000);
     window.location.href = uriWithCallback;
+  }, [
+    nip46,
+    relayList,
+    setConnectionStartTime,
+    setConnectionTimeout,
+    setNip46Tab,
+    setState,
+  ]);
+
+  const handleLoginWithAmber = useCallback(() => {
+    if (nip46.nostrConnectUri) {
+      window.location.href = appendAmberIntentUrl(nip46.nostrConnectUri);
+      return;
+    }
+    const relays = parseRelayList(relayList);
+    if (relays.length === 0) return;
+    const created = createNip46NostrConnectUri({
+      relays,
+      appName: BRAND_NAME,
+      ...getNostrConnectAppMetadata(),
+    });
+    const uriWithCallback = appendPrimalCallback(created.uri);
+    nip46.setPendingUri(
+      uriWithCallback,
+      created.clientSecretKey,
+      created.relays
+    );
+    try {
+      created.pool.close(created.relays);
+    } catch {
+      // ignore
+    }
+    setNip46Tab("nostrconnect");
+    setState("awaiting_profile_selection");
+    setConnectionStartTime(Date.now());
+    setConnectionTimeout(120_000);
+    window.location.href = appendAmberIntentUrl(created.uri);
   }, [
     nip46,
     relayList,
@@ -701,6 +741,7 @@ export default function NostrLoginPanel() {
             setState("signer_initializing");
           }}
           onPrimal={handleLoginWithPrimal}
+          onAmber={handleLoginWithAmber}
           nip07Available={nip07.available}
         />
       ) : null}
@@ -753,6 +794,7 @@ export default function NostrLoginPanel() {
           onCopyUri={copyNostrConnectUriForAwaitingPanel}
           copyOk={copyOk}
           onLoginWithPrimal={handleLoginWithPrimal}
+          onLoginWithAmber={handleLoginWithAmber}
           onCancel={cancelAwaitingProfileSelection}
         />
       ) : null}

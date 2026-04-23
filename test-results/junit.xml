@@ -1,9 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.001495416">
-    <testsuite name="tests/unit/calendar-week-view-smoke.test.tsx" timestamp="2026-04-23T12:07:34.730Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.001495416">
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; exports a function component" time="0.000495666">
+<testsuites name="vitest tests" tests="28" failures="0" errors="0" time="0.006727375">
+    <testsuite name="tests/unit/is-mobile.test.ts" timestamp="2026-04-23T14:58:27.694Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.00339175">
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns false when navigator.userAgent is missing" time="0.00185525">
         </testcase>
-        <testcase classname="tests/unit/calendar-week-view-smoke.test.tsx" name="WeekView smoke &gt; accepts required props shape" time="0.000510958">
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns true for Android userAgent" time="0.000238833">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns true for iPhone userAgent" time="0.000157417">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns false for desktop userAgent" time="0.000130542">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns true when maxTouchPoints &gt; 1" time="0.000103125">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isMobile &gt; returns false when navigator is undefined" time="0.0000815">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isAndroid &gt; returns true when userAgent contains Android" time="0.000122041">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isAndroid &gt; returns false for iPhone" time="0.0001075">
+        </testcase>
+        <testcase classname="tests/unit/is-mobile.test.ts" name="isAndroid &gt; returns false when navigator is undefined" time="0.000073958">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/auth/reconnect-uri.test.ts" timestamp="2026-04-23T14:58:27.695Z" hostname="Ivans-MacBook-Pro.local" tests="19" failures="0" errors="0" skipped="0" time="0.003335625">
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; bunkerCanonicalKey &gt; normalizes relays to lowercase, trims, wss-only, sorted, deduped" time="0.000582167">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; bunkerCanonicalKey &gt; uses empty string for null secret" time="0.000094833">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; splits by newlines and trims empty" time="0.000333625">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; handles CRLF" time="0.000074583">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; filters empty lines" time="0.000070458">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; parseRelayList &gt; returns empty array for empty string" time="0.00005025">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when isStandalonePWA is true" time="0.000111625">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when window is undefined" time="0.0000895">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; returns uri unchanged when uri already has callback=" time="0.00008175">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; appends callback with origin + pathname + search of the current page so Primal returns the user to the sign-in tab" time="0.000079333">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendPrimalCallback &gt; uses &amp; when uri already has ?" time="0.000105916">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; appendAmberIntentUrl &gt; wraps appendPrimalCallback output in an Android intent targeting Amber" time="0.000342291">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; returns null when neither storage has the key" time="0.00008525">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; returns null when stored value is invalid JSON" time="0.000076833">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; round-trips: set then get returns same shape" time="0.000236625">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; writes to localStorage as the durable primary store" time="0.000095666">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; recovers from sessionStorage when localStorage is wiped (iOS Safari deep-link case)" time="0.000074875">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; getPendingReconnect / setPendingReconnect &gt; returns null and clears the entry once past its TTL" time="0.000067459">
+        </testcase>
+        <testcase classname="tests/unit/auth/reconnect-uri.test.ts" name="reconnect-uri &gt; clearPendingReconnectStorage &gt; removes key from both storages" time="0.000050209">
         </testcase>
     </testsuite>
 </testsuites>
