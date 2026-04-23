@@ -49,7 +49,11 @@ export function PublishingQueueFilter({
   };
 
   return (
-    <Select value={currentValue} onValueChange={navigateToQueue}>
+    <Select
+      name="queueType"
+      value={currentValue}
+      onValueChange={navigateToQueue}
+    >
       <SelectTrigger
         className={PUBLISHING_FILTER_SELECT_TRIGGER_CLASS}
         aria-label="Filter by queue"
