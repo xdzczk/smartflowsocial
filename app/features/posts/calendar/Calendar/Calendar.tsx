@@ -698,16 +698,24 @@ export function Calendar({
         queueTypes={queueTypes}
       />
 
-      {/* Calendar content: Day view on lg shows main + right sidebar */}
-      {/*
-        NOTE: `overflow-x-hidden` is intentional. Using `overflow-x-visible`
-        here triggers the CSS spec quirk where `overflow-x: visible` is
-        computed to `auto` when `overflow-y` is not `visible`, turning this
-        wrapper into a silent two-axis scroll container. On Android Chrome,
-        that intercepts horizontal touch pans before they reach the Week
-        view's own horizontal scroll container (see WeeklyView.tsx).
-      */}
-      <div className="flex min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      {/* Calendar content: Day view on lg shows main + right sidebar.
+          Keep this wrapper's overflow at `visible` on both axes:
+          - The ancestor `<main>` in DashboardLayoutPage already applies
+            `overflow-hidden` on calendar routes, so page-level clipping is
+            handled one level up.
+          - Each child view (Week/Day/Month) has its own internal scroll
+            container, so this wrapper does not need to scroll.
+          - Setting `overflow-y: auto` here turns this element into a
+            two-axis scroll container (because `overflow-x: visible` gets
+            computed to `auto` per CSS spec when the other axis is not
+            `visible`). On Android Chrome that silently intercepts
+            horizontal touch pans before they reach the Week view's own
+            horizontal scroll container.
+          - Setting `overflow-x: hidden` (or `overflow: hidden`) here
+            establishes a new block-formatting context that changes how
+            flex widths are resolved down the chain, which broke the
+            horizontal scroll sizing on iOS. */}
+      <div className="flex min-h-0 flex-1 overflow-visible">
         <CalendarErrorBoundary>
           <div
             data-testid={`calendar-view-${view}`}
