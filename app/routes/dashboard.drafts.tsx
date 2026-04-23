@@ -60,6 +60,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
+function normalizeDraftsSearch(url: URL): string {
+  const params = new URLSearchParams(url.search);
+  // ?tab is a client-only content-type filter; the loader never reads it.
+  params.delete("tab");
+  return params.toString();
+}
+
+export function shouldRevalidate(args: {
+  currentUrl: URL;
+  nextUrl: URL;
+  formAction?: string;
+  defaultShouldRevalidate: boolean;
+}): boolean {
+  const isDraftsAction =
+    typeof args.formAction === "string" &&
+    args.formAction.includes("/dashboard/drafts");
+
+  if (isDraftsAction) {
+    return true;
+  }
+
+  if (args.currentUrl.pathname !== args.nextUrl.pathname) {
+    return args.defaultShouldRevalidate;
+  }
+
+  // Skip revalidation when only client-only params changed.
+  // The loader reads ?queueType and ?page — those still trigger revalidation.
+  if (
+    normalizeDraftsSearch(args.currentUrl) ===
+    normalizeDraftsSearch(args.nextUrl)
+  ) {
+    return false;
+  }
+
+  return args.defaultShouldRevalidate;
+}
+
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {

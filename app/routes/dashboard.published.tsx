@@ -48,6 +48,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
+function normalizePublishedSearch(url: URL): string {
+  const params = new URLSearchParams(url.search);
+  // ?tab is a client-only content-type filter; the loader never reads it.
+  params.delete("tab");
+  return params.toString();
+}
+
 export function shouldRevalidate(args: {
   currentUrl: URL;
   nextUrl: URL;
@@ -62,9 +69,14 @@ export function shouldRevalidate(args: {
     return true;
   }
 
+  if (args.currentUrl.pathname !== args.nextUrl.pathname) {
+    return args.defaultShouldRevalidate;
+  }
+
+  // Skip revalidation when only client-only params changed.
   if (
-    args.currentUrl.pathname === args.nextUrl.pathname &&
-    args.currentUrl.search === args.nextUrl.search
+    normalizePublishedSearch(args.currentUrl) ===
+    normalizePublishedSearch(args.nextUrl)
   ) {
     return false;
   }

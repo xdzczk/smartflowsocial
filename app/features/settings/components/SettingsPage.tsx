@@ -70,8 +70,6 @@ import {
   type QueueTypeSettings,
   type RelayAck,
 } from "./settings-page-loader-parsers";
-import { SettingsActivePanelSkeleton } from "./SettingsActivePanelSkeleton";
-
 function renderSettingsPanel(
   tab: SettingsTabId,
   ctx: {
@@ -573,12 +571,16 @@ export default function SettingsPage() {
     isChild: isChildBool,
   });
 
-  const isLoadingNextTab =
+  // Derive the destination tab during an in-flight tab navigation so the rail
+  // highlights the next item immediately and the panel switches without a skeleton.
+  // shouldRevalidate returns false on ?tab= changes, so all data is already
+  // in memory — there is nothing to wait for.
+  const isNavigatingToSettings =
     navigation.state === "loading" &&
     navigation.location.pathname === "/dashboard/settings";
 
   const nextSearch = navigation.location ? navigation.location.search : "";
-  const nextTabParam = isLoadingNextTab
+  const nextTabParam = isNavigatingToSettings
     ? new URLSearchParams(nextSearch).get("tab")
     : null;
 
@@ -673,59 +675,55 @@ export default function SettingsPage() {
 
   return (
     <SettingsShell sections={settingsSections} activeTab={nextActiveTab}>
-      {isLoadingNextTab ? (
-        <SettingsActivePanelSkeleton />
-      ) : (
-        renderSettingsPanel(activeTab, {
-          isChildBool,
-          timezoneValue,
-          timeFormatRaw,
-          dateFormatRaw,
-          preferredNostrClientRaw,
-          customNostrClientBaseUrlRaw,
-          themePreferenceRaw,
-          pushNotificationsEnabled,
-          pushNotifyPublishSuccess,
-          pushNotifyPublishFailure,
-          pushNotifyRunwayLow,
-          pushNotifyIncludePreview,
-          runwayNotifyBelowDays,
-          primarySignerProfile,
-          queueTypes,
-          globalScheduleIntervalHours,
-          hashTagPresets,
-          accounts,
-          relaysList,
-          publishRelaySourceValue,
-          profileRelayEntriesList,
-          managedRelaysList,
-          relayAcksMap,
-          blastrRelayEnabled,
-          canToggleBlastr,
-          blastrPolicyRaw,
-          blastrSystemRelaysRaw,
-          giveawayBlacklistList,
-          mutedList,
-          filterMutedValue,
-          hidePostsFromLowTrustUsersValue,
-          replyTemplates,
-          uploadProviderValue,
-          uploadProviderStoredValue,
-          isSubscriptionActiveForGatingValue,
-          customBlossomUrlValue,
-          enableMirrorBlossomValue,
-          mirrorUploadUrlsList,
-          subscription,
-          availablePlans,
-          paymentHistory,
-          nwcEnabledValue,
-          maskedNwcStringValue,
-          nwcLastUsedValue,
-          referral,
-          defaultZapAmountSats,
-          billingContext,
-        })
-      )}
+      {renderSettingsPanel(nextActiveTab, {
+        isChildBool,
+        timezoneValue,
+        timeFormatRaw,
+        dateFormatRaw,
+        preferredNostrClientRaw,
+        customNostrClientBaseUrlRaw,
+        themePreferenceRaw,
+        pushNotificationsEnabled,
+        pushNotifyPublishSuccess,
+        pushNotifyPublishFailure,
+        pushNotifyRunwayLow,
+        pushNotifyIncludePreview,
+        runwayNotifyBelowDays,
+        primarySignerProfile,
+        queueTypes,
+        globalScheduleIntervalHours,
+        hashTagPresets,
+        accounts,
+        relaysList,
+        publishRelaySourceValue,
+        profileRelayEntriesList,
+        managedRelaysList,
+        relayAcksMap,
+        blastrRelayEnabled,
+        canToggleBlastr,
+        blastrPolicyRaw,
+        blastrSystemRelaysRaw,
+        giveawayBlacklistList,
+        mutedList,
+        filterMutedValue,
+        hidePostsFromLowTrustUsersValue,
+        replyTemplates,
+        uploadProviderValue,
+        uploadProviderStoredValue,
+        isSubscriptionActiveForGatingValue,
+        customBlossomUrlValue,
+        enableMirrorBlossomValue,
+        mirrorUploadUrlsList,
+        subscription,
+        availablePlans,
+        paymentHistory,
+        nwcEnabledValue,
+        maskedNwcStringValue,
+        nwcLastUsedValue,
+        referral,
+        defaultZapAmountSats,
+        billingContext,
+      })}
     </SettingsShell>
   );
 }
