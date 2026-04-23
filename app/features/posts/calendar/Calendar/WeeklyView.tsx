@@ -333,21 +333,27 @@ export function WeeklyView({
           `min-width`) wider than the viewport on mobile. That is what makes
           the scroll container actually overflow horizontally so mobile
           browsers expose horizontal panning.
-        - Do NOT add `scroll-snap-type` here. The DaysHeader row is
-          `position: sticky; top: 0` inside this scroll container, which on
-          Android Chrome and iOS Safari can cause horizontal touch scrolling
-          to lock up or be silently cancelled when snap targets are present
-          on sticky descendants. See DaysHeader.tsx for the matching note.
-        - Do NOT set `touch-action` here. The default `auto` allows both
-          horizontal and vertical panning; explicit values like `pan-x pan-y`
-          are intersected with ancestor/descendant values and can silently
-          disable horizontal scrolling on some Android builds.
+        - Do NOT add `scroll-snap-type` here. It interacts badly with
+          sticky descendants on Android Chrome and iOS Safari and silently
+          locks horizontal touch panning.
+        - On mobile, `DaysHeader` is rendered non-sticky (`stickyTop={false}`).
+          Position-sticky on a descendant of a two-axis `overflow: auto`
+          container is a known cause of lost horizontal touch panning on
+          Android Chrome (bug https://crbug.com/1156075 and related) and
+          on older iOS WebKit builds. We give up the pinned weekday row on
+          phones to guarantee horizontal scroll always works.
+        - `touch-action: pan-x pan-y` is set explicitly so the browser
+          promises both pan directions to this element even if an ancestor
+          has a more restrictive computed value.
       */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
         className="relative min-h-0 min-w-0 flex-1 overflow-auto"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        style={{
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x pan-y",
+        }}
         onMouseLeave={() => {
           setHoveredPostKey(null);
           setHoverOverlayPayload(null);
@@ -366,6 +372,7 @@ export function WeeklyView({
             user={user}
             dateLocale={dateLocale}
             isMobile={isMobile}
+            stickyTop={!isMobile}
           />
           <TimeGrid {...commonTimeGridProps} isMobile={isMobile} />
         </div>

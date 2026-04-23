@@ -41,8 +41,14 @@ export function DaysHeader({
     >
       {showTimeSpacer ? (
         <div
-          className="border-border/40 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
-          style={{ zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }}
+          className={`border-border/40 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] ${
+            isMobile ? "" : "sticky left-0"
+          }`}
+          style={
+            isMobile
+              ? undefined
+              : { zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }
+          }
         />
       ) : null}
       {weekDays.map((day) => {

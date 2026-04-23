@@ -280,9 +280,27 @@ export default function UserMenu() {
         <Button
           variant="outline"
           size="sm"
+          aria-label={`Account: ${displayName || currentLabel}`}
           className="h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
         >
-          <Avatar className="h-9 w-9 flex-none rounded-none sm:h-6 sm:w-6 sm:rounded-full">
+          {/* Mobile: raw img fills the button — Button's overflow-hidden+rounded-lg clips it */}
+          {currentAvatar ? (
+            <img
+              src={currentAvatar}
+              alt=""
+              aria-hidden="true"
+              className="block h-full w-full object-cover sm:hidden"
+            />
+          ) : (
+            <span
+              className="text-xs leading-none font-medium sm:hidden"
+              aria-hidden="true"
+            >
+              {avatarFallback}
+            </span>
+          )}
+          {/* Desktop: standard circular avatar + display name */}
+          <Avatar className="hidden h-6 w-6 sm:flex">
             {currentAvatar ? (
               <AvatarImage
                 src={currentAvatar}

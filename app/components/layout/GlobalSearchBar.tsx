@@ -235,7 +235,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     >
       <PopoverAnchor asChild>
         <div ref={containerRef} className={`relative ${className}`}>
-          <div className="relative h-9">
+          <div className="tap-target relative h-9">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
               <Search className="text-text-secondary h-4 w-4" />
             </div>
