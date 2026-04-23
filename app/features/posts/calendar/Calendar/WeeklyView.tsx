@@ -321,6 +321,13 @@ export function WeeklyView({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/*
+        NOTE: Do NOT add `scroll-snap-type` here. The DaysHeader row is
+        `position: sticky; top: 0` inside this scroll container, which on
+        Android Chrome and iOS Safari can cause horizontal touch scrolling
+        to lock up or be silently cancelled when snap targets are present
+        on sticky descendants. See DaysHeader.tsx for the matching note.
+      */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
@@ -329,10 +336,6 @@ export function WeeklyView({
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x pan-y",
           overscrollBehaviorX: "contain",
-          ...(isMobile && {
-            scrollSnapType: "x proximity",
-            scrollPaddingLeft: "4rem",
-          }),
         }}
         onMouseLeave={() => {
           setHoveredPostKey(null);

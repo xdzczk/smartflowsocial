@@ -51,12 +51,16 @@ export function DaysHeader({
           dayZoned.year === todayZoned.year &&
           dayZoned.month === todayZoned.month &&
           dayZoned.day === todayZoned.day;
+        // NOTE: Do NOT add `scroll-snap-align` here. These columns live
+        // inside the sticky `DaysHeader` row, and both Chromium and
+        // WebKit have bugs where snap targets on sticky descendants
+        // disable or break horizontal touch scrolling in the ancestor
+        // scroll container (see WeeklyView.tsx for the matching note).
         const mobileWeekColumnStyle = isMobile
           ? {
               width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
               minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
               flex: "0 0 auto" as const,
-              scrollSnapAlign: "start" as const,
             }
           : undefined;
         return (

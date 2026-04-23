@@ -447,8 +447,8 @@ function PageHeaderBar({
       id="page-header"
       className={`bg-canvas border-border h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
     >
-      <div className="max-w-10xl safe-x mx-auto flex w-full min-w-0 justify-between px-3 sm:px-4 lg:px-8">
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="max-w-10xl safe-x mx-auto flex w-full min-w-0 items-center justify-between px-3 sm:px-4 lg:px-8">
+        <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button
               onClick={onDesktopToggle}
@@ -476,10 +476,10 @@ function PageHeaderBar({
             </Button>
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center px-2 sm:px-3 lg:px-6">
-          <GlobalSearchBar className="w-full min-w-0" />
+        <div className="flex min-w-0 flex-1 items-center justify-center px-2.5 sm:px-4 lg:px-6">
+          <GlobalSearchBar className="w-full max-w-xl min-w-0" />
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           <UserMenu />
         </div>
