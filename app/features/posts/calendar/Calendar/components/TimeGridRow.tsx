@@ -104,7 +104,10 @@ export function TimeGridRow({
       >
         <div
           className="text-text-secondary/85 border-border/30 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none"
-          style={{ zIndex: CALENDAR_TIME_RAIL_STICKY_Z }}
+          style={{
+            zIndex: CALENDAR_TIME_RAIL_STICKY_Z,
+            boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+          }}
         >
           {hourLabel}
         </div>

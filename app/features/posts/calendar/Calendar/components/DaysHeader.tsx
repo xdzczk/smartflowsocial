@@ -48,7 +48,10 @@ export function DaysHeader({
         // day-label cells so they slide under it cleanly.
         <div
           className="border-border/40 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
-          style={{ zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z }}
+          style={{
+            zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z,
+            boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+          }}
         />
       ) : null}
       {weekDays.map((day) => {

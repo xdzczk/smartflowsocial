@@ -10,7 +10,7 @@ import { CONTENT_MOBILE_BREAKPOINT_PX } from "~/features/posts/components/consta
 import type { QueueType, UserData } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { addDays, fromDate, toDate } from "~/lib/temporal";
+import { addDays, fromDate, nowInTimezone, toDate } from "~/lib/temporal";
 
 import {
   buildDropIsoString,
@@ -21,6 +21,7 @@ import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
+  CURRENT_TIME_INDICATOR_Z,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
   MOBILE_WEEK_GRID_MIN_WIDTH,
@@ -50,6 +51,14 @@ const WEEK_SCROLL_DEBUG_STORAGE_KEY = "debugWeekScroll";
 
 function subscribeNoop(): () => void {
   return () => {};
+}
+
+function subscribeMinute(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const id = window.setInterval(() => {
+    onStoreChange();
+  }, 30_000);
+  return () => window.clearInterval(id);
 }
 
 function getWeekScrollDebugEnabled(): boolean {
@@ -131,6 +140,12 @@ export function WeeklyView({
     viewportInnerWidth: number;
   } | null>(null);
 
+  // Track vertical scroll position so the current-time dot (rendered in the
+  // non-scrolling outer wrapper) stays aligned with the correct time row.
+  const [scrollTop, setScrollTop] = useState(0);
+  // Height of the sticky DaysHeader, used to compute the dot's clamped top.
+  const [daysHeaderHeight, setDaysHeaderHeight] = useState(0);
+
   const getDaysHeaderHeight = (container: HTMLDivElement): number => {
     const header = container.querySelector<HTMLElement>(
       '[data-calendar-days-header="true"]'
@@ -189,6 +204,33 @@ export function WeeklyView({
   }, [userTimeFormat]);
 
   const userTimezone = user?.timezone ?? "Etc/UTC";
+
+  // Current-time dot: subscribe to clock so it moves every 30 s. Returns
+  // null during SSR (preventing hydration mismatch). The DOT is rendered in
+  // the outer (non-scrolling) wrapper at left:4rem so it stays glued to the
+  // time column's right edge regardless of horizontal scroll position.
+  // Must be declared after userTimezone and weekDays are in scope.
+  const indicatorNowKey = useSyncExternalStore(
+    subscribeMinute,
+    () => {
+      const z = nowInTimezone(userTimezone);
+      return `${z.year}|${z.month}|${z.day}|${z.hour}|${z.minute}`;
+    },
+    () => null
+  );
+  const indicatorTopOffset = useMemo<number | null>(() => {
+    if (!indicatorNowKey) return null;
+    const parts = indicatorNowKey.split("|").map(Number);
+    if (parts.length < 5) return null;
+    const [y, mo, d, h, mi] = parts as [number, number, number, number, number];
+    const isTodayInWeek = weekDays.some((day) => {
+      const dz = fromDate(day, userTimezone);
+      return dz.year === y && dz.month === mo && dz.day === d;
+    });
+    if (!isTodayInWeek) return null;
+    return h * 2 * ROW_HEIGHT_PX + (mi / 60) * ROW_HEIGHT_PX * 2;
+  }, [indicatorNowKey, weekDays, userTimezone]);
+
   const weekDaysDateKeys = useMemo(() => {
     return weekDays.map((day) => {
       const dayZoned = fromDate(day, userTimezone);
@@ -304,6 +346,19 @@ export function WeeklyView({
       window.removeEventListener("resize", measure);
     };
   }, [debugEnabled]);
+
+  // Measure the DaysHeader height after mount so the outer-wrapper dot is
+  // positioned correctly. Re-measures on scroll-container resize (e.g. font
+  // size change, dynamic header appearance).
+  useEffect(() => {
+    const el = gridScrollRef.current;
+    if (!el) return;
+    const measure = () => setDaysHeaderHeight(getDaysHeaderHeight(el));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
@@ -424,8 +479,35 @@ export function WeeklyView({
     ? scrollDebugMetrics.scrollWidth > scrollDebugMetrics.clientWidth
     : false;
 
+  // Dot's top in outer wrapper: daysHeaderHeight + topOffset - scrollTop, clamped
+  // so it never slides above the sticky day-header row.
+  const dotTop =
+    indicatorTopOffset !== null
+      ? Math.max(
+          daysHeaderHeight,
+          daysHeaderHeight + indicatorTopOffset - scrollTop
+        ) - 5 // centre the 10 px circle on the line
+      : null;
+
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/* Current-time dot lives here (outside the scroll container) so it
+          always stays at the time column's right edge even when the user
+          pans horizontally. The line is still drawn inside the scroll area
+          by CurrentTimeIndicator so it extends across the day columns. */}
+      {dotTop !== null ? (
+        <div
+          aria-hidden
+          className="bg-brand pointer-events-none absolute rounded-full"
+          style={{
+            width: 10,
+            height: 10,
+            left: "calc(4rem - 5px)",
+            top: dotTop,
+            zIndex: CURRENT_TIME_INDICATOR_Z,
+          }}
+        />
+      ) : null}
       {debugEnabled ? (
         <div
           className="pointer-events-none fixed top-2 right-2 rounded-md border-2 border-lime-300 bg-black/90 px-3 py-2 font-mono text-[11px] leading-tight text-lime-200 shadow-lg"
@@ -484,6 +566,9 @@ export function WeeklyView({
         style={{
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x pan-y",
+        }}
+        onScroll={() => {
+          setScrollTop(gridScrollRef.current?.scrollTop ?? 0);
         }}
         onMouseLeave={() => {
           setHoveredPostKey(null);

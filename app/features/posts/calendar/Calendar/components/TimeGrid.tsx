@@ -187,6 +187,15 @@ export function TimeGrid({
             isMobile={isMobile}
           />
         </div>
+        {/* Permanent separator at the time-column/day-columns boundary.
+            Drawn above the rows-wrapper stacking context (z=1) so it stays
+            visible even when overflow-visible post blocks expand across rows
+            and would otherwise cover the per-row border-r lines. */}
+        <div
+          aria-hidden
+          className="border-border/40 pointer-events-none absolute inset-y-0 border-r"
+          style={{ left: "calc(4rem - 1px)", width: "1px", zIndex: 3 }}
+        />
         {!isMobile && hoverOverlayPayload ? (
           <div
             className="pointer-events-none absolute inset-0"
