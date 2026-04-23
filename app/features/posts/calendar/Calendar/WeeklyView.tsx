@@ -21,7 +21,6 @@ import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
-  CURRENT_TIME_INDICATOR_Z,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
   MOBILE_WEEK_GRID_MIN_WIDTH,
@@ -140,14 +139,8 @@ export function WeeklyView({
     viewportInnerWidth: number;
   } | null>(null);
 
-  // Track vertical scroll position so the current-time dot (rendered in the
-  // non-scrolling outer wrapper) stays aligned with the correct time row.
-  const [scrollTop, setScrollTop] = useState(0);
-  // Height of the sticky DaysHeader, used to compute the dot's clamped top.
-  const [daysHeaderHeight, setDaysHeaderHeight] = useState(0);
-
-  const getDaysHeaderHeight = (container: HTMLDivElement): number => {
-    const header = container.querySelector<HTMLElement>(
+  const getDaysHeaderHeight = (container: HTMLDivElement | null): number => {
+    const header = container?.querySelector<HTMLElement>(
       '[data-calendar-days-header="true"]'
     );
     return header?.offsetHeight ?? 0;
@@ -347,19 +340,6 @@ export function WeeklyView({
     };
   }, [debugEnabled]);
 
-  // Measure the DaysHeader height after mount so the outer-wrapper dot is
-  // positioned correctly. Re-measures on scroll-container resize (e.g. font
-  // size change, dynamic header appearance).
-  useEffect(() => {
-    const el = gridScrollRef.current;
-    if (!el) return;
-    const measure = () => setDaysHeaderHeight(getDaysHeaderHeight(el));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
     const el = gridScrollRef.current;
@@ -469,6 +449,7 @@ export function WeeklyView({
     setActiveEmptySlotKey,
     hoverOverlayPayload,
     setHoverOverlayPayload,
+    indicatorTopOffset,
   };
 
   const gridMinWidth = isMobile
@@ -479,52 +460,8 @@ export function WeeklyView({
     ? scrollDebugMetrics.scrollWidth > scrollDebugMetrics.clientWidth
     : false;
 
-  // Both the line and dot are rendered in the outer (non-scrolling) wrapper so
-  // neither is displaced by horizontal panning. Top is computed from the
-  // current-time row offset minus how far the user has scrolled.
-  // Hide entirely when the row has scrolled above the header so a phantom
-  // stripe doesn't appear pinned at the top of the content area.
-  // overflow-hidden on the outer wrapper clips naturally when below the fold.
-  const rawIndicatorTop =
-    indicatorTopOffset !== null
-      ? daysHeaderHeight + indicatorTopOffset - scrollTop
-      : null;
-  // rawIndicatorTop < daysHeaderHeight  ⟺  indicatorTopOffset < scrollTop
-  const showIndicator =
-    rawIndicatorTop !== null && rawIndicatorTop >= daysHeaderHeight;
-
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {/* Current-time line + dot both live in the outer (non-scrolling)
-          wrapper so horizontal panning never displaces them from the time
-          column's right edge. */}
-      {showIndicator && rawIndicatorTop !== null ? (
-        <>
-          {/* Horizontal line: starts at time-column right edge, spans all visible day columns */}
-          <div
-            aria-hidden
-            className="bg-brand/90 pointer-events-none absolute h-px"
-            style={{
-              left: "4rem",
-              right: 0,
-              top: rawIndicatorTop,
-              zIndex: CURRENT_TIME_INDICATOR_Z,
-            }}
-          />
-          {/* Dot: centred on the line, pinned to the time-column right edge */}
-          <div
-            aria-hidden
-            className="bg-brand pointer-events-none absolute rounded-full"
-            style={{
-              width: 10,
-              height: 10,
-              left: "calc(4rem - 5px)",
-              top: rawIndicatorTop - 5,
-              zIndex: CURRENT_TIME_INDICATOR_Z,
-            }}
-          />
-        </>
-      ) : null}
       {debugEnabled ? (
         <div
           className="pointer-events-none fixed top-2 right-2 rounded-md border-2 border-lime-300 bg-black/90 px-3 py-2 font-mono text-[11px] leading-tight text-lime-200 shadow-lg"
@@ -583,9 +520,6 @@ export function WeeklyView({
         style={{
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x pan-y",
-        }}
-        onScroll={() => {
-          setScrollTop(gridScrollRef.current?.scrollTop ?? 0);
         }}
         onMouseLeave={() => {
           setHoveredPostKey(null);
