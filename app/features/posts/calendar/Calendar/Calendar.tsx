@@ -38,6 +38,7 @@ import type {
   UserData,
 } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useTodayKey } from "~/lib/hooks/useTodayKey";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
   addDays,
@@ -291,18 +292,20 @@ function getCalendarPostModalType(
   return "scheduled";
 }
 
-function parseInitialDate(
-  initialDate: string | null | undefined,
-  userTimezone: string
-): Date {
-  if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
-    const now = nowInTimezone(userTimezone);
-    return toDate(now);
-  }
+/**
+ * Deterministic, SSR-safe placeholder "currentDate" used during server render
+ * and the first client render when no `initialDate` URL param is provided.
+ * The real "today" replaces this after hydration via `useTodayKey`. Module-
+ * level so `useMemo` dependency identity is stable across renders.
+ */
+const SSR_PLACEHOLDER_CURRENT_DATE = new Date(Date.UTC(2024, 0, 1, 12, 0, 0));
+
+function parseInitialDateExplicit(
+  initialDate: string | null | undefined
+): Date | null {
+  if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) return null;
   const parsed = new Date(initialDate + "T12:00:00.000Z");
-  return Number.isNaN(parsed.getTime())
-    ? toDate(nowInTimezone(userTimezone))
-    : parsed;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function Calendar({
@@ -322,14 +325,32 @@ export function Calendar({
     if (initialView && VIEW_VALUES.includes(initialView)) return initialView;
     return "week";
   });
-  const [currentDate, setCurrentDate] = useState(() =>
-    parseInitialDate(initialDate, userTimezone)
+  // Split the state so the initializer runs deterministically on server and
+  // client (no `nowInTimezone()` in useState). `todayKey` is populated client-
+  // only via useSyncExternalStore and drives the fallback for unset dates.
+  // This eliminates React hydration error #418 that previously fired because
+  // the server and client produced slightly different "today" values.
+  const todayKey = useTodayKey(userTimezone);
+  const [userSelectedDate, setCurrentDate] = useState<Date | null>(() =>
+    parseInitialDateExplicit(initialDate)
   );
+  const currentDate = useMemo<Date>(() => {
+    if (userSelectedDate) return userSelectedDate;
+    if (todayKey) {
+      return new Date(
+        Date.UTC(todayKey.year, todayKey.month - 1, todayKey.day, 12, 0, 0)
+      );
+    }
+    return SSR_PLACEHOLDER_CURRENT_DATE;
+  }, [userSelectedDate, todayKey]);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
     null
   );
   const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
+  // `miniCalendarMonth` is only rendered when the mini calendar popover is
+  // open (initially closed), so its `nowInTimezone()`-based initializer does
+  // not risk a hydration mismatch — the popover isn't in server HTML.
   const [miniCalendarMonth, setMiniCalendarMonth] = useState<Date>(() => {
     const now = nowInTimezone(user?.timezone ?? "Etc/UTC");
     return toDate(now);

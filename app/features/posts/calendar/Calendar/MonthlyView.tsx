@@ -6,13 +6,8 @@ import type { QueueType, UserData } from "~/features/posts/types";
 import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import {
-  addDays,
-  createZonedDateTime,
-  fromDate,
-  nowInTimezone,
-  toDate,
-} from "~/lib/temporal";
+import { useTodayKey } from "~/lib/hooks/useTodayKey";
+import { addDays, createZonedDateTime, fromDate, toDate } from "~/lib/temporal";
 
 import {
   buildDropIsoString,
@@ -184,6 +179,9 @@ export function MonthlyView({
   const { formatDate } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
+  // Read "today" on the client only so SSR and the first-client render
+  // produce identical HTML (avoids React hydration error #418).
+  const todayKey = useTodayKey(userTimezone);
 
   const calendarDays = useMemo((): CalendarDay[] => {
     const currentZoned = fromDate(currentDate, userTimezone);
@@ -200,22 +198,23 @@ export function MonthlyView({
     const dayOfWeek = firstDayZoned.dayOfWeek;
     const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
     const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
-    const todayZoned = nowInTimezone(userTimezone);
     const days: CalendarDay[] = [];
     for (let i = 0; i < 42; i++) {
       const dateZoned = addDays(startDateZoned, i);
       const date = toDate(dateZoned);
+      const isToday = todayKey
+        ? dateZoned.year === todayKey.year &&
+          dateZoned.month === todayKey.month &&
+          dateZoned.day === todayKey.day
+        : false;
       days.push({
         date,
         isCurrentMonth: dateZoned.month === month,
-        isToday:
-          dateZoned.year === todayZoned.year &&
-          dateZoned.month === todayZoned.month &&
-          dateZoned.day === todayZoned.day,
+        isToday,
       });
     }
     return days;
-  }, [currentDate, userTimezone]);
+  }, [currentDate, userTimezone, todayKey]);
 
   const postsByDate = useMemo(
     (): PostsByDate =>

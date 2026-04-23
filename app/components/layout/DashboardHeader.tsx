@@ -38,6 +38,7 @@ import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { BRAND_NAME } from "~/lib/brand";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
@@ -540,17 +541,11 @@ export default function Header({
   const isFirstRunDashboard =
     location.pathname === DASHBOARD_ROOT_PATH &&
     dashboardIndexData?.isFirstRunDashboard === true;
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined"
-      ? window.matchMedia("(max-width: 1023px)").matches
-      : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const fn = () => setIsMobile(mq.matches);
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, []);
+  // Shared SSR-safe hook; always returns `false` on the server and the first
+  // client render, then flips via useEffect. This avoids React hydration
+  // error #418 which previously fired when the server rendered desktop
+  // markup and the client hydrated with mobile markup.
+  const isMobile = useIsMobile(1023);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setMobileSidebarOpen(false), 0);
