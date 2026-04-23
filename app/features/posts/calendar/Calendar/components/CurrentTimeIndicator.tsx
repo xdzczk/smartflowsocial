@@ -79,13 +79,12 @@ export function CurrentTimeIndicator({
   const topOffset =
     now.hour * 2 * ROW_HEIGHT_PX + minuteProgress * ROW_HEIGHT_PX * 2;
 
-  // The dot (circle) is rendered by WeeklyView in the outer non-scrolling
-  // wrapper so it stays glued to the time column's right edge regardless of
-  // horizontal scroll. Only the horizontal line is rendered here.
   return (
     <div
       className="bg-brand/90 pointer-events-none absolute right-0 left-16 h-0.5"
       style={{ top: `${topOffset}px`, zIndex: CURRENT_TIME_INDICATOR_Z }}
-    />
+    >
+      <div className="bg-brand absolute -top-1 -left-2 h-2.5 w-2.5 rounded-full" />
+    </div>
   );
 }

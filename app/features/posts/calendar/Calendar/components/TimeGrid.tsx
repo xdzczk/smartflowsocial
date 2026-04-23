@@ -3,7 +3,6 @@ import { fromDate } from "~/lib/temporal";
 import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
 
-import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { TimeGridRow, type TimeGridRowProps } from "./TimeGridRow";
 import {
   CALENDAR_HOVER_OVERLAY_Z,
@@ -181,11 +180,6 @@ export function TimeGrid({
               isMobile={isMobile}
             />
           ))}
-          <CurrentTimeIndicator
-            user={user}
-            weekDays={weekDays}
-            isMobile={isMobile}
-          />
         </div>
         {/* Permanent separator at the time-column/day-columns boundary.
             Drawn above the rows-wrapper stacking context (z=1) so it stays

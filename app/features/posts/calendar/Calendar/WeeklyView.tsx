@@ -479,34 +479,51 @@ export function WeeklyView({
     ? scrollDebugMetrics.scrollWidth > scrollDebugMetrics.clientWidth
     : false;
 
-  // Dot's top in outer wrapper: daysHeaderHeight + topOffset - scrollTop, clamped
-  // so it never slides above the sticky day-header row.
-  const dotTop =
+  // Both the line and dot are rendered in the outer (non-scrolling) wrapper so
+  // neither is displaced by horizontal panning. Top is computed from the
+  // current-time row offset minus how far the user has scrolled.
+  // Hide entirely when the row has scrolled above the header so a phantom
+  // stripe doesn't appear pinned at the top of the content area.
+  // overflow-hidden on the outer wrapper clips naturally when below the fold.
+  const rawIndicatorTop =
     indicatorTopOffset !== null
-      ? Math.max(
-          daysHeaderHeight,
-          daysHeaderHeight + indicatorTopOffset - scrollTop
-        ) - 5 // centre the 10 px circle on the line
+      ? daysHeaderHeight + indicatorTopOffset - scrollTop
       : null;
+  // rawIndicatorTop < daysHeaderHeight  ⟺  indicatorTopOffset < scrollTop
+  const showIndicator =
+    rawIndicatorTop !== null && rawIndicatorTop >= daysHeaderHeight;
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {/* Current-time dot lives here (outside the scroll container) so it
-          always stays at the time column's right edge even when the user
-          pans horizontally. The line is still drawn inside the scroll area
-          by CurrentTimeIndicator so it extends across the day columns. */}
-      {dotTop !== null ? (
-        <div
-          aria-hidden
-          className="bg-brand pointer-events-none absolute rounded-full"
-          style={{
-            width: 10,
-            height: 10,
-            left: "calc(4rem - 5px)",
-            top: dotTop,
-            zIndex: CURRENT_TIME_INDICATOR_Z,
-          }}
-        />
+      {/* Current-time line + dot both live in the outer (non-scrolling)
+          wrapper so horizontal panning never displaces them from the time
+          column's right edge. */}
+      {showIndicator && rawIndicatorTop !== null ? (
+        <>
+          {/* Horizontal line: starts at time-column right edge, spans all visible day columns */}
+          <div
+            aria-hidden
+            className="bg-brand/90 pointer-events-none absolute h-px"
+            style={{
+              left: "4rem",
+              right: 0,
+              top: rawIndicatorTop,
+              zIndex: CURRENT_TIME_INDICATOR_Z,
+            }}
+          />
+          {/* Dot: centred on the line, pinned to the time-column right edge */}
+          <div
+            aria-hidden
+            className="bg-brand pointer-events-none absolute rounded-full"
+            style={{
+              width: 10,
+              height: 10,
+              left: "calc(4rem - 5px)",
+              top: rawIndicatorTop - 5,
+              zIndex: CURRENT_TIME_INDICATOR_Z,
+            }}
+          />
+        </>
       ) : null}
       {debugEnabled ? (
         <div
