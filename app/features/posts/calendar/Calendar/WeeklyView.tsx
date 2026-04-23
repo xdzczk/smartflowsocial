@@ -329,6 +329,10 @@ export function WeeklyView({
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x pan-y",
           overscrollBehaviorX: "contain",
+          ...(isMobile && {
+            scrollSnapType: "x proximity",
+            scrollPaddingLeft: "4rem",
+          }),
         }}
         onMouseLeave={() => {
           setHoveredPostKey(null);

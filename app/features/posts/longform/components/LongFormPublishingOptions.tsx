@@ -338,7 +338,7 @@ export function LongFormPublishingOptions({
               variant="secondary"
               size="sm"
               onClick={() => onScheduleIntervalClick(interval)}
-              className="w-full min-w-0 shrink-0 px-1.5 text-xs transition-transform hover:scale-105 sm:px-2 sm:text-sm"
+              className="motion-fast w-full min-w-0 shrink-0 px-1.5 text-xs hover:-translate-y-px active:translate-y-0 sm:px-2 sm:text-sm"
             >
               {formatIntervalLabel(interval, { compact: true })}
             </Button>

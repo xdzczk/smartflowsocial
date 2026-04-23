@@ -37,13 +37,13 @@ for (const cssFile of cssFiles) {
   const stats = fs.statSync(fullPath);
   const content = fs.readFileSync(fullPath, "utf8");
 
-  // Check for essential utility classes used on Plans page
+  // Check for essential utility classes — confirms Tailwind content scanning worked
   const checks = {
     container: content.includes(".container"),
     grid: content.includes(".grid"),
     "text-4xl": content.includes(".text-4xl"),
     "grid-cols": content.includes(".grid-cols"),
-    "bg-amber": content.includes(".bg-amber"),
+    "rounded-md": content.includes(".rounded-md"),
   };
 
   // Also check file size - a proper Tailwind CSS file should be at least 50KB

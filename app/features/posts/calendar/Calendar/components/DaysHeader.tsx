@@ -56,6 +56,7 @@ export function DaysHeader({
               width: MOBILE_WEEK_DAY_COLUMN_WIDTH,
               minWidth: MOBILE_WEEK_DAY_COLUMN_WIDTH,
               flex: "0 0 auto" as const,
+              scrollSnapAlign: "start" as const,
             }
           : undefined;
         return (
