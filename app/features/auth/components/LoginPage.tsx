@@ -37,7 +37,7 @@ export default function LoginPage() {
       </div>
       <main
         id="page-content"
-        className="relative z-10 mt-16 flex max-w-full flex-auto flex-col px-4 sm:px-6 lg:px-8"
+        className="safe-x relative z-10 mt-16 flex max-w-full flex-auto flex-col px-4 sm:px-6 lg:px-8"
       >
         <div className="mx-auto w-full max-w-md py-8 sm:max-w-xl lg:max-w-5xl lg:py-16">
           <LoginAuthShellProvider>

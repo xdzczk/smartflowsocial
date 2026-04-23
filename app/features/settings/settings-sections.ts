@@ -128,13 +128,8 @@ export function billingSegmentForNormalizedTab(
 
 export function getVisibleSettingsSections(input: {
   isChild: boolean;
-  hasAccountsAccess: boolean;
 }): SettingsSectionDef[] {
-  return SECTIONS_ORDERED.filter((s) => {
-    if (s.id === "accounts" && !input.hasAccountsAccess) return false;
-    if (s.id === "billing" && input.isChild) return false;
-    return true;
-  });
+  return SECTIONS_ORDERED.filter((s) => !(s.id === "billing" && input.isChild));
 }
 
 /**
@@ -168,20 +163,16 @@ export function groupVisibleSettingsSections(
 }
 
 /**
- * Legacy rules: child users cannot open billing; accounts tab requires access.
+ * Legacy rules: child users cannot open billing.
  */
 export function getSettingsDefaultTab(input: {
   tabParam: string | null;
   isChild: boolean;
-  hasAccountsAccess: boolean;
 }): SettingsTabId {
   const normalized = normalizeSettingsTabParam(input.tabParam);
   const requested: SettingsTabId = normalized ?? "general";
 
   if (input.isChild && requested === "billing") {
-    return "general";
-  }
-  if (!input.hasAccountsAccess && requested === "accounts") {
     return "general";
   }
   return requested;
@@ -190,7 +181,6 @@ export function getSettingsDefaultTab(input: {
 export function resolveSettingsTab(input: {
   tabParam: string | null;
   isChild: boolean;
-  hasAccountsAccess: boolean;
 }): SettingsTabId {
   const visible = new Set(getVisibleSettingsSections(input).map((s) => s.id));
   const candidate = getSettingsDefaultTab(input);

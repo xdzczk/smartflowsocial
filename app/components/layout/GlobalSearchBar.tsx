@@ -235,7 +235,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     >
       <PopoverAnchor asChild>
         <div ref={containerRef} className={`relative ${className}`}>
-          <div className="relative">
+          <div className="tap-target relative h-9">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
               <Search className="text-text-secondary h-4 w-4" />
             </div>
@@ -250,7 +250,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               placeholder="Inspect a Nostr note, profile, or URL"
               title="Paste a Nostr note, profile, or URL — ⌘K to focus"
               className={cn(
-                "border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-1.5 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none sm:py-2 sm:pl-10",
+                "border-border bg-surface text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block h-full w-full appearance-none rounded-lg border py-0 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none sm:pl-10",
                 lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"
               )}
             />

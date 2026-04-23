@@ -3,10 +3,11 @@ import { fromDate } from "~/lib/temporal";
 import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
 import { PostBlock } from "../PostBlock";
 
-import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
 import { TimeGridRow, type TimeGridRowProps } from "./TimeGridRow";
 import {
   CALENDAR_HOVER_OVERLAY_Z,
+  CALENDAR_TIME_RAIL_OVERLAY_Z,
+  CURRENT_TIME_INDICATOR_Z,
   EXPANDED_BLOCK_WRAPPER_CLASS,
   ROW_HEIGHT_PX,
   TIME_GRID_LINES_Z,
@@ -16,7 +17,7 @@ import {
 
 export interface TimeGridProps extends Omit<
   TimeGridRowProps,
-  "time" | "index" | "hourLabel"
+  "time" | "index"
 > {
   hours: string[];
   hourLabels: string[];
@@ -24,6 +25,9 @@ export interface TimeGridProps extends Omit<
   getSlotState: (day: Date, time: string) => SlotState;
   hoverOverlayPayload: HoverOverlayPayload | null;
   setHoverOverlayPayload: (payload: HoverOverlayPayload | null) => void;
+  /** Pixel offset from the time-grid top (row 00:00) to the current time.
+   *  Null when today is not in the visible week or during SSR. */
+  indicatorTopOffset?: number | null;
 }
 
 export function TimeGrid({
@@ -52,6 +56,7 @@ export function TimeGrid({
   setActiveEmptySlotKey,
   hoverOverlayPayload,
   setHoverOverlayPayload,
+  indicatorTopOffset,
   onClearSelection,
   isMobile,
 }: TimeGridProps) {
@@ -134,6 +139,39 @@ export function TimeGrid({
           if (outside) onDragLeave();
         }}
       >
+        {/*
+         * Sticky time-label overlay — first flex child so its y=0 matches
+         * the rows-wrapper's y=0. height:0 keeps it out of the flex column
+         * flow; overflow:visible lets the absolutely-positioned labels render
+         * at top = N × ROW_HEIGHT_PX. position:sticky left:0 pins the strip
+         * to the scroll viewport's left edge during horizontal panning.
+         *
+         * Placed INSIDE this container (sharing its position:relative
+         * containing block) so the hover overlay at z=46 is never split into
+         * a separate compositor layer from the time-rail overlay at z=2.
+         * Previously, having the sticky overlay as a sibling of this container
+         * caused Chrome's compositor to treat the container as z=0, putting
+         * post-block hover overlays behind the sticky layer.
+         */}
+        <div
+          aria-hidden
+          className="pointer-events-none sticky left-0 w-16 overflow-visible"
+          style={{ height: 0, zIndex: CALENDAR_TIME_RAIL_OVERLAY_Z }}
+        >
+          {hourLabels.map((label, index) => (
+            <div
+              key={index}
+              className="border-border/30 text-text-secondary/85 absolute right-0 left-0 border-r bg-[hsl(var(--calendar-surface-2-bg))] pr-2 text-right text-xs leading-none"
+              style={{
+                top: index * ROW_HEIGHT_PX,
+                height: ROW_HEIGHT_PX,
+                boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+              }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
         {/* Grid lines in a single layer behind rows so they don't cut through post blocks */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -153,7 +191,6 @@ export function TimeGrid({
               key={time}
               time={time}
               index={index}
-              hourLabel={hourLabels[index] ?? ""}
               weekDays={weekDays}
               hours={hours}
               getSlotState={getSlotState}
@@ -181,12 +218,43 @@ export function TimeGrid({
               isMobile={isMobile}
             />
           ))}
-          <CurrentTimeIndicator
-            user={user}
-            weekDays={weekDays}
-            isMobile={isMobile}
-          />
         </div>
+        {indicatorTopOffset !== null && indicatorTopOffset !== undefined ? (
+          <>
+            {/* Horizontal line: from time-column right edge across all day columns.
+                Positioned absolutely inside the inner container so vertical scroll
+                is handled natively by the browser (no React state tracking needed). */}
+            <div
+              aria-hidden
+              className="bg-brand/90 pointer-events-none absolute h-px"
+              style={{
+                top: indicatorTopOffset,
+                left: "4rem",
+                right: 0,
+                zIndex: CURRENT_TIME_INDICATOR_Z,
+              }}
+            />
+            {/* Dot: same height:0 + sticky left trick as the time-label overlay.
+                The wrapper is absolute at the correct vertical position; the sticky
+                inner element keeps the dot pinned at the time-column right edge even
+                when the user pans horizontally. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute right-0 left-0"
+              style={{ top: indicatorTopOffset - 5, height: 10 }}
+            >
+              <div
+                className="bg-brand pointer-events-none sticky rounded-full"
+                style={{
+                  width: 10,
+                  height: 10,
+                  left: "calc(4rem - 5px)",
+                  zIndex: CURRENT_TIME_INDICATOR_Z,
+                }}
+              />
+            </div>
+          </>
+        ) : null}
         {!isMobile && hoverOverlayPayload ? (
           <div
             className="pointer-events-none absolute inset-0"

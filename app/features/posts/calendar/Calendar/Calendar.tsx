@@ -38,6 +38,7 @@ import type {
   UserData,
 } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useTodayKey } from "~/lib/hooks/useTodayKey";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import {
   addDays,
@@ -291,18 +292,20 @@ function getCalendarPostModalType(
   return "scheduled";
 }
 
-function parseInitialDate(
-  initialDate: string | null | undefined,
-  userTimezone: string
-): Date {
-  if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
-    const now = nowInTimezone(userTimezone);
-    return toDate(now);
-  }
+/**
+ * Deterministic, SSR-safe placeholder "currentDate" used during server render
+ * and the first client render when no `initialDate` URL param is provided.
+ * The real "today" replaces this after hydration via `useTodayKey`. Module-
+ * level so `useMemo` dependency identity is stable across renders.
+ */
+const SSR_PLACEHOLDER_CURRENT_DATE = new Date(Date.UTC(2024, 0, 1, 12, 0, 0));
+
+function parseInitialDateExplicit(
+  initialDate: string | null | undefined
+): Date | null {
+  if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) return null;
   const parsed = new Date(initialDate + "T12:00:00.000Z");
-  return Number.isNaN(parsed.getTime())
-    ? toDate(nowInTimezone(userTimezone))
-    : parsed;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function Calendar({
@@ -322,14 +325,32 @@ export function Calendar({
     if (initialView && VIEW_VALUES.includes(initialView)) return initialView;
     return "week";
   });
-  const [currentDate, setCurrentDate] = useState(() =>
-    parseInitialDate(initialDate, userTimezone)
+  // Split the state so the initializer runs deterministically on server and
+  // client (no `nowInTimezone()` in useState). `todayKey` is populated client-
+  // only via useSyncExternalStore and drives the fallback for unset dates.
+  // This eliminates React hydration error #418 that previously fired because
+  // the server and client produced slightly different "today" values.
+  const todayKey = useTodayKey(userTimezone);
+  const [userSelectedDate, setCurrentDate] = useState<Date | null>(() =>
+    parseInitialDateExplicit(initialDate)
   );
+  const currentDate = useMemo<Date>(() => {
+    if (userSelectedDate) return userSelectedDate;
+    if (todayKey) {
+      return new Date(
+        Date.UTC(todayKey.year, todayKey.month - 1, todayKey.day, 12, 0, 0)
+      );
+    }
+    return SSR_PLACEHOLDER_CURRENT_DATE;
+  }, [userSelectedDate, todayKey]);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
     null
   );
   const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
+  // `miniCalendarMonth` is only rendered when the mini calendar popover is
+  // open (initially closed), so its `nowInTimezone()`-based initializer does
+  // not risk a hydration mismatch — the popover isn't in server HTML.
   const [miniCalendarMonth, setMiniCalendarMonth] = useState<Date>(() => {
     const now = nowInTimezone(user?.timezone ?? "Etc/UTC");
     return toDate(now);
@@ -698,21 +719,44 @@ export function Calendar({
         queueTypes={queueTypes}
       />
 
-      {/* Calendar content: Day view on lg shows main + right sidebar */}
-      <div className="flex min-h-0 flex-1 overflow-x-visible overflow-y-auto">
+      {/* Calendar content: Day view on lg shows main + right sidebar.
+          Keep this wrapper's overflow at `visible` on both axes:
+          - The ancestor `<main>` in DashboardLayoutPage already applies
+            `overflow-hidden` on calendar routes, so page-level clipping is
+            handled one level up.
+          - Each child view (Week/Day/Month) has its own internal scroll
+            container, so this wrapper does not need to scroll.
+          - Setting `overflow-y: auto` here turns this element into a
+            two-axis scroll container (because `overflow-x: visible` gets
+            computed to `auto` per CSS spec when the other axis is not
+            `visible`). On Android Chrome that silently intercepts
+            horizontal touch pans before they reach the Week view's own
+            horizontal scroll container.
+          - Setting `overflow-x: hidden` (or `overflow: hidden`) here
+            establishes a new block-formatting context that changes how
+            flex widths are resolved down the chain, which broke the
+            horizontal scroll sizing on iOS. */}
+      {/* `min-w-0` below is critical: without it, a flex item's default
+          `min-width: auto` pins the item to its min-content width, and the
+          Week view's inner grid (explicitly sized to ~233vw on mobile to
+          force horizontal overflow) would push these wrappers to 918px on
+          a 430px viewport. That defeats the inner scroll container — its
+          `clientWidth` matches its `scrollWidth`, so there is nothing to
+          pan. See crbug.com/1110989 and related. */}
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-visible">
         <CalendarErrorBoundary>
           <div
             data-testid={`calendar-view-${view}`}
-            className={`flex min-h-0 flex-1 transition-opacity duration-200 ${
-              view === "day" ? "lg:min-w-0 lg:flex-row" : ""
+            className={`flex min-h-0 min-w-0 flex-1 transition-opacity duration-200 ${
+              view === "day" ? "lg:flex-row" : ""
             } flex-col`}
             style={{
               transitionTimingFunction: "var(--calendar-transition-ease)",
             }}
           >
             <div
-              className={`flex min-h-0 flex-1 flex-col ${
-                view === "day" ? "lg:min-w-0" : "min-w-0"
+              className={`flex min-h-0 min-w-0 flex-1 flex-col ${
+                view === "day" ? "lg:min-w-0" : ""
               }`}
             >
               {view === "day" ? (

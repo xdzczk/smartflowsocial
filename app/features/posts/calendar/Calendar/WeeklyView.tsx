@@ -1,10 +1,16 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "~/features/posts/components/constants";
 import type { QueueType, UserData } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { addDays, fromDate, toDate } from "~/lib/temporal";
+import { addDays, fromDate, nowInTimezone, toDate } from "~/lib/temporal";
 
 import {
   buildDropIsoString,
@@ -15,9 +21,9 @@ import { DaysHeader } from "./components/DaysHeader";
 import { TimeGrid } from "./components/TimeGrid";
 import {
   BOTTOM_ROWS_EXPAND_UP_THRESHOLD,
-  CALENDAR_MOBILE_HEADER_Z,
   DEFAULT_SCROLL_HOUR,
   HOURS_PER_DAY,
+  MOBILE_WEEK_GRID_MIN_WIDTH,
   ROW_HEIGHT_PX,
   WEEK_VIEW_MIN_WIDTH,
 } from "./components/weekly-view-constants";
@@ -38,6 +44,50 @@ interface WeeklyViewProps {
   queueTypes?: QueueType[];
   isLongform?: boolean;
   isAll?: boolean;
+}
+
+const WEEK_SCROLL_DEBUG_STORAGE_KEY = "debugWeekScroll";
+
+function subscribeNoop(): () => void {
+  return () => {};
+}
+
+function subscribeMinute(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const id = window.setInterval(() => {
+    onStoreChange();
+  }, 30_000);
+  return () => window.clearInterval(id);
+}
+
+function getWeekScrollDebugEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV === "development") return true;
+  if (
+    new URLSearchParams(window.location.search).has(
+      WEEK_SCROLL_DEBUG_STORAGE_KEY
+    )
+  ) {
+    return true;
+  }
+  try {
+    return window.localStorage.getItem(WEEK_SCROLL_DEBUG_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Client-only opt-in flag that toggles the WeeklyView diagnostic overlay.
+ * Returns `false` during SSR and the first client render so the overlay
+ * never appears in server HTML (preventing hydration mismatches).
+ */
+function useWeekScrollDebugEnabled(): boolean {
+  return useSyncExternalStore(
+    subscribeNoop,
+    getWeekScrollDebugEnabled,
+    () => false
+  );
 }
 
 function getSlotState(
@@ -70,7 +120,6 @@ export function WeeklyView({
   isLongform = false,
   isAll = false,
 }: WeeklyViewProps) {
-  const MOBILE_DAY_COLUMNS_WIDTH = "calc(7 * ((100vw - 4rem) / 3))";
   const { dateLocale } = useFormattedDate();
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [hoveredPostKey, setHoveredPostKey] = useState<string | null>(null);
@@ -82,12 +131,16 @@ export function WeeklyView({
   );
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const hasSetInitialScrollRef = useRef(false);
-  const mobileHeaderScrollRef = useRef<HTMLDivElement>(null);
-  const mobileBodyScrollRef = useRef<HTMLDivElement>(null);
-  const mobileScrollSyncSourceRef = useRef<"header" | "body" | null>(null);
+  const debugEnabled = useWeekScrollDebugEnabled();
+  const [scrollDebugMetrics, setScrollDebugMetrics] = useState<{
+    scrollWidth: number;
+    clientWidth: number;
+    scrollLeft: number;
+    viewportInnerWidth: number;
+  } | null>(null);
 
-  const getDaysHeaderHeight = (container: HTMLDivElement): number => {
-    const header = container.querySelector<HTMLElement>(
+  const getDaysHeaderHeight = (container: HTMLDivElement | null): number => {
+    const header = container?.querySelector<HTMLElement>(
       '[data-calendar-days-header="true"]'
     );
     return header?.offsetHeight ?? 0;
@@ -144,6 +197,33 @@ export function WeeklyView({
   }, [userTimeFormat]);
 
   const userTimezone = user?.timezone ?? "Etc/UTC";
+
+  // Current-time dot: subscribe to clock so it moves every 30 s. Returns
+  // null during SSR (preventing hydration mismatch). The DOT is rendered in
+  // the outer (non-scrolling) wrapper at left:4rem so it stays glued to the
+  // time column's right edge regardless of horizontal scroll position.
+  // Must be declared after userTimezone and weekDays are in scope.
+  const indicatorNowKey = useSyncExternalStore(
+    subscribeMinute,
+    () => {
+      const z = nowInTimezone(userTimezone);
+      return `${z.year}|${z.month}|${z.day}|${z.hour}|${z.minute}`;
+    },
+    () => null
+  );
+  const indicatorTopOffset = useMemo<number | null>(() => {
+    if (!indicatorNowKey) return null;
+    const parts = indicatorNowKey.split("|").map(Number);
+    if (parts.length < 5) return null;
+    const [y, mo, d, h, mi] = parts as [number, number, number, number, number];
+    const isTodayInWeek = weekDays.some((day) => {
+      const dz = fromDate(day, userTimezone);
+      return dz.year === y && dz.month === mo && dz.day === d;
+    });
+    if (!isTodayInWeek) return null;
+    return h * 2 * ROW_HEIGHT_PX + (mi / 60) * ROW_HEIGHT_PX * 2;
+  }, [indicatorNowKey, weekDays, userTimezone]);
+
   const weekDaysDateKeys = useMemo(() => {
     return weekDays.map((day) => {
       const dayZoned = fromDate(day, userTimezone);
@@ -207,6 +287,58 @@ export function WeeklyView({
   const handleDragLeave = () => {
     setDragOverSlot(null);
   };
+
+  // Diagnostic overlay: measure the scroll container so we can verify on-
+  // device whether the Week view is actually horizontally overflowing.
+  //
+  // If `scrollWidth > clientWidth` but the user can't pan, the layout is
+  // fine and the problem is a touch-gesture or ancestor issue; if they're
+  // equal, the layout itself is broken and no amount of touch-action
+  // tweaking helps.
+  //
+  // Enabled in local dev automatically, or anywhere (including staging) by
+  // appending `?debugWeekScroll=1` to the URL, OR by setting
+  // `localStorage.setItem("debugWeekScroll","1")`. Kept off by default in
+  // production so users never see it.
+  useEffect(() => {
+    if (!debugEnabled) return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).has("debugWeekScroll")) {
+      window.localStorage.setItem("debugWeekScroll", "1");
+    }
+    const el = gridScrollRef.current;
+    const measure = () => {
+      const inner = window.innerWidth;
+      if (!el) {
+        setScrollDebugMetrics({
+          scrollWidth: 0,
+          clientWidth: 0,
+          scrollLeft: 0,
+          viewportInnerWidth: inner,
+        });
+        return;
+      }
+      setScrollDebugMetrics({
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+        scrollLeft: el.scrollLeft,
+        viewportInnerWidth: inner,
+      });
+    };
+    // First measure scheduled in the next microtask so we don't call
+    // setState synchronously in the effect body (lint rule).
+    const raf = window.requestAnimationFrame(measure);
+    const ro = el ? new ResizeObserver(measure) : null;
+    if (el && ro) ro.observe(el);
+    if (el) el.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      ro?.disconnect();
+      if (el) el.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [debugEnabled]);
 
   // Default scroll to 6:00 once when the scroll container has layout (Apple Calendar–style)
   useEffect(() => {
@@ -317,130 +449,77 @@ export function WeeklyView({
     setActiveEmptySlotKey,
     hoverOverlayPayload,
     setHoverOverlayPayload,
+    indicatorTopOffset,
   };
 
-  if (isMobile) {
-    const syncHorizontalScroll = (
-      source: "header" | "body",
-      scrollLeft: number
-    ) => {
-      if (
-        mobileScrollSyncSourceRef.current &&
-        mobileScrollSyncSourceRef.current !== source
-      ) {
-        mobileScrollSyncSourceRef.current = null;
-        return;
-      }
-      mobileScrollSyncSourceRef.current = source;
-      const target =
-        source === "header"
-          ? mobileBodyScrollRef.current
-          : mobileHeaderScrollRef.current;
-      if (!target) {
-        mobileScrollSyncSourceRef.current = null;
-        return;
-      }
-      if (Math.abs(target.scrollLeft - scrollLeft) > 0.5) {
-        target.scrollLeft = scrollLeft;
-      }
-      requestAnimationFrame(() => {
-        mobileScrollSyncSourceRef.current = null;
-      });
-    };
+  const gridMinWidth = isMobile
+    ? MOBILE_WEEK_GRID_MIN_WIDTH
+    : WEEK_VIEW_MIN_WIDTH;
 
-    return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
-        <div
-          ref={gridScrollRef}
-          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
-          style={{ WebkitOverflowScrolling: "touch" }}
-          onMouseLeave={() => {
-            setHoveredPostKey(null);
-            setHoverOverlayPayload(null);
-          }}
-        >
-          <div
-            className="border-border/40 sticky top-0 flex min-w-0 border-b bg-[hsl(var(--calendar-surface-2-bg))]"
-            style={{ zIndex: CALENDAR_MOBILE_HEADER_Z }}
-          >
-            <div className="border-border/40 w-16 shrink-0 border-r" />
-            {}
-            <div
-              ref={mobileHeaderScrollRef}
-              className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-              style={{ WebkitOverflowScrolling: "touch" }}
-              onScroll={(e) =>
-                syncHorizontalScroll("header", e.currentTarget.scrollLeft)
-              }
-            >
-              <div
-                style={{
-                  width: MOBILE_DAY_COLUMNS_WIDTH,
-                  minWidth: MOBILE_DAY_COLUMNS_WIDTH,
-                }}
-              >
-                <DaysHeader
-                  weekDays={weekDays}
-                  user={user}
-                  dateLocale={dateLocale}
-                  isMobile={true}
-                  showTimeSpacer={false}
-                  stickyTop={false}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex min-h-[40vh] min-w-0 flex-none select-none">
-            <div className="w-16 shrink-0">
-              {hourLabels.map((label, index) => (
-                <div
-                  key={hours[index] ?? `mobile-time-rail-${label}-${index}`}
-                  className="text-text-secondary/85 border-border/30 flex w-16 items-start justify-end border-r pr-2 text-right text-xs leading-none"
-                  style={{ height: ROW_HEIGHT_PX - 1 }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-            {}
-            <div
-              ref={mobileBodyScrollRef}
-              className="min-w-0 flex-1 overflow-x-auto overflow-y-visible"
-              style={{
-                WebkitOverflowScrolling: "touch",
-                overscrollBehaviorX: "contain",
-              }}
-              onScroll={(e) =>
-                syncHorizontalScroll("body", e.currentTarget.scrollLeft)
-              }
-            >
-              <div
-                className="min-h-[40vh] min-w-0"
-                style={{
-                  width: MOBILE_DAY_COLUMNS_WIDTH,
-                  minWidth: MOBILE_DAY_COLUMNS_WIDTH,
-                }}
-              >
-                <TimeGrid {...commonTimeGridProps} isMobile={true} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const overflowsHorizontally = scrollDebugMetrics
+    ? scrollDebugMetrics.scrollWidth > scrollDebugMetrics.clientWidth
+    : false;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {debugEnabled ? (
+        <div
+          className="pointer-events-none fixed top-2 right-2 rounded-md border-2 border-lime-300 bg-black/90 px-3 py-2 font-mono text-[11px] leading-tight text-lime-200 shadow-lg"
+          style={{ zIndex: 2147483646 }}
+          data-testid="weekly-view-scroll-debug"
+        >
+          <div className="mb-1 font-bold text-lime-300">WEEK SCROLL DEBUG</div>
+          {scrollDebugMetrics ? (
+            <>
+              <div>
+                vw:{scrollDebugMetrics.viewportInnerWidth} mobile:
+                {isMobile ? "Y" : "N"}
+              </div>
+              <div>
+                sw:{scrollDebugMetrics.scrollWidth} cw:
+                {scrollDebugMetrics.clientWidth}
+              </div>
+              <div>
+                sl:{scrollDebugMetrics.scrollLeft} overflow:
+                {overflowsHorizontally ? "YES" : "NO"}
+              </div>
+            </>
+          ) : (
+            <div>measuring… (ref not ready)</div>
+          )}
+        </div>
+      ) : null}
+      {/*
+        Scroll container notes:
+        - This element is intentionally a plain block (NOT flex). Making it
+          `display: flex; flex-direction: column` causes iOS Safari and
+          Android Chrome to ignore the inner child's `min-width` as a
+          horizontal overflow trigger (flex cross-axis `stretch` clamps
+          the child back to container width), which kills horizontal touch
+          scrolling on phones.
+        - The inner `gridContent` wrapper gets an explicit `width` (not just
+          `min-width`) wider than the viewport on mobile. That is what makes
+          the scroll container actually overflow horizontally so mobile
+          browsers expose horizontal panning.
+        - Do NOT add `scroll-snap-type` here. It interacts badly with
+          sticky descendants on Android Chrome and iOS Safari and silently
+          locks horizontal touch panning.
+        - `DaysHeader` (top) and `TimeGridRow` time rail (left) are BOTH
+          `position: sticky` on every device. Older engines (pre ~2022)
+          had bugs where sticky descendants of a two-axis `overflow: auto`
+          container could break horizontal touch panning, but current iOS
+          Safari and Android Chrome handle this correctly.
+        - `touch-action: pan-x pan-y` is set explicitly so the browser
+          promises both pan directions to this element even if an ancestor
+          has a more restrictive computed value.
+      */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Scroll container clears hover state when pointer exits grid area */}
       <div
         ref={gridScrollRef}
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-auto"
+        className="relative min-h-0 min-w-0 flex-1 overflow-auto"
         style={{
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x pan-y",
-          overscrollBehaviorX: "contain",
         }}
         onMouseLeave={() => {
           setHoveredPostKey(null);
@@ -448,16 +527,21 @@ export function WeeklyView({
         }}
       >
         <div
-          className="flex min-h-[40vh] min-w-0 flex-none flex-col select-none"
-          style={{ minWidth: WEEK_VIEW_MIN_WIDTH }}
+          className="flex min-h-[40vh] flex-col select-none"
+          style={
+            isMobile
+              ? { width: gridMinWidth, minWidth: gridMinWidth }
+              : { minWidth: gridMinWidth, width: "100%" }
+          }
         >
           <DaysHeader
             weekDays={weekDays}
             user={user}
             dateLocale={dateLocale}
-            isMobile={false}
+            isMobile={isMobile}
+            stickyTop={true}
           />
-          <TimeGrid {...commonTimeGridProps} isMobile={false} />
+          <TimeGrid {...commonTimeGridProps} isMobile={isMobile} />
         </div>
       </div>
     </div>

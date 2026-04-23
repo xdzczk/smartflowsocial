@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
-/* Space for fixed BTCPay “awaiting confirmation” strip (see BtcpayConfirmationWatchBar) */
+/* ============================================================================
+ * App chrome offsets
+ *
+ * A single source of truth for the height of fixed top bars so page content
+ * doesn't have to guess. Includes the iOS/Android safe-area inset so an
+ * installed PWA opening under a notch keeps its content below the notch.
+ *
+ *   --header-h          baseline bar height (no safe-area)
+ *   --header-offset     bar height + top safe-area (what main content must clear)
+ *   --footer-safe       bottom safe-area alone (for sticky footers / toasts)
+ * ========================================================================= */
+:root {
+  --header-h: 4rem; /* h-16 */
+  --header-offset: calc(var(--header-h) + env(safe-area-inset-top));
+  --footer-safe: env(safe-area-inset-bottom);
+}
+
+/* Space for fixed BTCPay "awaiting confirmation" strip (see BtcpayConfirmationWatchBar).
+ * The strip itself uses `safe-pt-2`, so we match the same baseline + safe-area inset
+ * here so page content doesn't slide under the notch on installed iOS PWAs. */
 body.has-btcpay-confirmation-bar {
-  padding-top: 2.75rem;
+  padding-top: calc(2.75rem + env(safe-area-inset-top));
 }
 
 /* PWA Micro-animations */
@@ -168,18 +187,6 @@ body.has-btcpay-confirmation-bar {
   --color-surface-selected: hsl(var(--surface-selected));
   --color-surface-selected-foreground: hsl(var(--surface-selected-foreground));
 
-  /* Legacy surface aliases (kept until Phase 1c finishes consumer rename) */
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
   /* ---------- Text ---------- */
   --color-text: hsl(var(--text));
   --color-text-secondary: hsl(var(--text-secondary));
@@ -197,13 +204,6 @@ body.has-btcpay-confirmation-bar {
   --color-brand-strong: hsl(var(--brand-strong));
   --color-brand-soft: hsl(var(--brand-soft));
   --color-brand-on: hsl(var(--brand-on));
-
-  /* Legacy brand aliases */
-  --color-primary: hsl(var(--primary));
-  --color-primary-action: hsl(var(--primary-action));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
 
   /* ---------- Status ----------
    * Two foreground families:
@@ -225,10 +225,6 @@ body.has-btcpay-confirmation-bar {
   --color-info-foreground: hsl(var(--info-foreground));
   --color-info-text: hsl(var(--info-text));
   --color-brand-text: hsl(var(--brand-text));
-
-  /* Legacy danger aliases */
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
 
   /* ---------- Misc ---------- */
   --color-checkbox: hsl(var(--checkbox));
@@ -342,25 +338,11 @@ body.has-btcpay-confirmation-bar {
     --surface-selected: 255 60% 96%;  /* subtle brand wash for selected items */
     --surface-selected-foreground: 255 77% 35%;
 
-    /* Legacy surface aliases (point to new tokens) */
-    --background: var(--canvas);
-    --card: var(--surface);
-    --popover: var(--surface-overlay);
-    --muted: var(--surface-hover);     /* "muted" was used as hover-bg; aligns intent */
-    --secondary: 0 0% 95%;             /* retired lavender; neutral elevated grey */
-
     /* ---------- Text ---------- */
     --text: 0 0% 9%;                   /* primary text (slightly softer than 5%) */
     --text-secondary: 25 8% 38%;       /* same as old --muted-foreground */
     --text-tertiary: 0 0% 50%;         /* helper / placeholder / timestamps */
     --text-on-brand: 0 0% 100%;
-
-    /* Legacy text aliases */
-    --foreground: var(--text);
-    --card-foreground: var(--text);
-    --popover-foreground: var(--text);
-    --muted-foreground: var(--text-secondary);
-    --secondary-foreground: var(--text);
 
     /* ---------- Borders ---------- */
     --border-subtle: 0 0% 93%;         /* hairline on cards; lift carries the rest */
@@ -374,16 +356,8 @@ body.has-btcpay-confirmation-bar {
     --brand-soft: 255 60% 70%;         /* lavender — accent fill / hover wash */
     --brand-on: 0 0% 100%;
 
-    /* Legacy brand aliases */
-    --primary: var(--brand);
-    --primary-action: var(--brand-strong);
-    --primary-foreground: var(--brand-on);
-    --accent: var(--brand-soft);
-    --accent-foreground: var(--brand-on);
-
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    --ring: var(--focus-ring);         /* legacy alias */
 
     /* ---------- Status ---------- */
     --success: 142 70% 36%;
@@ -404,10 +378,6 @@ body.has-btcpay-confirmation-bar {
     --info-text: 217 80% 28%;          /* AA on alpha-tinted bg */
 
     --brand-text: 255 70% 30%;         /* dark brand for use on brand-soft washes */
-
-    /* Legacy danger aliases */
-    --destructive: var(--danger);
-    --destructive-foreground: var(--danger-foreground);
 
     /* ---------- Misc ---------- */
     --checkbox: 0 0% 50%;
@@ -481,20 +451,13 @@ body.has-btcpay-confirmation-bar {
   .dark {
     /* ---------- Surfaces ---------- */
     --canvas: 0 0% 4.3%;               /* base canvas */
-    --surface: 0 0% 6.7%;              /* card / panel */
-    --surface-raised: 0 0% 8.5%;       /* elevated cards (Flow cards, right rails) */
-    --surface-overlay: 0 0% 10%;       /* menus / popovers / dialogs — actually lifts above cards */
-    --surface-hover: 0 0% 9%;          /* row / item hover */
-    --surface-active: 0 0% 11.5%;      /* pressed */
+    --surface: 0 0% 8%;                /* card / panel — +1.3% for IPS readability */
+    --surface-raised: 0 0% 11%;        /* elevated cards (Flow cards, right rails) */
+    --surface-overlay: 0 0% 13.5%;     /* menus / popovers / dialogs — clearly above cards */
+    --surface-hover: 0 0% 11.5%;       /* row / item hover */
+    --surface-active: 0 0% 14%;        /* pressed */
     --surface-selected: 255 30% 14%;   /* brand-tinted selection wash */
     --surface-selected-foreground: 0 0% 98%;
-
-    /* Legacy surface aliases */
-    --background: var(--canvas);
-    --card: var(--surface);
-    --popover: var(--surface-overlay);
-    --muted: var(--surface-hover);
-    --secondary: 0 0% 12%;             /* unchanged from prior dark value */
 
     /* ---------- Text ---------- */
     --text: 0 0% 98%;
@@ -502,19 +465,12 @@ body.has-btcpay-confirmation-bar {
     --text-tertiary: 0 0% 52%;
     --text-on-brand: 0 0% 100%;
 
-    /* Legacy text aliases */
-    --foreground: var(--text);
-    --card-foreground: var(--text);
-    --popover-foreground: var(--text);
-    --muted-foreground: var(--text-secondary);
-    --secondary-foreground: var(--text);
-
     /* ---------- Borders ----------
        Strengthened from prior 9.5% → 14% so borders read on cards/rails and the
        per-feature dark:border-white/14 overrides are no longer needed. */
-    --border-subtle: 0 0% 9%;          /* hairline on cards */
-    --border: 0 0% 14%;                /* default — inputs, dividers */
-    --border-strong: 0 0% 22%;         /* emphasized */
+    --border-subtle: 0 0% 12%;         /* hairline on cards (4% delta above surface-8%) */
+    --border: 0 0% 16%;                /* default — inputs, dividers */
+    --border-strong: 0 0% 24%;         /* emphasized */
     --input: var(--border);
 
     /* ---------- Brand (unchanged hues) ---------- */
@@ -523,15 +479,8 @@ body.has-btcpay-confirmation-bar {
     --brand-soft: 255 60% 70%;
     --brand-on: 0 0% 100%;
 
-    --primary: var(--brand);
-    --primary-action: var(--brand-strong);
-    --primary-foreground: var(--brand-on);
-    --accent: var(--brand-soft);
-    --accent-foreground: var(--brand-on);
-
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    --ring: var(--focus-ring);
 
     /* ---------- Status ---------- */
     --success: 142 50% 40%;            /* unchanged */
@@ -567,10 +516,10 @@ body.has-btcpay-confirmation-bar {
     --chart-4: 250 25% 60%;
     --chart-5: 250 25% 80%;
 
-    /* ---------- Elevation (deeper shadows for dark) ---------- */
-    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.30);
-    --elevation-2: 0 4px 12px 0 hsl(0 0% 0% / 0.40);
-    --elevation-3: 0 16px 40px 0 hsl(0 0% 0% / 0.55);
+    /* ---------- Elevation (deeper shadows + inset top-edge highlight for dark) ---------- */
+    --elevation-1: 0 1px 3px 0 hsl(0 0% 0% / 0.35), inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
+    --elevation-2: 0 4px 14px 0 hsl(0 0% 0% / 0.50), inset 0 1px 0 0 hsl(0 0% 100% / 0.06);
+    --elevation-3: 0 16px 40px 0 hsl(0 0% 0% / 0.65), inset 0 1px 0 0 hsl(0 0% 100% / 0.08);
 
     /* ---------- Switch (sealed island) ---------- */
     --switch-track-off: 0 0% 15%;
@@ -1435,5 +1384,69 @@ body.has-btcpay-confirmation-bar {
   /* Native checkbox accent color - controls checked state */
   .accent-checkbox {
     accent-color: hsl(var(--checkbox));
+  }
+
+  /* ============================================================================
+   * Safe-area (iOS notch, Android gesture bar, installed PWA chrome)
+   *
+   * We opt into the unsafe area globally via `viewport-fit=cover` in the viewport
+   * meta (see app/root.tsx). These utilities re-introduce the inset only where it
+   * matters: fixed/sticky headers, toast bars, sheets, and mobile footers.
+   *
+   * `safe-*` utilities use `max(baseline, env(safe-area-inset-*))` so on a device
+   * without a safe-area inset (most desktops) the baseline still applies.
+   * ========================================================================= */
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left { padding-left: env(safe-area-inset-left); }
+  .safe-right { padding-right: env(safe-area-inset-right); }
+  .safe-x {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Header chrome offset (matches --header-offset — the visible bar + notch inset). */
+  .h-header { height: var(--header-offset); }
+  .pt-header { padding-top: var(--header-offset); }
+  .top-header { top: var(--header-offset); }
+  /* Just the safe-area part (lets the bar paint the notch while keeping h-16 content). */
+  .pt-safe-top { padding-top: env(safe-area-inset-top); }
+
+  /* Fixed bars: keep a visual baseline and add the inset on top. */
+  .safe-pt-2 { padding-top: max(0.5rem, env(safe-area-inset-top)); }
+  .safe-pt-3 { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+  .safe-pt-4 { padding-top: max(1rem, env(safe-area-inset-top)); }
+  .safe-pb-2 { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+  .safe-pb-3 { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .safe-pb-4 { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .safe-x-3 { padding-left: max(0.75rem, env(safe-area-inset-left)); padding-right: max(0.75rem, env(safe-area-inset-right)); }
+  .safe-x-4 { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+  .safe-x-5 { padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
+
+  /* Headers / body that should push *content* below the inset but still have
+     a coloured surface extending to the true top of the viewport. */
+  .safe-mt-top { margin-top: env(safe-area-inset-top); }
+
+  /* Touch targets: when the pointer is coarse (phone/tablet), enforce a 44px
+     minimum hit area on things tagged `tap-target`. Non-coarse devices keep
+     the original geometry so desktop density isn't affected. */
+  @media (pointer: coarse) {
+    .tap-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Kill iOS's gray tap-highlight flash on buttons/links/nav tiles. We already
+     render focus-visible rings; the tap-highlight is redundant and cheap-feeling. */
+  a,
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  summary,
+  label[for],
+  [data-tap-reset] {
+    -webkit-tap-highlight-color: transparent;
   }
 }

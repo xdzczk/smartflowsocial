@@ -294,14 +294,18 @@ function DayViewPostDetailCard({
 /**
  * Returns true when viewport width is at least lg (1024px).
  * Used to show Day view sidebar and change post click behavior.
+ *
+ * SSR-safe: the initial server render and the first client render both
+ * return `false`. The real value is committed after mount, avoiding
+ * React hydration mismatches (#418/#423) that previously occurred when
+ * the server (no `window`) rendered the mobile layout while the client
+ * hydrated with the desktop layout.
  */
 export function useIsLg(): boolean {
-  const [isLg, setIsLg] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia(`(min-width: ${LG_BREAKPOINT_PX}px)`).matches;
-  });
+  const [isLg, setIsLg] = useState<boolean>(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const mq = window.matchMedia(`(min-width: ${LG_BREAKPOINT_PX}px)`);
     const handler = () => setIsLg(mq.matches);
     handler();

@@ -156,7 +156,7 @@ export function BtcpayConfirmationWatchBar() {
 
   return (
     <div
-      className="border-warning/40 bg-warning text-warning-foreground shadow-2 fixed top-0 right-0 left-0 z-[100] border-b px-3 py-2 backdrop-blur-sm"
+      className="border-warning/40 bg-warning text-warning-foreground shadow-2 safe-pt-2 safe-x fixed top-0 right-0 left-0 z-[100] border-b px-3 pb-2 backdrop-blur-sm"
       role="status"
     >
       <div className="mx-auto flex max-w-4xl items-center justify-center gap-3 text-center text-sm">

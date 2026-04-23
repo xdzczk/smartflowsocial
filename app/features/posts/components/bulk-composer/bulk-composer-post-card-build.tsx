@@ -317,7 +317,7 @@ export function BulkComposerPostCardBuildBody({
           {onRowFileSelect ? (
             <label
               className={cn(
-                "border-muted-foreground/30 text-text-secondary flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
+                "border-text-secondary/30 text-text-secondary flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs",
                 rowMediaUploadDisabled && "pointer-events-none opacity-50"
               )}
             >

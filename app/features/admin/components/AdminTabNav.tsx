@@ -42,7 +42,7 @@ export function AdminTabNav() {
   }
 
   return (
-    <div className="border-border from-background/95 to-background/75 sticky top-0 z-10 border-b bg-gradient-to-b backdrop-blur-md">
+    <div className="border-border from-canvas/95 to-canvas/75 sticky top-0 z-10 border-b bg-gradient-to-b backdrop-blur-md">
       <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <nav className="flex flex-wrap gap-1" aria-label="Admin sections">
           {TABS.map((tab) => (

@@ -2,6 +2,7 @@ import { useRouteLoaderData } from "@remix-run/react";
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { Button } from "~/components/ui/button";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import {
   applyThemePreferenceToDocument,
@@ -107,24 +108,28 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button
-        className="focus-ring border-border bg-canvas hover:bg-surface-hover inline-flex h-9 w-9 items-center justify-center rounded-lg border"
+      <Button
+        variant="outline"
+        size="icon"
+        className="rounded-lg shadow-none"
         aria-label={user ? themeAriaLabel(placeholderTheme) : "Theme: System"}
         type="button"
       >
         <PlaceholderIcon className={INLINE_ICON_SIZE_CLASS} />
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button
       onClick={cycleTheme}
-      className="focus-ring border-border bg-canvas hover:bg-surface-hover motion-fast inline-flex h-9 w-9 items-center justify-center rounded-lg border"
+      variant="outline"
+      size="icon"
+      className="rounded-lg shadow-none"
       aria-label={label}
       type="button"
     >
       <Icon className={INLINE_ICON_SIZE_CLASS} />
-    </button>
+    </Button>
   );
 }

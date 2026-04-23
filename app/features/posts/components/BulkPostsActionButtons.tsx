@@ -139,7 +139,7 @@ export default function BulkPostsActionButtons({
                   type="button"
                   onClick={() => handleScheduleIntervalClick(interval)}
                   disabled={isProcessing}
-                  className="dark:bg-surface bg-surface-hover text-text-secondary hover:bg-surface-hover dark:text-text dark:hover:bg-surface-hover shadow-2 mx-2 rounded-md px-4 py-2 text-sm font-medium transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                  className="dark:bg-surface bg-surface-hover text-text-secondary hover:bg-surface-hover dark:text-text dark:hover:bg-surface-hover shadow-2 motion-fast mx-2 rounded-md px-4 py-2 text-sm font-medium hover:-translate-y-px active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                   {formatIntervalLabel(interval, { compact: true })}
                 </button>
@@ -219,7 +219,7 @@ export default function BulkPostsActionButtons({
             type="button"
             onClick={handleBulkRecyclableToggle}
             disabled={isProcessing}
-            className="bg-surface-hover text-text hover:bg-surface-hover/80 shadow-2 rounded-md px-4 py-2 text-sm font-medium transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="bg-surface-hover text-text hover:bg-surface-hover/80 shadow-2 motion-fast rounded-md px-4 py-2 text-sm font-medium hover:-translate-y-px active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {posts.every((post) => post.isRecyclable)
               ? "Mark All Non-Recyclable"

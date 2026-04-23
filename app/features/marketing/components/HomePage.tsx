@@ -146,7 +146,7 @@ export function HomePage(): ReactNode {
         {/* Process Flow Section */}
         <section className="border-border bg-canvas relative border-t py-16 sm:py-24 lg:py-32">
           {/* Subtle neutral gradient overlay for depth */}
-          <div className="from-muted/10 to-background dark:from-muted/5 absolute inset-0 bg-gradient-to-b via-transparent" />
+          <div className="from-surface-hover/10 to-canvas dark:from-surface-hover/5 absolute inset-0 bg-gradient-to-b via-transparent" />
           <div className="relative container mx-auto px-4 lg:px-8 xl:max-w-7xl">
             <div className="mb-16 text-center">
               <h2 className="text-text mb-4 text-4xl font-black">

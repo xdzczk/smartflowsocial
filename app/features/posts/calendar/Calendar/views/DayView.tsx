@@ -8,7 +8,8 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { CONTENT_MOBILE_BREAKPOINT_PX } from "~/features/posts/components/constants";
 import type { QueueType, UserData } from "~/features/posts/types";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
-import { fromDate, nowInTimezone } from "~/lib/temporal";
+import { useTodayKey } from "~/lib/hooks/useTodayKey";
+import { fromDate } from "~/lib/temporal";
 
 import { DayViewTwoColumnGrid } from "../components/DayViewTwoColumnGrid";
 import {
@@ -158,11 +159,12 @@ export function DayView({
   }, []);
 
   const dayZoned = fromDate(currentDate, userTimezone);
-  const todayZoned = nowInTimezone(userTimezone);
-  const isToday =
-    dayZoned.year === todayZoned.year &&
-    dayZoned.month === todayZoned.month &&
-    dayZoned.day === todayZoned.day;
+  const todayKey = useTodayKey(userTimezone);
+  const isToday = todayKey
+    ? dayZoned.year === todayKey.year &&
+      dayZoned.month === todayKey.month &&
+      dayZoned.day === todayKey.day
+    : false;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

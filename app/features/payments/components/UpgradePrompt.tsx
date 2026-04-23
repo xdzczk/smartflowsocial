@@ -20,7 +20,7 @@ export default function UpgradePrompt({
   const minPlan = getMinimumPlanForFeature(feature);
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-surface-overlay shadow-3 inset-card-lg mx-4 max-w-md rounded-xl">
         <div className="mb-4 flex items-start justify-between">
           <div className="cluster-loose">

@@ -114,13 +114,13 @@ export function AdminLineChart({
             tickFormatter={(v) =>
               typeof v === "string" ? formatDayLabel(v) : String(v)
             }
-            stroke="hsl(var(--muted-foreground) / 0.5)"
+            stroke="hsl(var(--text-secondary) / 0.5)"
             tickLine={false}
           />
           <YAxis
             tick={{ fontSize: 10 }}
             width={36}
-            stroke="hsl(var(--muted-foreground) / 0.5)"
+            stroke="hsl(var(--text-secondary) / 0.5)"
             tickLine={false}
           />
           <Tooltip content={renderTooltip} />

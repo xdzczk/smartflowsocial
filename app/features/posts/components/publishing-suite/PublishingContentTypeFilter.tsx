@@ -49,6 +49,7 @@ export function PublishingContentTypeFilter({
 
   return (
     <Select
+      name="contentType"
       value={resolvedValue}
       onValueChange={(next) => {
         if (onValueChange) {

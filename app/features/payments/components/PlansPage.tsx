@@ -321,7 +321,7 @@ export function PlansPage(): ReactNode {
   return (
     <>
       <div className="bg-canvas relative min-h-screen overflow-hidden">
-        <div className="from-secondary/25 via-background to-background dark:from-background/30 absolute inset-0 bg-gradient-to-b" />
+        <div className="from-surface-hover/25 via-canvas to-canvas dark:from-canvas/30 absolute inset-0 bg-gradient-to-b" />
 
         <Header />
 
@@ -437,7 +437,7 @@ export function PlansPage(): ReactNode {
           </div>
 
           {founderOffering ? (
-            <section className="border-border from-card via-card to-muted/20 shadow-2 mb-7 rounded-xl border bg-gradient-to-r p-4 md:p-5">
+            <section className="border-border from-surface via-surface to-surface-hover/20 shadow-2 mb-7 rounded-xl border bg-gradient-to-r p-4 md:p-5">
               <p className="text-brand text-[11px] font-semibold tracking-[0.14em] uppercase">
                 LIMITED ALLOCATION — LIFETIME ACCESS
               </p>

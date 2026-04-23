@@ -19,7 +19,7 @@ export function PublishingFilterRow(props: PublishingFilterRowProps) {
   return (
     <div
       className={cn(
-        "border-border stack mb-4 border-b pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3",
+        "border-border mb-4 flex flex-row flex-wrap items-center justify-between gap-2 border-b pb-4",
         className
       )}
     >
@@ -27,10 +27,10 @@ export function PublishingFilterRow(props: PublishingFilterRowProps) {
         <div className="flex w-full min-w-0 flex-col">{props.children}</div>
       ) : (
         <>
-          <div className="flex min-w-0 flex-1 flex-shrink-0 items-center">
+          <div className="flex min-w-0 flex-1 items-center">
             {props.leading}
           </div>
-          <div className="flex min-w-0 flex-shrink-0 flex-wrap items-center gap-3 sm:justify-end">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             {props.trailing}
           </div>
         </>

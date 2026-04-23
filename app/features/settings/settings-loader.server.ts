@@ -15,7 +15,6 @@ import {
   getUserSubscription,
 } from "~/features/payments/data";
 import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
-import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import {
   getSubscriptionData,
   isSubscriptionActiveForGating,
@@ -416,11 +415,9 @@ export async function loadSettingsData(
   const myNpub = userRecord?.npub ?? "";
   const isChild = !!userRecord?.isChild;
 
-  // Use the already-fetched subscription for account access gating.
   const planName = subscription?.Plan?.name ?? "";
   const planId = (subscription?.planId ?? "").toLowerCase();
   const parsedPlanType = parseCommercialPlanType(planId || planName);
-  const commercialPlanType = parsedPlanType ?? "free";
   if (!parsedPlanType && (planId || planName)) {
     logWarning("Invalid subscription plan in settings loader", {
       userId,
@@ -428,8 +425,11 @@ export async function loadSettingsData(
       planName: planName || null,
     });
   }
-  const hasAccountsAccess =
-    isChild || getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
+  // Accounts tab is available to all plans so any user can view and manage
+  // their parent/child relationship (e.g. confirm or unlink child status).
+  // Server-side action guards still restrict plan-gated operations like
+  // request_child and search_accounts.
+  const hasAccountsAccess = true;
 
   const globalScheduleIntervalHours = normalizeGlobalScheduleIntervalHours(
     scheduleIntervalStrings
@@ -474,18 +474,10 @@ export async function loadSettingsData(
   );
 
   const accountsPromise: Promise<SettingsLoaderData["accounts"]> =
-    hasAccountsAccess
-      ? buildAccountsData({
-          userRecord: userRecord ?? { isChild: false, parentNpub: null },
-          myNpub,
-        })
-      : Promise.resolve({
-          isChild: false,
-          parentNpub: myNpub || null,
-          parentUser: null,
-          confirmedChildren: [],
-          pendingChildren: [],
-        });
+    buildAccountsData({
+      userRecord: userRecord ?? { isChild: false, parentNpub: null },
+      myNpub,
+    });
 
   const billingBundlePromise: Promise<{
     allPlans: Awaited<ReturnType<typeof getAllPlans>>;

@@ -8,7 +8,11 @@ const buttonVariants = cva(
   // recipe (Phase 1j-2) — ring-2 with a 2px canvas-colored donut so the ring
   // reads as designed polish on top of a surface. Override with `focus-ring`
   // on inline / table-row buttons where the offset clips against neighbours.
-  "focus-ring-offset inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium motion-fast disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  //
+  // `tap-target` (Phase mobile polish): on coarse-pointer devices only, enforces
+  // a 44×44 minimum hit area so `h-9`/`h-8`/`h-7` buttons don't become mistap
+  // hazards on phones. Visual geometry is unchanged on desktop.
+  "focus-ring-offset tap-target inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium motion-fast disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {

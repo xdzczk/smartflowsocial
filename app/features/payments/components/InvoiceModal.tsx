@@ -100,7 +100,7 @@ export function InvoiceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-[60] flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
       <div className="bg-surface-overlay shadow-3 inset-card-lg mx-4 max-w-lg rounded-xl">
         <div className="mb-4">
           <h3 className="text-text mb-2 text-lg font-semibold">

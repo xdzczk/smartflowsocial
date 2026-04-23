@@ -199,7 +199,7 @@ export const getQueueColor = (
       bg: "bg-brand/[0.06]",
       text: "text-text",
       hover: "hover:bg-surface-hover",
-      border: "border-accent/20",
+      border: "border-brand-soft/20",
     },
     unassigned: UNASSIGNED_MAP,
   };

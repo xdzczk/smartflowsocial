@@ -57,7 +57,7 @@ export default function LongFormPreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="bg-opacity-50 absolute inset-0 bg-black"
+        className="absolute inset-0 bg-black/50"
         onClick={onClose}
         onKeyDown={handleBackdropKeyDown}
         role="button"

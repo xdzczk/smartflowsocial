@@ -81,16 +81,16 @@ export class CreateLongFormPostUseCase {
       };
     }
 
-    // Not scheduled - create as DRAFT regardless of `input.isPublished`.
+    // Not scheduled - create as DRAFT regardless of input.isPublished.
     //
-    // When the caller intends to publish immediately (`input.isPublished === true`),
-    // they invoke `PublishLongFormNowUseCase` right after this use case. That use
-    // case owns the full DRAFT → PUBLISHING → PUBLISHED lifecycle, persists the
+    // When the caller intends an immediate publish (input.isPublished === true),
+    // they run the dedicated publish-longform-now flow right after this use case.
+    // That flow owns the full DRAFT → PUBLISHING → PUBLISHED lifecycle, persists the
     // signedEvent/nostrEvent and publishAttemptId atomically on the PUBLISHED
     // transition, and writes per-relay ACK rows.
     //
     // We deliberately do NOT pre-mark the post as PUBLISHED here. Doing so used
-    // to make `PublishLongFormNowUseCase` treat the very first publish as a
+    // to make that publish flow treat the very first publish as a
     // duplicate (its idempotency guard reads `currentState`), silently skip the
     // call to the Nostr publisher, and report success — leaving an event that
     // never actually reached any relay. We also do NOT persist signedEvent /

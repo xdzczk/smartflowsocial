@@ -70,13 +70,10 @@ import {
   type QueueTypeSettings,
   type RelayAck,
 } from "./settings-page-loader-parsers";
-import { SettingsActivePanelSkeleton } from "./SettingsActivePanelSkeleton";
-
 function renderSettingsPanel(
   tab: SettingsTabId,
   ctx: {
     isChildBool: boolean;
-    hasAccountsAccessBool: boolean;
     timezoneValue: string | null;
     timeFormatRaw: unknown;
     dateFormatRaw: unknown;
@@ -136,7 +133,6 @@ function renderSettingsPanel(
 ) {
   const {
     isChildBool,
-    hasAccountsAccessBool,
     timezoneValue,
     timeFormatRaw,
     dateFormatRaw,
@@ -393,7 +389,6 @@ function renderSettingsPanel(
         />
       );
     case "accounts":
-      if (!hasAccountsAccessBool) return null;
       return (
         <div className="flex min-w-0 flex-col gap-6">
           {accounts ? (
@@ -447,7 +442,6 @@ export default function SettingsPage() {
     availablePlans?: unknown;
     paymentHistory?: unknown;
     isChild?: unknown;
-    hasAccountsAccess?: unknown;
     accounts?: unknown;
     mutedList?: unknown;
     replyTemplates?: unknown;
@@ -507,7 +501,6 @@ export default function SettingsPage() {
     availablePlans: availablePlansRaw,
     paymentHistory: paymentHistoryRaw,
     isChild,
-    hasAccountsAccess,
     accounts: accountsRaw,
     mutedList: mutedListRaw,
     replyTemplates: replyTemplatesRaw,
@@ -570,23 +563,24 @@ export default function SettingsPage() {
     (billingContextRaw as BillingContext | null | undefined) ?? null;
 
   const isChildBool = asBoolean(isChild);
-  const hasAccountsAccessBool = asBoolean(hasAccountsAccess);
   const activeTab = resolveSettingsTab({
     tabParam: searchParams.get("tab"),
     isChild: isChildBool,
-    hasAccountsAccess: hasAccountsAccessBool,
   });
   const settingsSections = getVisibleSettingsSections({
     isChild: isChildBool,
-    hasAccountsAccess: hasAccountsAccessBool,
   });
 
-  const isLoadingNextTab =
+  // Derive the destination tab during an in-flight tab navigation so the rail
+  // highlights the next item immediately and the panel switches without a skeleton.
+  // shouldRevalidate returns false on ?tab= changes, so all data is already
+  // in memory — there is nothing to wait for.
+  const isNavigatingToSettings =
     navigation.state === "loading" &&
     navigation.location.pathname === "/dashboard/settings";
 
   const nextSearch = navigation.location ? navigation.location.search : "";
-  const nextTabParam = isLoadingNextTab
+  const nextTabParam = isNavigatingToSettings
     ? new URLSearchParams(nextSearch).get("tab")
     : null;
 
@@ -594,7 +588,6 @@ export default function SettingsPage() {
     ? resolveSettingsTab({
         tabParam: nextTabParam,
         isChild: isChildBool,
-        hasAccountsAccess: hasAccountsAccessBool,
       })
     : activeTab;
 
@@ -682,60 +675,55 @@ export default function SettingsPage() {
 
   return (
     <SettingsShell sections={settingsSections} activeTab={nextActiveTab}>
-      {isLoadingNextTab ? (
-        <SettingsActivePanelSkeleton />
-      ) : (
-        renderSettingsPanel(activeTab, {
-          isChildBool,
-          hasAccountsAccessBool,
-          timezoneValue,
-          timeFormatRaw,
-          dateFormatRaw,
-          preferredNostrClientRaw,
-          customNostrClientBaseUrlRaw,
-          themePreferenceRaw,
-          pushNotificationsEnabled,
-          pushNotifyPublishSuccess,
-          pushNotifyPublishFailure,
-          pushNotifyRunwayLow,
-          pushNotifyIncludePreview,
-          runwayNotifyBelowDays,
-          primarySignerProfile,
-          queueTypes,
-          globalScheduleIntervalHours,
-          hashTagPresets,
-          accounts,
-          relaysList,
-          publishRelaySourceValue,
-          profileRelayEntriesList,
-          managedRelaysList,
-          relayAcksMap,
-          blastrRelayEnabled,
-          canToggleBlastr,
-          blastrPolicyRaw,
-          blastrSystemRelaysRaw,
-          giveawayBlacklistList,
-          mutedList,
-          filterMutedValue,
-          hidePostsFromLowTrustUsersValue,
-          replyTemplates,
-          uploadProviderValue,
-          uploadProviderStoredValue,
-          isSubscriptionActiveForGatingValue,
-          customBlossomUrlValue,
-          enableMirrorBlossomValue,
-          mirrorUploadUrlsList,
-          subscription,
-          availablePlans,
-          paymentHistory,
-          nwcEnabledValue,
-          maskedNwcStringValue,
-          nwcLastUsedValue,
-          referral,
-          defaultZapAmountSats,
-          billingContext,
-        })
-      )}
+      {renderSettingsPanel(nextActiveTab, {
+        isChildBool,
+        timezoneValue,
+        timeFormatRaw,
+        dateFormatRaw,
+        preferredNostrClientRaw,
+        customNostrClientBaseUrlRaw,
+        themePreferenceRaw,
+        pushNotificationsEnabled,
+        pushNotifyPublishSuccess,
+        pushNotifyPublishFailure,
+        pushNotifyRunwayLow,
+        pushNotifyIncludePreview,
+        runwayNotifyBelowDays,
+        primarySignerProfile,
+        queueTypes,
+        globalScheduleIntervalHours,
+        hashTagPresets,
+        accounts,
+        relaysList,
+        publishRelaySourceValue,
+        profileRelayEntriesList,
+        managedRelaysList,
+        relayAcksMap,
+        blastrRelayEnabled,
+        canToggleBlastr,
+        blastrPolicyRaw,
+        blastrSystemRelaysRaw,
+        giveawayBlacklistList,
+        mutedList,
+        filterMutedValue,
+        hidePostsFromLowTrustUsersValue,
+        replyTemplates,
+        uploadProviderValue,
+        uploadProviderStoredValue,
+        isSubscriptionActiveForGatingValue,
+        customBlossomUrlValue,
+        enableMirrorBlossomValue,
+        mirrorUploadUrlsList,
+        subscription,
+        availablePlans,
+        paymentHistory,
+        nwcEnabledValue,
+        maskedNwcStringValue,
+        nwcLastUsedValue,
+        referral,
+        defaultZapAmountSats,
+        billingContext,
+      })}
     </SettingsShell>
   );
 }

@@ -62,9 +62,7 @@ function getClassName(
   const statusClass = queueColorStyle
     ? ""
     : getStatusColor(post, isLongform ?? false, isPast ?? false);
-  const borderClass = queueColorStyle
-    ? "border-0"
-    : "border border-current border-opacity-20";
+  const borderClass = queueColorStyle ? "border-0" : "border border-current/20";
   return `${baseClasses} ${cursorClass} ${dragClass} ${statusClass} ${borderClass}`;
 }
 

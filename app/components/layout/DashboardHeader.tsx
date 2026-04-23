@@ -38,6 +38,7 @@ import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { BRAND_NAME } from "~/lib/brand";
+import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
@@ -171,7 +172,7 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -228,7 +229,7 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -445,10 +446,10 @@ function PageHeaderBar({
   return (
     <header
       id="page-header"
-      className={`bg-canvas border-border fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
+      className={`bg-canvas border-border h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center border-b transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
     >
-      <div className="max-w-10xl mx-auto flex w-full min-w-0 justify-between px-3 sm:px-4 lg:px-8">
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="max-w-10xl safe-x-4 mx-auto flex w-full min-w-0 items-center justify-between sm:px-5 lg:px-8">
+        <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button
               onClick={onDesktopToggle}
@@ -476,10 +477,10 @@ function PageHeaderBar({
             </Button>
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center px-2 sm:px-3 lg:px-6">
-          <GlobalSearchBar className="w-full min-w-0" />
+        <div className="flex min-w-0 flex-1 items-center justify-center px-2.5 sm:px-4 lg:px-6">
+          <GlobalSearchBar className="w-full max-w-xl min-w-0" />
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           <UserMenu />
         </div>
@@ -540,17 +541,11 @@ export default function Header({
   const isFirstRunDashboard =
     location.pathname === DASHBOARD_ROOT_PATH &&
     dashboardIndexData?.isFirstRunDashboard === true;
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined"
-      ? window.matchMedia("(max-width: 1023px)").matches
-      : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const fn = () => setIsMobile(mq.matches);
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, []);
+  // Shared SSR-safe hook; always returns `false` on the server and the first
+  // client render, then flips via useEffect. This avoids React hydration
+  // error #418 which previously fired when the server rendered desktop
+  // markup and the client hydrated with mobile markup.
+  const isMobile = useIsMobile(1023);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setMobileSidebarOpen(false), 0);
@@ -574,7 +569,7 @@ export default function Header({
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`border-border bg-surface text-text fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
+        className={`border-border bg-surface text-text pt-safe-top safe-pb-2 fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
           isDesktopExpanded ? "lg:w-64" : "lg:w-16"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >

@@ -190,11 +190,11 @@ export function getQueueColorStyle(
   }
 
   // Unassigned: same greys as Next 7 days — lighter by default (opacity-65 equivalent), darker on hover/focus/touch (opacity-100)
-  const unassignedBgDefault = "hsl(var(--muted-foreground) / 0.36)";
-  const unassignedBgHover = "hsl(var(--muted-foreground) / 0.55)";
+  const unassignedBgDefault = "hsl(var(--text-secondary) / 0.36)";
+  const unassignedBgHover = "hsl(var(--text-secondary) / 0.55)";
   return {
     backgroundColor: unassignedBgDefault,
-    color: "hsl(var(--muted-foreground))",
+    color: "hsl(var(--text-secondary))",
     borderColor: "transparent",
     isUnassigned: true,
     hoverBackgroundColor: unassignedBgHover,

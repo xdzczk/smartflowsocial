@@ -206,7 +206,7 @@ export function ScheduleNext7DaysCard({
                         // CSS custom property not in React.CSSProperties; assertion required
                         /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- CSS custom properties require type assertion */
                         {
-                          "--queue-color": "hsl(var(--primary))",
+                          "--queue-color": "hsl(var(--brand))",
                         } as React.CSSProperties
                       }
                       title={`View ${label} in Calendar`}
@@ -237,7 +237,7 @@ export function ScheduleNext7DaysCard({
                                 0
                               );
                               const unassignedAccent =
-                                "hsl(var(--muted-foreground) / 0.55)";
+                                "hsl(var(--text-secondary) / 0.55)";
                               const queuesWithCount = byQueue
                                 .filter((q) => q.count > 0)
                                 .map((q) => {

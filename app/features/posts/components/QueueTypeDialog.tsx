@@ -346,10 +346,10 @@ export function QueueTypeDialog({
                         style={{
                           backgroundColor: QUEUE_COLOR_ACCENTS[token],
                           borderColor: isSelected
-                            ? "hsl(var(--ring))"
+                            ? "hsl(var(--focus-ring))"
                             : "transparent",
                           boxShadow: isSelected
-                            ? "0 0 0 2px hsl(var(--background))"
+                            ? "0 0 0 2px hsl(var(--canvas))"
                             : undefined,
                         }}
                         title={token}

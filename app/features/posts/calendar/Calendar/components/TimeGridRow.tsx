@@ -5,7 +5,6 @@ import type { CalendarPost } from "../PostBlock.types";
 
 import { SlotCell } from "./SlotCell";
 import {
-  CALENDAR_TIME_RAIL_STICKY_Z,
   ROW_HEIGHT_PX,
   TIME_GRID_ROW_CONTENT_Z,
 } from "./weekly-view-constants";
@@ -13,7 +12,6 @@ import {
 export interface TimeGridRowProps {
   time: string;
   index: number;
-  hourLabel: string;
   weekDays: Date[];
   hours: string[];
   getSlotState: (day: Date, time: string) => SlotState;
@@ -57,7 +55,6 @@ export interface TimeGridRowProps {
 export function TimeGridRow({
   time,
   index,
-  hourLabel,
   weekDays,
   hours,
   getSlotState,
@@ -102,16 +99,12 @@ export function TimeGridRow({
         className="relative flex min-h-0 w-full min-w-0 flex-1 items-stretch overflow-visible"
         style={{ height: ROW_HEIGHT_PX - 1, zIndex: TIME_GRID_ROW_CONTENT_Z }}
       >
-        <div
-          className={`text-text-secondary/85 border-border/30 w-16 flex-shrink-0 border-r pr-2 text-right text-xs leading-none ${
-            isMobile
-              ? "hidden"
-              : "sticky left-0 bg-[hsl(var(--calendar-surface-2-bg))]"
-          }`}
-          style={isMobile ? undefined : { zIndex: CALENDAR_TIME_RAIL_STICKY_Z }}
-        >
-          {hourLabel}
-        </div>
+        {/* Layout spacer: keeps slot cells at x ≥ 4rem.
+              Visual rendering (background, border, label) is provided by
+              the sticky time-rail overlay in TimeGrid which sits above the
+              rows-wrapper stacking context and can never be covered by
+              post blocks from any row. */}
+        <div className="w-16 flex-shrink-0" />
         {weekDays.map((day, dayIndex) => {
           const slotState = getSlotState(day, time);
           return (
