@@ -17,7 +17,7 @@ import { Download, Share, SquarePlus, X } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import { useInstallPrompt } from "~/lib/hooks/useInstallPrompt.client";
+import { useInstallPrompt } from "~/lib/hooks/useInstallPrompt";
 
 export function InstallPromptBanner() {
   const {
