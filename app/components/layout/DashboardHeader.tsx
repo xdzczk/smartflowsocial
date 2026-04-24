@@ -7,6 +7,8 @@ import {
 import {
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Copy,
   FilePenLine,
@@ -30,6 +32,7 @@ import type { MouseEvent } from "react";
 
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
+import { PlanUsageSidebar } from "~/components/layout/PlanUsageSidebar";
 import { ProductFeedbackSidebar } from "~/components/layout/ProductFeedbackSidebar";
 import UserMenu from "~/components/layout/UserMenu";
 import { InstallPromptSidebar } from "~/components/pwa/InstallPrompt";
@@ -174,7 +177,7 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative max-lg:min-h-11 max-lg:items-center ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -206,7 +209,7 @@ function NavigationItem({
       </span>
       {!collapsed ? (
         <>
-          <span className="grow py-2">{children}</span>
+          <span className="grow py-2 max-lg:py-1.5">{children}</span>
           {!hasAccess ? (
             <Lock
               className="text-warning h-4 w-4 flex-shrink-0"
@@ -231,7 +234,7 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative max-lg:min-h-11 max-lg:items-center ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
@@ -268,7 +271,9 @@ function OperatorAdminNavItem({
       <span className={`flex flex-none items-center ${iconSpanClass}`}>
         <Shield className={NAV_ICON_SIZE_CLASS} strokeWidth={NAV_ICON_STROKE} />
       </span>
-      {!collapsed ? <span className="grow py-2">Admin</span> : null}
+      {!collapsed ? (
+        <span className="grow py-2 max-lg:py-1.5">Admin</span>
+      ) : null}
     </a>
   );
 }
@@ -290,7 +295,7 @@ function SidebarNavContent({
 }: SidebarNavContentProps) {
   const collapsed = !isDesktopExpanded;
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-1 max-lg:space-y-0.5">
       <NavigationItem
         to={DASHBOARD_ROOT_PATH}
         feature="dashboard"
@@ -454,27 +459,43 @@ function PageHeaderBar({
         <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button
+              type="button"
               onClick={onDesktopToggle}
               variant="outline"
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
+              aria-label={
+                isDesktopExpanded ? "Collapse sidebar" : "Expand sidebar"
+              }
             >
-              <Menu
-                className={NAV_ICON_SIZE_CLASS}
-                strokeWidth={NAV_ICON_STROKE}
-              />
+              {isDesktopExpanded ? (
+                <ChevronLeft
+                  className={NAV_ICON_SIZE_CLASS}
+                  strokeWidth={NAV_ICON_STROKE}
+                  aria-hidden
+                />
+              ) : (
+                <ChevronRight
+                  className={NAV_ICON_SIZE_CLASS}
+                  strokeWidth={NAV_ICON_STROKE}
+                  aria-hidden
+                />
+              )}
             </Button>
           </div>
           <div className="lg:hidden">
             <Button
+              type="button"
               onClick={onMobileToggle}
               variant="outline"
               size="icon"
               className="h-9 w-9 rounded-lg shadow-none"
+              aria-label="Open navigation"
             >
               <Menu
                 className={NAV_ICON_SIZE_CLASS}
                 strokeWidth={NAV_ICON_STROKE}
+                aria-hidden
               />
             </Button>
           </div>
@@ -537,12 +558,10 @@ export default function Header({
     featureName: string;
   }>({ isOpen: false, feature: null, featureName: "" });
   const location = useLocation();
-  const dashboardIndexData = useRouteLoaderData("routes/dashboard._index") as
+  const dashboardLayoutData = useRouteLoaderData("routes/dashboard") as
     | { isFirstRunDashboard?: boolean }
     | undefined;
-  const isFirstRunDashboard =
-    location.pathname === DASHBOARD_ROOT_PATH &&
-    dashboardIndexData?.isFirstRunDashboard === true;
+  const isFirstRunDashboard = dashboardLayoutData?.isFirstRunDashboard === true;
 
   const install = useInstallPrompt();
   const [installIosInstructionsOpen, setInstallIosInstructionsOpen] =
@@ -583,7 +602,12 @@ export default function Header({
     ? () => setMobileSidebarOpen(false)
     : undefined;
 
-  const sidebarPadding = isDesktopExpanded ? "p-4" : "p-2 lg:px-2 lg:py-3";
+  const sidebarScrollPadding = isDesktopExpanded
+    ? "p-4"
+    : "p-2 lg:px-2 lg:pt-4";
+  const sidebarFooterPadding = isDesktopExpanded
+    ? "p-4"
+    : "p-2 lg:px-2 lg:py-3";
 
   return (
     <>
@@ -598,9 +622,9 @@ export default function Header({
           isDesktopExpanded={isDesktopExpanded}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
-        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
           <div
-            className={`w-full transition-[padding] duration-300 ${sidebarPadding}`}
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain transition-[padding] duration-300 ${sidebarScrollPadding} pb-2`}
           >
             <SidebarNavContent
               pathname={location.pathname}
@@ -609,48 +633,55 @@ export default function Header({
               onMobileNavActiveClick={onMobileNavActiveClick}
               isFirstRunDashboard={isFirstRunDashboard}
             />
-          </div>
-        </div>
-        <div
-          className={`mt-auto transition-[padding] duration-300 ${sidebarPadding}`}
-        >
-          {isOperatorAdmin ? (
-            <div className="mb-1">
-              <OperatorAdminNavItem
-                pathname={location.pathname}
-                collapsed={!isDesktopExpanded}
-                onMobileNavActiveClick={onMobileNavActiveClick}
-              />
+            {isOperatorAdmin ? (
+              <div className="mt-3 shrink-0 lg:mt-3.5">
+                <OperatorAdminNavItem
+                  pathname={location.pathname}
+                  collapsed={!isDesktopExpanded}
+                  onMobileNavActiveClick={onMobileNavActiveClick}
+                />
+              </div>
+            ) : null}
+            <div className="border-border-subtle/50 mt-5 flex shrink-0 flex-col border-t pt-4 max-lg:pt-5 lg:mt-7 lg:pt-4">
+              <div className="flex flex-col gap-2 max-lg:gap-2.5 lg:gap-2.5">
+                <PlanUsageSidebar
+                  isDesktopExpanded={isDesktopExpanded}
+                  onMobileNavActiveClick={onMobileNavActiveClick}
+                />
+                {install.shouldRender ? (
+                  <InstallPromptSidebar
+                    isDesktopExpanded={isDesktopExpanded}
+                    canPrompt={install.canPrompt}
+                    isIosSafariInstallable={install.isIosSafariInstallable}
+                    onChromiumInstall={handlePwaChromiumInstall}
+                    dismiss={install.dismiss}
+                    iosInstructionsOpen={installIosInstructionsOpen}
+                    setIosInstructionsOpen={setInstallIosInstructionsOpen}
+                  />
+                ) : null}
+              </div>
             </div>
-          ) : null}
-          {install.shouldRender ? (
-            <InstallPromptSidebar
-              isDesktopExpanded={isDesktopExpanded}
-              canPrompt={install.canPrompt}
-              isIosSafariInstallable={install.isIosSafariInstallable}
-              onChromiumInstall={handlePwaChromiumInstall}
-              dismiss={install.dismiss}
-              iosInstructionsOpen={installIosInstructionsOpen}
-              setIosInstructionsOpen={setInstallIosInstructionsOpen}
-            />
-          ) : null}
-          <NavigationItem
-            to="/dashboard/settings"
-            feature="settings"
-            isActive={location.pathname === "/dashboard/settings"}
-            onUpgradeClick={handleUpgradeClick}
-            onActiveClick={onMobileNavActiveClick}
-            icon={
-              <Settings
-                className={NAV_ICON_SIZE_CLASS}
-                strokeWidth={NAV_ICON_STROKE}
-              />
-            }
-            collapsed={!isDesktopExpanded}
+            <div className="min-h-0 min-w-0 flex-1 basis-0" aria-hidden />
+          </div>
+          <div
+            className={`border-border-subtle/50 flex shrink-0 flex-col gap-1.5 border-t pt-3 pb-2 transition-[padding] duration-300 max-lg:gap-2 max-lg:pt-3.5 lg:gap-2 lg:pt-3.5 ${sidebarFooterPadding}`}
           >
-            Settings
-          </NavigationItem>
-          <div className="mt-1">
+            <NavigationItem
+              to="/dashboard/settings"
+              feature="settings"
+              isActive={location.pathname === "/dashboard/settings"}
+              onUpgradeClick={handleUpgradeClick}
+              onActiveClick={onMobileNavActiveClick}
+              icon={
+                <Settings
+                  className={NAV_ICON_SIZE_CLASS}
+                  strokeWidth={NAV_ICON_STROKE}
+                />
+              }
+              collapsed={!isDesktopExpanded}
+            >
+              Settings
+            </NavigationItem>
             <ProductFeedbackSidebar
               collapsed={!isDesktopExpanded}
               onOpenMobileSidebarClose={onMobileNavActiveClick}

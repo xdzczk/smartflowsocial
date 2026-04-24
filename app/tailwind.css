@@ -57,6 +57,31 @@ body.has-btcpay-confirmation-bar {
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
+  /* Sidebar "Create" row: soft brand glow while first-run onboarding is active (no scale / layout shift). */
+  @keyframes nav-create-onboarding-glow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 transparent,
+        0 0 10px 0 hsl(var(--brand) / 0.05);
+    }
+    50% {
+      box-shadow:
+        0 0 0 0 transparent,
+        0 0 22px 3px hsl(var(--brand) / 0.1);
+    }
+  }
+
+  .animate-nav-create-onboarding-glow {
+    animation: nav-create-onboarding-glow 2.25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-nav-create-onboarding-glow {
+      animation: none;
+    }
+  }
+
   /* Next scheduled Flow card: queue-tinted shadow pulse (duration from --flow-glow-duration; color from --queue-color). Kept distinct from ordinary hover (neutral elevation only on non-pulse cards). */
   :root {
     --flow-shadow-glow-start: 9%;

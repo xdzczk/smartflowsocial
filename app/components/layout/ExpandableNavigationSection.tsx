@@ -3,6 +3,7 @@ import { ChevronDown, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useSubscription, type FeatureName } from "~/features/payments/types";
+import { cn } from "~/lib/utils";
 
 const TEXT_PRIMARY = "text-brand";
 // Inactive nav icons: slightly higher contrast than inactive text; match link hover so icon and text react together
@@ -69,7 +70,7 @@ function NavigationChildItemComponent({
 
   const title = !hasAccess ? "Subscription required" : child.label;
 
-  const childLinkClass = `focus-ring group flex items-center rounded-lg border border-transparent text-sm font-medium relative ${
+  const childLinkClass = `focus-ring group flex items-center rounded-lg border border-transparent text-sm font-medium relative max-lg:min-h-11 ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
@@ -95,7 +96,7 @@ function NavigationChildItemComponent({
       </span>
       {!collapsed ? (
         <>
-          <span className="grow py-2">{child.label}</span>
+          <span className="grow py-2 max-lg:py-1.5">{child.label}</span>
           {!hasAccess ? (
             <Lock
               className="text-warning h-4 w-4 flex-shrink-0"
@@ -156,7 +157,7 @@ export function ExpandableNavigationSection({
   // Collapsed: show only icon-only child links (no parent button, no expand/collapse)
   if (collapsed) {
     return (
-      <div className="space-y-1">
+      <div className="space-y-1 max-lg:space-y-0.5">
         {items.map((child) => {
           const isActive = location.pathname.startsWith(getPathname(child.to));
           return (
@@ -200,16 +201,18 @@ export function ExpandableNavigationSection({
     }, 0);
   };
 
-  const parentClass = `focus-ring group cluster rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer ${
+  const parentClass = cn(
+    "focus-ring group cluster max-lg:min-h-11 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer",
     isAnyChildActive
       ? "bg-surface-selected text-text border-border-subtle"
-      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
-  }`;
+      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border",
+    showSubtleHint && "animate-nav-create-onboarding-glow"
+  );
 
   return (
     <div
       ref={sectionRef}
-      className="space-y-1"
+      className="space-y-1 max-lg:space-y-0.5"
       onBlurCapture={handleBlurCapture}
     >
       {/* Parent Section Header */}
@@ -226,17 +229,7 @@ export function ExpandableNavigationSection({
         >
           {icon}
         </span>
-        <span className="grow py-2 text-left">
-          <span className="inline-cluster-tight.5">
-            <span>{title}</span>
-            {showSubtleHint ? (
-              <span
-                className="bg-brand/70 inline-block h-1.5 w-1.5 rounded-full"
-                aria-hidden
-              />
-            ) : null}
-          </span>
-        </span>
+        <span className="grow py-2 text-left max-lg:py-1.5">{title}</span>
         <span
           className={`flex flex-none items-center ${isAnyChildActive ? TEXT_PRIMARY : TEXT_NAV_ICON_INACTIVE} transition-transform duration-200 ease-in-out ${
             isExpanded ? "rotate-180" : "rotate-0"
@@ -253,7 +246,7 @@ export function ExpandableNavigationSection({
           isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="space-y-1 pl-8">
+        <div className="space-y-1 pl-8 max-lg:space-y-0.5">
           {items.map((child) => {
             const isActive = location.pathname.startsWith(
               getPathname(child.to)

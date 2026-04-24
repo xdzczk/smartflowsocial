@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import type { QueueType } from "~/features/posts/types";
+import { cn } from "~/lib/utils";
 
 import { PUBLISHING_FILTER_SELECT_TRIGGER_CLASS } from "./constants";
 
@@ -20,10 +21,13 @@ export function PublishingQueueFilter({
   currentTab,
   basePath = "/dashboard",
   queueTypes,
+  triggerClassName,
 }: {
   currentTab: string;
   basePath?: string;
   queueTypes: Array<QueueType | string>;
+  /** Extra classes for the trigger (e.g. dashboard Flow toolbar). */
+  triggerClassName?: string;
 }) {
   const params = useParams();
   const [searchParams] = useSearchParams();
@@ -55,7 +59,7 @@ export function PublishingQueueFilter({
       onValueChange={navigateToQueue}
     >
       <SelectTrigger
-        className={PUBLISHING_FILTER_SELECT_TRIGGER_CLASS}
+        className={cn(PUBLISHING_FILTER_SELECT_TRIGGER_CLASS, triggerClassName)}
         aria-label="Filter by queue"
       >
         <SelectValue placeholder="Queue" />

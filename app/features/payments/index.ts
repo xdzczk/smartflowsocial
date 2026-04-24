@@ -38,6 +38,7 @@ export {
   getPlanDisplayName,
   hasFeatureAccess,
   isSubscriptionPeriodExpired,
+  isSubscriptionExpiredForUi,
   usePlanEntitlements,
 } from "./types";
 
@@ -92,6 +93,8 @@ export {
 
 export { checkAndRenewSubscriptions } from "./services/subscription-renewal.server";
 export { runCampaignPayoutAutorunCron } from "./services/campaign-payout-cron.server";
+
+export { loadPlanUsageSnapshot } from "./services/plan-usage-snapshot.server";
 
 // ============================================================================
 // Components (Public API)

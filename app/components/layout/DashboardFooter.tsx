@@ -1,5 +1,5 @@
 import { Clock, TriangleAlert } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator";
 import { BRAND_NAME } from "~/lib/brand";
@@ -17,23 +17,61 @@ function getTimezoneShortName(timezone: string | undefined): string {
 /** Placeholder for clock while hydrating to avoid server/client date mismatch (React hydration errors #418/#425). */
 const CLOCK_PLACEHOLDER = "–";
 
+const footerWallClockListeners = new Set<() => void>();
+let footerWallClockTickMs = 0;
+let footerWallClockIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function subscribeFooterWallClock(onStoreChange: () => void) {
+  footerWallClockListeners.add(onStoreChange);
+  if (typeof window !== "undefined") {
+    queueMicrotask(() => {
+      if (footerWallClockListeners.size === 0) return;
+      if (footerWallClockTickMs === 0) {
+        footerWallClockTickMs = Date.now();
+        for (const l of footerWallClockListeners) l();
+      }
+      footerWallClockIntervalId ??= setInterval(() => {
+        footerWallClockTickMs = Date.now();
+        for (const l of footerWallClockListeners) l();
+      }, 1000);
+    });
+  }
+  return () => {
+    footerWallClockListeners.delete(onStoreChange);
+    if (
+      footerWallClockListeners.size === 0 &&
+      footerWallClockIntervalId != null
+    ) {
+      clearInterval(footerWallClockIntervalId);
+      footerWallClockIntervalId = null;
+      footerWallClockTickMs = 0;
+    }
+  };
+}
+
+function getFooterWallClockSnapshot() {
+  return footerWallClockTickMs;
+}
+
+function getFooterWallClockServerSnapshot() {
+  return 0;
+}
+
 export default function Footer() {
   const user = useOptionalUser() ?? null;
   const { dateLocale } = useFormattedDate();
-  const [mounted, setMounted] = useState(false);
-  const [time, setTime] = useState<Date | null>(null);
+  const tickMs = useSyncExternalStore(
+    subscribeFooterWallClock,
+    getFooterWallClockSnapshot,
+    getFooterWallClockServerSnapshot
+  );
   const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setMounted(true);
-      setTime(new Date());
-    }, 0);
-    return () => clearTimeout(id);
-  }, []);
+  const clockReady = tickMs > 0;
+  const time = clockReady ? new Date(tickMs) : null;
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!clockReady) return;
     const id = setTimeout(
       () => setSyncNeedsAttention(getSyncState() === "needs_attention"),
       0
@@ -45,15 +83,7 @@ export default function Footer() {
       clearTimeout(id);
       unsubscribe();
     };
-  }, [mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const timer = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [mounted]);
+  }, [clockReady]);
 
   const userTimezone =
     user && typeof user === "object" && "timezone" in user
@@ -68,7 +98,7 @@ export default function Footer() {
       : "12h";
 
   const dateString =
-    mounted && time
+    clockReady && time
       ? time.toLocaleDateString(dateLocale, {
           timeZone: userTimezone,
           month: "short",
@@ -78,7 +108,7 @@ export default function Footer() {
       : CLOCK_PLACEHOLDER;
 
   const timeString =
-    mounted && time
+    clockReady && time
       ? time.toLocaleTimeString("en-US", {
           timeZone: userTimezone,
           hour: "2-digit",

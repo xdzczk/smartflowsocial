@@ -23,6 +23,7 @@ import {
   CARD_MIN_HEIGHT_MOBILE,
   CARD_SLOT_SIZE,
   CARD_SLOT_SIZE_MOBILE,
+  FLOW_DESKTOP_SCROLL_CHROME_PX,
   getGoLiveAt,
   LOADING_LABEL,
   MOBILE_BREAKPOINT_PX,
@@ -74,6 +75,11 @@ export interface FlowViewProps {
   isPostActivationEmpty?: boolean;
   /** Server time at document render — aligns relative labels with SSR for hydration. */
   serverNowMs?: number;
+  /**
+   * Optional desktop (non-mobile) Flow card content height in px; clamped by the
+   * dashboard before passing. When omitted, uses {@link CARD_MIN_HEIGHT}.
+   */
+  desktopFlowCardHeightPx?: number;
 }
 
 export interface FlowViewHandle {
@@ -101,6 +107,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onHasLiveEdgeChange,
       isPostActivationEmpty = false,
       serverNowMs,
+      desktopFlowCardHeightPx,
     },
     ref
   ): React.ReactNode {
@@ -395,7 +402,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="focus-ring card-lift border-border-subtle bg-surface hover:border-border hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle bg-surface hover:border-border hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[var(--flow-card-h,232px)] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
@@ -507,17 +514,32 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
     const virtualItems = rowVirtualizer.getVirtualItems();
 
+    const desktopFlowCardContentPx = !isMobile
+      ? typeof desktopFlowCardHeightPx === "number" &&
+        desktopFlowCardHeightPx > 0
+        ? desktopFlowCardHeightPx
+        : CARD_MIN_HEIGHT
+      : CARD_MIN_HEIGHT_MOBILE;
+    const flowScrollOuterHeightPx = isMobile
+      ? CARD_MIN_HEIGHT_MOBILE + 32
+      : desktopFlowCardContentPx + FLOW_DESKTOP_SCROLL_CHROME_PX;
+
+    const flowCardCssVarStyle: Record<string, string> | undefined = !isMobile
+      ? { "--flow-card-h": `${desktopFlowCardContentPx}px` }
+      : undefined;
+
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-full">
+      <div
+        className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-auto lg:flex-none"
+        style={flowCardCssVarStyle}
+      >
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
           className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4"
           style={{
-            height: isMobile
-              ? CARD_MIN_HEIGHT_MOBILE + 32
-              : CARD_MIN_HEIGHT + 36,
+            height: flowScrollOuterHeightPx,
             contain: "layout",
           }}
         >
@@ -533,7 +555,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                   ? "transform"
                   : "auto",
               height: "100%",
-              minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
+              minHeight: isMobile
+                ? CARD_MIN_HEIGHT_MOBILE
+                : desktopFlowCardContentPx,
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",

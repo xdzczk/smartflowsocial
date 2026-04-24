@@ -73,6 +73,11 @@ interface QueueTypeDialogProps {
   formFetcher?: FetcherWithComponents<QueueTypeDialogFetcherData>;
   /** Called with the full fetcher data (includes queueType) so parent can add/update list immediately */
   onQueueCreatedOrUpdated?: (data: QueueTypeDialogFetcherData) => void;
+  /**
+   * POST target for create/update (defaults to current route).
+   * Use `/dashboard/settings` when embedding the dialog on another page so queue actions hit the settings handler.
+   */
+  submitAction?: string;
 }
 
 export function QueueTypeDialog({
@@ -82,6 +87,7 @@ export function QueueTypeDialog({
   hashTagPresets,
   formFetcher: formFetcherProp,
   onQueueCreatedOrUpdated,
+  submitAction,
 }: QueueTypeDialogProps) {
   const internalFetcher = useFetcher<QueueTypeDialogFetcherData>();
   const fetcher = formFetcherProp ?? internalFetcher;
@@ -275,7 +281,12 @@ export function QueueTypeDialog({
       formData.set("id", queueType.id);
     }
 
-    fetcher.submit(formData, { method: "post" });
+    fetcher.submit(
+      formData,
+      submitAction
+        ? { method: "post", action: submitAction }
+        : { method: "post" }
+    );
   });
 
   const includeInNote = form.watch("includeHashtagsInNoteBody") !== false;

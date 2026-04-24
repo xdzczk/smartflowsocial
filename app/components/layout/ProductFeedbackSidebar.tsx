@@ -82,7 +82,7 @@ export function ProductFeedbackSidebar({
     dashLoader?.feedbackInboxKind10050Relays ?? [];
 
   // Match inactive `NavigationItem` / `OperatorAdminNavItem` in DashboardHeader; `text-xs` scales the row down.
-  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border ${
+  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-left text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
   const iconSpanClass =

@@ -1,7 +1,13 @@
 import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button, type ButtonProps } from "~/components/ui/button";
@@ -22,9 +28,31 @@ import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-const subscribeNoop = () => () => {};
-const getServerNotHydrated = () => false;
-const getClientHydrated = () => true;
+/** Radix Dialog trigger needs client-only ids; store flips after first microtask so SSR + first paint stay in sync. */
+const dialogShellListeners = new Set<() => void>();
+let dialogShellStoreReady = false;
+
+function subscribeDialogShellReady(onStoreChange: () => void) {
+  dialogShellListeners.add(onStoreChange);
+  if (typeof window !== "undefined") {
+    queueMicrotask(() => {
+      if (dialogShellStoreReady) return;
+      dialogShellStoreReady = true;
+      for (const l of dialogShellListeners) l();
+    });
+  }
+  return () => {
+    dialogShellListeners.delete(onStoreChange);
+  };
+}
+
+function getDialogShellSnapshot() {
+  return dialogShellStoreReady;
+}
+
+function getDialogShellServerSnapshot() {
+  return false;
+}
 
 interface UserWithProfile {
   npub: string;
@@ -167,20 +195,21 @@ function getUserAvatarFallback(user: unknown): string {
   return "U";
 }
 
-function UserMenuAccountTrigger({
-  displayName,
-  currentLabel,
-  currentAvatar,
-  avatarFallback,
-  ...buttonProps
-}: {
-  displayName: string;
-  currentLabel: string;
-  currentAvatar: string | undefined;
-  avatarFallback: string;
-} & Omit<ButtonProps, "variant" | "size" | "type">) {
+const UserMenuAccountTrigger = forwardRef<
+  HTMLButtonElement,
+  {
+    displayName: string;
+    currentLabel: string;
+    currentAvatar: string | undefined;
+    avatarFallback: string;
+  } & Omit<ButtonProps, "variant" | "size" | "type">
+>(function UserMenuAccountTrigger(
+  { displayName, currentLabel, currentAvatar, avatarFallback, ...buttonProps },
+  ref
+) {
   return (
     <Button
+      ref={ref}
       variant="outline"
       size="sm"
       type="button"
@@ -221,7 +250,8 @@ function UserMenuAccountTrigger({
       </span>
     </Button>
   );
-}
+});
+UserMenuAccountTrigger.displayName = "UserMenuAccountTrigger";
 
 export default function UserMenu() {
   const user = useOptionalUser() as UserWithProfile | null | undefined;
@@ -234,9 +264,9 @@ export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const [children, setChildren] = useState<ChildAccount[]>([]);
   const dialogShellReady = useSyncExternalStore(
-    subscribeNoop,
-    getClientHydrated,
-    getServerNotHydrated
+    subscribeDialogShellReady,
+    getDialogShellSnapshot,
+    getDialogShellServerSnapshot
   );
 
   // Safely handle potentially undefined subscription values
@@ -347,8 +377,8 @@ export default function UserMenu() {
     avatarFallback,
   };
 
-  // Radix Dialog assigns useId-based aria-controls on the trigger; mounting it
-  // only after hydration avoids SSR/client id drift (hydration warning #418).
+  // Mount Dialog after hydration so Radix-generated ids / aria-controls match
+  // between SSR and the first client paint (see dialogShellReady).
   if (!dialogShellReady) {
     return (
       <UserMenuAccountTrigger

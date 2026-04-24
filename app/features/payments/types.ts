@@ -210,6 +210,22 @@ export function isSubscriptionPeriodExpired(
 }
 
 /**
+ * True when the account should show post-paid lapse messaging (non-active status,
+ * or ACTIVE subscription whose paid period has ended). Matches dashboard
+ * subscription-expired banner eligibility; native Free (ACTIVE, in-period) is false.
+ */
+export function isSubscriptionExpiredForUi(
+  subscription: UserSubscription | null
+): boolean {
+  if (subscription == null) {
+    return false;
+  }
+  const statusInactive = subscription.status !== "ACTIVE";
+  const periodExpired = isSubscriptionPeriodExpired(subscription);
+  return statusInactive ? true : periodExpired;
+}
+
+/**
  * Get the current user's plan type from their subscription.
  * When the billing period has ended, returns "free" so paid features are gated.
  */
