@@ -110,11 +110,11 @@ export default function QueueHealth({
         }
       }}
     >
-      <Card className="flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
-        <CardHeader className="px-3.5 pt-1.5 pb-1 sm:px-4 sm:pt-2">
+      <Card className="border-border-subtle bg-surface flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
+        <CardHeader className="px-4 pt-3 pb-2">
           <h3 className="text-overline text-text-secondary">Queue Health</h3>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3.5 pt-0 pb-3 sm:px-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-4">
           {countsByQueue.length === 0 ? (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col items-start justify-start gap-3 py-2 text-left lg:min-h-0 lg:pt-3 lg:pb-1">
               <div className="min-w-0 space-y-2">
@@ -154,7 +154,7 @@ export default function QueueHealth({
             </div>
           ) : (
             <ul
-              className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3 sm:gap-2 sm:p-3.5"
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-1"
               aria-label="Scheduled posts per queue"
             >
               {countsByQueue.map(({ queueName, count }) => {
@@ -170,7 +170,7 @@ export default function QueueHealth({
                   <li key={queueName} className="flex min-h-[2.5rem] flex-col">
                     <Link
                       to={scheduledUrl}
-                      className="focus-ring card-lift hover:border-border-subtle bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.5rem] flex-col justify-center gap-1 rounded-lg border border-transparent px-2.5 py-1 sm:gap-1.5 sm:px-3 sm:py-1.5"
+                      className="focus-ring motion-fast border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg border px-3 py-2"
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <span className="text-text min-w-0 truncate text-xs font-medium">
@@ -184,7 +184,7 @@ export default function QueueHealth({
                         </span>
                       </div>
                       <div
-                        className={`h-2 min-w-0 overflow-hidden rounded-[1px] sm:h-2.5 ${bundle ? "" : "bg-surface-hover/30"}`}
+                        className={`h-2 min-w-0 overflow-hidden rounded-[1px] ${bundle ? "" : "bg-surface-hover/30"}`}
                         role="presentation"
                         aria-hidden
                         style={

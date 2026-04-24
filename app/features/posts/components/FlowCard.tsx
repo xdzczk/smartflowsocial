@@ -236,13 +236,16 @@ function FlowCardInner({
   const isPublished = Boolean(item.publishedAt);
   /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */
   const isPastCard = isPublished || Boolean(isLastPosted);
+  const nextCardClass = isNextScheduledAndFuture
+    ? "border-border bg-surface shadow-2"
+    : "border-border-subtle bg-surface-raised shadow-1 hover:border-border";
 
   return (
     <button
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`focus-ring card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised group shadow-1 hover:border-border relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 md:h-[var(--flow-card-h,232px)] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`focus-ring card-lift flow-card-queue-shadow group motion-base relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border md:h-[var(--flow-card-h,232px)] md:w-[352px] ${nextCardClass} ${isPastCard ? "opacity-70 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),
@@ -252,15 +255,15 @@ function FlowCardInner({
     >
       {/* Subtle queue wash on hover (behind z-10 content; shows through open areas / edges; lower mix than legacy 8%/12%) */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_5%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_7%,transparent)]"
+        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_4%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_6%,transparent)]"
         aria-hidden
       />
       {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
       {hasMedia ? (
-        <div className="relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-xl md:w-32 md:min-w-[128px]">
+        <div className="bg-surface-hover/36 relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-lg md:w-32 md:min-w-[128px]">
           <MediaPreviewCollage
             urls={mediaUrls}
-            className="h-full w-full rounded-l-xl"
+            className="h-full w-full rounded-l-lg"
             thumbnailClassName="h-full min-h-full w-full object-cover object-center"
             hidePlayButton
             twoItemLayout="vertical"
@@ -279,7 +282,7 @@ function FlowCardInner({
           ) : null}
         </div>
       ) : (
-        <div className="bg-surface-hover/50 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-xl p-2 md:w-32 md:min-w-[128px] md:p-3">
+        <div className="bg-surface-hover/58 dark:bg-surface-hover/42 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-lg p-2.5 md:w-32 md:min-w-[128px] md:p-3.5">
           {isRepostContent(item) ? (
             <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
               <Repeat
@@ -289,34 +292,36 @@ function FlowCardInner({
               />
             </div>
           ) : null}
-          <span className="text-text-secondary line-clamp-4 text-sm">
+          <span className="text-text-secondary line-clamp-4 text-sm leading-snug">
             {contentSummaryText}
           </span>
         </div>
       )}
       {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-3 text-left md:gap-1.5 md:p-5">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-3.5 text-left md:gap-2 md:p-5">
         {isLastPosted ? (
           <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
             Last post
           </span>
         ) : isNextScheduledAndFuture ? (
-          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-            Next post
+          <span className="bg-surface-selected text-surface-selected-foreground mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+            Next
           </span>
         ) : null}
-        <span className="text-text text-xl leading-tight font-bold tabular-nums">
+        <span
+          className={`text-text leading-tight font-semibold tracking-tight tabular-nums ${isNextScheduledAndFuture ? "text-[1.55rem]" : "text-[1.4rem]"}`}
+        >
           {timeLabel}
         </span>
         {hasMedia ? (
-          <span className="text-text-secondary line-clamp-2 text-sm">
+          <span className="text-text-secondary line-clamp-2 text-sm leading-snug">
             {contentSummaryText}
           </span>
         ) : null}
-        <span className="text-text-secondary mt-0.5 text-[11px] leading-snug">
+        <span className="text-text-secondary text-[11px] leading-snug">
           {formattedTime}
         </span>
-        <span className="text-text-secondary text-xs leading-snug">
+        <span className="text-text-secondary/90 text-xs leading-snug">
           {statusLabel}
           {postKindLabel ? ` · ${postKindLabel}` : ""}
           {queueName ? ` · ${queueName}` : ""}

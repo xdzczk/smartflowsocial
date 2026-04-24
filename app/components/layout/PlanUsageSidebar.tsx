@@ -287,7 +287,7 @@ export function PlanUsageSidebar({
                 : "Show extra plan usage rows"
             }
             onClick={() => setExpanded((v) => !v)}
-            className="text-text hover:bg-surface-hover/80 focus-ring flex w-full items-center justify-between gap-2 rounded-md px-0.5 py-0.5 text-left"
+            className="text-text hover:bg-surface-hover/55 focus-ring flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left"
           >
             {headerInner}
             <span className="text-text-tertiary inline-flex shrink-0">
@@ -299,12 +299,12 @@ export function PlanUsageSidebar({
             </span>
           </button>
         ) : (
-          <div className="flex w-full items-center gap-2 px-0.5 py-0.5">
+          <div className="flex w-full items-center gap-2 px-1 py-1">
             {headerInner}
           </div>
         )}
 
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 space-y-1.5">
           <UsageLine
             label="Scheduled"
             used={snapshot.scheduledUsed}
@@ -327,7 +327,7 @@ export function PlanUsageSidebar({
           />
 
           {expanded && canExpand ? (
-            <div className="border-border-subtle border-t pt-2">
+            <div className="border-border-subtle/80 border-t pt-2">
               {snapshot.storageLimitBytes != null &&
               snapshot.storageUsedBytes != null ? (
                 <StorageLine
@@ -346,7 +346,7 @@ export function PlanUsageSidebar({
         ) : null}
 
         {showPlanFooterLink ? (
-          <div className="border-border-subtle mt-2 border-t pt-2">
+          <div className="border-border-subtle/80 mt-2 border-t pt-2">
             <Link
               to="/plans"
               onClick={() => onMobileNavActiveClick?.()}

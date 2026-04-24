@@ -67,12 +67,16 @@ export default function Statistics({
           ? "bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning"
           : "bg-slate-500/15 text-slate-600 dark:bg-slate-400/20 dark:text-slate-400";
 
-  const cardBase = "card-lift kpi-card min-h-[72px]";
+  const cardBase =
+    "card-lift kpi-card border-border-subtle/80 min-h-[80px] overflow-hidden shadow-1";
   const contentBase =
-    "focus-ring border border-transparent hover:border-border-subtle hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 motion-fast";
-  const iconBase = "flex size-12 items-center justify-center rounded-xl";
-  const dtBase = "text-text text-h1 tabular-nums";
-  const ddBase = "text-text-secondary text-overline";
+    "focus-ring flex min-h-[80px] grow items-center justify-between gap-4 rounded-lg border border-transparent px-4 py-4 motion-fast hover:border-border-subtle hover:bg-surface-hover/35 sm:px-5";
+  const iconBase =
+    "flex size-11 shrink-0 items-center justify-center rounded-lg sm:size-12";
+  const valueStackBase = "min-w-0 space-y-1 text-right";
+  const dtBase =
+    "text-text text-[1.375rem] leading-none font-semibold tracking-tight tabular-nums sm:text-[1.5rem]";
+  const ddBase = "text-text-secondary/85 text-overline";
 
   const runwayKpiColor =
     runwayDaysNum <= 0 && !hasScheduledPosts
@@ -114,7 +118,7 @@ export default function Statistics({
                 aria-hidden
               />
             </div>
-            <dl className="space-y-0 text-right">
+            <dl className={valueStackBase}>
               <dt className={dtBase}>Compose</dt>
               <dd className={ddBase}>Add to Flow</dd>
             </dl>
@@ -138,7 +142,7 @@ export default function Statistics({
                 aria-hidden
               />
             </div>
-            <dl className="space-y-0 text-right">
+            <dl className={valueStackBase}>
               <dt className={dtBase}>{stats.scheduledCount}</dt>
               <dd className={ddBase}>{scheduledCaption}</dd>
             </dl>
@@ -162,7 +166,7 @@ export default function Statistics({
                 aria-hidden
               />
             </div>
-            <dl className="space-y-0 text-right">
+            <dl className={valueStackBase}>
               <dt className={dtBase}>{stats.successCount}</dt>
               <dd className={ddBase}>{publishedCaption}</dd>
             </dl>
@@ -185,7 +189,7 @@ export default function Statistics({
                 aria-hidden
               />
             </div>
-            <dl className="space-y-0 text-right">
+            <dl className={valueStackBase}>
               <dt className={dtBase}>{runwayLabel}</dt>
               <dd className={ddBase}>{runwayCaption}</dd>
             </dl>

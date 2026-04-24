@@ -360,11 +360,11 @@ body.has-btcpay-confirmation-bar {
 @layer base {
   :root {
     /* ---------- Surfaces ---------- */
-    --canvas: 0 0% 97.5%;             /* page background — slightly off-white so cards lift */
+    --canvas: 0 0% 96.5%;             /* page background — slightly stronger off-white so dashboard sections separate more clearly */
     --surface: 0 0% 100%;             /* card / panel surface (pure white) */
     --surface-raised: 0 0% 100%;      /* elevated card; in light, lift comes from shadow */
     --surface-overlay: 0 0% 100%;     /* menus / popovers / dialogs */
-    --surface-hover: 0 0% 96%;        /* row / item hover background */
+    --surface-hover: 0 0% 94.8%;      /* row / item hover background */
     --surface-active: 0 0% 93%;       /* pressed state */
     --surface-selected: 255 60% 96%;  /* subtle brand wash for selected items */
     --surface-selected-foreground: 255 77% 35%;
@@ -376,7 +376,7 @@ body.has-btcpay-confirmation-bar {
     --text-on-brand: 0 0% 100%;
 
     /* ---------- Borders ---------- */
-    --border-subtle: 0 0% 93%;         /* hairline on cards; lift carries the rest */
+    --border-subtle: 0 0% 90.5%;       /* hairline on cards; slightly stronger so quiet section surfaces still read */
     --border: 0 0% 88%;                /* default — inputs, dividers */
     --border-strong: 0 0% 75%;         /* emphasized — selected outline, focus border */
     --input: var(--border);            /* input border merged into --border */
@@ -483,9 +483,9 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Surfaces ---------- */
     --canvas: 0 0% 4.3%;               /* base canvas */
     --surface: 0 0% 8%;                /* card / panel — +1.3% for IPS readability */
-    --surface-raised: 0 0% 11%;        /* elevated cards (Flow cards, right rails) */
+    --surface-raised: 0 0% 11.5%;      /* elevated cards (Flow cards, right rails) */
     --surface-overlay: 0 0% 13.5%;     /* menus / popovers / dialogs — clearly above cards */
-    --surface-hover: 0 0% 11.5%;       /* row / item hover */
+    --surface-hover: 0 0% 12%;         /* row / item hover */
     --surface-active: 0 0% 14%;        /* pressed */
     --surface-selected: 255 30% 14%;   /* brand-tinted selection wash */
     --surface-selected-foreground: 0 0% 98%;
@@ -499,7 +499,7 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Borders ----------
        Strengthened from prior 9.5% → 14% so borders read on cards/rails and the
        per-feature dark:border-white/14 overrides are no longer needed. */
-    --border-subtle: 0 0% 12%;         /* hairline on cards (4% delta above surface-8%) */
+    --border-subtle: 0 0% 13.5%;       /* hairline on cards; strengthened so quiet dashboard rails don't need bespoke overrides */
     --border: 0 0% 16%;                /* default — inputs, dividers */
     --border-strong: 0 0% 24%;         /* emphasized */
     --input: var(--border);
@@ -1188,17 +1188,38 @@ body.has-btcpay-confirmation-bar {
     );
   }
 
-  /* Flow zone: subtle inset shadow so strip feels recessed */
+  /* Flow zone: quiet section surface that lets raised Flow cards own the emphasis */
   .flow-zone {
+    background-color: hsl(var(--surface-hover) / 0.82);
     box-shadow:
       inset 0 1px 0 0 hsl(var(--text) / 0.03),
       inset 0 -1px 0 0 hsl(var(--text) / 0.03);
   }
 
   .dark .flow-zone {
+    background-color: hsl(var(--surface-hover) / 0.28);
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--text) / 0.04),
-      inset 0 -1px 0 0 hsl(var(--text) / 0.04);
+      inset 0 1px 0 0 hsl(var(--text) / 0.045),
+      inset 0 -1px 0 0 hsl(var(--text) / 0.045);
+  }
+
+  /* KPI cards: slightly more instrumentation-like than generic nav cards. */
+  .kpi-card {
+    background:
+      linear-gradient(
+        180deg,
+        hsl(var(--surface-raised) / 0.96) 0%,
+        hsl(var(--surface) / 0.98) 100%
+      );
+  }
+
+  .dark .kpi-card {
+    background:
+      linear-gradient(
+        180deg,
+        hsl(var(--surface-raised) / 0.96) 0%,
+        hsl(var(--surface) / 0.94) 100%
+      );
   }
 
   /* Flow slot: smooth position transition when item moves (e.g. next scheduled → last posted) */

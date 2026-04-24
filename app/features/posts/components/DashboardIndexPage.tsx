@@ -385,17 +385,15 @@ function DashboardReturningUserSplit({
 }: DashboardReturningUserSplitProps) {
   return (
     <>
-      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-0 px-4 lg:px-8">
-        <div className="mt-2.5 lg:mt-0">
-          <Statistics
-            runwayDays={runwayDays}
-            onRunwayClick={onRunwayClick}
-            runwayRedThresholdDays={runwaySettings?.redThresholdDays}
-            runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
-            isPostActivationEmpty={isPostActivationEmpty}
-          />
-        </div>
-        <div className="mt-4 flex min-w-0 flex-col gap-2.5 lg:mt-3.5 lg:flex-row lg:items-center lg:gap-4">
+      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-4 px-4 pt-2.5 lg:space-y-5 lg:px-8 lg:pt-0">
+        <Statistics
+          runwayDays={runwayDays}
+          onRunwayClick={onRunwayClick}
+          runwayRedThresholdDays={runwaySettings?.redThresholdDays}
+          runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
+          isPostActivationEmpty={isPostActivationEmpty}
+        />
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
           <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
             <ContentListPageHeader
               pageType="flow"
@@ -437,10 +435,10 @@ function DashboardReturningUserSplit({
 
       <div
         ref={splitRegionRef}
-        className="flex w-full min-w-0 flex-col gap-4 lg:min-h-0 lg:flex-1"
+        className="flex w-full min-w-0 flex-col gap-5 lg:min-h-0 lg:flex-1"
       >
         <div
-          className={`flow-zone bg-surface-hover/28 dark:bg-surface-hover/12 mt-2 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-3 md:min-h-[300px] lg:mt-3.5 lg:shrink-0 lg:justify-center ${
+          className={`flow-zone border-border-subtle/75 mt-2.5 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y py-3 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
             flowZoneHeightPx != null
               ? "lg:min-h-0 lg:flex-none lg:overflow-visible lg:py-0"
               : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:py-2.5"
@@ -502,12 +500,12 @@ function DashboardReturningUserSplit({
         </div>
 
         <div
-          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-6 lg:min-h-0 lg:px-8"
+          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-3 lg:min-h-0 lg:px-8"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }
         >
-          <div className="flex min-h-0 min-w-0 flex-col gap-3 max-lg:min-h-0 lg:h-full lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-4">
+          <div className="flex min-h-0 min-w-0 flex-col gap-4 max-lg:min-h-0 lg:h-full lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-4">
             <ScheduleNext7DaysCard
               days={scheduleNext7Days}
               targetPerDay={targetPerDay}

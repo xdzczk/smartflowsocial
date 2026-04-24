@@ -123,8 +123,8 @@ export function ScheduleNext7DaysCard({
         }
       }}
     >
-      <Card className="flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-3.5 pt-1.5 pb-1 sm:px-4 sm:pt-2">
+      <Card className="border-border-subtle bg-surface flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <h3 className="text-overline text-text-secondary">Next 7 days</h3>
             {allSet ? (
@@ -148,9 +148,9 @@ export function ScheduleNext7DaysCard({
             <span>Target</span>
           </button>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3.5 pt-0 pb-3 sm:px-4 sm:pb-3.5">
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-4">
           {isPostActivationEmpty ? (
-            <div className="flex flex-col justify-start gap-2.5 py-3 lg:min-h-0 lg:flex-1 lg:gap-3 lg:py-3">
+            <div className="flex flex-col justify-start gap-3 py-3 lg:min-h-0 lg:flex-1">
               <p className="text-text-secondary text-sm">
                 No scheduled posts yet. Schedule your first post to start
                 building your flow across the week. Your flow starts once
@@ -173,7 +173,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="flex flex-col gap-1"
+              className="flex flex-col gap-2"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
@@ -195,10 +195,10 @@ export function ScheduleNext7DaysCard({
                   <li key={dateKey} className="flex min-h-[2rem] flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus-ring card-lift flex min-h-[2rem] flex-1 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs sm:gap-2 sm:px-3 sm:py-1.5 ${
+                      className={`focus-ring motion-fast flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
                         gap
-                          ? "border-warning/50 bg-warning/10 hover:border-warning/55 hover:bg-warning/14 dark:border-warning/40 dark:bg-warning/10 dark:hover:border-warning/45 dark:hover:bg-warning/14"
-                          : "border-border-subtle bg-surface-hover/20 hover:border-border hover:bg-surface-hover/45"
+                          ? "border-warning/45 bg-warning/9 hover:border-warning/55 hover:bg-warning/12 dark:border-warning/35 dark:bg-warning/10 dark:hover:border-warning/42 dark:hover:bg-warning/13"
+                          : "border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26"
                       }`}
                       title={`View ${label} in Calendar`}
                     >

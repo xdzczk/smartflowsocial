@@ -402,16 +402,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="focus-ring card-lift border-border-subtle bg-surface hover:border-border hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[var(--flow-card-h,232px)] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle/90 bg-surface/72 text-text hover:bg-surface-hover/18 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-lg border border-dashed shadow-none md:h-[var(--flow-card-h,232px)] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
-                  className="text-text-secondary h-12 w-12 md:h-14 md:w-14"
+                  className="text-text-secondary/85 h-12 w-12 md:h-14 md:w-14"
                   aria-hidden
                 />
                 <div className="flex flex-col items-start gap-0.5 text-left">
-                  <span className="text-text font-semibold">Open composer</span>
-                  <span className="text-text-secondary/90 text-sm">
+                  <span className="text-text font-medium">Open composer</span>
+                  <span className="text-text-secondary text-sm">
                     Schedule or publish
                   </span>
                 </div>
@@ -482,7 +482,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               </Link>
               <Link
                 to="/dashboard/compose"
-                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/40 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -502,7 +502,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             action={
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/40 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
