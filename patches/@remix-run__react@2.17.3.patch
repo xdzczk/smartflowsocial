@@ -1,0 +1,28 @@
+diff --git a/dist/browser.js b/dist/browser.js
+index 52e0727268e39fbb12b8bab6ce8e1c87ca534af2..6d75110a0709232afa4aaf1c71f88e23c83085da 100644
+--- a/dist/browser.js
++++ b/dist/browser.js
+@@ -229,7 +229,8 @@ function RemixBrowser(_props) {
+       router: router,
+       fallbackElement: null,
+       future: {
+-        v7_startTransition: true
++        v7_startTransition: true,
++        v7_relativeSplatPath: window.__remixContext.future.v3_relativeSplatPath === true
+       }
+     }))), window.__remixContext.future.v3_singleFetch ? /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null) : null)
+   );
+diff --git a/dist/esm/browser.js b/dist/esm/browser.js
+index c05184c366348dd19a1f035c6efdfe5ff4607b53..d647aef8f12777e42c8e7c9cf08a5c361429c876 100644
+--- a/dist/esm/browser.js
++++ b/dist/esm/browser.js
+@@ -279,7 +279,8 @@ function RemixBrowser(_props) {
+       router: router,
+       fallbackElement: null,
+       future: {
+-        v7_startTransition: true
++        v7_startTransition: true,
++        v7_relativeSplatPath: window.__remixContext.future.v3_relativeSplatPath === true
+       }
+     }))), window.__remixContext.future.v3_singleFetch ? /*#__PURE__*/React.createElement(React.Fragment, null) : null)
+   );

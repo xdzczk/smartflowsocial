@@ -90,11 +90,9 @@ export default function TopPostsList({
   };
 
   return (
-    <Card className="bg-surface-hover/30 shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
+    <Card className="flex min-w-0 flex-1 flex-col">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
-        <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
-          Top Posts
-        </h3>
+        <h3 className="text-overline text-text-secondary">Top Posts</h3>
         <nav className="flex gap-1 text-xs" aria-label="Top posts timeframe">
           <Link
             to={linkParams(7)}
@@ -103,12 +101,12 @@ export default function TopPostsList({
             className={
               timeframeDays === 7
                 ? "focus-ring text-text rounded-xs font-medium underline"
-                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
+                : "focus-ring text-text-secondary hover:text-text rounded-xs"
             }
           >
             7d
           </Link>
-          <span className="text-text-secondary/60" aria-hidden>
+          <span className="text-text-tertiary" aria-hidden>
             |
           </span>
           <Link
@@ -118,7 +116,7 @@ export default function TopPostsList({
             className={
               timeframeDays === 30
                 ? "focus-ring text-text rounded-xs font-medium underline"
-                : "focus-ring text-text-secondary/80 hover:text-text-secondary rounded-xs"
+                : "focus-ring text-text-secondary hover:text-text rounded-xs"
             }
           >
             30d
@@ -128,10 +126,10 @@ export default function TopPostsList({
       <CardContent className="px-4 pt-0 pb-3">
         {topPosts.length === 0 ? (
           <div className="space-y-1">
-            <p className="text-text-secondary/80 text-[11px]">
+            <p className="text-text-secondary text-caption">
               No posted content in this period.
             </p>
-            <p className="text-text-secondary/60 text-[10px]">
+            <p className="text-text-tertiary text-[10px] leading-snug">
               Posted content in the last {timeframeDays}d will appear here by
               engagement.
             </p>
@@ -151,7 +149,7 @@ export default function TopPostsList({
                   <button
                     type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="focus-ring border-border/60 hover:bg-surface-hover/50 motion-fast flex w-full flex-row items-center gap-3 rounded-xs border p-2 text-left text-[11px]"
+                    className="focus-ring border-border-subtle hover:bg-surface-hover/50 motion-fast flex w-full flex-row items-center gap-3 rounded-xs border p-2 text-left text-[11px]"
                     aria-label={`${preview}, Likes ${likes}, Replies ${replies}, Zaps ${zaps}`}
                   >
                     <div className="bg-surface-hover/50 flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
@@ -179,37 +177,34 @@ export default function TopPostsList({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-text-secondary/90 min-w-0 truncate text-[11px] leading-snug font-medium">
+                      <p className="text-text-secondary min-w-0 truncate text-[11px] leading-snug font-medium">
                         {preview}
                       </p>
                       <p
-                        className="text-text-secondary/80 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] leading-snug"
+                        className="text-text-secondary mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] leading-snug"
                         aria-hidden
                       >
                         <span className="inline-flex items-center gap-0.5">
-                          <Heart className="text-text-secondary/80 size-3.5 shrink-0" />
+                          <Heart className="text-text-secondary size-3.5 shrink-0" />
                           {likes}
                         </span>
-                        <span className="text-text-secondary/60" aria-hidden>
+                        <span className="text-text-tertiary" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <MessageCircle className="text-text-secondary/80 size-3.5 shrink-0" />
+                          <MessageCircle className="text-text-secondary size-3.5 shrink-0" />
                           {replies}
                         </span>
-                        <span className="text-text-secondary/60" aria-hidden>
+                        <span className="text-text-tertiary" aria-hidden>
                           ·
                         </span>
                         <span className="inline-flex items-center gap-0.5">
-                          <Zap className="text-text-secondary/80 size-3.5 shrink-0" />
+                          <Zap className="text-text-secondary size-3.5 shrink-0" />
                           {zaps}
                         </span>
                         {relativeTime ? (
                           <>
-                            <span
-                              className="text-text-secondary/60"
-                              aria-hidden
-                            >
+                            <span className="text-text-tertiary" aria-hidden>
                               ·
                             </span>
                             <span>{relativeTime}</span>

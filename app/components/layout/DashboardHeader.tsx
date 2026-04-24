@@ -32,12 +32,14 @@ import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavig
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
 import { ProductFeedbackSidebar } from "~/components/layout/ProductFeedbackSidebar";
 import UserMenu from "~/components/layout/UserMenu";
+import { InstallPromptSidebar } from "~/components/pwa/InstallPrompt";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/Logo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import UpgradePrompt from "~/features/payments/components/UpgradePrompt";
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { BRAND_NAME } from "~/lib/brand";
+import { useInstallPrompt } from "~/lib/hooks/useInstallPrompt";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
@@ -541,6 +543,25 @@ export default function Header({
   const isFirstRunDashboard =
     location.pathname === DASHBOARD_ROOT_PATH &&
     dashboardIndexData?.isFirstRunDashboard === true;
+
+  const install = useInstallPrompt();
+  const [installIosInstructionsOpen, setInstallIosInstructionsOpen] =
+    useState(false);
+  const handlePwaChromiumInstall = useCallback(() => {
+    void (async () => {
+      const accepted = await install.triggerPrompt();
+      if (!accepted) {
+        install.dismiss();
+      }
+    })();
+  }, [install]);
+
+  useEffect(() => {
+    if (!install.shouldRender) {
+      queueMicrotask(() => setInstallIosInstructionsOpen(false));
+    }
+  }, [install.shouldRender]);
+
   // Shared SSR-safe hook; always returns `false` on the server and the first
   // client render, then flips via useEffect. This avoids React hydration
   // error #418 which previously fired when the server rendered desktop
@@ -577,7 +598,7 @@ export default function Header({
           isDesktopExpanded={isDesktopExpanded}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
-        <div className="overflow-x-hidden overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
           <div
             className={`w-full transition-[padding] duration-300 ${sidebarPadding}`}
           >
@@ -601,6 +622,17 @@ export default function Header({
                 onMobileNavActiveClick={onMobileNavActiveClick}
               />
             </div>
+          ) : null}
+          {install.shouldRender ? (
+            <InstallPromptSidebar
+              isDesktopExpanded={isDesktopExpanded}
+              canPrompt={install.canPrompt}
+              isIosSafariInstallable={install.isIosSafariInstallable}
+              onChromiumInstall={handlePwaChromiumInstall}
+              dismiss={install.dismiss}
+              iosInstructionsOpen={installIosInstructionsOpen}
+              setIosInstructionsOpen={setInstallIosInstructionsOpen}
+            />
           ) : null}
           <NavigationItem
             to="/dashboard/settings"

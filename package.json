@@ -281,6 +281,9 @@
       "allowedAnyPeerVersion": [
         "nostr-tools"
       ]
+    },
+    "patchedDependencies": {
+      "@remix-run/react@2.17.3": "patches/@remix-run__react@2.17.3.patch"
     }
   }
 }

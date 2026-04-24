@@ -24,7 +24,6 @@ import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPag
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
-import { InstallPromptBanner } from "~/components/pwa/InstallPromptBanner";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -640,9 +639,6 @@ export function DashboardLayoutPage(): ReactNode {
         </main>
 
         <Footer />
-        {/* PWA install affordance (Chromium native prompt + iOS A2HS walkthrough).
-            Self-hides when already standalone / dismissed within the last 30 days. */}
-        <InstallPromptBanner />
       </div>
     </>
   );

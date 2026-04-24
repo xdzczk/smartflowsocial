@@ -146,6 +146,7 @@ export default function DashboardIndexPage() {
       byQueue?: Array<{ queueName: string; count: number }>;
     }>;
     runwaySettings?: { targetPostsPerDay?: number };
+    serverNowMs?: number;
   }>();
   const queueCountsByQueue = Array.isArray(loaderData.queueCountsByQueue)
     ? loaderData.queueCountsByQueue
@@ -157,6 +158,10 @@ export default function DashboardIndexPage() {
     typeof loaderData.runwaySettings?.targetPostsPerDay === "number"
       ? loaderData.runwaySettings.targetPostsPerDay
       : 0;
+  const serverNowMs =
+    typeof loaderData.serverNowMs === "number" && loaderData.serverNowMs > 0
+      ? loaderData.serverNowMs
+      : undefined;
   const isFirstRunDashboard = loaderData.isFirstRunDashboard === true;
   const dashboardActivity = {
     hasDrafts: loaderData.dashboardActivity?.hasDrafts === true,
@@ -430,7 +435,7 @@ export default function DashboardIndexPage() {
             </div>
 
             {/* Flow section: scrollable area between Your Flow heading and Queue Health / Top Posts */}
-            <div className="flow-zone bg-surface-hover/40 dark:bg-surface-hover/20 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
+            <div className="flow-zone bg-surface-hover/28 dark:bg-surface-hover/12 mt-3 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto py-4 md:min-h-[300px]">
               {flowError ? (
                 <Alert
                   variant="destructive"
@@ -468,6 +473,7 @@ export default function DashboardIndexPage() {
                     flowItems={flowItems}
                     hasMorePast={hasMorePast}
                     hasMoreFuture={hasMoreFuture}
+                    serverNowMs={serverNowMs}
                     isLoadingMorePast={isLoadingMorePast}
                     isLoadingMoreFuture={isLoadingMoreFuture}
                     onCardClick={(item) =>

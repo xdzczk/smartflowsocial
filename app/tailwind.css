@@ -57,23 +57,23 @@ body.has-btcpay-confirmation-bar {
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Next scheduled Flow card: coloured shadow glow (pulses same shadow as hover; duration inline, color from --queue-color) */
+  /* Next scheduled Flow card: queue-tinted shadow pulse (duration from --flow-glow-duration; color from --queue-color). Kept distinct from ordinary hover (neutral elevation only on non-pulse cards). */
   :root {
-    --flow-shadow-glow-start: 12%;
-    --flow-shadow-glow-end: 34%;
+    --flow-shadow-glow-start: 9%;
+    --flow-shadow-glow-end: 24%;
   }
   .dark {
-    --flow-shadow-glow-start: 10%;
-    --flow-shadow-glow-end: 28%;
+    --flow-shadow-glow-start: 7%;
+    --flow-shadow-glow-end: 20%;
   }
   @keyframes flow-next-shadow-glow {
     0%,
     100% {
-      box-shadow: 0 4px 14px 0
+      box-shadow: 0 3px 12px 0
         color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-start), transparent);
     }
     50% {
-      box-shadow: 0 4px 14px 0
+      box-shadow: 0 4px 16px 0
         color-mix(in srgb, var(--queue-color) var(--flow-shadow-glow-end), transparent);
     }
   }
@@ -116,6 +116,12 @@ body.has-btcpay-confirmation-bar {
 
   .animate-slide-up {
     animation: slide-up 200ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-up {
+      animation: none;
+    }
   }
 }
 
@@ -341,7 +347,7 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Text ---------- */
     --text: 0 0% 9%;                   /* primary text (slightly softer than 5%) */
     --text-secondary: 25 8% 38%;       /* same as old --muted-foreground */
-    --text-tertiary: 0 0% 50%;         /* helper / placeholder / timestamps */
+    --text-tertiary: 0 0% 44%;         /* helper / labels — slightly darker than 50% for AA on white */
     --text-on-brand: 0 0% 100%;
 
     /* ---------- Borders ---------- */
@@ -462,7 +468,7 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Text ---------- */
     --text: 0 0% 98%;
     --text-secondary: 30 5% 65%;       /* slightly stronger than prior 60% for legibility */
-    --text-tertiary: 0 0% 52%;
+    --text-tertiary: 0 0% 58%;         /* lifts faint UI chrome off deep surfaces without matching body */
     --text-on-brand: 0 0% 100%;
 
     /* ---------- Borders ----------
@@ -517,8 +523,9 @@ body.has-btcpay-confirmation-bar {
     --chart-5: 250 25% 80%;
 
     /* ---------- Elevation (deeper shadows + inset top-edge highlight for dark) ---------- */
-    --elevation-1: 0 1px 3px 0 hsl(0 0% 0% / 0.35), inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
-    --elevation-2: 0 4px 14px 0 hsl(0 0% 0% / 0.50), inset 0 1px 0 0 hsl(0 0% 100% / 0.06);
+    /* Tier-1 slightly softened so many bordered cards (dashboard) read calm, not muddy */
+    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.28), inset 0 1px 0 0 hsl(0 0% 100% / 0.045);
+    --elevation-2: 0 4px 14px 0 hsl(0 0% 0% / 0.46), inset 0 1px 0 0 hsl(0 0% 100% / 0.06);
     --elevation-3: 0 16px 40px 0 hsl(0 0% 0% / 0.65), inset 0 1px 0 0 hsl(0 0% 100% / 0.08);
 
     /* ---------- Switch (sealed island) ---------- */
@@ -1151,7 +1158,7 @@ body.has-btcpay-confirmation-bar {
   .dark .dashboard-canvas {
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(var(--text) / 0.025) 1px,
+      hsl(var(--text) / 0.018) 1px,
       transparent 0
     );
   }
@@ -1236,11 +1243,14 @@ body.has-btcpay-confirmation-bar {
   .card-lift {
     transition:
       transform 0.2s ease-out,
-      box-shadow 0.2s ease-out;
+      box-shadow 0.2s ease-out,
+      border-color 0.2s ease-out,
+      background-color 0.2s ease-out;
   }
 
   @media (hover: hover) {
-    .card-lift:hover {
+    /* Next-scheduled flow pulse owns box-shadow via keyframes; do not paint neutral shadow over it */
+    .card-lift:hover:not(.animate-flow-next-shadow-glow) {
       box-shadow: var(--elevation-2);
     }
   }
@@ -1260,100 +1270,26 @@ body.has-btcpay-confirmation-bar {
     }
   }
 
-  /* Flow cards: queue-coloured shadow on hover/active (requires --queue-color to be set) */
+  /* Flow cards: neutral elevation on hover/active. Next-scheduled pulse keeps keyframe box-shadow — do not override when .animate-flow-next-shadow-glow is present. */
   @media (hover: hover) {
-    .flow-card-queue-shadow.card-lift:hover,
-    .flow-card-queue-shadow.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    .flow-card-queue-shadow.card-lift:hover:not(.animate-flow-next-shadow-glow),
+    .flow-card-queue-shadow.card-lift:active:not(.animate-flow-next-shadow-glow) {
+      box-shadow: var(--elevation-2);
     }
 
-    .dark .flow-card-queue-shadow.card-lift:hover,
-    .dark .flow-card-queue-shadow.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
-    }
-
-    /* Next scheduled card: show static coloured shadow on hover/active (animation would keep keyframe shadow, so cancel it) */
-    .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:hover,
-    .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation: none;
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
-    }
-
-    .dark .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:hover,
-    .dark .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation: none;
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
+    .dark .flow-card-queue-shadow.card-lift:hover:not(.animate-flow-next-shadow-glow),
+    .dark .flow-card-queue-shadow.card-lift:active:not(.animate-flow-next-shadow-glow) {
+      box-shadow: var(--elevation-2);
     }
   }
 
   @media (hover: none) {
-    #page-content .flow-card-queue-shadow.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
+    #page-content .flow-card-queue-shadow.card-lift:active:not(.animate-flow-next-shadow-glow) {
+      box-shadow: var(--elevation-2);
     }
 
-    .dark #page-content .flow-card-queue-shadow.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
-    }
-
-    /* Next scheduled card: show static coloured shadow on touch (same as hover so shadow is always visible) */
-    #page-content .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation: none;
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
-    }
-
-    .dark #page-content .flow-card-queue-shadow.animate-flow-next-shadow-glow.card-lift:active {
-      animation: none;
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
-    }
-  }
-
-  /* Queue Health rows & Next 7 days rows: queue-coloured shadow only, no elevation */
-  @media (hover: hover) {
-    .queue-health-row.card-lift:hover,
-    .queue-health-row.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
-      transform: none;
-    }
-
-    .dark .queue-health-row.card-lift:hover,
-    .dark .queue-health-row.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
-      transform: none;
-    }
-  }
-
-  @media (hover: none) {
-    #page-content .queue-health-row.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 36%, transparent);
-      transform: none;
-    }
-
-    .dark #page-content .queue-health-row.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--queue-color) 42%, transparent);
-      transform: none;
-    }
-  }
-
-  /* KPI cards: coloured shadow on hover/active (requires --kpi-color to be set) */
-  @media (hover: hover) {
-    .kpi-card.card-lift:hover,
-    .kpi-card.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 36%, transparent);
-    }
-
-    .dark .kpi-card.card-lift:hover,
-    .dark .kpi-card.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 42%, transparent);
-    }
-  }
-
-  @media (hover: none) {
-    #page-content .kpi-card.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 36%, transparent);
-    }
-
-    .dark #page-content .kpi-card.card-lift:active {
-      box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--kpi-color) 42%, transparent);
+    .dark #page-content .flow-card-queue-shadow.card-lift:active:not(.animate-flow-next-shadow-glow) {
+      box-shadow: var(--elevation-2);
     }
   }
 

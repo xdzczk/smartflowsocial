@@ -67,12 +67,12 @@ export default function Statistics({
           ? "bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning"
           : "bg-slate-500/15 text-slate-600 dark:bg-slate-400/20 dark:text-slate-400";
 
-  const cardBase = "card-lift kpi-card min-h-[72px] shadow-1 dark:shadow-none";
+  const cardBase = "card-lift kpi-card min-h-[72px]";
   const contentBase =
-    "focus-ring hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 motion-fast";
+    "focus-ring border border-transparent hover:border-border-subtle hover:bg-surface-hover/50 flex min-h-[72px] grow items-center justify-between rounded-xl p-4 motion-fast";
   const iconBase = "flex size-12 items-center justify-center rounded-xl";
   const dtBase = "text-text text-h1 tabular-nums";
-  const ddBase = "text-text-secondary/90 text-overline";
+  const ddBase = "text-text-secondary text-overline";
 
   const runwayKpiColor =
     runwayDaysNum <= 0 && !hasScheduledPosts

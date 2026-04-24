@@ -123,12 +123,10 @@ export function ScheduleNext7DaysCard({
         }
       }}
     >
-      <Card className="bg-surface-hover/30 shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
+      <Card className="flex min-w-0 flex-1 flex-col">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
-              Next 7 days
-            </h3>
+            <h3 className="text-overline text-text-secondary">Next 7 days</h3>
             {allSet ? (
               <span
                 className="text-text-secondary cluster-tight text-xs"
@@ -197,18 +195,11 @@ export function ScheduleNext7DaysCard({
                   <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow ${
+                      className={`focus-ring card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${
                         gap
-                          ? "border-warning/50 bg-warning/10 hover:bg-warning/20 dark:border-warning/40 dark:bg-warning/10 dark:hover:bg-warning/20"
-                          : "border-border/60 bg-surface-hover/20 hover:bg-surface-hover/50"
+                          ? "border-warning/50 bg-warning/10 hover:border-warning/55 hover:bg-warning/14 dark:border-warning/40 dark:bg-warning/10 dark:hover:border-warning/45 dark:hover:bg-warning/14"
+                          : "border-border-subtle bg-surface-hover/20 hover:border-border hover:bg-surface-hover/45"
                       }`}
-                      style={
-                        // CSS custom property not in React.CSSProperties; assertion required
-                        /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- CSS custom properties require type assertion */
-                        {
-                          "--queue-color": "hsl(var(--brand))",
-                        } as React.CSSProperties
-                      }
                       title={`View ${label} in Calendar`}
                     >
                       <span

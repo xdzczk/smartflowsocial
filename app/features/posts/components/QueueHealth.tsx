@@ -1,6 +1,5 @@
 import { Link } from "@remix-run/react";
 import { useRef, useState } from "react";
-import type { CSSProperties } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -10,8 +9,6 @@ import {
   type QueueColorBundle,
 } from "../queue-colors";
 import type { QueueType } from "../types";
-
-const QUEUE_COLOR_CSS_VAR = "--queue-color";
 
 /** Solid Tailwind background class per named queue for bar fill (no arbitrary values). */
 const BAR_FILL_CLASS: Record<string, string> = {
@@ -113,11 +110,9 @@ export default function QueueHealth({
         }
       }}
     >
-      <Card className="shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
+      <Card className="flex min-w-0 flex-1 flex-col">
         <CardHeader className="px-4 pt-2 pb-1.5">
-          <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
-            Queue Health
-          </h3>
+          <h3 className="text-overline text-text-secondary">Queue Health</h3>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
           {countsByQueue.length === 0 ? (
@@ -151,18 +146,12 @@ export default function QueueHealth({
                 );
                 const widthPercent = (count / maxCount) * 100;
                 const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(queueName)}`;
-                const linkStyle:
-                  | (CSSProperties & Record<string, string>)
-                  | undefined = bundle
-                  ? { [QUEUE_COLOR_CSS_VAR]: bundle.accent }
-                  : undefined;
 
                 return (
                   <li key={queueName} className="flex min-h-[2.75rem] flex-col">
                     <Link
                       to={scheduledUrl}
-                      className={`focus-ring card-lift bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-shadow ${bundle ? "queue-health-row" : ""}`}
-                      style={linkStyle}
+                      className="focus-ring card-lift hover:border-border-subtle bg-surface-hover/30 hover:bg-surface-hover/50 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5"
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <span className="text-text min-w-0 truncate text-xs font-medium">

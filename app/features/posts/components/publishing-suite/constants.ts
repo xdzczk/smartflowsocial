@@ -8,7 +8,7 @@ export const PUBLISHING_SEGMENTED_ROW_H = "h-10";
 export const PUBLISHING_FILTER_CONTROL_H = "h-9";
 export const PUBLISHING_FILTER_CONTROL_RADIUS = "rounded-lg";
 export const PUBLISHING_FILTER_CONTROL_BASE_CLASS =
-  "focus-ring border-border/60 bg-canvas text-text shadow-none disabled:opacity-50 disabled:cursor-not-allowed";
+  "focus-ring border-border-subtle bg-surface text-text shadow-1 transition-colors hover:bg-surface-hover/25 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Width tokens: type + queue should match; From/To should match. */
 export const PUBLISHING_FILTER_WIDTH_STANDARD =
@@ -50,7 +50,7 @@ export const PUBLISHING_DATETIME_CELL_CLASS =
  * Shared sort / queue / type filter trigger.
  * Prefer combining the unified tokens above (height/radius/base/width) in new code.
  */
-export const PUBLISHING_FILTER_SELECT_TRIGGER_CLASS = `border-border ${PUBLISHING_FILTER_CONTROL_H} ${PUBLISHING_FILTER_CONTROL_RADIUS} ${PUBLISHING_FILTER_CONTROL_BASE_CLASS} ${PUBLISHING_FILTER_WIDTH_STANDARD}`;
+export const PUBLISHING_FILTER_SELECT_TRIGGER_CLASS = `${PUBLISHING_FILTER_CONTROL_H} ${PUBLISHING_FILTER_CONTROL_RADIUS} ${PUBLISHING_FILTER_CONTROL_BASE_CLASS} ${PUBLISHING_FILTER_WIDTH_STANDARD}`;
 
 /** Templates type filter: slightly wider min width (combine with PUBLISHING_FILTER_SELECT_TRIGGER_CLASS). */
 export const PUBLISHING_TEMPLATE_TYPE_SELECT_TRIGGER_CLASS =

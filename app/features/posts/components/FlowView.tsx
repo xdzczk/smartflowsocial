@@ -72,6 +72,8 @@ export interface FlowViewProps {
   onHasLiveEdgeChange?: (hasLiveEdge: boolean) => void;
   /** True when first-run is done but no scheduled/published items exist yet. */
   isPostActivationEmpty?: boolean;
+  /** Server time at document render — aligns relative labels with SSR for hydration. */
+  serverNowMs?: number;
 }
 
 export interface FlowViewHandle {
@@ -98,21 +100,28 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onFetchMoreFuture,
       onHasLiveEdgeChange,
       isPostActivationEmpty = false,
+      serverNowMs,
     },
     ref
   ): React.ReactNode {
-    const [nowMs, setNowMs] = useState(() => NOW_MS());
+    const [nowMs, setNowMs] = useState(() =>
+      typeof serverNowMs === "number" && serverNowMs > 0
+        ? serverNowMs
+        : NOW_MS()
+    );
+    useEffect(() => {
+      if (typeof serverNowMs === "number" && serverNowMs > 0) {
+        setNowMs(serverNowMs);
+      }
+    }, [serverNowMs]);
     useEffect(() => {
       const interval = setInterval(() => {
         setNowMs(NOW_MS());
       }, 60_000);
       return () => clearInterval(interval);
     }, []);
-    const [isMobile, setIsMobile] = useState(() =>
-      typeof window !== "undefined"
-        ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches
-        : false
-    );
+    // Match SSR (false); read viewport after mount to avoid hydration mismatch.
+    const [isMobile, setIsMobile] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
@@ -124,9 +133,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     /** Id of the item that was the first future (next scheduled) last render; used to detect when it gets published and trigger smooth scroll */
     const prevFirstFutureIdRef = useRef<string | null>(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
       const fn = () => setIsMobile(mq.matches);
+      fn();
       mq.addEventListener("change", fn);
       return () => mq.removeEventListener("change", fn);
     }, []);
@@ -385,7 +395,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="focus-ring card-lift border-border-subtle bg-surface hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle bg-surface hover:border-border hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
@@ -465,7 +475,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               </Link>
               <Link
                 to="/dashboard/compose"
-                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -485,7 +495,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             action={
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>

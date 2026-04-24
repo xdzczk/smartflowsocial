@@ -230,7 +230,7 @@ function FlowCardInner({
       }
     : undefined;
 
-  // Coloured shadow-1 on hover/touch and for next-scheduled glow: queue color or primary (same as unassigned next scheduled)
+  // --queue-color: next-scheduled shadow pulse + subtle hover tint overlay (low mix).
   const shadowColor = queueColor ?? "hsl(var(--brand))";
 
   const isPublished = Boolean(item.publishedAt);
@@ -242,7 +242,7 @@ function FlowCardInner({
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`focus-ring card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised group shadow-1 relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`focus-ring card-lift flow-card-queue-shadow border-border-subtle bg-surface-raised group shadow-1 hover:border-border relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border transition-opacity duration-200 md:h-[232px] md:w-[352px] ${isPastCard ? "opacity-65 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
         ...(glowStyle ?? {}),
@@ -250,9 +250,9 @@ function FlowCardInner({
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {/* Queue tint overlay on hover/active (uses --queue-color: queue accent or primary for no-queue cards) */}
+      {/* Subtle queue wash on hover (behind z-10 content; shows through open areas / edges; lower mix than legacy 8%/12%) */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_8%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_12%,transparent)]"
+        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_5%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_7%,transparent)]"
         aria-hidden
       />
       {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
@@ -297,11 +297,11 @@ function FlowCardInner({
       {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
       <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1 p-3 text-left md:gap-1.5 md:p-5">
         {isLastPosted ? (
-          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
             Last post
           </span>
         ) : isNextScheduledAndFuture ? (
-          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
             Next post
           </span>
         ) : null}
@@ -309,14 +309,14 @@ function FlowCardInner({
           {timeLabel}
         </span>
         {hasMedia ? (
-          <span className="text-text-secondary/90 line-clamp-2 text-sm">
+          <span className="text-text-secondary line-clamp-2 text-sm">
             {contentSummaryText}
           </span>
         ) : null}
-        <span className="text-text-secondary/90 mt-0.5 text-[11px] leading-snug">
+        <span className="text-text-secondary mt-0.5 text-[11px] leading-snug">
           {formattedTime}
         </span>
-        <span className="text-text-secondary/90 text-xs leading-snug">
+        <span className="text-text-secondary text-xs leading-snug">
           {statusLabel}
           {postKindLabel ? ` · ${postKindLabel}` : ""}
           {queueName ? ` · ${queueName}` : ""}
