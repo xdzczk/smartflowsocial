@@ -400,7 +400,7 @@ function SidebarHeader({
 }: SidebarHeaderProps) {
   return (
     <div
-      className={`flex h-16 w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center lg:shadow-[inset_0_-1px_0_0_rgb(0_0_0/0.055)] dark:lg:shadow-[inset_0_-1px_0_0_rgb(255_255_255/0.04)] ${
+      className={`flex h-[var(--header-h)] w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
         isDesktopExpanded ? "lg:px-4" : "lg:px-0"
       }`}
     >
@@ -424,9 +424,11 @@ function SidebarHeader({
               : "/Logo-NoText.svg"
           }
           alt={BRAND_NAME}
-          className={`h-9 w-auto lg:h-10 ${
-            isDesktopExpanded ? "" : "lg:h-8 lg:w-8 lg:object-contain"
-          }`}
+          className={
+            isDesktopExpanded
+              ? "h-9 w-auto lg:h-8"
+              : "h-9 w-auto lg:h-7 lg:w-7 lg:object-contain"
+          }
         />
       </Link>
       <div className="lg:hidden">
@@ -457,7 +459,7 @@ function PageHeaderBar({
   return (
     <header
       id="page-header"
-      className={`dashboard-shell-chrome h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-16"}`}
+      className={`dashboard-shell-chrome h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-12"}`}
     >
       <div className="max-w-10xl safe-x-4 mx-auto flex w-full min-w-0 items-center justify-between sm:px-5 lg:px-8">
         <div className="flex shrink-0 items-center">
@@ -619,7 +621,7 @@ export default function Header({
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
         className={`dashboard-shell-chrome text-text pt-safe-top safe-pb-2 fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
-          isDesktopExpanded ? "lg:w-64" : "lg:w-16"
+          isDesktopExpanded ? "lg:w-64" : "lg:w-12"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <SidebarHeader
@@ -646,7 +648,7 @@ export default function Header({
                 />
               </div>
             ) : null}
-            <div className="mt-5 flex shrink-0 flex-col border-t border-transparent pt-4 shadow-[inset_0_1px_0_0_rgb(0_0_0/0.045)] max-lg:pt-5 lg:mt-7 lg:pt-4 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.035)]">
+            <div className="border-border-subtle/35 dark:border-border-subtle/25 mt-5 flex shrink-0 flex-col border-t pt-4 max-lg:pt-5 lg:mt-7 lg:pt-4">
               <div className="flex flex-col gap-2 max-lg:gap-2.5 lg:gap-2.5">
                 <PlanUsageSidebar
                   isDesktopExpanded={isDesktopExpanded}
@@ -668,7 +670,7 @@ export default function Header({
             <div className="min-h-0 min-w-0 flex-1 basis-0" aria-hidden />
           </div>
           <div
-            className={`flex shrink-0 flex-col gap-1.5 border-t border-transparent pt-3 pb-2 shadow-[inset_0_1px_0_0_rgb(0_0_0/0.045)] transition-[padding] duration-300 max-lg:gap-2 max-lg:pt-3.5 lg:gap-2 lg:pt-3.5 dark:shadow-[inset_0_1px_0_0_rgb(255_255_255/0.035)] ${sidebarFooterPadding}`}
+            className={`border-border-subtle/35 dark:border-border-subtle/25 flex shrink-0 flex-col gap-1.5 border-t pt-3 pb-2 transition-[padding] duration-300 max-lg:gap-2 max-lg:pt-3.5 lg:gap-2 lg:pt-3.5 ${sidebarFooterPadding}`}
           >
             <NavigationItem
               to="/dashboard/settings"

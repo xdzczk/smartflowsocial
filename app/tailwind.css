@@ -12,9 +12,16 @@
  *   --footer-safe       bottom safe-area alone (for sticky footers / toasts)
  * ========================================================================= */
 :root {
-  --header-h: 4rem; /* h-16 */
+  /* Mobile: taller bar for touch; lg+ matches collapsed dashboard rail (w-12). */
+  --header-h: 4rem;
   --header-offset: calc(var(--header-h) + env(safe-area-inset-top));
   --footer-safe: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --header-h: 3rem; /* h-12 / lg:w-12 collapsed sidebar */
+  }
 }
 
 /* Space for fixed BTCPay "awaiting confirmation" strip (see BtcpayConfirmationWatchBar).
@@ -63,12 +70,12 @@ body.has-btcpay-confirmation-bar {
     100% {
       box-shadow:
         0 0 0 0 transparent,
-        0 0 10px 0 hsl(var(--brand) / 0.05);
+        0 0 12px 0 hsl(var(--text) / 0.05);
     }
     50% {
       box-shadow:
         0 0 0 0 transparent,
-        0 0 22px 3px hsl(var(--brand) / 0.1);
+        0 0 22px 3px hsl(var(--text) / 0.09);
     }
   }
 
@@ -342,32 +349,32 @@ body.has-btcpay-confirmation-bar {
 /* ============================================================================
  * Token values — light + dark
  *
- * Elevation ladder (critical):
- *   --bg-base          → app / canvas
- *   --bg-surface-1     → sections (+2–3% L vs base, dark; stepped light tints)
- *   --bg-surface-2     → cards
- *   --bg-surface-3     → hover / active
- * Semantic aliases (`--canvas`, `--surface`, …) map onto this ladder. Chrome
- * keeps separate `--bg-sidebar` / `--bg-topbar`. Elevation uses inset
- * rgba(255,255,255,0.03) + soft rgba(0,0,0,0.3) (light uses a lighter drop).
+ * Elevation ladder:
+ *   --bg-base → app / canvas · --bg-surface-1 → sections · --bg-surface-2 → cards
+ *   · --bg-surface-3 → hover / active. Chrome: `--chrome-shell` + directional
+ *   `--chrome-shell-shadow-*` (pronounced toward canvas; joints don’t triple-stack).
  *
- * Brand: calmer indigo-violet (less neon) while keeping CTAs, focus, and nav
- * contrast on both canvases.
+ * Material: **Dark** = neutral charcoal / slate (`~220°`, very low chroma) — no
+ * global purple wash. **Light** = warm cream / greige canvas + white cards.
+ * **Purple** = `--brand-strong` + selection washes only (CTAs, focus, active nav,
+ * selected controls, Flow NEXT pulse) — `--brand` for body links is slate-blue,
+ * not lavender.
  * ========================================================================= */
 
 @layer base {
   :root {
-    /* ---------- Elevation ladder (240°; +L steps; cards stay pure white) ---------- */
-    --bg-base: 240 20% 96%;
-    --bg-surface-1: 240 18% 98.2%;
+    /* ---------- Elevation ladder (warm greige; white cards) ---------- */
+    --bg-base: 44 14% 96.2%;
+    --bg-surface-1: 43 12% 97.8%;
     --bg-surface-2: 0 0% 100%;
-    --bg-surface-3: 240 14% 97.2%;
+    --bg-surface-3: 42 10% 97%;
 
-    /* Legacy / chrome (sidebar & topbar sit beside the ladder) */
+    /* Chrome shell: one tone (header = sidebar = footer); canvas stays slightly brighter */
     --bg-app: var(--bg-base);
-    --bg-sidebar: 240 18% 94%;
-    --bg-topbar: 240 17% 95%;
-    --bg-secondary: 240 15% 92%;
+    --chrome-shell: 44 12% 94.9%;
+    --bg-sidebar: var(--chrome-shell);
+    --bg-topbar: var(--chrome-shell);
+    --bg-secondary: 42 10% 92.5%;
     --bg-card: var(--bg-surface-2);
 
     /* ---------- Semantic surfaces → ladder ---------- */
@@ -377,25 +384,26 @@ body.has-btcpay-confirmation-bar {
     --surface-overlay: 0 0% 100%;
     --surface-hover: var(--bg-surface-3);
     --surface-active: var(--bg-surface-3);
-    --surface-selected: 248 22% 96%;
-    --surface-selected-foreground: 250 36% 38%;
+    /* Selection wash: faint brand hint (purple lives here + CTAs/nav active) */
+    --surface-selected: 255 20% 95.8%;
+    --surface-selected-foreground: 258 38% 38%;
 
     /* ---------- Text ---------- */
-    --text: 240 12% 8%;
-    --text-secondary: 240 8% 34%;
-    --text-tertiary: 240 6% 46%;
+    --text: 38 14% 10%;
+    --text-secondary: 38 8% 34%;
+    --text-tertiary: 38 5% 46%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders (minimal; prefer shadow-*) ---------- */
-    --border-subtle: 240 12% 93%;
-    --border: 240 9% 86%;
-    --border-strong: 240 7% 76%;
-    --input: 240 9% 78%;
+    /* ---------- Borders (warm grey — no lavender) ---------- */
+    --border-subtle: 38 10% 90%;
+    --border: 36 9% 84%;
+    --border-strong: 34 8% 72%;
+    --input: 38 9% 80%;
 
-    /* ---------- Brand (strongest = primary actions only; softer decorative ramp) ---------- */
-    --brand: 254 54% 51.8%;              /* headlines / links — lower chroma than CTA */
-    --brand-strong: 253 86.9% 61.1%;   /* primary CTA + focus — unchanged peak */
-    --brand-soft: 253 54% 75.4%;       /* tinted fills — subtler than before */
+    /* ---------- Brand: strong = purple accent; default --brand = slate link (not global lavender) ---------- */
+    --brand: 222 28% 42%;
+    --brand-strong: 253 86.9% 61.1%;
+    --brand-soft: 253 38% 76%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
@@ -418,51 +426,51 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 80% 28%;
 
-    --brand-text: 253 42% 36.2%;        /* on brand-soft — decorative legibility */
+    --brand-text: 222 32% 34%;
 
     /* ---------- Misc ---------- */
-    --checkbox: 240 5% 48%;
+    --checkbox: 38 6% 48%;
     --checkbox-foreground: 0 0% 100%;
 
-    /* ---------- Charts (slightly desaturated vs brand ramp for calmer data-vis) ---------- */
-    --chart-1: 253 74% 60%;
-    --chart-2: 253 44% 74%;
-    --chart-3: 250 70% 32%;
-    --chart-4: 280 38% 52%;
-    --chart-5: 32 72% 46%;
+    /* ---------- Charts (muted; brand purple reserved for accent UI) ---------- */
+    --chart-1: 222 42% 48%;
+    --chart-2: 253 42% 62%;
+    --chart-3: 215 35% 36%;
+    --chart-4: 280 32% 50%;
+    --chart-5: 32 68% 46%;
 
-    /* ---------- Elevation (inset highlight + soft drop; borders demoted) ---------- */
+    /* ---------- Elevation (warm shadow + soft top plane; cards lift off sections) ---------- */
     --elevation-1:
-      0 4px 18px rgb(0 0 0 / 0.1),
-      0 1px 3px rgb(0 0 0 / 0.06),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 5px 22px hsl(32 22% 18% / 0.075),
+      0 1px 4px hsl(30 16% 14% / 0.055),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.55);
     --elevation-2:
-      0 10px 28px rgb(0 0 0 / 0.12),
-      0 2px 8px rgb(0 0 0 / 0.08),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 12px 32px hsl(32 20% 16% / 0.095),
+      0 2px 10px hsl(30 14% 12% / 0.07),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.62);
     --elevation-3:
-      0 22px 48px rgb(0 0 0 / 0.14),
-      0 6px 16px rgb(0 0 0 / 0.1),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 24px 52px hsl(32 18% 14% / 0.12),
+      0 6px 18px hsl(30 12% 10% / 0.09),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.68);
 
-    /* ---------- Switch / toggle (sealed island; 240° neutrals) ---------- */
-    --switch-track-off: 240 12% 91%;
-    --switch-track-off-hover: 240 11% 86%;
-    --switch-border-off: 240 10% 76%;
-    --switch-border-off-hover: 240 9% 68%;
-    --switch-thumb-off: 240 20% 99%;
+    /* ---------- Switch / toggle (warm neutrals) ---------- */
+    --switch-track-off: 40 12% 91%;
+    --switch-track-off-hover: 38 11% 86%;
+    --switch-border-off: 36 10% 76%;
+    --switch-border-off-hover: 36 9% 68%;
+    --switch-thumb-off: 42 25% 99%;
     --switch-track-on: 253 86.9% 61.1%;
     --switch-track-on-hover: 253 86.9% 63%;
     --switch-border-on: 253 72% 48%;
     --switch-border-on-hover: 253 65% 42%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 240 14% 95%;
-    --switch-border-off-disabled: 240 10% 86%;
-    --switch-thumb-off-disabled: 240 8% 90%;
+    --switch-track-off-disabled: 40 14% 95%;
+    --switch-border-off-disabled: 38 10% 86%;
+    --switch-thumb-off-disabled: 38 8% 90%;
     --switch-track-on-disabled: 253 42% 72%;
     --switch-border-on-disabled: 253 38% 62%;
     --switch-thumb-on-disabled: 0 0% 100%;
-    --switch-thumb-shadow-off: 0 1px 2px hsl(240 16% 18% / 0.14);
+    --switch-thumb-shadow-off: 0 1px 2px hsl(32 18% 18% / 0.14);
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.32);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
@@ -496,21 +504,30 @@ body.has-btcpay-confirmation-bar {
     --landing-card-elevated: var(--surface-raised);
     --landing-section-alt: var(--canvas);
 
-    /* Chrome: matches sidebar token (legacy single-var consumers) */
-    --shell-chrome-bg: 240 18% 94%;
-    --shell-chrome-divider: 240 10% 72%;
+    --shell-chrome-bg: var(--chrome-shell);
+    --shell-chrome-divider: 38 9% 72%;
+    /* Chrome: one material; soft cast into canvas (keep inset hairline only slightly bright) */
+    --chrome-shell-shadow-header:
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.3),
+      0 3px 18px hsl(32 16% 16% / 0.055),
+      0 1px 6px hsl(30 12% 12% / 0.04);
+    /* No top inset hairline — it read as a bright strip vs canvas above the bar */
+    --chrome-shell-shadow-footer:
+      0 -3px 18px hsl(32 16% 16% / 0.055),
+      0 -1px 6px hsl(30 12% 12% / 0.04);
   }
 
   .dark {
-    /* ---------- Elevation ladder (240°; +2–3% L per tier) ---------- */
-    --bg-base: 240 10% 8%;
-    --bg-surface-1: 240 9% 11%;
-    --bg-surface-2: 240 8% 14%;
-    --bg-surface-3: 240 8% 17%;
+    /* ---------- Elevation ladder (neutral slate ~220°, subtle cool; not purple) ---------- */
+    --bg-base: 220 6% 8.8%;
+    --bg-surface-1: 220 6% 11.2%;
+    --bg-surface-2: 220 7% 14.2%;
+    --bg-surface-3: 220 7% 17.2%;
 
     --bg-app: var(--bg-base);
-    --bg-sidebar: 240 9% 10%;
-    --bg-topbar: 240 9% 11%;
+    --chrome-shell: 220 6% 9.8%;
+    --bg-sidebar: var(--chrome-shell);
+    --bg-topbar: var(--chrome-shell);
     --bg-card-1: var(--bg-surface-2);
     --bg-card-2: var(--bg-surface-3);
 
@@ -518,28 +535,29 @@ body.has-btcpay-confirmation-bar {
     --canvas: var(--bg-base);
     --surface: var(--bg-surface-2);
     --surface-raised: var(--bg-surface-2);
-    --surface-overlay: 240 8% 19%;
+    --surface-overlay: 220 7% 19.5%;
     --surface-hover: var(--bg-surface-3);
     --surface-active: var(--bg-surface-3);
-    --surface-selected: 240 8% 16%;
-    --surface-selected-foreground: 240 28% 92%;
+    /* Active nav / selection: restrained violet (brand accent, not base material) */
+    --surface-selected: 262 14% 16.4%;
+    --surface-selected-foreground: 260 38% 91%;
 
     /* ---------- Text ---------- */
-    --text: 240 10% 95.5%;
-    --text-secondary: 240 6% 69%;
-    --text-tertiary: 240 5% 52%;
+    --text: 220 10% 96%;
+    --text-secondary: 220 5% 67%;
+    --text-tertiary: 220 4% 50%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders (match card tier → invisible on cards; use shadow) ---------- */
-    --border-subtle: 240 8% 14%;
-    --border: 240 8% 22%;
-    --border-strong: 240 9% 32%;
-    --input: 240 8% 22%;
+    /* ---------- Borders (tonal; invisible on card tier — separation = shadow) ---------- */
+    --border-subtle: 220 7% 14.2%;
+    --border: 220 6% 21%;
+    --border-strong: 220 8% 30%;
+    --input: 220 6% 22%;
 
-    /* ---------- Brand (decorative ramp softer; primary peak unchanged) ---------- */
-    --brand: 254 52% 52%;
+    /* ---------- Brand: links = cool slate; CTAs / focus = purple ---------- */
+    --brand: 218 16% 71%;
     --brand-strong: 253 86.9% 61.1%;
-    --brand-soft: 253 52% 74.5%;
+    --brand-soft: 253 34% 72%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
@@ -562,54 +580,54 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 75% 80%;
 
-    --brand-text: 258 44% 81%;
+    --brand-text: 260 32% 80%;
 
     --destructive: var(--danger);
     --destructive-foreground: var(--danger-foreground);
 
     /* ---------- Misc ---------- */
-    --checkbox: 240 6% 58%;
+    --checkbox: 220 6% 58%;
     --checkbox-foreground: 0 0% 100%;
 
-    /* ---------- Charts (desaturated vs prior ramp) ---------- */
-    --chart-1: 253 74% 60%;
-    --chart-2: 253 44% 74%;
-    --chart-3: 250 70% 32%;
-    --chart-4: 280 34% 62%;
-    --chart-5: 32 68% 52%;
+    /* ---------- Charts (slate-forward neutrals + restrained accents) ---------- */
+    --chart-1: 220 38% 58%;
+    --chart-2: 253 40% 68%;
+    --chart-3: 215 32% 38%;
+    --chart-4: 280 28% 58%;
+    --chart-5: 32 62% 52%;
 
-    /* ---------- Elevation (spec: inset rgba(255,255,255,0.03) + rgba(0,0,0,0.3)) ---------- */
+    /* ---------- Elevation (cool charcoal shadow — no harsh ring) ---------- */
     --elevation-1:
-      0 4px 20px rgb(0 0 0 / 0.3),
-      0 1px 2px rgb(0 0 0 / 0.22),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 5px 24px hsl(220 16% 4% / 0.38),
+      0 1px 3px hsl(220 12% 3% / 0.28),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.04);
     --elevation-2:
-      0 10px 32px rgb(0 0 0 / 0.3),
-      0 2px 8px rgb(0 0 0 / 0.24),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 12px 36px hsl(220 14% 3% / 0.42),
+      0 2px 10px hsl(220 10% 3% / 0.3),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.045);
     --elevation-3:
-      0 24px 56px rgb(0 0 0 / 0.3),
-      0 6px 16px rgb(0 0 0 / 0.26),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+      0 26px 58px hsl(220 12% 2% / 0.46),
+      0 6px 18px hsl(220 10% 3% / 0.32),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.05);
 
-    /* ---------- Switch (sealed island; 240° field) ---------- */
-    --switch-track-off: 240 8% 10.5%;
-    --switch-track-off-hover: 240 8% 12%;
-    --switch-border-off: 240 8% 18%;
-    --switch-border-off-hover: 240 8% 23%;
-    --switch-thumb-off: 240 10% 96%;
+    /* ---------- Switch (slate neutrals) ---------- */
+    --switch-track-off: 220 7% 10.5%;
+    --switch-track-off-hover: 220 7% 12%;
+    --switch-border-off: 220 7% 18%;
+    --switch-border-off-hover: 220 7% 23%;
+    --switch-thumb-off: 220 8% 96%;
     --switch-track-on: 253 86.9% 61.1%;
     --switch-track-on-hover: 253 86.9% 64%;
     --switch-border-on: 253 78% 48%;
     --switch-border-on-hover: 253 72% 54%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 240 7% 9.5%;
-    --switch-border-off-disabled: 240 7% 14%;
-    --switch-thumb-off-disabled: 240 5% 48%;
+    --switch-track-off-disabled: 220 6% 9.5%;
+    --switch-border-off-disabled: 220 6% 14%;
+    --switch-thumb-off-disabled: 220 5% 48%;
     --switch-track-on-disabled: 253 52% 34%;
     --switch-border-on-disabled: 253 44% 28%;
     --switch-thumb-on-disabled: 0 0% 82%;
-    --switch-thumb-shadow-off: 0 1px 3px hsl(240 30% 5% / 0.34);
+    --switch-thumb-shadow-off: 0 1px 3px hsl(220 22% 4% / 0.34);
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.34);
 
     /* ---------- Calendar (sealed island) ---------- */
@@ -627,59 +645,77 @@ body.has-btcpay-confirmation-bar {
     --landing-card-elevated: var(--surface-raised);
     --landing-section-alt: var(--canvas);
 
-    /* Chrome: sidebar tone (legacy); header uses --bg-topbar in components */
-    --shell-chrome-bg: 240 9% 10%;
-    --shell-chrome-divider: 240 8% 38%;
+    --shell-chrome-bg: var(--chrome-shell);
+    --shell-chrome-divider: 220 7% 28%;
+    --chrome-shell-shadow-header:
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.045),
+      0 5px 26px hsl(220 14% 3% / 0.22),
+      0 2px 9px hsl(220 12% 3% / 0.14);
+    --chrome-shell-shadow-footer:
+      0 -5px 26px hsl(220 14% 3% / 0.2),
+      0 -2px 9px hsl(220 12% 3% / 0.13);
   }
 }
 
 /* ============================================================================
- * Dashboard shell — unified chrome (header, sidebar, footer = one frame; main = canvas)
+ * Dashboard shell — unified chrome (one bg). Header/footer shadow into canvas;
+ * no sidebar inset rail (seam depth = main ::before at lg+).
  * ========================================================================= */
 
 @layer components {
-  /* Top bar: one lightness step above sidebar; same 240° family as canvas */
-  #page-header.dashboard-shell-chrome {
-    background-color: hsl(var(--bg-topbar));
-    border-bottom: 0;
-    box-shadow:
-      inset 0 -1px 0 0 rgb(255 255 255 / 0.03),
-      0 4px 18px rgb(0 0 0 / 0.1);
-  }
-  .dark #page-header.dashboard-shell-chrome {
-    box-shadow:
-      inset 0 -1px 0 0 rgb(255 255 255 / 0.03),
-      0 6px 22px rgb(0 0 0 / 0.3);
+  /* Same flat canvas as .dashboard-canvas so padding / subpixel gaps never flash a lighter band */
+  #page-container[data-dashboard-shell] > main#page-content {
+    background-color: hsl(var(--canvas));
   }
 
+  #page-header.dashboard-shell-chrome,
   #page-sidebar.dashboard-shell-chrome,
   #page-footer.dashboard-shell-chrome {
-    background-color: hsl(var(--bg-sidebar));
+    background-color: hsl(var(--shell-chrome-bg));
   }
 
-  /* Sidebar / footer edge: soft depth, not a drawn rule */
-  #page-sidebar.dashboard-shell-chrome {
-    border-right: 0;
-    box-shadow:
-      inset -1px 0 0 0 rgb(255 255 255 / 0.03),
-      4px 0 18px rgb(0 0 0 / 0.08);
+  #page-header.dashboard-shell-chrome {
+    box-shadow: var(--chrome-shell-shadow-header);
   }
-  .dark #page-sidebar.dashboard-shell-chrome {
-    box-shadow:
-      inset -1px 0 0 0 rgb(255 255 255 / 0.03),
-      6px 0 24px rgb(0 0 0 / 0.3);
+
+  /*
+   * Chrome→canvas depth at the sidebar seam (lg+).
+   * Inset box-shadow on `main` sits *under* full-bleed descendants, so it never
+   * showed — use a ::before gradient band above in-flow content instead.
+   * Scoped with [data-dashboard-shell] so login (same #page-content id) is excluded.
+   */
+  @media (min-width: 1024px) {
+    #page-container[data-dashboard-shell] > main#page-content {
+      position: relative;
+    }
+
+    #page-container[data-dashboard-shell] > main#page-content::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 1.5rem;
+      pointer-events: none;
+      z-index: 2;
+      background: linear-gradient(
+        to right,
+        hsl(32 16% 12% / 0.085) 0%,
+        hsl(32 14% 14% / 0.028) 38%,
+        transparent 78%
+      );
+    }
+
+    .dark #page-container[data-dashboard-shell] > main#page-content::before {
+      background: linear-gradient(
+        to right,
+        hsl(220 14% 3% / 0.22) 0%,
+        hsl(220 12% 6% / 0.07) 40%,
+        transparent 78%
+      );
+    }
   }
 
   #page-footer.dashboard-shell-chrome {
-    border-top: 0;
-    box-shadow:
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
-      0 -4px 18px rgb(0 0 0 / 0.08);
-  }
-  .dark #page-footer.dashboard-shell-chrome {
-    box-shadow:
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
-      0 -6px 22px rgb(0 0 0 / 0.3);
+    box-shadow: var(--chrome-shell-shadow-footer);
   }
 }
 
@@ -1262,43 +1298,41 @@ body.has-btcpay-confirmation-bar {
     );
   }
 
-  /* Dashboard base canvas: hair vertical tone + grain (barely perceptible depth) */
+  /* Dashboard base canvas: flat --canvas + grain only (no vertical tone shift —
+   * a bottom gradient vs flat `bg-canvas` on #page-container read as a light seam above the footer). */
   .dashboard-canvas {
     background-color: hsl(var(--canvas));
-    background-image:
-      linear-gradient(180deg, hsl(var(--canvas)) 0%, hsl(240 16% 94.2%) 100%),
-      radial-gradient(
-        circle at 1px 1px,
-        hsl(var(--text) / 0.014) 1px,
-        transparent 0
-      );
-    background-size: auto, 24px 24px;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--text) / 0.014) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
   }
 
   .dark .dashboard-canvas {
-    background-image:
-      linear-gradient(180deg, hsl(var(--canvas)) 0%, hsl(240 10% 7.2%) 100%),
-      radial-gradient(
-        circle at 1px 1px,
-        hsl(var(--text) / 0.016) 1px,
-        transparent 0
-      );
-    background-size: auto, 24px 24px;
+    background-color: hsl(var(--canvas));
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(var(--text) / 0.016) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
   }
 
   /* Flow zone: section tier (--bg-surface-1), depth via elevation not borders */
   .flow-zone {
     background-color: hsl(var(--bg-surface-1));
     box-shadow:
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
-      0 2px 14px rgb(0 0 0 / 0.08);
+      inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+      0 2px 16px hsl(32 18% 18% / 0.055);
   }
 
   .dark .flow-zone {
     background-color: hsl(var(--bg-surface-1));
     box-shadow:
-      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
-      0 4px 18px rgb(0 0 0 / 0.3);
+      inset 0 1px 0 0 rgb(255 255 255 / 0.04),
+      0 4px 20px hsl(220 14% 4% / 0.32);
   }
 
   /* KPI cards: slightly more instrumentation-like than generic nav cards. */
@@ -1491,7 +1525,7 @@ body.has-btcpay-confirmation-bar {
   .h-header { height: var(--header-offset); }
   .pt-header { padding-top: var(--header-offset); }
   .top-header { top: var(--header-offset); }
-  /* Just the safe-area part (lets the bar paint the notch while keeping h-16 content). */
+  /* Just the safe-area part (lets the bar paint the notch while keeping --header-h content row). */
   .pt-safe-top { padding-top: env(safe-area-inset-top); }
 
   /* Fixed bars: keep a visual baseline and add the inset on top. */

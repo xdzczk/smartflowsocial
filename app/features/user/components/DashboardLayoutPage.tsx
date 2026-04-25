@@ -357,7 +357,8 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        data-dashboard-shell
+        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-12"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
@@ -369,7 +370,7 @@ export function DashboardLayoutPage(): ReactNode {
         />
 
         {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders.
-            pt-header = h-16 + env(safe-area-inset-top) so content clears the notch on installed iOS PWAs. */}
+            pt-header = --header-h + env(safe-area-inset-top) so content clears the notch on installed iOS PWAs. */}
         <main
           id="page-content"
           className={`pt-header flex min-h-0 max-w-full min-w-0 flex-1 flex-col ${

@@ -231,7 +231,7 @@ function FlowCardInner({
     : undefined;
 
   // --queue-color: next-scheduled shadow pulse + subtle hover tint overlay (low mix).
-  const shadowColor = queueColor ?? "hsl(var(--brand))";
+  const shadowColor = queueColor ?? "hsl(var(--brand-strong) / 0.72)";
 
   const isPublished = Boolean(item.publishedAt);
   /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */
