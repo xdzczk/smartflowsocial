@@ -56,7 +56,11 @@ export function ContentListPageHeader({
 
   return (
     <div
-      className={`flex flex-shrink-0 flex-col gap-1 text-left ${className ?? ""}`}
+      className={cn(
+        "flex min-w-0 flex-shrink-0 text-left",
+        subtitle ? "flex-col gap-1" : "items-center",
+        className
+      )}
     >
       <h3 className={cn("font-semibold", titleClassName)}>{title}</h3>
       {subtitle ? (

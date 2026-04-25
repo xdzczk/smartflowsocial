@@ -237,8 +237,8 @@ function FlowCardInner({
   /** Past cards (published or the "Last posted" boundary) use reduced opacity; isLastPosted covers motion-fast when publishedAt may not have updated yet */
   const isPastCard = isPublished || Boolean(isLastPosted);
   const nextCardClass = isNextScheduledAndFuture
-    ? "border-border bg-surface shadow-none"
-    : "border-border-subtle bg-surface-raised shadow-1 hover:border-border";
+    ? "border-transparent bg-surface shadow-none"
+    : "border-transparent bg-surface-raised shadow-1 hover:shadow-2";
 
   return (
     <button

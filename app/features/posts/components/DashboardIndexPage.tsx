@@ -102,7 +102,7 @@ function canAutoRevalidateDashboard(): boolean {
 
 /** Softer selects in the Flow toolbar so “Your flow” stays the visual anchor (same h-9 footprint). */
 const DASHBOARD_FLOW_FILTER_TRIGGER_CLASS =
-  "text-body-sm font-medium shadow-none border-border/60 bg-surface-hover/15 hover:border-border hover:bg-surface-hover/35 dark:bg-surface-hover/10 dark:hover:bg-surface-hover/25";
+  "text-body-sm font-medium shadow-none border-border/60 bg-surface-hover/15 hover:border-border hover:bg-surface-hover/35 dark:bg-surface-hover/10 dark:hover:bg-surface-hover/25 min-w-0 w-full px-2 sm:w-full sm:min-w-0 sm:px-3 lg:w-[14rem] lg:min-w-[10rem] lg:shrink-0";
 
 function DashboardPlanSuccessMessage({
   show,
@@ -420,7 +420,7 @@ function DashboardReturningUserSplit({
 
   return (
     <>
-      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-2.5 pb-4 lg:px-8 lg:pt-0">
+      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 lg:px-8 lg:pt-0 lg:pb-5">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
@@ -428,18 +428,18 @@ function DashboardReturningUserSplit({
           runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
           isPostActivationEmpty={isPostActivationEmpty}
         />
-        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-          <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
+        <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-3">
+          <div className="flex min-h-9 shrink-0 items-center gap-2 lg:gap-2.5">
             <ContentListPageHeader
               pageType="flow"
               className="min-w-0"
-              titleClassName="text-text text-[1.375rem] font-semibold leading-snug tracking-tight lg:text-[1.5rem] lg:font-bold lg:leading-snug"
+              titleClassName="text-text text-[24px] font-bold leading-none tracking-tight"
             />
             {showFlowNextButton ? (
               <button
                 type="button"
                 onClick={handleFlowNextClick}
-                className="focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/45 motion-fast text-body-sm inline-flex items-center gap-0.5 self-center rounded-md px-1.5 py-1 font-medium"
+                className="focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/45 motion-fast text-body-sm inline-flex items-center gap-0.5 rounded-md px-1.5 py-1 font-medium"
                 aria-label="Scroll timeline to next posts or schedule"
               >
                 <span>Next</span>
@@ -451,24 +451,28 @@ function DashboardReturningUserSplit({
               </button>
             ) : null}
           </div>
-          <div className="flex w-full min-w-0 flex-row flex-wrap items-center gap-2 lg:flex-1 lg:justify-end">
-            <PublishingContentTypeFilter
-              data-testid="dashboard-type-filter"
-              value={currentContentTab}
-              ariaLabel="Dashboard content type"
-              triggerClassName={DASHBOARD_FLOW_FILTER_TRIGGER_CLASS}
-              items={buildDashboardContentTypeFilterItems({
-                basePath: "/dashboard",
-                searchParams,
-                nip88PollsEnabled,
-              })}
-            />
-            <PublishingQueueFilter
-              currentTab={currentContentTab}
-              queueTypes={queueTypesFiltered}
-              basePath="/dashboard"
-              triggerClassName={DASHBOARD_FLOW_FILTER_TRIGGER_CLASS}
-            />
+          <div className="flex min-h-9 w-full min-w-0 flex-nowrap items-stretch gap-2 lg:flex-1 lg:justify-end">
+            <div className="min-w-0 flex-1 basis-0 lg:flex-none">
+              <PublishingContentTypeFilter
+                data-testid="dashboard-type-filter"
+                value={currentContentTab}
+                ariaLabel="Dashboard content type"
+                triggerClassName={DASHBOARD_FLOW_FILTER_TRIGGER_CLASS}
+                items={buildDashboardContentTypeFilterItems({
+                  basePath: "/dashboard",
+                  searchParams,
+                  nip88PollsEnabled,
+                })}
+              />
+            </div>
+            <div className="min-w-0 flex-1 basis-0 lg:flex-none">
+              <PublishingQueueFilter
+                currentTab={currentContentTab}
+                queueTypes={queueTypesFiltered}
+                basePath="/dashboard"
+                triggerClassName={DASHBOARD_FLOW_FILTER_TRIGGER_CLASS}
+              />
+            </div>
           </div>
         </div>
       </div>

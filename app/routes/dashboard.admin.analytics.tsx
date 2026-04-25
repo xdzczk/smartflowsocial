@@ -192,17 +192,17 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "users",
                   name: "New users",
-                  stroke: "hsl(var(--brand))",
+                  stroke: "hsl(var(--chart-1))",
                 },
                 {
                   dataKey: "posts",
                   name: "Posts published",
-                  stroke: "hsl(142 70% 42%)",
+                  stroke: "hsl(var(--chart-5))",
                 },
                 {
                   dataKey: "referred",
                   name: "Referred signups",
-                  stroke: "hsl(280 55% 52%)",
+                  stroke: "hsl(var(--chart-4))",
                 },
               ]}
             />
@@ -299,12 +299,12 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "subscriptions",
                   name: "Subscriptions started",
-                  stroke: "hsl(var(--brand))",
+                  stroke: "hsl(var(--chart-1))",
                 },
                 {
                   dataKey: "posts",
                   name: "Posts published",
-                  stroke: "hsl(32 90% 48%)",
+                  stroke: "hsl(var(--chart-5))",
                 },
               ]}
             />

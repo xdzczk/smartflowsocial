@@ -1,7 +1,9 @@
 import { Link } from "@remix-run/react";
 import { useRef, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { cn } from "~/lib/utils";
 
 import {
   getQueueAccentHex,
@@ -64,6 +66,75 @@ function getQueueAccentHexOrNull(
   return getQueueAccentHex(token);
 }
 
+/** Decorative lane / slot hint for the empty state (neutral, low contrast). */
+function QueueLanesPreview() {
+  const lanes: Array<Array<"empty" | "faint">> = [
+    [
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "faint",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+    ],
+    [
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "faint",
+      "empty",
+      "empty",
+    ],
+    [
+      "empty",
+      "empty",
+      "faint",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+      "empty",
+    ],
+  ];
+
+  return (
+    <div
+      className="border-border-subtle/70 bg-surface-hover/8 dark:bg-surface-hover/6 w-full max-w-[11.5rem] rounded-md border px-2 py-2"
+      aria-hidden
+    >
+      <div className="flex flex-col gap-1.5">
+        {/* eslint-disable react/no-array-index-key -- Static decorative queue preview; fixed grid, index keys stable */}
+        {lanes.map((lane, laneIdx) => (
+          <div key={laneIdx} className="flex gap-1">
+            {lane.map((cell, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "border-border-subtle/50 h-1.5 min-w-0 flex-1 rounded-[1px] border",
+                  cell === "faint"
+                    ? "bg-surface-hover/45 dark:bg-surface-hover/28"
+                    : "bg-transparent"
+                )}
+              />
+            ))}
+          </div>
+        ))}
+        {/* eslint-enable react/no-array-index-key -- */}
+      </div>
+    </div>
+  );
+}
+
 export default function QueueHealth({
   queueCounts,
   queueTypes,
@@ -116,41 +187,56 @@ export default function QueueHealth({
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-4">
           {countsByQueue.length === 0 ? (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col items-start justify-start gap-3 py-2 text-left lg:min-h-0 lg:pt-3 lg:pb-1">
-              <div className="min-w-0 space-y-2">
-                <p className="text-text text-sm font-medium">
-                  No queue health yet.
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-1 pt-1 pb-2 lg:min-h-0">
+              <div className="flex w-full max-w-[17.5rem] -translate-y-1 flex-col items-center text-center lg:-translate-y-1.5">
+                <div className="mb-3">
+                  <QueueLanesPreview />
+                </div>
+                <h4 className="text-text mb-1 text-sm font-semibold tracking-tight">
+                  No queues yet
+                </h4>
+                <p className="text-text-secondary mb-4 max-w-[17.5rem] text-xs leading-snug text-pretty">
+                  Create reusable publishing lanes to keep posts flowing. Queue
+                  Health will track fill level and weak spots.
                 </p>
-                <p className="text-text-secondary text-xs leading-relaxed">
-                  Queues are reusable publishing lanes.
-                </p>
-                <ol className="text-text-secondary mt-0.5 list-decimal space-y-1 pl-4 text-xs leading-relaxed marker:tabular-nums">
-                  <li className="pl-0.5">Create a queue</li>
-                  <li className="pl-0.5">Add posts from Compose or Bulk</li>
-                  <li className="pl-0.5">
-                    Keep queues filled for consistent posting
-                  </li>
-                </ol>
+                <div className="flex flex-col items-center gap-1">
+                  {onCreateQueueClick ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateQueueClick();
+                      }}
+                    >
+                      Create first queue
+                    </Button>
+                  ) : (
+                    <Button size="sm" asChild>
+                      <Link
+                        to="/dashboard/settings?tab=publishing"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Create first queue
+                      </Link>
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-text-secondary hover:text-text h-auto py-1.5 font-normal"
+                    asChild
+                  >
+                    <Link
+                      to="/dashboard/settings?tab=publishing"
+                      onClick={(e) => e.stopPropagation()}
+                      className="no-underline"
+                    >
+                      Learn how queues work
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              {onCreateQueueClick ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCreateQueueClick();
-                  }}
-                  className="focus-ring text-text-secondary hover:text-text w-fit rounded-xs text-left text-xs font-medium underline underline-offset-2"
-                >
-                  Create queue
-                </button>
-              ) : (
-                <Link
-                  to="/dashboard/settings?tab=publishing"
-                  className="focus-ring text-text-secondary hover:text-text w-fit rounded-xs text-xs font-medium underline underline-offset-2"
-                >
-                  Create queue
-                </Link>
-              )}
             </div>
           ) : (
             <ul
@@ -170,7 +256,7 @@ export default function QueueHealth({
                   <li key={queueName} className="flex min-h-[2.5rem] flex-col">
                     <Link
                       to={scheduledUrl}
-                      className="focus-ring motion-fast border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg border px-3 py-2"
+                      className="focus-ring motion-fast bg-surface-hover/38 shadow-1 hover:bg-surface-hover/52 hover:shadow-2 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26 flex h-full min-h-[2.75rem] flex-col justify-center gap-1.5 rounded-lg border border-transparent px-3 py-2"
                     >
                       <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <span className="text-text min-w-0 truncate text-xs font-medium">
@@ -189,7 +275,13 @@ export default function QueueHealth({
                         aria-hidden
                         style={
                           bundle
-                            ? { backgroundColor: bundle.surface }
+                            ? {
+                                backgroundImage:
+                                  "linear-gradient(180deg, hsl(var(--canvas) / 0.32) 0%, transparent 65%)",
+                                backgroundColor: bundle.surface,
+                                boxShadow:
+                                  "inset 0 1px 0 0 rgb(255 255 255 / 0.04)",
+                              }
                             : undefined
                         }
                       >

@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.008655417">
-    <testsuite name="tests/unit/lib/theme.client.test.ts" timestamp="2026-04-25T03:16:20.990Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.008655417">
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads and writes stored theme preferences" time="0.003186">
+<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.00963025">
+    <testsuite name="tests/unit/lib/theme.client.test.ts" timestamp="2026-04-25T06:06:50.695Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.00963025">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads and writes stored theme preferences" time="0.003567125">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; handles session override lifecycle" time="0.000332542">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; handles session override lifecycle" time="0.000341459">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; notifies and subscribes theme session changes" time="0.000561166">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; notifies and subscribes theme session changes" time="0.000599666">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; resolves and applies effective themes" time="0.001556958">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; resolves and applies effective themes" time="0.001817958">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; syncs theme-color meta and removes SSR media variants" time="0.000892958">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; syncs theme-color meta and removes SSR media variants" time="0.001042167">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads system effective theme from matchMedia" time="0.000217917">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads system effective theme from matchMedia" time="0.0002415">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to system theme changes with modern and legacy listeners" time="0.000523">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to system theme changes with modern and legacy listeners" time="0.00055675">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; applies system preference and reacts to future changes" time="0.000345125">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; applies system preference and reacts to future changes" time="0.0003575">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to document theme class changes" time="0.000502625">
+        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to document theme class changes" time="0.000528375">
         </testcase>
     </testsuite>
 </testsuites>

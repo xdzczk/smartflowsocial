@@ -217,6 +217,8 @@ body.has-btcpay-confirmation-bar {
   --color-surface-active: hsl(var(--surface-active));
   --color-surface-selected: hsl(var(--surface-selected));
   --color-surface-selected-foreground: hsl(var(--surface-selected-foreground));
+  /* Section band (between app base and cards): `bg-section` */
+  --color-section: hsl(var(--bg-surface-1));
 
   /* ---------- Text ---------- */
   --color-text: hsl(var(--text));
@@ -281,15 +283,13 @@ body.has-btcpay-confirmation-bar {
    *     no surface, no shadow, no border. Just typography on canvas.
    *
    *   Tier 1 — content card, form section (most common)
-   *     bg-surface  border border-border-subtle  shadow-1
-   *     Subtle hairline + 1px shadow. Premium, not loud. Default for Card.
+   *     bg-surface  border-transparent  shadow-1 (inset highlight + soft drop)
    *
    *   Tier 2 — feature panel, key dashboard card, sticky rail
-   *     bg-surface (or bg-surface-raised)  border border-border  shadow-2
-   *     Stronger border + 4px shadow. "Important" surface that deserves emphasis.
+   *     bg-surface (or bg-surface-raised)  border-transparent  shadow-2
    *
    *   Tier 3 — overlay / popover / dropdown / sheet (transient floating surface)
-   *     bg-surface-overlay  border border-border  shadow-3
+   *     bg-surface-overlay  border-transparent  shadow-3
    *     Highest surface brightness + stacked shadow. For things that float
    *     above the canvas and dismiss.
    *
@@ -342,11 +342,14 @@ body.has-btcpay-confirmation-bar {
 /* ============================================================================
  * Token values — light + dark
  *
- * Light: warm premium off-white canvas, soft warm borders/shadows, near-white
- * surfaces; text biased slightly warm vs cold neutral black.
- *
- * Dark: warm ink-charcoal canvas with subtle violet undertones (not pure black);
- * raised surfaces and borders carry the same family so rails/cards read cohesive.
+ * Elevation ladder (critical):
+ *   --bg-base          → app / canvas
+ *   --bg-surface-1     → sections (+2–3% L vs base, dark; stepped light tints)
+ *   --bg-surface-2     → cards
+ *   --bg-surface-3     → hover / active
+ * Semantic aliases (`--canvas`, `--surface`, …) map onto this ladder. Chrome
+ * keeps separate `--bg-sidebar` / `--bg-topbar`. Elevation uses inset
+ * rgba(255,255,255,0.03) + soft rgba(0,0,0,0.3) (light uses a lighter drop).
  *
  * Brand: calmer indigo-violet (less neon) while keeping CTAs, focus, and nav
  * contrast on both canvases.
@@ -354,32 +357,45 @@ body.has-btcpay-confirmation-bar {
 
 @layer base {
   :root {
-    /* ---------- Surfaces ---------- */
-    --canvas: 45 20% 96.1%;             /* ~#f7f6f3 — warm page field */
-    --surface: 0 0% 100%;               /* cards / panels — white */
-    --surface-raised: 40 27% 97.8%;     /* ~#fbfaf8 — slight warmth vs flat white */
-    --surface-overlay: 0 0% 100%;       /* menus / popovers / dialogs */
-    --surface-hover: 40 20% 94.1%;      /* warm hover */
-    --surface-active: 37 17% 91%;       /* warm pressed */
-    --surface-selected: 255 31% 95%;    /* quiet violet wash — not saturated */
-    --surface-selected-foreground: 250 39% 39%;
+    /* ---------- Elevation ladder (240°; +L steps; cards stay pure white) ---------- */
+    --bg-base: 240 20% 96%;
+    --bg-surface-1: 240 18% 98.2%;
+    --bg-surface-2: 0 0% 100%;
+    --bg-surface-3: 240 14% 97.2%;
+
+    /* Legacy / chrome (sidebar & topbar sit beside the ladder) */
+    --bg-app: var(--bg-base);
+    --bg-sidebar: 240 18% 94%;
+    --bg-topbar: 240 17% 95%;
+    --bg-secondary: 240 15% 92%;
+    --bg-card: var(--bg-surface-2);
+
+    /* ---------- Semantic surfaces → ladder ---------- */
+    --canvas: var(--bg-base);
+    --surface: var(--bg-surface-2);
+    --surface-raised: var(--bg-surface-2);
+    --surface-overlay: 0 0% 100%;
+    --surface-hover: var(--bg-surface-3);
+    --surface-active: var(--bg-surface-3);
+    --surface-selected: 248 22% 96%;
+    --surface-selected-foreground: 250 36% 38%;
 
     /* ---------- Text ---------- */
-    --text: 36 12% 8%;                   /* ~#171512 — high contrast, slightly warm */
-    --text-secondary: 36 9% 33%;
-    --text-tertiary: 37 8% 39%;
+    --text: 240 12% 8%;
+    --text-secondary: 240 8% 34%;
+    --text-tertiary: 240 6% 46%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders ---------- */
-    --border-subtle: 38 17% 90.6%;       /* ~#ebe8e3 */
-    --border: 40 15% 84.7%;            /* ~#dedad2 */
-    --border-strong: 39 13% 70.6%;     /* ~#beb7aa */
-    --input: var(--border);
+    /* ---------- Borders (minimal; prefer shadow-*) ---------- */
+    --border-subtle: 240 12% 93%;
+    --border: 240 9% 86%;
+    --border-strong: 240 7% 76%;
+    --input: 240 9% 78%;
 
-    /* ---------- Brand ---------- */
-    --brand: 254 66.3% 52.3%;            /* ~#5a35d6 — calmer headline / accent */
-    --brand-strong: 253 86.9% 61.1%;   /* ~#6b46f2 — primary CTA, focus ring */
-    --brand-soft: 253 63.8% 75.1%;     /* ~#a997e8 — washes / secondary fills */
+    /* ---------- Brand (strongest = primary actions only; softer decorative ramp) ---------- */
+    --brand: 254 54% 51.8%;              /* headlines / links — lower chroma than CTA */
+    --brand-strong: 253 86.9% 61.1%;   /* primary CTA + focus — unchanged peak */
+    --brand-soft: 253 54% 75.4%;       /* tinted fills — subtler than before */
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
@@ -402,57 +418,66 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 80% 28%;
 
-    --brand-text: 253 46% 37%;          /* on brand-soft / tinted rows */
+    --brand-text: 253 42% 36.2%;        /* on brand-soft — decorative legibility */
 
     /* ---------- Misc ---------- */
-    --checkbox: 35 5% 48%;
+    --checkbox: 240 5% 48%;
     --checkbox-foreground: 0 0% 100%;
 
-    /* ---------- Charts ---------- */
-    --chart-1: 253 86.9% 61.1%;          /* aligned to brand-strong */
-    --chart-2: 253 63.8% 75.1%;          /* aligned to brand-soft */
-    --chart-3: 250 100% 31%;
-    --chart-4: 250 25% 80%;
-    --chart-5: 250 100% 5%;
+    /* ---------- Charts (slightly desaturated vs brand ramp for calmer data-vis) ---------- */
+    --chart-1: 253 74% 60%;
+    --chart-2: 253 44% 74%;
+    --chart-3: 250 70% 32%;
+    --chart-4: 280 38% 52%;
+    --chart-5: 32 72% 46%;
 
-    /* ---------- Elevation (warm-tinted shadow, not cold gray) ---------- */
-    --elevation-1: 0 1px 2px 0 hsl(32 22% 18% / 0.045);
-    --elevation-2: 0 4px 12px 0 hsl(28 18% 16% / 0.072);
-    --elevation-3: 0 12px 32px 0 hsl(25 14% 14% / 0.11);
+    /* ---------- Elevation (inset highlight + soft drop; borders demoted) ---------- */
+    --elevation-1:
+      0 4px 18px rgb(0 0 0 / 0.1),
+      0 1px 3px rgb(0 0 0 / 0.06),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+    --elevation-2:
+      0 10px 28px rgb(0 0 0 / 0.12),
+      0 2px 8px rgb(0 0 0 / 0.08),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+    --elevation-3:
+      0 22px 48px rgb(0 0 0 / 0.14),
+      0 6px 16px rgb(0 0 0 / 0.1),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
 
-    /* ---------- Switch / toggle (sealed island; harmonized to warm neutrals) ---------- */
-    --switch-track-off: 38 12% 91%;
-    --switch-track-off-hover: 38 11% 86%;
-    --switch-border-off: 38 10% 74%;
-    --switch-border-off-hover: 37 9% 66%;
-    --switch-thumb-off: 40 25% 99%;
+    /* ---------- Switch / toggle (sealed island; 240° neutrals) ---------- */
+    --switch-track-off: 240 12% 91%;
+    --switch-track-off-hover: 240 11% 86%;
+    --switch-border-off: 240 10% 76%;
+    --switch-border-off-hover: 240 9% 68%;
+    --switch-thumb-off: 240 20% 99%;
     --switch-track-on: 253 86.9% 61.1%;
     --switch-track-on-hover: 253 86.9% 63%;
     --switch-border-on: 253 72% 48%;
     --switch-border-on-hover: 253 65% 42%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 38 14% 95%;
-    --switch-border-off-disabled: 38 10% 86%;
-    --switch-thumb-off-disabled: 38 8% 90%;
+    --switch-track-off-disabled: 240 14% 95%;
+    --switch-border-off-disabled: 240 10% 86%;
+    --switch-thumb-off-disabled: 240 8% 90%;
     --switch-track-on-disabled: 253 42% 72%;
     --switch-border-on-disabled: 253 38% 62%;
     --switch-thumb-on-disabled: 0 0% 100%;
-    --switch-thumb-shadow-off: 0 1px 2px hsl(32 20% 18% / 0.14);
+    --switch-thumb-shadow-off: 0 1px 2px hsl(240 16% 18% / 0.14);
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.32);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
-    /* Surface 1 = main content container */
-    --calendar-surface-1-bg: var(--surface);
+    /* Surface 1 = main content container (section tier) */
+    --calendar-surface-1-bg: var(--bg-surface-1);
     --calendar-surface-1-shadow: none;
     --calendar-surface-1-radius: var(--radius-lg);
     /* Surface 2 = calendar panel */
     --calendar-surface-2-bg: var(--surface);
     --calendar-surface-2-shadow: var(--elevation-1);
     --calendar-surface-2-radius: var(--radius-lg);
-    --calendar-surface-2-border: var(--border-subtle);
+    --calendar-surface-2-border: transparent;
     /* Surface 3 = post card */
     --calendar-surface-3-bg: var(--surface);
-    --calendar-surface-3-border: var(--border-subtle);
+    --calendar-surface-3-border: transparent;
     --calendar-surface-3-shadow: var(--elevation-1);
     --calendar-surface-3-radius: var(--radius-md);
     /* Surface 4 = hover/active */
@@ -470,35 +495,51 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Landing (sealed island; values aligned) ---------- */
     --landing-card-elevated: var(--surface-raised);
     --landing-section-alt: var(--canvas);
+
+    /* Chrome: matches sidebar token (legacy single-var consumers) */
+    --shell-chrome-bg: 240 18% 94%;
+    --shell-chrome-divider: 240 10% 72%;
   }
 
   .dark {
-    /* ---------- Surfaces ---------- */
-    --canvas: 270 6% 6.7%;               /* ~#111012 — warm ink charcoal */
-    --surface: 270 4.2% 9.4%;            /* ~#181719 */
-    --surface-raised: 255 6.1% 12.9%;    /* ~#201f23 */
-    --surface-overlay: 260 7.7% 15.3%;   /* ~#26242a — menus above cards */
-    --surface-hover: 270 5.5% 11.2%;
-    --surface-active: 270 6% 12.8%;
-    --surface-selected: 258 13% 15.3%;   /* subtle violet wash */
-    --surface-selected-foreground: 260 43% 93%;
+    /* ---------- Elevation ladder (240°; +2–3% L per tier) ---------- */
+    --bg-base: 240 10% 8%;
+    --bg-surface-1: 240 9% 11%;
+    --bg-surface-2: 240 8% 14%;
+    --bg-surface-3: 240 8% 17%;
+
+    --bg-app: var(--bg-base);
+    --bg-sidebar: 240 9% 10%;
+    --bg-topbar: 240 9% 11%;
+    --bg-card-1: var(--bg-surface-2);
+    --bg-card-2: var(--bg-surface-3);
+
+    /* ---------- Semantic surfaces → ladder ---------- */
+    --canvas: var(--bg-base);
+    --surface: var(--bg-surface-2);
+    --surface-raised: var(--bg-surface-2);
+    --surface-overlay: 240 8% 19%;
+    --surface-hover: var(--bg-surface-3);
+    --surface-active: var(--bg-surface-3);
+    --surface-selected: 240 8% 16%;
+    --surface-selected-foreground: 240 28% 92%;
 
     /* ---------- Text ---------- */
-    --text: 40 13% 95.5%;                /* ~#f5f4f2 — warm white, not optical #fff body */
-    --text-secondary: 37 8% 68%;
-    --text-tertiary: 30 4% 52%;
+    --text: 240 10% 95.5%;
+    --text-secondary: 240 6% 69%;
+    --text-tertiary: 240 5% 52%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders (violet-tinted, not pure gray) ---------- */
-    --border-subtle: 266 8.4% 16.3%;     /* ~#29262d */
-    --border: 267 8.6% 20.6%;          /* ~#343039 */
-    --border-strong: 263 12.6% 32.7%;    /* ~#51495e */
-    --input: var(--border);
+    /* ---------- Borders (match card tier → invisible on cards; use shadow) ---------- */
+    --border-subtle: 240 8% 14%;
+    --border: 240 8% 22%;
+    --border-strong: 240 9% 32%;
+    --input: 240 8% 22%;
 
-    /* ---------- Brand ---------- */
-    --brand: 254 66.3% 52.3%;
+    /* ---------- Brand (decorative ramp softer; primary peak unchanged) ---------- */
+    --brand: 254 52% 52%;
     --brand-strong: 253 86.9% 61.1%;
-    --brand-soft: 253 63.8% 75.1%;
+    --brand-soft: 253 52% 74.5%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
@@ -521,54 +562,63 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 75% 80%;
 
-    --brand-text: 258 49% 82%;
+    --brand-text: 258 44% 81%;
 
     --destructive: var(--danger);
     --destructive-foreground: var(--danger-foreground);
 
     /* ---------- Misc ---------- */
-    --checkbox: 270 4% 60%;
+    --checkbox: 240 6% 58%;
     --checkbox-foreground: 0 0% 100%;
 
-    /* ---------- Charts ---------- */
-    --chart-1: 253 86.9% 61.1%;
-    --chart-2: 253 63.8% 75.1%;
-    --chart-3: 250 100% 31%;
-    --chart-4: 250 25% 60%;
-    --chart-5: 250 25% 80%;
+    /* ---------- Charts (desaturated vs prior ramp) ---------- */
+    --chart-1: 253 74% 60%;
+    --chart-2: 253 44% 74%;
+    --chart-3: 250 70% 32%;
+    --chart-4: 280 34% 62%;
+    --chart-5: 32 68% 52%;
 
-    /* ---------- Elevation (depth + slightly warm inset rim on violet canvas) ---------- */
-    --elevation-1: 0 1px 2px 0 hsl(270 35% 3% / 0.30), inset 0 1px 0 0 hsl(265 25% 98% / 0.05);
-    --elevation-2: 0 4px 14px 0 hsl(270 32% 2% / 0.44), inset 0 1px 0 0 hsl(265 22% 98% / 0.065);
-    --elevation-3: 0 16px 40px 0 hsl(270 28% 2% / 0.62), inset 0 1px 0 0 hsl(265 20% 98% / 0.085);
+    /* ---------- Elevation (spec: inset rgba(255,255,255,0.03) + rgba(0,0,0,0.3)) ---------- */
+    --elevation-1:
+      0 4px 20px rgb(0 0 0 / 0.3),
+      0 1px 2px rgb(0 0 0 / 0.22),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+    --elevation-2:
+      0 10px 32px rgb(0 0 0 / 0.3),
+      0 2px 8px rgb(0 0 0 / 0.24),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
+    --elevation-3:
+      0 24px 56px rgb(0 0 0 / 0.3),
+      0 6px 16px rgb(0 0 0 / 0.26),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03);
 
-    /* ---------- Switch (sealed island) ---------- */
-    --switch-track-off: 270 6% 15%;
-    --switch-track-off-hover: 270 6% 18%;
-    --switch-border-off: 266 7% 28%;
-    --switch-border-off-hover: 265 8% 36%;
-    --switch-thumb-off: 40 10% 96%;
+    /* ---------- Switch (sealed island; 240° field) ---------- */
+    --switch-track-off: 240 8% 10.5%;
+    --switch-track-off-hover: 240 8% 12%;
+    --switch-border-off: 240 8% 18%;
+    --switch-border-off-hover: 240 8% 23%;
+    --switch-thumb-off: 240 10% 96%;
     --switch-track-on: 253 86.9% 61.1%;
     --switch-track-on-hover: 253 86.9% 64%;
     --switch-border-on: 253 78% 48%;
     --switch-border-on-hover: 253 72% 54%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 270 5% 11%;
-    --switch-border-off-disabled: 266 6% 17%;
-    --switch-thumb-off-disabled: 270 3% 52%;
+    --switch-track-off-disabled: 240 7% 9.5%;
+    --switch-border-off-disabled: 240 7% 14%;
+    --switch-thumb-off-disabled: 240 5% 48%;
     --switch-track-on-disabled: 253 52% 34%;
     --switch-border-on-disabled: 253 44% 28%;
     --switch-thumb-on-disabled: 0 0% 82%;
-    --switch-thumb-shadow-off: 0 1px 3px hsl(270 40% 4% / 0.38);
+    --switch-thumb-shadow-off: 0 1px 3px hsl(240 30% 5% / 0.34);
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.34);
 
     /* ---------- Calendar (sealed island) ---------- */
-    --calendar-surface-1-bg: var(--surface);
+    --calendar-surface-1-bg: var(--bg-surface-1);
     --calendar-surface-2-bg: var(--surface);
     --calendar-surface-2-shadow: var(--elevation-1);
-    --calendar-surface-2-border: var(--border);
+    --calendar-surface-2-border: transparent;
     --calendar-surface-3-bg: var(--surface);
-    --calendar-surface-3-border: var(--border);
+    --calendar-surface-3-border: transparent;
     --calendar-surface-3-shadow: var(--elevation-1);
     --calendar-surface-4-bg: var(--surface-hover);
     --calendar-surface-4-shadow: var(--elevation-2);
@@ -576,6 +626,60 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Landing (sealed island) ---------- */
     --landing-card-elevated: var(--surface-raised);
     --landing-section-alt: var(--canvas);
+
+    /* Chrome: sidebar tone (legacy); header uses --bg-topbar in components */
+    --shell-chrome-bg: 240 9% 10%;
+    --shell-chrome-divider: 240 8% 38%;
+  }
+}
+
+/* ============================================================================
+ * Dashboard shell — unified chrome (header, sidebar, footer = one frame; main = canvas)
+ * ========================================================================= */
+
+@layer components {
+  /* Top bar: one lightness step above sidebar; same 240° family as canvas */
+  #page-header.dashboard-shell-chrome {
+    background-color: hsl(var(--bg-topbar));
+    border-bottom: 0;
+    box-shadow:
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.03),
+      0 4px 18px rgb(0 0 0 / 0.1);
+  }
+  .dark #page-header.dashboard-shell-chrome {
+    box-shadow:
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.03),
+      0 6px 22px rgb(0 0 0 / 0.3);
+  }
+
+  #page-sidebar.dashboard-shell-chrome,
+  #page-footer.dashboard-shell-chrome {
+    background-color: hsl(var(--bg-sidebar));
+  }
+
+  /* Sidebar / footer edge: soft depth, not a drawn rule */
+  #page-sidebar.dashboard-shell-chrome {
+    border-right: 0;
+    box-shadow:
+      inset -1px 0 0 0 rgb(255 255 255 / 0.03),
+      4px 0 18px rgb(0 0 0 / 0.08);
+  }
+  .dark #page-sidebar.dashboard-shell-chrome {
+    box-shadow:
+      inset -1px 0 0 0 rgb(255 255 255 / 0.03),
+      6px 0 24px rgb(0 0 0 / 0.3);
+  }
+
+  #page-footer.dashboard-shell-chrome {
+    border-top: 0;
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+      0 -4px 18px rgb(0 0 0 / 0.08);
+  }
+  .dark #page-footer.dashboard-shell-chrome {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+      0 -6px 22px rgb(0 0 0 / 0.3);
   }
 }
 
@@ -1158,57 +1262,56 @@ body.has-btcpay-confirmation-bar {
     );
   }
 
-  /* Dashboard base canvas: 1–2% grain so base feels crafted, not flat */
+  /* Dashboard base canvas: hair vertical tone + grain (barely perceptible depth) */
   .dashboard-canvas {
     background-color: hsl(var(--canvas));
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      hsl(var(--text) / 0.015) 1px,
-      transparent 0
-    );
-    background-size: 24px 24px;
+    background-image:
+      linear-gradient(180deg, hsl(var(--canvas)) 0%, hsl(240 16% 94.2%) 100%),
+      radial-gradient(
+        circle at 1px 1px,
+        hsl(var(--text) / 0.014) 1px,
+        transparent 0
+      );
+    background-size: auto, 24px 24px;
   }
 
   .dark .dashboard-canvas {
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      hsl(var(--text) / 0.018) 1px,
-      transparent 0
-    );
+    background-image:
+      linear-gradient(180deg, hsl(var(--canvas)) 0%, hsl(240 10% 7.2%) 100%),
+      radial-gradient(
+        circle at 1px 1px,
+        hsl(var(--text) / 0.016) 1px,
+        transparent 0
+      );
+    background-size: auto, 24px 24px;
   }
 
-  /* Flow zone: quiet section surface that lets raised Flow cards own the emphasis */
+  /* Flow zone: section tier (--bg-surface-1), depth via elevation not borders */
   .flow-zone {
-    background-color: hsl(var(--surface-hover) / 0.82);
+    background-color: hsl(var(--bg-surface-1));
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--text) / 0.03),
-      inset 0 -1px 0 0 hsl(var(--text) / 0.03);
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+      0 2px 14px rgb(0 0 0 / 0.08);
   }
 
   .dark .flow-zone {
-    background-color: hsl(var(--surface-hover) / 0.28);
+    background-color: hsl(var(--bg-surface-1));
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--text) / 0.045),
-      inset 0 -1px 0 0 hsl(var(--text) / 0.045);
+      inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+      0 4px 18px rgb(0 0 0 / 0.3);
   }
 
   /* KPI cards: slightly more instrumentation-like than generic nav cards. */
   .kpi-card {
-    background:
-      linear-gradient(
-        180deg,
-        hsl(var(--surface-raised) / 0.96) 0%,
-        hsl(var(--surface) / 0.98) 100%
-      );
+    background: hsl(var(--bg-surface-2));
   }
 
   .dark .kpi-card {
-    background:
-      linear-gradient(
-        180deg,
-        hsl(var(--surface-raised) / 0.96) 0%,
-        hsl(var(--surface) / 0.94) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      hsl(var(--bg-surface-3) / 0.88) 0%,
+      hsl(var(--bg-surface-2)) 100%
+    );
   }
 
   /* Flow slot: smooth position transition when item moves (e.g. next scheduled → last posted) */
@@ -1223,13 +1326,21 @@ body.has-btcpay-confirmation-bar {
 
   /* Hero gradient utilities - neutral gradients only */
   .hero-gradient-light {
-    background: linear-gradient(to bottom, hsl(var(--surface-hover) / 0.5), hsl(var(--canvas)));
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--bg-surface-1) / 0.85),
+      hsl(var(--bg-base))
+    );
   }
 
   .hero-gradient-dark {
     background:
-      radial-gradient(ellipse at top, hsl(var(--surface-hover) / 0.3) 0%, transparent 50%),
-      linear-gradient(to bottom, hsl(var(--surface-hover) / 0.2), hsl(var(--canvas)));
+      radial-gradient(
+        ellipse at top,
+        hsl(var(--bg-surface-2) / 0.35) 0%,
+        transparent 50%
+      ),
+      linear-gradient(to bottom, hsl(var(--bg-surface-1) / 0.45), hsl(var(--bg-base)));
   }
 
   /* Hero motif backgrounds: use .dark so they follow app theme (not Tailwind’s dark: media query) */

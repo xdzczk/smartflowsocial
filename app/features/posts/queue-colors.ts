@@ -22,17 +22,18 @@ export type QueueColorToken = (typeof QUEUE_COLOR_TOKENS)[number];
 
 export const QUEUE_COLOR_ACCENTS: Record<QueueColorToken, string> = {
   slate: "#94A3B8",
-  blue: "#2563EB",
-  cyan: "#0891B2",
-  teal: "#0D9488",
-  green: "#16A34A",
-  lime: "#65A30D",
+  /** Blues / teals / greens / violets: ~12% lower saturation for calmer charts & lanes */
+  blue: "#3268DE",
+  cyan: "#0C8EAE",
+  teal: "#0A978A",
+  green: "#0CAD47",
+  lime: "#65A50B",
   amber: "#D97706",
   orange: "#EA580C",
   red: "#DC2626",
-  pink: "#DB2777",
-  violet: "#7C3AED",
-  indigo: "#4338CA",
+  pink: "#CF3378",
+  violet: "#7F46E1",
+  indigo: "#4B41C1",
 };
 
 /**
