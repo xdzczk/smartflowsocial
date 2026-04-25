@@ -80,6 +80,10 @@ export interface FlowViewProps {
    * dashboard before passing. When omitted, uses {@link CARD_MIN_HEIGHT}.
    */
   desktopFlowCardHeightPx?: number;
+  /** True when horizontal scroll is at the session "rest" position (default strip alignment). */
+  onFlowRestingScrollChange?: (isResting: boolean) => void;
+  /** Fired when scroll position changes after rest is known (user scroll or programmatic). */
+  onFlowScrollInteraction?: () => void;
 }
 
 export interface FlowViewHandle {
@@ -108,6 +112,8 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       isPostActivationEmpty = false,
       serverNowMs,
       desktopFlowCardHeightPx,
+      onFlowRestingScrollChange,
+      onFlowScrollInteraction,
     },
     ref
   ): React.ReactNode {
@@ -227,6 +233,70 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
     const { scrollViewport, allowFetch } = scrollHookResult;
 
+    const restScrollLeftRef = useRef<number | null>(null);
+    const lastEmittedRestRef = useRef(true);
+    const prevScrollLeftForInteractionRef = useRef<number | null>(null);
+    const restCaptureReadyAtRef = useRef(0);
+
+    const flowRestCaptureKey = useMemo(
+      () =>
+        `${flowItems.length}-${firstFutureIndex}-${hasMorePast}-${hasMoreFuture}-${isMobile}-${cardSlotSize}`,
+      [
+        flowItems.length,
+        firstFutureIndex,
+        hasMorePast,
+        hasMoreFuture,
+        isMobile,
+        cardSlotSize,
+      ]
+    );
+
+    useEffect(() => {
+      if (flowItems.length === 0) {
+        restScrollLeftRef.current = null;
+        return;
+      }
+      restScrollLeftRef.current = null;
+      const id = window.setTimeout(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        restScrollLeftRef.current = el.scrollLeft;
+        restCaptureReadyAtRef.current = Date.now();
+        prevScrollLeftForInteractionRef.current = el.scrollLeft;
+        lastEmittedRestRef.current = true;
+        onFlowRestingScrollChange?.(true);
+      }, 950);
+      return () => window.clearTimeout(id);
+    }, [flowRestCaptureKey, flowItems.length, onFlowRestingScrollChange]);
+
+    useEffect(() => {
+      if (flowItems.length === 0) return;
+      const rest = restScrollLeftRef.current;
+      if (rest == null) return;
+      const epsilon = 12;
+      const atRest = Math.abs(scrollViewport.scrollLeft - rest) <= epsilon;
+      if (lastEmittedRestRef.current !== atRest) {
+        lastEmittedRestRef.current = atRest;
+        onFlowRestingScrollChange?.(atRest);
+      }
+    }, [
+      flowItems.length,
+      scrollViewport.scrollLeft,
+      scrollViewport.clientWidth,
+      onFlowRestingScrollChange,
+    ]);
+
+    useEffect(() => {
+      if (flowItems.length === 0 || restScrollLeftRef.current == null) return;
+      const prev = prevScrollLeftForInteractionRef.current;
+      const next = scrollViewport.scrollLeft;
+      prevScrollLeftForInteractionRef.current = next;
+      if (Date.now() - restCaptureReadyAtRef.current < 120) return;
+      if (prev == null) return;
+      if (Math.abs(prev - next) < 1) return;
+      onFlowScrollInteraction?.();
+    }, [flowItems.length, scrollViewport.scrollLeft, onFlowScrollInteraction]);
+
     const { overscrollPx, isOverscrollSpringing, onOverscrollTransitionEnd } =
       useFlowViewOverscroll(scrollElement);
 
@@ -250,6 +320,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (!el) return;
       const delta = lastPrependedPastCount * cardSlotSize;
       el.scrollLeft += delta;
+      if (restScrollLeftRef.current != null) {
+        restScrollLeftRef.current += delta;
+      }
       onPrependedPastCompensated?.();
     }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
 

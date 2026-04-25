@@ -6,7 +6,15 @@ import {
   useRouteLoaderData,
   useSearchParams,
 } from "@remix-run/react";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { ChevronRight } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
@@ -383,9 +391,36 @@ function DashboardReturningUserSplit({
   onScheduleTargetModalOpen,
   onCreateQueueClick,
 }: DashboardReturningUserSplitProps) {
+  const ignoreFlowScrollInteractionUntilMsRef = useRef(0);
+  const [flowAtRest, setFlowAtRest] = useState(true);
+  const [suppressFlowNext, setSuppressFlowNext] = useState(false);
+
+  const onFlowRestingScrollChange = useCallback((resting: boolean) => {
+    setFlowAtRest(resting);
+    if (resting) {
+      setSuppressFlowNext(false);
+    }
+  }, []);
+
+  const onFlowScrollInteraction = useCallback(() => {
+    if (Date.now() < ignoreFlowScrollInteractionUntilMsRef.current) {
+      return;
+    }
+    setSuppressFlowNext(false);
+  }, []);
+
+  const handleFlowNextClick = useCallback(() => {
+    ignoreFlowScrollInteractionUntilMsRef.current = Date.now() + 850;
+    setSuppressFlowNext(true);
+    flowViewRef.current?.scrollToNext();
+  }, [flowViewRef]);
+
+  const showFlowNextButton =
+    flowItems.length > 0 && !flowAtRest && !suppressFlowNext;
+
   return (
     <>
-      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-4 px-4 pt-2.5 lg:space-y-5 lg:px-8 lg:pt-0">
+      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-2.5 pb-4 lg:px-8 lg:pt-0">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
@@ -398,20 +433,25 @@ function DashboardReturningUserSplit({
             <ContentListPageHeader
               pageType="flow"
               className="min-w-0"
-              titleClassName="text-text text-h3 lg:text-[1.25rem] lg:leading-snug lg:font-bold lg:tracking-tight"
+              titleClassName="text-text text-[1.375rem] font-semibold leading-snug tracking-tight lg:text-[1.5rem] lg:font-bold lg:leading-snug"
             />
-            {flowItems.length > 0 ? (
+            {showFlowNextButton ? (
               <button
                 type="button"
-                onClick={() => flowViewRef.current?.scrollToNext()}
-                className="focus-ring text-caption text-text-secondary/85 hover:text-text-secondary self-center rounded-xs font-normal whitespace-nowrap no-underline hover:underline"
+                onClick={handleFlowNextClick}
+                className="focus-ring text-text-secondary hover:text-text hover:bg-surface-hover/45 motion-fast text-body-sm inline-flex items-center gap-0.5 self-center rounded-md px-1.5 py-1 font-medium"
                 aria-label="Scroll timeline to next posts or schedule"
               >
-                Scroll to next
+                <span>Next</span>
+                <ChevronRight
+                  className="size-3.5 shrink-0 opacity-90"
+                  aria-hidden
+                  strokeWidth={2.25}
+                />
               </button>
             ) : null}
           </div>
-          <div className="flex w-full min-w-0 flex-col gap-2 lg:flex-1 lg:flex-row lg:flex-wrap lg:items-center lg:justify-end lg:gap-2">
+          <div className="flex w-full min-w-0 flex-row flex-wrap items-center gap-2 lg:flex-1 lg:justify-end">
             <PublishingContentTypeFilter
               data-testid="dashboard-type-filter"
               value={currentContentTab}
@@ -435,13 +475,13 @@ function DashboardReturningUserSplit({
 
       <div
         ref={splitRegionRef}
-        className="flex w-full min-w-0 flex-col gap-5 lg:min-h-0 lg:flex-1"
+        className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1"
       >
         <div
-          className={`flow-zone border-border-subtle/75 mt-2.5 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y py-3 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
+          className={`flow-zone border-border-subtle/75 mt-0 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y pt-2 pb-3 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
             flowZoneHeightPx != null
               ? "lg:min-h-0 lg:flex-none lg:overflow-visible lg:py-0"
-              : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:py-2.5"
+              : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:pt-2 lg:pb-2.5"
           }`}
           style={
             flowZoneHeightPx != null ? { height: flowZoneHeightPx } : undefined
@@ -494,13 +534,15 @@ function DashboardReturningUserSplit({
                 onPrependedPastCompensated={onPrependedPastCompensated}
                 onHasLiveEdgeChange={onHasLiveEdgeChange}
                 isPostActivationEmpty={isPostActivationEmpty}
+                onFlowRestingScrollChange={onFlowRestingScrollChange}
+                onFlowScrollInteraction={onFlowScrollInteraction}
               />
             </div>
           )}
         </div>
 
         <div
-          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-3 lg:min-h-0 lg:px-8"
+          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-0 lg:min-h-0 lg:px-8"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }

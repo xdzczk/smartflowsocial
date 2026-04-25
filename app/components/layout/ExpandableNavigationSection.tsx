@@ -2,6 +2,10 @@ import { Link, useLocation } from "@remix-run/react";
 import { ChevronDown, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import {
+  DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE,
+  DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE,
+} from "~/components/layout/dashboard-nav-link-classes";
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { cn } from "~/lib/utils";
 
@@ -70,14 +74,14 @@ function NavigationChildItemComponent({
 
   const title = !hasAccess ? "Subscription required" : child.label;
 
-  const childLinkClass = `focus-ring group flex items-center rounded-lg border border-transparent text-sm font-medium relative max-lg:min-h-11 ${
+  const childLinkClass = `focus-ring group flex items-center rounded-lg text-sm relative max-lg:min-h-11 ${
     collapsed ? "justify-center px-0 py-2" : "gap-2 px-2.5"
   } ${
     isActive
-      ? "bg-surface-selected text-text border-border-subtle"
+      ? DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE
       : hasAccess
-        ? "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
-        : "text-text-secondary/50 cursor-not-allowed opacity-60"
+        ? DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE
+        : "text-text-secondary/50 cursor-not-allowed border-transparent font-medium opacity-60"
   }`;
 
   return (
@@ -202,10 +206,10 @@ export function ExpandableNavigationSection({
   };
 
   const parentClass = cn(
-    "focus-ring group cluster max-lg:min-h-11 rounded-lg border border-transparent px-2.5 text-sm font-medium relative cursor-pointer",
+    "focus-ring group cluster max-lg:min-h-11 rounded-lg px-2.5 text-sm relative cursor-pointer",
     isAnyChildActive
-      ? "bg-surface-selected text-text border-border-subtle"
-      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border",
+      ? DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE
+      : DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE,
     showSubtleHint && "animate-nav-create-onboarding-glow"
   );
 

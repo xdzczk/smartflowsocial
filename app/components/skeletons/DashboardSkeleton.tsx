@@ -17,7 +17,7 @@ export function DashboardSkeleton() {
               className="border-border-subtle/80 bg-surface shadow-1 min-h-[80px] rounded-lg border p-4"
             >
               <div className="flex min-h-[48px] items-center justify-between gap-4">
-                <Skeleton className="size-11 rounded-lg sm:size-12" />
+                <Skeleton className="size-10 rounded-lg sm:size-11" />
                 <div className="flex flex-col items-end gap-1">
                   <Skeleton className="h-7 w-16 rounded-xs" />
                   <Skeleton className="h-3 w-20 rounded-xs" />

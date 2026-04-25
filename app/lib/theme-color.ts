@@ -6,6 +6,8 @@
  * during SSR (the root `meta()` and inline boot script reference it).
  */
 export const THEME_COLOR_HEX = {
-  light: "#f9f9f9",
-  dark: "#0b0b0b",
+  /** Matches `tailwind.css` `--canvas` (warm off-white). */
+  light: "#f7f6f3",
+  /** Matches `tailwind.css` `--canvas` (warm ink charcoal). */
+  dark: "#111012",
 } as const;

@@ -342,49 +342,44 @@ body.has-btcpay-confirmation-bar {
 /* ============================================================================
  * Token values — light + dark
  *
- * Light premium principles (Phase 1b changes):
- *   - Canvas drops to 97.5% so cards (100%) physically lift above the page.
- *   - Lavender --secondary retired; --secondary becomes a neutral elevated
- *     grey to match dark mode's role.
- *   - Popover stays at 100% white (lifts via shadow, not a brighter surface).
+ * Light: warm premium off-white canvas, soft warm borders/shadows, near-white
+ * surfaces; text biased slightly warm vs cold neutral black.
  *
- * Dark premium principles (Phase 1b changes):
- *   - Popover/overlay lifts from 6.7% → 10% so menus/dialogs sit *above*
- *     cards (today they have no surface lift — only border + shadow).
- *   - --border strengthened from 9.5% → 14% so it reads on top of cards
- *     (rails no longer need dark:border-white/14 overrides).
- *   - --destructive saturation/lightness bumped so danger text is legible
- *     in dark (today 0 50% 28% is too dim for inline text).
+ * Dark: warm ink-charcoal canvas with subtle violet undertones (not pure black);
+ * raised surfaces and borders carry the same family so rails/cards read cohesive.
+ *
+ * Brand: calmer indigo-violet (less neon) while keeping CTAs, focus, and nav
+ * contrast on both canvases.
  * ========================================================================= */
 
 @layer base {
   :root {
     /* ---------- Surfaces ---------- */
-    --canvas: 0 0% 96.5%;             /* page background — slightly stronger off-white so dashboard sections separate more clearly */
-    --surface: 0 0% 100%;             /* card / panel surface (pure white) */
-    --surface-raised: 0 0% 100%;      /* elevated card; in light, lift comes from shadow */
-    --surface-overlay: 0 0% 100%;     /* menus / popovers / dialogs */
-    --surface-hover: 0 0% 94.8%;      /* row / item hover background */
-    --surface-active: 0 0% 93%;       /* pressed state */
-    --surface-selected: 255 60% 96%;  /* subtle brand wash for selected items */
-    --surface-selected-foreground: 255 77% 35%;
+    --canvas: 45 20% 96.1%;             /* ~#f7f6f3 — warm page field */
+    --surface: 0 0% 100%;               /* cards / panels — white */
+    --surface-raised: 40 27% 97.8%;     /* ~#fbfaf8 — slight warmth vs flat white */
+    --surface-overlay: 0 0% 100%;       /* menus / popovers / dialogs */
+    --surface-hover: 40 20% 94.1%;      /* warm hover */
+    --surface-active: 37 17% 91%;       /* warm pressed */
+    --surface-selected: 255 31% 95%;    /* quiet violet wash — not saturated */
+    --surface-selected-foreground: 250 39% 39%;
 
     /* ---------- Text ---------- */
-    --text: 0 0% 9%;                   /* primary text (slightly softer than 5%) */
-    --text-secondary: 25 8% 38%;       /* same as old --muted-foreground */
-    --text-tertiary: 0 0% 44%;         /* helper / labels — slightly darker than 50% for AA on white */
+    --text: 36 12% 8%;                   /* ~#171512 — high contrast, slightly warm */
+    --text-secondary: 36 9% 33%;
+    --text-tertiary: 37 8% 39%;
     --text-on-brand: 0 0% 100%;
 
     /* ---------- Borders ---------- */
-    --border-subtle: 0 0% 90.5%;       /* hairline on cards; slightly stronger so quiet section surfaces still read */
-    --border: 0 0% 88%;                /* default — inputs, dividers */
-    --border-strong: 0 0% 75%;         /* emphasized — selected outline, focus border */
-    --input: var(--border);            /* input border merged into --border */
+    --border-subtle: 38 17% 90.6%;       /* ~#ebe8e3 */
+    --border: 40 15% 84.7%;            /* ~#dedad2 */
+    --border-strong: 39 13% 70.6%;     /* ~#beb7aa */
+    --input: var(--border);
 
     /* ---------- Brand ---------- */
-    --brand: 255 77% 51%;              /* calm purple — headlines, subtle accents */
-    --brand-strong: 255 97% 51%;       /* action purple — primary buttons, focus ring */
-    --brand-soft: 255 60% 70%;         /* lavender — accent fill / hover wash */
+    --brand: 254 66.3% 52.3%;            /* ~#5a35d6 — calmer headline / accent */
+    --brand-strong: 253 86.9% 61.1%;   /* ~#6b46f2 — primary CTA, focus ring */
+    --brand-soft: 253 63.8% 75.1%;     /* ~#a997e8 — washes / secondary fills */
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
@@ -393,10 +388,9 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Status ---------- */
     --success: 142 70% 36%;
     --success-foreground: 0 0% 100%;
-    /* Status text on tinted washes — saturated dark for AA on alpha-tinted bg */
     --success-text: 142 72% 20%;
 
-    --warning: 38 92% 45%;             /* NEW — retires raw amber-* in alerts */
+    --warning: 38 92% 45%;
     --warning-foreground: 0 0% 12%;
     --warning-text: 32 92% 22%;
 
@@ -404,48 +398,47 @@ body.has-btcpay-confirmation-bar {
     --danger-foreground: 0 0% 100%;
     --danger-text: 0 76% 30%;
 
-    --info: 217 91% 50%;               /* "scheduled / live / preview" status */
+    --info: 217 91% 50%;
     --info-foreground: 0 0% 100%;
-    --info-text: 217 80% 28%;          /* AA on alpha-tinted bg */
+    --info-text: 217 80% 28%;
 
-    --brand-text: 255 70% 30%;         /* dark brand for use on brand-soft washes */
+    --brand-text: 253 46% 37%;          /* on brand-soft / tinted rows */
 
     /* ---------- Misc ---------- */
-    --checkbox: 0 0% 50%;
+    --checkbox: 35 5% 48%;
     --checkbox-foreground: 0 0% 100%;
 
-    /* ---------- Charts (untouched) ---------- */
-    --chart-1: 255 97% 51%;
-    --chart-2: 255 60% 70%;
+    /* ---------- Charts ---------- */
+    --chart-1: 253 86.9% 61.1%;          /* aligned to brand-strong */
+    --chart-2: 253 63.8% 75.1%;          /* aligned to brand-soft */
     --chart-3: 250 100% 31%;
     --chart-4: 250 25% 80%;
     --chart-5: 250 100% 5%;
 
-    /* ---------- Elevation ---------- */
-    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
-    --elevation-2: 0 4px 12px 0 hsl(0 0% 0% / 0.06);
-    --elevation-3: 0 12px 32px 0 hsl(0 0% 0% / 0.10);
+    /* ---------- Elevation (warm-tinted shadow, not cold gray) ---------- */
+    --elevation-1: 0 1px 2px 0 hsl(32 22% 18% / 0.045);
+    --elevation-2: 0 4px 12px 0 hsl(28 18% 16% / 0.072);
+    --elevation-3: 0 12px 32px 0 hsl(25 14% 14% / 0.11);
 
-    /* ---------- Switch / toggle (sealed island; values unchanged) ---------- */
-    --switch-track-off: 0 0% 91%;
-    --switch-track-off-hover: 0 0% 86%;
-    --switch-border-off: 0 0% 74%;
-    --switch-border-off-hover: 0 0% 66%;
-    --switch-thumb-off: 0 0% 100%;
-    --switch-track-on: 255 97% 51%;
-    --switch-track-on-hover: 255 97% 54%;
-    --switch-border-on: 255 82% 44%;
-    --switch-border-on-hover: 255 75% 40%;
+    /* ---------- Switch / toggle (sealed island; harmonized to warm neutrals) ---------- */
+    --switch-track-off: 38 12% 91%;
+    --switch-track-off-hover: 38 11% 86%;
+    --switch-border-off: 38 10% 74%;
+    --switch-border-off-hover: 37 9% 66%;
+    --switch-thumb-off: 40 25% 99%;
+    --switch-track-on: 253 86.9% 61.1%;
+    --switch-track-on-hover: 253 86.9% 63%;
+    --switch-border-on: 253 72% 48%;
+    --switch-border-on-hover: 253 65% 42%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 0 0% 95%;
-    --switch-border-off-disabled: 0 0% 86%;
-    --switch-thumb-off-disabled: 0 0% 90%;
-    --switch-track-on-disabled: 255 42% 72%;
-    --switch-border-on-disabled: 255 38% 62%;
+    --switch-track-off-disabled: 38 14% 95%;
+    --switch-border-off-disabled: 38 10% 86%;
+    --switch-thumb-off-disabled: 38 8% 90%;
+    --switch-track-on-disabled: 253 42% 72%;
+    --switch-border-on-disabled: 253 38% 62%;
     --switch-thumb-on-disabled: 0 0% 100%;
-    /* Switch thumb shadow tokens (replaces raw hsl literals in switch.tsx) */
-    --switch-thumb-shadow-off: 0 1px 2px hsl(0 0% 0% / 0.14);
-    --switch-thumb-shadow-on: 0 1px 2px hsl(255 97% 20% / 0.35);
+    --switch-thumb-shadow-off: 0 1px 2px hsl(32 20% 18% / 0.14);
+    --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.32);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
     /* Surface 1 = main content container */
@@ -481,97 +474,93 @@ body.has-btcpay-confirmation-bar {
 
   .dark {
     /* ---------- Surfaces ---------- */
-    --canvas: 0 0% 4.3%;               /* base canvas */
-    --surface: 0 0% 8%;                /* card / panel — +1.3% for IPS readability */
-    --surface-raised: 0 0% 11.5%;      /* elevated cards (Flow cards, right rails) */
-    --surface-overlay: 0 0% 13.5%;     /* menus / popovers / dialogs — clearly above cards */
-    --surface-hover: 0 0% 12%;         /* row / item hover */
-    --surface-active: 0 0% 14%;        /* pressed */
-    --surface-selected: 255 30% 14%;   /* brand-tinted selection wash */
-    --surface-selected-foreground: 0 0% 98%;
+    --canvas: 270 6% 6.7%;               /* ~#111012 — warm ink charcoal */
+    --surface: 270 4.2% 9.4%;            /* ~#181719 */
+    --surface-raised: 255 6.1% 12.9%;    /* ~#201f23 */
+    --surface-overlay: 260 7.7% 15.3%;   /* ~#26242a — menus above cards */
+    --surface-hover: 270 5.5% 11.2%;
+    --surface-active: 270 6% 12.8%;
+    --surface-selected: 258 13% 15.3%;   /* subtle violet wash */
+    --surface-selected-foreground: 260 43% 93%;
 
     /* ---------- Text ---------- */
-    --text: 0 0% 98%;
-    --text-secondary: 30 5% 65%;       /* slightly stronger than prior 60% for legibility */
-    --text-tertiary: 0 0% 58%;         /* lifts faint UI chrome off deep surfaces without matching body */
+    --text: 40 13% 95.5%;                /* ~#f5f4f2 — warm white, not optical #fff body */
+    --text-secondary: 37 8% 68%;
+    --text-tertiary: 30 4% 52%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders ----------
-       Strengthened from prior 9.5% → 14% so borders read on cards/rails and the
-       per-feature dark:border-white/14 overrides are no longer needed. */
-    --border-subtle: 0 0% 13.5%;       /* hairline on cards; strengthened so quiet dashboard rails don't need bespoke overrides */
-    --border: 0 0% 16%;                /* default — inputs, dividers */
-    --border-strong: 0 0% 24%;         /* emphasized */
+    /* ---------- Borders (violet-tinted, not pure gray) ---------- */
+    --border-subtle: 266 8.4% 16.3%;     /* ~#29262d */
+    --border: 267 8.6% 20.6%;          /* ~#343039 */
+    --border-strong: 263 12.6% 32.7%;    /* ~#51495e */
     --input: var(--border);
 
-    /* ---------- Brand (unchanged hues) ---------- */
-    --brand: 255 77% 51%;
-    --brand-strong: 255 97% 51%;
-    --brand-soft: 255 60% 70%;
+    /* ---------- Brand ---------- */
+    --brand: 254 66.3% 52.3%;
+    --brand-strong: 253 86.9% 61.1%;
+    --brand-soft: 253 63.8% 75.1%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
 
     /* ---------- Status ---------- */
-    --success: 142 50% 40%;            /* unchanged */
+    --success: 142 50% 40%;
     --success-foreground: 0 0% 100%;
-    /* Status text on tinted washes — light & saturated for AA on dark alpha-tinted bg */
     --success-text: 142 55% 78%;
 
-    --warning: 38 70% 50%;             /* NEW */
+    --warning: 38 70% 50%;
     --warning-foreground: 0 0% 5%;
     --warning-text: 38 78% 78%;
 
-    --danger: 0 60% 50%;               /* lifted from prior 0 50% 28% (too dim for text) */
+    --danger: 0 60% 50%;
     --danger-foreground: 0 0% 98%;
     --danger-text: 0 80% 82%;
 
-    --info: 217 80% 60%;               /* "scheduled / live / preview" status */
+    --info: 217 80% 60%;
     --info-foreground: 0 0% 100%;
     --info-text: 217 75% 80%;
 
-    --brand-text: 255 65% 82%;
+    --brand-text: 258 49% 82%;
 
     --destructive: var(--danger);
     --destructive-foreground: var(--danger-foreground);
 
     /* ---------- Misc ---------- */
-    --checkbox: 0 0% 60%;
+    --checkbox: 270 4% 60%;
     --checkbox-foreground: 0 0% 100%;
 
     /* ---------- Charts ---------- */
-    --chart-1: 255 97% 51%;
-    --chart-2: 255 60% 70%;
+    --chart-1: 253 86.9% 61.1%;
+    --chart-2: 253 63.8% 75.1%;
     --chart-3: 250 100% 31%;
     --chart-4: 250 25% 60%;
     --chart-5: 250 25% 80%;
 
-    /* ---------- Elevation (deeper shadows + inset top-edge highlight for dark) ---------- */
-    /* Tier-1 slightly softened so many bordered cards (dashboard) read calm, not muddy */
-    --elevation-1: 0 1px 2px 0 hsl(0 0% 0% / 0.28), inset 0 1px 0 0 hsl(0 0% 100% / 0.045);
-    --elevation-2: 0 4px 14px 0 hsl(0 0% 0% / 0.46), inset 0 1px 0 0 hsl(0 0% 100% / 0.06);
-    --elevation-3: 0 16px 40px 0 hsl(0 0% 0% / 0.65), inset 0 1px 0 0 hsl(0 0% 100% / 0.08);
+    /* ---------- Elevation (depth + slightly warm inset rim on violet canvas) ---------- */
+    --elevation-1: 0 1px 2px 0 hsl(270 35% 3% / 0.30), inset 0 1px 0 0 hsl(265 25% 98% / 0.05);
+    --elevation-2: 0 4px 14px 0 hsl(270 32% 2% / 0.44), inset 0 1px 0 0 hsl(265 22% 98% / 0.065);
+    --elevation-3: 0 16px 40px 0 hsl(270 28% 2% / 0.62), inset 0 1px 0 0 hsl(265 20% 98% / 0.085);
 
     /* ---------- Switch (sealed island) ---------- */
-    --switch-track-off: 0 0% 15%;
-    --switch-track-off-hover: 0 0% 18%;
-    --switch-border-off: 0 0% 28%;
-    --switch-border-off-hover: 0 0% 36%;
-    --switch-thumb-off: 0 0% 96%;
-    --switch-track-on: 255 97% 51%;
-    --switch-track-on-hover: 255 97% 56%;
-    --switch-border-on: 255 88% 42%;
-    --switch-border-on-hover: 255 82% 48%;
+    --switch-track-off: 270 6% 15%;
+    --switch-track-off-hover: 270 6% 18%;
+    --switch-border-off: 266 7% 28%;
+    --switch-border-off-hover: 265 8% 36%;
+    --switch-thumb-off: 40 10% 96%;
+    --switch-track-on: 253 86.9% 61.1%;
+    --switch-track-on-hover: 253 86.9% 64%;
+    --switch-border-on: 253 78% 48%;
+    --switch-border-on-hover: 253 72% 54%;
     --switch-thumb-on: 0 0% 100%;
-    --switch-track-off-disabled: 0 0% 11%;
-    --switch-border-off-disabled: 0 0% 17%;
-    --switch-thumb-off-disabled: 0 0% 52%;
-    --switch-track-on-disabled: 255 52% 34%;
-    --switch-border-on-disabled: 255 44% 28%;
+    --switch-track-off-disabled: 270 5% 11%;
+    --switch-border-off-disabled: 266 6% 17%;
+    --switch-thumb-off-disabled: 270 3% 52%;
+    --switch-track-on-disabled: 253 52% 34%;
+    --switch-border-on-disabled: 253 44% 28%;
     --switch-thumb-on-disabled: 0 0% 82%;
-    --switch-thumb-shadow-off: 0 1px 3px hsl(0 0% 0% / 0.4);
-    --switch-thumb-shadow-on: 0 1px 2px hsl(255 97% 20% / 0.35);
+    --switch-thumb-shadow-off: 0 1px 3px hsl(270 40% 4% / 0.38);
+    --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.34);
 
     /* ---------- Calendar (sealed island) ---------- */
     --calendar-surface-1-bg: var(--surface);

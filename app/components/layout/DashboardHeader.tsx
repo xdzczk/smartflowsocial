@@ -30,6 +30,10 @@ import {
 import { useCallback, useState, useEffect } from "react";
 import type { MouseEvent } from "react";
 
+import {
+  DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE,
+  DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE,
+} from "~/components/layout/dashboard-nav-link-classes";
 import { ExpandableNavigationSection } from "~/components/layout/ExpandableNavigationSection";
 import { GlobalSearchBar } from "~/components/layout/GlobalSearchBar";
 import { PlanUsageSidebar } from "~/components/layout/PlanUsageSidebar";
@@ -177,14 +181,14 @@ function NavigationItem({
     }
   };
 
-  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative max-lg:min-h-11 max-lg:items-center ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg px-2.5 text-sm relative max-lg:min-h-11 max-lg:items-center ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
-      ? "bg-surface-selected text-text border-border-subtle"
+      ? DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE
       : hasAccess
-        ? "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
-        : "text-text-secondary/50 cursor-not-allowed opacity-60"
+        ? DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE
+        : "text-text-secondary/50 cursor-not-allowed border-transparent font-medium opacity-60"
   }`;
 
   const title = !hasAccess ? "Subscription required" : (children as string);
@@ -234,12 +238,12 @@ function OperatorAdminNavItem({
 }) {
   const navigate = useNavigate();
   const isActive = pathname.startsWith("/dashboard/admin");
-  const linkClass = `focus-ring group cluster tap-target rounded-lg border border-transparent px-2.5 text-sm font-medium relative max-lg:min-h-11 max-lg:items-center ${
+  const linkClass = `focus-ring group cluster tap-target rounded-lg px-2.5 text-sm relative max-lg:min-h-11 max-lg:items-center ${
     collapsed ? "justify-center px-0 py-2" : ""
   } ${
     isActive
-      ? "bg-surface-selected text-text border-border-subtle"
-      : "text-text-secondary hover:bg-surface-hover hover:text-text active:border-border"
+      ? DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE
+      : DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE
   }`;
   const iconSpanClass = isActive
     ? "text-brand"
