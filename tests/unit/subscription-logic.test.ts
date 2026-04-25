@@ -13,6 +13,7 @@ import {
   hasFeatureAccess,
   getMinimumPlanForFeature,
   isNewUserWithoutSubscription,
+  isSubscriptionExpiredForUi,
   type UserSubscription,
   type SubscriptionData,
   type PlanType,
@@ -131,6 +132,41 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       };
 
       expect(getUserPlanType(subscription)).toBe("teams");
+    });
+  });
+
+  describe("isSubscriptionExpiredForUi", () => {
+    it("returns false for null", () => {
+      expect(isSubscriptionExpiredForUi(null)).toBe(false);
+    });
+
+    it("returns false for ACTIVE paid subscription within period (no end date)", () => {
+      const subscription: UserSubscription = {
+        planId: "pro",
+        status: "ACTIVE",
+        Plan: { name: "Pro Plan", id: "pro" },
+      };
+      expect(isSubscriptionExpiredForUi(subscription)).toBe(false);
+    });
+
+    it("returns true for ACTIVE paid subscription after currentPeriodEnd", () => {
+      const past = new Date(Date.now() - 86400000).toISOString();
+      const subscription: UserSubscription = {
+        planId: "pro",
+        status: "ACTIVE",
+        currentPeriodEnd: past,
+        Plan: { name: "Pro Plan", id: "pro" },
+      };
+      expect(isSubscriptionExpiredForUi(subscription)).toBe(true);
+    });
+
+    it("returns true for non-ACTIVE status", () => {
+      const subscription: UserSubscription = {
+        planId: "creator",
+        status: "EXPIRED",
+        Plan: { name: "Creator Plan", id: "creator" },
+      };
+      expect(isSubscriptionExpiredForUi(subscription)).toBe(true);
     });
   });
 

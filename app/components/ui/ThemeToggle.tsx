@@ -92,17 +92,14 @@ export function ThemeToggle() {
 
   const Icon = theme === "system" ? Laptop : theme === "light" ? Sun : Moon;
 
-  const placeholderTheme = (() => {
-    if (!user) return theme;
-    if (typeof window !== "undefined") {
-      return getSessionThemeOverride() ?? accountTheme;
-    }
-    return accountTheme;
-  })();
-  const PlaceholderIcon =
-    placeholderTheme === "system"
+  // Until mounted, match SSR: no localStorage/session reads (they differ on the client).
+  const hydrateSafePreference: StoredThemePreference = user
+    ? accountTheme
+    : "system";
+  const HydrateSafeIcon =
+    hydrateSafePreference === "system"
       ? Laptop
-      : placeholderTheme === "light"
+      : hydrateSafePreference === "light"
         ? Sun
         : Moon;
 
@@ -112,10 +109,10 @@ export function ThemeToggle() {
         variant="outline"
         size="icon"
         className="rounded-lg shadow-none"
-        aria-label={user ? themeAriaLabel(placeholderTheme) : "Theme: System"}
+        aria-label={themeAriaLabel(hydrateSafePreference)}
         type="button"
       >
-        <PlaceholderIcon className={INLINE_ICON_SIZE_CLASS} />
+        <HydrateSafeIcon className={INLINE_ICON_SIZE_CLASS} />
       </Button>
     );
   }

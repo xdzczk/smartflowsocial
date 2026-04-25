@@ -3,6 +3,8 @@
  * Shows section title that updates with content-type tab (or fixed "Your flow" for Dashboard).
  */
 
+import { cn } from "~/lib/utils";
+
 interface ContentListPageHeaderProps {
   /** Which page: flow (Dashboard), or list page type */
   pageType: "flow" | "scheduled" | "published" | "calendar" | "drafts";
@@ -14,6 +16,8 @@ interface ContentListPageHeaderProps {
   subtitle?: string;
   /** When set, replaces the computed title (e.g. always "Drafts"). */
   titleOverride?: string;
+  /** Merged into the title element (e.g. dashboard Flow section scale). */
+  titleClassName?: string;
 }
 
 function getTitle(
@@ -44,6 +48,7 @@ export function ContentListPageHeader({
   className,
   subtitle,
   titleOverride,
+  titleClassName,
 }: ContentListPageHeaderProps) {
   const title =
     titleOverride ??
@@ -51,9 +56,13 @@ export function ContentListPageHeader({
 
   return (
     <div
-      className={`flex flex-shrink-0 flex-col gap-1 text-left ${className ?? ""}`}
+      className={cn(
+        "flex min-w-0 flex-shrink-0 text-left",
+        subtitle ? "flex-col gap-1" : "items-center",
+        className
+      )}
     >
-      <h3 className="font-semibold">{title}</h3>
+      <h3 className={cn("font-semibold", titleClassName)}>{title}</h3>
       {subtitle ? (
         <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
       ) : null}

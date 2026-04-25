@@ -9,7 +9,14 @@ import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
 import {
   requireDashboardSubscriptionContext,
   ensureUserHasFreePlan,
+  loadPlanUsageSnapshot,
 } from "~/features/payments";
+import {
+  deriveDashboardActivitySummary,
+  getContentStatistics,
+  getDraftCountForDashboard,
+  getQueueCountsForDashboard,
+} from "~/features/posts/server";
 import { getReferredByForNpub } from "~/features/referral/get-referred-by.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import {
@@ -56,18 +63,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Pending parent link requests for this user (as child)
   const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
 
-  const [dashboardData, referredBy, feedbackInboxKind10050Relays] =
-    await Promise.all([
-      loadDashboardData(user.id, user.npub, pendingParentNpubs),
-      getReferredByForNpub(user.npub),
-      loadFeedbackInboxKind10050Relays(),
-    ]);
+  const [
+    dashboardData,
+    referredBy,
+    feedbackInboxKind10050Relays,
+    planUsage,
+    postStatistics,
+    queueCountsByQueue,
+    draftCount,
+  ] = await Promise.all([
+    loadDashboardData(user.id, user.npub, pendingParentNpubs),
+    getReferredByForNpub(user.npub),
+    loadFeedbackInboxKind10050Relays(),
+    loadPlanUsageSnapshot(user.id, subscriptionData.currentSubscription),
+    getContentStatistics(user.id),
+    getQueueCountsForDashboard(user.id),
+    getDraftCountForDashboard(user.id),
+  ]);
+
+  const dashboardActivity = deriveDashboardActivitySummary({
+    draftCount,
+    postStatistics,
+    queueCountsByQueue,
+  });
 
   return json({
     userId: user.id,
     user,
     currentSubscription: subscriptionData.currentSubscription,
     billingContext: subscriptionData.billingContext ?? null,
+    planUsage,
+    isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
     ...dashboardData,
     referredBy: referredBy ?? undefined,
     isOperatorAdmin: isReferralAdmin(user.npub),

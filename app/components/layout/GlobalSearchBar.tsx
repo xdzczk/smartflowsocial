@@ -274,7 +274,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
             </div>
           </div>
           {pasteKind ? (
-            <div className="cluster mt-1.5 px-0.5">
+            <div className="cluster absolute top-full right-0 left-0 z-20 mt-1.5 px-0.5">
               <Badge variant="secondary" className="font-mono text-[10px]">
                 {pasteKind}
               </Badge>

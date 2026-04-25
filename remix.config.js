@@ -16,6 +16,8 @@ module.exports = {
     v2_meta: true,
     v2_normalizeFormMethod: true,
     v2_routeConvention: true,
+    // Opt into React Router v7 relative splat resolution; silences dev console warning.
+    v3_relativeSplatPath: true,
   },
   browserNodeBuiltinsPolyfill: {
     modules: {

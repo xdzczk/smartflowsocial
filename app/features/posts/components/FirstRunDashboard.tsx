@@ -48,7 +48,7 @@ export function FirstRunDashboard({
   return (
     <div className="max-w-10xl mx-auto w-full px-4 lg:px-8">
       <div className="space-y-4">
-        <Card className="shadow-1 dark:shadow-none">
+        <Card>
           <CardContent className="px-5 py-5 md:px-6 md:py-6">
             <p className="text-text-secondary text-xs font-medium tracking-wide uppercase">
               Get started
@@ -77,7 +77,7 @@ export function FirstRunDashboard({
           </CardContent>
         </Card>
 
-        <Card className="shadow-1 dark:shadow-none">
+        <Card>
           <CardHeader className="px-5 pt-4 pb-2 md:px-6">
             <h2 className="text-text text-sm font-semibold tracking-tight">
               Quick start
@@ -111,7 +111,7 @@ export function FirstRunDashboard({
         </Card>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Card className="shadow-1 dark:shadow-none">
+          <Card>
             <CardContent className="p-4">
               <h3 className="text-text text-sm font-medium">Schedule posts</h3>
               <p className="text-text-secondary mt-1 text-xs leading-5">
@@ -119,7 +119,7 @@ export function FirstRunDashboard({
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-1 dark:shadow-none">
+          <Card>
             <CardContent className="p-4">
               <h3 className="text-text text-sm font-medium">Build queues</h3>
               <p className="text-text-secondary mt-1 text-xs leading-5">
@@ -128,7 +128,7 @@ export function FirstRunDashboard({
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-1 dark:shadow-none">
+          <Card>
             <CardContent className="p-4">
               <h3 className="text-text text-sm font-medium">Track activity</h3>
               <p className="text-text-secondary mt-1 text-xs leading-5">

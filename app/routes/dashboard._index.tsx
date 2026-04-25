@@ -60,6 +60,7 @@ const FALLBACK_FLOW = {
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const serverNowMs = Date.now();
   try {
     const userId = await requireUserId(request);
 
@@ -125,10 +126,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         dashboardActivity,
         isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
         scheduleNext7Days: [],
+        serverNowMs,
       });
     }
 
-    const now = new Date();
+    const now = new Date(serverNowMs);
     const userTimezone = validatedData.user?.timezone ?? "Etc/UTC";
     const runwaySettings = await getRunwaySettings(userId);
     const [runwayLastScheduledAtUtc, scheduleNext7Days] = await Promise.all([
@@ -145,6 +147,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       dashboardActivity,
       isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
       scheduleNext7Days,
+      serverNowMs,
     });
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
@@ -160,6 +163,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       postStatistics: EMPTY_STATS,
       queueCountsByQueue: [],
       scheduleNext7Days: [],
+      serverNowMs,
     });
   }
 };

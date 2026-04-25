@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  "@remix-run/react@2.17.3":
+    hash: e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160
+    path: patches/@remix-run__react@2.17.3.patch
+
 importers:
   .:
     dependencies:
@@ -84,10 +89,10 @@ importers:
         version: 2.17.3(typescript@5.9.3)
       "@remix-run/react":
         specifier: ^2.17.3
-        version: 2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+        version: 2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       "@sentry/remix":
         specifier: ^10.32.1
-        version: 10.32.1(@remix-run/node@2.17.3(typescript@5.9.3))(@remix-run/react@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@remix-run/server-runtime@2.17.3(typescript@5.9.3))(react@18.3.1)
+        version: 10.32.1(@remix-run/node@2.17.3(typescript@5.9.3))(@remix-run/react@2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@remix-run/server-runtime@2.17.3(typescript@5.9.3))(react@18.3.1)
       "@tanstack/react-query":
         specifier: ^5.90.16
         version: 5.90.16(react@18.3.1)
@@ -262,7 +267,7 @@ importers:
         version: 10.2.0
       "@remix-run/dev":
         specifier: ^2.17.3
-        version: 2.17.3(@remix-run/react@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.0.3)(bufferutil@4.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(vite@7.3.1(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+        version: 2.17.3(@remix-run/react@2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.0.3)(bufferutil@4.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(vite@7.3.1(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
       "@remix-run/testing":
         specifier: ^2.17.3
         version: 2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
@@ -10798,7 +10803,7 @@ snapshots:
 
   "@remix-run/css-bundle@2.17.3": {}
 
-  "@remix-run/dev@2.17.3(@remix-run/react@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.0.3)(bufferutil@4.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(vite@7.3.1(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)":
+  "@remix-run/dev@2.17.3(@remix-run/react@2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/node@25.0.3)(bufferutil@4.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(vite@7.3.1(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)":
     dependencies:
       "@babel/core": 7.28.5
       "@babel/generator": 7.28.5
@@ -10811,7 +10816,7 @@ snapshots:
       "@mdx-js/mdx": 2.3.0
       "@npmcli/package-json": 4.0.1
       "@remix-run/node": 2.17.3(typescript@5.9.3)
-      "@remix-run/react": 2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      "@remix-run/react": 2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       "@remix-run/router": 1.23.0
       "@remix-run/server-runtime": 2.17.3(typescript@5.9.3)
       "@types/mdx": 2.0.13
@@ -10898,7 +10903,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  "@remix-run/react@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)":
+  "@remix-run/react@2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)":
     dependencies:
       "@remix-run/router": 1.23.0
       "@remix-run/server-runtime": 2.17.3(typescript@5.9.3)
@@ -10927,7 +10932,7 @@ snapshots:
   "@remix-run/testing@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)":
     dependencies:
       "@remix-run/node": 2.17.3(typescript@5.9.3)
-      "@remix-run/react": 2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      "@remix-run/react": 2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       "@remix-run/router": 1.23.0
       react: 18.3.1
       react-router-dom: 6.30.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11202,13 +11207,13 @@ snapshots:
       hoist-non-react-statics: 3.3.2
       react: 18.3.1
 
-  "@sentry/remix@10.32.1(@remix-run/node@2.17.3(typescript@5.9.3))(@remix-run/react@2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@remix-run/server-runtime@2.17.3(typescript@5.9.3))(react@18.3.1)":
+  "@sentry/remix@10.32.1(@remix-run/node@2.17.3(typescript@5.9.3))(@remix-run/react@2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@remix-run/server-runtime@2.17.3(typescript@5.9.3))(react@18.3.1)":
     dependencies:
       "@opentelemetry/api": 1.9.0
       "@opentelemetry/instrumentation": 0.208.0(@opentelemetry/api@1.9.0)
       "@opentelemetry/semantic-conventions": 1.38.0
       "@remix-run/node": 2.17.3(typescript@5.9.3)
-      "@remix-run/react": 2.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      "@remix-run/react": 2.17.3(patch_hash=e938fdb9e09ad707dfc4bf3c46d2a3925c7f7dda312754a15b2db60ba2dd7160)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       "@remix-run/router": 1.23.0
       "@remix-run/server-runtime": 2.17.3(typescript@5.9.3)
       "@sentry/cli": 2.58.4

@@ -1,5 +1,5 @@
 /**
- * useInstallPrompt — hook backing <InstallPromptBanner />.
+ * useInstallPrompt — hook backing dashboard PWA install UI (sidebar / drawer panel).
  *
  * Captures Chromium's `beforeinstallprompt` event (Android Chrome, desktop
  * Chrome/Edge) so we can render our own install affordance instead of the

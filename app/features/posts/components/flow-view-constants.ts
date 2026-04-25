@@ -9,6 +9,97 @@ export const GAP = 28;
 export const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 export const CARD_MIN_HEIGHT = 232;
 
+/** Desktop dashboard: vertical chrome inside the horizontal Flow strip (py-4 + breathing room). */
+export const FLOW_DESKTOP_SCROLL_CHROME_PX = 36;
+
+/**
+ * Dashboard desktop Flow cards: target width/height (~1.45–1.75), centered on {@link CARD_WIDTH}.
+ */
+export const FLOW_DESKTOP_DASHBOARD_CARD_ASPECT = 1.58;
+/** Tallest card allowed on tall viewports; width/height must stay ≥ this ratio */
+export const FLOW_DESKTOP_DASHBOARD_CARD_ASPECT_MIN = 1.45;
+export const FLOW_DESKTOP_DASHBOARD_CARD_HEIGHT_MIN_PX = 210;
+/** Normal desktop: card height cap (unchanged large-window look). */
+export const FLOW_DESKTOP_DASHBOARD_CARD_HEIGHT_MAX_PX = 240;
+
+/**
+ * First desktop height band: modest vertical scaling (`lg` dashboard). Below this = baseline only.
+ */
+export const DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX = 960;
+
+/**
+ * Second band: stronger scaling for very tall / fullscreen desktop viewports.
+ */
+export const DASHBOARD_DESKTOP_VERY_TALL_VIEWPORT_MIN_PX = 1000;
+
+/** @deprecated Use {@link DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX} */
+export const TALL_DESKTOP_VIEWPORT_MIN_PX =
+  DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX;
+
+/**
+ * Desktop dashboard Flow **card content** height (px): baseline stays compact; tall and
+ * very-tall bands ramp modestly then more generously while keeping width/height ≥ ~1.45.
+ */
+export function getDashboardDesktopFlowCardContentHeightPx(
+  viewportHeightPx?: number
+): number {
+  const raw = Math.round(CARD_WIDTH / FLOW_DESKTOP_DASHBOARD_CARD_ASPECT);
+  const base = Math.min(
+    FLOW_DESKTOP_DASHBOARD_CARD_HEIGHT_MAX_PX,
+    Math.max(FLOW_DESKTOP_DASHBOARD_CARD_HEIGHT_MIN_PX, raw)
+  );
+  if (
+    viewportHeightPx == null ||
+    viewportHeightPx < DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX
+  ) {
+    return base;
+  }
+  const maxByAspect = Math.floor(
+    CARD_WIDTH / FLOW_DESKTOP_DASHBOARD_CARD_ASPECT_MIN
+  );
+  const tallCardCeiling = Math.min(246, maxByAspect);
+
+  if (viewportHeightPx < DASHBOARD_DESKTOP_VERY_TALL_VIEWPORT_MIN_PX) {
+    const span =
+      DASHBOARD_DESKTOP_VERY_TALL_VIEWPORT_MIN_PX -
+      DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX;
+    const t = Math.min(
+      1,
+      Math.max(
+        0,
+        (viewportHeightPx - DASHBOARD_DESKTOP_TALL_VIEWPORT_MIN_PX) / span
+      )
+    );
+    const modestCeiling = Math.min(base + 5, tallCardCeiling);
+    return Math.round(base + t * (modestCeiling - base));
+  }
+
+  const startVeryTall = Math.min(base + 5, tallCardCeiling);
+  const t = Math.min(
+    1,
+    Math.max(
+      0,
+      (viewportHeightPx - DASHBOARD_DESKTOP_VERY_TALL_VIEWPORT_MIN_PX) / 450
+    )
+  );
+  return Math.round(startVeryTall + t * (tallCardCeiling - startVeryTall));
+}
+
+/** Max card content height for generic desktop clamps (tall-safe upper bound). */
+export const FLOW_DESKTOP_CARD_HEIGHT_MAX_PX = Math.min(
+  246,
+  Math.floor(CARD_WIDTH / FLOW_DESKTOP_DASHBOARD_CARD_ASPECT_MIN)
+);
+
+/**
+ * Fallback when split-region measurement is unavailable.
+ */
+export function clampDashboardDesktopFlowCardHeightPx(
+  viewportHeightPx: number
+): number {
+  return getDashboardDesktopFlowCardContentHeightPx(viewportHeightPx);
+}
+
 /** Mobile: smaller cards so ~1.3–1.5 cards visible; reduces "trapped" feel */
 export const CARD_WIDTH_MOBILE = 280;
 export const GAP_MOBILE = 20;

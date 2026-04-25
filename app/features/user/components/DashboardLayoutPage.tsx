@@ -8,13 +8,7 @@ import {
   useNavigation,
 } from "@remix-run/react";
 import { X } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
 import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
@@ -24,7 +18,6 @@ import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPag
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
-import { InstallPromptBanner } from "~/components/pwa/InstallPromptBanner";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -40,7 +33,7 @@ import { GiveawayProofPageSkeleton } from "~/features/giveaway/components/Giveaw
 import {
   BillingAlertBanner,
   getUserPlanType,
-  isSubscriptionPeriodExpired,
+  isSubscriptionExpiredForUi,
 } from "~/features/payments";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { CalendarPageSkeleton } from "~/features/posts/calendar/CalendarPageSkeleton";
@@ -64,34 +57,11 @@ import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
 const DASHBOARD_INDEX_PATH = "/dashboard";
-const FREE_PLAN_BANNER_DISMISSED_KEY =
-  "smartflowsocial:dismissed-free-plan-banner";
 const SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-subscription-expired-banner";
-const FREE_PLAN_BANNER_ANALYTICS_EVENT = "smartflow:free-plan-banner-analytics";
 const subscribeNoop = () => () => {};
 const getClientMountedSnapshot = () => true;
 const getServerMountedSnapshot = () => false;
-
-type FreePlanBannerAnalyticsEventName =
-  | "free_plan_banner_viewed"
-  | "free_plan_banner_dismissed"
-  | "free_plan_banner_cta_clicked";
-
-function trackFreePlanBannerEvent(
-  name: FreePlanBannerAnalyticsEventName
-): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.dispatchEvent(
-      new CustomEvent(FREE_PLAN_BANNER_ANALYTICS_EVENT, {
-        detail: { name, at: Date.now() },
-      })
-    );
-  } catch {
-    // Ignore analytics errors.
-  }
-}
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
   let name: string | undefined;
@@ -317,12 +287,9 @@ export function DashboardLayoutPage(): ReactNode {
   const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
   const isCalendar = isCalendarPath(location.pathname);
-  const statusInactive =
-    currentSubscription != null && currentSubscription.status !== "ACTIVE";
-  const periodExpired = isSubscriptionPeriodExpired(
+  const isSubscriptionExpired = isSubscriptionExpiredForUi(
     currentSubscription ?? null
   );
-  const isSubscriptionExpired = statusInactive ? true : periodExpired;
   const showBillingAlert =
     billingContext != null &&
     billingContext.bannerVariant !== "none" &&
@@ -350,18 +317,6 @@ export function DashboardLayoutPage(): ReactNode {
     getServerMountedSnapshot
   );
   const [
-    isFreePlanBannerDismissedLocally,
-    setIsFreePlanBannerDismissedLocally,
-  ] = useState(false);
-  const isFreePlanBannerDismissed = useMemo(() => {
-    if (!isClientMounted) return false;
-    try {
-      return sessionStorage.getItem(FREE_PLAN_BANNER_DISMISSED_KEY) === "1";
-    } catch {
-      return false;
-    }
-  }, [isClientMounted]);
-  const [
     isSubscriptionExpiredBannerDismissedLocally,
     setIsSubscriptionExpiredBannerDismissedLocally,
   ] = useState(false);
@@ -380,37 +335,6 @@ export function DashboardLayoutPage(): ReactNode {
     isSubscriptionExpired &&
     !isSubscriptionExpiredBannerDismissed &&
     !isSubscriptionExpiredBannerDismissedLocally;
-  const hasTrackedFreePlanBannerView = useRef(false);
-
-  const shouldShowFreePlanBanner =
-    isClientMounted &&
-    isFreePlan &&
-    !showBillingAlert &&
-    !isSubscriptionExpired &&
-    !isFreePlanBannerDismissed &&
-    !isFreePlanBannerDismissedLocally;
-
-  useEffect(() => {
-    if (!shouldShowFreePlanBanner || hasTrackedFreePlanBannerView.current) {
-      return;
-    }
-    hasTrackedFreePlanBannerView.current = true;
-    trackFreePlanBannerEvent("free_plan_banner_viewed");
-  }, [shouldShowFreePlanBanner]);
-
-  const handleDismissFreePlanBanner = () => {
-    try {
-      sessionStorage.setItem(FREE_PLAN_BANNER_DISMISSED_KEY, "1");
-    } catch {
-      // Ignore storage access errors.
-    }
-    setIsFreePlanBannerDismissedLocally(true);
-    trackFreePlanBannerEvent("free_plan_banner_dismissed");
-  };
-
-  const handleFreePlanBannerCtaClick = () => {
-    trackFreePlanBannerEvent("free_plan_banner_cta_clicked");
-  };
 
   const handleDismissSubscriptionExpiredBanner = () => {
     try {
@@ -433,7 +357,8 @@ export function DashboardLayoutPage(): ReactNode {
     <>
       <div
         id="page-container"
-        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-16"}`}
+        data-dashboard-shell
+        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-12"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
@@ -445,7 +370,7 @@ export function DashboardLayoutPage(): ReactNode {
         />
 
         {/* No overflow-x-hidden: it forces overflow-y to compute to auto and breaks position:sticky summary rails in dashboard builders.
-            pt-header = h-16 + env(safe-area-inset-top) so content clears the notch on installed iOS PWAs. */}
+            pt-header = --header-h + env(safe-area-inset-top) so content clears the notch on installed iOS PWAs. */}
         <main
           id="page-content"
           className={`pt-header flex min-h-0 max-w-full min-w-0 flex-1 flex-col ${
@@ -530,10 +455,10 @@ export function DashboardLayoutPage(): ReactNode {
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
               <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">Your subscription has expired</p>
+                  <p className="font-medium">Your subscription has expired.</p>
                   <p className="text-sm opacity-90">
-                    You’re on the Free plan now. Resubscribe to restore your
-                    previous plan benefits.
+                    You’re on Free now. Resubscribe to restore your previous
+                    plan benefits.
                   </p>
                 </div>
                 <div className="cluster-tight.5 self-start md:ml-4 md:shrink-0">
@@ -542,7 +467,7 @@ export function DashboardLayoutPage(): ReactNode {
                     to="/plans"
                     className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
                   >
-                    View plans
+                    Restore plan
                   </Link>
                   <button
                     type="button"
@@ -559,49 +484,10 @@ export function DashboardLayoutPage(): ReactNode {
                 </div>
               </div>
             </div>
-          ) : shouldShowFreePlanBanner ? (
-            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
-              <div className="border-border-subtle bg-surface/80 text-text-secondary shadow-1 mb-4 rounded-xl border px-4 py-3.5">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-text text-sm font-semibold tracking-tight">
-                      You’re on the Free plan
-                    </p>
-                    <p className="mt-1 text-sm leading-5">
-                      You’re on Free - enough to test the core workflow. Upgrade
-                      later for more accounts, higher limits, and stronger
-                      publishing infrastructure.
-                    </p>
-                  </div>
-                  <div className="cluster-tight.5 self-start md:ml-4 md:shrink-0">
-                    <Link
-                      prefetch="intent"
-                      to="/plans"
-                      onClick={handleFreePlanBannerCtaClick}
-                      className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium"
-                    >
-                      View plans
-                    </Link>
-                    <button
-                      type="button"
-                      aria-label="Dismiss free plan banner"
-                      onClick={handleDismissFreePlanBanner}
-                      className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
-                    >
-                      <X
-                        className={INLINE_ICON_SIZE_CLASS}
-                        strokeWidth={INLINE_ICON_STROKE}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-8 md:pb-24" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">
@@ -630,7 +516,9 @@ export function DashboardLayoutPage(): ReactNode {
             ) : (
               <div
                 className={`animate-in fade-in-0 duration-200 ${
-                  isCalendar ? "flex min-h-0 flex-1 flex-col" : ""
+                  isCalendar || isDashboardIndex
+                    ? "flex min-h-0 flex-1 flex-col"
+                    : ""
                 }`}
               >
                 <Outlet />
@@ -640,9 +528,6 @@ export function DashboardLayoutPage(): ReactNode {
         </main>
 
         <Footer />
-        {/* PWA install affordance (Chromium native prompt + iOS A2HS walkthrough).
-            Self-hides when already standalone / dismissed within the last 30 days. */}
-        <InstallPromptBanner />
       </div>
     </>
   );

@@ -1,11 +1,16 @@
 import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
-import { useEffect, useRef } from "react";
-import * as React from "react";
+import {
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
+import { Button, type ButtonProps } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +27,32 @@ import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+/** Radix Dialog trigger needs client-only ids; store flips after first microtask so SSR + first paint stay in sync. */
+const dialogShellListeners = new Set<() => void>();
+let dialogShellStoreReady = false;
+
+function subscribeDialogShellReady(onStoreChange: () => void) {
+  dialogShellListeners.add(onStoreChange);
+  if (typeof window !== "undefined") {
+    queueMicrotask(() => {
+      if (dialogShellStoreReady) return;
+      dialogShellStoreReady = true;
+      for (const l of dialogShellListeners) l();
+    });
+  }
+  return () => {
+    dialogShellListeners.delete(onStoreChange);
+  };
+}
+
+function getDialogShellSnapshot() {
+  return dialogShellStoreReady;
+}
+
+function getDialogShellServerSnapshot() {
+  return false;
+}
 
 interface UserWithProfile {
   npub: string;
@@ -164,6 +195,64 @@ function getUserAvatarFallback(user: unknown): string {
   return "U";
 }
 
+const UserMenuAccountTrigger = forwardRef<
+  HTMLButtonElement,
+  {
+    displayName: string;
+    currentLabel: string;
+    currentAvatar: string | undefined;
+    avatarFallback: string;
+  } & Omit<ButtonProps, "variant" | "size" | "type">
+>(function UserMenuAccountTrigger(
+  { displayName, currentLabel, currentAvatar, avatarFallback, ...buttonProps },
+  ref
+) {
+  return (
+    <Button
+      ref={ref}
+      variant="outline"
+      size="sm"
+      type="button"
+      aria-label={`Account: ${displayName || currentLabel}`}
+      className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
+      {...buttonProps}
+    >
+      {currentAvatar ? (
+        <img
+          src={currentAvatar}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-center sm:hidden"
+        />
+      ) : (
+        <span
+          className="text-xs leading-none font-medium sm:hidden"
+          aria-hidden="true"
+        >
+          {avatarFallback}
+        </span>
+      )}
+      {currentAvatar ? (
+        <span className="hidden h-7 w-7 shrink-0 overflow-hidden rounded-md sm:inline-flex">
+          <img
+            src={currentAvatar}
+            alt={displayName || currentLabel}
+            className="h-full w-full object-cover object-center"
+          />
+        </span>
+      ) : (
+        <span className="bg-surface-hover text-text-secondary hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-medium sm:inline-flex">
+          {avatarFallback}
+        </span>
+      )}
+      <span className="hidden sm:ml-2 sm:inline">
+        {displayName || currentLabel}
+      </span>
+    </Button>
+  );
+});
+UserMenuAccountTrigger.displayName = "UserMenuAccountTrigger";
+
 export default function UserMenu() {
   const user = useOptionalUser() as UserWithProfile | null | undefined;
   const subscription = useSubscription();
@@ -172,8 +261,13 @@ export default function UserMenu() {
   const queryClient = useQueryClient();
   const hasReloadedRef = useRef(false);
   const wasSubmittingRef = useRef(false);
-  const [open, setOpen] = React.useState(false);
-  const [children, setChildren] = React.useState<ChildAccount[]>([]);
+  const [open, setOpen] = useState(false);
+  const [children, setChildren] = useState<ChildAccount[]>([]);
+  const dialogShellReady = useSyncExternalStore(
+    subscribeDialogShellReady,
+    getDialogShellSnapshot,
+    getDialogShellServerSnapshot
+  );
 
   // Safely handle potentially undefined subscription values
   const planId = (subscription?.currentSubscription?.planId ?? "")
@@ -190,7 +284,7 @@ export default function UserMenu() {
   const hasAccountsAccess =
     !isChild && getCanonicalPlanPolicy(commercialPlanType).accountsIncluded > 1;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       open &&
       hasAccountsAccess &&
@@ -201,8 +295,10 @@ export default function UserMenu() {
     }
   }, [open, hasAccountsAccess, fetcher.state, fetcher]);
 
-  React.useEffect(() => {
-    if (fetcher.data?.children) setChildren(fetcher.data.children);
+  useEffect(() => {
+    if (fetcher.data?.children) {
+      queueMicrotask(() => setChildren(fetcher.data!.children));
+    }
   }, [fetcher.data]);
 
   // Handle logout redirect - force full page reload to clear all state
@@ -274,52 +370,29 @@ export default function UserMenu() {
   const displayName = getUserDisplayName(user);
   const avatarFallback = getUserAvatarFallback(user);
 
+  const triggerProps = {
+    displayName,
+    currentLabel,
+    currentAvatar,
+    avatarFallback,
+  };
+
+  // Mount Dialog after hydration so Radix-generated ids / aria-controls match
+  // between SSR and the first client paint (see dialogShellReady).
+  if (!dialogShellReady) {
+    return (
+      <UserMenuAccountTrigger
+        {...triggerProps}
+        aria-haspopup="dialog"
+        aria-expanded={false}
+      />
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={`Account: ${displayName || currentLabel}`}
-          className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
-        >
-          {/* Mobile: absolutely fill the button then scale-150 so the circular
-              logo overflows the button bounds; overflow-hidden+rounded-lg clips
-              it back, leaving a fully-filled rounded-rectangle with no gaps. */}
-          {currentAvatar ? (
-            <img
-              src={currentAvatar}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover object-center sm:hidden"
-            />
-          ) : (
-            <span
-              className="text-xs leading-none font-medium sm:hidden"
-              aria-hidden="true"
-            >
-              {avatarFallback}
-            </span>
-          )}
-          {/* Desktop: rounded-square avatar — plain img/span avoids Avatar's
-              hardcoded rounded-full base class */}
-          {currentAvatar ? (
-            <span className="hidden h-7 w-7 shrink-0 overflow-hidden rounded-md sm:inline-flex">
-              <img
-                src={currentAvatar}
-                alt={displayName || currentLabel}
-                className="h-full w-full object-cover object-center"
-              />
-            </span>
-          ) : (
-            <span className="bg-surface-hover text-text-secondary hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-medium sm:inline-flex">
-              {avatarFallback}
-            </span>
-          )}
-          <span className="hidden sm:ml-2 sm:inline">
-            {displayName || currentLabel}
-          </span>
-        </Button>
+        <UserMenuAccountTrigger {...triggerProps} />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

@@ -23,6 +23,7 @@ import {
   CARD_MIN_HEIGHT_MOBILE,
   CARD_SLOT_SIZE,
   CARD_SLOT_SIZE_MOBILE,
+  FLOW_DESKTOP_SCROLL_CHROME_PX,
   getGoLiveAt,
   LOADING_LABEL,
   MOBILE_BREAKPOINT_PX,
@@ -72,6 +73,17 @@ export interface FlowViewProps {
   onHasLiveEdgeChange?: (hasLiveEdge: boolean) => void;
   /** True when first-run is done but no scheduled/published items exist yet. */
   isPostActivationEmpty?: boolean;
+  /** Server time at document render — aligns relative labels with SSR for hydration. */
+  serverNowMs?: number;
+  /**
+   * Optional desktop (non-mobile) Flow card content height in px; clamped by the
+   * dashboard before passing. When omitted, uses {@link CARD_MIN_HEIGHT}.
+   */
+  desktopFlowCardHeightPx?: number;
+  /** True when horizontal scroll is at the session "rest" position (default strip alignment). */
+  onFlowRestingScrollChange?: (isResting: boolean) => void;
+  /** Fired when scroll position changes after rest is known (user scroll or programmatic). */
+  onFlowScrollInteraction?: () => void;
 }
 
 export interface FlowViewHandle {
@@ -98,21 +110,31 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       onFetchMoreFuture,
       onHasLiveEdgeChange,
       isPostActivationEmpty = false,
+      serverNowMs,
+      desktopFlowCardHeightPx,
+      onFlowRestingScrollChange,
+      onFlowScrollInteraction,
     },
     ref
   ): React.ReactNode {
-    const [nowMs, setNowMs] = useState(() => NOW_MS());
+    const [nowMs, setNowMs] = useState(() =>
+      typeof serverNowMs === "number" && serverNowMs > 0
+        ? serverNowMs
+        : NOW_MS()
+    );
+    useEffect(() => {
+      if (typeof serverNowMs === "number" && serverNowMs > 0) {
+        setNowMs(serverNowMs);
+      }
+    }, [serverNowMs]);
     useEffect(() => {
       const interval = setInterval(() => {
         setNowMs(NOW_MS());
       }, 60_000);
       return () => clearInterval(interval);
     }, []);
-    const [isMobile, setIsMobile] = useState(() =>
-      typeof window !== "undefined"
-        ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches
-        : false
-    );
+    // Match SSR (false); read viewport after mount to avoid hydration mismatch.
+    const [isMobile, setIsMobile] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
       null
@@ -124,9 +146,10 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     /** Id of the item that was the first future (next scheduled) last render; used to detect when it gets published and trigger smooth scroll */
     const prevFirstFutureIdRef = useRef<string | null>(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
       const fn = () => setIsMobile(mq.matches);
+      fn();
       mq.addEventListener("change", fn);
       return () => mq.removeEventListener("change", fn);
     }, []);
@@ -210,6 +233,70 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     );
     const { scrollViewport, allowFetch } = scrollHookResult;
 
+    const restScrollLeftRef = useRef<number | null>(null);
+    const lastEmittedRestRef = useRef(true);
+    const prevScrollLeftForInteractionRef = useRef<number | null>(null);
+    const restCaptureReadyAtRef = useRef(0);
+
+    const flowRestCaptureKey = useMemo(
+      () =>
+        `${flowItems.length}-${firstFutureIndex}-${hasMorePast}-${hasMoreFuture}-${isMobile}-${cardSlotSize}`,
+      [
+        flowItems.length,
+        firstFutureIndex,
+        hasMorePast,
+        hasMoreFuture,
+        isMobile,
+        cardSlotSize,
+      ]
+    );
+
+    useEffect(() => {
+      if (flowItems.length === 0) {
+        restScrollLeftRef.current = null;
+        return;
+      }
+      restScrollLeftRef.current = null;
+      const id = window.setTimeout(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        restScrollLeftRef.current = el.scrollLeft;
+        restCaptureReadyAtRef.current = Date.now();
+        prevScrollLeftForInteractionRef.current = el.scrollLeft;
+        lastEmittedRestRef.current = true;
+        onFlowRestingScrollChange?.(true);
+      }, 950);
+      return () => window.clearTimeout(id);
+    }, [flowRestCaptureKey, flowItems.length, onFlowRestingScrollChange]);
+
+    useEffect(() => {
+      if (flowItems.length === 0) return;
+      const rest = restScrollLeftRef.current;
+      if (rest == null) return;
+      const epsilon = 12;
+      const atRest = Math.abs(scrollViewport.scrollLeft - rest) <= epsilon;
+      if (lastEmittedRestRef.current !== atRest) {
+        lastEmittedRestRef.current = atRest;
+        onFlowRestingScrollChange?.(atRest);
+      }
+    }, [
+      flowItems.length,
+      scrollViewport.scrollLeft,
+      scrollViewport.clientWidth,
+      onFlowRestingScrollChange,
+    ]);
+
+    useEffect(() => {
+      if (flowItems.length === 0 || restScrollLeftRef.current == null) return;
+      const prev = prevScrollLeftForInteractionRef.current;
+      const next = scrollViewport.scrollLeft;
+      prevScrollLeftForInteractionRef.current = next;
+      if (Date.now() - restCaptureReadyAtRef.current < 120) return;
+      if (prev == null) return;
+      if (Math.abs(prev - next) < 1) return;
+      onFlowScrollInteraction?.();
+    }, [flowItems.length, scrollViewport.scrollLeft, onFlowScrollInteraction]);
+
     const { overscrollPx, isOverscrollSpringing, onOverscrollTransitionEnd } =
       useFlowViewOverscroll(scrollElement);
 
@@ -233,6 +320,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
       if (!el) return;
       const delta = lastPrependedPastCount * cardSlotSize;
       el.scrollLeft += delta;
+      if (restScrollLeftRef.current != null) {
+        restScrollLeftRef.current += delta;
+      }
       onPrependedPastCompensated?.();
     }, [lastPrependedPastCount, cardSlotSize, onPrependedPastCompensated]);
 
@@ -385,16 +475,16 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               <Link
                 to="/dashboard/compose?type=post"
                 tabIndex={focusableTabIndex}
-                className="focus-ring card-lift border-border-subtle bg-surface hover:bg-surface-hover/30 shadow-1 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed md:h-[232px] md:w-[352px]"
+                className="focus-ring card-lift border-border-subtle/90 bg-surface/72 text-text hover:bg-surface-hover/18 flex h-[200px] w-[280px] flex-shrink-0 flex-row items-center justify-center gap-3 overflow-hidden rounded-lg border border-dashed shadow-none md:h-[var(--flow-card-h,232px)] md:w-[352px]"
                 aria-label="Open composer"
               >
                 <Plus
-                  className="text-text-secondary h-12 w-12 md:h-14 md:w-14"
+                  className="text-text-secondary/85 h-12 w-12 md:h-14 md:w-14"
                   aria-hidden
                 />
                 <div className="flex flex-col items-start gap-0.5 text-left">
-                  <span className="text-text font-semibold">Open composer</span>
-                  <span className="text-text-secondary/90 text-sm">
+                  <span className="text-text font-medium">Open composer</span>
+                  <span className="text-text-secondary text-sm">
                     Schedule or publish
                   </span>
                 </div>
@@ -465,7 +555,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
               </Link>
               <Link
                 to="/dashboard/compose"
-                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/40 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -485,7 +575,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             action={
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring card-lift border-border-subtle text-text hover:bg-surface-hover/50 shadow-1 rounded-xl border px-4 py-2 text-sm font-medium"
+                className="focus-ring card-lift border-border-subtle text-text hover:border-border hover:bg-surface-hover/40 rounded-xl border px-4 py-2 text-sm font-medium"
               >
                 Open composer
               </Link>
@@ -497,17 +587,32 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
     const virtualItems = rowVirtualizer.getVirtualItems();
 
+    const desktopFlowCardContentPx = !isMobile
+      ? typeof desktopFlowCardHeightPx === "number" &&
+        desktopFlowCardHeightPx > 0
+        ? desktopFlowCardHeightPx
+        : CARD_MIN_HEIGHT
+      : CARD_MIN_HEIGHT_MOBILE;
+    const flowScrollOuterHeightPx = isMobile
+      ? CARD_MIN_HEIGHT_MOBILE + 32
+      : desktopFlowCardContentPx + FLOW_DESKTOP_SCROLL_CHROME_PX;
+
+    const flowCardCssVarStyle: Record<string, string> | undefined = !isMobile
+      ? { "--flow-card-h": `${desktopFlowCardContentPx}px` }
+      : undefined;
+
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-full">
+      <div
+        className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-auto lg:flex-none"
+        style={flowCardCssVarStyle}
+      >
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
           className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4"
           style={{
-            height: isMobile
-              ? CARD_MIN_HEIGHT_MOBILE + 32
-              : CARD_MIN_HEIGHT + 36,
+            height: flowScrollOuterHeightPx,
             contain: "layout",
           }}
         >
@@ -523,7 +628,9 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
                   ? "transform"
                   : "auto",
               height: "100%",
-              minHeight: isMobile ? CARD_MIN_HEIGHT_MOBILE : CARD_MIN_HEIGHT,
+              minHeight: isMobile
+                ? CARD_MIN_HEIGHT_MOBILE
+                : desktopFlowCardContentPx,
               width: rowVirtualizer.getTotalSize(),
               position: "relative",
               minWidth: "100%",

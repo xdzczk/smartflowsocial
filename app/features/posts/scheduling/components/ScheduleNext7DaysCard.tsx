@@ -92,7 +92,7 @@ export function ScheduleNext7DaysCard({
 
   return (
     <div
-      className={`focus-ring group flex min-w-0 flex-1 flex-col focus-visible:ring-inset ${colorsRevealed ? "colors-revealed" : ""}`}
+      className={`focus-ring group flex w-full min-w-0 flex-col focus-visible:ring-inset lg:min-h-0 lg:flex-1 ${colorsRevealed ? "colors-revealed" : ""}`}
       tabIndex={0}
       role="button"
       aria-label="Next 7 days schedule"
@@ -123,12 +123,10 @@ export function ScheduleNext7DaysCard({
         }
       }}
     >
-      <Card className="bg-surface-hover/30 shadow-1 flex min-w-0 flex-1 flex-col dark:shadow-none">
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1.5 px-4 pt-2 pb-1.5">
+      <Card className="border-border-subtle bg-surface flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h3 className="text-text text-[11px] font-medium tracking-tight uppercase">
-              Next 7 days
-            </h3>
+            <h3 className="text-overline text-text-secondary">Next 7 days</h3>
             {allSet ? (
               <span
                 className="text-text-secondary cluster-tight text-xs"
@@ -142,7 +140,7 @@ export function ScheduleNext7DaysCard({
           <button
             type="button"
             onClick={onOpenTargetModal}
-            className="focus-ring text-text-secondary hover:text-text inline-flex flex-shrink-0 items-center gap-1 rounded-xs p-1 text-xs"
+            className="focus-ring text-text-secondary hover:text-text inline-flex flex-shrink-0 items-center gap-1 rounded-xs px-1 py-0.5 text-xs"
             title="Set target per day"
             aria-label="Set target posts per day"
           >
@@ -150,9 +148,9 @@ export function ScheduleNext7DaysCard({
             <span>Target</span>
           </button>
         </CardHeader>
-        <CardContent className="px-4 pt-0 pb-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-4">
           {isPostActivationEmpty ? (
-            <div className="flex min-h-[12rem] flex-col justify-center gap-3">
+            <div className="flex flex-col justify-start gap-3 py-3 lg:min-h-0 lg:flex-1">
               <p className="text-text-secondary text-sm">
                 No scheduled posts yet. Schedule your first post to start
                 building your flow across the week. Your flow starts once
@@ -175,7 +173,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="stack-tight"
+              className="flex flex-col gap-2"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
@@ -194,21 +192,14 @@ export function ScheduleNext7DaysCard({
 
                 const calendarDayUrl = `/dashboard/calendar?date=${encodeURIComponent(dateKey)}&view=day`;
                 return (
-                  <li key={dateKey} className="flex min-h-[2.25rem] flex-col">
+                  <li key={dateKey} className="flex min-h-[2rem] flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus-ring queue-health-row card-lift flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-shadow ${
+                      className={`focus-ring motion-fast flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
                         gap
-                          ? "border-warning/50 bg-warning/10 hover:bg-warning/20 dark:border-warning/40 dark:bg-warning/10 dark:hover:bg-warning/20"
-                          : "border-border/60 bg-surface-hover/20 hover:bg-surface-hover/50"
+                          ? "border-warning/45 bg-warning/9 hover:border-warning/55 hover:bg-warning/12 dark:border-warning/35 dark:bg-warning/10 dark:hover:border-warning/42 dark:hover:bg-warning/13"
+                          : "border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26"
                       }`}
-                      style={
-                        // CSS custom property not in React.CSSProperties; assertion required
-                        /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- CSS custom properties require type assertion */
-                        {
-                          "--queue-color": "hsl(var(--brand))",
-                        } as React.CSSProperties
-                      }
                       title={`View ${label} in Calendar`}
                     >
                       <span
