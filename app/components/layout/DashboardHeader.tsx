@@ -651,43 +651,47 @@ export default function Header({
           </div>
           <div className="min-h-0 shrink-0 grow basis-0" aria-hidden />
           <div
-            className={`flex shrink-0 flex-col gap-3 pt-6 transition-[padding] duration-300 ${sidebarBottomPad}`}
+            className={`flex shrink-0 flex-col pt-8 transition-[padding] duration-300 ${sidebarBottomPad}`}
           >
             <PlanUsageSidebar
               isDesktopExpanded={isDesktopExpanded}
               onMobileNavActiveClick={onMobileNavActiveClick}
             />
             {install.shouldRender ? (
-              <InstallPromptSidebar
-                isDesktopExpanded={isDesktopExpanded}
-                canPrompt={install.canPrompt}
-                isIosSafariInstallable={install.isIosSafariInstallable}
-                onChromiumInstall={handlePwaChromiumInstall}
-                dismiss={install.dismiss}
-                iosInstructionsOpen={installIosInstructionsOpen}
-                setIosInstructionsOpen={setInstallIosInstructionsOpen}
-              />
-            ) : null}
-            <NavigationItem
-              to="/dashboard/settings"
-              feature="settings"
-              isActive={location.pathname === "/dashboard/settings"}
-              onUpgradeClick={handleUpgradeClick}
-              onActiveClick={onMobileNavActiveClick}
-              icon={
-                <Settings
-                  className={NAV_ICON_SIZE_CLASS}
-                  strokeWidth={NAV_ICON_STROKE}
+              <div className="mt-5">
+                <InstallPromptSidebar
+                  isDesktopExpanded={isDesktopExpanded}
+                  canPrompt={install.canPrompt}
+                  isIosSafariInstallable={install.isIosSafariInstallable}
+                  onChromiumInstall={handlePwaChromiumInstall}
+                  dismiss={install.dismiss}
+                  iosInstructionsOpen={installIosInstructionsOpen}
+                  setIosInstructionsOpen={setInstallIosInstructionsOpen}
                 />
-              }
-              collapsed={!isDesktopExpanded}
-            >
-              Settings
-            </NavigationItem>
-            <ProductFeedbackSidebar
-              collapsed={!isDesktopExpanded}
-              onOpenMobileSidebarClose={onMobileNavActiveClick}
-            />
+              </div>
+            ) : null}
+            <div className="mt-3 flex flex-col gap-1">
+              <NavigationItem
+                to="/dashboard/settings"
+                feature="settings"
+                isActive={location.pathname === "/dashboard/settings"}
+                onUpgradeClick={handleUpgradeClick}
+                onActiveClick={onMobileNavActiveClick}
+                icon={
+                  <Settings
+                    className={NAV_ICON_SIZE_CLASS}
+                    strokeWidth={NAV_ICON_STROKE}
+                  />
+                }
+                collapsed={!isDesktopExpanded}
+              >
+                Settings
+              </NavigationItem>
+              <ProductFeedbackSidebar
+                collapsed={!isDesktopExpanded}
+                onOpenMobileSidebarClose={onMobileNavActiveClick}
+              />
+            </div>
           </div>
         </div>
       </nav>
