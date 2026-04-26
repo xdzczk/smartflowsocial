@@ -11,7 +11,7 @@ export interface DashboardDesktopLayoutHeights {
   splitRegionRef: RefObject<HTMLDivElement | null>;
   /** Outer Flow band (tinted zone); may exceed card+chrome for vertical breathing room */
   flowZoneHeightPx: number | undefined;
-  /** Next 7 Days + Queue Health row height (px) */
+  /** Next 7 Days + Queues row height (px) */
   lowerRowHeightPx: number | undefined;
   /** Aspect-limited Flow card content height (px) for the desktop FlowView prop */
   desktopFlowCardHeightPx: number | undefined;

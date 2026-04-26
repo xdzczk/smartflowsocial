@@ -25,7 +25,7 @@ export interface ScheduleNext7DaysCardProps {
   targetPerDay: number;
   userTimezone?: string;
   onOpenTargetModal: () => void;
-  /** Queue types for resolving block colors (same as Queue Health). */
+  /** Queue types for resolving block colors (same as Queues panel). */
   queueTypes?: ScheduleNext7DaysQueueTypes;
   /** True when onboarding is complete but dashboard has no scheduled/published activity yet. */
   isPostActivationEmpty?: boolean;

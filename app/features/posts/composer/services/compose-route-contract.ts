@@ -137,3 +137,16 @@ export function buildComposeEditUrl(context: ComposerContext): string {
   }
   return `/dashboard/compose?${params.toString()}`;
 }
+
+/** Create flow URL with optional queue preselection (`queue` = queue name). */
+export function buildComposeCreateUrl(options?: {
+  type?: ComposeContentType;
+  queue?: string | null;
+}): string {
+  const type = options?.type ?? "post";
+  const params = new URLSearchParams();
+  params.set("type", type);
+  const q = options?.queue?.trim();
+  if (q) params.set("queue", q);
+  return `/dashboard/compose?${params.toString()}`;
+}

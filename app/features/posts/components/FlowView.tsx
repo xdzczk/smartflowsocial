@@ -594,7 +594,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         : CARD_MIN_HEIGHT
       : CARD_MIN_HEIGHT_MOBILE;
     const flowScrollOuterHeightPx = isMobile
-      ? CARD_MIN_HEIGHT_MOBILE + 32
+      ? CARD_MIN_HEIGHT_MOBILE + 18
       : desktopFlowCardContentPx + FLOW_DESKTOP_SCROLL_CHROME_PX;
 
     const flowCardCssVarStyle: Record<string, string> | undefined = !isMobile
@@ -610,7 +610,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4"
+          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain pt-2.5 pb-2"
           style={{
             height: flowScrollOuterHeightPx,
             contain: "layout",

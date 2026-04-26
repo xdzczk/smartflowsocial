@@ -108,6 +108,7 @@ export {
   getQueueTypes,
   getQueueTypeByIdForUser,
   getQueueTypeByNameForUser,
+  setQueueTypeEnabledForUser,
 } from "./services/queue-types.server";
 
 // NWC (Nostr Wallet Connect)

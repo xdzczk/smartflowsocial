@@ -4,6 +4,7 @@ import {
   findQueueTypeByIdAndUserId,
   findQueueTypeIdByNameAndUserId,
   findQueueTypesByUserId,
+  setQueueTypeEnabledForUser as setQueueTypeEnabledForUserRow,
   updateQueueType as updateQueueTypeRow,
 } from "../repositories/queue-types-data.server";
 
@@ -69,6 +70,14 @@ export function getQueueTypeByIdForUser(
   queueTypeId: string
 ): Promise<QueueType | null> {
   return findQueueTypeByIdAndUserId(userId, queueTypeId);
+}
+
+export function setQueueTypeEnabledForUser(
+  userId: string,
+  queueTypeId: string,
+  isEnabled: boolean
+): Promise<QueueType> {
+  return setQueueTypeEnabledForUserRow(userId, queueTypeId, isEnabled);
 }
 
 /**

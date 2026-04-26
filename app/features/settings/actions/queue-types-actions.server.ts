@@ -22,6 +22,7 @@ import {
   deleteQueueType,
   getQueueTypeByIdForUser,
   hashTagPresetExistsForUser,
+  setQueueTypeEnabledForUser,
   updateQueueType,
 } from "~/features/user";
 import { countQueueTypesForUser } from "~/features/user/repositories/queue-types-data.server";
@@ -30,6 +31,7 @@ import {
   createQueueTypeSchema,
   updateQueueTypeSchema,
   deleteQueueTypeSchema,
+  toggleQueueEnabledSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
@@ -310,6 +312,27 @@ async function handleUpdateQueueType(
   });
 }
 
+async function handleToggleQueueEnabled(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const result = validateFormDataOrRespond(formData, toggleQueueEnabledSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const { id, isEnabled } = result.data;
+  const existing = await getQueueTypeByIdForUser(userId, id);
+  if (!existing) {
+    return json({ error: "Queue type not found" }, { status: 404 });
+  }
+  const updated = await setQueueTypeEnabledForUser(userId, id, isEnabled);
+  await invalidateQueueTypesCache(userId);
+  return json({
+    success: true,
+    queueType: queueTypeToClient(updated),
+  });
+}
+
 async function handleDeleteQueueType(
   userId: string,
   formData: FormData
@@ -378,6 +401,10 @@ export async function handleQueueTypeAction(
 
   if (action === "update_queue_type") {
     return handleUpdateQueueType(userId, formData);
+  }
+
+  if (action === "toggle_queue_enabled") {
+    return handleToggleQueueEnabled(userId, formData);
   }
 
   if (action === "delete_queue_type") {

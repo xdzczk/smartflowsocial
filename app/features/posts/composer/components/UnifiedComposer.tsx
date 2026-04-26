@@ -125,6 +125,10 @@ export interface UnifiedComposerProps {
   } | null;
   /** Prefill schedule (datetime-local format YYYY-MM-DDTHH:mm) when opening from calendar slot. */
   initialScheduledFor?: string | null;
+  /**
+   * When creating (no initialDraft), preselect this queue by name (e.g. from `?queue=` on compose URL).
+   */
+  initialQueueForCreate?: string | null;
   /** When true, skip restoring local browser draft and clear any cached snapshot. */
   skipLocalDraftRestore?: boolean;
   /** Schedule intervals from route loader (e.g. new post). Used when user is not yet available so time chips show on first paint. */
@@ -202,6 +206,7 @@ export function UnifiedComposer({
   initialDraftId = null,
   initialDraft = null,
   initialScheduledFor = null,
+  initialQueueForCreate = null,
   skipLocalDraftRestore = false,
   mode = "default",
   editTemplateContext = null,
@@ -357,17 +362,20 @@ export function UnifiedComposer({
 
   const tags: string[] = [];
 
+  const initialQueueName =
+    initialDraft?.queueType ?? initialQueueForCreate ?? "unassigned";
+
   const form = useZodForm(textPostClientSchema, {
     defaultValues: {
       content: stripAttachmentTokens(initialDraft?.content ?? ""),
       scheduledFor: initialScheduledFor ?? "",
-      queueType: initialDraft?.queueType ?? "unassigned",
+      queueType: initialQueueName,
       isRecyclable: false,
       useHashtagPresets: !!initialDraft?.hashTagPresetId,
       hashTagPresetId:
         initialDraft?.hashTagPresetId ?? selectedHashTagPresetId ?? undefined,
       includeHashtagsInNoteBody: defaultIncludeHashtagsForQueueSelection(
-        initialDraft?.queueType ?? "unassigned",
+        initialQueueName,
         queueTypes
       ),
     },
@@ -414,7 +422,7 @@ export function UnifiedComposer({
     scheduleIntervals:
       scheduleIntervalsProp ?? (user?.scheduleInterval as number[] | undefined),
     userTimezone: user?.timezone ?? undefined,
-    initialQueue: initialDraft?.queueType ?? "unassigned",
+    initialQueue: initialQueueName,
     onQueueTypeChange,
   });
 

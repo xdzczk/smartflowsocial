@@ -87,6 +87,17 @@ export function findQueueTypeByIdAndUserId(
   });
 }
 
+export function setQueueTypeEnabledForUser(
+  userId: string,
+  queueTypeId: string,
+  isEnabled: boolean
+): Promise<QueueType> {
+  return prisma.queueType.update({
+    where: { id: queueTypeId, userId },
+    data: { isEnabled },
+  });
+}
+
 export function findQueueTypeIdByNameAndUserId(
   userId: string,
   name: string

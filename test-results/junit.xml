@@ -1,23 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.0096125">
-    <testsuite name="tests/unit/lib/theme.client.test.ts" timestamp="2026-04-25T06:46:31.917Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.0096125">
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads and writes stored theme preferences" time="0.003711375">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.001402667">
+    <testsuite name="tests/unit/posts/queue-runway.test.ts" timestamp="2026-04-26T03:54:43.737Z" hostname="Ivans-MacBook-Pro.local" tests="6" failures="0" errors="0" skipped="0" time="0.001402667">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses 24h / interval for INTERVAL" time="0.000491541">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; handles session override lifecycle" time="0.000338708">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue returns 0 when queue disabled" time="0.000072208">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; notifies and subscribes theme session changes" time="0.00057875">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses slot count for FIXED_SLOTS" time="0.000061125">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; resolves and applies effective themes" time="0.001770583">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue averages weekly slots over 7 days" time="0.000108708">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; syncs theme-color meta and removes SSR media variants" time="0.000988333">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatQueueRunwayDaysLabel uses ceil of posts / rate" time="0.000102667">
         </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; reads system effective theme from matchMedia" time="0.000222625">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to system theme changes with modern and legacy listeners" time="0.000513792">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; applies system preference and reacts to future changes" time="0.000360708">
-        </testcase>
-        <testcase classname="tests/unit/lib/theme.client.test.ts" name="theme client &gt; subscribes to document theme class changes" time="0.000541166">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatShortCadenceLabel prefers cadenceLabel when set" time="0.000082542">
         </testcase>
     </testsuite>
 </testsuites>

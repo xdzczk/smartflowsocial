@@ -5,7 +5,14 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Button } from "~/components/ui/button";
@@ -539,6 +546,25 @@ export default function NewPostPage() {
   const isEditMode = composerContext.mode !== "create";
   const showHydrationHardError = isEditMode && hydrationStatus === "error";
 
+  const queueNameFromUrl = searchParams.get("queue");
+  const resolvedInitialQueue = useMemo(() => {
+    const fromDraft = initialDraft?.queueType ?? null;
+    if (fromDraft) return fromDraft;
+    if (isEditMode || publishResultToken) return "unassigned";
+    const raw = queueNameFromUrl?.trim();
+    if (!raw) return "unassigned";
+    const known = typedQueueTypes.some((q) =>
+      typeof q === "string" ? q === raw : q.name === raw
+    );
+    return known ? raw : "unassigned";
+  }, [
+    initialDraft?.queueType,
+    isEditMode,
+    publishResultToken,
+    queueNameFromUrl,
+    typedQueueTypes,
+  ]);
+
   const shortComposeDraftPickerBase =
     composerTab === "thread"
       ? "/dashboard/compose?type=thread"
@@ -722,7 +748,7 @@ export default function NewPostPage() {
                     Boolean(initialDraftId) ||
                     isEditMode
                   }
-                  initialQueue={initialDraft?.queueType ?? "unassigned"}
+                  initialQueue={resolvedInitialQueue}
                   initialPollRestore={initialPollRestore}
                   initialDraftId={initialDraftId}
                   onDraftStateLabelChange={setSaveStateLabel}
@@ -747,6 +773,7 @@ export default function NewPostPage() {
                   onRelayClick={() => setRelaySelectorOpen(true)}
                   initialDraft={initialDraft}
                   initialDraftId={initialDraftId}
+                  initialQueueForCreate={resolvedInitialQueue}
                   initialScheduledFor={composedScheduledAt ?? undefined}
                   composerContext={composerContext}
                   skipLocalDraftRestore={

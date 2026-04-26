@@ -9,8 +9,8 @@ export const GAP = 28;
 export const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 export const CARD_MIN_HEIGHT = 232;
 
-/** Desktop dashboard: vertical chrome inside the horizontal Flow strip (py-4 + breathing room). */
-export const FLOW_DESKTOP_SCROLL_CHROME_PX = 36;
+/** Desktop dashboard: vertical chrome inside the horizontal Flow strip (pt-2.5 pb-2 + breathing room). */
+export const FLOW_DESKTOP_SCROLL_CHROME_PX = 22;
 
 /**
  * Dashboard desktop Flow cards: target width/height (~1.45–1.75), centered on {@link CARD_WIDTH}.

@@ -1,0 +1,315 @@
+import { Link, useFetcher, useRevalidator } from "@remix-run/react";
+import {
+  ListPlus,
+  MoreHorizontal,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+} from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import { toast } from "react-hot-toast";
+
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { queueCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
+import { buildComposeCreateUrl } from "~/features/posts/composer";
+import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+
+import type { QueueType } from "../types";
+
+import { QueueLanesPreview } from "./queue-health-empty-preview";
+import {
+  estimatePostsPerDayForQueue,
+  formatQueueRunwayDaysLabel,
+  formatShortCadenceLabel,
+} from "./queue-runway";
+
+const KPI_CARD_CLASS =
+  "card-lift kpi-card border-border-subtle/80 flex min-w-0 flex-1 flex-col overflow-hidden shadow-1 lg:h-full lg:min-h-0";
+
+export interface QueuesPanelProps {
+  /** Queue definitions in display order (same as settings). */
+  queueTypes: QueueType[];
+  queueCounts: Array<{ queueName: string; count: number }>;
+  /** Composer / interval queues: global quick-pick hours (for runway when a queue uses global interval). */
+  globalScheduleIntervalHours: number[];
+  onCreateQueueClick?: () => void;
+  onEditQueue?: (queue: QueueType) => void;
+  /** When false, create is blocked (plan limit). */
+  canCreateMoreQueues: boolean;
+  queuesLimit: number | null;
+}
+
+export function QueuesPanel({
+  queueTypes,
+  queueCounts,
+  globalScheduleIntervalHours,
+  onCreateQueueClick,
+  onEditQueue,
+  canCreateMoreQueues,
+  queuesLimit,
+}: QueuesPanelProps) {
+  const revalidator = useRevalidator();
+  const toggleFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const lastToggleHandled = useRef<unknown>(null);
+
+  const countByName = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const { queueName, count } of queueCounts) {
+      if (queueName === "Unassigned") continue;
+      m.set(queueName, count);
+    }
+    return m;
+  }, [queueCounts]);
+
+  useEffect(() => {
+    const data = toggleFetcher.data;
+    if (!data || toggleFetcher.state !== "idle") return;
+    if (data.error) {
+      toast.error(data.error);
+      return;
+    }
+    if (data.success && lastToggleHandled.current !== data) {
+      lastToggleHandled.current = data;
+      revalidator.revalidate();
+    }
+  }, [toggleFetcher.data, toggleFetcher.state, revalidator]);
+
+  const createDisabled = !canCreateMoreQueues || !onCreateQueueClick;
+  const createTitle =
+    !canCreateMoreQueues && queuesLimit != null
+      ? queueCapExceededMessage(queuesLimit)
+      : undefined;
+
+  const handleCreateClick = () => {
+    if (!onCreateQueueClick) return;
+    if (!canCreateMoreQueues && queuesLimit != null) {
+      toast.error(queueCapExceededMessage(queuesLimit));
+      return;
+    }
+    onCreateQueueClick();
+  };
+
+  const submitToggleEnabled = (queue: QueueType, enabled: boolean) => {
+    const fd = new FormData();
+    fd.set("_action", "toggle_queue_enabled");
+    fd.set("id", queue.id);
+    fd.set("isEnabled", enabled ? "on" : "off");
+    lastToggleHandled.current = null;
+    toggleFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
+  };
+
+  return (
+    <section
+      className="flex w-full min-w-0 flex-col lg:min-h-0 lg:flex-1"
+      aria-label="Queues"
+    >
+      <Card className={KPI_CARD_CLASS}>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
+          <h3 className="text-overline text-text-secondary">Queues</h3>
+          {onCreateQueueClick ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0 gap-1 px-2.5 text-xs font-medium"
+              disabled={createDisabled}
+              title={createTitle}
+              onClick={handleCreateClick}
+            >
+              <Plus className="size-3.5" strokeWidth={2.25} aria-hidden />
+              Create Queue
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" className="h-8" asChild>
+              <Link to="/dashboard/settings?tab=publishing">Create Queue</Link>
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
+          {queueTypes.length === 0 ? (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-1 py-3">
+              <div className="flex w-full max-w-[17.5rem] flex-col items-center text-center">
+                <div className="mb-3">
+                  <QueueLanesPreview />
+                </div>
+                <h4 className="text-text mb-1 text-sm font-semibold tracking-tight">
+                  No queues yet
+                </h4>
+                <p className="text-text-secondary mb-4 max-w-[17.5rem] text-xs leading-snug text-pretty">
+                  Create publishing lanes for your content. Each queue keeps its
+                  own cadence, runway, and scheduled backlog.
+                </p>
+                <div className="flex flex-col items-center gap-1">
+                  {onCreateQueueClick ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateClick}
+                      disabled={createDisabled}
+                      title={createTitle}
+                    >
+                      Create first queue
+                    </Button>
+                  ) : (
+                    <Button size="sm" asChild>
+                      <Link to="/dashboard/settings?tab=publishing">
+                        Create first queue
+                      </Link>
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-text-secondary hover:text-text h-auto py-1.5 font-normal"
+                    asChild
+                  >
+                    <Link
+                      to="/dashboard/settings?tab=publishing"
+                      className="no-underline"
+                    >
+                      Queue settings
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <ul className="divide-border-subtle/60 flex min-h-0 flex-1 flex-col divide-y overflow-y-auto">
+              {queueTypes.map((qt) => {
+                const inQueue = countByName.get(qt.name) ?? 0;
+                const postsPerDay = estimatePostsPerDayForQueue(
+                  qt,
+                  globalScheduleIntervalHours
+                );
+                const runwayLabel = formatQueueRunwayDaysLabel(
+                  inQueue,
+                  postsPerDay
+                );
+                const cadence = formatShortCadenceLabel(
+                  qt,
+                  globalScheduleIntervalHours
+                );
+                const token = qt.colorToken ?? null;
+                const dotColor =
+                  token != null && token !== ""
+                    ? getQueueAccentHex(token)
+                    : (qt.color ?? "#6B7280");
+                const enabled = qt.isEnabled !== false;
+                const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(qt.name)}`;
+                const composeUrl = buildComposeCreateUrl({ queue: qt.name });
+
+                return (
+                  <li
+                    key={qt.id}
+                    className="flex min-w-0 items-center gap-2 py-2"
+                  >
+                    <div
+                      className="mt-0.5 size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: dotColor }}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-baseline justify-between gap-2">
+                        <span className="text-text truncate text-xs font-semibold tracking-tight">
+                          {qt.name}
+                        </span>
+                        <span className="text-text-secondary shrink-0 text-[11px] tabular-nums">
+                          {inQueue} queued
+                        </span>
+                      </div>
+                      <div className="text-text-secondary mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0 text-[11px] leading-tight">
+                        <span className="tabular-nums">{runwayLabel}</span>
+                        {cadence ? (
+                          <span className="text-text-tertiary">{cadence}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      {onEditQueue ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-text-secondary hover:text-text size-8"
+                          onClick={() => onEditQueue(qt)}
+                          aria-label={`Edit ${qt.name}`}
+                        >
+                          <Pencil className={INLINE_ICON_SIZE_CLASS} />
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-text-secondary hover:text-text size-8"
+                        asChild
+                      >
+                        <Link
+                          to={composeUrl}
+                          aria-label={`Add post to ${qt.name}`}
+                        >
+                          <ListPlus className={INLINE_ICON_SIZE_CLASS} />
+                        </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-text-secondary hover:text-text size-8"
+                        disabled={toggleFetcher.state !== "idle"}
+                        onClick={() => submitToggleEnabled(qt, !enabled)}
+                        aria-label={
+                          enabled ? `Pause ${qt.name}` : `Resume ${qt.name}`
+                        }
+                      >
+                        {enabled ? (
+                          <Pause className={INLINE_ICON_SIZE_CLASS} />
+                        ) : (
+                          <Play className={INLINE_ICON_SIZE_CLASS} />
+                        )}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-text-secondary hover:text-text size-8"
+                            aria-label={`More actions for ${qt.name}`}
+                          >
+                            <MoreHorizontal
+                              className={INLINE_ICON_SIZE_CLASS}
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem asChild>
+                            <Link to={scheduledUrl}>View scheduled</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/dashboard/settings?tab=publishing">
+                              Publishing settings
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
