@@ -81,8 +81,8 @@ export function ProductFeedbackSidebar({
   const feedbackInboxKind10050Relays =
     dashLoader?.feedbackInboxKind10050Relays ?? [];
 
-  // Match inactive `NavigationItem` / `OperatorAdminNavItem` in DashboardHeader; `text-xs` scales the row down.
-  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-left text-xs font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border dark:hover:bg-surface-overlay/16 ${
+  // Match `NavigationItem` in DashboardHeader (`text-sm` + tap row).
+  const triggerClass = `focus-ring group flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 text-left text-sm font-medium relative text-text-secondary hover:bg-surface-hover hover:text-text active:border-border dark:hover:bg-surface-overlay/16 ${
     collapsed ? "justify-center px-0 py-2" : ""
   }`;
   const iconSpanClass =
@@ -226,9 +226,7 @@ export function ProductFeedbackSidebar({
             aria-hidden
           />
         </span>
-        {!collapsed ? (
-          <span className="grow py-2">Report bug · Suggest feature</span>
-        ) : null}
+        {!collapsed ? <span className="grow py-2">Report bug</span> : null}
       </button>
 
       <DialogContent className="max-w-md">

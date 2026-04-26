@@ -33,7 +33,7 @@ import {
 } from "./queue-runway";
 
 const KPI_CARD_CLASS =
-  "card-lift kpi-card border-border-subtle/80 flex min-w-0 flex-1 flex-col overflow-hidden shadow-1 lg:h-full lg:min-h-0";
+  "kpi-card border-border-subtle/80 flex min-w-0 flex-1 flex-col overflow-hidden shadow-1 lg:h-full lg:min-h-0";
 
 export interface QueuesPanelProps {
   /** Queue definitions in display order (same as settings). */

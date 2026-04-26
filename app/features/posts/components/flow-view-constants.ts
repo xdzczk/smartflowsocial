@@ -9,8 +9,12 @@ export const GAP = 28;
 export const CARD_SLOT_SIZE = CARD_WIDTH + GAP;
 export const CARD_MIN_HEIGHT = 232;
 
-/** Desktop dashboard: vertical chrome inside the horizontal Flow strip (pt-2.5 pb-2 + breathing room). */
-export const FLOW_DESKTOP_SCROLL_CHROME_PX = 22;
+/**
+ * Desktop dashboard: vertical chrome inside the horizontal Flow strip.
+ * Must cover symmetric FlowView padding (py-5 → 40px) plus inner slack so hover {@link --elevation-2}
+ * can paint into padding without clipping. Keeps cards vertically centered in the strip.
+ */
+export const FLOW_DESKTOP_SCROLL_CHROME_PX = 68;
 
 /**
  * Dashboard desktop Flow cards: target width/height (~1.45–1.75), centered on {@link CARD_WIDTH}.

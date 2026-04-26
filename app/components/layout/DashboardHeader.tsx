@@ -400,7 +400,7 @@ function SidebarHeader({
 }: SidebarHeaderProps) {
   return (
     <div
-      className={`flex h-[var(--header-h)] w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
+      className={`flex min-h-[var(--header-h)] w-full flex-none items-center justify-between border-b border-transparent px-4 py-3.5 transition-[padding] duration-300 max-lg:py-3 lg:justify-center lg:py-4 ${
         isDesktopExpanded ? "lg:px-4" : "lg:px-0"
       }`}
     >
@@ -426,8 +426,8 @@ function SidebarHeader({
           alt={BRAND_NAME}
           className={
             isDesktopExpanded
-              ? "h-9 w-auto lg:h-8"
-              : "h-9 w-auto lg:h-7 lg:w-7 lg:object-contain"
+              ? "h-9 w-auto lg:h-9"
+              : "h-9 w-auto lg:h-8 lg:w-8 lg:object-contain"
           }
         />
       </Link>
@@ -608,12 +608,12 @@ export default function Header({
     ? () => setMobileSidebarOpen(false)
     : undefined;
 
-  const sidebarScrollPadding = isDesktopExpanded
-    ? "p-4"
-    : "p-2 lg:px-2 lg:pt-4";
-  const sidebarFooterPadding = isDesktopExpanded
-    ? "p-4"
-    : "p-2 lg:px-2 lg:py-3";
+  const sidebarNavPad = isDesktopExpanded
+    ? "px-4 pt-4 pb-2"
+    : "px-2 pt-2 pb-2 lg:px-2 lg:pt-4";
+  const sidebarBottomPad = isDesktopExpanded
+    ? "px-4 pb-4"
+    : "px-2 pb-4 lg:px-2";
 
   return (
     <>
@@ -628,50 +628,46 @@ export default function Header({
           isDesktopExpanded={isDesktopExpanded}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
-        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
           <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain transition-[padding] duration-300 ${sidebarScrollPadding} pb-2`}
+            className={`min-h-0 shrink grow-0 overflow-y-auto overscroll-y-contain transition-[padding] duration-300 ${sidebarNavPad}`}
           >
-            <SidebarNavContent
-              pathname={location.pathname}
-              isDesktopExpanded={isDesktopExpanded}
-              onUpgradeClick={handleUpgradeClick}
-              onMobileNavActiveClick={onMobileNavActiveClick}
-              isFirstRunDashboard={isFirstRunDashboard}
-            />
-            {isOperatorAdmin ? (
-              <div className="mt-3 shrink-0 lg:mt-3.5">
+            <div className="flex flex-col gap-2">
+              <SidebarNavContent
+                pathname={location.pathname}
+                isDesktopExpanded={isDesktopExpanded}
+                onUpgradeClick={handleUpgradeClick}
+                onMobileNavActiveClick={onMobileNavActiveClick}
+                isFirstRunDashboard={isFirstRunDashboard}
+              />
+              {isOperatorAdmin ? (
                 <OperatorAdminNavItem
                   pathname={location.pathname}
                   collapsed={!isDesktopExpanded}
                   onMobileNavActiveClick={onMobileNavActiveClick}
                 />
-              </div>
-            ) : null}
-            <div className="border-border-subtle/35 dark:border-border-subtle/25 mt-5 flex shrink-0 flex-col border-t pt-4 max-lg:pt-5 lg:mt-7 lg:pt-4">
-              <div className="flex flex-col gap-2 max-lg:gap-2.5 lg:gap-2.5">
-                <PlanUsageSidebar
-                  isDesktopExpanded={isDesktopExpanded}
-                  onMobileNavActiveClick={onMobileNavActiveClick}
-                />
-                {install.shouldRender ? (
-                  <InstallPromptSidebar
-                    isDesktopExpanded={isDesktopExpanded}
-                    canPrompt={install.canPrompt}
-                    isIosSafariInstallable={install.isIosSafariInstallable}
-                    onChromiumInstall={handlePwaChromiumInstall}
-                    dismiss={install.dismiss}
-                    iosInstructionsOpen={installIosInstructionsOpen}
-                    setIosInstructionsOpen={setInstallIosInstructionsOpen}
-                  />
-                ) : null}
-              </div>
+              ) : null}
             </div>
-            <div className="min-h-0 min-w-0 flex-1 basis-0" aria-hidden />
           </div>
+          <div className="min-h-0 shrink-0 grow basis-0" aria-hidden />
           <div
-            className={`border-border-subtle/35 dark:border-border-subtle/25 flex shrink-0 flex-col gap-1.5 border-t pt-3 pb-2 transition-[padding] duration-300 max-lg:gap-2 max-lg:pt-3.5 lg:gap-2 lg:pt-3.5 ${sidebarFooterPadding}`}
+            className={`flex shrink-0 flex-col gap-3 pt-6 transition-[padding] duration-300 ${sidebarBottomPad}`}
           >
+            <PlanUsageSidebar
+              isDesktopExpanded={isDesktopExpanded}
+              onMobileNavActiveClick={onMobileNavActiveClick}
+            />
+            {install.shouldRender ? (
+              <InstallPromptSidebar
+                isDesktopExpanded={isDesktopExpanded}
+                canPrompt={install.canPrompt}
+                isIosSafariInstallable={install.isIosSafariInstallable}
+                onChromiumInstall={handlePwaChromiumInstall}
+                dismiss={install.dismiss}
+                iosInstructionsOpen={installIosInstructionsOpen}
+                setIosInstructionsOpen={setInstallIosInstructionsOpen}
+              />
+            ) : null}
             <NavigationItem
               to="/dashboard/settings"
               feature="settings"

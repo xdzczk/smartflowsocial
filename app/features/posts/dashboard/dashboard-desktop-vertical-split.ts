@@ -17,20 +17,23 @@ export function getDashboardDesktopFlowScrollOuterHeightPx(
 
 export const DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX = 280;
 
-/** Desktop lower row ceiling (normal and tall; avoids lowering this at the tall threshold) */
-export const DASHBOARD_DESKTOP_LOWER_ROW_MAX_PX = 330;
+/** When the viewport is shorter than both mins, lower row may shrink below {@link DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX} after the flow zone hits its floor. */
+const LOWER_ROW_SHRINK_FLOOR_PX = 240;
 
-const FLOW_ZONE_PREF_VH = 0.27;
-const LOWER_ROW_PREF_VH = 0.29;
+/** Desktop lower row ceiling (normal and tall; avoids lowering this at the tall threshold) */
+export const DASHBOARD_DESKTOP_LOWER_ROW_MAX_PX = 348;
+
+const FLOW_ZONE_PREF_VH = 0.25;
+const LOWER_ROW_PREF_VH = 0.31;
 
 /** Baseline desktop: max outer Flow zone (compact large-window fit) */
-export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_PX = 340;
+export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_PX = 332;
 
 /** Tall band (960–999px vh): modest extra Flow zone height */
-export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_TALL_PX = 356;
+export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_TALL_PX = 348;
 
 /** Very tall / fullscreen: Flow zone ceiling */
-export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_VERY_TALL_PX = 400;
+export const DASHBOARD_DESKTOP_FLOW_ZONE_MAX_VERY_TALL_PX = 388;
 
 function applyVeryTallSlackDistribution(
   slackFloor: number,
@@ -46,7 +49,7 @@ function applyVeryTallSlackDistribution(
     let hLower = hLowerRef.v;
     if (preferFlow && hFlow < flowZoneMax) {
       hFlow += 1;
-    } else if (hLower < lowerMax && hLower < hFlow) {
+    } else if (hLower < lowerMax) {
       hLower += 1;
     } else if (hFlow < flowZoneMax) {
       hFlow += 1;
@@ -68,16 +71,13 @@ function shrinkHeightsUntilFitInner(
   let hLower = hLowerRef.v;
   let guard = 0;
   while (hFlow + hLower > inner && guard++ < 2000) {
-    if (hLower > DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX && hLower > hFlow - 1) {
-      hLower -= 1;
-    } else if (hFlow > flowZoneMin) {
+    if (hFlow > flowZoneMin) {
       hFlow -= 1;
-    } else if (hLower > DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX) {
+    } else if (hLower > LOWER_ROW_SHRINK_FLOOR_PX) {
       hLower -= 1;
     } else {
       break;
     }
-    hLower = Math.min(hLower, hFlow);
   }
   hFlowRef.v = hFlow;
   hLowerRef.v = hLower;
@@ -107,10 +107,8 @@ export function computeDashboardDesktopSplitHeights({
   const lowerMax = DASHBOARD_DESKTOP_LOWER_ROW_MAX_PX;
 
   const flowScrollOuter = getDashboardDesktopFlowScrollOuterHeightPx(vh);
-  const flowZoneMin = Math.max(
-    flowScrollOuter,
-    DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX
-  );
+  /** Flow band only needs to fit the strip; do not force it to match lower-row min (that hid ~10–14px from the Next 7 days row). */
+  const flowZoneMin = flowScrollOuter;
 
   let hFlow = Math.round(
     Math.min(flowZoneMax, Math.max(flowZoneMin, vh * FLOW_ZONE_PREF_VH))
@@ -121,14 +119,16 @@ export function computeDashboardDesktopSplitHeights({
       Math.max(DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX, vh * LOWER_ROW_PREF_VH)
     )
   );
-  hLower = Math.min(hLower, hFlow);
 
   const sumMin = flowZoneMin + DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX;
 
   if (inner < sumMin) {
+    const hFlowRef = { v: flowZoneMin };
+    const hLowerRef = { v: DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX };
+    shrinkHeightsUntilFitInner(inner, flowZoneMin, hFlowRef, hLowerRef);
     return {
-      flowZonePx: flowZoneMin,
-      lowerRowPx: DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX,
+      flowZonePx: hFlowRef.v,
+      lowerRowPx: hLowerRef.v,
     };
   }
 
@@ -148,7 +148,7 @@ export function computeDashboardDesktopSplitHeights({
       hLower = hLowerRef.v;
     } else {
       const growLower = (s: number) => {
-        const add = Math.min(s, lowerMax - hLower, hFlow - hLower);
+        const add = Math.min(s, lowerMax - hLower);
         hLower += add;
         return s - add;
       };
@@ -173,7 +173,6 @@ export function computeDashboardDesktopSplitHeights({
     lowerMax,
     Math.max(DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX, hLower)
   );
-  hLower = Math.min(hLower, hFlow);
 
   const hFlowRef = { v: hFlow };
   const hLowerRef = { v: hLower };
@@ -181,6 +180,6 @@ export function computeDashboardDesktopSplitHeights({
 
   return {
     flowZonePx: hFlowRef.v,
-    lowerRowPx: Math.min(hLowerRef.v, hFlowRef.v),
+    lowerRowPx: hLowerRef.v,
   };
 }

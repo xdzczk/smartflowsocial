@@ -1,5 +1,5 @@
 import { Repeat } from "lucide-react";
-import { memo, type ReactNode } from "react";
+import { memo, type CSSProperties, type ReactNode } from "react";
 
 import { isPollPostItem } from "~/features/polls";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -240,92 +240,109 @@ function FlowCardInner({
     ? "border-transparent bg-surface shadow-none"
     : "border-transparent bg-surface-raised shadow-1 hover:shadow-2";
 
+  const glowLayerStyle: CSSProperties | undefined = isNextScheduledAndFuture
+    ? {
+        ["--queue-color" as string]: shadowColor,
+        ...(glowStyle ?? {}),
+      }
+    : undefined;
+
   return (
     <button
       type="button"
       onClick={onClick}
       tabIndex={tabIndex}
-      className={`focus-ring card-lift flow-card-queue-shadow group motion-base relative flex h-[200px] w-[280px] flex-shrink-0 flex-row overflow-hidden rounded-lg border md:h-[var(--flow-card-h,232px)] md:w-[352px] ${nextCardClass} ${isPastCard ? "opacity-70 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""} ${isNextScheduledAndFuture ? "animate-flow-next-shadow-glow" : ""}`}
+      className={`focus-ring card-lift flow-card-queue-shadow group motion-base relative flex h-[200px] w-[280px] flex-shrink-0 flex-row rounded-lg border md:h-[var(--flow-card-h,232px)] md:w-[352px] ${nextCardClass} ${isPastCard ? "opacity-70 hover:opacity-100 focus:opacity-100 active:opacity-100" : ""}`}
       style={{
         ["--queue-color" as string]: shadowColor,
-        ...(glowStyle ?? {}),
       }}
       aria-label={ariaLabel ?? defaultAriaLabel}
       title={`${preview}\n${statusLabel} ${timeLabel}`}
     >
-      {/* Subtle queue wash on hover (behind z-10 content; shows through open areas / edges; lower mix than legacy 8%/12%) */}
-      <div
-        className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_4%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_6%,transparent)]"
-        aria-hidden
-      />
-      {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
-      {hasMedia ? (
-        <div className="bg-surface-hover/36 relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-lg md:w-32 md:min-w-[128px]">
-          <MediaPreviewCollage
-            urls={mediaUrls}
-            className="h-full w-full rounded-l-lg"
-            thumbnailClassName="h-full min-h-full w-full object-cover object-center"
-            hidePlayButton
-            twoItemLayout="vertical"
-            fallback={
-              <div className="bg-surface-hover h-full w-full flex-shrink-0" />
-            }
-          />
-          {isRepostContent(item) ? (
-            <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
-              <Repeat
-                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                strokeWidth={2}
-                aria-hidden
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="bg-surface-hover/58 dark:bg-surface-hover/42 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-lg p-2.5 md:w-32 md:min-w-[128px] md:p-3.5">
-          {isRepostContent(item) ? (
-            <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
-              <Repeat
-                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
-                strokeWidth={2}
-                aria-hidden
-              />
-            </div>
-          ) : null}
-          <span className="text-text-secondary line-clamp-4 text-sm leading-snug">
-            {contentSummaryText}
-          </span>
-        </div>
-      )}
-      {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-3.5 text-left md:gap-2 md:p-5">
-        {isLastPosted ? (
-          <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-            Last post
-          </span>
-        ) : isNextScheduledAndFuture ? (
-          <span className="bg-surface-selected text-surface-selected-foreground mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-            Next
-          </span>
-        ) : null}
+      {/* Queue-tinted pulse on its own layer so the button can still take neutral hover elevation (box-shadow). */}
+      {isNextScheduledAndFuture ? (
         <span
-          className={`text-text leading-tight font-semibold tracking-tight tabular-nums ${isNextScheduledAndFuture ? "text-[1.55rem]" : "text-[1.4rem]"}`}
-        >
-          {timeLabel}
-        </span>
+          className="animate-flow-next-shadow-glow pointer-events-none absolute inset-0 z-0 rounded-lg"
+          style={glowLayerStyle}
+          aria-hidden
+        />
+      ) : null}
+      {/* overflow-hidden on an inner layer so box-shadow / glow on the button are not clipped */}
+      <div className="relative z-10 flex h-full min-h-0 w-full min-w-0 flex-row overflow-hidden rounded-lg">
+        {/* Subtle queue wash on hover (behind z-10 content; shows through open areas / edges; lower mix than legacy 8%/12%) */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--queue-color)_4%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 dark:bg-[color-mix(in_srgb,var(--queue-color)_6%,transparent)]"
+          aria-hidden
+        />
+        {/* Visual anchor: count-based collage (1 full, 2 side-by-side, 3 one-big-two-small, 4 grid) */}
         {hasMedia ? (
-          <span className="text-text-secondary line-clamp-2 text-sm leading-snug">
-            {contentSummaryText}
+          <div className="bg-surface-hover/36 relative z-10 h-full w-24 min-w-[96px] flex-shrink-0 rounded-l-lg md:w-32 md:min-w-[128px]">
+            <MediaPreviewCollage
+              urls={mediaUrls}
+              className="h-full w-full rounded-l-lg"
+              thumbnailClassName="h-full min-h-full w-full object-cover object-center"
+              hidePlayButton
+              twoItemLayout="vertical"
+              fallback={
+                <div className="bg-surface-hover h-full w-full flex-shrink-0" />
+              }
+            />
+            {isRepostContent(item) ? (
+              <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
+                <Repeat
+                  className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="bg-surface-hover/58 dark:bg-surface-hover/42 relative z-10 flex h-full w-24 min-w-[96px] flex-shrink-0 flex-col justify-center overflow-hidden rounded-l-lg p-2.5 md:w-32 md:min-w-[128px] md:p-3.5">
+            {isRepostContent(item) ? (
+              <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
+                <Repeat
+                  className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              </div>
+            ) : null}
+            <span className="text-text-secondary line-clamp-4 text-sm leading-snug">
+              {contentSummaryText}
+            </span>
+          </div>
+        )}
+        {/* Text on right: tighter padding on mobile so next card peeks; clearer hierarchy */}
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-3.5 text-left md:gap-2 md:p-5">
+          {isLastPosted ? (
+            <span className="text-text-secondary bg-surface-hover/50 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+              Last post
+            </span>
+          ) : isNextScheduledAndFuture ? (
+            <span className="bg-surface-selected text-surface-selected-foreground mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+              Next
+            </span>
+          ) : null}
+          <span
+            className={`text-text leading-tight font-semibold tracking-tight tabular-nums ${isNextScheduledAndFuture ? "text-[1.55rem]" : "text-[1.4rem]"}`}
+          >
+            {timeLabel}
           </span>
-        ) : null}
-        <span className="text-text-secondary text-[11px] leading-snug">
-          {formattedTime}
-        </span>
-        <span className="text-text-secondary/90 text-xs leading-snug">
-          {statusLabel}
-          {postKindLabel ? ` · ${postKindLabel}` : ""}
-          {queueName ? ` · ${queueName}` : ""}
-        </span>
+          {hasMedia ? (
+            <span className="text-text-secondary line-clamp-2 text-sm leading-snug">
+              {contentSummaryText}
+            </span>
+          ) : null}
+          <span className="text-text-secondary text-[11px] leading-snug">
+            {formattedTime}
+          </span>
+          <span className="text-text-secondary/90 text-xs leading-snug">
+            {statusLabel}
+            {postKindLabel ? ` · ${postKindLabel}` : ""}
+            {queueName ? ` · ${queueName}` : ""}
+          </span>
+        </div>
       </div>
     </button>
   );

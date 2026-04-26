@@ -124,7 +124,7 @@ export function ScheduleNext7DaysCard({
       }}
     >
       <Card className="border-border-subtle bg-surface flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-2.5 pb-1.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <h3 className="text-overline text-text-secondary">Next 7 days</h3>
             {allSet ? (
@@ -148,7 +148,7 @@ export function ScheduleNext7DaysCard({
             <span>Target</span>
           </button>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-3">
           {isPostActivationEmpty ? (
             <div className="flex flex-col justify-start gap-3 py-3 lg:min-h-0 lg:flex-1">
               <p className="text-text-secondary text-sm">
@@ -173,7 +173,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="flex flex-col gap-2"
+              className="flex flex-col gap-1.5"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
