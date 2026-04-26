@@ -297,7 +297,7 @@ export function RecyclablesTable({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="font-montserrat bg-brand text-brand-on hover:bg-brand/90 motion-base inline-block rounded-full px-4 py-1 text-sm"
+                      className="font-montserrat bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-base inline-block rounded-full px-4 py-1 text-sm"
                     >
                       Open on Nostr
                     </Link>

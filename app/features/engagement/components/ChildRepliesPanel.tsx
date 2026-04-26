@@ -18,7 +18,7 @@ export function ChildRepliesPanel({
   if (isLoading) {
     return (
       <div
-        className="dark:border-brand/30 border-border mt-3 border-l-2 pl-3"
+        className="border-border border-l-selection-border/40 mt-3 border-l-2 pl-3"
         role="status"
         aria-live="polite"
         aria-busy="true"
@@ -34,7 +34,7 @@ export function ChildRepliesPanel({
   if (replies.length === 0) {
     return (
       <div
-        className="dark:border-brand/30 border-border mt-3 border-l-2 pl-3"
+        className="border-border border-l-selection-border/40 mt-3 border-l-2 pl-3"
         role="status"
       >
         <div className="text-text-secondary text-xs">No replies yet</div>
@@ -43,7 +43,7 @@ export function ChildRepliesPanel({
   }
 
   return (
-    <div className="border-brand/30 mt-3 space-y-2 border-l-2 pl-3">
+    <div className="border-l-selection-border/40 mt-3 space-y-2 border-l-2 pl-3">
       {replies.map((reply) => {
         const replyMetadata = metadata[reply.pubkey];
         let replyAuthorName =

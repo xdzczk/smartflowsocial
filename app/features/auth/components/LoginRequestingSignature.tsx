@@ -136,7 +136,7 @@ export function LoginRequestingSignature({
       <div className="flex flex-wrap gap-2 pt-1">
         <Button
           type="button"
-          className="bg-brand text-brand-on hover:bg-brand/90 shadow-2 min-w-[160px] justify-center"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2 min-w-[160px] justify-center"
           disabled
         >
           {isVerifying ? "Verifying…" : "Waiting for signature…"}

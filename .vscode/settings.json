@@ -82,5 +82,10 @@
   "git.autoRepositoryDetection": "openEditors",
   "git.autorefresh": false,
   "git.decorations.enabled": false,
-  "scm.diffDecorationsGutterVisibility": "hover"
+  "scm.diffDecorationsGutterVisibility": "hover",
+
+  // Tailwind v4 uses @theme, @utility, @import "tailwindcss", etc. The built-in
+  // CSS validator only understands standard at-rules, so it would otherwise
+  // report unknownAtRules warnings on app/tailwind.css (and similar files).
+  "css.lint.unknownAtRules": "ignore"
 }

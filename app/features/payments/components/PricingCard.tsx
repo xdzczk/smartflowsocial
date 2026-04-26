@@ -140,7 +140,7 @@ export function PricingCard({
 
   const primaryButtonClass = isTeams
     ? "bg-surface-hover text-text-secondary cursor-not-allowed"
-    : "bg-brand text-brand-on hover:bg-brand/90";
+    : "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90";
 
   const label = planCtaLabel(
     plan,

@@ -29,14 +29,14 @@ export function AudienceSourceCards({
           className={cn(
             "border-border relative rounded-xl border p-4 text-left text-sm transition-all",
             value === "mutuals"
-              ? "border-brand bg-brand/5 ring-brand ring-2"
-              : "hover:border-brand/40 hover:bg-surface-hover/30",
+              ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+              : "hover:border-selection-border/40 hover:bg-surface-hover/30",
             disabled && "pointer-events-none opacity-50"
           )}
         >
           {value === "mutuals" ? (
             <span
-              className="bg-brand text-brand-on absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full"
+              className="bg-selection-fill text-selection-foreground absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full"
               aria-hidden
             >
               <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -44,7 +44,7 @@ export function AudienceSourceCards({
           ) : null}
           <div className="flex flex-wrap items-center gap-2 pr-8 font-medium">
             Mutuals
-            <span className="bg-brand/15 text-brand rounded-xs px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+            <span className="bg-selection-wash text-selection-foreground rounded-xs px-1.5 py-0.5 text-[10px] font-semibold uppercase">
               Recommended
             </span>
           </div>
@@ -66,15 +66,15 @@ export function AudienceSourceCards({
         className={cn(
           "border-border relative rounded-xl border p-4 text-left text-sm transition-all",
           value === "selected"
-            ? "border-brand bg-brand/5 ring-brand ring-2"
-            : "hover:border-brand/40 hover:bg-surface-hover/30",
+            ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+            : "hover:border-selection-border/40 hover:bg-surface-hover/30",
           disabled && "pointer-events-none opacity-50",
           !allowMutuals && "sm:col-span-2"
         )}
       >
         {value === "selected" ? (
           <span
-            className="bg-brand text-brand-on absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full"
+            className="bg-selection-fill text-selection-foreground absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full"
             aria-hidden
           >
             <Check className="h-3.5 w-3.5" strokeWidth={2.5} />

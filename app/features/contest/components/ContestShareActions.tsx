@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { Button } from "~/components/ui/button";
+
 import { contestCopy } from "../contest-copy";
 
 export function ContestShareActions({
@@ -21,26 +23,28 @@ export function ContestShareActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button
+      <Button
         type="button"
-        className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
+        variant="outline"
+        size="sm"
         onClick={() => {
           void navigator.clipboard.writeText(announcementText);
           setCopiedKey("announcement");
         }}
       >
         {copiedKey === "announcement" ? "Copied" : contestCopy.copyAnnouncement}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
-        className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
+        variant="outline"
+        size="sm"
         onClick={() => {
           void navigator.clipboard.writeText(updateText);
           setCopiedKey("update");
         }}
       >
         {copiedKey === "update" ? "Copied" : contestCopy.copyUpdate}
-      </button>
+      </Button>
     </div>
   );
 }

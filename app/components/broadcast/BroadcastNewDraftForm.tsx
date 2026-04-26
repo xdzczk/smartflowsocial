@@ -10,6 +10,7 @@ import {
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { BroadcastCreationRail } from "~/components/broadcast/BroadcastCreationRail";
 import type { BroadcastCommitMode } from "~/components/broadcast/BroadcastRailModeTabs";
+import { Button } from "~/components/ui/button";
 import {
   FormControl,
   FormDescription,
@@ -21,6 +22,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
 import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -415,7 +417,7 @@ export function BroadcastNewDraftForm({
                 </label>
                 <select
                   id="broadcast-exclude-recent-days-global"
-                  className="border-border bg-canvas mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
+                  className={`${campaignFieldClassNames} mt-1 max-w-xs`}
                   value={String(excludeMessagedDays)}
                   onChange={(e) => {
                     setExcludeMessagedDays(Number(e.target.value));
@@ -446,15 +448,15 @@ export function BroadcastNewDraftForm({
 
             {canSaveAudience ? (
               <div className="stack-tight border-t pt-4 sm:flex-row sm:flex-wrap">
-                <button
+                <Button
                   type="submit"
                   name="intent"
                   value="save_audience"
+                  variant="outline"
                   disabled={busy}
-                  className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                 >
                   Save audience
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>

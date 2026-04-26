@@ -164,7 +164,7 @@ export function InvoiceModal({
                 onCopy(invoiceData.invoice);
                 setIsCopied(true);
               }}
-              className="border-border dark:border-border bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+              className="border-border dark:border-border bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
             >
               {isCopied ? "Copied" : "Copy"}
             </button>
@@ -183,7 +183,7 @@ export function InvoiceModal({
                 void handlePayInWallet();
               }}
               disabled={isOpeningWallet}
-              className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring mt-2 w-full rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring mt-2 w-full rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isOpeningWallet ? "Opening wallet..." : "Pay in wallet"}
             </button>
@@ -205,7 +205,7 @@ export function InvoiceModal({
               href={invoiceData.invoice}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring block w-full rounded-lg px-4 py-3 text-center text-sm font-medium focus-visible:ring-1 focus-visible:outline-none"
+              className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring block w-full rounded-lg px-4 py-3 text-center text-sm font-medium focus-visible:ring-1 focus-visible:outline-none"
             >
               Open BTCPay checkout
             </a>

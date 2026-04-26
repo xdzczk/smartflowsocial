@@ -85,7 +85,7 @@ export default function GiveawayPresetsPage() {
           <span className="text-text font-medium">Save as preset</span>.
         </p>
       ) : (
-        <div className="border-border overflow-x-auto rounded-lg border">
+        <div className="border-border bg-surface shadow-1 overflow-x-auto rounded-xl border">
           <table className="w-full text-left text-sm">
             <thead className="bg-surface-hover/40 text-text-secondary text-xs uppercase">
               <tr>

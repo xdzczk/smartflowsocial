@@ -79,7 +79,7 @@ function NoSubscriptionMessage() {
       </p>
       <Link
         to="/plans"
-        className="bg-brand text-brand-on hover:bg-brand/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
+        className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
       >
         View plans
         <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -133,7 +133,7 @@ function UpgradePlanSection() {
       <div className="stack-tight sm:flex-row sm:flex-wrap sm:items-center">
         <Link
           to="/plans"
-          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           Choose a paid plan
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -345,7 +345,7 @@ export function SubscriptionSettings({
                 <Link
                   to={primaryCta.to}
                   prefetch="intent"
-                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
                 >
                   {primaryCta.label}
                 </Link>
@@ -674,7 +674,7 @@ export function SubscriptionSettings({
                 <button
                   type="submit"
                   disabled={topUpFetcher.state !== "idle"}
-                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
                 >
                   {topUpFetcher.state === "idle"
                     ? "Continue to checkout"

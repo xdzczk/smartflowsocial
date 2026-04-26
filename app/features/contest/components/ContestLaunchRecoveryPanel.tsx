@@ -2,6 +2,8 @@ import { Form, Link, useSubmit } from "@remix-run/react";
 import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
+import { cn } from "~/lib/utils";
 
 import type { ContestDetailPageData } from "../contest-detail.types";
 
@@ -68,7 +70,7 @@ export function ContestLaunchRecoveryPanel({
   return (
     <div className="space-y-3">
       {showScheduledInfo && scheduledLabel ? (
-        <div className="border-border bg-surface-hover/30 rounded-md border p-3 text-sm">
+        <div className="border-border bg-surface shadow-1 rounded-xl border p-3 text-sm">
           <p className="text-text font-medium">Scheduled contest launch</p>
           <p className="text-text-secondary">
             Activates at {scheduledLabel}
@@ -112,7 +114,10 @@ export function ContestLaunchRecoveryPanel({
                     name="scheduledFor"
                     type="datetime-local"
                     required
-                    className="border-border bg-canvas text-text rounded-xs border px-2 py-1"
+                    className={cn(
+                      campaignFieldClassNames,
+                      "w-auto max-w-[14rem]"
+                    )}
                     value={
                       rescheduleValue ||
                       toDateTimeLocalValue(launchOrchestration.scheduledFor)
@@ -142,7 +147,7 @@ export function ContestLaunchRecoveryPanel({
               If the source post publish failed, fix or reschedule it from{" "}
               <Link
                 to="/dashboard/scheduled"
-                className="text-brand underline-offset-2 hover:underline"
+                className="text-link underline-offset-2 hover:underline"
               >
                 Scheduled
               </Link>
@@ -153,7 +158,7 @@ export function ContestLaunchRecoveryPanel({
       ) : null}
 
       {!isFailure && canReschedule ? (
-        <div className="border-border rounded-md border p-3 text-sm">
+        <div className="border-border bg-surface shadow-1 rounded-xl border p-3 text-sm">
           <p className="text-text mb-2 font-medium">Change launch time</p>
           <form
             className="flex flex-wrap items-end gap-2"
@@ -173,7 +178,7 @@ export function ContestLaunchRecoveryPanel({
                 name="scheduledFor"
                 type="datetime-local"
                 required
-                className="border-border bg-canvas text-text rounded-xs border px-2 py-1"
+                className={cn(campaignFieldClassNames, "w-auto max-w-[14rem]")}
                 defaultValue={toDateTimeLocalValue(
                   launchOrchestration.scheduledFor
                 )}

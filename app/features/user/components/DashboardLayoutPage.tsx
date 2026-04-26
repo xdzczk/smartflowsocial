@@ -433,7 +433,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
+                          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -465,7 +465,7 @@ export function DashboardLayoutPage(): ReactNode {
                   <Link
                     prefetch="intent"
                     to="/plans"
-                    className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
+                    className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
                   >
                     Restore plan
                   </Link>

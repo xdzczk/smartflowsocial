@@ -402,7 +402,7 @@ export function ErrorBoundary() {
               <div className="mt-10 flex justify-center">
                 <a
                   href="/"
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 shadow-1 rounded-md px-6 py-3 text-base font-semibold"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-1 rounded-md px-6 py-3 text-base font-semibold"
                 >
                   Go back home
                 </a>

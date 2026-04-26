@@ -914,7 +914,7 @@ export function EditPostModal({
                       isSigningEvent ||
                       isUploadingImages
                     }
-                    className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isUploadingImages
                       ? "Uploading Images..."

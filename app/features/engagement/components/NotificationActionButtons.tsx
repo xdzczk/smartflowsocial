@@ -99,7 +99,7 @@ export function NotificationActionButtons({
   const eventViewUrl = viewEventUrl ?? `https://primal.net/e/${eventId}`;
 
   const trayOpenClass =
-    "bg-brand/10 text-brand border-brand/25 border shadow-1";
+    "bg-selection-wash text-selection-foreground border-selection-border/30 border shadow-1";
 
   return (
     <div className="mt-0.5 space-y-1">
@@ -146,9 +146,9 @@ export function NotificationActionButtons({
             repostTrayOpen
               ? trayOpenClass
               : repostPostedHighlight
-                ? "text-brand border-brand/30 bg-brand/5 border"
+                ? "text-selection-foreground border-selection-border/40 bg-selection-wash border"
                 : repostScheduledHighlight
-                  ? "text-brand/85 border-brand/35 border border-dashed"
+                  ? "text-selection-foreground/90 border-selection-border/40 border border-dashed"
                   : ""
           }`}
           disabled={isReposting}
@@ -159,7 +159,9 @@ export function NotificationActionButtons({
         >
           <Repeat
             className={`${INLINE_ICON_SIZE_CLASS} ${
-              repostPostedHighlight && !repostTrayOpen ? "fill-primary/35" : ""
+              repostPostedHighlight && !repostTrayOpen
+                ? "fill-selection-foreground/35"
+                : ""
             }`}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
@@ -248,7 +250,9 @@ export function NotificationActionButtons({
           variant="ghost"
           size="sm"
           className={`${secondaryAckClass} ${
-            likeCompleted ? "text-brand bg-brand/8 border-brand/20 border" : ""
+            likeCompleted
+              ? "text-selection-foreground bg-selection-wash border-selection-border/25 border"
+              : ""
           }`}
           aria-label="Like"
           onClick={(e) => {
@@ -257,7 +261,7 @@ export function NotificationActionButtons({
           }}
         >
           <Heart
-            className={`h-3.5 w-3.5 ${likeCompleted ? "fill-primary/45" : ""}`}
+            className={`h-3.5 w-3.5 ${likeCompleted ? "fill-selection-foreground/40" : ""}`}
             strokeWidth={INLINE_ICON_STROKE}
             aria-hidden
           />
@@ -274,7 +278,9 @@ export function NotificationActionButtons({
             variant="ghost"
             size="sm"
             className={`${secondaryAckClass} ${
-              zapCompleted ? "text-brand bg-brand/8 border-brand/20 border" : ""
+              zapCompleted
+                ? "text-selection-foreground bg-selection-wash border-selection-border/25 border"
+                : ""
             }`}
             aria-label="Zap"
             onClick={(e) => {
@@ -283,7 +289,7 @@ export function NotificationActionButtons({
             }}
           >
             <Zap
-              className={`h-3.5 w-3.5 ${zapCompleted ? "fill-primary/45" : ""}`}
+              className={`h-3.5 w-3.5 ${zapCompleted ? "fill-selection-foreground/40" : ""}`}
               strokeWidth={INLINE_ICON_STROKE}
               aria-hidden
             />

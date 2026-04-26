@@ -28,7 +28,7 @@ export default function DashboardAdminLayout() {
 
   return (
     <AdminCurrencyProvider initialFx={adminFx} initialFxError={adminFxError}>
-      <div className="from-surface-hover/25 to-canvas min-h-[60vh] bg-gradient-to-b pb-12">
+      <div className="bg-canvas min-h-0 pb-10 sm:pb-12">
         <AdminTabNav />
         <Outlet />
       </div>

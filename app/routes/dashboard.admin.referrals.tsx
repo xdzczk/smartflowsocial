@@ -30,6 +30,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
+  AdminAccessDenied,
   AdminCard,
   AdminPageHeader,
   MetricCard,
@@ -150,7 +151,7 @@ export default function AdminReferralsPage() {
   const { unit, formatSats, moneyColumnLabel } = useAdminCurrency();
 
   if (!isLoaderOk(raw)) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
 
   const data = raw;
@@ -593,7 +594,7 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Referrals table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export", "csv"]]).toString()}`}
-              className="text-brand text-sm hover:underline"
+              className="text-link hover:text-link-hover text-sm hover:underline"
             >
               Export CSV
             </a>
@@ -629,7 +630,7 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Earnings table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export_earnings", "csv"]]).toString()}`}
-              className="text-brand text-sm hover:underline"
+              className="text-link hover:text-link-hover text-sm hover:underline"
             >
               Export earnings CSV
             </a>
@@ -674,7 +675,7 @@ export default function AdminReferralsPage() {
                           <input type="hidden" name="earning_id" value={e.id} />
                           <button
                             type="submit"
-                            className="text-brand text-xs hover:underline"
+                            className="text-link hover:text-link-hover text-xs hover:underline"
                           >
                             Retry
                           </button>
@@ -690,7 +691,7 @@ export default function AdminReferralsPage() {
 
         <Link
           to="/dashboard/admin"
-          className="text-brand text-sm hover:underline"
+          className="text-link hover:text-link-hover text-sm hover:underline"
         >
           ← Back to overview
         </Link>

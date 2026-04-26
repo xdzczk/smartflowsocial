@@ -506,7 +506,7 @@ function DashboardReturningUserSplit({
                 <button
                   type="button"
                   onClick={onFlowRetry}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
                 >
                   Retry
                 </button>

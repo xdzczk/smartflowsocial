@@ -1,5 +1,9 @@
 import { useFetcher } from "@remix-run/react";
 
+import { Button } from "~/components/ui/button";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
+import { cn } from "~/lib/utils";
+
 export function GiveawayDetailSavePresetForm() {
   const fetcher = useFetcher();
   return (
@@ -13,15 +17,16 @@ export function GiveawayDetailSavePresetForm() {
         name="presetName"
         type="text"
         placeholder="Preset name"
-        className="border-border bg-canvas rounded-xs border px-2 py-1 text-sm"
+        className={cn(campaignFieldClassNames, "max-w-xs")}
       />
-      <button
+      <Button
         type="submit"
-        className="border-border rounded-md border px-3 py-1 text-sm"
+        variant="outline"
+        size="sm"
         disabled={fetcher.state !== "idle"}
       >
         Save
-      </button>
+      </Button>
     </fetcher.Form>
   );
 }

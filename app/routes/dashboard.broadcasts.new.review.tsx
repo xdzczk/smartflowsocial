@@ -5,6 +5,7 @@ import { Suspense, useCallback, useMemo, useState } from "react";
 
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { Button } from "~/components/ui/button";
 import { requireUserId } from "~/features/auth";
 import {
   formatBroadcastAudienceLabel,
@@ -21,6 +22,7 @@ import {
   ensureUnsubscribeTokensForCampaign,
   getBroadcastUnsubscribeBaseUrl,
 } from "~/features/broadcast/broadcast-unsubscribe.server";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
 import {
   getBroadcastPlanLimits,
   getUserPlanType,
@@ -306,7 +308,7 @@ function BroadcastNewReviewRouteLoaded({
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <section className="border-border rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <h2 className="font-medium">Campaign summary</h2>
             <ul className="text-text-secondary mt-3 space-y-2 text-sm">
               <li>
@@ -362,7 +364,7 @@ function BroadcastNewReviewRouteLoaded({
             </div>
           </section>
 
-          <section className="border-border rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <h2 className="font-medium">Recipient resolution</h2>
             <ul className="text-text-secondary mt-3 space-y-1 text-sm">
               <li>Final send count: {campaign.totalRecipients}</li>
@@ -395,7 +397,7 @@ function BroadcastNewReviewRouteLoaded({
           </section>
 
           {snapshotSummary || snapshotSourceTab ? (
-            <section className="border-border rounded-lg border p-4">
+            <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
               <h2 className="font-medium">Composer snapshot</h2>
               <p className="text-text-secondary mt-2 text-sm">
                 {snapshotSourceTab ? (
@@ -447,7 +449,7 @@ function BroadcastNewReviewRouteLoaded({
             </section>
           ) : null}
 
-          <section className="border-border rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <h2 className="font-medium">Save audience</h2>
             <p className="text-text-secondary mt-2 text-sm">
               Save this audience definition to your library for reuse (same type
@@ -471,28 +473,23 @@ function BroadcastNewReviewRouteLoaded({
                   id="save-audience-name"
                   name="name"
                   defaultValue={`${campaign.name} audience`}
-                  className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+                  className={campaignFieldClassNames}
                 />
               </div>
-              <button
-                type="submit"
-                className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-              >
-                Save as audience
-              </button>
+              <Button type="submit">Save as audience</Button>
             </Form>
           </section>
         </div>
 
         <div className="space-y-6">
-          <section className="border-border rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <h2 className="font-medium">Compatibility forecast</h2>
             <p className="text-text-secondary mt-2 text-sm">
               {broadcastCompatibilityForecastNote(campaign.deliveryMode)}
             </p>
           </section>
 
-          <section className="border-border rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <h2 className="font-medium">Plan limits</h2>
             <p className="text-text-secondary mt-2 text-sm">
               Plan: {planType} · up to {limits.maxRecipientsPerCampaign}{" "}
@@ -505,7 +502,7 @@ function BroadcastNewReviewRouteLoaded({
           </section>
 
           {warnings.length > 0 ? (
-            <section className="border-border rounded-lg border p-4">
+            <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
               <h2 className="font-medium">Risk &amp; quality</h2>
               <ul className="mt-2 space-y-2 text-sm">
                 {warnings.map((w) => (
@@ -525,28 +522,28 @@ function BroadcastNewReviewRouteLoaded({
             </section>
           ) : null}
 
-          <section className="border-border bg-surface-hover/20 rounded-lg border p-4">
+          <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
             <p className="text-text-secondary text-xs">
               Use broadcasts for relevant updates. Repeated unsolicited DMs can
               damage sender reputation on the network.
             </p>
             <div className="stack-tight mt-4 sm:flex-row sm:flex-wrap">
-              <Link
-                to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}
-                className="border-border bg-canvas hover:bg-surface-hover inline-flex justify-center rounded-md border px-4 py-2 text-sm font-medium"
-              >
-                Back to edit
-              </Link>
-              <button
+              <Button variant="outline" asChild>
+                <Link
+                  to={`/dashboard/broadcasts/new?campaignId=${encodeURIComponent(campaign.id)}`}
+                >
+                  Back to edit
+                </Link>
+              </Button>
+              <Button
                 type="button"
                 onClick={() => {
                   void runFinalize();
                 }}
                 disabled={!!finalizeProgress}
-                className="bg-brand text-brand-on inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {scheduledIsFuture ? "Sign and schedule" : "Sign and send now"}
-              </button>
+              </Button>
             </div>
             {finalizeProgress ? (
               <p className="text-text-secondary mt-2 text-sm">

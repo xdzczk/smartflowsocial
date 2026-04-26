@@ -4,6 +4,8 @@ import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import {
+  AdminAccessDenied,
+  AdminAnalyticsPageSkeleton,
   AdminChartCard,
   AdminLineChart,
   AdminPageHeader,
@@ -11,7 +13,6 @@ import {
   AdminSection,
   MetricCard,
   useAdminCurrency,
-  AdminAnalyticsPageSkeleton,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,
@@ -83,7 +84,7 @@ type AdminAnalyticsLoaderResult =
 export default function AdminAnalyticsPage() {
   const raw = useLoaderData() as AdminAnalyticsLoaderResult;
   if ("error" in raw) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
 
   return (
@@ -144,7 +145,7 @@ function AdminAnalyticsPageLoaded({
           title="Insight summary"
           description="Rule-based read on this range — low volume stays intentionally cautious."
         >
-          <ul className="border-border bg-surface/50 space-y-2 rounded-xl border p-4 text-sm">
+          <ul className="border-border bg-surface space-y-2 rounded-xl border p-4 text-sm">
             {d.takeaways.map((t) => (
               <li key={t} className="text-text/90 list-inside list-disc">
                 {t}

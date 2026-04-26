@@ -1,3 +1,9 @@
+import { cn } from "~/lib/utils";
+
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "../campaign-field-classes";
 import { payoutCopy } from "../payout-copy";
 
 export function PayoutMethodSelector({
@@ -21,7 +27,7 @@ export function PayoutMethodSelector({
           <select
             name="payoutWalletMode"
             defaultValue={walletMode}
-            className="border-border bg-canvas ml-2 rounded-md border px-2 py-1 text-sm"
+            className={cn(campaignSelectClassNames, "ml-2 w-auto min-w-0")}
           >
             <option value="manual">Manual payout</option>
             <option value="nwc_creator" disabled={!nwcEnabled}>
@@ -55,7 +61,7 @@ export function PayoutMethodSelector({
             defaultValue={autoPayCapSats ?? ""}
             min={0}
             step={1}
-            className="border-border bg-canvas ml-2 w-40 rounded-md border px-2 py-1 text-sm"
+            className={cn(campaignFieldClassNames, "ml-2 w-40")}
           />
         </label>
       </div>

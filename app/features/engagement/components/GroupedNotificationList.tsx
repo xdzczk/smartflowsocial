@@ -323,7 +323,7 @@ function GroupedNotificationCard({
   };
 
   return (
-    <div className="border-border bg-surface overflow-hidden rounded-lg border">
+    <div className="border-border bg-surface shadow-1 overflow-hidden rounded-xl border">
       <div className="flex flex-col items-stretch lg:flex-row lg:items-start">
         <div className="border-border flex flex-shrink-0 flex-col border-b p-2 lg:w-[30%] lg:border-r lg:border-b-0 lg:py-2 lg:pr-2 lg:pl-2.5">
           <div className="mb-1.5 flex gap-2">

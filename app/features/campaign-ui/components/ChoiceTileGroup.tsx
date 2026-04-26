@@ -10,16 +10,17 @@ export interface ChoiceTileOption<T extends string = string> {
 }
 
 const tileBase = cn(
-  "border-border bg-surface cursor-pointer rounded-lg border motion-fast",
-  "hover:border-brand/40",
+  "border-border bg-surface shadow-1 cursor-pointer rounded-xl border motion-fast",
+  "hover:border-selection-border/40 hover:bg-surface-hover/25",
   "focus-within:ring-focus-ring focus-within:ring-1",
   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
 );
 
-const tileSelected = "border-brand bg-brand/5";
+const tileSelected =
+  "border-selection-border bg-selection-wash ring-selection-border/35 ring-2";
 
 /**
- * Single-select choice tiles (radio). Selected state uses border-brand, no glow ring.
+ * Single-select choice tiles (radio). Selected state uses selection tokens.
  */
 export function ChoiceTileGroup<T extends string>({
   name,

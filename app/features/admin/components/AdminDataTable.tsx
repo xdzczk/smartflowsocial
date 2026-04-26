@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { StatusIcon } from "~/components/ui/status-icon";
 import { cn } from "~/lib/utils";
 
 export function AdminDataTable({
@@ -17,7 +18,7 @@ export function AdminDataTable({
     <div
       data-density={density === "compact" ? "compact" : undefined}
       className={cn(
-        "border-border bg-surface/40 shadow-1 overflow-x-auto rounded-xl border",
+        "border-border bg-surface shadow-1 overflow-x-auto rounded-xl border",
         className
       )}
     >
@@ -47,7 +48,7 @@ export function AdminDataTableHead({
   return (
     <thead
       className={cn(
-        "bg-surface-hover/45 border-border sticky top-0 z-[1] border-b backdrop-blur-sm",
+        "bg-surface-hover/50 border-border sticky top-0 z-[1] border-b",
         className
       )}
     >
@@ -65,11 +66,11 @@ export function AdminDataTableEmpty({
 }) {
   return (
     <tr>
-      <td
-        colSpan={colSpan}
-        className="text-text-secondary p-8 text-center text-sm"
-      >
-        {children}
+      <td colSpan={colSpan} className="p-8">
+        <div className="text-text-secondary flex flex-col items-center justify-center gap-2 text-center text-sm">
+          <StatusIcon tone="neutral" size="md" />
+          <div>{children}</div>
+        </div>
       </td>
     </tr>
   );

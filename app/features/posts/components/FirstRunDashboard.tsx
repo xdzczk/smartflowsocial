@@ -63,7 +63,7 @@ export function FirstRunDashboard({
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
+                className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
               >
                 Create first post
               </Link>

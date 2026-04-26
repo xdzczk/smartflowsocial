@@ -1052,7 +1052,7 @@ function MiniCalendarGrid({
               !isCurrentMonth ? "text-text-secondary/70" : "text-text"
             } ${
               isSelected
-                ? "bg-brand text-brand-on"
+                ? "bg-selection-fill text-selection-foreground hover:bg-selection-fill/90"
                 : isToday
                   ? "ring-brand bg-brand/10 ring-1"
                   : "hover:bg-surface-hover"

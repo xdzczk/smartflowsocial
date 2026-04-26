@@ -1,12 +1,17 @@
 import { cn } from "~/lib/utils";
 
-/** Main-column form fields aligned with rail field grammar, slightly larger type. */
+/**
+ * Native `<input>` / `<textarea>` on campaign flows — visual parity with
+ * `~/components/ui/input` (surface, shadow-1, focus-ring), without Radix.
+ */
 export const campaignFieldClassNames = cn(
-  "border-border bg-canvas text-text placeholder:text-text-tertiary",
-  "h-10 w-full rounded-md border px-3 text-sm shadow-none",
-  "motion-fast",
-  "focus-visible:ring-focus-ring focus-visible:outline-none focus-visible:ring-1",
+  "focus-ring border-border bg-surface text-text placeholder:text-text-tertiary",
+  "shadow-1 motion-fast h-9 w-full rounded-md border px-3 py-1 text-sm",
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 
-export const campaignSelectClassNames = cn(campaignFieldClassNames, "py-0");
+/** Native `<select>` — same ladder; slightly taller vertical padding for glyphs. */
+export const campaignSelectClassNames = cn(
+  campaignFieldClassNames,
+  "block py-1.5"
+);

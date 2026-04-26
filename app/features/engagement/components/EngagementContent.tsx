@@ -3,9 +3,11 @@
  * Renders by type tab: All (replies + mentions), Replies, or Mentions (quotes + mention-type).
  */
 
+import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 import { EmptyState } from "~/components/ui/empty-state";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 
 import type { EngagementItemStateMap } from "../engagement-filter";
 import type { EngagementTypeTab } from "../hooks/useEngagementState";
@@ -140,9 +142,13 @@ export function EngagementContent({
         ) : null}
 
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-surface rounded-lg border">
-            <EmptyState title="No engagement found for your posts yet." />
-          </div>
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="No engagement yet"
+            description="When people reply, mention you, or quote your posts, it will show up here."
+            className="border-border bg-surface rounded-xl border"
+          />
         ) : null}
       </div>
     );
@@ -159,12 +165,17 @@ export function EngagementContent({
             listVariant="replies"
           />
         ) : (
-          <div className="border-border bg-surface rounded-lg border">
-            <EmptyState
-              title="No replies found for your posts."
-              description={`Posts fetched: ${postsCount}`}
-            />
-          </div>
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="No replies yet"
+            description={
+              postsCount > 0
+                ? `Nothing here matches your filters. (${String(postsCount)} post${postsCount === 1 ? "" : "s"} on your account.)`
+                : "Nothing here matches your filters yet, or replies have not synced. Try clearing filters or check back later."
+            }
+            className="border-border bg-surface rounded-xl border"
+          />
         )}
       </>
     );
@@ -190,9 +201,13 @@ export function EngagementContent({
           />
         ) : null}
         {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
-          <div className="border-border bg-surface rounded-lg border">
-            <EmptyState title="Nothing needs response right now." />
-          </div>
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="You are all caught up"
+            description="Nothing in this view needs a response right now. Adjust filters or check other tabs for open threads."
+            className="border-border bg-surface rounded-xl border"
+          />
         ) : null}
       </div>
     );
@@ -208,9 +223,13 @@ export function EngagementContent({
           listVariant="mentions"
         />
       ) : (
-        <div className="border-border bg-surface rounded-lg border">
-          <EmptyState title="No mentions or quote reposts found for your posts." />
-        </div>
+        <EmptyState
+          size="md"
+          icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+          title="No mentions yet"
+          description="Quote reposts and mentions will appear here when people reference your posts."
+          className="border-border bg-surface rounded-xl border"
+        />
       )}
     </>
   );

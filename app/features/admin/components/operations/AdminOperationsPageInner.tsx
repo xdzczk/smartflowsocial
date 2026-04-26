@@ -83,9 +83,9 @@ export function AdminOperationsPageInner() {
     const el = document.getElementById(id);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    el.classList.add("ring-brand/35", "rounded-xl", "ring-2");
+    el.classList.add("ring-focus-border/60", "rounded-xl", "ring-2");
     const t = window.setTimeout(() => {
-      el.classList.remove("ring-brand/35", "rounded-xl", "ring-2");
+      el.classList.remove("ring-focus-border/60", "rounded-xl", "ring-2");
     }, 2400);
     return () => {
       window.clearTimeout(t);
@@ -178,7 +178,7 @@ export function AdminOperationsPageInner() {
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
         <AdminCard
           variant="emphasis"
-          className="border-brand/20 shadow-2 sticky top-[52px] z-[5] backdrop-blur-sm lg:top-14"
+          className="border-border shadow-1 sticky top-[52px] z-[5] lg:top-14"
         >
           <p className="text-text-secondary text-[11px] font-semibold tracking-wide uppercase">
             Current operational state
@@ -764,7 +764,7 @@ export function AdminOperationsPageInner() {
 
         <Link
           to="/dashboard/admin"
-          className="text-brand text-sm hover:underline"
+          className="text-link hover:text-link-hover focus-ring text-sm hover:underline"
         >
           ← Overview
         </Link>

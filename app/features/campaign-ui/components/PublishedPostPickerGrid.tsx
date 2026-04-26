@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 
+import { Button } from "~/components/ui/button";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
 import { getImageUrls, isVideoFile } from "~/lib/helpers";
+import { cn } from "~/lib/utils";
 
 export const PUBLISHED_POST_PICKER_PAGE_SIZE = 4;
 
@@ -92,7 +95,7 @@ export function PublishedPostPickerGrid({
           setListPage(1);
         }}
         placeholder="Filter by caption…"
-        className="border-border bg-canvas mb-2 w-full max-w-md rounded-md border px-3 py-2 text-sm"
+        className={cn(campaignFieldClassNames, "mb-2 max-w-md")}
       />
       {filteredPosts.length === 0 ? (
         <p className="text-text-secondary text-sm">
@@ -112,22 +115,24 @@ export function PublishedPostPickerGrid({
               </span>
             </span>
             <div className="cluster">
-              <button
+              <Button
                 type="button"
-                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
+                variant="outline"
+                size="xs"
                 disabled={safePage <= 1}
                 onClick={() => {
                   setListPage((p) => Math.max(1, Math.min(p, pageCount) - 1));
                 }}
               >
                 Previous
-              </button>
+              </Button>
               <span className="text-text-secondary tabular-nums">
                 Page {safePage} of {pageCount}
               </span>
-              <button
+              <Button
                 type="button"
-                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-40"
+                variant="outline"
+                size="xs"
                 disabled={safePage >= pageCount}
                 onClick={() => {
                   setListPage((p) => {
@@ -137,7 +142,7 @@ export function PublishedPostPickerGrid({
                 }}
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -154,7 +159,12 @@ export function PublishedPostPickerGrid({
                   onClick={() => {
                     onValueChange(p.id);
                   }}
-                  className={`border-border bg-canvas motion-fast flex flex-col overflow-hidden rounded-lg border text-left ${selected ? "bg-surface-selected border-brand ring-brand/20 ring-2" : "hover:border-brand/40"}`}
+                  className={cn(
+                    "border-border bg-surface shadow-1 motion-fast flex flex-col overflow-hidden rounded-xl border text-left",
+                    selected
+                      ? "border-selection-border bg-selection-wash ring-selection-border/35 ring-2"
+                      : "hover:border-selection-border/40 hover:bg-surface-hover/20"
+                  )}
                 >
                   <div className="bg-surface-hover relative aspect-video w-full overflow-hidden">
                     {firstUrl ? (

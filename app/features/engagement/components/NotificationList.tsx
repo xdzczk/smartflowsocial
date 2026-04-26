@@ -165,7 +165,7 @@ function ReplyNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
             >
               Open on Nostr
             </Link>
@@ -251,7 +251,7 @@ function ZapNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
             >
               View original post
             </Link>
@@ -330,7 +330,7 @@ function MentionNotification({
               }
               target="_blank"
               rel="noreferrer"
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
             >
               Open on Nostr
             </Link>

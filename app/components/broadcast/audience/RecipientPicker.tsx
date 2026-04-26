@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { cn } from "~/lib/utils";
 
@@ -54,6 +55,12 @@ const MAX_BROWSER_ROWS = 400;
 const PROFILE_BATCH = 120;
 const CHIP_THRESHOLD = 24;
 const CACHE_TTL_MS = 2 * 60 * 1000;
+
+const POOL_SEGMENT_OPTIONS = [
+  { value: "followers", label: "Followers" },
+  { value: "mutuals", label: "Mutuals" },
+  { value: "saved", label: "Saved audiences" },
+] as const;
 
 interface CachedPoolData {
   pubkeys: string[];
@@ -409,34 +416,22 @@ export function RecipientPicker({
       </p>
 
       <div className="flex flex-wrap gap-1 rounded-lg border p-1">
-        {(
-          [
-            ["followers", "Followers"],
-            ["mutuals", "Mutuals"],
-            ["saved", "Saved audiences"],
-          ] as const
-        ).map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              setPoolTab(k);
-              setSearch("");
-              setCheckedBrowser(new Set());
-              setExpandingSavedId(null);
-              setExpandedMembers([]);
-            }}
-            className={cn(
-              "motion-fast rounded-md px-3 py-1.5 text-xs font-medium",
-              poolTab === k
-                ? "bg-brand text-brand-on"
-                : "text-text-secondary hover:bg-surface-hover"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+        <SegmentedControl
+          aria-label="Recipient pool"
+          value={poolTab}
+          onChange={(next) => {
+            setPoolTab(next as PickerPoolTab);
+            setSearch("");
+            setCheckedBrowser(new Set());
+            setExpandingSavedId(null);
+            setExpandedMembers([]);
+          }}
+          options={POOL_SEGMENT_OPTIONS}
+          size="default"
+          inactiveSurface={false}
+          disabled={disabled ?? false}
+          className="min-w-0 flex-1 sm:flex-none [&_button]:text-xs"
+        />
         <button
           type="button"
           disabled
@@ -720,7 +715,7 @@ export function RecipientPicker({
               return (
                 <span
                   key={pl}
-                  className="border-border bg-canvas inline-cluster-tight.5 rounded-full border py-1 pr-1 pl-2 text-xs"
+                  className="border-border bg-surface shadow-1 inline-cluster-tight.5 rounded-full border py-1 pr-1 pl-2 text-xs"
                 >
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={pr?.picture ?? undefined} alt="" />

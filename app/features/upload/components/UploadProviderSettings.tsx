@@ -329,7 +329,7 @@ export function UploadProviderSettings({
           <button
             type="submit"
             disabled={submitDisabled}
-            className="bg-brand text-brand-on hover:bg-brand/90 motion-fast rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Saving…" : ctaLabel}
           </button>

@@ -174,6 +174,10 @@ body.has-btcpay-confirmation-bar {
  *   - Per-feature islands (calendar-*, landing-*, switch-*, queue-*) collapse
  *     into the global system but the *names* stay aliased for one phase to
  *     avoid touching feature consumers in this PR.
+ *
+ * Phase A — semantic aliases (same computed values as today; migrate call sites
+ * in Phase B): action-primary, link, selection-*, focus-border, brand-wash-*,
+ * brand-action. See block under “Brand” in @theme.
  * ========================================================================= */
 
 @theme {
@@ -239,11 +243,49 @@ body.has-btcpay-confirmation-bar {
   --color-border-strong: hsl(var(--border-strong));
   --color-input: hsl(var(--input));
 
-  /* ---------- Brand ---------- */
+  /* ---------- Brand ----------
+   * Roles (do not overload in new code — use aliases below):
+   *   --brand / text-brand / border-brand  → identity + link accent + soft
+   *     selection borders (NOT saturated primary CTA fill; prefer action-primary).
+   *   --brand-strong                       → saturated action hue (matches primary Button).
+   *   action-primary                       → primary CTA fill (alias of brand-strong).
+   *   selection-fill / selection-border    → filled chips, tiles, segmented “on” states
+   *     that today use bg-brand + border-brand (Phase B migrates call sites).
+   *   focus-ring / focus-border            → keyboard + input focus color only.
+   *   brand-wash / selection-wash          → alpha tints; replace ad-hoc bg-brand/5|10|12.
+   *   brand-action                         → marketing hero CTA (alias of brand-strong).
+   */
   --color-brand: hsl(var(--brand));
   --color-brand-strong: hsl(var(--brand-strong));
   --color-brand-soft: hsl(var(--brand-soft));
   --color-brand-on: hsl(var(--brand-on));
+
+  /* ---------- Phase A: semantic aliases (values = existing tokens; no hue drift) ---------- */
+  /* Primary CTA / filled submit (use instead of bg-brand for new code). */
+  --color-action-primary: hsl(var(--brand-strong));
+  --color-action-primary-foreground: hsl(var(--brand-on));
+
+  /* Links and inline accent (use instead of text-brand where intent is “link”). */
+  --color-link: hsl(var(--brand));
+  /* Phase A: same as link; Phase B may tune (e.g. match prior hover:text-brand/90). */
+  --color-link-hover: hsl(var(--brand));
+
+  /* Selected chip / tile / segmented control (fills often used bg-brand today). */
+  --color-selection-fill: hsl(var(--brand));
+  --color-selection-fill-strong: hsl(var(--brand-strong));
+  --color-selection-border: hsl(var(--brand));
+  --color-selection-foreground: hsl(var(--brand-on));
+
+  /* Input / keyboard focus border color (ring recipe still uses --focus-ring). */
+  --color-focus-border: hsl(var(--focus-ring));
+
+  /* Soft washes — fixed alpha on --brand channel (matches common /5 /12 /15 uses). */
+  --color-brand-wash: hsl(var(--brand) / 0.05);
+  --color-brand-wash-strong: hsl(var(--brand) / 0.12);
+  --color-selection-wash: hsl(var(--brand) / 0.05);
+
+  /* Marketing landing CTA (was bg-brand-action without a theme entry). */
+  --color-brand-action: hsl(var(--brand-strong));
 
   /* ---------- Status ----------
    * Two foreground families:

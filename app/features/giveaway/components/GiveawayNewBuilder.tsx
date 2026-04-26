@@ -23,6 +23,7 @@ import {
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
@@ -660,11 +661,12 @@ export function GiveawayNewBuilder({
                   onClick={() => {
                     setRewardMode("simple");
                   }}
-                  className={
+                  className={cn(
+                    "border-border bg-surface shadow-1 motion-fast cursor-pointer rounded-xl border p-4 text-left",
                     rewardMode === "simple"
-                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                  }
+                      ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+                      : "hover:border-selection-border/40 hover:bg-surface-hover/30"
+                  )}
                 >
                   <p className="text-text font-medium">Simple payout</p>
                   <p className="text-text-secondary mt-1 text-sm">
@@ -676,11 +678,12 @@ export function GiveawayNewBuilder({
                   onClick={() => {
                     setRewardMode("advanced");
                   }}
-                  className={
+                  className={cn(
+                    "border-border bg-surface shadow-1 motion-fast cursor-pointer rounded-xl border p-4 text-left",
                     rewardMode === "advanced"
-                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                  }
+                      ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+                      : "hover:border-selection-border/40 hover:bg-surface-hover/30"
+                  )}
                 >
                   <p className="text-text font-medium">
                     Customize by entry type

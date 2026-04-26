@@ -93,7 +93,7 @@ export function BillingAlertBanner({
         <Link
           prefetch="intent"
           to={to}
-          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
+          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
         >
           {label}
         </Link>
@@ -138,7 +138,7 @@ export function BillingStatusCard({
         <Link
           to={to}
           prefetch="intent"
-          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
         >
           {label}
         </Link>

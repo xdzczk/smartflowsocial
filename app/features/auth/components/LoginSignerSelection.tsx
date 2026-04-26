@@ -53,7 +53,7 @@ export function LoginSignerSelection({
             type="button"
             variant="default"
             className={cn(
-              "bg-brand text-brand-on hover:bg-brand/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
+              "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip07" &&
                 "ring-brand/50 ring-offset-canvas ring-2 ring-offset-2"
             )}

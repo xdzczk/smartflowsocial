@@ -80,7 +80,7 @@ export function BulkPostsSubmitButton({
     <button
       type="submit"
       disabled={disabled}
-      className="bg-brand text-brand-on hover:bg-brand/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
+      className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 mt-6 w-full min-w-0 flex-1 rounded-lg p-4 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0"
     >
       {getButtonContent()}
     </button>

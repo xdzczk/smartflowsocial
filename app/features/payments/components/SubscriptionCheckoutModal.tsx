@@ -338,7 +338,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectAutoRenew}
                   disabled={isSubmitting || !autoRenewOk}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -355,7 +355,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectManual}
                   disabled={isSubmitting}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -373,7 +373,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectBtcOnchain}
                   disabled={isSubmitting}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

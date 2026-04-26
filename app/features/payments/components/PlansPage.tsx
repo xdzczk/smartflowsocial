@@ -494,7 +494,7 @@ export function PlansPage(): ReactNode {
                           }
                           openCheckoutForPlan(founderOffering.id);
                         }}
-                        className="bg-brand text-brand-on hover:bg-brand/90 focus-visible:ring-focus-ring/40 motion-fast rounded-lg px-4 py-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                        className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring/40 motion-fast rounded-lg px-4 py-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
                       >
                         {isLoading && selectedPlan === founderOffering.id
                           ? "Processing…"

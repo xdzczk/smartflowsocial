@@ -596,7 +596,7 @@ export function ScheduleRepostQuoteModal({
                   type="button"
                   onClick={() => void handleConfirm()}
                   disabled={isSubmitting || isSigning || !scheduledFor.trim()}
-                  className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                 >
                   {getConfirmButtonLabel(
                     isSigning,
