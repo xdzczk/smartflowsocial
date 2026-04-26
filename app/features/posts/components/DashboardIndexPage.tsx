@@ -428,7 +428,7 @@ function DashboardReturningUserSplit({
 
   return (
     <>
-      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 lg:px-8 lg:pt-0 lg:pb-5">
+      <div className="max-w-page mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 sm:px-6 lg:px-8 lg:pt-0 lg:pb-5">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
@@ -554,7 +554,7 @@ function DashboardReturningUserSplit({
         </div>
 
         <div
-          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-0 lg:min-h-0 lg:px-8"
+          className="max-w-page mx-auto w-full shrink-0 px-4 max-lg:mt-0 sm:px-6 lg:min-h-0 lg:px-8"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }

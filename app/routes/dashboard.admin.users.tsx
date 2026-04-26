@@ -9,6 +9,7 @@ import {
 import { Suspense, useMemo, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -186,7 +187,7 @@ function AdminUsersPageLoaded({
         title="Users"
         subtitle="Directory with lifecycle heuristics and 7d activity. Segment filters apply to the current page of results."
       />
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-6`}>
         <div className="flex flex-wrap gap-2">
           {["all", "enabled", "disabled", "paid", "referred"].map((f) => (
             <Button

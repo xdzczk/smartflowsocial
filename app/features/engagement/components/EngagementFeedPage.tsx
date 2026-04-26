@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { PageContent } from "~/components/layout/PageContent";
 import { StatusIcon } from "~/components/ui/status-icon";
 import { PublishingFilterRow } from "~/features/posts/components/publishing-suite/PublishingFilterRow";
 import type { PostData } from "~/features/posts/server";
@@ -312,7 +313,7 @@ export default function EngagementFeedPage() {
   const engagementPanelId = "engagement-feed-panel";
 
   return (
-    <div>
+    <PageContent fluid>
       <EngagementHeader />
 
       <PublishingFilterRow className="mb-6">
@@ -421,6 +422,6 @@ export default function EngagementFeedPage() {
           userTimezone={userTimezone}
         />
       ) : null}
-    </div>
+    </PageContent>
   );
 }

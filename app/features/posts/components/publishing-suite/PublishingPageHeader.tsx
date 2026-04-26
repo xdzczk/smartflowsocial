@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
-import { cn } from "~/lib/utils";
+import { PageHeader } from "~/components/layout/PageHeader";
 
+/** Library / queue / settings-style product page title — see `PageHeader` variant `library`. */
 export function PublishingPageHeader({
   title,
   subtitle,
@@ -14,23 +15,12 @@ export function PublishingPageHeader({
   className?: string;
 }) {
   return (
-    <header
-      className={cn(
-        "flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
-        className
-      )}
-    >
-      <div className="min-w-0 flex-1 space-y-1">
-        <h1 className="text-text text-h2">{title}</h1>
-        {subtitle ? (
-          <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
-        ) : null}
-      </div>
-      {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {actions}
-        </div>
-      ) : null}
-    </header>
+    <PageHeader
+      variant="library"
+      title={title}
+      subtitle={subtitle}
+      actions={actions}
+      className={className}
+    />
   );
 }

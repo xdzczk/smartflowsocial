@@ -18,6 +18,10 @@ import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPag
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
+import {
+  DASHBOARD_MAIN_BAND_CLASS,
+  DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS,
+} from "~/components/layout/page-layout-constants";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -384,7 +388,7 @@ export function DashboardLayoutPage(): ReactNode {
             />
           ) : null}
           {pendingParentUsers.length > 0 ? (
-            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+            <div className={`${DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS} pt-4`}>
               {pendingParentUsers.map((p) => {
                 const isThisSubmitting =
                   navigation.state === "submitting" &&
@@ -452,7 +456,7 @@ export function DashboardLayoutPage(): ReactNode {
           {showBillingAlert ? (
             <BillingAlertBanner billingContext={billingContext} />
           ) : shouldShowSubscriptionExpiredBanner ? (
-            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+            <div className={`${DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS} pt-4`}>
               <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">Your subscription has expired.</p>
@@ -487,7 +491,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : DASHBOARD_MAIN_BAND_CLASS}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">

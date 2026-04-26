@@ -6,6 +6,7 @@ import {
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -175,7 +176,7 @@ export function AdminOperationsPageInner() {
         subtitle="Failures, dead letters, queues, and outbox — surgical view for incident response."
         generatedAt={d.generatedAt}
       />
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-8`}>
         <AdminCard
           variant="emphasis"
           className="border-border shadow-1 sticky top-[52px] z-[5] lg:top-14"

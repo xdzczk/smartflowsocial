@@ -3,6 +3,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
   AdminAccessDenied,
   AdminAnalyticsPageSkeleton,
@@ -138,7 +139,7 @@ function AdminAnalyticsPageLoaded({
         subtitle="Growth, publishing mix, adoption proxies, and shareable milestones."
         generatedAt={d.generatedAt}
       />
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-10`}>
         <AdminSection
           id="narrative"
           eyebrow="Narrative"

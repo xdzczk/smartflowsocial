@@ -8,6 +8,7 @@ import {
 } from "@remix-run/react";
 import { useState } from "react";
 
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -173,7 +174,7 @@ export default function AdminReferralsPage() {
         subtitle="Finance-ops surface: performance, ledger, CSV exports, and Lightning payouts. Confirm every batch in the dialog."
       />
 
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-10`}>
         {isActionError(actionData) ? (
           <div
             className="border-danger/50 bg-danger/10 text-danger rounded-md border px-3 py-2 text-sm"

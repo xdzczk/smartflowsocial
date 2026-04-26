@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from "@remix-run/react";
 
+import { PageContent } from "~/components/layout/PageContent";
+
 const subNav = [
   { to: "/dashboard/giveaway", end: true, label: "All giveaways" },
   { to: "/dashboard/giveaway/new", end: false, label: "New giveaway" },
@@ -12,7 +14,7 @@ const subNav = [
  */
 export default function GiveawayLayout() {
   return (
-    <div className="space-y-6">
+    <PageContent fluid className="space-y-6">
       <nav
         aria-label="Giveaway sections"
         className="border-border flex flex-wrap gap-1 border-b pb-2"
@@ -36,6 +38,6 @@ export default function GiveawayLayout() {
         ))}
       </nav>
       <Outlet />
-    </div>
+    </PageContent>
   );
 }

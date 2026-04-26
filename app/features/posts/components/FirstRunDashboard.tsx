@@ -46,7 +46,7 @@ export function FirstRunDashboard({
   ];
 
   return (
-    <div className="max-w-10xl mx-auto w-full px-4 lg:px-8">
+    <div className="max-w-page mx-auto w-full px-4 sm:px-6 lg:px-8">
       <div className="space-y-4">
         <Card>
           <CardContent className="px-5 py-5 md:px-6 md:py-6">

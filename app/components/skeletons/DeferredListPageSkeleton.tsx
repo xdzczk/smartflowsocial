@@ -1,3 +1,11 @@
+import {
+  PAGE_MAX_WIDTH_CLASS,
+  PAGE_PAD_X_CLASS,
+} from "~/components/layout/page-layout-constants";
+
+/** Matches `PageContent` constrained band when these skeletons render outside the shell. */
+const DEFERRED_LIST_PAGE_SHELL_CLASS = `mx-auto w-full ${PAGE_MAX_WIDTH_CLASS} ${PAGE_PAD_X_CLASS} py-6`;
+
 export type DeferredListPageSkeletonVariant =
   | "list"
   | "detail"
@@ -18,7 +26,7 @@ export function DeferredListPageSkeleton({
   if (variant === "detail") {
     return (
       <div
-        className="mx-auto w-full max-w-5xl animate-pulse space-y-6 p-4 sm:p-6"
+        className={`${DEFERRED_LIST_PAGE_SHELL_CLASS} animate-pulse space-y-6`}
         aria-busy="true"
         aria-label={label}
       >
@@ -50,7 +58,7 @@ export function DeferredListPageSkeleton({
   if (variant === "mediaGallery") {
     return (
       <div
-        className="mx-auto w-full max-w-6xl animate-pulse space-y-6 p-4 sm:p-6"
+        className={`${DEFERRED_LIST_PAGE_SHELL_CLASS} animate-pulse space-y-6`}
         aria-busy="true"
         aria-label={label}
       >
@@ -99,7 +107,7 @@ export function DeferredListPageSkeleton({
   if (variant === "adminDashboard") {
     return (
       <div
-        className="mx-auto w-full max-w-6xl animate-pulse space-y-8 p-4 sm:p-6"
+        className={`${DEFERRED_LIST_PAGE_SHELL_CLASS} animate-pulse space-y-8`}
         aria-busy="true"
         aria-label={label}
       >
@@ -138,7 +146,7 @@ export function DeferredListPageSkeleton({
 
   return (
     <div
-      className="mx-auto w-full max-w-6xl animate-pulse space-y-6 p-4 sm:p-6"
+      className={`${DEFERRED_LIST_PAGE_SHELL_CLASS} animate-pulse space-y-6`}
       aria-busy="true"
       aria-label={label}
     >

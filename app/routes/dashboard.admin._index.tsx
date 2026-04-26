@@ -5,6 +5,7 @@
 import type { SerializeFrom } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
   AdminAccessDenied,
   AdminAlertList,
@@ -67,7 +68,7 @@ export default function AdminOverviewPage() {
         subtitle="Executive snapshot: platform health, publishing, users, and referrals. Dangerous payout controls live under Referrals."
         generatedAt={d.generatedAt}
       />
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-8`}>
         <AdminSection eyebrow="Pulse" title="Executive strip">
           <p className="text-text-secondary mb-3 text-xs leading-snug">
             Top-line business, publishing, and signer health. Click a card to

@@ -31,7 +31,7 @@ export function PlanStatusBanner({
       : "border-border bg-surface text-text";
 
   return (
-    <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+    <div className="max-w-page mx-auto w-full px-4 pt-4 sm:px-6 lg:px-8">
       <section
         data-plan-type={planType}
         className={cn(

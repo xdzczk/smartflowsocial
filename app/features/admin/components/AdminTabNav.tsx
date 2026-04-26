@@ -49,7 +49,7 @@ export function AdminTabNav() {
 
   return (
     <div className="border-border bg-canvas sticky top-0 z-10 border-b">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:px-6 sm:pb-4">
+      <div className="flex w-full min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4">
         <nav className="flex flex-wrap gap-1" aria-label="Admin sections">
           {TABS.map((tab) => (
             <NavLink

@@ -1,3 +1,5 @@
+import { PAGE_INNER_FLUID_CLASS } from "~/components/layout/page-layout-constants";
+
 /** Match `RailSegmentedTabGroup` / composer rail segmented height. */
 export const PUBLISHING_SEGMENTED_ROW_H = "h-10";
 
@@ -19,9 +21,13 @@ export const PUBLISHING_FILTER_WIDTH_DATE = "w-full min-w-[9rem] sm:w-[12rem]";
 export const PUBLISHING_CONTENT_KIND_BADGE_CLASS =
   "inline-flex shrink-0 rounded-full bg-surface-hover px-2 py-1 text-xs font-medium text-text dark:text-text";
 
-/** Outer layout for Drafts, Templates, Scheduled, Published, Recyclables. */
-export const PUBLISHING_LIBRARY_SHELL_CLASS =
-  "mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-4 pb-8 sm:px-6";
+/**
+ * Outer layout for Drafts, Templates, Scheduled, Published, Recyclables.
+ * Width and horizontal padding come from `DashboardLayoutPage`’s main band;
+ * prefer wrapping with `PageContent` `fluid` in new code — this string stays for
+ * call sites that still compose class names directly.
+ */
+export const PUBLISHING_LIBRARY_SHELL_CLASS = `${PAGE_INNER_FLUID_CLASS} min-h-screen w-full pb-8`;
 
 /** Table/list surface inside library pages. */
 export const PUBLISHING_LIST_SURFACE_CLASS =

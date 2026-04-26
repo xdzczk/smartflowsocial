@@ -1,7 +1,10 @@
+import { PageContent } from "~/components/layout/PageContent";
+
 export function SettingsPageSkeleton() {
   return (
-    <div
-      className="mx-auto w-full max-w-[1400px] animate-pulse overflow-x-hidden px-4 pb-8 sm:px-6"
+    <PageContent
+      fluid
+      className="animate-pulse overflow-x-hidden pb-8"
       aria-busy="true"
       aria-label="Loading settings"
       data-testid="settings-page-skeleton"
@@ -32,6 +35,6 @@ export function SettingsPageSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContent>
   );
 }
