@@ -11,6 +11,10 @@ const PLAN_USAGE_EXPANDED_LS_KEY = "sfs:dashboard-plan-usage-expanded";
 /** Match sidebar nav icons (DashboardHeader). */
 const SIDEBAR_CHEVRON_STROKE = 2.25;
 
+const METRIC_NUMBERS_CLASS = "font-medium tracking-tight tabular-nums";
+const METRIC_LABEL_CLASS = "text-[11px] font-normal";
+const METRIC_SLASH_CLASS = "text-text-tertiary/85 text-[11px] font-normal";
+
 function usageRatio(used: number, limit: number | null): number | null {
   if (limit == null || limit <= 0) return null;
   return used / limit;
@@ -155,18 +159,11 @@ function MetricNumbers({
   return (
     <div className="flex flex-col gap-1">
       <p className="text-xs leading-snug">
-        <span
-          className={cn(
-            "font-medium tracking-tight tabular-nums",
-            textClass(state)
-          )}
-        >
+        <span className={cn(METRIC_NUMBERS_CLASS, textClass(state))}>
           {limit == null ? (
             <>
               {used}
-              <span
-                className={cn("text-[11px] font-normal", labelClass(state))}
-              >
+              <span className={cn(METRIC_LABEL_CLASS, labelClass(state))}>
                 {" "}
                 {unitLabel}
               </span>
@@ -174,14 +171,9 @@ function MetricNumbers({
           ) : (
             <>
               {used}
-              <span className="text-text-tertiary/85 text-[11px] font-normal">
-                {" "}
-                /{" "}
-              </span>
+              <span className={METRIC_SLASH_CLASS}> / </span>
               {limit}
-              <span
-                className={cn("text-[11px] font-normal", labelClass(state))}
-              >
+              <span className={cn(METRIC_LABEL_CLASS, labelClass(state))}>
                 {" "}
                 {unitLabel}
               </span>
@@ -227,17 +219,9 @@ function StorageBlock({
     <div className="mt-3 flex flex-col gap-1">
       <p className={sectionHeadingClass}>Storage</p>
       <p className="text-xs leading-snug">
-        <span
-          className={cn(
-            "font-medium tracking-tight tabular-nums",
-            textClass(state)
-          )}
-        >
+        <span className={cn(METRIC_NUMBERS_CLASS, textClass(state))}>
           {usedBytes <= 0 ? "0 B" : formatBytesForPlanMarketing(usedBytes)}
-          <span className="text-text-tertiary/85 text-[11px] font-normal">
-            {" "}
-            /{" "}
-          </span>
+          <span className={METRIC_SLASH_CLASS}> / </span>
           {formatBytesForPlanMarketing(limitBytes)}
         </span>
       </p>
@@ -509,18 +493,11 @@ export function PlanUsageSidebar({
     const state = meterVisualState(scheduledRatio);
     return (
       <p className="text-xs leading-snug">
-        <span
-          className={cn(
-            "font-medium tracking-tight tabular-nums",
-            textClass(state)
-          )}
-        >
+        <span className={cn(METRIC_NUMBERS_CLASS, textClass(state))}>
           {snapshot.scheduledLimit == null ? (
             <>
               {snapshot.scheduledUsed}
-              <span
-                className={cn("text-[11px] font-normal", labelClass(state))}
-              >
+              <span className={cn(METRIC_LABEL_CLASS, labelClass(state))}>
                 {" "}
                 {LABEL_SCHEDULED}
               </span>
@@ -528,14 +505,9 @@ export function PlanUsageSidebar({
           ) : (
             <>
               {snapshot.scheduledUsed}
-              <span className="text-text-tertiary/85 text-[11px] font-normal">
-                {" "}
-                /{" "}
-              </span>
+              <span className={METRIC_SLASH_CLASS}> / </span>
               {snapshot.scheduledLimit}
-              <span
-                className={cn("text-[11px] font-normal", labelClass(state))}
-              >
+              <span className={cn(METRIC_LABEL_CLASS, labelClass(state))}>
                 {" "}
                 {LABEL_SCHEDULED}
               </span>
