@@ -2,6 +2,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
+import { CALENDAR_SELECTED_POST_RING } from "./components/weekly-view-constants";
 import { PostBadges } from "./PostBadges";
 import type {
   PostBlockBaseProps,
@@ -204,6 +205,7 @@ export function CompactPostBlock({
   timeString,
   hideTimeRowPreview = false,
   slotExpandRows,
+  isCalendarSelected = false,
 }: CompactPostBlockProps) {
   const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
@@ -240,7 +242,7 @@ export function CompactPostBlock({
         queueColorStyle,
         post,
         isLongform
-      )} relative flex h-full flex-col overflow-hidden ${unassignedBgClass}`}
+      )} relative flex h-full flex-col overflow-hidden ${unassignedBgClass} ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""}`}
       style={queueColorStyle ? queueStyle : undefined}
       title={getTitle(postPreview, isPast, isLongform, formattedTime)}
     >

@@ -54,7 +54,7 @@ export function ContestSourcePostCard({
             <button
               type="button"
               onClick={onOpenNostr}
-              className="text-brand text-sm font-medium hover:underline"
+              className="text-link hover:text-link-hover text-sm font-medium hover:underline"
             >
               {contestCopy.openSourcePost}
             </button>

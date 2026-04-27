@@ -67,6 +67,8 @@ export interface PostBlockProps {
   slotExpandRows?: number;
   /** When true (Day/Week view), compact block does not show thumbnail/icon next to time. */
   hideTimeRowPreview?: boolean;
+  /** Day/week: post is the one open in the sidebar — show brand-strong selection ring only then. */
+  isCalendarSelected?: boolean;
 }
 
 export interface PostBlockBaseProps {
@@ -83,4 +85,6 @@ export interface PostBlockBaseProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   /** When true, past posts render at full opacity (e.g. when expanded in weekly view). */
   forceOpaque?: boolean;
+  /** See PostBlockProps.isCalendarSelected */
+  isCalendarSelected?: boolean;
 }

@@ -375,7 +375,7 @@ function BroadcastNewReviewRouteLoaded({
                     {" "}
                     <Link
                       to="/dashboard/broadcasts/suppression"
-                      className="text-brand font-medium hover:underline"
+                      className="text-link hover:text-link-hover font-medium hover:underline"
                     >
                       View suppression list
                     </Link>

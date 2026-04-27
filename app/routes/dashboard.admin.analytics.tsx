@@ -204,7 +204,7 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "referred",
                   name: "Referred signups",
-                  stroke: "hsl(var(--chart-4))",
+                  stroke: "var(--color-chart-4)",
                 },
               ]}
             />

@@ -177,7 +177,7 @@ export function ZapNoteDrawer({
             Uses WebLN when available. Configure wallet under{" "}
             <Link
               to="/dashboard/settings?tab=engagement"
-              className="text-brand underline-offset-2 hover:underline"
+              className="text-link hover:text-link-hover underline-offset-2 hover:underline"
             >
               Settings
             </Link>

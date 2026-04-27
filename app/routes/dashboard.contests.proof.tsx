@@ -119,7 +119,7 @@ export default function ContestProofPage() {
             <p className="text-text-secondary text-sm">
               <Link
                 to="/dashboard/contests"
-                className="text-brand hover:underline"
+                className="text-link hover:text-link-hover hover:underline"
               >
                 ← All contests
               </Link>

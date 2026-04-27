@@ -83,7 +83,7 @@ export function DateGrid({
               dayInfo.isCurrentMonth
                 ? "bg-[hsl(var(--calendar-surface-2-bg))]"
                 : "bg-surface-hover/40"
-            } ${dayInfo.isToday ? "ring-brand ring-1" : ""}`;
+            } ${dayInfo.isToday ? "ring-border-strong/45 ring-1" : ""}`;
 
           return (
             <div

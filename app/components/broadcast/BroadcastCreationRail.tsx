@@ -435,7 +435,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
                     <span className="block">Active (automatic)</span>
                     <Link
                       to="/dashboard/broadcasts/suppression"
-                      className="text-brand mt-0.5 inline-block text-[10px] font-medium hover:underline"
+                      className="text-link hover:text-link-hover mt-0.5 inline-block text-[10px] font-medium hover:underline"
                     >
                       Suppression list
                     </Link>

@@ -186,7 +186,7 @@ export const getQueueColor = (
   > = {
     main: {
       bg: "bg-brand/[0.06]",
-      text: "text-brand",
+      text: "text-link",
       hover: "hover:bg-brand/15",
       border: "border-brand/20",
     },

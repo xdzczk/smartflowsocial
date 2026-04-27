@@ -112,14 +112,14 @@ export function LoginRequestingSignature({
     >
       <div className="flex items-start gap-3">
         <Loader2
-          className="text-brand mt-0.5 h-5 w-5 shrink-0 animate-spin"
+          className="text-link mt-0.5 h-5 w-5 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex min-h-6 flex-wrap items-center gap-x-1 gap-y-1 text-sm">
             <span className="text-text-secondary shrink-0">Signing in as</span>
             <span
-              className="text-brand min-w-0 truncate font-semibold"
+              className="text-text min-w-0 truncate font-semibold"
               title={signingInDisplayName ?? formatNpubShort(pubkey)}
             >
               {signingInDisplayName ?? formatNpubShort(pubkey)}

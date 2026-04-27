@@ -79,7 +79,7 @@ export function DaysHeader({
             key={day.toISOString()}
             className={`border-border/30 flex items-center justify-center gap-1 border-r px-2 py-1 text-center last:border-r-0 ${
               isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
-            } ${isToday ? "bg-surface-selected border-l-brand border-l-2" : ""}`}
+            } ${isToday ? "bg-surface-hover/90 border-l-border-strong border-l-2" : ""}`}
             style={mobileWeekColumnStyle}
           >
             <span className="text-text-secondary text-xs font-normal">
@@ -90,7 +90,7 @@ export function DaysHeader({
             </span>
             <span
               className={`text-sm leading-tight font-semibold ${
-                isToday ? "text-brand" : "text-text"
+                isToday ? "text-link" : "text-text"
               }`}
             >
               {day.getDate()}

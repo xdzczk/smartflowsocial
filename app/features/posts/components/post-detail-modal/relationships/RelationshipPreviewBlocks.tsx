@@ -33,7 +33,7 @@ export function InReplyToBlock({
         to={viewThreadUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-brand mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
+        className="text-link hover:text-link-hover mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
       >
         View thread
         <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
@@ -73,7 +73,7 @@ export function QuotedPostBlock({
           to={openUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
+          className="text-link hover:text-link-hover mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
         >
           Open quoted post
           <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />
@@ -109,7 +109,7 @@ export function RepostedPostBlock({
           to={openUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
+          className="text-link hover:text-link-hover mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium hover:underline"
         >
           Open reposted post
           <ChevronRight className={INLINE_ICON_SIZE_CLASS} aria-hidden />

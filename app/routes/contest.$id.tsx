@@ -95,7 +95,7 @@ export default function PublicContestPageRoute() {
         {data.sourceNoteId ? (
           <a
             href={`https://njump.me/${data.sourceNoteId}`}
-            className="text-brand text-sm hover:underline"
+            className="text-link hover:text-link-hover text-sm hover:underline"
             target="_blank"
             rel="noreferrer"
           >

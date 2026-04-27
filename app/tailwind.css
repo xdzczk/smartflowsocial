@@ -198,8 +198,10 @@ body.has-btcpay-confirmation-bar {
 
   /* ---------- Brand ----------
    * Roles (do not overload in new code — use aliases below):
-   *   --brand / text-brand / border-brand  → identity + link accent + soft
-   *     selection borders (NOT saturated primary CTA fill; prefer action-primary).
+   *   --link / text-link / link-hover      → body links + trust/slate actions (NOT CTAs,
+   *     selection, or focus — those stay brand-strong / --brand).
+   *   --brand / text-brand / border-brand  → selection chips, borders, tints (slate-blue);
+   *     avoid for plain hyperlinks — prefer --link.
    *   --brand-strong                       → saturated action hue (matches primary Button).
    *   action-primary                       → primary CTA fill (alias of brand-strong).
    *   selection-fill / selection-border    → filled chips, tiles, segmented “on” states
@@ -218,10 +220,9 @@ body.has-btcpay-confirmation-bar {
   --color-action-primary: hsl(var(--brand-strong));
   --color-action-primary-foreground: hsl(var(--brand-on));
 
-  /* Links and inline accent (use instead of text-brand where intent is “link”). */
-  --color-link: hsl(var(--brand));
-  /* Phase A: same as link; Phase B may tune (e.g. match prior hover:text-brand/90). */
-  --color-link-hover: hsl(var(--brand));
+  /* Trust / informational links (hue ~221; lower chroma than --brand — does not compete with purple). */
+  --color-link: hsl(var(--link));
+  --color-link-hover: hsl(var(--link-hover));
 
   /* Selected chip / tile / segmented control (fills often used bg-brand today). */
   --color-selection-fill: hsl(var(--brand));
@@ -271,9 +272,11 @@ body.has-btcpay-confirmation-bar {
 
   /* Charts (data-vis, untouched in Phase 1) */
   --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
+  /* Chart accent 2: hue locked to --brand-strong (single purple family). */
+  --color-chart-2: hsl(from hsl(var(--brand-strong)) h 38% 57%);
   --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
+  /* Distinct L/S from chart-2; hue still from --brand-strong. */
+  --color-chart-4: hsl(from hsl(var(--brand-strong)) h 46% 48%);
   --color-chart-5: hsl(var(--chart-5));
 
   /* ---------- Elevation (shadow ladder) ----------
@@ -352,8 +355,8 @@ body.has-btcpay-confirmation-bar {
  * Material: **Dark** = neutral charcoal / slate (`~220°`, very low chroma) — no
  * global purple wash. **Light** = warm cream / greige canvas + white cards.
  * **Purple** = `--brand-strong` + selection washes only (CTAs, focus, active nav,
- * selected controls, Flow NEXT pulse) — `--brand` for body links is slate-blue,
- * not lavender.
+ * selected controls, Flow NEXT pulse). **Links** = `--link` / `text-link` (cool slate,
+ * lower chroma than `--brand`); `--brand` stays for selection/chip borders + tints.
  * ========================================================================= */
 
 @layer base {
@@ -395,9 +398,13 @@ body.has-btcpay-confirmation-bar {
     --border-strong: 34 8% 72%;
     --input: 38 9% 80%;
 
-    /* ---------- Brand: strong = purple accent; default --brand = slate link (not global lavender) ---------- */
+    /* ---------- Brand: strong = purple accent; --brand = slate for selection/tints ---------- */
     --brand: 222 26% 42%;
-    --brand-strong: 258 72% 58%;
+    /* Trust / hyperlinks: ~221° hue, lower S than --brand; hover = deeper + a touch more S */
+    --link: 221 14% 43%;
+    --link-hover: 221 22% 36%;
+    /* ~10% less S, ~3% lower L vs prior — calmer primary / focus / toggles */
+    --brand-strong: 258 62% 55%;
     --brand-soft: 258 34% 77%;
     --brand-on: 0 0% 100%;
 
@@ -438,9 +445,7 @@ body.has-btcpay-confirmation-bar {
 
     /* ---------- Charts (muted; brand purple reserved for accent UI) ---------- */
     --chart-1: 222 42% 48%;
-    --chart-2: 253 42% 62%;
     --chart-3: 215 35% 36%;
-    --chart-4: 280 32% 50%;
     --chart-5: 32 68% 46%;
 
     /* ---------- Elevation (warm shadow + soft top plane; cards lift off sections) ---------- */
@@ -457,25 +462,29 @@ body.has-btcpay-confirmation-bar {
       0 6px 18px hsl(30 12% 10% / 0.09),
       inset 0 1px 0 0 rgb(255 255 255 / 0.68);
 
-    /* ---------- Switch / toggle (warm neutrals) ---------- */
+    /* ---------- Switch / toggle ----------
+     * On state: track matches primary CTA (`--brand-strong`) exactly; border is the same hue,
+     * mixed toward black for a slightly darker rim; thumb stays neutral (`--capture`), not purple.
+     * Thumb shadows stay neutral — no hue taken from brand (reads as chrome, not a second accent).
+     */
     --switch-track-off: 40 12% 91%;
     --switch-track-off-hover: 38 11% 86%;
     --switch-border-off: 36 10% 76%;
     --switch-border-off-hover: 36 9% 68%;
     --switch-thumb-off: 42 25% 99%;
-    --switch-track-on: 253 86.9% 61.1%;
-    --switch-track-on-hover: 253 86.9% 63%;
-    --switch-border-on: 253 72% 48%;
-    --switch-border-on-hover: 253 65% 42%;
-    --switch-thumb-on: 0 0% 100%;
+    --switch-track-on: var(--brand-strong);
+    --switch-track-on-hover: color-mix(in hsl, hsl(var(--brand-strong)) 90%, hsl(0 0% 100%));
+    --switch-border-on: color-mix(in hsl, hsl(var(--brand-strong)) 72%, hsl(0 0% 0%));
+    --switch-border-on-hover: color-mix(in hsl, hsl(var(--brand-strong)) 60%, hsl(0 0% 0%));
+    --switch-thumb-on: var(--capture);
     --switch-track-off-disabled: 40 14% 95%;
     --switch-border-off-disabled: 38 10% 86%;
     --switch-thumb-off-disabled: 38 8% 90%;
-    --switch-track-on-disabled: 253 42% 72%;
-    --switch-border-on-disabled: 253 38% 62%;
-    --switch-thumb-on-disabled: 0 0% 100%;
+    --switch-track-on-disabled: color-mix(in hsl, hsl(var(--brand-strong)) 28%, hsl(var(--surface)));
+    --switch-border-on-disabled: color-mix(in hsl, hsl(var(--brand-strong)) 42%, hsl(var(--surface)));
+    --switch-thumb-on-disabled: var(--capture);
     --switch-thumb-shadow-off: 0 1px 2px hsl(32 18% 18% / 0.14);
-    --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.32);
+    --switch-thumb-shadow-on: 0 1px 3px hsl(38 14% 12% / 0.22);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
     /* Time column: `boxShadow: "var(--shadow-sidebar-edge)"` — token lives with scrim/capture above. */
@@ -502,8 +511,8 @@ body.has-btcpay-confirmation-bar {
     --calendar-radius-lg: var(--radius-lg);
     --calendar-transition-duration: 200ms;
     --calendar-transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
-    /* Bug fix: this token was consumed by DayViewSidebar but never defined. */
-    --calendar-accent-purple: var(--brand-strong);
+    /* Legacy name: month/week chrome no longer uses product purple; neutral label ink. */
+    --calendar-accent-purple: var(--text-secondary);
 
     /* ---------- Landing (sealed island; values aligned) ---------- */
     --landing-card-elevated: var(--surface-raised);
@@ -559,9 +568,12 @@ body.has-btcpay-confirmation-bar {
     --border-strong: 220 8% 30%;
     --input: 220 6% 22%;
 
-    /* ---------- Brand: links = cool slate; CTAs / focus = purple ---------- */
+    /* ---------- Brand: slate for selection/tints; CTAs / focus = purple ---------- */
     --brand: 218 15% 70%;
-    --brand-strong: 258 74% 64%;
+    --link: 221 10% 72%;
+    --link-hover: 221 15% 82%;
+    /* Matched S/L pull for dark mode (less neon on CTAs / ring / switches) */
+    --brand-strong: 258 64% 61%;
     --brand-soft: 258 26% 34%;
     --brand-on: 0 0% 100%;
 
@@ -605,9 +617,10 @@ body.has-btcpay-confirmation-bar {
 
     /* ---------- Charts (slate-forward neutrals + restrained accents) ---------- */
     --chart-1: 220 38% 58%;
-    --chart-2: 253 40% 68%;
+    /* @theme --color-chart-2 default is light-tuned; dark redefines hue-matched L/S here. */
+    --color-chart-2: hsl(from hsl(var(--brand-strong)) h 32% 66%);
+    --color-chart-4: hsl(from hsl(var(--brand-strong)) h 38% 58%);
     --chart-3: 215 32% 38%;
-    --chart-4: 280 28% 58%;
     --chart-5: 32 62% 52%;
 
     /* ---------- Elevation (cool charcoal shadow — no harsh ring) ---------- */
@@ -624,25 +637,25 @@ body.has-btcpay-confirmation-bar {
       0 6px 18px hsl(220 10% 3% / 0.32),
       inset 0 1px 0 0 rgb(255 255 255 / 0.05);
 
-    /* ---------- Switch (slate neutrals) ---------- */
+    /* ---------- Switch (slate neutrals off; on-track = --brand-strong; neutral thumb) ---------- */
     --switch-track-off: 220 7% 10.5%;
     --switch-track-off-hover: 220 7% 12%;
     --switch-border-off: 220 7% 18%;
     --switch-border-off-hover: 220 7% 23%;
     --switch-thumb-off: 220 8% 96%;
-    --switch-track-on: 253 86.9% 61.1%;
-    --switch-track-on-hover: 253 86.9% 64%;
-    --switch-border-on: 253 78% 48%;
-    --switch-border-on-hover: 253 72% 54%;
-    --switch-thumb-on: 0 0% 100%;
+    --switch-track-on: var(--brand-strong);
+    --switch-track-on-hover: color-mix(in hsl, hsl(var(--brand-strong)) 88%, hsl(0 0% 100%));
+    --switch-border-on: color-mix(in hsl, hsl(var(--brand-strong)) 64%, hsl(0 0% 0%));
+    --switch-border-on-hover: color-mix(in hsl, hsl(var(--brand-strong)) 52%, hsl(0 0% 0%));
+    --switch-thumb-on: var(--capture);
     --switch-track-off-disabled: 220 6% 9.5%;
     --switch-border-off-disabled: 220 6% 14%;
     --switch-thumb-off-disabled: 220 5% 48%;
-    --switch-track-on-disabled: 253 52% 34%;
-    --switch-border-on-disabled: 253 44% 28%;
-    --switch-thumb-on-disabled: 0 0% 82%;
+    --switch-track-on-disabled: color-mix(in hsl, hsl(var(--brand-strong)) 35%, hsl(var(--surface)));
+    --switch-border-on-disabled: color-mix(in hsl, hsl(var(--brand-strong)) 45%, hsl(0 0% 0%));
+    --switch-thumb-on-disabled: 220 5% 82%;
     --switch-thumb-shadow-off: 0 1px 3px hsl(220 22% 4% / 0.34);
-    --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.34);
+    --switch-thumb-shadow-on: 0 1px 3px hsl(220 24% 2% / 0.45);
 
     /* ---------- Calendar (sealed island) ---------- */
     /* Time column edge: same `--shadow-sidebar-edge` as light (DaysHeader, TimeGrid). */
@@ -1212,13 +1225,13 @@ body.has-btcpay-confirmation-bar {
   }
 
   .longform-markdown-preview a {
-    color: hsl(var(--brand-strong));
+    color: hsl(var(--link));
     text-decoration: underline;
     text-underline-offset: 2px;
   }
 
   .longform-markdown-preview a:hover {
-    color: hsl(var(--brand));
+    color: hsl(var(--link-hover));
   }
 
   .longform-markdown-preview img {

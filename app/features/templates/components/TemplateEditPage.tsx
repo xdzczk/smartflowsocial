@@ -144,7 +144,7 @@ export default function TemplateEditPage() {
       <div className="mb-6">
         <Link
           to="/dashboard/templates"
-          className="text-brand hover:text-brand/90 dark:text-text-secondary dark:hover:text-text text-sm"
+          className="text-link hover:text-link-hover dark:text-text-secondary dark:hover:text-text text-sm"
         >
           ← Back to template library
         </Link>

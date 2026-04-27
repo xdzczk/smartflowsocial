@@ -228,7 +228,7 @@ export function TimeGrid({
                 is handled natively by the browser (no React state tracking needed). */}
             <div
               aria-hidden
-              className="bg-brand/90 pointer-events-none absolute h-px"
+              className="bg-text-secondary/40 pointer-events-none absolute h-px"
               style={{
                 top: indicatorTopOffset,
                 left: "4rem",
@@ -246,7 +246,7 @@ export function TimeGrid({
               style={{ top: indicatorTopOffset - 5, height: 10 }}
             >
               <div
-                className="bg-brand pointer-events-none sticky rounded-full"
+                className="bg-text-secondary pointer-events-none sticky rounded-full"
                 style={{
                   width: 10,
                   height: 10,

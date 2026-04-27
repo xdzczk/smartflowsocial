@@ -501,13 +501,13 @@ function BroadcastAudiencesRouteLoaded({
                       <div className="flex flex-wrap gap-2">
                         <Link
                           to={`/dashboard/broadcasts/new?savedAudienceId=${encodeURIComponent(r.id)}`}
-                          className="text-brand text-xs font-medium hover:underline"
+                          className="text-link hover:text-link-hover text-xs font-medium hover:underline"
                         >
                           Use
                         </Link>
                         <Link
                           to={`${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(r.id)}`}
-                          className="text-brand text-xs font-medium hover:underline"
+                          className="text-link hover:text-link-hover text-xs font-medium hover:underline"
                         >
                           Edit
                         </Link>
@@ -520,7 +520,7 @@ function BroadcastAudiencesRouteLoaded({
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="text-brand text-xs font-medium hover:underline"
+                            className="text-link hover:text-link-hover text-xs font-medium hover:underline"
                           >
                             Duplicate
                           </button>
@@ -534,7 +534,7 @@ function BroadcastAudiencesRouteLoaded({
                           <input type="hidden" name="id" value={r.id} />
                           <button
                             type="submit"
-                            className="text-brand text-xs font-medium hover:underline"
+                            className="text-link hover:text-link-hover text-xs font-medium hover:underline"
                           >
                             Refresh estimate
                           </button>

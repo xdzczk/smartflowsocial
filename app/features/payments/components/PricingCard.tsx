@@ -231,7 +231,7 @@ export function PricingCard({
           >
             {plan.callouts.map((line) => (
               <li key={line} className="flex items-start gap-2.5">
-                <span className="text-brand mt-0.5 shrink-0 text-xs">●</span>
+                <span className="text-link mt-0.5 shrink-0 text-xs">●</span>
                 <span>{line}</span>
               </li>
             ))}

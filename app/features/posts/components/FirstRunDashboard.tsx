@@ -92,7 +92,7 @@ export function FirstRunDashboard({
               >
                 <span className="mt-0.5 shrink-0" aria-hidden>
                   {item.done ? (
-                    <CheckCircle2 className="text-brand h-4 w-4" />
+                    <CheckCircle2 className="text-link h-4 w-4" />
                   ) : (
                     <Circle className="text-text-secondary h-4 w-4" />
                   )}

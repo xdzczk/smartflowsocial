@@ -428,7 +428,7 @@ export function DraftsTable({
                             ) : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-text group-hover:text-brand pr-2 leading-snug font-semibold">
+                            <p className="text-text group-hover:text-link-hover pr-2 leading-snug font-semibold">
                               {preview.title}
                             </p>
                             <p

@@ -188,7 +188,7 @@ export function SubscriptionCheckoutModal({
                   className="text-text mb-1 text-base font-semibold"
                 >
                   Auto-renew with wallet
-                  <span className="bg-brand/15 text-brand ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                  <span className="bg-brand/15 text-link ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
                     Recommended
                   </span>
                 </h4>

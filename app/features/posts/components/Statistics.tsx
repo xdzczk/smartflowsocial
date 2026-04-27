@@ -11,7 +11,7 @@ const KPI_ICON_CLASS = "inline-block size-[1.35rem] sm:size-[1.4rem]";
 
 // Category hues kept for scanability; fills and glyphs are ~half the old opacity so tiles stay calm.
 const COMPOSE_ICON_WELL_CLASS =
-  "bg-purple-500/7 text-purple-600/78 dark:bg-purple-400/9 dark:text-purple-400/72";
+  "bg-brand-strong/7 text-brand-strong/78 dark:bg-brand-strong/9 dark:text-brand-strong/72";
 
 const SCHEDULED_ICON_WELL_CLASS =
   "bg-info/7 text-info/76 dark:bg-info/9 dark:text-info/72";

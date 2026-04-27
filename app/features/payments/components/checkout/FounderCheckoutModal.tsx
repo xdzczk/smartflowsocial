@@ -77,7 +77,7 @@ export function FounderCheckoutModal({
               <DialogTitle className="text-2xl font-semibold tracking-tight">
                 Founder checkout
               </DialogTitle>
-              <p className="text-brand text-xs font-semibold tracking-wider uppercase">
+              <p className="text-link text-xs font-semibold tracking-wider uppercase">
                 One-time lifetime access
               </p>
               <p className="text-text text-lg font-semibold tabular-nums">

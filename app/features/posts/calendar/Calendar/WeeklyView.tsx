@@ -40,6 +40,9 @@ interface WeeklyViewProps {
   currentDate: Date;
   onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
   onPostEdit: (post: CalendarPost) => void;
+  /** Post open in sidebar (day) or last-focused selection — drives `brand-strong` ring on blocks. */
+  selectedPost?: CalendarPost | null;
+  onClearSelection?: () => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
@@ -79,6 +82,8 @@ export function WeeklyView({
   currentDate,
   onPostDrop,
   onPostEdit,
+  selectedPost = null,
+  onClearSelection,
   user,
   queueTypes,
   isLongform = false,
@@ -355,6 +360,8 @@ export function WeeklyView({
     hoverOverlayPayload,
     setHoverOverlayPayload,
     indicatorTopOffset,
+    selectedPost,
+    onClearSelection,
   };
 
   const gridMinWidth = isMobile

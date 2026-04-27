@@ -38,7 +38,7 @@ export function RecyclablesQueueTabs({
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             !currentQueueType
-              ? "border-border text-text dark:border-brand dark:text-brand"
+              ? "border-border text-text dark:border-brand/50 dark:text-link"
               : "text-text-secondary hover:border-border hover:text-text border-transparent"
           }`}
         >

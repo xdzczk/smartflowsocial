@@ -13,6 +13,8 @@ export interface WeekViewProps {
   currentDate: Date;
   onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
   onPostEdit: (post: CalendarPost) => void;
+  selectedPost?: CalendarPost | null;
+  onClearSelection?: () => void;
   user?: UserData | null;
   queueTypes?: QueueType[];
   isLongform?: boolean;
@@ -25,6 +27,8 @@ export function WeekView({
   currentDate,
   onPostDrop,
   onPostEdit,
+  selectedPost = null,
+  onClearSelection,
   user,
   queueTypes,
   isLongform = false,
@@ -37,6 +41,8 @@ export function WeekView({
       currentDate={currentDate}
       onPostDrop={onPostDrop}
       onPostEdit={onPostEdit}
+      selectedPost={selectedPost}
+      onClearSelection={onClearSelection}
       user={user}
       queueTypes={queueTypes}
       isLongform={isLongform}

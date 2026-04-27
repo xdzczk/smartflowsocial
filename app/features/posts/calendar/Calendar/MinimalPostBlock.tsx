@@ -2,6 +2,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
+import { CALENDAR_SELECTED_POST_RING } from "./components/weekly-view-constants";
 import { PostBadges } from "./PostBadges";
 import type {
   PostBlockBaseProps,
@@ -143,6 +144,7 @@ interface UltraCompactLayoutProps {
   queueColorStyle: React.CSSProperties | null | undefined;
   displayTime: Date;
   userTimezone: string;
+  isCalendarSelected?: boolean;
 }
 
 function UltraCompactLayout({
@@ -159,10 +161,11 @@ function UltraCompactLayout({
   queueColorStyle,
   displayTime,
   userTimezone: _userTimezone,
+  isCalendarSelected = false,
 }: UltraCompactLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus-visible:ring-1 focus-visible:ring-focus-ring`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus-visible:ring-1 focus-visible:ring-focus-ring ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""}`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -225,6 +228,7 @@ interface RegularLayoutProps {
   hideVideoPlayButton: boolean;
   timeLabel?: string;
   slotExpandRows?: number;
+  isCalendarSelected?: boolean;
 }
 
 function RegularLayout({
@@ -244,10 +248,11 @@ function RegularLayout({
   hideVideoPlayButton,
   timeLabel,
   slotExpandRows,
+  isCalendarSelected = false,
 }: RegularLayoutProps) {
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
-  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} focus-ring px-2 py-1`;
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} focus-ring px-2 py-1 ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""}`;
   const ariaLabel = getAriaLabel(
     postPreview,
     isLongform,
@@ -336,6 +341,7 @@ export function MinimalPostBlock({
   hideVideoPlayButton = false,
   timeLabel,
   slotExpandRows,
+  isCalendarSelected = false,
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const rows = slotExpandRows ?? 1;
@@ -367,6 +373,7 @@ export function MinimalPostBlock({
         queueColorStyle={queueColorStyle}
         displayTime={displayTime}
         userTimezone={userTimezone}
+        isCalendarSelected={isCalendarSelected}
       />
     );
   }
@@ -389,6 +396,7 @@ export function MinimalPostBlock({
       hideVideoPlayButton={hideVideoPlayButton}
       timeLabel={timeLabel}
       slotExpandRows={slotExpandRows}
+      isCalendarSelected={isCalendarSelected}
     />
   );
 }

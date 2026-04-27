@@ -202,7 +202,7 @@ export function HashtagPresetSelector({
                             {countHashtags(preset.tags)} tags
                           </Badge>
                           {selectedPresetId === preset.id ? (
-                            <Check className="text-text dark:text-brand h-4 w-4" />
+                            <Check className="text-text dark:text-link h-4 w-4" />
                           ) : null}
                         </div>
 

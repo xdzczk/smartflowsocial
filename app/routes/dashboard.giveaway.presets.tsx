@@ -149,7 +149,10 @@ export default function GiveawayPresetsPage() {
       )}
 
       <p className="text-text-secondary text-sm">
-        <Link to="/dashboard/giveaway" className="text-brand hover:underline">
+        <Link
+          to="/dashboard/giveaway"
+          className="text-link hover:text-link-hover hover:underline"
+        >
           ← All giveaways
         </Link>
       </p>

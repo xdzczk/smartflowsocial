@@ -103,7 +103,7 @@ export function InstallPromptSidebar({
                   <span className="text-text-secondary font-semibold">1.</span>{" "}
                   Tap{" "}
                   <Share
-                    className="text-brand mx-0.5 inline size-[18px] align-middle"
+                    className="text-link mx-0.5 inline size-[18px] align-middle"
                     strokeWidth={SIDEBAR_ICON_STROKE}
                     aria-label="Share"
                   />{" "}

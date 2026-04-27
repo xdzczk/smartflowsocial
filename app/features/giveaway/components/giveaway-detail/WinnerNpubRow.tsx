@@ -81,7 +81,7 @@ export function WinnerNpubRow({
           href={profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand shrink-0 text-xs"
+          className="text-link shrink-0 text-xs"
         >
           Profile
         </a>

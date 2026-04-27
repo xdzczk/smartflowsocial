@@ -59,7 +59,7 @@ export function Nip46QrUri({
         <div className="space-y-2">
           <div className="text-text flex items-center justify-center gap-2 text-lg font-semibold tracking-tight sm:text-xl">
             <ScanLine
-              className="text-brand size-5 shrink-0 opacity-90"
+              className="text-link size-5 shrink-0 opacity-90"
               aria-hidden
             />
             <span>{approvalHeading}</span>

@@ -467,7 +467,7 @@ export function ScheduledPostsTable({
                       {formatDate(post.scheduledAtUtc)}
                     </td>
                     <td className="p-3 text-center">
-                      <div className="text-brand text-sm font-medium">
+                      <div className="text-text text-sm font-medium">
                         {countdowns[post.id] ?? "—"}
                       </div>
                     </td>

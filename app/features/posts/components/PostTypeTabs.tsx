@@ -73,7 +73,7 @@ export default function PostTypeTabs({
   const getTabClasses = (isActive: boolean) =>
     `whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
       isActive
-        ? "border-border text-text dark:border-brand dark:text-brand"
+        ? "border-border text-text dark:border-brand/50 dark:text-link"
         : "border-transparent text-text-secondary hover:border-border hover:text-text"
     }`;
 

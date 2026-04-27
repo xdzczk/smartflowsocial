@@ -32,7 +32,7 @@ export function BulkDraftsListing({ groups }: BulkDraftsListingProps) {
           Save a batch of posts as a draft from{" "}
           <Link
             to="/dashboard/bulkposts"
-            className="text-brand font-medium hover:underline"
+            className="text-link hover:text-link-hover font-medium hover:underline"
           >
             Bulk Posts
           </Link>{" "}

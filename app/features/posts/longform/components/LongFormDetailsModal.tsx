@@ -375,7 +375,7 @@ function LongFormDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -389,7 +389,7 @@ function LongFormDetailRail({
                   to={openOnNostrUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   Open on Nostr
                   <ChevronRight
@@ -433,7 +433,7 @@ function LongFormDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight

@@ -65,7 +65,7 @@ export function ReferredByBanner({
             href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand hover:underline"
+            className="text-link hover:text-link-hover hover:underline"
           >
             View profile
           </a>

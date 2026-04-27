@@ -303,7 +303,7 @@ function ContestNewFormSetupSteps({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="text-brand text-xs font-medium underline-offset-2 hover:underline"
+                  className="text-link hover:text-link-hover text-xs font-medium underline-offset-2 hover:underline"
                 >
                   Details
                 </button>

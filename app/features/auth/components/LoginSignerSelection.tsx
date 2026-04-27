@@ -81,7 +81,7 @@ export function LoginSignerSelection({
                   href="https://getalby.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   Alby
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -90,7 +90,7 @@ export function LoginSignerSelection({
                   href="https://github.com/fiatjaf/nos2x"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   nos2x
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -99,7 +99,7 @@ export function LoginSignerSelection({
                   href="https://amber.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   Amber
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />

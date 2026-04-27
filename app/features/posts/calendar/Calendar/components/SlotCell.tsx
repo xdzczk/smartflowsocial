@@ -51,6 +51,7 @@ export function SlotCell({
   dateLocale,
   userTimezone,
   isMobile,
+  selectedPost,
 }: SlotCellProps) {
   const cellHasHoveredPost =
     hoveredPostKey?.startsWith(`${slotState.dateKey}-${time}-`) ?? false;
@@ -82,7 +83,7 @@ export function SlotCell({
         isMobile ? "min-w-0 shrink-0" : "min-w-[3.5rem] flex-1"
       } ${
         slotState.isDragOver
-          ? "bg-brand/5 border-brand/20"
+          ? "bg-border-subtle/70 border-border-strong/45"
           : "dark:hover:bg-surface-hover hover:bg-surface-hover"
       }`}
       style={cellStyle}
@@ -108,6 +109,7 @@ export function SlotCell({
         columnIndex={columnIndex}
         onHoverOverlayChange={onHoverOverlayChange}
         onClearSelection={onClearSelection}
+        selectedPost={selectedPost}
       />
     </div>
   );

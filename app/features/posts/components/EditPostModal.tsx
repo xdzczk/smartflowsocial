@@ -647,7 +647,7 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-brand text-xs hover:underline"
+                          className="text-link hover:text-link-hover text-xs hover:underline"
                         >
                           Add another repost
                         </button>
@@ -830,7 +830,7 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-brand text-xs hover:underline"
+                          className="text-link hover:text-link-hover text-xs hover:underline"
                         >
                           Add another quote
                         </button>

@@ -21,19 +21,19 @@ function DefaultRightPanel() {
       </div>
       <ul className="text-text/85 space-y-2.5 text-sm leading-snug">
         <li className="flex gap-2">
-          <span className="text-brand font-bold" aria-hidden>
+          <span className="text-link font-bold" aria-hidden>
             ·
           </span>
           <span>Native Nostr authentication</span>
         </li>
         <li className="flex gap-2">
-          <span className="text-brand font-bold" aria-hidden>
+          <span className="text-link font-bold" aria-hidden>
             ·
           </span>
           <span>Browser extension and remote signer supported</span>
         </li>
         <li className="flex gap-2">
-          <span className="text-brand font-bold" aria-hidden>
+          <span className="text-link font-bold" aria-hidden>
             ·
           </span>
           <span>Fast access to your publishing dashboard</span>

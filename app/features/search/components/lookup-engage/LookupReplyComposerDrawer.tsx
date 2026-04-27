@@ -121,7 +121,7 @@ export function LookupReplyComposerDrawer({
           Need relays or signing? Check{" "}
           <Link
             to="/dashboard/settings?tab=relays"
-            className="text-brand underline-offset-2 hover:underline"
+            className="text-link hover:text-link-hover underline-offset-2 hover:underline"
           >
             Settings
           </Link>

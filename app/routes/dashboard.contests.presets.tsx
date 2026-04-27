@@ -156,7 +156,10 @@ export default function ContestPresetsPage() {
       )}
 
       <p className="text-text-secondary text-sm">
-        <Link to="/dashboard/contests" className="text-brand hover:underline">
+        <Link
+          to="/dashboard/contests"
+          className="text-link hover:text-link-hover hover:underline"
+        >
           ← All contests
         </Link>
       </p>

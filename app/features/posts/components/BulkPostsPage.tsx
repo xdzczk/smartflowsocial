@@ -260,7 +260,10 @@ export default function BulkPostsPage() {
           Bulk publishing is a paid workflow designed for higher-volume
           operators. You can explore this page on Free; upgrade to sign and
           schedule in bulk.{" "}
-          <Link to="/plans" className="text-brand font-medium underline">
+          <Link
+            to="/plans"
+            className="text-link hover:text-link-hover font-medium underline"
+          >
             View plans
           </Link>
         </div>

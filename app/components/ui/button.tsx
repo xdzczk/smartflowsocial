@@ -29,7 +29,7 @@ const buttonVariants = cva(
           "bg-surface-hover text-text shadow-1 hover:bg-surface-active",
         // Ghost: no surface until hover. Tightest button.
         ghost: "text-text hover:bg-surface-hover",
-        link: "text-brand underline-offset-4 hover:underline",
+        link: "text-link underline-offset-4 hover:text-link-hover hover:underline",
       },
       size: {
         // Height ladder: 28 / 32 / 36 / 44. xs for table-row inline actions.

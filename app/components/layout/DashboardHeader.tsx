@@ -195,7 +195,7 @@ function NavigationItem({
 
   // Inactive icons use slightly higher contrast than inactive text; match link hover so icon and text react together
   const iconSpanClass = isActive
-    ? "text-brand"
+    ? "text-surface-selected-foreground"
     : hasAccess
       ? "text-text/70 group-hover:text-text"
       : "text-text-secondary";
@@ -246,7 +246,7 @@ function OperatorAdminNavItem({
       : DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE
   }`;
   const iconSpanClass = isActive
-    ? "text-brand"
+    ? "text-surface-selected-foreground"
     : "text-text/70 group-hover:text-text";
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -407,7 +407,7 @@ function SidebarHeader({
       <Link
         prefetch="intent"
         to={DASHBOARD_ROOT_PATH}
-        className={`focus-ring group text-text hover:text-brand motion-fast inline-flex items-center rounded-lg ${
+        className={`focus-ring group text-text hover:text-link-hover motion-fast inline-flex items-center rounded-lg ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
         title={BRAND_NAME}

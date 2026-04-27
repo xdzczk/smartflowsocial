@@ -141,7 +141,7 @@ export function TextPostPreview({
         {shouldClampPrimary ? (
           <button
             type="button"
-            className="text-brand mt-1 text-xs font-medium hover:underline"
+            className="text-link hover:text-link-hover mt-1 text-xs font-medium hover:underline"
             onClick={() => setExpanded((value) => !value)}
           >
             {expanded ? "Show less" : "Read more"}

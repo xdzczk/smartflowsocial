@@ -187,7 +187,7 @@ function SettingsMediaPageInner() {
         </div>
         <Link
           to="/dashboard/settings?tab=media"
-          className="text-brand shrink-0 text-sm hover:underline"
+          className="text-link hover:text-link-hover shrink-0 text-sm hover:underline"
         >
           Back to Media &amp; Storage
         </Link>
@@ -282,7 +282,7 @@ function SettingsMediaPageInner() {
               <p>
                 <Link
                   to="/dashboard/settings?tab=media"
-                  className="text-brand font-medium hover:underline"
+                  className="text-link hover:text-link-hover font-medium hover:underline"
                 >
                   Media &amp; Storage settings
                 </Link>
@@ -342,7 +342,7 @@ function SettingsMediaPageInner() {
                             href={m.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-brand text-sm font-medium hover:underline"
+                            className="text-link hover:text-link-hover text-sm font-medium hover:underline"
                           >
                             Open
                           </a>
@@ -369,7 +369,7 @@ function SettingsMediaPageInner() {
                     className={
                       page <= 1
                         ? "text-text-secondary pointer-events-none"
-                        : "text-brand hover:underline"
+                        : "text-link hover:text-link-hover hover:underline"
                     }
                   >
                     Previous
@@ -382,7 +382,7 @@ function SettingsMediaPageInner() {
                     className={
                       page >= totalPages
                         ? "text-text-secondary pointer-events-none"
-                        : "text-brand hover:underline"
+                        : "text-link hover:text-link-hover hover:underline"
                     }
                   >
                     Next
