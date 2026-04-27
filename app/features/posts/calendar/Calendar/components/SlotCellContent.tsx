@@ -63,7 +63,7 @@ function renderSinglePostSlotContent(
     slotState;
   const post = posts[0];
   if (!post) return null;
-  const isCalendarSelected = !!selectedPost && selectedPost.id === post.id;
+  const isCalendarSelected = selectedPost ? selectedPost.id === post.id : false;
 
   const blockInner = (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -354,7 +354,7 @@ function MultiPostBlock({
         forceOpaque={multiHovered}
         hideTimeRowPreview={true}
         slotExpandRows={multiExpandRows}
-        isCalendarSelected={selectedPost ? selectedPost.id === post.id : null}
+        isCalendarSelected={selectedPost ? selectedPost.id === post.id : false}
       />
     </div>
   );

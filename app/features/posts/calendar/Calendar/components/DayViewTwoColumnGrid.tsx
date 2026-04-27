@@ -396,10 +396,10 @@ export function DayViewTwoColumnGrid({
                       placement={p}
                       isHovered={
                         hoveredSlotKey === p.slotKey ||
-                        (!!selectedPost && selectedPost.id === p.post.id)
+                        (selectedPost ? selectedPost.id === p.post.id : false)
                       }
                       isCalendarSelected={
-                        selectedPost ? selectedPost.id === p.post.id : null
+                        selectedPost ? selectedPost.id === p.post.id : false
                       }
                       hoverOverlayPayload={overlayPayload}
                       onHoverOverlayChange={(payload) => {
@@ -496,10 +496,10 @@ export function DayViewTwoColumnGrid({
                       placement={p}
                       isHovered={
                         hoveredSlotKey === p.slotKey ||
-                        (!!selectedPost && selectedPost.id === p.post.id)
+                        (selectedPost ? selectedPost.id === p.post.id : false)
                       }
                       isCalendarSelected={
-                        selectedPost ? selectedPost.id === p.post.id : null
+                        selectedPost ? selectedPost.id === p.post.id : false
                       }
                       hoverOverlayPayload={overlayPayload}
                       onHoverOverlayChange={(payload) => {
@@ -683,7 +683,7 @@ export function DayViewTwoColumnGrid({
                           forceOpaque={isHovered}
                           slotExpandRows={baseRows}
                           isCalendarSelected={
-                            selectedPost ? selectedPost.id === post.id : null
+                            selectedPost ? selectedPost.id === post.id : false
                           }
                         />
                       </div>
@@ -755,7 +755,7 @@ export function DayViewTwoColumnGrid({
                   isCalendarSelected={
                     selectedPost
                       ? selectedPost.id === dayHoverOverlayPayload.post.id
-                      : null
+                      : false
                   }
                 />
               </div>
