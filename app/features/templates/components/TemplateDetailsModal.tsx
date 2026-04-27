@@ -43,7 +43,7 @@ export function TemplateDetailsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="fixed inset-0 z-0 bg-black/80"
+        className="bg-scrim/80 fixed inset-0 z-0"
         aria-hidden
         onClick={onClose}
       />

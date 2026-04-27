@@ -183,7 +183,7 @@ export function MediaThumbnail({
         muted={true}
       />
       {isVideo ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-all duration-200 group-hover:bg-black/50">
+        <div className="bg-scrim/30 group-hover:bg-scrim/50 absolute inset-0 flex items-center justify-center transition-all duration-200">
           <div className="bg-surface/90 group-hover:bg-surface rounded-full p-3 transition-all duration-200">
             <Play
               className="text-text h-8 w-8"
@@ -194,7 +194,7 @@ export function MediaThumbnail({
         </div>
       ) : null}
       {/* Media type indicator */}
-      <div className="absolute top-2 left-2 rounded-xs bg-black/70 px-2 py-1 text-xs text-white">
+      <div className="bg-scrim/70 text-brand-on absolute top-2 left-2 rounded-xs px-2 py-1 text-xs">
         {isVideo ? "🎥" : "🖼️"}
       </div>
     </div>
@@ -234,11 +234,11 @@ export function MediaModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+    <div className="bg-scrim/90 fixed inset-0 z-50 flex items-center justify-center">
       <div className="relative max-h-full max-w-7xl p-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white transition-all hover:bg-black/70"
+          className="bg-scrim/50 text-brand-on hover:bg-scrim/70 absolute top-4 right-4 z-10 rounded-full p-2 transition-all"
           aria-label="Close"
         >
           <X className="h-6 w-6" strokeWidth={INLINE_ICON_STROKE} aria-hidden />

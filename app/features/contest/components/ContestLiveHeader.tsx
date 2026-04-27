@@ -40,7 +40,7 @@ export function ContestLiveHeader({
   return (
     <div className="border-brand/25 from-brand/8 via-surface to-surface shadow-1 relative overflow-hidden rounded-xl border-2 bg-gradient-to-br p-5">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.12),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--info)_/_0.12),transparent_55%)]"
         aria-hidden
       />
       <div className="relative space-y-4">

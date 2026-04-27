@@ -204,7 +204,7 @@ export default function ScheduledPosts() {
 
         {/* Post Details Modal */}
         {selectedPost ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-scrim/50 fixed inset-0 z-50 flex items-center justify-center">
             <div className="bg-surface max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Post Details</h3>

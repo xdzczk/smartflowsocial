@@ -1,5 +1,6 @@
 /**
  * Days header row for week/day time grid (weekday labels + dates).
+ * Time-spacer edge shadow uses `var(--shadow-sidebar-edge)` from `tailwind.css`.
  */
 
 import type { UserData } from "~/features/posts/types";
@@ -50,7 +51,7 @@ export function DaysHeader({
           className="border-border/40 sticky left-0 w-16 flex-shrink-0 border-r bg-[hsl(var(--calendar-surface-2-bg))]"
           style={{
             zIndex: CALENDAR_DAYS_HEADER_TIME_SPACER_Z,
-            boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+            boxShadow: "var(--shadow-sidebar-edge)",
           }}
         />
       ) : null}

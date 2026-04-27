@@ -232,7 +232,7 @@ export function QuoteInputPanel({
         <button
           onClick={onSubmit}
           disabled={isQuoting || !quoteContent.trim()}
-          className="bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+          className="bg-success text-success-foreground hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
         >
           {isQuoting ? POSTING_LABEL : "Post Quote"}
         </button>

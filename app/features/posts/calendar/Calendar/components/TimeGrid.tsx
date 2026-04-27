@@ -1,3 +1,5 @@
+/** Time rail edge shadow: `var(--shadow-sidebar-edge)` (see `tailwind.css`). */
+
 import { fromDate } from "~/lib/temporal";
 
 import type { HoverOverlayPayload, SlotState } from "../domain/grid-types";
@@ -165,7 +167,7 @@ export function TimeGrid({
               style={{
                 top: index * ROW_HEIGHT_PX,
                 height: ROW_HEIGHT_PX,
-                boxShadow: "2px 0 4px rgba(0,0,0,0.05)",
+                boxShadow: "var(--shadow-sidebar-edge)",
               }}
             >
               {label}

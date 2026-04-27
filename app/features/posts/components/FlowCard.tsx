@@ -290,7 +290,7 @@ function FlowCardInner({
             {isRepostContent(item) ? (
               <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
                 <Repeat
-                  className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                  className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                   strokeWidth={2}
                   aria-hidden
                 />
@@ -302,7 +302,7 @@ function FlowCardInner({
             {isRepostContent(item) ? (
               <div className="bg-brand absolute top-1 right-1 rounded-full p-1">
                 <Repeat
-                  className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                  className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                   strokeWidth={2}
                   aria-hidden
                 />

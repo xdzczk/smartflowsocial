@@ -41,7 +41,7 @@ export function BulkPostsSubmitButton({
           </span>
           {showProgress ? (
             <div className="w-full">
-              <div className="mb-1 text-xs text-white/80">
+              <div className="text-action-primary-foreground/80 mb-1 text-xs">
                 Step {preparationProgress.current} of{" "}
                 {preparationProgress.total}
               </div>

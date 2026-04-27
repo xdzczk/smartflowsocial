@@ -224,7 +224,7 @@ export function ContentListCard({
         {isRepostContent(item) ? (
           <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
             <Repeat
-              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+              className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
               strokeWidth={2}
               aria-hidden
             />

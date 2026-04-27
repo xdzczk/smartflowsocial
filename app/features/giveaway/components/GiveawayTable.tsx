@@ -187,7 +187,7 @@ export function GiveawayTable({
                       {post.repost ? (
                         <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                            className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />
@@ -196,7 +196,7 @@ export function GiveawayTable({
                       {post.isQuotedPost ? (
                         <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <Quote
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                            className={`${SMALL_ICON_SIZE_CLASS} text-success-foreground`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />
@@ -211,7 +211,7 @@ export function GiveawayTable({
                       {post.repost ? (
                         <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                            className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />
@@ -220,7 +220,7 @@ export function GiveawayTable({
                       {post.isQuotedPost ? (
                         <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                           <Quote
-                            className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                            className={`${SMALL_ICON_SIZE_CLASS} text-success-foreground`}
                             strokeWidth={INLINE_ICON_STROKE}
                             aria-hidden
                           />

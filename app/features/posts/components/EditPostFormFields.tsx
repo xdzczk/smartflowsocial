@@ -83,7 +83,7 @@ export function EditPostFormFields({
               <button
                 type="button"
                 onClick={() => onRemoveExistingImage(idx)}
-                className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
+                className="bg-danger text-danger-foreground hover:bg-danger absolute -top-2 -right-2 rounded-full p-1"
               >
                 ×
               </button>
@@ -102,7 +102,7 @@ export function EditPostFormFields({
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}
-                  className="bg-danger hover:bg-danger absolute -top-2 -right-2 rounded-full p-1 text-white"
+                  className="bg-danger text-danger-foreground hover:bg-danger absolute -top-2 -right-2 rounded-full p-1"
                 >
                   ×
                 </button>

@@ -655,7 +655,7 @@ export function QueueTypeDialog({
           >
             {isSubmitting ? (
               <Loader2
-                className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
+                className="text-brand-on mr-2 -ml-1 h-4 w-4 animate-spin"
                 aria-hidden
               />
             ) : null}

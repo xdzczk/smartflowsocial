@@ -46,7 +46,7 @@ export function ResumeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-scrim/50 fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-surface max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Resume Draft</h2>
@@ -125,7 +125,7 @@ export function ResumeModal({
             <button
               onClick={onConfirm}
               disabled={isSubmitting}
-              className="bg-success hover:bg-success/90 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="bg-success text-success-foreground hover:bg-success/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
               {isSubmitting ? "Signing & Scheduling..." : "Sign & Schedule"}
             </button>

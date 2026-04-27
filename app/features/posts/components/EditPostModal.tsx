@@ -425,7 +425,7 @@ export function EditPostModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-scrim/50 fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className={cn(
             "bg-surface-overlay shadow-3 max-h-[90vh] w-full overflow-hidden rounded-xl",

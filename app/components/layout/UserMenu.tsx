@@ -216,9 +216,17 @@ const UserMenuAccountTrigger = forwardRef<
   ref
 ) {
   const labelText = displayName || currentLabel;
-  /** Slightly taller than h-9 so overflow clips a crisp edge; width matches h-9 for square crop. */
-  const triggerAvatarClass =
-    "h-[calc(2.25rem+2px)] w-9 shrink-0 -my-px rounded-none";
+  /**
+   * Desktop: fixed-width column, slight vertical bleed clipped by overflow.
+   * Mobile: `tap-target` can enlarge the control to 44×44 on coarse pointers while
+   * we keep h-9 w-9 as the visual baseline — fill with absolute inset-0 so the PFP
+   * never letterboxes inside the button.
+   */
+  const triggerAvatarClass = cn(
+    "rounded-none",
+    "absolute inset-0 h-full w-full",
+    "sm:static sm:inset-auto sm:h-[calc(2.25rem+2px)] sm:w-9 sm:shrink-0 sm:-my-px"
+  );
   return (
     <Button
       ref={ref}
@@ -227,7 +235,7 @@ const UserMenuAccountTrigger = forwardRef<
       type="button"
       aria-label={`Account: ${labelText}`}
       className={cn(
-        "h-9 min-h-9 w-9 shrink-0 justify-center gap-0 overflow-hidden rounded-lg p-0 pl-0 shadow-none",
+        "relative h-9 min-h-9 w-9 shrink-0 justify-center gap-0 overflow-hidden rounded-lg p-0 pl-0 shadow-none",
         "flex flex-row items-center",
         "sm:w-auto sm:min-w-0 sm:justify-start sm:gap-2.5 sm:pr-3",
         className

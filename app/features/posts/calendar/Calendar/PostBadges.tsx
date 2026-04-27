@@ -39,7 +39,7 @@ export function PostBadges({
       {post.repost ? (
         <div className={`${positionClass} bg-brand rounded-full p-0.5`}>
           <Repeat
-            className={`${sizeClass} text-white`}
+            className={`${sizeClass} text-brand-on`}
             strokeWidth={strokeWidth}
             aria-hidden
           />
@@ -48,7 +48,7 @@ export function PostBadges({
       {post.isQuotedPost ? (
         <div className={`${positionClass} bg-success rounded-full p-0.5`}>
           <Quote
-            className={`${sizeClass} text-white`}
+            className={`${sizeClass} text-success-foreground`}
             strokeWidth={strokeWidth}
             aria-hidden
           />

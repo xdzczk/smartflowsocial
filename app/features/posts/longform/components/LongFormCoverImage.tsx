@@ -133,7 +133,7 @@ export function LongFormCoverImage({
         </div>
       ) : (
         <div className="mt-1">
-          <div className="border-border/35 relative overflow-hidden rounded-lg border bg-black/5 dark:bg-white/5">
+          <div className="border-border/35 bg-scrim/5 dark:bg-capture/5 relative overflow-hidden rounded-lg border">
             <div className="aspect-[21/9] max-h-[260px] min-h-[140px] w-full">
               <img
                 src={image}
@@ -141,7 +141,7 @@ export function LongFormCoverImage({
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/0 opacity-0 transition-all hover:bg-black/35 hover:opacity-100">
+            <div className="bg-scrim/0 hover:bg-scrim/35 absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-all hover:opacity-100">
               <Button
                 type="button"
                 variant="secondary"

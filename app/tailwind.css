@@ -180,6 +180,10 @@ body.has-btcpay-confirmation-bar {
   /* Section band (between app base and cards): `bg-section` */
   --color-section: hsl(var(--bg-surface-1));
 
+  /* Overlay scrim + QR “paper”; use `bg-scrim/{opacity}` and `bg-capture` (not raw black/white). */
+  --color-scrim: hsl(var(--scrim));
+  --color-capture: hsl(var(--capture));
+
   /* ---------- Text ---------- */
   --color-text: hsl(var(--text));
   --color-text-secondary: hsl(var(--text-secondary));
@@ -228,10 +232,10 @@ body.has-btcpay-confirmation-bar {
   /* Input / keyboard focus border color (ring recipe still uses --focus-ring). */
   --color-focus-border: hsl(var(--focus-ring));
 
-  /* Soft washes — fixed alpha on --brand channel (matches common /5 /12 /15 uses). */
-  --color-brand-wash: hsl(var(--brand) / 0.05);
-  --color-brand-wash-strong: hsl(var(--brand) / 0.12);
-  --color-selection-wash: hsl(var(--brand) / 0.05);
+  /* Soft washes — fixed alpha on --brand-strong (purple identity tint). */
+  --color-brand-wash: hsl(var(--brand-strong) / 0.06);
+  --color-brand-wash-strong: hsl(var(--brand-strong) / 0.12);
+  --color-selection-wash: hsl(var(--brand-strong) / 0.06);
 
   /* Marketing landing CTA (was bg-brand-action without a theme entry). */
   --color-brand-action: hsl(var(--brand-strong));
@@ -376,8 +380,8 @@ body.has-btcpay-confirmation-bar {
     --surface-hover: var(--bg-surface-3);
     --surface-active: var(--bg-surface-3);
     /* Selection wash: faint brand hint (purple lives here + CTAs/nav active) */
-    --surface-selected: 255 20% 95.8%;
-    --surface-selected-foreground: 258 38% 38%;
+    --surface-selected: 260 20% 96%;
+    --surface-selected-foreground: 262 34% 36%;
 
     /* ---------- Text ---------- */
     --text: 38 14% 10%;
@@ -392,15 +396,22 @@ body.has-btcpay-confirmation-bar {
     --input: 38 9% 80%;
 
     /* ---------- Brand: strong = purple accent; default --brand = slate link (not global lavender) ---------- */
-    --brand: 222 28% 42%;
-    --brand-strong: 253 86.9% 61.1%;
-    --brand-soft: 253 38% 76%;
+    --brand: 222 26% 42%;
+    --brand-strong: 258 72% 58%;
+    --brand-soft: 258 34% 77%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
     /* Legacy shadcn/Tailwind `ring-*` token; was undefined — mirrors focus accent. */
     --ring: var(--focus-ring);
+
+    /* Neutral scrim: `0 0% 0%` only — drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
+    --scrim: 0 0% 0%;
+    /* Optical white for QR / dense codes; constant in light + dark. */
+    --capture: 0 0% 100%;
+    /* Calendar time-rail edge (DaysHeader, TimeGrid): ties drop shadow to `--text` for mode balance. */
+    --shadow-sidebar-edge: 2px 0 4px hsl(var(--text) / 0.06);
 
     /* ---------- Status ---------- */
     --success: 142 70% 36%;
@@ -419,7 +430,7 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 80% 28%;
 
-    --brand-text: 222 32% 34%;
+    --brand-text: 262 30% 34%;
 
     /* ---------- Misc ---------- */
     --checkbox: 38 6% 48%;
@@ -467,6 +478,7 @@ body.has-btcpay-confirmation-bar {
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.32);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
+    /* Time column: `boxShadow: "var(--shadow-sidebar-edge)"` — token lives with scrim/capture above. */
     /* Surface 1 = main content container (section tier) */
     --calendar-surface-1-bg: var(--bg-surface-1);
     --calendar-surface-1-shadow: none;
@@ -491,7 +503,7 @@ body.has-btcpay-confirmation-bar {
     --calendar-transition-duration: 200ms;
     --calendar-transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
     /* Bug fix: this token was consumed by DayViewSidebar but never defined. */
-    --calendar-accent-purple: var(--brand);
+    --calendar-accent-purple: var(--brand-strong);
 
     /* ---------- Landing (sealed island; values aligned) ---------- */
     --landing-card-elevated: var(--surface-raised);
@@ -532,8 +544,8 @@ body.has-btcpay-confirmation-bar {
     --surface-hover: var(--bg-surface-3);
     --surface-active: var(--bg-surface-3);
     /* Active nav / selection: restrained violet (brand accent, not base material) */
-    --surface-selected: 262 14% 16.4%;
-    --surface-selected-foreground: 260 38% 91%;
+    --surface-selected: 262 15% 17%;
+    --surface-selected-foreground: 262 30% 90%;
 
     /* ---------- Text ---------- */
     --text: 220 10% 96%;
@@ -548,15 +560,22 @@ body.has-btcpay-confirmation-bar {
     --input: 220 6% 22%;
 
     /* ---------- Brand: links = cool slate; CTAs / focus = purple ---------- */
-    --brand: 218 16% 71%;
-    --brand-strong: 253 86.9% 61.1%;
-    --brand-soft: 253 34% 72%;
+    --brand: 218 15% 70%;
+    --brand-strong: 258 74% 64%;
+    --brand-soft: 258 26% 34%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
     /* Legacy shadcn/Tailwind `ring-*` token; was undefined — mirrors focus accent. */
     --ring: var(--focus-ring);
+
+    /* Neutral scrim: `0 0% 0%` only — drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
+    --scrim: 0 0% 0%;
+    /* Optical white for QR / dense codes; constant in light + dark. */
+    --capture: 0 0% 100%;
+    /* Calendar time-rail edge (DaysHeader, TimeGrid): ties drop shadow to `--text` for mode balance. */
+    --shadow-sidebar-edge: 2px 0 4px hsl(var(--text) / 0.06);
 
     /* ---------- Status ---------- */
     --success: 142 50% 40%;
@@ -575,7 +594,7 @@ body.has-btcpay-confirmation-bar {
     --info-foreground: 0 0% 100%;
     --info-text: 217 75% 80%;
 
-    --brand-text: 260 32% 80%;
+    --brand-text: 262 26% 80%;
 
     --destructive: var(--danger);
     --destructive-foreground: var(--danger-foreground);
@@ -626,6 +645,7 @@ body.has-btcpay-confirmation-bar {
     --switch-thumb-shadow-on: 0 1px 2px hsl(253 87% 22% / 0.34);
 
     /* ---------- Calendar (sealed island) ---------- */
+    /* Time column edge: same `--shadow-sidebar-edge` as light (DaysHeader, TimeGrid). */
     --calendar-surface-1-bg: var(--bg-surface-1);
     --calendar-surface-2-bg: var(--surface);
     --calendar-surface-2-shadow: var(--elevation-1);

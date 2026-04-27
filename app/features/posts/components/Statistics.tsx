@@ -63,12 +63,12 @@ export default function Statistics({
   const runwayDaysNum = runwayDays ?? 0;
   const runwayIconClass =
     runwayDaysNum <= 0 && !hasScheduledPosts
-      ? "bg-slate-500/7 text-slate-600/72 dark:bg-slate-400/9 dark:text-slate-400/68"
+      ? "bg-text-tertiary/10 text-text-secondary dark:bg-text-tertiary/15 dark:text-text-tertiary"
       : runwayDaysNum < 2
         ? "bg-danger/7 text-danger/76 dark:bg-danger/9 dark:text-danger/72"
         : runwayDaysNum <= 7
           ? "bg-warning/7 text-warning/78 dark:bg-warning/9 dark:text-warning/74"
-          : "bg-slate-500/7 text-slate-600/72 dark:bg-slate-400/9 dark:text-slate-400/68";
+          : "bg-text-tertiary/10 text-text-secondary dark:bg-text-tertiary/15 dark:text-text-tertiary";
 
   const cardBase =
     "card-lift kpi-card border-border-subtle/80 min-h-[80px] overflow-hidden shadow-1";

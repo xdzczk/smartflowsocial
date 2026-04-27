@@ -71,8 +71,8 @@ export function Nip46QrUri({
 
         <div
           className={cn(
-            "border-border shadow-2 flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-4 sm:min-h-[min(320px,85vw)] sm:p-6",
-            "dark:border-white/10 dark:bg-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_8px_40px_-12px_rgba(0,0,0,0.45)]"
+            "border-border shadow-2 dark:shadow-3 bg-capture flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border p-4 sm:min-h-[min(320px,85vw)] sm:p-6",
+            "dark:border-border/60"
           )}
         >
           {uri ? (
@@ -135,7 +135,7 @@ export function Nip46QrUri({
   return (
     <div className={className ?? "space-y-4 pt-2"}>
       <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-        <div className="border-border shadow-2 dark:shadow-1 flex justify-center rounded-lg border bg-white p-4 dark:bg-white">
+        <div className="border-border shadow-2 dark:shadow-1 bg-capture dark:border-border/60 flex justify-center rounded-lg border p-4">
           <QRCode value={uri} size={QR_INLINE_SIZE} />
         </div>
         <div className="space-y-3">

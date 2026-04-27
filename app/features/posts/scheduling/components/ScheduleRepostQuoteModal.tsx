@@ -407,7 +407,7 @@ export function ScheduleRepostQuoteModal({
   const modalContent =
     !open || typeof document === "undefined" ? null : (
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+        className="bg-scrim/50 fixed inset-0 z-[100] flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="schedule-repost-quote-title"
