@@ -41,7 +41,7 @@ export function RailSummaryToken({
   className?: string;
 }) {
   const cls = cn(
-    "border-border bg-surface-hover/40 text-text inline-flex h-5 max-w-full items-center truncate rounded-sm px-1.5 text-[10px] font-medium",
+    "border-border-subtle/55 bg-surface-hover/35 text-text inline-flex h-5 max-w-full items-center truncate rounded-sm px-1.5 text-[10px] font-medium",
     onClick && "hover:bg-surface-hover/70 cursor-pointer",
     className
   );

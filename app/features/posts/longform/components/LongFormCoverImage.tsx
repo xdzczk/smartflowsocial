@@ -57,14 +57,14 @@ export function LongFormCoverImage({
       </div>
 
       {uploadError ? (
-        <div className="border-danger bg-danger/10 text-danger mt-1 rounded-md border p-2 text-sm">
+        <div className="bg-danger/[0.07] text-danger ring-danger/25 dark:bg-danger/[0.12] dark:ring-danger/35 mt-2 rounded-md py-2 pl-3 text-[13px] leading-snug ring-1">
           {uploadError}
         </div>
       ) : null}
 
       {coverFileUploadDisabled && uploadProvider?.includes("BLOSSOM") ? (
         <div
-          className="border-warning/55 bg-warning/10 text-warning-text mt-1 rounded-md border px-2.5 py-2 text-[11px] leading-snug"
+          className="bg-warning/[0.08] text-warning-text ring-warning/30 dark:bg-warning/[0.10] mt-2 rounded-md py-2 pl-3 text-[11px] leading-snug ring-1"
           role="note"
         >
           Cover file upload needs a NIP-07 browser extension or connected remote

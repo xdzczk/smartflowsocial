@@ -54,7 +54,6 @@ import type { ComposerContext } from "../services/compose-route-contract";
 import { usePendingPublishAttempt } from "../state/use-pending-publish-attempt";
 
 import {
-  ComposerCanvasDivider,
   ComposerErrors,
   ComposerLeftCanvas,
   type ComposerPublishMode,
@@ -1434,7 +1433,6 @@ export function UnifiedComposer({
               <>
                 {!skipEmptyPostPreview ? (
                   <>
-                    <ComposerCanvasDivider />
                     <div
                       className={cn(
                         "flex flex-col",
@@ -1463,7 +1461,6 @@ export function UnifiedComposer({
                     </div>
                   </>
                 ) : null}
-                <ComposerCanvasDivider />
                 <div
                   className={
                     isContestSourcePostDensity

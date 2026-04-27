@@ -46,6 +46,8 @@ export interface PageHeaderProps {
   actions?: ReactNode;
   variant?: PageHeaderVariant;
   className?: string;
+  /** Override default title typography (e.g. composer uses `text-h1`). */
+  titleClassName?: string;
 }
 
 /**
@@ -60,11 +62,12 @@ export function PageHeader({
   actions,
   variant = "library",
   className,
+  titleClassName,
 }: PageHeaderProps) {
   return (
     <header className={cn(VARIANT_SHELL[variant], className)}>
       <div className="min-w-0 flex-1 space-y-1">
-        <h1 className={VARIANT_TITLE[variant]}>{title}</h1>
+        <h1 className={cn(VARIANT_TITLE[variant], titleClassName)}>{title}</h1>
         {subtitle ? (
           <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
         ) : null}

@@ -100,7 +100,7 @@ function EditorialLongFormContentEditor({
         className={cn(
           "overflow-hidden",
           containedInComposerCard
-            ? "border-border/20 bg-surface-hover/[0.04] rounded-lg border"
+            ? "ring-border-subtle/45 rounded-xl ring-1"
             : [
                 "border-border/35 bg-surface/40 rounded-xl border",
                 "shadow-1 shadow-black/[0.02] dark:shadow-black/20",
@@ -112,7 +112,7 @@ function EditorialLongFormContentEditor({
           className={cn(
             "border-b",
             containedInComposerCard
-              ? "border-border/20 bg-surface-hover/10"
+              ? "border-border-subtle/40 bg-section/40 dark:bg-section/25"
               : "border-border/15 bg-surface-hover/[0.06]"
           )}
         >
@@ -144,7 +144,9 @@ function EditorialLongFormContentEditor({
               ? EDITORIAL_PLACEHOLDER_MIN_HEIGHT
               : EDITORIAL_EDITOR_MIN_HEIGHT,
             !editorReady && "pointer-events-none select-none",
-            containedInComposerCard ? "bg-canvas/60" : "bg-canvas/50"
+            containedInComposerCard
+              ? "bg-canvas/35 dark:bg-canvas/20"
+              : "bg-canvas/50"
           )}
           aria-busy={!editorReady}
           aria-label={!editorReady ? "Editor loading" : undefined}

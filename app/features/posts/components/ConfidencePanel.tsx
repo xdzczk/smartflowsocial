@@ -166,7 +166,7 @@ function FollowUpRailCollapsible({
         }
       />
       {open ? (
-        <div className="divide-border/60 border-border/50 mt-1 border-t pt-2 pl-0">
+        <div className="border-border-subtle/45 mt-2 border-t pt-2 pl-0">
           {children}
         </div>
       ) : null}
@@ -285,7 +285,7 @@ function PublishSummarySection({
                   <li
                     key={line}
                     className={cn(
-                      "border-border/40 border-b border-dotted pb-0.5 last:border-0",
+                      "border-border-subtle/45 border-b border-dotted pb-0.5 last:border-0",
                       isTags && "text-text-secondary"
                     )}
                   >
@@ -446,7 +446,7 @@ function PublishOptionsZone({
   return (
     <div>
       <RailSectionHeader>Publish options</RailSectionHeader>
-      <div className="divide-border/60 divide-y">
+      <div className="divide-border-subtle/45 divide-y">
         {followUp ? (
           <FollowUpRailCollapsible summaryLine={followUp.summaryLine}>
             {followUp.children}

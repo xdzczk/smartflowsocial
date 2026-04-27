@@ -1,6 +1,6 @@
 import { cn } from "~/lib/utils";
 
-const TAB_ROW_H = "h-10";
+const SEGMENT_MIN_H = "min-h-9";
 
 const COLS = {
   2: "grid-cols-2",
@@ -29,18 +29,11 @@ export function RailSegmentedTabGroup({
   disabled?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        // rounded-t-lg (14px) matches the rail body's rounded-lg below.
-        "overflow-hidden rounded-t-lg border-x border-t",
-        /* Strengthened global --border (14% in dark) reads on both modes — no override needed. */
-        "border-border-strong"
-      )}
-    >
+    <div className="border-border-subtle/65 bg-section/65 dark:bg-section/45 shrink-0 border-b px-3 pt-3 pb-2.5">
       <div
         role="radiogroup"
         aria-label={radiogroupAriaLabel}
-        className={cn("divide-border relative grid divide-x", COLS[columns])}
+        className={cn("grid gap-1", COLS[columns])}
       >
         {items.map((item) => {
           const active = value === item.id;
@@ -53,13 +46,12 @@ export function RailSegmentedTabGroup({
               aria-label={item.ariaLabel}
               disabled={disabled}
               className={cn(
-                TAB_ROW_H,
-                "motion-fast flex items-center justify-center px-1 text-center text-xs",
+                SEGMENT_MIN_H,
+                "motion-fast flex items-center justify-center rounded-md px-1 text-center text-xs",
                 disabled && "pointer-events-none opacity-90",
-                /* Active: no bottom rule so it reads as one surface with the rail body below */
                 active
-                  ? "bg-surface text-text relative z-[1] border-b border-b-transparent font-semibold"
-                  : "bg-surface-hover/40 text-text-secondary border-border hover:bg-surface-hover/70 hover:text-text border-b font-medium"
+                  ? "bg-surface text-text ring-border-subtle/55 dark:ring-border-subtle/40 font-semibold ring-1 shadow-sm dark:shadow-none"
+                  : "text-text-secondary hover:bg-surface-hover/55 hover:text-text border border-transparent font-medium"
               )}
               onClick={() => {
                 if (!disabled) onValueChange(item.id);

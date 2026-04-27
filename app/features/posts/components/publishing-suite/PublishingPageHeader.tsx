@@ -8,11 +8,13 @@ export function PublishingPageHeader({
   subtitle,
   actions,
   className,
+  titleClassName,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   className?: string;
+  titleClassName?: string;
 }) {
   return (
     <PageHeader
@@ -21,6 +23,7 @@ export function PublishingPageHeader({
       subtitle={subtitle}
       actions={actions}
       className={className}
+      titleClassName={titleClassName}
     />
   );
 }

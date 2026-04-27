@@ -29,7 +29,7 @@ export function LongFormPostSigningProgress({
   return (
     <>
       {isSigning ? (
-        <div className="bg-surface-hover/30 text-text-secondary flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+        <div className="bg-section/45 text-text-secondary ring-border-subtle/40 dark:bg-section/30 flex items-center justify-between gap-2 rounded-lg p-3 text-sm ring-1">
           <span>
             Waiting for signer approval…
             {phaseStatus ? <> {phaseStatus}</> : null}
@@ -49,7 +49,7 @@ export function LongFormPostSigningProgress({
         </div>
       ) : null}
       {signingError ? (
-        <div className="border-danger bg-danger/10 text-danger dark:border-danger/60 dark:bg-danger/10 dark:text-danger rounded-md border p-3 text-sm">
+        <div className="bg-danger/[0.07] text-danger dark:bg-danger/[0.11] dark:text-danger ring-danger/25 dark:ring-danger/35 rounded-lg py-2.5 pl-3 text-[13px] ring-1">
           {signingError}
         </div>
       ) : null}

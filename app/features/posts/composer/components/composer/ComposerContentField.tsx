@@ -71,7 +71,7 @@ export function ComposerContentField({
           isCard &&
             "border-border bg-surface focus-within:ring-brand/25 shadow-1 relative overflow-hidden rounded-lg border transition-shadow duration-200 focus-within:ring-2",
           !isCard &&
-            "focus-within:bg-surface-hover/50 focus-within:ring-border-subtle motion-base rounded-md focus-within:ring-1"
+            "focus-within:bg-surface-hover/35 focus-within:ring-border-subtle/70 motion-base rounded-md focus-within:ring-1"
         )}
       >
         <div
@@ -108,7 +108,7 @@ export function ComposerContentField({
             "flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between",
             isCard
               ? "text-text-secondary border-border-subtle bg-surface-hover/40 border-t px-3 py-1.5 pt-2 text-[10px]"
-              : "text-text-tertiary border-border-subtle mt-0.5 border-t pt-1.5 text-[9px] sm:pt-1.5"
+              : "text-text-tertiary/90 border-border-subtle/60 mt-1 border-t pt-2 text-[9px] sm:pt-1.5"
           )}
         >
           <span className="hidden sm:inline">

@@ -21,6 +21,7 @@ import type { ComposerAttachment } from "~/features/posts/types";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
+import { ComposerCanvasDivider } from "./ComposerLeftCanvas";
 import { MIN_THREAD_SEGMENTS } from "./thread-constants";
 
 export interface ThreadSegment {
@@ -88,7 +89,7 @@ export function ComposerThreadField({
         </div>
       ) : null}
       {onAutoNumberSegmentsChange ? (
-        <div className="border-border-subtle bg-surface-hover/40 flex max-w-[min(100%,42rem)] items-center justify-between gap-3 rounded-md border px-2.5 py-2">
+        <div className="bg-section/50 ring-border-subtle/45 dark:bg-section/35 flex max-w-[min(100%,42rem)] items-center justify-between gap-3 rounded-lg px-2.5 py-2 ring-1">
           <div className="min-w-0 space-y-0.5">
             <Label
               htmlFor="thread-auto-number-segments"
@@ -117,21 +118,18 @@ export function ComposerThreadField({
         </div>
       ) : null}
       {segments.map((seg, idx) => (
-        <div key={seg.id} className="relative">
+        <div key={seg.id} className="relative max-w-[min(100%,42rem)]">
           {idx > 0 ? (
-            <div
-              className="bg-border-subtle mb-4 h-px w-full max-w-[min(100%,42rem)]"
-              aria-hidden
-            />
+            <ComposerCanvasDivider className="mt-1 mb-5 max-w-[min(100%,42rem)]" />
           ) : null}
           <div
             role="button"
             tabIndex={-1}
             aria-label={`Segment ${idx + 1}. Drop media here or press Enter to add files.`}
             className={cn(
-              "group border-border-subtle relative border-l pl-3 transition-[background-color,border-color] duration-150",
-              "hover:bg-surface-hover/30",
-              "focus-within:border-brand/30 focus-within:bg-surface-hover/40"
+              "group relative rounded-lg py-1 pl-3 transition-[background-color,box-shadow] duration-150",
+              "border-border-subtle/40 border-l-[3px]",
+              "hover:bg-section/30 focus-within:bg-section/40 dark:hover:bg-section/20 dark:focus-within:bg-section/30"
             )}
             onDragOver={(e) => {
               e.preventDefault();
@@ -167,7 +165,7 @@ export function ComposerThreadField({
             }}
           >
             {draggingOverSegmentId === seg.id ? (
-              <div className="border-brand bg-brand/5 pointer-events-none absolute inset-0 z-10 flex items-center justify-center border border-dashed">
+              <div className="border-brand/45 bg-brand/[0.06] dark:bg-brand/[0.08] pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border border-dashed">
                 <span className="text-text-secondary text-xs">
                   Drop to add media
                 </span>
@@ -268,8 +266,8 @@ export function ComposerThreadField({
             {/* Main writing field */}
             <div
               className={cn(
-                "focus-within:bg-surface-hover/50 focus-within:ring-border-subtle -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-[background-color,box-shadow] duration-150",
-                "focus-within:ring-1"
+                "focus-within:bg-section/35 focus-within:ring-border-subtle/55 -mx-0.5 rounded-md px-0.5 pt-0.5 pb-0 transition-[background-color,box-shadow] duration-150",
+                "dark:focus-within:bg-section/25 focus-within:ring-1"
               )}
             >
               <div className="relative">

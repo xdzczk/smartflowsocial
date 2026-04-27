@@ -1,6 +1,6 @@
 /**
- * Single left-column composer surface: matches publishing rail card grammar
- * (rounded-lg border bg-surface shadow-1). Sections use dividers, not nested cards.
+ * Single left-column composer surface: dashboard card grammar (elevated surface,
+ * restrained border). Sections use soft dividers, not nested form boxes.
  */
 
 import { cn } from "~/lib/utils";
@@ -8,7 +8,10 @@ import { cn } from "~/lib/utils";
 export function ComposerCanvasDivider({ className }: { className?: string }) {
   return (
     <div
-      className={cn("bg-border-subtle h-px w-full shrink-0", className)}
+      className={cn(
+        "via-border-subtle/75 dark:via-border-subtle/55 h-px w-full shrink-0 bg-gradient-to-r from-transparent to-transparent",
+        className
+      )}
       role="separator"
     />
   );
@@ -34,7 +37,7 @@ export function ComposerLeftCanvas({
   return (
     <div
       className={cn(
-        "border-border bg-surface shadow-1 rounded-lg border",
+        "border-border-subtle/80 bg-surface shadow-1 rounded-xl border ring-1 ring-black/[0.03] dark:ring-white/[0.05]",
         className
       )}
     >

@@ -20,10 +20,7 @@ export function ComposerPreviewSection({
 }) {
   return (
     <section
-      className={cn(
-        "border-border/35 mt-1 border-t pt-2.5 first:mt-0 first:border-t-0 first:pt-1",
-        className
-      )}
+      className={cn("mt-5 pt-0.5 first:mt-0 first:pt-0", className)}
       aria-label={title}
     >
       <ComposerCanvasSectionLabel className="mb-1.5">
