@@ -47,6 +47,7 @@ const queueTypeSchema = z.object({
         .optional(),
     })
     .optional(),
+  status: z.enum(["active", "paused", "archived"]).optional(),
   isEnabled: z.boolean().optional(),
   userId: z.string().optional(),
 });

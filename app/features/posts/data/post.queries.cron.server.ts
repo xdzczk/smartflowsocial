@@ -14,9 +14,11 @@ export function getCronDueScheduledPosts(): Promise<Post[]> {
     where: {
       // Use currentState as single source of truth
       currentState: "SCHEDULED",
+      queueHoldStatus: "NONE",
       scheduledAtUtc: {
         lte: now,
       },
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
     },
   });
 }

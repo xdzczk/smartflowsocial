@@ -114,8 +114,15 @@ function parseQueueType(qt: unknown): string | QueueType {
           : undefined,
       status:
         typeof queueTypeObj.status === "string" &&
-        ["active", "paused", "full", "manual"].includes(queueTypeObj.status)
-          ? (queueTypeObj.status as "active" | "paused" | "full" | "manual")
+        ["active", "paused", "archived", "full", "manual"].includes(
+          queueTypeObj.status
+        )
+          ? (queueTypeObj.status as
+              | "active"
+              | "paused"
+              | "archived"
+              | "full"
+              | "manual")
           : undefined,
       isEnabled:
         typeof queueTypeObj["isEnabled"] === "boolean"
@@ -504,7 +511,33 @@ export default function NewPostPage() {
   );
   /** Bumped on success modal "Create new post" so composers remount (poll has no localStorage draft like UnifiedComposer). */
   const [composerSessionKey, setComposerSessionKey] = useState(0);
-  const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
+  const isEditMode = composerContext.mode !== "create";
+  const queueNameFromUrl = searchParams.get("queue");
+  const resolvedInitialQueue = useMemo(() => {
+    const fromDraft = initialDraft?.queueType ?? null;
+    if (fromDraft) return fromDraft;
+    if (isEditMode || publishResultToken) return "unassigned";
+    const raw = queueNameFromUrl?.trim();
+    if (!raw) return "unassigned";
+    const known = typedQueueTypes.some((q) =>
+      typeof q === "string" ? q === raw : q.name === raw
+    );
+    return known ? raw : "unassigned";
+  }, [
+    initialDraft?.queueType,
+    isEditMode,
+    publishResultToken,
+    queueNameFromUrl,
+    typedQueueTypes,
+  ]);
+  const shouldForceQueueCompose =
+    !isEditMode &&
+    !publishResultToken &&
+    !initialDraftId &&
+    resolvedInitialQueue !== "unassigned";
+  const [publishMode, setPublishMode] = useState<ComposerPublishMode>(() =>
+    shouldForceQueueCompose ? "queue" : "now"
+  );
   useEffect(() => {
     trackComposerEvent("composer_content_type_selected", {
       contentType: composerTab,
@@ -543,27 +576,7 @@ export default function NewPostPage() {
               : composerTab === "thread"
                 ? "Create thread"
                 : "Create post";
-  const isEditMode = composerContext.mode !== "create";
   const showHydrationHardError = isEditMode && hydrationStatus === "error";
-
-  const queueNameFromUrl = searchParams.get("queue");
-  const resolvedInitialQueue = useMemo(() => {
-    const fromDraft = initialDraft?.queueType ?? null;
-    if (fromDraft) return fromDraft;
-    if (isEditMode || publishResultToken) return "unassigned";
-    const raw = queueNameFromUrl?.trim();
-    if (!raw) return "unassigned";
-    const known = typedQueueTypes.some((q) =>
-      typeof q === "string" ? q === raw : q.name === raw
-    );
-    return known ? raw : "unassigned";
-  }, [
-    initialDraft?.queueType,
-    isEditMode,
-    publishResultToken,
-    queueNameFromUrl,
-    typedQueueTypes,
-  ]);
 
   const shortComposeDraftPickerBase =
     composerTab === "thread"
@@ -746,7 +759,8 @@ export default function NewPostPage() {
                   skipLocalDraftRestore={
                     Boolean(publishResultToken) ||
                     Boolean(initialDraftId) ||
-                    isEditMode
+                    isEditMode ||
+                    shouldForceQueueCompose
                   }
                   initialQueue={resolvedInitialQueue}
                   initialPollRestore={initialPollRestore}
@@ -777,7 +791,9 @@ export default function NewPostPage() {
                   initialScheduledFor={composedScheduledAt ?? undefined}
                   composerContext={composerContext}
                   skipLocalDraftRestore={
-                    Boolean(publishResultToken) || isEditMode
+                    Boolean(publishResultToken) ||
+                    isEditMode ||
+                    shouldForceQueueCompose
                   }
                   localDraftStorageKey={
                     composerTab === "thread"

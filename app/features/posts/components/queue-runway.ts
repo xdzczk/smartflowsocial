@@ -1,5 +1,6 @@
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
+import { isQueuePaused } from "../queue-status";
 import {
   isFixedSlotsScheduleConfig,
   isIntervalScheduleConfig,
@@ -19,7 +20,7 @@ export function estimatePostsPerDayForQueue(
   queueType: QueueType,
   globalScheduleIntervalHours: number[]
 ): number | null {
-  if (queueType.isEnabled === false) return 0;
+  if (isQueuePaused(queueType)) return 0;
   const st = queueType.scheduleType;
   const cfg = queueType.scheduleConfig;
   if (!st || !cfg) return null;

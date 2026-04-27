@@ -11,6 +11,7 @@ import { railSelectTriggerClassNames } from "~/features/posts/components/publish
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
+import { isQueueSchedulable, shouldShowQueueInUi } from "../queue-status";
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
   queueTypes: Array<string | QueueType>;
@@ -62,15 +63,23 @@ export function QueueSelector({
           {queueTypes
             .filter((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
-              const isEnabled =
-                typeof queue === "object" ? queue.isEnabled !== false : true;
-              return isEnabled && queueName !== "Unassigned";
+              return (
+                queueName !== "Unassigned" &&
+                (typeof queue === "string" || shouldShowQueueInUi(queue))
+              );
             })
             .map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
+              const isSchedulable =
+                typeof queue === "string" ? true : isQueueSchedulable(queue);
               return (
-                <SelectItem key={queueName} value={queueName}>
+                <SelectItem
+                  key={queueName}
+                  value={queueName}
+                  disabled={!isSchedulable}
+                >
                   {queueName}
+                  {!isSchedulable ? " (Paused)" : ""}
                 </SelectItem>
               );
             })}

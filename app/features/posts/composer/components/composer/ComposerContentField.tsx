@@ -31,8 +31,7 @@ export interface ComposerContentFieldProps {
 
 const DEFAULT_MAX_LENGTH = 5000;
 
-const DEFAULT_PLACEHOLDER =
-  "Share an update, link, or drop media—tokens go inline as you type.";
+const DEFAULT_PLACEHOLDER = "Share an update, link, or drop media.";
 
 export function ComposerContentField({
   value,

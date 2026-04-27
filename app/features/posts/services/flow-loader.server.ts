@@ -34,6 +34,7 @@ import {
   type LongFormPostDTO,
 } from "../dtos";
 import { getFlowGoLiveAtMs } from "../flow-go-live-at";
+import { shouldShowQueueInUi } from "../queue-status";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 import type {
   CombinedContent,
@@ -214,7 +215,7 @@ export async function loadFlowData({
     getHashTagPresetsCached(userId),
   ]);
 
-  const enabledQueueTypes = queueTypes.filter((qt) => qt.isEnabled !== false);
+  const enabledQueueTypes = queueTypes.filter((qt) => shouldShowQueueInUi(qt));
   const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
   const fetchPosts =

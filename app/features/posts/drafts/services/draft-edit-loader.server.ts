@@ -4,6 +4,7 @@
  */
 
 import { toPostDTO, type PostDTO } from "~/features/posts/dtos";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import { getPostById } from "~/features/posts/server";
 import { deriveIsDraft } from "~/features/posts/state-machine/post-state";
 import type { PostData } from "~/features/posts/types";
@@ -63,7 +64,7 @@ export async function loadDraftEditData(userId: string, postId: string) {
   return {
     post: postDTO,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     hashTagPresets,
     versions,
   };

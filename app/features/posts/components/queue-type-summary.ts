@@ -1,5 +1,6 @@
 import { formatIntervalLabel } from "~/lib/schedule-intervals";
 
+import { isQueuePaused } from "../queue-status";
 import {
   isFixedSlotsScheduleConfig,
   isIntervalScheduleConfig,
@@ -102,8 +103,8 @@ export function getQueueMetadataChips(
 ): QueueMetadataChip[] {
   const chips: QueueMetadataChip[] = [];
 
-  if (queueType.isEnabled === false) {
-    chips.push({ key: "disabled", label: "Disabled" });
+  if (isQueuePaused(queueType)) {
+    chips.push({ key: "paused", label: "Paused" });
   }
 
   const preset = queueType.hashTagPreset;

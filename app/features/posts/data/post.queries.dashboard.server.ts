@@ -30,6 +30,7 @@ export async function getScheduledPosts({
   contentTab,
   scheduledFromUtc,
   scheduledToUtc,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   page?: number;
@@ -43,6 +44,7 @@ export async function getScheduledPosts({
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<PostsWithPagination> {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -94,6 +96,23 @@ export async function getScheduledPosts({
       }
     }
 
+    if (excludePausedQueueContent) {
+      const pausedQueueExclusion: Prisma.PostWhereInput = {
+        OR: [
+          { queueTypeId: null },
+          { queueType: { status: { not: "PAUSED" } } },
+        ],
+      };
+      whereClause.AND = [
+        ...(Array.isArray(whereClause.AND)
+          ? whereClause.AND
+          : whereClause.AND
+            ? [whereClause.AND]
+            : []),
+        pausedQueueExclusion,
+      ];
+    }
+
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where: whereClause,
@@ -143,11 +162,13 @@ export async function getScheduledRepostsCount({
   queueType,
   scheduledFromUtc,
   scheduledToUtc,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   queueType?: string;
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<number> {
   const whereClause: Prisma.PostWhereInput = {
     currentState: "SCHEDULED",
@@ -166,6 +187,19 @@ export async function getScheduledRepostsCount({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
   }
   return prisma.post.count({ where: whereClause });
 }
@@ -731,6 +765,7 @@ export async function getLastPostTimeForQueue({
        FROM "Post"
        WHERE "userId" = $1 AND "queueTypeId" = $2
          AND "currentState" = 'SCHEDULED'
+         AND "queueHoldStatus" = 'NONE'
          AND "dependencyMode" = 'standalone'
          AND "scheduledAtUtc" IS NOT NULL
        ORDER BY effective_at DESC
@@ -746,6 +781,7 @@ export async function getLastPostTimeForQueue({
      FROM "Post"
      WHERE "userId" = $1 AND "queueTypeId" = $2
        AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+       AND ("currentState" <> 'SCHEDULED' OR "queueHoldStatus" = 'NONE')
        AND "dependencyMode" = 'standalone'
        AND "scheduledAtUtc" IS NOT NULL
      ORDER BY effective_at DESC

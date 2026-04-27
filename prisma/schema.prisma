@@ -454,6 +454,7 @@ model QueueType {
   scheduleType    ScheduleType   @default(INTERVAL)
   scheduleConfig  Json
   isEnabled       Boolean        @default(true)
+  status          QueueStatus    @default(ACTIVE)
   colorToken      String?
   description     String?
   lastPostTime    DateTime?
@@ -924,6 +925,10 @@ model Post {
   fileUrl                 String[]
   scheduledAtUtc          DateTime? // New DateTime field (UTC)
   nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
+  queueHoldStatus         QueueHoldStatus       @default(NONE)
+  queueHeldAtUtc          DateTime?
+  queueHeldOriginalScheduledAtUtc DateTime?
+  queueHeldByQueueTypeId  String?
   publishedAt             DateTime?
   content                 String?
   postType                PostType              @default(IMAGE)
@@ -1000,6 +1005,7 @@ model Post {
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
   @@index([userId, scheduledAtUtc])
+  @@index([queueTypeId, queueHoldStatus, scheduledAtUtc])
   @@index([publishedAt])
   @@index([repostOfPostId])
   @@index([quoteOfPostId])
@@ -1043,6 +1049,18 @@ enum ScheduledSigningState {
   invalidated
 }
 
+enum QueueStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum QueueHoldStatus {
+  NONE
+  HELD_BY_QUEUE
+  NEEDS_RESIGN_AFTER_QUEUE_RESUME
+}
+
 model LongFormPost {
   id                      String                        @id @default(cuid())
   nostrEventId            String?
@@ -1052,6 +1070,10 @@ model LongFormPost {
   image                   String?
   scheduledAtUtc          DateTime? // New DateTime field (UTC)
   nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
+  queueHoldStatus         QueueHoldStatus               @default(NONE)
+  queueHeldAtUtc          DateTime?
+  queueHeldOriginalScheduledAtUtc DateTime?
+  queueHeldByQueueTypeId  String?
   postedAt                DateTime?
   publishedAt             DateTime?
   updatedAt               DateTime                      @updatedAt
@@ -1087,6 +1109,7 @@ model LongFormPost {
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
   @@index([userId, scheduledAtUtc])
+  @@index([queueTypeId, queueHoldStatus, scheduledAtUtc])
   @@index([publishedAt])
 }
 

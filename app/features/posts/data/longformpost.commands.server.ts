@@ -264,6 +264,12 @@ export async function updateLongFormPost({
     tags && typeof tags === "string" ? tags : null,
     finalScheduledFor
   );
+  if (scheduledAtUtcInput !== undefined || queueTypeId !== undefined) {
+    updateData.queueHoldStatus = "NONE";
+    updateData.queueHeldAtUtc = null;
+    updateData.queueHeldOriginalScheduledAtUtc = null;
+    updateData.queueHeldByQueueTypeId = null;
+  }
 
   setQueueTypeUpdate(updateData, queueTypeId);
   setEventData(updateData, signedEvent, nostrEvent);

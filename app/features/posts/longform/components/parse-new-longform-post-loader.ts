@@ -89,6 +89,14 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
           typeof q.isEnabled === "boolean"
             ? q.isEnabled
             : q.isEnabled !== false;
+        const statusRaw = (q as { status?: unknown }).status;
+        const status =
+          typeof statusRaw === "string" &&
+          (statusRaw === "active" ||
+            statusRaw === "paused" ||
+            statusRaw === "archived")
+            ? statusRaw
+            : undefined;
         const userIdVal = typeof q.userId === "string" ? q.userId : "";
         const includeRaw = (q as { includeHashtagsInNoteBody?: unknown })
           .includeHashtagsInNoteBody;
@@ -101,6 +109,7 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
           scheduleType: scheduleType,
           scheduleConfig:
             scheduleConfig as unknown as QueueType["scheduleConfig"],
+          status: status,
           isEnabled: isEnabled,
           userId: userIdVal,
           includeHashtagsInNoteBody:

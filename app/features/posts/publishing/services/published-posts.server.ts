@@ -10,6 +10,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getPublishedLongFormPosts,
   getPublishedPosts,
@@ -242,12 +243,8 @@ export async function getPublishedDashboardData({
     pagination: outPagination,
     stats,
     user,
-    queueTypes: queueTypes.filter(
-      (qt: unknown) =>
-        typeof qt === "object" &&
-        qt !== null &&
-        "isEnabled" in qt &&
-        qt.isEnabled !== false
+    queueTypes: queueTypes.filter((qt: unknown) =>
+      typeof qt === "object" && qt !== null ? shouldShowQueueInUi(qt) : false
     ),
     selectedQueueType: queueType,
     totalPostsCount: totalPosts - repostsCount,

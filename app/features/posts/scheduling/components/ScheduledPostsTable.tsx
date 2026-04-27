@@ -482,7 +482,14 @@ export function ScheduledPostsTable({
                     </td>
                     <td className="p-3 text-center">
                       <span className="text-text-secondary text-xs font-medium">
-                        {post.signedEvent ? "Signed" : "Scheduled"}
+                        {post.queueHoldStatus === "HELD_BY_QUEUE"
+                          ? "Paused"
+                          : post.queueHoldStatus ===
+                              "NEEDS_RESIGN_AFTER_QUEUE_RESUME"
+                            ? "Needs re-sign"
+                            : post.signedEvent
+                              ? "Signed"
+                              : "Scheduled"}
                       </span>
                     </td>
                     <td className="p-3 text-center">

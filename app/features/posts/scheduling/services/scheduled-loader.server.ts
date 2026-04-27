@@ -11,6 +11,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getScheduledLongFormPosts,
   getScheduledPosts,
@@ -66,13 +67,16 @@ export async function loadScheduledData(
       limit,
       scheduledFromUtc,
       scheduledToUtc,
+      excludePausedQueueContent: true,
     }),
     getScheduledLongFormPosts({
       userId,
       page,
       limit,
+      queueType,
       scheduledFromUtc,
       scheduledToUtc,
+      excludePausedQueueContent: true,
     }),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
@@ -81,6 +85,7 @@ export async function loadScheduledData(
       queueType,
       scheduledFromUtc,
       scheduledToUtc,
+      excludePausedQueueContent: true,
     }),
     getScheduledContestLaunchesForUser(userId, {
       fromUtc: scheduledFromUtc,
@@ -95,7 +100,6 @@ export async function loadScheduledData(
   const allLongformPosts = allLongformPostsResult.posts;
   const longformPostsPagination = allLongformPostsResult.pagination;
 
-  // Filter longform posts by queue type if specific queue is selected
   const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
@@ -157,7 +161,7 @@ export async function loadScheduledData(
     posts: postsDTO,
     longformPosts: longformPostsDTO,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     selectedQueueType: queueType,
     hashTagPresets,
     pagination: postsPagination,

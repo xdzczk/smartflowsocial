@@ -397,6 +397,11 @@ describe("Post Queries", () => {
       expect(prisma.post.findMany).toHaveBeenCalledWith({
         where: {
           currentState: "SCHEDULED",
+          queueHoldStatus: "NONE",
+          OR: [
+            { queueTypeId: null },
+            { queueType: { status: { not: "PAUSED" } } },
+          ],
           scheduledAtUtc: {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             lte: expect.any(Date),

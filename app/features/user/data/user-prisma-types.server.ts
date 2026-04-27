@@ -5,6 +5,7 @@ export type {
   User,
   HashTagPreset,
   QueueType,
+  QueueStatus,
   ScheduleType,
   UploadProvider,
 } from "@prisma/client";

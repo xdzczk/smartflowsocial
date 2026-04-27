@@ -2,6 +2,7 @@
  * Content statistics (posts + longform) for dashboard
  */
 
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getLongFormStatistics,
   getScheduledLongFormCountByQueue,
@@ -93,7 +94,7 @@ export async function getQueueCountsForDashboard(
 
   const idToName = new Map<string, string>();
   for (const qt of queueTypes) {
-    if (qt.isEnabled !== false) {
+    if (shouldShowQueueInUi(qt)) {
       idToName.set(qt.id, qt.name);
     }
   }
@@ -111,7 +112,7 @@ export async function getQueueCountsForDashboard(
 
   const result: QueueCountItem[] = [];
   for (const qt of queueTypes) {
-    if (qt.isEnabled === false) continue;
+    if (!shouldShowQueueInUi(qt)) continue;
     const count = countByQueueId.get(qt.id) ?? 0;
     result.push({ queueName: qt.name, count });
   }

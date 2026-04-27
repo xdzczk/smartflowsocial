@@ -7,6 +7,7 @@
 import { json } from "@remix-run/node";
 
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   deletePost,
   getRecyclablePosts,
@@ -97,12 +98,8 @@ export async function getRecyclableDashboardData({
     pagination: outPagination,
     stats,
     user,
-    queueTypes: queueTypes.filter(
-      (qt: unknown) =>
-        typeof qt === "object" &&
-        qt !== null &&
-        "isEnabled" in qt &&
-        qt.isEnabled !== false
+    queueTypes: queueTypes.filter((qt: unknown) =>
+      typeof qt === "object" && qt !== null ? shouldShowQueueInUi(qt) : false
     ),
     selectedQueueType: queueType,
   };

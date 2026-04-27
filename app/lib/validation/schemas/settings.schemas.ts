@@ -641,6 +641,10 @@ export const toggleQueueEnabledSchema = z.object({
     ),
 });
 
+export const queueStatusActionSchema = z.object({
+  id: z.string().min(1, ERROR_ID_REQUIRED),
+});
+
 /**
  * Accounts action schemas
  */

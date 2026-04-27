@@ -19,6 +19,7 @@ import {
   computeScheduledForUnix,
   delayMs,
 } from "~/features/posts/queue-payload.server";
+import { isHeldByQueue, isQueuePaused } from "~/features/posts/queue-status";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { RepostConditions } from "~/features/posts/types";
@@ -67,6 +68,29 @@ export async function processPost(
   postData: PostData,
   now: number
 ): Promise<boolean> {
+  const currentPostRaw = await findPostUnique(
+    { id: postData.id, userId: postData.userId },
+    {
+      select: {
+        currentState: true,
+        queueHoldStatus: true,
+        queueType: { select: { status: true, isEnabled: true } },
+      },
+    }
+  );
+  const currentPost = currentPostRaw as {
+    currentState: string | null;
+    queueHoldStatus: string | null;
+    queueType: { status?: string | null; isEnabled?: boolean | null } | null;
+  } | null;
+  if (
+    currentPost?.currentState !== "SCHEDULED" ||
+    isHeldByQueue(currentPost.queueHoldStatus) ||
+    isQueuePaused(currentPost.queueType)
+  ) {
+    return false;
+  }
+
   const signedEvent = toSignedEvent(postData.signedEvent);
   if (!signedEvent) {
     return false;
@@ -148,6 +172,12 @@ async function getScheduledPostWithRetry(
 ): Promise<{
   scheduledAtUtc: Date | null;
   currentState: string | null;
+  queueHoldStatus: string | null;
+  queueType: {
+    name?: string | null;
+    status?: string | null;
+    isEnabled?: boolean | null;
+  } | null;
 } | null> {
   for (let attempt = 0; attempt < POST_LOOKUP_RETRY_ATTEMPTS; attempt++) {
     if (attempt > 0) {
@@ -164,15 +194,33 @@ async function getScheduledPostWithRetry(
       );
       await delayMs(delayMsVal);
     }
-    const post = await findPostUnique(
+    const postRaw = await findPostUnique(
       { id: postId, userId },
       {
         select: {
           scheduledAtUtc: true,
           currentState: true,
+          queueHoldStatus: true,
+          queueType: {
+            select: {
+              name: true,
+              status: true,
+              isEnabled: true,
+            },
+          },
         },
       }
     );
+    const post = postRaw as {
+      scheduledAtUtc: Date | null;
+      currentState: string | null;
+      queueHoldStatus: string | null;
+      queueType: {
+        name?: string | null;
+        status?: string | null;
+        isEnabled?: boolean | null;
+      } | null;
+    } | null;
     if (post) return post;
   }
   return null;
@@ -372,6 +420,44 @@ export async function runScheduledPostJob(input: {
       category: "worker",
       level: "info",
       data: { queue: queueName, postId, userId, correlationId },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  if (
+    isHeldByQueue(existingPost.queueHoldStatus) ||
+    isQueuePaused(existingPost.queueType)
+  ) {
+    logInfo("Skipping scheduled post because queue is paused or held", {
+      ...buildObsContext({
+        postId,
+        userId,
+        correlationId,
+        queueName,
+        jobId: String(job.id ?? "unknown"),
+        attemptsMade: job.attemptsMade + 1,
+      }),
+      queueStatus: existingPost.queueType?.status ?? null,
+      queueHoldStatus: existingPost.queueHoldStatus,
+    });
+    recordJobSkipped(
+      queueName,
+      isHeldByQueue(existingPost.queueHoldStatus)
+        ? "queue_held"
+        : "queue_paused"
+    );
+    addBreadcrumb({
+      message: "scheduled_post_job_skipped_queue_paused_or_held",
+      category: "worker",
+      level: "info",
+      data: {
+        queue: queueName,
+        postId,
+        userId,
+        correlationId,
+        queueStatus: existingPost.queueType?.status ?? null,
+        queueHoldStatus: existingPost.queueHoldStatus,
+      },
     });
     return { success: true, postId, skipped: true };
   }

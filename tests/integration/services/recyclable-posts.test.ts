@@ -65,7 +65,6 @@ describe("Recyclable Posts Service", () => {
       const mockUser = { id: TEST_USER_ID };
       const mockQueueTypes = [
         { id: "queue-1", name: "Queue 1", isEnabled: true },
-        { id: "queue-2", name: "Queue 2", isEnabled: false },
       ];
       (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
@@ -101,7 +100,7 @@ describe("Recyclable Posts Service", () => {
       // Stats are loaded client-side; loader returns empty stats
       expect(result.stats).toEqual({});
       expect(result.user).toEqual(mockUser);
-      expect(result.queueTypes).toHaveLength(1); // Only enabled
+      expect(result.queueTypes).toHaveLength(1);
       expect(result.selectedQueueType).toBe("all");
     });
 

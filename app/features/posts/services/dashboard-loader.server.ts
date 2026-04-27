@@ -25,6 +25,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "../dtos";
+import { shouldShowQueueInUi } from "../queue-status";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
@@ -134,7 +135,7 @@ export async function loadDashboardData(
     longformPosts: longformPostsDTO,
     postStatistics,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     selectedQueueType: queueType,
     hashTagPresets,
     pagination: scheduledPostsPagination, // Use posts pagination as primary

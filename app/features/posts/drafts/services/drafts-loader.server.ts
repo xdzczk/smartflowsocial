@@ -10,6 +10,7 @@ import {
   type PostDTO,
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import { getDraftLongFormPosts, getDraftPosts } from "~/features/posts/server";
 import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
@@ -91,7 +92,7 @@ export async function loadDraftsData(
     posts: postsDTO,
     longformPosts: longformPostsDTO,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     selectedQueueType: queueType,
     pagination: postsPagination, // Use posts pagination as primary
     longformPagination: longformPostsPagination,

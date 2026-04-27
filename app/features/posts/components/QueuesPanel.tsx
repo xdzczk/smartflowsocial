@@ -21,6 +21,7 @@ import {
 import { queueCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { buildComposeCreateUrl } from "~/features/posts/composer";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import { isQueuePaused } from "~/features/posts/queue-status";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import type { QueueType } from "../types";
@@ -98,11 +99,13 @@ export function QueuesPanel({
     onCreateQueueClick();
   };
 
-  const submitToggleEnabled = (queue: QueueType, enabled: boolean) => {
+  const submitQueueAction = (
+    queue: QueueType,
+    action: "pause_queue" | "resume_queue"
+  ) => {
     const fd = new FormData();
-    fd.set("_action", "toggle_queue_enabled");
+    fd.set("_action", action);
     fd.set("id", queue.id);
-    fd.set("isEnabled", enabled ? "on" : "off");
     lastToggleHandled.current = null;
     toggleFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
   };
@@ -203,7 +206,7 @@ export function QueuesPanel({
                   token != null && token !== ""
                     ? getQueueAccentHex(token)
                     : (qt.color ?? "#6B7280");
-                const enabled = qt.isEnabled !== false;
+                const paused = isQueuePaused(qt);
                 const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(qt.name)}`;
                 const composeUrl = buildComposeCreateUrl({ queue: qt.name });
 
@@ -219,16 +222,25 @@ export function QueuesPanel({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-baseline justify-between gap-2">
-                        <span className="text-text truncate text-xs font-semibold tracking-tight">
-                          {qt.name}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span className="text-text truncate text-xs font-semibold tracking-tight">
+                            {qt.name}
+                          </span>
+                          {paused ? (
+                            <span className="border-border-subtle text-text-secondary inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                              Paused
+                            </span>
+                          ) : null}
+                        </div>
                         <span className="text-text-secondary shrink-0 text-[11px] tabular-nums">
-                          {inQueue} queued
+                          {inQueue} {paused ? "held" : "queued"}
                         </span>
                       </div>
                       <div className="text-text-secondary mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0 text-[11px] leading-tight">
-                        <span className="tabular-nums">{runwayLabel}</span>
-                        {cadence ? (
+                        <span className="tabular-nums">
+                          {paused ? "Paused" : runwayLabel}
+                        </span>
+                        {!paused && cadence ? (
                           <span className="text-text-tertiary">{cadence}</span>
                         ) : null}
                       </div>
@@ -246,35 +258,54 @@ export function QueuesPanel({
                           <Pencil className={INLINE_ICON_SIZE_CLASS} />
                         </Button>
                       ) : null}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-text-secondary hover:text-text size-8"
-                        asChild
-                      >
-                        <Link
-                          to={composeUrl}
-                          aria-label={`Add post to ${qt.name}`}
+                      {paused ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-text-secondary hover:text-text size-8"
+                          disabled
+                          title={`${qt.name} is paused`}
+                          aria-label={`${qt.name} is paused`}
                         >
                           <ListPlus className={INLINE_ICON_SIZE_CLASS} />
-                        </Link>
-                      </Button>
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-text-secondary hover:text-text size-8"
+                          asChild
+                        >
+                          <Link
+                            to={composeUrl}
+                            aria-label={`Add post to ${qt.name}`}
+                          >
+                            <ListPlus className={INLINE_ICON_SIZE_CLASS} />
+                          </Link>
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         className="text-text-secondary hover:text-text size-8"
                         disabled={toggleFetcher.state !== "idle"}
-                        onClick={() => submitToggleEnabled(qt, !enabled)}
+                        onClick={() =>
+                          submitQueueAction(
+                            qt,
+                            paused ? "resume_queue" : "pause_queue"
+                          )
+                        }
                         aria-label={
-                          enabled ? `Pause ${qt.name}` : `Resume ${qt.name}`
+                          paused ? `Resume ${qt.name}` : `Pause ${qt.name}`
                         }
                       >
-                        {enabled ? (
-                          <Pause className={INLINE_ICON_SIZE_CLASS} />
-                        ) : (
+                        {paused ? (
                           <Play className={INLINE_ICON_SIZE_CLASS} />
+                        ) : (
+                          <Pause className={INLINE_ICON_SIZE_CLASS} />
                         )}
                       </Button>
                       <DropdownMenu>

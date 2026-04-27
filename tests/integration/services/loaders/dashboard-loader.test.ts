@@ -104,7 +104,8 @@ describe("Dashboard Loader", () => {
     expect(result.longformPosts).toBeDefined();
     expect(result.postStatistics).toEqual(mockStatistics);
     expect(result.user).toEqual(mockUser);
-    expect(result.queueTypes).toHaveLength(1); // Only enabled
+    // Paused (isEnabled false) queues remain in dashboard selectors
+    expect(result.queueTypes).toHaveLength(2);
     expect(result.selectedQueueType).toBe("all");
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
   });
@@ -152,11 +153,11 @@ describe("Dashboard Loader", () => {
     expect(result.selectedQueueType).toBe("Queue 1");
   });
 
-  it("should filter out disabled queue types", async () => {
+  it("should filter out archived queue types", async () => {
     const mockQueueTypes = [
       { id: "queue-1", name: "Queue 1", isEnabled: true },
-      { id: "queue-2", name: "Queue 2", isEnabled: false },
-      { id: "queue-3", name: "Queue 3" }, // Missing isEnabled - treated as enabled
+      { id: "queue-2", name: "Queue 2", isEnabled: true, status: "archived" },
+      { id: "queue-3", name: "Queue 3" }, // Missing isEnabled - still shown if not archived
     ];
     const emptyPagination = { total: 0, pages: 0, currentPage: 1, limit: 20 };
 

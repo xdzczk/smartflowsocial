@@ -18,6 +18,7 @@ import {
   toSignedEvent,
   computeScheduledForUnix,
 } from "~/features/posts/queue-payload.server";
+import { isHeldByQueue, isQueuePaused } from "~/features/posts/queue-status";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import type { PublishLease } from "~/infra/publishing/publish-lease.server";
 import {
@@ -50,6 +51,29 @@ export async function processLongFormPost(
   postData: PostData,
   now: number
 ): Promise<boolean> {
+  const currentPostRaw = await findLongFormPostUnique(
+    { id: postData.id, userId: postData.userId },
+    {
+      select: {
+        currentState: true,
+        queueHoldStatus: true,
+        queueType: { select: { status: true, isEnabled: true } },
+      },
+    }
+  );
+  const currentPost = currentPostRaw as {
+    currentState: string | null;
+    queueHoldStatus: string | null;
+    queueType: { status?: string | null; isEnabled?: boolean | null } | null;
+  } | null;
+  if (
+    currentPost?.currentState !== "SCHEDULED" ||
+    isHeldByQueue(currentPost.queueHoldStatus) ||
+    isQueuePaused(currentPost.queueType)
+  ) {
+    return false;
+  }
+
   const signedEvent = toSignedEvent(postData.signedEvent);
   if (!signedEvent) {
     return false;
@@ -253,16 +277,27 @@ export async function runScheduledLongFormPostJob(input: {
   const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
   const stateMachine = new LongFormPostStateMachine();
 
-  const existingPost = await findLongFormPostUnique(
+  const existingPostRaw = await findLongFormPostUnique(
     { id: postId, userId },
     {
       select: {
         scheduledAtUtc: true,
         currentState: true,
-        queueType: { select: { name: true } },
+        queueHoldStatus: true,
+        queueType: { select: { name: true, status: true, isEnabled: true } },
       },
     }
   );
+  const existingPost = existingPostRaw as {
+    scheduledAtUtc: Date | null;
+    currentState: string | null;
+    queueHoldStatus: string | null;
+    queueType: {
+      name?: string | null;
+      status?: string | null;
+      isEnabled?: boolean | null;
+    } | null;
+  } | null;
 
   if (!existingPost) {
     throw new Error(`Longform post ${postId} not found for user ${userId}`);
@@ -286,6 +321,47 @@ export async function runScheduledLongFormPostJob(input: {
       category: "worker",
       level: "info",
       data: { queue: queueName, postId, userId, correlationId },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  if (
+    isHeldByQueue(existingPost.queueHoldStatus) ||
+    isQueuePaused(existingPost.queueType)
+  ) {
+    logInfo(
+      "Skipping scheduled longform post because queue is paused or held",
+      {
+        ...buildObsContext({
+          postId,
+          userId,
+          correlationId,
+          queueName,
+          jobId: String(job.id ?? "unknown"),
+          attemptsMade: job.attemptsMade + 1,
+        }),
+        queueStatus: existingPost.queueType?.status ?? null,
+        queueHoldStatus: existingPost.queueHoldStatus,
+      }
+    );
+    recordJobSkipped(
+      queueName,
+      isHeldByQueue(existingPost.queueHoldStatus)
+        ? "queue_held"
+        : "queue_paused"
+    );
+    addBreadcrumb({
+      message: "scheduled_longform_job_skipped_queue_paused_or_held",
+      category: "worker",
+      level: "info",
+      data: {
+        queue: queueName,
+        postId,
+        userId,
+        correlationId,
+        queueStatus: existingPost.queueType?.status ?? null,
+        queueHoldStatus: existingPost.queueHoldStatus,
+      },
     });
     return { success: true, postId, skipped: true };
   }

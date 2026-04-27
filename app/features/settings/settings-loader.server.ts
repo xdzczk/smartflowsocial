@@ -553,6 +553,7 @@ export async function loadSettingsData(
         scheduleType: string;
         scheduleConfig: unknown;
         isEnabled: boolean | null;
+        status: string | null;
         isDefault: boolean | null;
         userId: string;
         hashTagPresetId: string | null;
@@ -605,6 +606,12 @@ export async function loadSettingsData(
           !Array.isArray(row.scheduleConfig)
             ? (row.scheduleConfig as ScheduleConfig)
             : undefined,
+        status:
+          row.status === "PAUSED"
+            ? "paused"
+            : row.status === "ARCHIVED"
+              ? "archived"
+              : "active",
         isEnabled: row.isEnabled ?? undefined,
         isDefault: row.isDefault === true,
         userId: row.userId,
