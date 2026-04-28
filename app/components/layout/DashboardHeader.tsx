@@ -461,7 +461,7 @@ function PageHeaderBar({
       id="page-header"
       className={`dashboard-shell-chrome h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-12"}`}
     >
-      <div className="safe-x-4 max-w-page mx-auto flex w-full min-w-0 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="safe-x-4 flex w-full min-w-0 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button
