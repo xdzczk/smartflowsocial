@@ -523,8 +523,10 @@ export interface ScheduledLongFormCountByQueueRow {
 
 export async function getScheduledLongFormCountByQueue({
   userId,
+  asOf = new Date(),
 }: {
   userId: string;
+  asOf?: Date;
 }): Promise<ScheduledLongFormCountByQueueRow[]> {
   try {
     const rows = await prisma.longFormPost.groupBy({
@@ -532,6 +534,7 @@ export async function getScheduledLongFormCountByQueue({
       where: {
         userId,
         currentState: "SCHEDULED",
+        scheduledAtUtc: { gt: asOf },
       },
       _count: { id: true },
     });
