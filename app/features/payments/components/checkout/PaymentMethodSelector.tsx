@@ -67,7 +67,7 @@ export function PaymentMethodSelector({
             )}
           >
             {isRecommendedMethod(id) ? (
-              <span className="bg-brand/15 text-brand mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+              <span className="bg-brand/15 text-link mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
                 Recommended
               </span>
             ) : null}

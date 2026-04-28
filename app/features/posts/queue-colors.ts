@@ -20,20 +20,20 @@ export const QUEUE_COLOR_TOKENS = [
 
 export type QueueColorToken = (typeof QUEUE_COLOR_TOKENS)[number];
 
+/** Premium muted palette (dots, strips, badges — surfaces use rgba from these via getQueueColorBundle). */
 export const QUEUE_COLOR_ACCENTS: Record<QueueColorToken, string> = {
-  slate: "#94A3B8",
-  /** Blues / teals / greens / violets: ~12% lower saturation for calmer charts & lanes */
-  blue: "#3268DE",
-  cyan: "#0C8EAE",
-  teal: "#0A978A",
-  green: "#0CAD47",
-  lime: "#65A50B",
-  amber: "#D97706",
-  orange: "#EA580C",
-  red: "#DC2626",
-  pink: "#CF3378",
-  violet: "#7F46E1",
-  indigo: "#4B41C1",
+  slate: "#7C8FA8",
+  blue: "#3F6FD8",
+  cyan: "#168FA6",
+  teal: "#159A89",
+  green: "#22A657",
+  lime: "#72A40D",
+  amber: "#C97900",
+  orange: "#D95A0B",
+  red: "#D62F2F",
+  pink: "#C23A7A",
+  violet: "#7B4ED0",
+  indigo: "#5A4AC7",
 };
 
 /**
@@ -186,7 +186,7 @@ export const getQueueColor = (
   > = {
     main: {
       bg: "bg-brand/[0.06]",
-      text: "text-brand",
+      text: "text-link",
       hover: "hover:bg-brand/15",
       border: "border-brand/20",
     },

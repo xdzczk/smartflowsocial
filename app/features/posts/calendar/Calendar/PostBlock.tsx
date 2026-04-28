@@ -25,6 +25,7 @@ export function PostBlock({
   forceOpaque = false,
   slotExpandRows,
   hideTimeRowPreview = false,
+  isCalendarSelected = false,
 }: PostBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStarted, setDragStarted] = useState(false);
@@ -98,6 +99,7 @@ export function PostBlock({
     onClick: handleClick,
     onKeyDown: handleKeyDown,
     forceOpaque,
+    isCalendarSelected,
   };
 
   if (thumbnailOnly) {

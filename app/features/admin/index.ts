@@ -10,6 +10,7 @@ export {
   AdminStatusPill,
 } from "./components/AdminStatusPill";
 export type { AdminHealthTone } from "./components/AdminStatusPill";
+export { AdminAccessDenied } from "./components/AdminAccessDenied";
 export { AdminAlertList } from "./components/AdminAlertList";
 export { AdminCard } from "./components/AdminCard";
 export type { AdminCardVariant } from "./components/AdminCard";

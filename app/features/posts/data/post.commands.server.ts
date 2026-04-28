@@ -540,6 +540,10 @@ export function reschedulePost({
     scheduledAtUtc,
     manual_override: overrideQueue,
     updatedAt: new Date(),
+    queueHoldStatus: "NONE",
+    queueHeldAtUtc: null,
+    queueHeldOriginalScheduledAtUtc: null,
+    queueHeldByQueueTypeId: null,
   };
 
   // If new signed events are provided, update them, otherwise clear them
@@ -600,6 +604,10 @@ export async function updatePost({
       updateData.scheduledAtUtc =
         toScheduledAtUtcDate(data.scheduledAtUtc) ?? null;
     }
+    updateData.queueHoldStatus = "NONE";
+    updateData.queueHeldAtUtc = null;
+    updateData.queueHeldOriginalScheduledAtUtc = null;
+    updateData.queueHeldByQueueTypeId = null;
   }
   if (data.nominalScheduledAtUtc !== undefined) {
     updateData.nominalScheduledAtUtc = data.nominalScheduledAtUtc
@@ -658,6 +666,10 @@ export async function updatePost({
       "queueType",
       "queueType"
     );
+    updateData.queueHoldStatus = "NONE";
+    updateData.queueHeldAtUtc = null;
+    updateData.queueHeldOriginalScheduledAtUtc = null;
+    updateData.queueHeldByQueueTypeId = null;
   }
 
   const post = await prisma.post.update({

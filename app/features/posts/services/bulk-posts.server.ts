@@ -4,6 +4,7 @@
  * Handles bulk posts dashboard data loading
  */
 
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import { getBulkDraftGroupPosts } from "~/features/posts/server/drafts";
 import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
 
@@ -44,12 +45,8 @@ export async function getBulkPostsDashboardData(
 
   const base = {
     tags: tagsArray,
-    queueTypes: queueTypes.filter(
-      (qt: unknown) =>
-        typeof qt === "object" &&
-        qt !== null &&
-        "isEnabled" in qt &&
-        qt.isEnabled !== false
+    queueTypes: queueTypes.filter((qt: unknown) =>
+      typeof qt === "object" && qt !== null ? shouldShowQueueInUi(qt) : false
     ),
     hashTagPresets,
     mode,

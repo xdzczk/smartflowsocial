@@ -95,7 +95,7 @@ export function BulkPostCard({
             />
             <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
               <Share2
-                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                 strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
@@ -124,7 +124,7 @@ export function BulkPostCard({
             />
             <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
               <Quote
-                className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                className={`${SMALL_ICON_SIZE_CLASS} text-success-foreground`}
                 strokeWidth={INLINE_ICON_STROKE}
                 aria-hidden
               />
@@ -277,7 +277,7 @@ export function BulkPostCard({
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="bg-danger hover:bg-danger rounded-xs px-3 py-1 text-white"
+          className="bg-danger text-danger-foreground hover:bg-danger rounded-xs px-3 py-1"
         >
           Remove
         </button>

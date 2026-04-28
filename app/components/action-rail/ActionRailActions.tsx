@@ -60,7 +60,7 @@ export function ActionRailActions({
     ) : null);
 
   return (
-    <div className="border-border/60 bg-surface/80 shrink-0 overflow-hidden border-t">
+    <div className="border-border-subtle/45 from-surface to-surface-hover/15 bg-surface dark:from-surface dark:to-surface shrink-0 overflow-hidden border-t bg-gradient-to-b pt-0.5 shadow-[0_-12px_40px_-28px_rgba(15,15,20,0.12)] dark:shadow-[0_-14px_44px_-24px_rgba(0,0,0,0.55)]">
       {firstSecondary}
       {secondSecondaryLabel && onSecondSecondaryClick ? (
         <Button
@@ -82,9 +82,8 @@ export function ActionRailActions({
             variant="default"
             aria-disabled={blocked}
             className={cn(
-              // rounded-b-lg matches parent ActionRail's rounded-lg (was -xl mismatched).
-              // bg-brand-strong is the action-saturation brand (matches the global Button default).
-              "h-12 w-full rounded-none rounded-b-lg border-0 text-xs font-semibold shadow-none",
+              // rounded-b-xl matches parent ActionRail card radius.
+              "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
               blocked
                 ? "bg-brand-strong/80 text-brand-on hover:bg-brand-strong/80 pointer-events-auto cursor-not-allowed opacity-95"
                 : "bg-brand-strong text-brand-on hover:bg-brand-strong/92"

@@ -18,6 +18,10 @@ import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPag
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
+import {
+  DASHBOARD_MAIN_BAND_CLASS,
+  DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS,
+} from "~/components/layout/page-layout-constants";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -384,7 +388,7 @@ export function DashboardLayoutPage(): ReactNode {
             />
           ) : null}
           {pendingParentUsers.length > 0 ? (
-            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+            <div className={`${DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS} pt-4`}>
               {pendingParentUsers.map((p) => {
                 const isThisSubmitting =
                   navigation.state === "submitting" &&
@@ -433,7 +437,7 @@ export function DashboardLayoutPage(): ReactNode {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
+                          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -452,7 +456,7 @@ export function DashboardLayoutPage(): ReactNode {
           {showBillingAlert ? (
             <BillingAlertBanner billingContext={billingContext} />
           ) : shouldShowSubscriptionExpiredBanner ? (
-            <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+            <div className={`${DASHBOARD_MAIN_BAND_FULL_WIDTH_CLASS} pt-4`}>
               <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">Your subscription has expired.</p>
@@ -465,7 +469,7 @@ export function DashboardLayoutPage(): ReactNode {
                   <Link
                     prefetch="intent"
                     to="/plans"
-                    className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
+                    className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
                   >
                     Restore plan
                   </Link>
@@ -473,7 +477,7 @@ export function DashboardLayoutPage(): ReactNode {
                     type="button"
                     aria-label="Dismiss subscription expired banner"
                     onClick={handleDismissSubscriptionExpiredBanner}
-                    className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
+                    className="focus-ring-offset text-text-secondary hover:text-text hover:bg-surface-hover motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
                   >
                     <X
                       className={INLINE_ICON_SIZE_CLASS}
@@ -487,7 +491,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : "max-w-10xl mx-auto px-4 lg:px-8"}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isDashboardIndex ? "lg:min-h-0 lg:overflow-y-auto" : isCalendar ? "min-h-0 min-w-0" : DASHBOARD_MAIN_BAND_CLASS}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">

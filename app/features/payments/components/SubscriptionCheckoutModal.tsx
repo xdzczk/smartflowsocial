@@ -188,7 +188,7 @@ export function SubscriptionCheckoutModal({
                   className="text-text mb-1 text-base font-semibold"
                 >
                   Auto-renew with wallet
-                  <span className="bg-brand/15 text-brand ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                  <span className="bg-brand/15 text-link ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
                     Recommended
                   </span>
                 </h4>
@@ -213,7 +213,7 @@ export function SubscriptionCheckoutModal({
                     onBlur={() => setNwcTouched(true)}
                     placeholder="nostr+walletconnect://…"
                     autoComplete="off"
-                    className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus-visible:ring-1 focus-visible:outline-none"
+                    className="focus-ring border-border bg-surface-hover text-text focus:border-brand min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs"
                   />
                   {nwcEnabled && maskedNwcString ? (
                     <p className="text-text-secondary mt-1 text-xs">
@@ -267,7 +267,7 @@ export function SubscriptionCheckoutModal({
                         )
                       }
                       disabled={isSubmitting}
-                      className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring w-full max-w-md rounded-lg border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+                      className="focus-ring border-border bg-surface-hover text-text focus:border-brand w-full max-w-md rounded-lg border px-3 py-2 text-sm"
                     >
                       {manualDurations.map((months) => (
                         <option key={months} value={months}>
@@ -338,7 +338,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectAutoRenew}
                   disabled={isSubmitting || !autoRenewOk}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -355,7 +355,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectManual}
                   disabled={isSubmitting}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -373,7 +373,7 @@ export function SubscriptionCheckoutModal({
                   type="button"
                   onClick={onSelectBtcOnchain}
                   disabled={isSubmitting}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

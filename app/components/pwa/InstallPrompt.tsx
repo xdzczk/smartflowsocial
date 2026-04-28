@@ -1,23 +1,27 @@
 /**
  * PWA / “Add to Home Screen” install UI — presentational pieces only.
  *
- * Visually secondary to {@link PlanUsageSidebar}: lighter card surface and a
- * compact CTA on desktop (`lg+`). Full-width CTA on small viewports only.
+ * Sidebar rail: same icon/typography language as main nav; light outline, no centered CTAs.
  */
 import { Share, X } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
-import { SIDEBAR_UTILITY_INSTALL_CARD_CLASS } from "~/components/layout/sidebar-utility-styles";
 import { cn } from "~/lib/utils";
 
 const REGION_LABEL = "Install SmartFlowSocial";
 
-/** Sidebar-selected accent family, toned down vs. primary plan card. */
-const INSTALL_CTA_ACCENT =
-  "focus-ring motion-fast tap-target flex h-8 w-full items-center justify-center rounded-lg border border-border-subtle/55 bg-surface-selected/40 px-3 text-[11px] font-medium text-text shadow-none hover:bg-surface-hover hover:text-text active:border-border dark:border-border-subtle/45 dark:bg-surface-selected/28 lg:h-7 lg:min-w-[5.25rem] lg:w-auto";
+/** PWA / manifest artwork (see public/manifest.json). */
+const APP_ICON_SRC = "/AppIcon.svg";
+
+/** Match DashboardHeader nav icons: 18px, stroke 2.25 */
+const SIDEBAR_ICON_CLASS = "inline-block size-[18px] shrink-0";
+const SIDEBAR_ICON_STROKE = 2.25;
+
+const INSTALL_CTA_CLASS =
+  "focus-ring motion-fast tap-target flex h-9 w-full items-center rounded-lg px-2.5 text-left text-sm font-medium text-text-secondary shadow-none hover:bg-surface-hover/55 hover:text-text";
 
 const INSTALL_CTA_MUTED =
-  "focus-ring motion-fast tap-target flex h-8 w-full items-center justify-center rounded-lg border border-transparent bg-transparent px-3 text-[11px] font-medium text-text-secondary shadow-none hover:bg-surface-hover hover:text-text active:border-border lg:h-7 lg:min-w-[4.75rem] lg:w-auto";
+  "focus-ring motion-fast tap-target flex h-9 w-full items-center rounded-lg px-2.5 text-left text-sm font-medium text-text-tertiary shadow-none hover:bg-surface-hover/55 hover:text-text-secondary";
 
 const PANEL_TITLE = "Install app";
 const PANEL_SUBTITLE = "Full-screen access";
@@ -52,88 +56,92 @@ export function InstallPromptSidebar({
       role="region"
       aria-label={REGION_LABEL}
       className={cn(
-        "w-full shrink-0",
+        "border-border-subtle/50 dark:border-border-subtle/35 relative w-full shrink-0 rounded-lg border px-2.5 py-2",
         "hidden max-lg:block",
         isDesktopExpanded ? "lg:block" : "lg:hidden",
         "[@media(max-height:660px)]:hidden",
         "[@media(min-width:1024px)_and_(max-height:500px)]:hidden"
       )}
     >
-      <div className={cn(SIDEBAR_UTILITY_INSTALL_CARD_CLASS, "relative")}>
-        <button
-          type="button"
-          aria-label="Dismiss install prompt"
-          onClick={dismiss}
-          className="text-text-tertiary hover:text-text hover:bg-surface-hover/70 focus-ring-offset absolute top-0 right-0 inline-flex size-6 items-center justify-center rounded-md"
-        >
-          <X className="size-3.5" strokeWidth={2} aria-hidden />
-        </button>
+      <button
+        type="button"
+        aria-label="Dismiss install prompt"
+        onClick={dismiss}
+        className="text-text-tertiary hover:text-text hover:bg-surface-hover/50 focus-ring absolute top-1.5 right-1.5 inline-flex size-8 items-center justify-center rounded-lg"
+      >
+        <X
+          className={SIDEBAR_ICON_CLASS}
+          strokeWidth={SIDEBAR_ICON_STROKE}
+          aria-hidden
+        />
+      </button>
 
-        <div className="flex gap-1 pr-5">
+      <div className="flex gap-2 pr-9">
+        <span className="flex flex-none items-start pt-0.5">
           <img
-            src="/Logo-NoText.svg"
+            src={APP_ICON_SRC}
             alt=""
+            width={18}
+            height={18}
+            className="size-[18px] shrink-0 rounded-[4px] object-cover"
             aria-hidden
-            className="size-3.5 shrink-0 self-start rounded opacity-85"
           />
-          <div className="min-w-0 flex-1 pt-px">
-            <p className="text-text-secondary text-[10px] leading-snug">
-              <span className="text-text/90 font-medium">{PANEL_TITLE}</span>
-              <span className="text-text-tertiary" aria-hidden>
-                {" "}
-                ·{" "}
-              </span>
-              <span>{PANEL_SUBTITLE}</span>
-            </p>
-          </div>
-        </div>
+        </span>
+        <p className="text-text-tertiary min-w-0 flex-1 text-sm leading-normal">
+          <span className="text-text-secondary font-medium">{PANEL_TITLE}</span>
+          <span aria-hidden> · </span>
+          <span>{PANEL_SUBTITLE}</span>
+        </p>
+      </div>
 
-        <div className="mt-0.5 flex w-full flex-col items-stretch gap-0.5 lg:flex-row lg:justify-end">
-          {isIos ? (
-            <>
-              {iosInstructionsOpen ? (
-                <ol className="text-text-secondary border-border-subtle/55 w-full space-y-0.5 border-t border-dashed pt-1 text-[10px] leading-snug lg:order-first lg:mr-auto lg:max-w-[11rem] lg:border-0 lg:pt-0">
-                  <li>
-                    <span className="text-text font-semibold">1.</span> Tap{" "}
-                    <Share
-                      className="text-brand mx-0.5 inline size-3"
-                      aria-label="Share"
-                    />{" "}
-                    Share → Add to Home Screen.
-                  </li>
-                  <li>
-                    <span className="text-text font-semibold">2.</span> Tap{" "}
-                    <span className="text-text font-medium">Add</span>.
-                  </li>
-                </ol>
-              ) : null}
-              <button
-                type="button"
-                className={cn(
-                  iosInstructionsOpen ? INSTALL_CTA_MUTED : INSTALL_CTA_ACCENT
-                )}
-                aria-expanded={iosInstructionsOpen}
-                aria-label={
-                  iosInstructionsOpen
-                    ? "Close install instructions"
-                    : "Show how to add this app to your home screen"
-                }
-                onClick={() => setIosInstructionsOpen((v) => !v)}
-              >
-                {iosInstructionsOpen ? "Done" : "Install"}
-              </button>
-            </>
-          ) : (
+      <div className="mt-2 flex w-full flex-col gap-2">
+        {isIos ? (
+          <>
+            {iosInstructionsOpen ? (
+              <ol className="text-text-tertiary space-y-1 text-sm leading-normal">
+                <li>
+                  <span className="text-text-secondary font-semibold">1.</span>{" "}
+                  Tap{" "}
+                  <Share
+                    className="text-link mx-0.5 inline size-[18px] align-middle"
+                    strokeWidth={SIDEBAR_ICON_STROKE}
+                    aria-label="Share"
+                  />{" "}
+                  Share → Add to Home Screen.
+                </li>
+                <li>
+                  <span className="text-text-secondary font-semibold">2.</span>{" "}
+                  Tap{" "}
+                  <span className="text-text-secondary font-medium">Add</span>.
+                </li>
+              </ol>
+            ) : null}
             <button
               type="button"
-              className={INSTALL_CTA_ACCENT}
-              aria-label="Install SmartFlowSocial app"
-              onClick={onChromiumInstall}
+              className={cn(
+                iosInstructionsOpen ? INSTALL_CTA_MUTED : INSTALL_CTA_CLASS
+              )}
+              aria-expanded={iosInstructionsOpen}
+              aria-label={
+                iosInstructionsOpen
+                  ? "Close install instructions"
+                  : "Show how to add this app to your home screen"
+              }
+              onClick={() => setIosInstructionsOpen((v) => !v)}
             >
-              Install
+              {iosInstructionsOpen ? "Done" : "Install"}
             </button>
-          )}
-        </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={INSTALL_CTA_CLASS}
+            aria-label="Install SmartFlowSocial app"
+            onClick={onChromiumInstall}
+          >
+            Install
+          </button>
+        )}
       </div>
     </div>
   );

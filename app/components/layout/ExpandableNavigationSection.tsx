@@ -9,7 +9,7 @@ import {
 import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { cn } from "~/lib/utils";
 
-const TEXT_PRIMARY = "text-brand";
+const TEXT_PRIMARY = "text-surface-selected-foreground";
 // Inactive nav icons: slightly higher contrast than inactive text; match link hover so icon and text react together
 const TEXT_NAV_ICON_INACTIVE = "text-text/70 group-hover:text-text";
 const NAV_ICON_STROKE = 2.25;

@@ -19,7 +19,7 @@ export function UnifiedComposerBlossomSignerMediaNote() {
       Open{" "}
       <Link
         to="/dashboard/settings"
-        className="text-brand font-medium underline underline-offset-2"
+        className="text-link hover:text-link-hover font-medium underline underline-offset-2"
       >
         Settings
       </Link>{" "}

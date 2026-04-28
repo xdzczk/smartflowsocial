@@ -1,6 +1,6 @@
 /**
  * Skeleton loader for dashboard index.
- * Mirrors layout: 4 KPI cards, header row, Flow strip, Queue Health + Next 7 days.
+ * Mirrors layout: 4 KPI cards, header row, Flow strip, Queues + Next 7 days.
  */
 
 import { Skeleton } from "~/components/ui/skeleton";
@@ -58,7 +58,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Bottom row: Next 7 days + Queue Health */}
+      {/* Bottom row: Next 7 days + Queues */}
       <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-4">
         <div className="border-border-subtle bg-surface shadow-1 flex w-full min-w-0 flex-col rounded-xl border lg:flex-1">
           <div className="flex flex-row items-center justify-between gap-2 px-4 pt-3 pb-2">

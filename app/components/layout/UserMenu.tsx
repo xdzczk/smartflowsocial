@@ -27,6 +27,7 @@ import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { cn } from "~/lib/utils";
 
 /** Radix Dialog trigger needs client-only ids; store flips after first microtask so SSR + first paint stay in sync. */
 const dialogShellListeners = new Set<() => void>();
@@ -204,49 +205,59 @@ const UserMenuAccountTrigger = forwardRef<
     avatarFallback: string;
   } & Omit<ButtonProps, "variant" | "size" | "type">
 >(function UserMenuAccountTrigger(
-  { displayName, currentLabel, currentAvatar, avatarFallback, ...buttonProps },
+  {
+    displayName,
+    currentLabel,
+    currentAvatar,
+    avatarFallback,
+    className,
+    ...buttonProps
+  },
   ref
 ) {
+  const labelText = displayName || currentLabel;
+  /**
+   * Desktop: fixed-width column, slight vertical bleed clipped by overflow.
+   * Mobile: `tap-target` can enlarge the control to 44×44 on coarse pointers while
+   * we keep h-9 w-9 as the visual baseline — fill with absolute inset-0 so the PFP
+   * never letterboxes inside the button.
+   */
+  const triggerAvatarClass = cn(
+    "rounded-none",
+    "absolute inset-0 h-full w-full",
+    "sm:static sm:inset-auto sm:h-[calc(2.25rem+2px)] sm:w-9 sm:shrink-0 sm:-my-px"
+  );
   return (
     <Button
       ref={ref}
       variant="outline"
-      size="sm"
+      size="default"
       type="button"
-      aria-label={`Account: ${displayName || currentLabel}`}
-      className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg p-0 shadow-none sm:h-auto sm:w-auto sm:overflow-visible sm:rounded-lg sm:px-2 sm:py-1.5"
+      aria-label={`Account: ${labelText}`}
+      className={cn(
+        "relative h-9 min-h-9 w-9 shrink-0 justify-center gap-0 overflow-hidden rounded-lg p-0 pl-0 shadow-none",
+        "flex flex-row items-center",
+        "sm:w-auto sm:min-w-0 sm:justify-start sm:gap-2.5 sm:pr-3",
+        className
+      )}
       {...buttonProps}
     >
-      {currentAvatar ? (
-        <img
-          src={currentAvatar}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-center sm:hidden"
-        />
-      ) : (
-        <span
-          className="text-xs leading-none font-medium sm:hidden"
-          aria-hidden="true"
-        >
-          {avatarFallback}
-        </span>
-      )}
-      {currentAvatar ? (
-        <span className="hidden h-7 w-7 shrink-0 overflow-hidden rounded-md sm:inline-flex">
-          <img
+      <Avatar className={triggerAvatarClass}>
+        {currentAvatar ? (
+          <AvatarImage
             src={currentAvatar}
-            alt={displayName || currentLabel}
-            className="h-full w-full object-cover object-center"
+            alt=""
+            className="object-cover"
+            aria-hidden
           />
-        </span>
-      ) : (
-        <span className="bg-surface-hover text-text-secondary hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-medium sm:inline-flex">
-          {avatarFallback}
-        </span>
-      )}
-      <span className="hidden sm:ml-2 sm:inline">
-        {displayName || currentLabel}
+        ) : (
+          <AvatarFallback className="rounded-none text-xs font-medium">
+            {avatarFallback}
+          </AvatarFallback>
+        )}
+      </Avatar>
+      <span className="text-text hidden max-w-[7.5rem] min-w-0 shrink truncate text-left text-sm font-medium sm:block sm:max-w-[10.5rem] lg:max-w-[12.5rem]">
+        {labelText}
       </span>
     </Button>
   );

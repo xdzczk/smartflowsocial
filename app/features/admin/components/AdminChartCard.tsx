@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { EmptyState } from "~/components/ui/empty-state";
 import { cn } from "~/lib/utils";
 
 import { AdminCard, type AdminCardVariant } from "./AdminCard";
@@ -34,6 +35,19 @@ export function AdminChartCard({
   children: ReactNode;
 }) {
   const emptyHeading = emptyTitle ?? "No data in this range";
+  const emptyDescriptionNode =
+    emptyDescription || emptySuggestedRange ? (
+      <>
+        {emptyDescription ? (
+          <span className="block">{emptyDescription}</span>
+        ) : null}
+        {emptySuggestedRange ? (
+          <span className="mt-2 block text-xs italic">
+            {emptySuggestedRange}
+          </span>
+        ) : null}
+      </>
+    ) : undefined;
   return (
     <AdminCard
       variant={variant}
@@ -65,15 +79,12 @@ export function AdminChartCard({
         )}
       >
         {empty ? (
-          <div className="text-text-secondary max-w-md px-2 text-center text-sm">
-            <p className="text-text/90 font-medium">{emptyHeading}</p>
-            {emptyDescription ? (
-              <p className="mt-2 text-xs leading-relaxed">{emptyDescription}</p>
-            ) : null}
-            {emptySuggestedRange ? (
-              <p className="mt-2 text-xs italic">{emptySuggestedRange}</p>
-            ) : null}
-          </div>
+          <EmptyState
+            size="sm"
+            title={emptyHeading}
+            description={emptyDescriptionNode}
+            className="max-w-md px-2 py-6"
+          />
         ) : (
           children
         )}

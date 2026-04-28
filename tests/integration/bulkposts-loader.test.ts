@@ -112,13 +112,14 @@ describe("Bulk Posts Loader", () => {
     expect(result.tags).toEqual([]);
   });
 
-  it("should filter out disabled queue types", async () => {
+  it("should filter out archived queue types", async () => {
     const mockQueueTypes = [
       createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
       createMockQueueType({
         id: "queue-2",
-        name: "disabled",
-        isEnabled: false,
+        name: "archived",
+        isEnabled: true,
+        status: "archived",
       }),
       createMockQueueType({ id: "queue-3", name: "enabled", isEnabled: true }),
     ];
@@ -131,6 +132,6 @@ describe("Bulk Posts Loader", () => {
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
     expect(result.queueTypes).toHaveLength(2);
-    expect(result.queueTypes.every((qt) => qt.isEnabled !== false)).toBe(true);
+    expect(result.queueTypes.every((qt) => qt.id !== "queue-2")).toBe(true);
   });
 });

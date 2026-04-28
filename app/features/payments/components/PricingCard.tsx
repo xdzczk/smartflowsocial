@@ -86,7 +86,7 @@ function PricingCardCta({
         onClick={() => {
           if (!isTeams) onPlanSelect(plan.id);
         }}
-        className={`${primaryButtonClass} focus-visible:ring-focus-ring/40 motion-fast w-full rounded-lg px-4 py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55`}
+        className={`${primaryButtonClass} focus-ring-offset motion-fast w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55`}
       >
         {buttonContent}
       </button>
@@ -102,7 +102,7 @@ function PricingCardCta({
         type="submit"
         disabled={isButtonDisabled}
         onClick={() => onPlanSelect(plan.id)}
-        className={`${primaryButtonClass} focus-visible:ring-focus-ring/40 motion-fast w-full rounded-lg px-4 py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55`}
+        className={`${primaryButtonClass} focus-ring-offset motion-fast w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55`}
       >
         {buttonContent}
       </button>
@@ -140,7 +140,7 @@ export function PricingCard({
 
   const primaryButtonClass = isTeams
     ? "bg-surface-hover text-text-secondary cursor-not-allowed"
-    : "bg-brand text-brand-on hover:bg-brand/90";
+    : "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90";
 
   const label = planCtaLabel(
     plan,
@@ -231,7 +231,7 @@ export function PricingCard({
           >
             {plan.callouts.map((line) => (
               <li key={line} className="flex items-start gap-2.5">
-                <span className="text-brand mt-0.5 shrink-0 text-xs">●</span>
+                <span className="text-link mt-0.5 shrink-0 text-xs">●</span>
                 <span>{line}</span>
               </li>
             ))}
@@ -242,7 +242,7 @@ export function PricingCard({
       {isCurrentPlan && !isCurrentPlanExpired && !isTeams ? (
         <Link
           to="/dashboard"
-          className="border-border bg-surface-hover/80 text-text hover:bg-surface-active focus-visible:ring-focus-ring/40 motion-fast flex w-full items-center justify-center rounded-lg border px-4 py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-ring border-border bg-surface-hover/80 text-text hover:bg-surface-active motion-fast flex w-full items-center justify-center rounded-lg border px-4 py-3 text-sm font-semibold"
         >
           Current plan
         </Link>

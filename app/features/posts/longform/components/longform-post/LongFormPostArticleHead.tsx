@@ -45,7 +45,7 @@ export function LongFormPostArticleHead({
 }: LongFormPostArticleHeadProps) {
   return (
     <div className={articleColumnClass}>
-      <div className="space-y-5">
+      <div className="space-y-6">
         <input
           key={initialPostId ?? "new"}
           type="text"
@@ -63,56 +63,58 @@ export function LongFormPostArticleHead({
           }
         />
 
-        <div className="pt-0.5">
-          <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <ComposerCanvasSectionLabel
-              as="label"
-              className="mb-0"
-              htmlFor="article-composer-summary"
-              tone="article"
-            >
-              Summary
-            </ComposerCanvasSectionLabel>
-            <button
-              type="button"
-              className={cn(
-                "motion-fast text-[10px] font-normal underline-offset-2",
-                !content
-                  ? "text-text-secondary/35 pointer-events-none cursor-not-allowed"
-                  : "text-text-secondary/50 hover:text-text-secondary/70 underline"
-              )}
-              onClick={onGenerateSummary}
-              disabled={!content}
-            >
-              Auto-generate
-            </button>
+        <div className="space-y-5 pt-2">
+          <div className="text-text-secondary/90 space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <ComposerCanvasSectionLabel
+                as="label"
+                className="mb-0"
+                htmlFor="article-composer-summary"
+                tone="article"
+              >
+                Summary
+              </ComposerCanvasSectionLabel>
+              <button
+                type="button"
+                className={cn(
+                  "motion-fast text-[10px] font-normal underline-offset-2",
+                  !content
+                    ? "text-text-secondary/35 pointer-events-none cursor-not-allowed"
+                    : "text-text-secondary/50 hover:text-text-secondary/70 underline"
+                )}
+                onClick={onGenerateSummary}
+                disabled={!content}
+              >
+                Auto-generate
+              </button>
+            </div>
+            <Textarea
+              id="article-composer-summary"
+              name="summary"
+              value={summary ?? ""}
+              onChange={(e) =>
+                form.setValue("summary", e.target.value, {
+                  shouldValidate: true,
+                })
+              }
+              placeholder="Short line for previews and search (recommended)."
+              rows={2}
+              className="border-border-subtle/40 focus-visible:border-border-subtle/60 text-text-secondary motion-fast resize-y rounded-md border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+            />
           </div>
-          <Textarea
-            id="article-composer-summary"
-            name="summary"
-            value={summary ?? ""}
-            onChange={(e) =>
-              form.setValue("summary", e.target.value, {
-                shouldValidate: true,
-              })
-            }
-            placeholder="Short line for previews and search (recommended)."
-            rows={2}
-            className="border-border/25 focus-visible:border-border/45 motion-fast resize-y rounded-none border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+
+          <LongFormCoverImage
+            image={image}
+            uploadError={uploadError ?? ""}
+            uploadProvider={uploadProvider}
+            uploadFetcherState={uploadFetcherState}
+            onImageUpload={(e) => onImageUpload(e)}
+            onRemove={onRemoveCover}
+            onOpenAssetBrowser={() => {}}
+            softLabel
+            coverFileUploadDisabled={mediaUploadBlocked}
           />
         </div>
-
-        <LongFormCoverImage
-          image={image}
-          uploadError={uploadError ?? ""}
-          uploadProvider={uploadProvider}
-          uploadFetcherState={uploadFetcherState}
-          onImageUpload={(e) => onImageUpload(e)}
-          onRemove={onRemoveCover}
-          onOpenAssetBrowser={() => {}}
-          softLabel
-          coverFileUploadDisabled={mediaUploadBlocked}
-        />
       </div>
     </div>
   );

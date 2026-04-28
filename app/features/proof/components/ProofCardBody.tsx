@@ -37,7 +37,7 @@ function SupportLines({
             <p
               className={cn(
                 "mt-0.5 text-lg font-semibold tabular-nums",
-                s.emphasis && "text-brand"
+                s.emphasis && "text-link"
               )}
             >
               {s.value}
@@ -70,7 +70,7 @@ function SupportLines({
           <span
             className={cn(
               valueCls,
-              s.emphasis && "text-brand",
+              s.emphasis && "text-link",
               isGrid && "text-base"
             )}
           >

@@ -199,7 +199,7 @@ export function ThreadPostPreview({
               "ring-brand/10 ring-1 ring-inset"
             )}
           >
-            <p className="text-brand/80 mb-2 text-[10px] font-semibold tracking-tight">
+            <p className="text-link/80 mb-2 text-[10px] font-semibold tracking-tight">
               Part {segments[currentIndex]?.position ?? currentIndex + 1}{" "}
               <span className="text-text-secondary/80 font-normal">
                 (current)

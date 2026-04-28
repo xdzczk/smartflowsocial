@@ -11,6 +11,7 @@ import {
   type LongFormPostDTO,
 } from "~/features/posts/dtos";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -60,10 +61,32 @@ export async function loadCalendarData(userId: string, queueType: string) {
     user,
     queueTypes,
   ] = await Promise.all([
-    getScheduledPosts({ userId, limit: CALENDAR_SCHEDULED_LIMIT }),
-    getScheduledLongFormPosts({ userId, limit: CALENDAR_SCHEDULED_LIMIT }),
-    getPastPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
-    getPastLongFormPosts({ userId, startDate: thirtyDaysAgo, endDate: now }),
+    getScheduledPosts({
+      userId,
+      limit: CALENDAR_SCHEDULED_LIMIT,
+      queueType,
+      excludePausedQueueContent: true,
+    }),
+    getScheduledLongFormPosts({
+      userId,
+      limit: CALENDAR_SCHEDULED_LIMIT,
+      queueType,
+      excludePausedQueueContent: true,
+    }),
+    getPastPosts({
+      userId,
+      startDate: thirtyDaysAgo,
+      endDate: now,
+      queueType,
+      excludePausedQueueContent: true,
+    }),
+    getPastLongFormPosts({
+      userId,
+      startDate: thirtyDaysAgo,
+      endDate: now,
+      queueType,
+      excludePausedQueueContent: true,
+    }),
     getUserById(userId),
     getQueueTypes(userId),
   ]);
@@ -400,7 +423,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
     pastPosts: pastPostsDTO,
     pastLongFormPosts: pastLongFormPostsDTO,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     selectedQueueType: queueType,
     scheduleIntervals: user?.scheduleInterval ?? [],
     // Pagination totals for display
@@ -521,7 +544,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
   return {
     scheduledPosts: scheduledPostsDTO,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt) => shouldShowQueueInUi(qt)),
     selectedQueueType: queueType,
     scheduleIntervals,
   };

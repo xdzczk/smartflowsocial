@@ -76,6 +76,7 @@ function BlockInColumn({
   isLongform,
   isAll,
   isMobile,
+  isCalendarSelected,
 }: {
   placement: DayViewPlacement;
   isHovered: boolean;
@@ -88,6 +89,7 @@ function BlockInColumn({
   isLongform?: boolean;
   isAll?: boolean;
   isMobile?: boolean;
+  isCalendarSelected: boolean;
 }) {
   const baseRows = Math.max(
     1,
@@ -137,6 +139,7 @@ function BlockInColumn({
         forceOpaque={isHovered}
         hideTimeRowPreview
         slotExpandRows={baseRows}
+        isCalendarSelected={isCalendarSelected}
       />
     </div>
   );
@@ -393,7 +396,10 @@ export function DayViewTwoColumnGrid({
                       placement={p}
                       isHovered={
                         hoveredSlotKey === p.slotKey ||
-                        (!!selectedPost && selectedPost.id === p.post.id)
+                        (selectedPost ? selectedPost.id === p.post.id : false)
+                      }
+                      isCalendarSelected={
+                        selectedPost ? selectedPost.id === p.post.id : false
                       }
                       hoverOverlayPayload={overlayPayload}
                       onHoverOverlayChange={(payload) => {
@@ -490,7 +496,10 @@ export function DayViewTwoColumnGrid({
                       placement={p}
                       isHovered={
                         hoveredSlotKey === p.slotKey ||
-                        (!!selectedPost && selectedPost.id === p.post.id)
+                        (selectedPost ? selectedPost.id === p.post.id : false)
+                      }
+                      isCalendarSelected={
+                        selectedPost ? selectedPost.id === p.post.id : false
                       }
                       hoverOverlayPayload={overlayPayload}
                       onHoverOverlayChange={(payload) => {
@@ -673,6 +682,9 @@ export function DayViewTwoColumnGrid({
                           hideTimeRowPreview
                           forceOpaque={isHovered}
                           slotExpandRows={baseRows}
+                          isCalendarSelected={
+                            selectedPost ? selectedPost.id === post.id : false
+                          }
                         />
                       </div>
                     );
@@ -740,6 +752,11 @@ export function DayViewTwoColumnGrid({
                   forceOpaque
                   hideTimeRowPreview
                   slotExpandRows={dayHoverOverlayPayload.expandedRows}
+                  isCalendarSelected={
+                    selectedPost
+                      ? selectedPost.id === dayHoverOverlayPayload.post.id
+                      : false
+                  }
                 />
               </div>
             </div>
@@ -769,7 +786,7 @@ export function DayViewTwoColumnGrid({
                   data-slot={slotKey}
                 >
                   {isDragOver ? (
-                    <div className="bg-brand/10 border-brand/50 absolute inset-0 rounded-[var(--calendar-radius-sm)] border-2 border-dashed" />
+                    <div className="border-brand-strong/45 bg-brand-strong/[0.08] absolute inset-0 rounded-[var(--calendar-radius-sm)] border-2 border-dashed" />
                   ) : null}
                 </div>
               );

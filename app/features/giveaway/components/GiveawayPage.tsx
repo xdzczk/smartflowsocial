@@ -8,9 +8,17 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
+import { PublishingPageHeader } from "~/features/posts/ui";
+import { cn } from "~/lib/utils";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import { scopeIsFollowGraphAccountPool } from "../types";
+
+const GIVEAWAY_SELECT_FULL_WIDTH_CLASS = "w-full min-w-[9rem]";
 
 function engagementLabel(t: string): string {
   const m: Record<string, string> = {
@@ -77,23 +85,18 @@ export default function GiveawayPage({
 
   return (
     <div className="space-y-6">
-      <div className="stack sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-text text-2xl font-semibold tracking-tight">
-            Giveaways
-          </h2>
-          <p className="text-text-secondary mt-1 max-w-xl text-sm">
-            Reward real engagement, pick winners fairly, and track payout
-            status.
-          </p>
-        </div>
-        <Button asChild className="shrink-0">
-          <Link to="/dashboard/giveaway/new">New giveaway</Link>
-        </Button>
-      </div>
+      <PublishingPageHeader
+        title="Giveaways"
+        subtitle="Reward real engagement, pick winners fairly, and track payout status."
+        actions={
+          <Button asChild>
+            <Link to="/dashboard/giveaway/new">New giveaway</Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Total giveaways</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -101,7 +104,7 @@ export default function GiveawayPage({
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Pending payout</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -109,7 +112,7 @@ export default function GiveawayPage({
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Completed</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -117,7 +120,7 @@ export default function GiveawayPage({
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Total sats paid</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -125,7 +128,7 @@ export default function GiveawayPage({
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Winners selected</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -138,7 +141,7 @@ export default function GiveawayPage({
       <Form
         method="get"
         replace
-        className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
+        className="border-border bg-surface shadow-1 flex flex-col gap-3 rounded-xl border p-4"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="min-w-[200px] flex-1">
@@ -154,7 +157,7 @@ export default function GiveawayPage({
               type="search"
               defaultValue={filters.q}
               placeholder="Title or id…"
-              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
           <div>
@@ -168,7 +171,10 @@ export default function GiveawayPage({
               id="g-status"
               name="status"
               defaultValue={filters.status}
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(
+                campaignSelectClassNames,
+                GIVEAWAY_SELECT_FULL_WIDTH_CLASS
+              )}
             >
               <option value="">All statuses</option>
               <option value="DRAFT">Draft</option>
@@ -189,7 +195,10 @@ export default function GiveawayPage({
               id="g-scope"
               name="scope"
               defaultValue={filters.scope}
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(
+                campaignSelectClassNames,
+                GIVEAWAY_SELECT_FULL_WIDTH_CLASS
+              )}
             >
               <option value="">All scopes</option>
               <option value="PERIOD">Period</option>
@@ -210,7 +219,10 @@ export default function GiveawayPage({
               id="g-sort"
               name="sort"
               defaultValue={filters.sort}
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(
+                campaignSelectClassNames,
+                GIVEAWAY_SELECT_FULL_WIDTH_CLASS
+              )}
             >
               <option value="newest">Newest</option>
               <option value="payout_pending">Payout pending</option>
@@ -229,7 +241,7 @@ export default function GiveawayPage({
               name="from"
               type="date"
               defaultValue={filters.from}
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignFieldClassNames, "w-auto min-w-[9rem]")}
             />
           </div>
           <div>
@@ -244,7 +256,7 @@ export default function GiveawayPage({
               name="to"
               type="date"
               defaultValue={filters.to}
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignFieldClassNames, "w-auto min-w-[9rem]")}
             />
           </div>
           <div className="flex gap-2">
@@ -259,7 +271,7 @@ export default function GiveawayPage({
       </Form>
 
       {kpis.total === 0 ? (
-        <div className="border-border bg-surface-hover/20 rounded-lg border border-dashed">
+        <div className="border-border bg-surface shadow-1 rounded-xl border">
           <EmptyState
             title="No giveaways yet"
             description="Create your first giveaway to pick winners from engagement, then lock and pay out fairly."
@@ -272,7 +284,7 @@ export default function GiveawayPage({
         </div>
       ) : giveaways.length > 0 ? (
         <>
-          <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
+          <div className="border-border bg-surface shadow-1 hidden overflow-x-auto rounded-xl border md:block">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface-hover/40 border-border text-text-secondary border-b text-xs uppercase">
                 <tr>
@@ -440,7 +452,7 @@ export default function GiveawayPage({
             </table>
           </div>
 
-          <ul className="border-border bg-surface divide-border divide-y rounded-lg border md:hidden">
+          <ul className="border-border bg-surface shadow-1 divide-border divide-y rounded-xl border md:hidden">
             {giveaways.map((g) => (
               <li key={g.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -543,7 +555,7 @@ export default function GiveawayPage({
           </ul>
         </>
       ) : (
-        <div className="border-border bg-surface-hover/20 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+        <div className="border-border bg-surface shadow-1 flex flex-col items-center justify-center rounded-xl border p-12 text-center">
           <p className="text-text font-medium">No giveaways match filters</p>
           <p className="text-text-secondary mt-1 max-w-sm text-sm">
             Try clearing filters or create a new giveaway to reward engagement

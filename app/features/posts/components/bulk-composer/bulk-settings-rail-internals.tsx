@@ -355,8 +355,8 @@ export function BulkSettingsRailFooter({
           className={cn(
             "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             signBlocked
-              ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
-              : "bg-brand text-brand-on hover:bg-brand/90"
+              ? "bg-action-primary/80 text-action-primary-foreground hover:bg-action-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90"
           )}
           onClick={() => {
             if (!signBlocked) onSign();

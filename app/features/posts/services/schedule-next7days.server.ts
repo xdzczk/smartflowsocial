@@ -28,7 +28,7 @@ const NEXT_7_DAYS = 7;
 /**
  * Returns post counts per calendar day for the next 7 days (today through day 6)
  * in the user's timezone. Includes scheduled and published (past) posts; both regular
- * and longform. Respects queueType.
+ * and longform. Omits posts on paused queues. Respects queueType.
  */
 export async function getScheduleNext7DaysCounts(
   userId: string,

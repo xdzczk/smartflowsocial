@@ -249,7 +249,7 @@ export default function DraftEditPage() {
           />
           <Link
             to="/dashboard/drafts"
-            className="text-brand hover:text-brand/90 dark:text-text-secondary dark:hover:text-text"
+            className="text-link hover:text-link-hover dark:text-text-secondary dark:hover:text-text"
           >
             ← Back to Drafts
           </Link>

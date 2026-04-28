@@ -255,21 +255,24 @@ export default function BulkPostsPage() {
 
   return (
     <>
-      {!canExecuteBulkActions ? (
-        <div className="border-border bg-surface-hover/40 text-text mb-4 rounded-lg border px-4 py-3 text-sm leading-relaxed">
-          Bulk publishing is a paid workflow designed for higher-volume
-          operators. You can explore this page on Free; upgrade to sign and
-          schedule in bulk.{" "}
-          <Link to="/plans" className="text-brand font-medium underline">
-            View plans
-          </Link>
-        </div>
-      ) : null}
       <BulkComposerShell
         title={getPageTitle(mode)}
         headerActions={headerActions}
         workspace={
           <>
+            {!canExecuteBulkActions ? (
+              <div className="border-border-subtle/70 bg-section/45 text-text ring-border-subtle/40 dark:bg-section/30 mb-2 rounded-xl border py-3 pr-4 pl-4 text-sm leading-relaxed ring-1">
+                Bulk publishing is a paid workflow designed for higher-volume
+                operators. You can explore this page on Free; upgrade to sign
+                and schedule in bulk.{" "}
+                <Link
+                  to="/plans"
+                  className="text-link hover:text-link-hover font-medium underline"
+                >
+                  View plans
+                </Link>
+              </div>
+            ) : null}
             <DraftPickerModal
               open={bulkDraftPickerOpen}
               onClose={() => setBulkDraftPickerOpen(false)}
@@ -290,23 +293,25 @@ export default function BulkPostsPage() {
             ) : null}
 
             {(mode === "quote" || mode === "repost") && posts.length === 0 ? (
-              <EmptyState
-                className="border-border bg-surface-hover/30 rounded-lg border"
-                icon={<Inbox />}
-                title="No posts to schedule"
-                description={
-                  <>
-                    Select regular posts (not articles) from Published and try
-                    &quot;Schedule {mode === "quote" ? "quote" : "repost"}
-                    &quot; again.
-                  </>
-                }
-                action={
-                  <Button asChild variant="outline">
-                    <Link to="/dashboard/published">Go to Published</Link>
-                  </Button>
-                }
-              />
+              <div className="flex min-h-[min(42vh,18rem)] flex-col items-center justify-center py-8">
+                <EmptyState
+                  className="border-border-subtle/60 bg-section/30 max-w-md rounded-xl border px-6 py-8 ring-1 ring-black/[0.03] dark:ring-white/[0.05]"
+                  icon={<Inbox />}
+                  title="No posts to schedule"
+                  description={
+                    <>
+                      Select regular posts (not articles) from Published and try
+                      &quot;Schedule {mode === "quote" ? "quote" : "repost"}
+                      &quot; again.
+                    </>
+                  }
+                  action={
+                    <Button asChild variant="outline">
+                      <Link to="/dashboard/published">Go to Published</Link>
+                    </Button>
+                  }
+                />
+              </div>
             ) : null}
 
             <Dialog

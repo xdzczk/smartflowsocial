@@ -1,16 +1,16 @@
 /**
- * Engagement feed header component
+ * Engagement feed page title — matches publishing library header hierarchy.
  */
+
+import { PublishingPageHeader } from "~/features/posts/components/publishing-suite/PublishingPageHeader";
 
 export function EngagementHeader() {
   return (
-    <div className="mb-3 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-      <div>
-        <h3 className="mb-1 font-semibold">Engagement Feed</h3>
-        <p className="text-text-secondary text-sm">
-          See who&apos;s engaging with your posts
-        </p>
-      </div>
+    <div className="pt-2 pb-4">
+      <PublishingPageHeader
+        title="Engagement"
+        subtitle="See who's engaging with your posts."
+      />
     </div>
   );
 }

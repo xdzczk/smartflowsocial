@@ -1,6 +1,8 @@
 import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 interface RandomUser {
   pubkey: string;
@@ -79,30 +81,28 @@ Enjoy your memes and have a nice day!
   };
 
   return (
-    <div className="giveaway-post-container border-border bg-surface shadow-1 rounded-lg border p-4">
-      <button
-        onClick={handleGenerateMessage}
-        className="bg-brand text-brand-on hover:bg-brand/90 mb-4 rounded-xs px-4 py-2"
-      >
+    <div className="giveaway-post-container border-border bg-surface shadow-1 rounded-xl border p-4">
+      <Button type="button" onClick={handleGenerateMessage} className="mb-4">
         Generate Message
-      </button>
+      </Button>
 
       {message ? (
         <div className="mt-4">
-          <textarea
-            className="border-border bg-canvas text-text w-full rounded-lg border p-3"
+          <Textarea
+            className="bg-surface min-h-[18rem]"
             rows={12}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-          ></textarea>
+          />
 
           <div className="mt-2 flex justify-end">
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={handleCopyToClipboard}
-              className="bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-xs px-4 py-2 text-white"
             >
               {copied ? "Copied!" : "Copy to Clipboard"}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

@@ -99,8 +99,18 @@ describe("Flow Loader", () => {
 
     expect(getPastPosts).toHaveBeenCalled();
     expect(getPastLongFormPosts).toHaveBeenCalled();
-    expect(getScheduledPosts).toHaveBeenCalled();
-    expect(getScheduledLongFormPosts).toHaveBeenCalled();
+    expect(getScheduledPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ excludePausedQueueContent: true })
+    );
+    expect(getScheduledLongFormPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ excludePausedQueueContent: true })
+    );
+    expect(getLatestScheduledAtUtc).toHaveBeenCalledWith(
+      expect.objectContaining({ excludePausedQueueContent: true })
+    );
+    expect(getLatestScheduledLongFormAtUtc).toHaveBeenCalledWith(
+      expect.objectContaining({ excludePausedQueueContent: true })
+    );
   });
 
   it("should accept before cursor for load more past", async () => {

@@ -186,13 +186,14 @@ describe("Recyclables Loader", () => {
     expect(result.pagination.currentPage).toBe(2);
   });
 
-  it("should filter out disabled queue types", async () => {
+  it("should filter out archived queue types", async () => {
     const mockQueueTypes = [
       createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
       createMockQueueType({
         id: "queue-2",
-        name: "disabled",
-        isEnabled: false,
+        name: "archived",
+        isEnabled: true,
+        status: "archived",
       }),
       createMockQueueType({ id: "queue-3", name: "enabled", isEnabled: true }),
     ];
@@ -221,7 +222,7 @@ describe("Recyclables Loader", () => {
     });
 
     expect(result.queueTypes).toHaveLength(2);
-    expect(result.queueTypes.every((qt) => qt.isEnabled !== false)).toBe(true);
+    expect(result.queueTypes.every((qt) => qt.id !== "queue-2")).toBe(true);
   });
 
   it("should extract event IDs from signedEvent for stats", async () => {

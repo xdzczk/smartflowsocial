@@ -610,6 +610,9 @@ export function Calendar({
       if (view === "day" && isLg) {
         setSelectedPost(post);
       } else {
+        if (view === "week") {
+          setSelectedPost(post);
+        }
         setDetailModalPost(post);
       }
     },
@@ -781,6 +784,8 @@ export function Calendar({
                   currentDate={currentDate}
                   onPostDrop={handlePostDrop}
                   onPostEdit={handlePostClick}
+                  selectedPost={selectedPost}
+                  onClearSelection={() => setSelectedPost(null)}
                   user={user}
                   queueTypes={queueTypes}
                   isLongform={isLongform}
@@ -889,18 +894,24 @@ export function Calendar({
             detailModalPost as Parameters<typeof PostDetailsModal>[0]["post"]
           }
           stats={detailModalPublishedStats}
-          onClose={() => setDetailModalPost(null)}
+          onClose={() => {
+            setDetailModalPost(null);
+            setSelectedPost(null);
+          }}
           onDeleted={() => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             setCalendarLiveMessage("Post deleted");
             refreshPostViews();
           }}
           onEdit={(post) => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             handleContentEditFromCalendar(post as CalendarPost);
           }}
           onReschedule={(post) => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             handlePostEdit(post as CalendarPost);
           }}
           scheduledCapabilities={detailModalVm?.capabilities}
@@ -919,18 +930,24 @@ export function Calendar({
             >[0]["post"]
           }
           stats={detailModalPublishedStats}
-          onClose={() => setDetailModalPost(null)}
+          onClose={() => {
+            setDetailModalPost(null);
+            setSelectedPost(null);
+          }}
           onDeleted={() => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             setCalendarLiveMessage("Article deleted");
             refreshPostViews();
           }}
           onEdit={(post) => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             handleContentEditFromCalendar(post as unknown as CalendarPost);
           }}
           onReschedule={(post) => {
             setDetailModalPost(null);
+            setSelectedPost(null);
             handlePostEdit(post as unknown as CalendarPost);
           }}
           type={detailModalType}
@@ -1052,9 +1069,9 @@ function MiniCalendarGrid({
               !isCurrentMonth ? "text-text-secondary/70" : "text-text"
             } ${
               isSelected
-                ? "bg-brand text-brand-on"
+                ? "bg-selection-fill text-selection-foreground hover:bg-selection-fill/90"
                 : isToday
-                  ? "ring-brand bg-brand/10 ring-1"
+                  ? "ring-border-strong/45 bg-surface-hover/90 ring-1"
                   : "hover:bg-surface-hover"
             }`}
           >

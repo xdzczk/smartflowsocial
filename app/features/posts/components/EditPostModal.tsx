@@ -425,7 +425,7 @@ export function EditPostModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-scrim/50 fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className={cn(
             "bg-surface-overlay shadow-3 max-h-[90vh] w-full overflow-hidden rounded-xl",
@@ -647,7 +647,7 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-brand text-xs hover:underline"
+                          className="text-link hover:text-link-hover text-xs hover:underline"
                         >
                           Add another repost
                         </button>
@@ -830,7 +830,7 @@ export function EditPostModal({
                               },
                             ])
                           }
-                          className="text-brand text-xs hover:underline"
+                          className="text-link hover:text-link-hover text-xs hover:underline"
                         >
                           Add another quote
                         </button>
@@ -914,7 +914,7 @@ export function EditPostModal({
                       isSigningEvent ||
                       isUploadingImages
                     }
-                    className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isUploadingImages
                       ? "Uploading Images..."

@@ -19,7 +19,7 @@ export interface TimeGridRowProps {
   setHoveredPostKey: (key: string | null) => void;
   dragOverSlot: string | null;
   userTimezone: string;
-  selectedPost?: { id: string } | null;
+  selectedPost?: CalendarPost | null;
   hoveredSlotKey: string | null;
   setHoveredSlotKey: (key: string | null) => void;
   onDragOver: (
@@ -64,7 +64,7 @@ export function TimeGridRow({
   hoveredPostKey,
   setHoveredPostKey,
   dragOverSlot: _dragOverSlot,
-  selectedPost: _selectedPost,
+  selectedPost,
   hoveredSlotKey,
   setHoveredSlotKey,
   onDragOver,
@@ -135,6 +135,7 @@ export function TimeGridRow({
               dateLocale={dateLocale}
               userTimezone={userTimezone}
               isMobile={isMobile}
+              selectedPost={selectedPost}
             />
           );
         })}

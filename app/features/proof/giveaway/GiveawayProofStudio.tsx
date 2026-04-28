@@ -78,7 +78,10 @@ export function GiveawayProofStudio({
           detail page, then return here to generate proof cards.
         </p>
         <p className="text-text-secondary text-sm">
-          <Link to="/dashboard/giveaway" className="text-brand hover:underline">
+          <Link
+            to="/dashboard/giveaway"
+            className="text-link hover:text-link-hover hover:underline"
+          >
             ← All giveaways
           </Link>
         </p>

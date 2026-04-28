@@ -105,7 +105,8 @@ export function ComposerMediaField({
         className={cn(
           "motion-fast relative rounded-lg",
           empty && !isDraggingOver && "min-h-0",
-          !empty && "bg-surface-hover/40 rounded-md px-1 py-1.5 sm:px-1.5",
+          !empty &&
+            "bg-section/35 dark:bg-section/25 rounded-md px-1 py-1.5 sm:px-1.5",
           isDraggingOver &&
             dropEnabled &&
             "bg-brand/5 ring-brand/40 ring-dashed ring-2"
@@ -138,7 +139,7 @@ export function ComposerMediaField({
         {empty && !isDraggingOver && emptyHint ? (
           <p
             className={cn(
-              "text-text-tertiary leading-snug",
+              "text-text-tertiary/85 leading-snug",
               compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]"
             )}
           >

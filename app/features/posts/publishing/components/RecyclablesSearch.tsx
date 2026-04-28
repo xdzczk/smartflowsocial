@@ -29,7 +29,7 @@ export function RecyclablesSearch({
         name="search"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
+        className="focus-ring border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6"
         placeholder="Search posts.."
       />
     </div>

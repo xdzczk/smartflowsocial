@@ -69,6 +69,10 @@ export const DAY_VIEW_POST_BLOCK_CONTAINER_Z = 10;
 export const EXPANDED_BLOCK_WRAPPER_CLASS =
   "opacity-100 overflow-hidden bg-[hsl(var(--calendar-surface-2-bg))] rounded-[var(--calendar-radius-md)] shadow-1";
 
+/** Day/week grid: selected post in sidebar — purple ring only here (not grid chrome). */
+export const CALENDAR_SELECTED_POST_RING =
+  "ring-2 ring-inset ring-brand-strong";
+
 export const CLASS_OVERFLOW_HIDDEN = "overflow-hidden";
 export const CLASS_DAY_COLUMN_EXPAND_UP =
   "overflow-x-hidden overflow-y-visible";

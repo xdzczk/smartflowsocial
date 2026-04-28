@@ -8,6 +8,7 @@ import {
 } from "@remix-run/react";
 import { useState } from "react";
 
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -30,6 +31,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
+  AdminAccessDenied,
   AdminCard,
   AdminPageHeader,
   MetricCard,
@@ -150,7 +152,7 @@ export default function AdminReferralsPage() {
   const { unit, formatSats, moneyColumnLabel } = useAdminCurrency();
 
   if (!isLoaderOk(raw)) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
 
   const data = raw;
@@ -172,7 +174,7 @@ export default function AdminReferralsPage() {
         subtitle="Finance-ops surface: performance, ledger, CSV exports, and Lightning payouts. Confirm every batch in the dialog."
       />
 
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-10`}>
         {isActionError(actionData) ? (
           <div
             className="border-danger/50 bg-danger/10 text-danger rounded-md border px-3 py-2 text-sm"
@@ -593,7 +595,7 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Referrals table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export", "csv"]]).toString()}`}
-              className="text-brand text-sm hover:underline"
+              className="text-link hover:text-link-hover text-sm hover:underline"
             >
               Export CSV
             </a>
@@ -629,7 +631,7 @@ export default function AdminReferralsPage() {
             <h2 className="text-lg font-semibold">Earnings table</h2>
             <a
               href={`?${new URLSearchParams([...searchParams.entries(), ["export_earnings", "csv"]]).toString()}`}
-              className="text-brand text-sm hover:underline"
+              className="text-link hover:text-link-hover text-sm hover:underline"
             >
               Export earnings CSV
             </a>
@@ -674,7 +676,7 @@ export default function AdminReferralsPage() {
                           <input type="hidden" name="earning_id" value={e.id} />
                           <button
                             type="submit"
-                            className="text-brand text-xs hover:underline"
+                            className="text-link hover:text-link-hover text-xs hover:underline"
                           >
                             Retry
                           </button>
@@ -690,7 +692,7 @@ export default function AdminReferralsPage() {
 
         <Link
           to="/dashboard/admin"
-          className="text-brand text-sm hover:underline"
+          className="text-link hover:text-link-hover text-sm hover:underline"
         >
           ← Back to overview
         </Link>

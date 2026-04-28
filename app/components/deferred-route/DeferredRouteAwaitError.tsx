@@ -13,7 +13,7 @@ export function DeferredRouteAwaitError({ retryTo }: { retryTo: string }) {
         <p className="text-danger mb-4 text-sm font-medium">{message}</p>
         <Link
           to={retryTo}
-          className="text-brand text-sm font-medium underline underline-offset-4"
+          className="text-link hover:text-link-hover text-sm font-medium underline underline-offset-4"
         >
           Try again
         </Link>

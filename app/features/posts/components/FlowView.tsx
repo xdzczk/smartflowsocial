@@ -549,7 +549,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 rounded-xl px-4 py-2 text-sm font-medium"
+                className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 rounded-xl px-4 py-2 text-sm font-medium"
               >
                 Schedule first post
               </Link>
@@ -594,7 +594,7 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
         : CARD_MIN_HEIGHT
       : CARD_MIN_HEIGHT_MOBILE;
     const flowScrollOuterHeightPx = isMobile
-      ? CARD_MIN_HEIGHT_MOBILE + 32
+      ? CARD_MIN_HEIGHT_MOBILE + FLOW_DESKTOP_SCROLL_CHROME_PX
       : desktopFlowCardContentPx + FLOW_DESKTOP_SCROLL_CHROME_PX;
 
     const flowCardCssVarStyle: Record<string, string> | undefined = !isMobile
@@ -603,14 +603,14 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
     return (
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col lg:h-auto lg:flex-none"
+        className="flex min-h-0 min-w-0 flex-1 flex-col justify-center lg:h-auto lg:flex-none"
         style={flowCardCssVarStyle}
       >
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4"
+          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-clip overscroll-x-contain py-5 [overflow-clip-margin:20px]"
           style={{
             height: flowScrollOuterHeightPx,
             contain: "layout",

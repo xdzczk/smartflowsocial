@@ -7,6 +7,8 @@ import {
 } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
+import { NativeRadio } from "~/components/ui/native-radio";
 import {
   CampaignSectionHeader,
   ChoiceTileGroup,
@@ -23,6 +25,7 @@ import {
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 import {
   ALL_GIVEAWAY_ENGAGEMENT_TYPES,
@@ -323,25 +326,35 @@ export function GiveawayNewBuilder({
             {scopeType === "PERIOD" ? (
               <div className="border-border/60 space-y-3 border-t pt-4">
                 <div className="flex flex-wrap gap-4">
-                  <label className="text-text cluster text-sm">
-                    <input
-                      type="radio"
+                  <label
+                    htmlFor="giveaway-period-mode-days"
+                    className="text-text cluster text-sm"
+                  >
+                    <NativeRadio
+                      id="giveaway-period-mode-days"
                       name="periodModeUi"
+                      value="days"
                       checked={periodMode === "days"}
                       onChange={() => {
                         setPeriodMode("days");
                       }}
+                      className="shrink-0"
                     />
                     Last N days
                   </label>
-                  <label className="text-text cluster text-sm">
-                    <input
-                      type="radio"
+                  <label
+                    htmlFor="giveaway-period-mode-custom"
+                    className="text-text cluster text-sm"
+                  >
+                    <NativeRadio
+                      id="giveaway-period-mode-custom"
                       name="periodModeUi"
+                      value="custom"
                       checked={periodMode === "custom"}
                       onChange={() => {
                         setPeriodMode("custom");
                       }}
+                      className="shrink-0"
                     />
                     Custom date range
                   </label>
@@ -536,9 +549,8 @@ export function GiveawayNewBuilder({
                       htmlFor={`giveaway-engagement-${m.value}`}
                       className="border-border bg-surface flex cursor-pointer gap-3 rounded-lg border p-3"
                     >
-                      <input
+                      <NativeCheckbox
                         id={`giveaway-engagement-${m.value}`}
-                        type="checkbox"
                         name="engagementTypes"
                         aria-label={`${m.label}: ${m.hint}`}
                         value={m.value}
@@ -546,6 +558,7 @@ export function GiveawayNewBuilder({
                         onChange={(e) => {
                           toggleEngagement(m.value, e.target.checked);
                         }}
+                        className="shrink-0"
                       />
                       <span>
                         <span className="text-text font-medium">{m.label}</span>
@@ -583,21 +596,45 @@ export function GiveawayNewBuilder({
             <div className="border-border/60 space-y-2 border-t pt-4">
               <p className="text-text text-sm font-medium">Exclusions</p>
               <div className="flex flex-wrap gap-4">
-                <label className="text-text cluster text-sm">
-                  <input type="checkbox" name="excludeMuted" value="true" />
+                <label
+                  htmlFor="giveaway-exclude-muted"
+                  className="text-text cluster text-sm"
+                >
+                  <NativeCheckbox
+                    id="giveaway-exclude-muted"
+                    name="excludeMuted"
+                    value="true"
+                  />
                   Muted
                 </label>
-                <label className="text-text cluster text-sm">
-                  <input type="checkbox" name="excludeBlocked" value="true" />
+                <label
+                  htmlFor="giveaway-exclude-blocked"
+                  className="text-text cluster text-sm"
+                >
+                  <NativeCheckbox
+                    id="giveaway-exclude-blocked"
+                    name="excludeBlocked"
+                    value="true"
+                  />
                   Blacklisted
                 </label>
-                <label className="text-text cluster text-sm">
-                  <input type="checkbox" name="excludeLowTrust" value="true" />
+                <label
+                  htmlFor="giveaway-exclude-low-trust"
+                  className="text-text cluster text-sm"
+                >
+                  <NativeCheckbox
+                    id="giveaway-exclude-low-trust"
+                    name="excludeLowTrust"
+                    value="true"
+                  />
                   Low trust
                 </label>
-                <label className="text-text cluster text-sm">
-                  <input
-                    type="checkbox"
+                <label
+                  htmlFor="giveaway-exclude-non-followers"
+                  className="text-text cluster text-sm"
+                >
+                  <NativeCheckbox
+                    id="giveaway-exclude-non-followers"
                     name="excludeNonFollowers"
                     value="true"
                   />
@@ -660,11 +697,12 @@ export function GiveawayNewBuilder({
                   onClick={() => {
                     setRewardMode("simple");
                   }}
-                  className={
+                  className={cn(
+                    "border-border bg-surface shadow-1 motion-fast cursor-pointer rounded-xl border p-4 text-left",
                     rewardMode === "simple"
-                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                  }
+                      ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+                      : "hover:border-selection-border/40 hover:bg-surface-hover/30"
+                  )}
                 >
                   <p className="text-text font-medium">Simple payout</p>
                   <p className="text-text-secondary mt-1 text-sm">
@@ -676,11 +714,12 @@ export function GiveawayNewBuilder({
                   onClick={() => {
                     setRewardMode("advanced");
                   }}
-                  className={
+                  className={cn(
+                    "border-border bg-surface shadow-1 motion-fast cursor-pointer rounded-xl border p-4 text-left",
                     rewardMode === "advanced"
-                      ? "border-brand bg-brand/5 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                      : "border-border bg-surface hover:border-brand/40 motion-fast cursor-pointer rounded-lg border p-4 text-left"
-                  }
+                      ? "border-selection-border bg-selection-wash ring-selection-border ring-2"
+                      : "hover:border-selection-border/40 hover:bg-surface-hover/30"
+                  )}
                 >
                   <p className="text-text font-medium">
                     Customize by entry type

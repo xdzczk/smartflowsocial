@@ -5,7 +5,10 @@
 
 import { Search } from "lucide-react";
 
+import { Button } from "~/components/ui/button";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 interface GiveawayFiltersProps {
   searchTerm: string;
@@ -44,7 +47,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, from: e.target.value })
               }
-              className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
+              className={campaignFieldClassNames}
             />
           </div>
           <div className="cluster">
@@ -59,7 +62,7 @@ export function GiveawayFilters({
               onChange={(e) =>
                 onDateRangeChange({ ...dateRange, to: e.target.value })
               }
-              className="border-border bg-canvas text-text focus:border-brand focus-visible:ring-focus-ring/50 rounded-lg border px-3 py-2 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
+              className={campaignFieldClassNames}
             />
           </div>
         </div>
@@ -79,7 +82,7 @@ export function GiveawayFilters({
             name="search"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="border-border bg-canvas text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus-visible:ring-2 focus-visible:outline-none"
+            className={cn(campaignFieldClassNames, "py-2 pr-3 pl-10")}
             placeholder="Search posts.."
           />
         </div>
@@ -88,12 +91,14 @@ export function GiveawayFilters({
       {/* Clear filters button */}
       {hasActiveFilters ? (
         <div className="mb-4 flex justify-end">
-          <button
+          <Button
+            type="button"
+            variant="link"
+            className="text-link h-auto p-0 text-sm"
             onClick={onClearFilters}
-            className="text-brand hover:text-brand/80 text-sm"
           >
             Clear filters
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

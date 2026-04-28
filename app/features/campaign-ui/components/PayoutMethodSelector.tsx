@@ -1,3 +1,10 @@
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
+import { cn } from "~/lib/utils";
+
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "../campaign-field-classes";
 import { payoutCopy } from "../payout-copy";
 
 export function PayoutMethodSelector({
@@ -21,7 +28,7 @@ export function PayoutMethodSelector({
           <select
             name="payoutWalletMode"
             defaultValue={walletMode}
-            className="border-border bg-canvas ml-2 rounded-md border px-2 py-1 text-sm"
+            className={cn(campaignSelectClassNames, "ml-2 w-auto min-w-0")}
           >
             <option value="manual">Manual payout</option>
             <option value="nwc_creator" disabled={!nwcEnabled}>
@@ -38,12 +45,11 @@ export function PayoutMethodSelector({
 
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm">
-          <input
-            type="checkbox"
+          <NativeCheckbox
             name="payoutAutoRunEnabled"
             defaultChecked={autoPayEnabled}
             disabled={walletMode !== "nwc_creator" || !nwcEnabled}
-            className="mr-2 align-middle"
+            className="mr-2 shrink-0 align-middle"
           />
           {autoPayLabel}
         </label>
@@ -55,7 +61,7 @@ export function PayoutMethodSelector({
             defaultValue={autoPayCapSats ?? ""}
             min={0}
             step={1}
-            className="border-border bg-canvas ml-2 w-40 rounded-md border px-2 py-1 text-sm"
+            className={cn(campaignFieldClassNames, "ml-2 w-40")}
           />
         </label>
       </div>

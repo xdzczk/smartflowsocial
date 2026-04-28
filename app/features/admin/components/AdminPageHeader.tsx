@@ -1,7 +1,14 @@
 import { useRevalidator } from "@remix-run/react";
 
+import { PageHeader } from "~/components/layout/PageHeader";
+import { Button } from "~/components/ui/button";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
+/**
+ * Admin sub-page title row — `PageHeader` `admin` variant + refresh.
+ * Horizontal padding comes from `DashboardLayoutPage`’s main band; border spans
+ * the band width.
+ */
 export function AdminPageHeader({
   title,
   subtitle,
@@ -15,16 +22,13 @@ export function AdminPageHeader({
   const { formatDate } = useFormattedDate();
 
   return (
-    <div className="border-border stack-tight border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 className="text-h1">{title}</h1>
-        {subtitle ? (
-          <p className="text-text-secondary text-body-sm mt-1 max-w-3xl">
-            {subtitle}
-          </p>
-        ) : null}
-        {generatedAt ? (
-          <p className="text-text-secondary mt-2 text-xs">
+    <PageHeader
+      variant="admin"
+      title={title}
+      subtitle={subtitle}
+      meta={
+        generatedAt ? (
+          <p className="text-text-secondary mt-1 text-xs">
             Last updated:{" "}
             {formatDate(generatedAt, {
               dateFormatOptions: {
@@ -33,16 +37,20 @@ export function AdminPageHeader({
               },
             })}
           </p>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        onClick={() => revalidator.revalidate()}
-        className="border-border text-text hover:bg-surface-hover shrink-0 rounded-md border px-3 py-1.5 text-sm"
-        disabled={revalidator.state === "loading"}
-      >
-        {revalidator.state === "loading" ? "Refreshing…" : "Refresh"}
-      </button>
-    </div>
+        ) : undefined
+      }
+      actions={
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={() => revalidator.revalidate()}
+          disabled={revalidator.state === "loading"}
+        >
+          {revalidator.state === "loading" ? "Refreshing…" : "Refresh"}
+        </Button>
+      }
+    />
   );
 }

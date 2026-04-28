@@ -57,14 +57,14 @@ export function LongFormCoverImage({
       </div>
 
       {uploadError ? (
-        <div className="border-danger bg-danger/10 text-danger mt-1 rounded-md border p-2 text-sm">
+        <div className="bg-danger/[0.07] text-danger ring-danger/25 dark:bg-danger/[0.12] dark:ring-danger/35 mt-2 rounded-md py-2 pl-3 text-[13px] leading-snug ring-1">
           {uploadError}
         </div>
       ) : null}
 
       {coverFileUploadDisabled && uploadProvider?.includes("BLOSSOM") ? (
         <div
-          className="border-warning/55 bg-warning/10 text-warning-text mt-1 rounded-md border px-2.5 py-2 text-[11px] leading-snug"
+          className="bg-warning/[0.08] text-warning-text ring-warning/30 dark:bg-warning/[0.10] mt-2 rounded-md py-2 pl-3 text-[11px] leading-snug ring-1"
           role="note"
         >
           Cover file upload needs a NIP-07 browser extension or connected remote
@@ -133,7 +133,7 @@ export function LongFormCoverImage({
         </div>
       ) : (
         <div className="mt-1">
-          <div className="border-border/35 relative overflow-hidden rounded-lg border bg-black/5 dark:bg-white/5">
+          <div className="border-border/35 bg-scrim/5 dark:bg-capture/5 relative overflow-hidden rounded-lg border">
             <div className="aspect-[21/9] max-h-[260px] min-h-[140px] w-full">
               <img
                 src={image}
@@ -141,7 +141,7 @@ export function LongFormCoverImage({
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/0 opacity-0 transition-all hover:bg-black/35 hover:opacity-100">
+            <div className="bg-scrim/0 hover:bg-scrim/35 absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-all hover:opacity-100">
               <Button
                 type="button"
                 variant="secondary"

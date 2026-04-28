@@ -203,7 +203,7 @@ export function RelaySourceSection({
         >
           <span className="cluster font-medium">
             {tabValue === "profile" ? (
-              <Check className="text-brand size-4 shrink-0" />
+              <Check className="text-link size-4 shrink-0" />
             ) : null}
             Nostr profile relays
           </span>
@@ -225,7 +225,7 @@ export function RelaySourceSection({
         >
           <span className="cluster font-medium">
             {tabValue === "app" ? (
-              <Check className="text-brand size-4 shrink-0" />
+              <Check className="text-link size-4 shrink-0" />
             ) : null}
             {BRAND_NAME} app relays
           </span>

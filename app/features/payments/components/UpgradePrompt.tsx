@@ -20,7 +20,7 @@ export default function UpgradePrompt({
   const minPlan = getMinimumPlanForFeature(feature);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-scrim/50 fixed inset-0 z-50 flex items-center justify-center">
       <div className="bg-surface-overlay shadow-3 inset-card-lg mx-4 max-w-md rounded-xl">
         <div className="mb-4 flex items-start justify-between">
           <div className="cluster-loose">
@@ -59,7 +59,7 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="focus-ring bg-brand text-brand-on hover:bg-brand/90 flex-1 rounded-lg px-4 py-2 text-center font-medium"
+            className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 flex-1 rounded-lg px-4 py-2 text-center font-medium"
           >
             View Plans
           </Link>

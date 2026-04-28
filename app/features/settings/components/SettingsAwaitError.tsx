@@ -16,7 +16,7 @@ export function SettingsAwaitError() {
         <p className="text-danger mb-4 text-sm font-medium">{message}</p>
         <Link
           to="/dashboard/settings"
-          className="text-brand text-sm font-medium underline underline-offset-4"
+          className="text-link hover:text-link-hover text-sm font-medium underline underline-offset-4"
         >
           Try again
         </Link>

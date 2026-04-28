@@ -11,6 +11,10 @@ import {
   getUserPlanType,
   type UserSubscription,
 } from "~/features/payments/types";
+import {
+  pauseQueueById,
+  resumeQueueById,
+} from "~/features/posts/data/queue-pause-resume.server";
 import { getQueueColorBundle } from "~/features/posts/queue-colors";
 import {
   deleteLongFormPost,
@@ -30,6 +34,8 @@ import {
   createQueueTypeSchema,
   updateQueueTypeSchema,
   deleteQueueTypeSchema,
+  queueStatusActionSchema,
+  toggleQueueEnabledSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
 
@@ -46,6 +52,7 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
   description: string | null;
   scheduleType: string;
   scheduleConfig: unknown;
+  status: "active" | "paused" | "archived";
   isEnabled: boolean;
   userId: string;
   isDefault?: boolean;
@@ -72,6 +79,12 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
     description: qt.description,
     scheduleType: qt.scheduleType,
     scheduleConfig: qt.scheduleConfig,
+    status:
+      qt.status === "PAUSED"
+        ? "paused"
+        : qt.status === "ARCHIVED"
+          ? "archived"
+          : "active",
     isEnabled: qt.isEnabled,
     userId: qt.userId,
     isDefault: "isDefault" in qt ? qt.isDefault : false,
@@ -310,6 +323,71 @@ async function handleUpdateQueueType(
   });
 }
 
+async function handleToggleQueueEnabled(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const result = validateFormDataOrRespond(formData, toggleQueueEnabledSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const { id, isEnabled } = result.data;
+  const existing = await getQueueTypeByIdForUser(userId, id);
+  if (!existing) {
+    return json({ error: "Queue type not found" }, { status: 404 });
+  }
+  const actionResult = isEnabled
+    ? await resumeQueueById({ userId, queueTypeId: id })
+    : await pauseQueueById({ userId, queueTypeId: id });
+  await invalidateQueueTypesCache(userId);
+  return json({
+    success: true,
+    queueType: queueTypeToClient(actionResult.queue),
+  });
+}
+
+async function handlePauseQueue(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const result = validateFormDataOrRespond(formData, queueStatusActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const queue = await pauseQueueById({
+    userId,
+    queueTypeId: result.data.id,
+  });
+  await invalidateQueueTypesCache(userId);
+  return json({
+    success: true,
+    queueType: queueTypeToClient(queue.queue),
+    pausedPostCount: queue.pausedPostCount,
+    pausedLongFormCount: queue.pausedLongFormCount,
+  });
+}
+
+async function handleResumeQueue(
+  userId: string,
+  formData: FormData
+): Promise<Response> {
+  const result = validateFormDataOrRespond(formData, queueStatusActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const queue = await resumeQueueById({
+    userId,
+    queueTypeId: result.data.id,
+  });
+  await invalidateQueueTypesCache(userId);
+  return json({
+    success: true,
+    queueType: queueTypeToClient(queue.queue),
+    resumedCount: queue.resumedCount,
+    needsResignCount: queue.needsResignCount,
+  });
+}
+
 async function handleDeleteQueueType(
   userId: string,
   formData: FormData
@@ -378,6 +456,18 @@ export async function handleQueueTypeAction(
 
   if (action === "update_queue_type") {
     return handleUpdateQueueType(userId, formData);
+  }
+
+  if (action === "toggle_queue_enabled") {
+    return handleToggleQueueEnabled(userId, formData);
+  }
+
+  if (action === "pause_queue") {
+    return handlePauseQueue(userId, formData);
+  }
+
+  if (action === "resume_queue") {
+    return handleResumeQueue(userId, formData);
   }
 
   if (action === "delete_queue_type") {

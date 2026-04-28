@@ -64,11 +64,15 @@ describe("Post Queries", () => {
             where?: {
               userId?: string;
               currentState?: string;
+              queueHoldStatus?: { not: string };
             };
           }
         | undefined;
       expect(firstCall?.where?.userId).toBe(TEST_USER_ID);
       expect(firstCall?.where?.currentState).toBe("SCHEDULED");
+      expect(firstCall?.where?.queueHoldStatus).toEqual({
+        not: "HELD_BY_QUEUE",
+      });
       expect(result.scheduledCount).toBe(3);
     });
 
@@ -397,6 +401,11 @@ describe("Post Queries", () => {
       expect(prisma.post.findMany).toHaveBeenCalledWith({
         where: {
           currentState: "SCHEDULED",
+          queueHoldStatus: "NONE",
+          OR: [
+            { queueTypeId: null },
+            { queueType: { status: { not: "PAUSED" } } },
+          ],
           scheduledAtUtc: {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             lte: expect.any(Date),

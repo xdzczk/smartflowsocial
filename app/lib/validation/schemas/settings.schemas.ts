@@ -632,6 +632,19 @@ export const deleteQueueTypeSchema = z.object({
     .default("queue_only"),
 });
 
+export const toggleQueueEnabledSchema = z.object({
+  id: z.string().min(1, ERROR_ID_REQUIRED),
+  isEnabled: z
+    .union([z.string(), z.boolean()])
+    .transform(
+      (val) => val === FORM_VALUE_ON || val === FORM_VALUE_TRUE || val === true
+    ),
+});
+
+export const queueStatusActionSchema = z.object({
+  id: z.string().min(1, ERROR_ID_REQUIRED),
+});
+
 /**
  * Accounts action schemas
  */

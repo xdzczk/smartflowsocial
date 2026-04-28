@@ -626,7 +626,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-link hover:text-link-hover h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -643,7 +643,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-link hover:text-link-hover h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex((_, i) =>
                     validationResult.byPost[i]?.some((e) =>
@@ -660,7 +660,7 @@ export function BulkSettingsRailBuildValidationBlock({
               <Button
                 type="button"
                 variant="link"
-                className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
+                className="text-link hover:text-link-hover h-auto justify-start px-0 py-0 text-[11px]"
                 onClick={() => {
                   const idx = posts.findIndex(
                     (p) => !p.queueType || p.queueType === "unassigned"
@@ -753,7 +753,7 @@ export function BulkSettingsRailReviewReadinessBlock({
             <Button
               type="button"
               variant="link"
-              className="text-brand h-auto justify-start px-0 py-0 text-[11px]"
+              className="text-link hover:text-link-hover h-auto justify-start px-0 py-0 text-[11px]"
               onClick={() => onJumpToPost(firstIssue)}
             >
               Jump to first issue

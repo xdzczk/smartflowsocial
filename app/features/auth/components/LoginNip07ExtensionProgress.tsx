@@ -160,7 +160,7 @@ export function LoginNip07ExtensionProgress({
     >
       <div className="flex items-start gap-3">
         <Loader2
-          className="text-brand mt-0.5 h-5 w-5 shrink-0 animate-spin"
+          className="text-link mt-0.5 h-5 w-5 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-3">

@@ -87,7 +87,7 @@ export function LookupEngageNowSection({
         className={cn(
           "h-9 w-full justify-start gap-2 px-3 text-xs font-medium",
           engagement.isLiked &&
-            "border-brand/50 bg-brand/10 text-brand hover:bg-brand/15"
+            "border-brand/50 bg-brand/10 text-link hover:bg-brand/15"
         )}
         disabled={engagement.isLikeSending || engagement.isLiked}
         onClick={() => void engagement.likeNote()}

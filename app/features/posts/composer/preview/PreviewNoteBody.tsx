@@ -37,7 +37,7 @@ function renderPreviewNoteTokens(tokens: PreviewNoteToken[]) {
             href={t.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand decoration-brand/40 hover:decoration-brand font-medium underline underline-offset-2"
+            className="text-link decoration-link/40 hover:decoration-link-hover font-medium underline underline-offset-2"
           >
             {t.label}
           </a>
@@ -49,18 +49,18 @@ function renderPreviewNoteTokens(tokens: PreviewNoteToken[]) {
             href={t.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand decoration-brand/40 hover:decoration-brand font-medium underline underline-offset-2"
+            className="text-link decoration-link/40 hover:decoration-link-hover font-medium underline underline-offset-2"
           >
             {t.label}
           </a>
         ) : (
-          <span key={key} className="text-brand font-medium">
+          <span key={key} className="text-link font-medium">
             {t.label}
           </span>
         );
       case "hashtag":
         return (
-          <span key={key} className="text-brand font-medium">
+          <span key={key} className="text-link font-medium">
             {t.label}
           </span>
         );

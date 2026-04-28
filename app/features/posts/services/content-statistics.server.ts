@@ -2,6 +2,7 @@
  * Content statistics (posts + longform) for dashboard
  */
 
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getLongFormStatistics,
   getScheduledLongFormCountByQueue,
@@ -13,6 +14,10 @@ import { getQueueTypesCached } from "~/features/user/services/user-cache.server"
 import { countDraftItemsForUser } from "../repositories/entitlement-counts.server";
 
 export interface ContentStatistics {
+  /**
+   * Count of scheduled short + longform that are not `HELD_BY_QUEUE` (active on the calendar).
+   * Paused-queue / held volume is shown per queue in the Queues panel only.
+   */
   scheduledCount: number;
   successCount: number;
 }
@@ -93,7 +98,7 @@ export async function getQueueCountsForDashboard(
 
   const idToName = new Map<string, string>();
   for (const qt of queueTypes) {
-    if (qt.isEnabled !== false) {
+    if (shouldShowQueueInUi(qt)) {
       idToName.set(qt.id, qt.name);
     }
   }
@@ -111,7 +116,7 @@ export async function getQueueCountsForDashboard(
 
   const result: QueueCountItem[] = [];
   for (const qt of queueTypes) {
-    if (qt.isEnabled === false) continue;
+    if (!shouldShowQueueInUi(qt)) continue;
     const count = countByQueueId.get(qt.id) ?? 0;
     result.push({ queueName: qt.name, count });
   }

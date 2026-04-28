@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
+import { PageContent } from "~/components/layout/PageContent";
 import { cn } from "~/lib/utils";
-
-import { PUBLISHING_LIBRARY_SHELL_CLASS } from "./constants";
 
 export function PublishingLibraryShell({
   children,
@@ -12,8 +11,8 @@ export function PublishingLibraryShell({
   className?: string;
 }) {
   return (
-    <div className={cn(PUBLISHING_LIBRARY_SHELL_CLASS, className)}>
+    <PageContent fluid className={cn("min-h-screen pb-8", className)}>
       {children}
-    </div>
+    </PageContent>
   );
 }

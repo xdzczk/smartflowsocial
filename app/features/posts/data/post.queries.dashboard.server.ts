@@ -30,6 +30,7 @@ export async function getScheduledPosts({
   contentTab,
   scheduledFromUtc,
   scheduledToUtc,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   page?: number;
@@ -43,6 +44,7 @@ export async function getScheduledPosts({
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<PostsWithPagination> {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -94,6 +96,23 @@ export async function getScheduledPosts({
       }
     }
 
+    if (excludePausedQueueContent) {
+      const pausedQueueExclusion: Prisma.PostWhereInput = {
+        OR: [
+          { queueTypeId: null },
+          { queueType: { status: { not: "PAUSED" } } },
+        ],
+      };
+      whereClause.AND = [
+        ...(Array.isArray(whereClause.AND)
+          ? whereClause.AND
+          : whereClause.AND
+            ? [whereClause.AND]
+            : []),
+        pausedQueueExclusion,
+      ];
+    }
+
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where: whereClause,
@@ -143,11 +162,13 @@ export async function getScheduledRepostsCount({
   queueType,
   scheduledFromUtc,
   scheduledToUtc,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   queueType?: string;
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<number> {
   const whereClause: Prisma.PostWhereInput = {
     currentState: "SCHEDULED",
@@ -167,13 +188,26 @@ export async function getScheduledRepostsCount({
       whereClause.queueType = { name: queueType };
     }
   }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
+  }
   return prisma.post.count({ where: whereClause });
 }
 
 /**
  * Returns posts (scheduled and published) with scheduledAtUtc in the given UTC range (inclusive).
  * Used for Next 7 days schedule overview: shows both upcoming and past posts per day.
- * Respects queueType filter.
+ * Respects queueType filter. Excludes posts on paused queues (same as runway / active calendar).
  */
 export async function getScheduledPostsInDateRange({
   userId,
@@ -192,6 +226,9 @@ export async function getScheduledPostsInDateRange({
   }>
 > {
   try {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
     const whereClause: Prisma.PostWhereInput = {
       currentState: { in: ["SCHEDULED", "PUBLISHED"] },
       userId,
@@ -200,6 +237,7 @@ export async function getScheduledPostsInDateRange({
         gte: fromUtc,
         lte: toUtc,
       },
+      AND: [pausedQueueExclusion],
     };
     if (queueType && queueType !== "all") {
       if (queueType === "unassigned") {
@@ -234,10 +272,12 @@ export async function getLatestScheduledAtUtc({
   userId,
   queueType = "all",
   now,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   queueType?: string;
   now: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<Date | null> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
@@ -250,6 +290,19 @@ export async function getLatestScheduledAtUtc({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
   }
   const post = await prisma.post.findFirst({
     where: whereClause,
@@ -533,6 +586,8 @@ export async function getPostStatistics({
           userId,
           currentState: "SCHEDULED",
           repost: false,
+          /** Dashboard KPI / activity: exclude posts held while their queue is paused */
+          queueHoldStatus: { not: "HELD_BY_QUEUE" },
         },
       }),
 
@@ -731,6 +786,7 @@ export async function getLastPostTimeForQueue({
        FROM "Post"
        WHERE "userId" = $1 AND "queueTypeId" = $2
          AND "currentState" = 'SCHEDULED'
+         AND "queueHoldStatus" = 'NONE'
          AND "dependencyMode" = 'standalone'
          AND "scheduledAtUtc" IS NOT NULL
        ORDER BY effective_at DESC
@@ -746,6 +802,7 @@ export async function getLastPostTimeForQueue({
      FROM "Post"
      WHERE "userId" = $1 AND "queueTypeId" = $2
        AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+       AND ("currentState" <> 'SCHEDULED' OR "queueHoldStatus" = 'NONE')
        AND "dependencyMode" = 'standalone'
        AND "scheduledAtUtc" IS NOT NULL
      ORDER BY effective_at DESC

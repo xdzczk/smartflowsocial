@@ -170,8 +170,8 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
           className={cn(
             "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
             primaryDisabled
-              ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
-              : "bg-brand text-brand-on hover:bg-brand/90"
+              ? "bg-action-primary/80 text-action-primary-foreground hover:bg-action-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+              : "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90"
           )}
         >
           <span className="inline-flex items-center justify-center gap-1.5">
@@ -435,7 +435,7 @@ export function BroadcastCreationRail(props: BroadcastCreationRailProps) {
                     <span className="block">Active (automatic)</span>
                     <Link
                       to="/dashboard/broadcasts/suppression"
-                      className="text-brand mt-0.5 inline-block text-[10px] font-medium hover:underline"
+                      className="text-link hover:text-link-hover mt-0.5 inline-block text-[10px] font-medium hover:underline"
                     >
                       Suppression list
                     </Link>

@@ -479,7 +479,7 @@ export function PostDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight
@@ -493,7 +493,7 @@ export function PostDetailRail({
                   to={openOnNostrUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   Open on Nostr
                   <ChevronRight
@@ -537,7 +537,7 @@ export function PostDetailRail({
                   to={viewThreadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
+                  className="text-link hover:text-link-hover inline-flex items-center gap-0.5 text-xs font-medium hover:underline"
                 >
                   View thread
                   <ChevronRight

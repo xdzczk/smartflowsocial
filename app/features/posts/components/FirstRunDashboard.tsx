@@ -46,7 +46,7 @@ export function FirstRunDashboard({
   ];
 
   return (
-    <div className="max-w-10xl mx-auto w-full px-4 lg:px-8">
+    <div className="max-w-page mx-auto w-full px-4 sm:px-6 lg:px-8">
       <div className="space-y-4">
         <Card>
           <CardContent className="px-5 py-5 md:px-6 md:py-6">
@@ -63,7 +63,7 @@ export function FirstRunDashboard({
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
               <Link
                 to="/dashboard/compose?type=post"
-                className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
+                className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
               >
                 Create first post
               </Link>
@@ -92,7 +92,7 @@ export function FirstRunDashboard({
               >
                 <span className="mt-0.5 shrink-0" aria-hidden>
                   {item.done ? (
-                    <CheckCircle2 className="text-brand h-4 w-4" />
+                    <CheckCircle2 className="text-link h-4 w-4" />
                   ) : (
                     <Circle className="text-text-secondary h-4 w-4" />
                   )}

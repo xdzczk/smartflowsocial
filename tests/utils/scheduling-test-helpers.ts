@@ -25,6 +25,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     scheduleConfig: { intervalHours: 6 },
     userId: TEST_USER_ID,
     isEnabled: true,
+    status: "ACTIVE",
     createdAt: new Date(),
     updatedAt: new Date(),
     colorToken: null,

@@ -116,7 +116,7 @@ export function DateRangeFilter({
         <button
           type="button"
           onClick={() => onDateRangeChange({ from: "", to: "" })}
-          className="focus-ring text-brand hover:text-brand/80 rounded-xs text-sm underline"
+          className="focus-ring text-link hover:text-link-hover rounded-xs text-sm underline"
         >
           Clear dates
         </button>

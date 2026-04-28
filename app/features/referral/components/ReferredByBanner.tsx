@@ -53,7 +53,7 @@ export function ReferredByBanner({
   const profileUrl = `https://njump.me/${referrerNpub}`;
 
   return (
-    <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+    <div className="max-w-page mx-auto w-full px-4 pt-4 sm:px-6 lg:px-8">
       <div
         className="border-border-subtle bg-surface-hover/30 mb-4 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm"
         role="status"
@@ -65,7 +65,7 @@ export function ReferredByBanner({
             href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand hover:underline"
+            className="text-link hover:text-link-hover hover:underline"
           >
             View profile
           </a>

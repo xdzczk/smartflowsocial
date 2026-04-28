@@ -34,6 +34,8 @@ export interface SlotCellContentProps {
   columnIndex?: number;
   onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
   onClearSelection?: () => void;
+  /** When set, matching post blocks show the calendar selected ring (sidebar selection). */
+  selectedPost?: CalendarPost | null;
 }
 
 /** Renders the single-post slot content (day view two-column or plain block). */
@@ -55,11 +57,13 @@ function renderSinglePostSlotContent(
     queueTypes,
     isLongform,
     isAll,
+    selectedPost,
   } = props;
   const { posts, singlePostKey, isHovered, blockHeightPx, expandRows } =
     slotState;
   const post = posts[0];
   if (!post) return null;
+  const isCalendarSelected = selectedPost ? selectedPost.id === post.id : false;
 
   const blockInner = (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Hover/focus wrapper for expansion; PostBlock inside is interactive
@@ -130,6 +134,7 @@ function renderSinglePostSlotContent(
         forceOpaque={singleHovered || isHovered}
         hideTimeRowPreview={true}
         slotExpandRows={expandRows}
+        isCalendarSelected={isCalendarSelected}
       />
     </div>
   );
@@ -156,6 +161,7 @@ interface MultiPostBlockProps {
   overlayPayload: HoverOverlayPayload | null;
   onHoverOverlayChange?: (payload: HoverOverlayPayload | null) => void;
   isMobile: boolean;
+  selectedPost?: CalendarPost | null;
 }
 
 function getMultiPostExpandRows(
@@ -271,6 +277,7 @@ function MultiPostBlock({
   queueTypes,
   isLongform,
   isAll,
+  selectedPost,
 }: MultiPostBlockProps) {
   const multiPostKey = getMultiPostHoverKey(
     dateKey,
@@ -347,6 +354,7 @@ function MultiPostBlock({
         forceOpaque={multiHovered}
         hideTimeRowPreview={true}
         slotExpandRows={multiExpandRows}
+        isCalendarSelected={selectedPost ? selectedPost.id === post.id : false}
       />
     </div>
   );
@@ -392,6 +400,7 @@ function renderMultiPostSlotContent(
     queueTypes,
     isLongform,
     isAll,
+    selectedPost: props.selectedPost,
   };
   const overlayPayloadByIndex = posts.map((post, index) => {
     return {

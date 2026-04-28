@@ -13,7 +13,7 @@ export function PreviewArtifactShell({
   return (
     <div
       className={cn(
-        "border-border bg-surface shadow-1 rounded-lg border p-3",
+        "border-border-subtle/80 bg-surface shadow-1 rounded-xl border p-3 ring-1 ring-black/[0.02] dark:ring-white/[0.04]",
         className
       )}
     >

@@ -15,11 +15,13 @@ import {
 import { Button } from "~/components/ui/button";
 import {
   PayoutProgressCard,
+  campaignFieldClassNames,
   mapPayoutItemPhase,
   payoutCopy,
 } from "~/features/campaign-ui";
 import type { BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { BRAND_NAME } from "~/lib/brand";
+import { cn } from "~/lib/utils";
 
 import type { GiveawayWinnerEntry } from "../../types";
 
@@ -161,7 +163,7 @@ export function GiveawayDetailBatchZapFlow({
               fd.set("stepIndex", "0");
               batchPayoutFetcher.submit(fd, { method: "post" });
             }}
-            className="bg-brand text-brand-on disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
+            className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
             title={
               nwcEnabled
                 ? "Pay all winners using your connected wallet"
@@ -379,7 +381,10 @@ export function GiveawayDetailBatchZapFlow({
               setOverrideReason(e.target.value);
             }}
             rows={3}
-            className="border-border bg-canvas w-full rounded-md border p-2 text-sm"
+            className={cn(
+              campaignFieldClassNames,
+              "h-auto min-h-[4.5rem] py-2"
+            )}
             placeholder="Reason for completing before all payouts are marked…"
           />
           <AlertDialogFooter>

@@ -14,6 +14,7 @@ import { Suspense, useMemo } from "react";
 import { BroadcastNewDraftForm } from "~/components/broadcast/BroadcastNewDraftForm";
 import { BroadcastNewPageSkeleton } from "~/components/broadcast/BroadcastNewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { Button } from "~/components/ui/button";
 import { requireUserId } from "~/features/auth";
 import {
   BroadcastActionError,
@@ -373,7 +374,7 @@ function BroadcastNewCampaignPhase({
           {notice}
         </div>
       ) : null}
-      <div className="border-border rounded-lg border p-4">
+      <div className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="font-medium">{campaign.name}</h2>
         <p className="text-text-secondary mt-2 text-sm">
           Status: {campaign.status} · Audience: {campaign.audienceType} ·
@@ -391,20 +392,16 @@ function BroadcastNewCampaignPhase({
         <Form method="post">
           <input type="hidden" name="intent" value="resolve" />
           <input type="hidden" name="campaignId" value={campaign.id} />
-          <button
-            type="submit"
-            disabled={busy}
-            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
+          <Button type="submit" disabled={busy}>
             Resolve audience
-          </button>
+          </Button>
         </Form>
       ) : null}
 
       {(campaign.status === "DRAFT" ||
         campaign.status === "AWAITING_SIGNATURE") &&
       pendingRecipients.length > 0 ? (
-        <div className="border-info/30 bg-info/5 space-y-3 rounded-lg border p-4">
+        <div className="border-info/30 bg-info/5 shadow-1 space-y-3 rounded-xl border p-4">
           <p className="text-sm font-medium">
             {pendingRecipients.length} recipient
             {pendingRecipients.length === 1 ? "" : "s"} ready for delivery.
@@ -420,12 +417,13 @@ function BroadcastNewCampaignPhase({
               audiences on lower tiers.
             </p>
           ) : null}
-          <Link
-            to={`/dashboard/broadcasts/new/review?campaignId=${encodeURIComponent(campaign.id)}`}
-            className="bg-brand text-brand-on inline-flex rounded-md px-4 py-2 text-sm font-medium"
-          >
-            Continue to review
-          </Link>
+          <Button asChild>
+            <Link
+              to={`/dashboard/broadcasts/new/review?campaignId=${encodeURIComponent(campaign.id)}`}
+            >
+              Continue to review
+            </Link>
+          </Button>
         </div>
       ) : null}
 
@@ -433,7 +431,7 @@ function BroadcastNewCampaignPhase({
       campaign.status !== "AWAITING_SIGNATURE" ? (
         <Link
           to={`/dashboard/broadcasts/${campaign.id}`}
-          className="text-brand text-sm font-medium"
+          className="text-link text-sm font-medium"
         >
           Open campaign →
         </Link>

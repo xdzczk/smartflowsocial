@@ -28,7 +28,8 @@ export type EngagementComposerMode = "reply" | "quote";
 
 const POSTING_LABEL = "Posting...";
 
-const PUBLISH_TOGGLE_ACTIVE = "bg-brand text-brand-on shadow-1";
+const PUBLISH_TOGGLE_ACTIVE =
+  "bg-selection-fill text-selection-foreground shadow-1 hover:bg-selection-fill/90";
 const PUBLISH_TOGGLE_IDLE =
   "bg-surface-hover/60 text-text-secondary hover:bg-surface-hover";
 
@@ -178,7 +179,7 @@ export function ReplyInputPanel({
         <button
           onClick={onSubmit}
           disabled={isReplying || !replyContent.trim()}
-          className="bg-brand text-brand-on hover:bg-brand/90 rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
         >
           {isReplying ? POSTING_LABEL : "Post Reply"}
         </button>
@@ -231,7 +232,7 @@ export function QuoteInputPanel({
         <button
           onClick={onSubmit}
           disabled={isQuoting || !quoteContent.trim()}
-          className="bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+          className="bg-success text-success-foreground hover:bg-success/90 dark:bg-success dark:hover:bg-success rounded-lg px-3 py-1 text-xs font-medium disabled:opacity-50"
         >
           {isQuoting ? POSTING_LABEL : "Post Quote"}
         </button>

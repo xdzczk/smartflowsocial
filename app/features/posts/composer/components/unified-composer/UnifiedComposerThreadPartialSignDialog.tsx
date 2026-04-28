@@ -55,7 +55,7 @@ export function UnifiedComposerThreadPartialSignDialog({
           <Button
             type="button"
             onClick={() => void onSubmitThreadSuccessfulOnly()}
-            className="bg-success hover:bg-success/90 text-white"
+            className="bg-success text-success-foreground hover:bg-success/90"
           >
             Schedule {partialThreadState?.signedEvents.length ?? 0} segments
           </Button>

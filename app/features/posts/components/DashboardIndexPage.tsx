@@ -19,6 +19,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
+import { buildEarliestNextScheduledUtcMsByQueueFromFlow } from "~/features/posts/components/queue-runway";
 import { QueueTypeDialog } from "~/features/posts/components/QueueTypeDialog";
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { useDashboardDesktopLayoutHeights } from "~/features/posts/hooks/useDashboardDesktopLayoutHeights";
@@ -39,7 +40,7 @@ import {
   PostDetailsModal,
   PublishingContentTypeFilter,
   PublishingQueueFilter,
-  QueueHealth,
+  Queues,
   RunwaySettingsModal,
   Statistics,
   SuccessMessage,
@@ -353,6 +354,10 @@ interface DashboardReturningUserSplitProps {
   queueCountsByQueue: Array<{ queueName: string; count: number }>;
   onScheduleTargetModalOpen: () => void;
   onCreateQueueClick: () => void;
+  onEditQueue: (queue: QueueType) => void;
+  canCreateMoreQueues: boolean;
+  queuesLimit: number | null;
+  globalScheduleIntervalHours: number[];
 }
 
 function DashboardReturningUserSplit({
@@ -390,10 +395,27 @@ function DashboardReturningUserSplit({
   queueCountsByQueue,
   onScheduleTargetModalOpen,
   onCreateQueueClick,
+  onEditQueue,
+  canCreateMoreQueues,
+  queuesLimit,
+  globalScheduleIntervalHours,
 }: DashboardReturningUserSplitProps) {
+  const { userTimeFormat } = useFormattedDate();
   const ignoreFlowScrollInteractionUntilMsRef = useRef(0);
   const [flowAtRest, setFlowAtRest] = useState(true);
   const [suppressFlowNext, setSuppressFlowNext] = useState(false);
+
+  const queuesUserTz = getUserTimezone(user) ?? "Etc/UTC";
+  const [clientFlowReferenceNowMs] = useState(() => Date.now());
+  const flowReferenceNowMs = serverNowMs ?? clientFlowReferenceNowMs;
+  const earliestNextScheduledUtcMsByQueueName = useMemo(
+    () =>
+      buildEarliestNextScheduledUtcMsByQueueFromFlow(
+        flowItems,
+        flowReferenceNowMs
+      ),
+    [flowItems, flowReferenceNowMs]
+  );
 
   const onFlowRestingScrollChange = useCallback((resting: boolean) => {
     setFlowAtRest(resting);
@@ -420,12 +442,12 @@ function DashboardReturningUserSplit({
 
   return (
     <>
-      <div className="max-w-10xl mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 lg:px-8 lg:pt-0 lg:pb-5">
+      <div className="max-w-page mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 sm:px-6 lg:px-8 lg:pt-0 lg:pb-5">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
-          runwayRedThresholdDays={runwaySettings?.redThresholdDays}
-          runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
+          runwayOrangeMaxDays={runwaySettings?.redThresholdDays}
+          runwayYellowMaxDays={runwaySettings?.orangeThresholdDays}
           isPostActivationEmpty={isPostActivationEmpty}
         />
         <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-3">
@@ -482,10 +504,10 @@ function DashboardReturningUserSplit({
         className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1"
       >
         <div
-          className={`flow-zone border-border-subtle/75 mt-0 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y pt-2 pb-3 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
+          className={`flow-zone border-border-subtle/75 mt-0 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y pt-1 pb-1 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
             flowZoneHeightPx != null
               ? "lg:min-h-0 lg:flex-none lg:overflow-visible lg:py-0"
-              : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:pt-2 lg:pb-2.5"
+              : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:pt-1 lg:pb-1"
           }`}
           style={
             flowZoneHeightPx != null ? { height: flowZoneHeightPx } : undefined
@@ -498,7 +520,7 @@ function DashboardReturningUserSplit({
                 <button
                   type="button"
                   onClick={onFlowRetry}
-                  className="focus-ring bg-brand text-brand-on hover:bg-brand/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
+                  className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 w-fit rounded-md px-3 py-1.5 text-sm font-medium"
                 >
                   Retry
                 </button>
@@ -546,7 +568,7 @@ function DashboardReturningUserSplit({
         </div>
 
         <div
-          className="max-w-10xl mx-auto w-full shrink-0 px-4 max-lg:mt-0 lg:min-h-0 lg:px-8"
+          className="max-w-page mx-auto w-full shrink-0 px-4 max-lg:mt-0 sm:px-6 lg:min-h-0 lg:px-8"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }
@@ -560,10 +582,20 @@ function DashboardReturningUserSplit({
               queueTypes={queueTypesFiltered}
               isPostActivationEmpty={isPostActivationEmpty}
             />
-            <QueueHealth
-              queueCounts={queueCountsByQueue}
+            <Queues
               queueTypes={queueTypesFiltered}
+              queueCounts={queueCountsByQueue}
+              globalScheduleIntervalHours={globalScheduleIntervalHours}
               onCreateQueueClick={onCreateQueueClick}
+              onEditQueue={onEditQueue}
+              canCreateMoreQueues={canCreateMoreQueues}
+              queuesLimit={queuesLimit}
+              earliestNextScheduledUtcMsByQueueName={
+                earliestNextScheduledUtcMsByQueueName
+              }
+              referenceNowMs={flowReferenceNowMs}
+              userTimezone={queuesUserTz}
+              hour12Preferred={userTimeFormat === "12h"}
             />
           </div>
         </div>
@@ -595,12 +627,21 @@ export default function DashboardIndexPage() {
   const [runwayModalOpen, setRunwayModalOpen] = useState(false);
   const [scheduleOverviewTargetModalOpen, setScheduleOverviewTargetModalOpen] =
     useState(false);
-  const [createQueueDialogOpen, setCreateQueueDialogOpen] = useState(false);
+  const [queueDialogOpen, setQueueDialogOpen] = useState(false);
+  const [queueDialogEditing, setQueueDialogEditing] =
+    useState<QueueType | null>(null);
 
   const dashboardRouteData = useRouteLoaderData("routes/dashboard") as
-    | { nip88PollsEnabled?: boolean }
+    | {
+        nip88PollsEnabled?: boolean;
+        planUsage?: { queuesUsed: number; queuesLimit: number | null };
+      }
     | undefined;
   const nip88PollsEnabled = Boolean(dashboardRouteData?.nip88PollsEnabled);
+  const planUsage = dashboardRouteData?.planUsage;
+  const queuesLimit = planUsage?.queuesLimit ?? null;
+  const queuesUsed = planUsage?.queuesUsed ?? 0;
+  const canCreateMoreQueues = queuesLimit == null || queuesUsed < queuesLimit;
 
   const {
     queueCountsByQueue,
@@ -685,6 +726,32 @@ export default function DashboardIndexPage() {
     : [];
   const hasAnyQueue = queueTypesFiltered.length > 0;
 
+  const globalScheduleIntervalHours = useMemo(() => {
+    if (
+      user &&
+      typeof user === "object" &&
+      "scheduleInterval" in user &&
+      Array.isArray((user as { scheduleInterval?: unknown }).scheduleInterval)
+    ) {
+      return (
+        user as { scheduleInterval: Array<string | number> }
+      ).scheduleInterval
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n) && n > 0);
+    }
+    return [];
+  }, [user]);
+
+  const openQueueCreateDialog = useCallback(() => {
+    setQueueDialogEditing(null);
+    setQueueDialogOpen(true);
+  }, []);
+
+  const openQueueEditDialog = useCallback((q: QueueType) => {
+    setQueueDialogEditing(q);
+    setQueueDialogOpen(true);
+  }, []);
+
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -746,7 +813,7 @@ export default function DashboardIndexPage() {
         onDismiss={() => setShowSuccessMessage(false)}
       />
 
-      {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queue Health + Top Posts) */}
+      {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queues + Next 7 days) */}
       <div className="dashboard-canvas flex min-h-0 flex-1 flex-col max-lg:min-h-[calc(100dvh-12rem)] lg:h-full lg:min-h-0">
         {isFirstRunDashboard ? (
           <div className="mt-2.5 lg:mt-0">
@@ -798,15 +865,22 @@ export default function DashboardIndexPage() {
             onScheduleTargetModalOpen={() =>
               setScheduleOverviewTargetModalOpen(true)
             }
-            onCreateQueueClick={() => setCreateQueueDialogOpen(true)}
+            onCreateQueueClick={openQueueCreateDialog}
+            onEditQueue={openQueueEditDialog}
+            canCreateMoreQueues={canCreateMoreQueues}
+            queuesLimit={queuesLimit}
+            globalScheduleIntervalHours={globalScheduleIntervalHours}
           />
         )}
       </div>
 
       <QueueTypeDialog
-        open={createQueueDialogOpen}
-        onOpenChange={setCreateQueueDialogOpen}
-        queueType={null}
+        open={queueDialogOpen}
+        onOpenChange={(open) => {
+          setQueueDialogOpen(open);
+          if (!open) setQueueDialogEditing(null);
+        }}
+        queueType={queueDialogEditing}
         hashTagPresets={hashTagPresets.map((p) => ({
           id: p.id,
           name: p.name,

@@ -60,7 +60,7 @@ function BulkUploadProcessingContent({
           Processing media files&hellip; {processingProgress.current}/
           {processingProgress.total}
         </p>
-        <div className="bg-surface-hover mt-2 h-2 w-64 rounded-full">
+        <div className="bg-surface-hover mt-2 h-2 w-64 max-w-full rounded-full">
           <div
             className="bg-brand h-2 rounded-full transition-all duration-300"
             style={{
@@ -165,29 +165,35 @@ export default function BulkPostsUploadArea({
     [uploadDisabled, onFilesDropped]
   );
 
-  const labelBorderClass = uploadDisabled
-    ? "dark:bg-surface border-border bg-surface-hover dark:border-border"
-    : isDragging
-      ? "border-brand bg-brand/5"
-      : "border-border";
+  const surfaceClass = cn(
+    "motion-fast relative block rounded-xl ring-1 transition-[background-color,box-shadow,color]",
+    uploadDisabled &&
+      "cursor-not-allowed bg-section/25 ring-border-subtle/40 opacity-95 dark:bg-section/15",
+    !uploadDisabled &&
+      !isDragging &&
+      "cursor-pointer bg-section/50 ring-border-subtle/55 hover:bg-section/65 dark:bg-section/30 dark:ring-border-subtle/45 dark:hover:bg-section/40",
+    !uploadDisabled &&
+      isDragging &&
+      "bg-brand/[0.07] ring-brand/35 dark:bg-brand/[0.09]"
+  );
 
   return (
     <div
       className={cn(
         "transition-opacity",
-        hasPosts ? "mb-4 opacity-90" : "mb-6"
+        hasPosts ? "mb-4 opacity-95" : "mb-5"
       )}
     >
       <div
         className={cn(
           "flex items-center justify-between",
-          hasPosts ? "mb-2" : "mb-4"
+          hasPosts ? "mb-2" : "mb-3"
         )}
       >
         <h2
           className={cn(
-            "font-semibold",
-            hasPosts ? "text-text text-sm" : "text-lg"
+            "font-semibold tracking-tight",
+            hasPosts ? "text-text text-sm" : "text-text text-base"
           )}
         >
           Shared media
@@ -202,14 +208,19 @@ export default function BulkPostsUploadArea({
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drop target wraps native file input */}
       <label
         htmlFor="bulk-posts-file-input"
-        className={`motion-fast relative block rounded-lg border-2 border-dashed ${labelBorderClass} ${uploadDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+        className={surfaceClass}
         aria-label="Upload media files"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
-        <div className={cn("text-center", hasPosts ? "p-6" : "p-12")}>
+        <div
+          className={cn(
+            "text-center",
+            hasPosts ? "px-4 py-6 sm:py-7" : "px-6 py-10 sm:px-8 sm:py-14"
+          )}
+        >
           <div
             className={cn(
               "flex flex-col items-center",

@@ -139,7 +139,7 @@ export function LongFormActionButtons({
             type="button"
             onClick={onSchedule}
             disabled={isDisabled}
-            className="bg-brand text-brand-on hover:bg-brand/90 flex-1 px-8 font-medium"
+            className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 flex-1 px-8 font-medium"
           >
             {getSigningButtonLabel(
               isSigning,
@@ -154,7 +154,7 @@ export function LongFormActionButtons({
             type="button"
             onClick={onPublish}
             disabled={isDisabled}
-            className="bg-success hover:bg-success/90 flex-1 px-8 font-medium text-white"
+            className="bg-success text-success-foreground hover:bg-success/90 flex-1 px-8 font-medium"
           >
             {getSigningButtonLabel(
               isSigning,

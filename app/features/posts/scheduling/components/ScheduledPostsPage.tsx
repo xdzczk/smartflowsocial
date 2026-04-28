@@ -478,7 +478,7 @@ export default function ScheduledPostsPage() {
                   <li key={row.id}>
                     <Link
                       to={`/dashboard/contests/detail/${row.contestId}`}
-                      className="text-brand font-medium underline-offset-2 hover:underline"
+                      className="text-link hover:text-link-hover font-medium underline-offset-2 hover:underline"
                     >
                       {row.title}
                     </Link>

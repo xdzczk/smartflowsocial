@@ -59,7 +59,7 @@ export function Nip46QrUri({
         <div className="space-y-2">
           <div className="text-text flex items-center justify-center gap-2 text-lg font-semibold tracking-tight sm:text-xl">
             <ScanLine
-              className="text-brand size-5 shrink-0 opacity-90"
+              className="text-link size-5 shrink-0 opacity-90"
               aria-hidden
             />
             <span>{approvalHeading}</span>
@@ -71,8 +71,8 @@ export function Nip46QrUri({
 
         <div
           className={cn(
-            "border-border shadow-2 flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border bg-white p-4 sm:min-h-[min(320px,85vw)] sm:p-6",
-            "dark:border-white/10 dark:bg-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_8px_40px_-12px_rgba(0,0,0,0.45)]"
+            "border-border shadow-2 dark:shadow-3 bg-capture flex min-h-[min(260px,78vw)] w-full max-w-[300px] items-center justify-center rounded-xl border p-4 sm:min-h-[min(320px,85vw)] sm:p-6",
+            "dark:border-border/60"
           )}
         >
           {uri ? (
@@ -101,7 +101,7 @@ export function Nip46QrUri({
               id={textareaId}
               readOnly
               value={uri}
-              className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs focus-visible:ring-1 focus-visible:outline-none"
+              className="focus-ring border-border bg-canvas shadow-1 w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs"
             />
           ) : (
             <div
@@ -135,7 +135,7 @@ export function Nip46QrUri({
   return (
     <div className={className ?? "space-y-4 pt-2"}>
       <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-        <div className="border-border shadow-2 dark:shadow-1 flex justify-center rounded-lg border bg-white p-4 dark:bg-white">
+        <div className="border-border shadow-2 dark:shadow-1 bg-capture dark:border-border/60 flex justify-center rounded-lg border p-4">
           <QRCode value={uri} size={QR_INLINE_SIZE} />
         </div>
         <div className="space-y-3">
@@ -145,7 +145,7 @@ export function Nip46QrUri({
           <textarea
             id={textareaId}
             readOnly
-            className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-3 text-sm focus-visible:ring-1 focus-visible:outline-none"
+            className="focus-ring border-border bg-canvas shadow-1 min-h-[88px] w-full rounded-md border p-3 text-sm"
             value={uri}
           />
           {helperText ? (

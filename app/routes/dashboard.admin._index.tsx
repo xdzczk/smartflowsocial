@@ -5,7 +5,9 @@
 import type { SerializeFrom } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
+  AdminAccessDenied,
   AdminAlertList,
   AdminPageHeader,
   AdminSection,
@@ -32,7 +34,7 @@ export default function AdminOverviewPage() {
   const { unit, formatSats } = useAdminCurrency();
 
   if (!isSuccess(raw)) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
   const d = raw;
   const def = d.insights.definitions;
@@ -66,7 +68,7 @@ export default function AdminOverviewPage() {
         subtitle="Executive snapshot: platform health, publishing, users, and referrals. Dangerous payout controls live under Referrals."
         generatedAt={d.generatedAt}
       />
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-8`}>
         <AdminSection eyebrow="Pulse" title="Executive strip">
           <p className="text-text-secondary mb-3 text-xs leading-snug">
             Top-line business, publishing, and signer health. Click a card to
@@ -212,7 +214,7 @@ export default function AdminOverviewPage() {
               Failed (all time, short):{" "}
               <Link
                 to="/dashboard/admin/operations?focus=failures"
-                className="text-brand font-medium hover:underline"
+                className="text-link hover:text-link-hover font-medium hover:underline"
               >
                 {d.publishing.failedShort}
               </Link>
@@ -238,7 +240,7 @@ export default function AdminOverviewPage() {
                       <div
                         key={row.state}
                         title={`${row.state}: ${row.count}`}
-                        className="bg-brand/70 h-full first:rounded-l-full last:rounded-r-full"
+                        className="bg-selection-fill/70 h-full first:rounded-l-full last:rounded-r-full"
                         style={{
                           width: `${(row.count / stateTotal) * 100}%`,
                           opacity: 0.35 + (row.count / stateTotal) * 0.65,
@@ -263,7 +265,7 @@ export default function AdminOverviewPage() {
                 {d.publishing.dailyPublishesShort.map((day) => (
                   <div
                     key={day.day}
-                    className="bg-brand/80 hover:bg-brand min-w-[6px] flex-1 rounded-t transition-all"
+                    className="bg-selection-fill/80 hover:bg-selection-fill min-w-[6px] flex-1 rounded-t transition-all"
                     style={{
                       height: `${(day.count / maxDaily) * 100}%`,
                       minHeight: day.count > 0 ? "4px" : "0",
@@ -310,12 +312,12 @@ export default function AdminOverviewPage() {
             </ul>
             <Link
               to="/dashboard/admin/users"
-              className="text-brand text-sm hover:underline"
+              className="text-link hover:text-link-hover text-sm hover:underline"
             >
               Open user directory →
             </Link>
 
-            <div className="border-border bg-surface/50 space-y-2 rounded-xl border p-3">
+            <div className="border-border bg-surface space-y-2 rounded-xl border p-3">
               <p className="text-text-secondary text-xs font-medium">
                 Relay publish ACKs (range)
               </p>
@@ -324,7 +326,7 @@ export default function AdminOverviewPage() {
               </p>
               <Link
                 to="/dashboard/admin/operations?focus=relay"
-                className="text-brand text-xs hover:underline"
+                className="text-link hover:text-link-hover text-xs hover:underline"
               >
                 Open Operations (relay) →
               </Link>
@@ -376,7 +378,7 @@ export default function AdminOverviewPage() {
             .{" "}
             <Link
               to="/dashboard/admin/referrals"
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
             >
               Open Referrals →
             </Link>

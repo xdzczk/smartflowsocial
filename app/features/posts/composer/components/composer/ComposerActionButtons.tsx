@@ -119,7 +119,7 @@ export function ComposerActionButtons({
           type="submit"
           value={submitActionValue}
           name="_action"
-          className="bg-success hover:bg-success/90 text-white"
+          className="bg-success text-success-foreground hover:bg-success/90"
           disabled={disabled}
         >
           {hasScheduleTimeForSubmit ? (

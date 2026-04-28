@@ -15,7 +15,6 @@ import {
   buildArticlePublishSummaryLines,
   buildPublishPathSummary,
   buildPublishingOutcomeSentence,
-  ComposerCanvasDivider,
   ComposerCanvasSectionLabel,
   ComposerLeftCanvas,
   getQueueNextSlotLabel,
@@ -850,31 +849,31 @@ export default function LongFormPost({
       <div className="flex min-h-screen flex-col gap-6 lg:flex-row lg:items-start">
         <div className="mb-4 min-w-0 flex-1 lg:mb-0">
           <ComposerLeftCanvas>
-            <LongFormPostArticleHead
-              initialPostId={initialData?.id}
-              title={title}
-              summary={summary}
-              content={content}
-              form={
-                form as UseFormReturn<z.infer<typeof longformPostClientSchema>>
-              }
-              onGenerateSummary={handleGenerateSummary}
-              image={image}
-              uploadError={uploadError}
-              uploadProvider={uploadProvider}
-              uploadFetcherState={uploadFetcherState}
-              onImageUpload={(e) => {
-                void handleImageUpload(e);
-              }}
-              onRemoveCover={() => setCoverImage("")}
-              mediaUploadBlocked={mediaUploadBlocked}
-              articleColumnClass={articleColumnClass}
-            />
+            <div className={`${articleColumnClass} space-y-10`}>
+              <LongFormPostArticleHead
+                initialPostId={initialData?.id}
+                title={title}
+                summary={summary}
+                content={content}
+                form={
+                  form as UseFormReturn<
+                    z.infer<typeof longformPostClientSchema>
+                  >
+                }
+                onGenerateSummary={handleGenerateSummary}
+                image={image}
+                uploadError={uploadError}
+                uploadProvider={uploadProvider}
+                uploadFetcherState={uploadFetcherState}
+                onImageUpload={(e) => {
+                  void handleImageUpload(e);
+                }}
+                onRemoveCover={() => setCoverImage("")}
+                mediaUploadBlocked={mediaUploadBlocked}
+                articleColumnClass="w-full min-w-0"
+              />
 
-            <ComposerCanvasDivider />
-
-            {/* Writing zone */}
-            <div className={articleColumnClass}>
+              {/* Writing zone — continuous with headline stack */}
               <LongFormContentEditor
                 key={initialData?.id ?? "new"}
                 surface="editorial"
@@ -887,120 +886,120 @@ export default function LongFormPost({
                 previewMarkdown={content}
                 chromeLeading={editPreviewToggle}
               />
-            </div>
 
-            <ComposerCanvasDivider />
-
-            {/* Finishing zone */}
-            <div className={`${articleColumnClass} space-y-3`}>
-              <div>
-                <ComposerCanvasSectionLabel
-                  as="label"
-                  className="mb-0"
-                  htmlFor="article-composer-custom-tags"
-                  tone="article"
-                >
-                  Custom tags
-                </ComposerCanvasSectionLabel>
-                <Input
-                  id="article-composer-custom-tags"
-                  {...form.register("customTags")}
-                  placeholder="e.g. bitcoin, nostr, technology"
-                  className="border-border/30 bg-canvas/40 mt-1.5 text-sm shadow-none"
-                />
-              </div>
-
-              {!isTemplateMode && displayedHashtags ? (
-                <div className="cluster">
-                  <Badge variant="secondary" className="text-xs">
-                    <Hash
-                      className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden
-                    />
-                    {displayedHashtags}
-                  </Badge>
-                </div>
-              ) : null}
-
-              <HashtagPresetToggle
-                presets={hashTagPresets}
-                selectedPresetId={selectedHashtagPresetId}
-                onSelect={
-                  onHashtagPresetChange ??
-                  ((_id, _tags) => {
-                    void _id;
-                    void _tags;
-                  })
-                }
-                useHashtagPresets={useHashtagPresets}
-                onUseHashtagPresetsChange={
-                  onUseHashtagPresetsChange ??
-                  (() => {
-                    void 0;
-                  })
-                }
-                presentation="subdued"
-                showQueuePreset={true}
-                queueType={(() => {
-                  const qt = queueTypes.find(
-                    (q) =>
-                      (typeof q === "string" ? q : q.name) === selectedQueueType
-                  );
-                  if (qt && typeof qt === "object" && qt.id) {
-                    return qt as {
-                      id: string;
-                      name: string;
-                      hashTagPreset?: LongFormHashTagPreset | null;
-                    };
-                  }
-                  return null;
-                })()}
-              />
-              <input
-                type="hidden"
-                name="useHashtagPresets"
-                value={useHashtagPresets.toString()}
-              />
-              <input
-                type="hidden"
-                name="hashTagPresetId"
-                value={selectedHashtagPresetId ?? ""}
-              />
-              <div className="flex items-start justify-between gap-3 pt-1">
-                <div className="min-w-0 space-y-0.5">
-                  <Label
-                    htmlFor="longform-include-tags-in-body"
-                    className="text-text-secondary/75 text-[11px] leading-snug font-normal"
+              {/* Finishing zone — tags & presets (secondary) */}
+              <div className="space-y-3 pt-1">
+                <div>
+                  <ComposerCanvasSectionLabel
+                    as="label"
+                    className="mb-0"
+                    htmlFor="article-composer-custom-tags"
+                    tone="article"
                   >
-                    Hide tags
-                  </Label>
-                  <p className="text-text-secondary/50 text-[10px] leading-snug">
-                    Off by default. Turn on to keep tags out of the article text
-                    (event tags only).
-                  </p>
+                    Custom tags
+                  </ComposerCanvasSectionLabel>
+                  <Input
+                    id="article-composer-custom-tags"
+                    {...form.register("customTags")}
+                    placeholder="e.g. bitcoin, nostr, technology"
+                    className="border-border-subtle/55 bg-section/30 dark:bg-section/20 mt-1.5 text-sm shadow-none"
+                  />
                 </div>
-                <Switch
-                  id="longform-include-tags-in-body"
-                  checked={includeHashtagsInNoteBody === false}
-                  onCheckedChange={(hide) => {
-                    form.setValue("includeHashtagsInNoteBody", !hide);
-                  }}
-                  disabled={fetcher.state !== "idle"}
-                  className="mt-0.5 shrink-0"
+
+                {!isTemplateMode && displayedHashtags ? (
+                  <div className="cluster">
+                    <Badge variant="secondary" className="text-xs">
+                      <Hash
+                        className={`mr-1 inline-block opacity-75 ${SMALL_ICON_SIZE_CLASS}`}
+                        strokeWidth={INLINE_ICON_STROKE}
+                        aria-hidden
+                      />
+                      {displayedHashtags}
+                    </Badge>
+                  </div>
+                ) : null}
+
+                <HashtagPresetToggle
+                  presets={hashTagPresets}
+                  selectedPresetId={selectedHashtagPresetId}
+                  onSelect={
+                    onHashtagPresetChange ??
+                    ((_id, _tags) => {
+                      void _id;
+                      void _tags;
+                    })
+                  }
+                  useHashtagPresets={useHashtagPresets}
+                  onUseHashtagPresetsChange={
+                    onUseHashtagPresetsChange ??
+                    (() => {
+                      void 0;
+                    })
+                  }
+                  presentation="subdued"
+                  showQueuePreset={true}
+                  queueType={(() => {
+                    const qt = queueTypes.find(
+                      (q) =>
+                        (typeof q === "string" ? q : q.name) ===
+                        selectedQueueType
+                    );
+                    if (qt && typeof qt === "object" && qt.id) {
+                      return qt as {
+                        id: string;
+                        name: string;
+                        hashTagPreset?: LongFormHashTagPreset | null;
+                      };
+                    }
+                    return null;
+                  })()}
+                />
+                <input
+                  type="hidden"
+                  name="useHashtagPresets"
+                  value={useHashtagPresets.toString()}
+                />
+                <input
+                  type="hidden"
+                  name="hashTagPresetId"
+                  value={selectedHashtagPresetId ?? ""}
+                />
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="min-w-0 space-y-0.5">
+                    <Label
+                      htmlFor="longform-include-tags-in-body"
+                      className="text-text-secondary/75 text-[11px] leading-snug font-normal"
+                    >
+                      Hide tags
+                    </Label>
+                    <p className="text-text-secondary/50 text-[10px] leading-snug">
+                      Off by default. Turn on to keep tags out of the article
+                      text (event tags only).
+                    </p>
+                  </div>
+                  <Switch
+                    id="longform-include-tags-in-body"
+                    checked={includeHashtagsInNoteBody === false}
+                    onCheckedChange={(hide) => {
+                      form.setValue("includeHashtagsInNoteBody", !hide);
+                    }}
+                    disabled={fetcher.state !== "idle"}
+                    className="mt-0.5 shrink-0"
+                  />
+                </div>
+                <input
+                  type="hidden"
+                  name="includeHashtagsInNoteBody"
+                  value={String(Boolean(includeHashtagsInNoteBody))}
                 />
               </div>
-              <input
-                type="hidden"
-                name="includeHashtagsInNoteBody"
-                value={String(Boolean(includeHashtagsInNoteBody))}
-              />
             </div>
 
             {showArticleFooterStrip ? (
               <>
-                <ComposerCanvasDivider />
-                <div className={`${articleColumnClass} space-y-4`}>
+                <div
+                  className={`${articleColumnClass} border-border-subtle/35 mt-8 space-y-4 border-t pt-6`}
+                >
                   {isTemplateMode ? (
                     <div className="space-y-2">
                       <Label htmlFor="template-name-longform">

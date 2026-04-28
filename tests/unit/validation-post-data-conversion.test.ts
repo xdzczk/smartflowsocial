@@ -63,7 +63,7 @@ describe("Post Data Conversion", () => {
       // color is derived from colorToken via getQueueAccentHex; no colorToken → slate default
       expect(result.queueType).toEqual({
         name: "Morning",
-        color: "#94A3B8", // slate accent when colorToken is null
+        color: "#7C8FA8", // slate accent when colorToken is null
         colorToken: null,
       });
     });
@@ -83,7 +83,7 @@ describe("Post Data Conversion", () => {
       // color is always from getQueueAccentHex(colorToken); null colorToken → slate
       expect(result.queueType).toEqual({
         name: "Morning",
-        color: "#94A3B8",
+        color: "#7C8FA8",
         colorToken: null,
       });
     });

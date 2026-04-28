@@ -9,6 +9,7 @@ import {
 import { Suspense, useMemo, useState } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -20,6 +21,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import {
+  AdminAccessDenied,
   AdminDataTable,
   AdminDataTableEmpty,
   AdminDataTableHead,
@@ -78,7 +80,7 @@ function segmentBadgeClass(s: AdminUserSegment): string {
     case "new":
       return "border-info/40 bg-info/10 text-info-text dark:text-info";
     case "activating":
-      return "border-brand/40 bg-brand/12 text-brand-text";
+      return "border-selection-border/40 bg-selection-wash text-selection-foreground";
     default:
       return "border-border bg-surface";
   }
@@ -91,7 +93,7 @@ type AdminUsersLoaderData =
 export default function AdminUsersPage() {
   const raw = useLoaderData<AdminUsersLoaderData>();
   if ("error" in raw) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
 
   return (
@@ -185,7 +187,7 @@ function AdminUsersPageLoaded({
         title="Users"
         subtitle="Directory with lifecycle heuristics and 7d activity. Segment filters apply to the current page of results."
       />
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-6`}>
         <div className="flex flex-wrap gap-2">
           {["all", "enabled", "disabled", "paid", "referred"].map((f) => (
             <Button
@@ -522,7 +524,7 @@ function AdminUsersPageLoaded({
           </span>
           {d.page > 1 ? (
             <Link
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
               to={`?${new URLSearchParams({
                 ...Object.fromEntries(searchParams),
                 page: String(d.page - 1),
@@ -533,7 +535,7 @@ function AdminUsersPageLoaded({
           ) : null}
           {d.page < totalPages ? (
             <Link
-              className="text-brand hover:underline"
+              className="text-link hover:text-link-hover hover:underline"
               to={`?${new URLSearchParams({
                 ...Object.fromEntries(searchParams),
                 page: String(d.page + 1),
@@ -546,7 +548,7 @@ function AdminUsersPageLoaded({
 
         <Link
           to="/dashboard/admin"
-          className="text-brand text-sm hover:underline"
+          className="text-link hover:text-link-hover text-sm hover:underline"
         >
           ← Overview
         </Link>

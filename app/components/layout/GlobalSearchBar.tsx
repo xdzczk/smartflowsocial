@@ -250,7 +250,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
               placeholder="Inspect a Nostr note, profile, or URL"
               title="Paste a Nostr note, profile, or URL — ⌘K to focus"
               className={cn(
-                "border-border bg-surface text-text placeholder:text-text-tertiary focus:border-brand focus-visible:ring-focus-ring/50 block h-full w-full appearance-none rounded-lg border py-0 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none sm:pl-10",
+                "focus-ring border-border bg-surface text-text placeholder:text-text-tertiary focus:border-brand block h-full w-full appearance-none rounded-lg border py-0 pl-8 text-sm sm:pl-10",
                 lookupNavigating || query ? "pr-16 sm:pr-20" : "pr-8 sm:pr-10"
               )}
             />
@@ -265,7 +265,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="text-text-secondary hover:text-text flex items-center p-1"
+                  className="focus-ring-offset text-text-secondary hover:text-text flex items-center rounded-md p-1"
                   aria-label="Clear search"
                 >
                   <X className={INLINE_ICON_SIZE_CLASS} />

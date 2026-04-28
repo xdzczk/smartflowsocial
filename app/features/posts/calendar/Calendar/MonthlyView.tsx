@@ -363,9 +363,9 @@ export function MonthlyView({
     } ${
       dragOverDateKey ===
       `${fromDate(dayInfo.date, userTimezone).year}-${String(fromDate(dayInfo.date, userTimezone).month).padStart(2, "0")}-${String(fromDate(dayInfo.date, userTimezone).day).padStart(2, "0")}`
-        ? "bg-brand/5 ring-brand/40 ring-1"
+        ? "ring-border-strong/35 bg-border-subtle/50 ring-1"
         : ""
-    } ${dayInfo.isToday ? "ring-brand ring-1" : ""}`;
+    } ${dayInfo.isToday ? "ring-border-strong/50 ring-1" : ""}`;
 
   return (
     <DateGrid

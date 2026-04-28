@@ -2,6 +2,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
+import { CALENDAR_SELECTED_POST_RING } from "./components/weekly-view-constants";
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
 import {
@@ -35,6 +36,7 @@ export function FullPostBlock({
   userTimezone: _userTimezone,
   timeString,
   hideVideoPlayButton = false,
+  isCalendarSelected = false,
 }: FullPostBlockProps) {
   const { formatDate } = useFormattedDate();
   const firstImage = getFirstImage(post, isLongform ?? false);
@@ -66,7 +68,7 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
-      className={`focus-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] ${
+      className={`focus-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""} ${
         queueColorStyle ? "border-0" : "border border-current/20"
       } ${isPast ? "cursor-default" : "cursor-pointer"} ${
         isDragging

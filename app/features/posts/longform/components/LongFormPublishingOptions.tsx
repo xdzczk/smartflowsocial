@@ -20,6 +20,10 @@ import {
   railSelectTriggerClassNames,
 } from "~/features/posts/components/publishing-rail";
 import {
+  isQueueSchedulable,
+  shouldShowQueueInUi,
+} from "~/features/posts/queue-status";
+import {
   COMPOSER_QUICK_SCHEDULE_INTERVAL_HOURS,
   formatIntervalLabel,
 } from "~/lib/schedule-intervals";
@@ -36,6 +40,7 @@ interface QueueType {
   hashtags?: string | null;
   scheduleType?: string;
   isEnabled?: boolean;
+  status?: "active" | "paused" | "archived" | "full" | "manual" | null;
 }
 
 interface HashTagPreset {
@@ -110,18 +115,21 @@ export function LongFormPublishingOptions({
       currentQueueType.scheduleType === "WEEKLY_SLOTS");
 
   const filteredQueues = queueTypes.filter((queue) => {
-    if (typeof queue === "object" && queue.isEnabled === false) return false;
     const name = typeof queue === "string" ? queue : queue.name;
-    return name !== "Unassigned";
+    return (
+      name !== "Unassigned" &&
+      (typeof queue === "string" || shouldShowQueueInUi(queue))
+    );
   });
 
   const selectableQueueNames = useMemo(() => {
     return queueTypes
       .filter((queue) => {
-        if (typeof queue === "object" && queue.isEnabled === false)
-          return false;
         const name = typeof queue === "string" ? queue : queue.name;
-        return name !== "Unassigned";
+        return (
+          name !== "Unassigned" &&
+          (typeof queue === "string" || shouldShowQueueInUi(queue))
+        );
       })
       .map((queue) => (typeof queue === "string" ? queue : queue.name));
   }, [queueTypes]);
@@ -180,9 +188,16 @@ export function LongFormPublishingOptions({
           <SelectItem value="__unassigned__">Select queue</SelectItem>
           {filteredQueues.map((queue) => {
             const queueName = typeof queue === "string" ? queue : queue.name;
+            const isSchedulable =
+              typeof queue === "string" ? true : isQueueSchedulable(queue);
             return (
-              <SelectItem key={queueName} value={queueName}>
+              <SelectItem
+                key={queueName}
+                value={queueName}
+                disabled={!isSchedulable}
+              >
                 {queueName}
+                {!isSchedulable ? " (Paused)" : ""}
               </SelectItem>
             );
           })}

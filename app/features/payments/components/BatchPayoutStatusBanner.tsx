@@ -55,7 +55,7 @@ export function BatchPayoutStatusBanner({
       </div>
       <div className="flex items-start gap-3 p-3 pt-4">
         <Loader2
-          className="text-brand mt-0.5 h-4 w-4 shrink-0 animate-spin"
+          className="text-link mt-0.5 h-4 w-4 shrink-0 animate-spin"
           aria-hidden
         />
         <div className="min-w-0 flex-1 space-y-2">

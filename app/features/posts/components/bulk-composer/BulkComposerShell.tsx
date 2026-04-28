@@ -1,42 +1,48 @@
 import type { ReactNode } from "react";
 
-import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
+import {
+  PublishingLibraryShell,
+  PublishingPageHeader,
+} from "~/features/posts/ui";
+import { cn } from "~/lib/utils";
 
 export function BulkComposerShell({
   title,
   headerActions,
   workspace,
   rail,
+  className,
 }: {
   title: string;
   headerActions: ReactNode;
   workspace: ReactNode;
   rail: ReactNode;
+  /** Optional class on the outer library shell (e.g. for nested route usage). */
+  className?: string;
 }) {
   const showHeader =
     title.trim().length > 0 ||
     (headerActions != null && headerActions !== false);
+  const pageTitle = title.trim().length > 0 ? title : "\u00a0";
 
   return (
-    <div className="px-6 pt-4 pb-6">
+    <PublishingLibraryShell className={cn(className)}>
       {showHeader ? (
-        <header className="border-border/50 mb-4 flex flex-wrap items-start justify-between gap-3 border-b pb-3">
-          {title.trim().length > 0 ? (
-            <NewPostHeader title={title} />
-          ) : (
-            <span className="min-w-0 flex-1" />
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            {headerActions}
-          </div>
-        </header>
-      ) : null}
-      <div className="stack lg:flex-row lg:items-stretch">
-        <div className="min-w-0 flex-1 space-y-4">{workspace}</div>
-        <div className="w-full shrink-0 lg:flex lg:min-h-0 lg:w-auto lg:max-w-[344px] lg:flex-col lg:items-start">
-          {rail}
+        <div className="pt-2 pb-4">
+          <PublishingPageHeader
+            title={pageTitle}
+            actions={
+              headerActions != null && headerActions !== false
+                ? headerActions
+                : undefined
+            }
+          />
         </div>
+      ) : null}
+      <div className="stack-loose min-w-0 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1 space-y-4">{workspace}</div>
+        <div className="w-full min-w-0 shrink-0 lg:w-auto">{rail}</div>
       </div>
-    </div>
+    </PublishingLibraryShell>
   );
 }

@@ -57,7 +57,7 @@ export default function LongFormPreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="bg-scrim/50 absolute inset-0"
         onClick={onClose}
         onKeyDown={handleBackdropKeyDown}
         role="button"
@@ -88,7 +88,7 @@ export default function LongFormPreviewModal({
           <div className="mx-auto max-w-2xl p-6">
             {/* Author Header */}
             <div className="cluster-loose mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(255,77%,51%)] to-[hsl(255,97%,51%)] text-lg font-semibold text-white">
+              <div className="from-brand-strong to-brand-soft text-brand-on flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br text-lg font-semibold">
                 {author.charAt(0).toUpperCase()}
               </div>
               <div>

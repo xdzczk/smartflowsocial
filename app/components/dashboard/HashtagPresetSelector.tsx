@@ -14,6 +14,7 @@ import {
   INLINE_ICON_SIZE_CLASS,
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 interface HashTagPreset {
   id: string;
@@ -173,75 +174,66 @@ export function HashtagPresetSelector({
         <CardContent className="pt-0">
           <div className="max-h-64 overflow-y-auto">
             <div className="space-y-2">
-              {presets.map((preset) => {
-                const handleKeyDown = (e: React.KeyboardEvent) => {
-                  if (!disabled && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    handlePresetClick(preset);
-                  }
-                };
-
-                return (
-                  <div
-                    key={preset.id}
-                    className={`motion-fast cursor-pointer rounded-lg border p-3 ${
-                      selectedPresetId === preset.id
-                        ? "border-border bg-surface-hover dark:border-brand dark:bg-brand/10"
-                        : "hover:bg-surface-hover"
-                    } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-                    onClick={() => !disabled && handlePresetClick(preset)}
-                    onKeyDown={handleKeyDown}
-                    role="button"
-                    tabIndex={disabled ? -1 : 0}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="cluster mb-1">
-                          <h4 className="text-sm font-medium">{preset.name}</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {countHashtags(preset.tags)} tags
-                          </Badge>
-                          {selectedPresetId === preset.id ? (
-                            <Check className="text-text dark:text-brand h-4 w-4" />
-                          ) : null}
-                        </div>
-
-                        {preset.description ? (
-                          <p className="text-text-secondary mb-2 text-xs">
-                            {preset.description}
-                          </p>
+              {presets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  disabled={disabled}
+                  className={cn(
+                    "focus-ring motion-fast w-full rounded-lg border p-3 text-left transition-colors",
+                    selectedPresetId === preset.id
+                      ? "border-border bg-surface-hover dark:border-brand dark:bg-brand/10"
+                      : "border-border hover:bg-surface-hover"
+                  )}
+                  onClick={() => handlePresetClick(preset)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="cluster mb-1">
+                        <h4 className="text-sm font-medium">{preset.name}</h4>
+                        <Badge variant="secondary" className="text-xs">
+                          {countHashtags(preset.tags)} tags
+                        </Badge>
+                        {selectedPresetId === preset.id ? (
+                          <Check className="text-text dark:text-link h-4 w-4" />
                         ) : null}
+                      </div>
 
-                        <div className="flex flex-wrap gap-1">
-                          {preset.tags
-                            .split(/\s+/)
-                            .filter(
-                              (tag) => tag.startsWith("#") && tag.length > 1
-                            )
-                            .slice(0, 3)
-                            .map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="outline"
-                                className="px-2 py-0 text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          {countHashtags(preset.tags) > 3 ? (
+                      {preset.description ? (
+                        <p className="text-text-secondary mb-2 text-xs">
+                          {preset.description}
+                        </p>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-1">
+                        {preset.tags
+                          .split(/\s+/)
+                          .filter(
+                            (tag) => tag.startsWith("#") && tag.length > 1
+                          )
+                          .slice(0, 3)
+                          .map((tag) => (
                             <Badge
+                              key={tag}
                               variant="outline"
                               className="px-2 py-0 text-xs"
                             >
-                              +{countHashtags(preset.tags) - 3} more
+                              {tag}
                             </Badge>
-                          ) : null}
-                        </div>
+                          ))}
+                        {countHashtags(preset.tags) > 3 ? (
+                          <Badge
+                            variant="outline"
+                            className="px-2 py-0 text-xs"
+                          >
+                            +{countHashtags(preset.tags) - 3} more
+                          </Badge>
+                        ) : null}
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </button>
+              ))}
             </div>
           </div>
 

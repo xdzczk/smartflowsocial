@@ -61,7 +61,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const subscriptionData = await requireDashboardSubscriptionContext(user.id);
 
   // Pending parent link requests for this user (as child)
-  const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
+  const pendingParentNpubs = await getPendingParentRequestsForChild(user.npub);
 
   const [
     dashboardData,

@@ -53,7 +53,7 @@ export function LoginSignerSelection({
             type="button"
             variant="default"
             className={cn(
-              "bg-brand text-brand-on hover:bg-brand/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
+              "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip07" &&
                 "ring-brand/50 ring-offset-canvas ring-2 ring-offset-2"
             )}
@@ -81,7 +81,7 @@ export function LoginSignerSelection({
                   href="https://getalby.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   Alby
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -90,7 +90,7 @@ export function LoginSignerSelection({
                   href="https://github.com/fiatjaf/nos2x"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   nos2x
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />
@@ -99,7 +99,7 @@ export function LoginSignerSelection({
                   href="https://amber.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand inline-cluster-tight hover:underline"
+                  className="text-link hover:text-link-hover inline-cluster-tight hover:underline"
                 >
                   Amber
                   <ExternalLink className={SMALL_ICON_SIZE_CLASS} />

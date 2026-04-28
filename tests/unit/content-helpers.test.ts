@@ -336,9 +336,9 @@ describe("Content Helpers", () => {
       };
       const result = getQueueTypeDisplay(queueType);
       expect(result.name).toBe("Morning");
-      // red token: accent #DC2626; surface is rgba(220,38,38,0.12)
-      expect(result.style?.backgroundColor).toMatch(/220|#DC2626/);
-      expect(result.style?.color).toBe("#DC2626");
+      // red token: accent #D62F2F; surface is rgba(214,47,47,0.12)
+      expect(result.style?.backgroundColor).toMatch(/214|#D62F2F/);
+      expect(result.style?.color).toBe("#D62F2F");
     });
 
     it("should return display info for queue type without color", () => {

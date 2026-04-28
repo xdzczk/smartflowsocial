@@ -10,6 +10,8 @@ import {
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { BroadcastCreationRail } from "~/components/broadcast/BroadcastCreationRail";
 import type { BroadcastCommitMode } from "~/components/broadcast/BroadcastRailModeTabs";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   FormControl,
   FormDescription,
@@ -21,6 +23,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { getBroadcastMessageLintWarnings } from "~/features/broadcast/broadcast-message-lint";
 import { getBroadcastScheduleTimeLabel } from "~/features/broadcast/broadcast-schedule-label";
 import { formatBroadcastUnsubscribeFooter } from "~/features/broadcast/broadcast-unsubscribe-copy";
+import { campaignFieldClassNames } from "~/features/campaign-ui";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -415,7 +418,7 @@ export function BroadcastNewDraftForm({
                 </label>
                 <select
                   id="broadcast-exclude-recent-days-global"
-                  className="border-border bg-canvas mt-1 block w-full max-w-xs rounded-md border px-3 py-2 text-sm"
+                  className={`${campaignFieldClassNames} mt-1 max-w-xs`}
                   value={String(excludeMessagedDays)}
                   onChange={(e) => {
                     setExcludeMessagedDays(Number(e.target.value));
@@ -428,14 +431,17 @@ export function BroadcastNewDraftForm({
                   <option value="90">90 days</option>
                 </select>
               </div>
-              <label className="flex cursor-pointer items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="border-border mt-0.5 rounded-xs"
+              <label
+                htmlFor="broadcast-exclude-prior-recipients"
+                className="flex cursor-pointer items-start gap-2 text-sm"
+              >
+                <Checkbox
+                  id="broadcast-exclude-prior-recipients"
                   checked={excludePriorBroadcastRecipients}
-                  onChange={(e) => {
-                    setExcludePriorBroadcastRecipients(e.target.checked);
-                  }}
+                  onCheckedChange={(v) =>
+                    setExcludePriorBroadcastRecipients(v === true)
+                  }
+                  className="mt-0.5 shrink-0"
                 />
                 <span>
                   Exclude anyone who already received a prior completed
@@ -446,15 +452,15 @@ export function BroadcastNewDraftForm({
 
             {canSaveAudience ? (
               <div className="stack-tight border-t pt-4 sm:flex-row sm:flex-wrap">
-                <button
+                <Button
                   type="submit"
                   name="intent"
                   value="save_audience"
+                  variant="outline"
                   disabled={busy}
-                  className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-4 py-2.5 text-sm font-medium disabled:opacity-50"
                 >
                   Save audience
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>
@@ -502,14 +508,14 @@ export function BroadcastNewDraftForm({
                   {messageLen} / 8000 characters ·{" "}
                   {messageBody ? messageBody.split(/\r?\n/).length : 0} lines
                 </p>
-                <label className="text-text-secondary flex cursor-pointer items-center gap-2 text-xs">
-                  <input
-                    type="checkbox"
-                    className="border-border rounded-xs"
+                <label
+                  htmlFor="broadcast-show-message-preview"
+                  className="text-text-secondary flex cursor-pointer items-center gap-2 text-xs"
+                >
+                  <Checkbox
+                    id="broadcast-show-message-preview"
                     checked={showMessagePreview}
-                    onChange={(e) => {
-                      setShowMessagePreview(e.target.checked);
-                    }}
+                    onCheckedChange={(v) => setShowMessagePreview(v === true)}
                   />
                   Preview message
                 </label>

@@ -11,14 +11,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { FilterChip } from "~/components/ui/filter-chip";
+import { cn } from "~/lib/utils";
 
 import type { EngagementSortBy } from "../engagement-filter";
-
-const FILTER_BUTTON_BASE =
-  "rounded-full px-3 py-1 text-xs font-medium motion-fast";
-const FILTER_ACTIVE = "bg-brand text-brand-on";
-const FILTER_INACTIVE =
-  "bg-surface-hover text-text-secondary hover:bg-surface-hover/80";
 
 const SORT_OPTIONS: Array<{ value: EngagementSortBy; label: string }> = [
   { value: "newest", label: "Newest first" },
@@ -43,6 +39,7 @@ interface EngagementFilterBarProps {
   setFilterHasScheduledAction: (v: boolean) => void;
   includeScheduledInNeedsResponse: boolean;
   setIncludeScheduledInNeedsResponse: (v: boolean) => void;
+  className?: string;
 }
 
 export function EngagementFilterBar({
@@ -60,6 +57,7 @@ export function EngagementFilterBar({
   setFilterHasScheduledAction,
   includeScheduledInNeedsResponse,
   setIncludeScheduledInNeedsResponse,
+  className,
 }: EngagementFilterBarProps) {
   const moreFiltersActive =
     filterHasDraft ||
@@ -67,35 +65,34 @@ export function EngagementFilterBar({
     includeScheduledInNeedsResponse;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 md:ml-auto md:flex-shrink-0">
+    <div
+      className={cn(
+        "flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-x-2 sm:gap-y-2 md:ml-auto md:shrink-0",
+        className
+      )}
+    >
       <span className="sr-only">Filters</span>
-      <button
+      <FilterChip
         type="button"
+        active={filterUnhandledOnly}
         onClick={() => setFilterUnhandledOnly(!filterUnhandledOnly)}
-        className={`${FILTER_BUTTON_BASE} ${
-          filterUnhandledOnly ? FILTER_ACTIVE : FILTER_INACTIVE
-        }`}
       >
         Unhandled only
-      </button>
-      <button
+      </FilterChip>
+      <FilterChip
         type="button"
+        active={filterFollowingOnly}
         onClick={() => setFilterFollowingOnly(!filterFollowingOnly)}
-        className={`${FILTER_BUTTON_BASE} ${
-          filterFollowingOnly ? FILTER_ACTIVE : FILTER_INACTIVE
-        }`}
       >
         Following only
-      </button>
-      <button
+      </FilterChip>
+      <FilterChip
         type="button"
+        active={filterHighReputation}
         onClick={() => setFilterHighReputation(!filterHighReputation)}
-        className={`${FILTER_BUTTON_BASE} ${
-          filterHighReputation ? FILTER_ACTIVE : FILTER_INACTIVE
-        }`}
       >
         High reputation
-      </button>
+      </FilterChip>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -104,7 +101,7 @@ export function EngagementFilterBar({
             variant="outline"
             size="sm"
             className={`h-8 gap-1 text-xs ${
-              moreFiltersActive ? "border-brand/50" : ""
+              moreFiltersActive ? "border-selection-border/50" : ""
             }`}
           >
             More filters

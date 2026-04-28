@@ -152,7 +152,7 @@ export default function NostrAuthButton() {
               <Button
                 variant="default"
                 size="sm"
-                className="bg-brand text-brand-on hover:bg-brand/90"
+                className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90"
                 asChild
               >
                 <Link to="/dashboard">Dashboard</Link>
@@ -167,7 +167,7 @@ export default function NostrAuthButton() {
         </>
       ) : (
         <Button
-          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 motion-fast inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold"
+          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast inline-flex items-center justify-center gap-2 rounded-lg px-8 py-4 text-lg font-semibold"
           asChild
         >
           <Link to="/">Sign in</Link>

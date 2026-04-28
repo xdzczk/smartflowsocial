@@ -360,7 +360,7 @@ function renderSettingsPanel(
             <p className="text-sm">
               <Link
                 to="/dashboard/settings/media"
-                className="text-brand font-medium hover:underline"
+                className="text-link hover:text-link-hover font-medium hover:underline"
               >
                 Open media library
               </Link>
@@ -396,6 +396,7 @@ function renderSettingsPanel(
               parentNpub={accounts.parentNpub}
               confirmedChildren={accounts.confirmedChildren}
               pendingChildren={accounts.pendingChildren}
+              pendingIncomingParents={accounts.pendingIncomingParents ?? []}
               isChild={accounts.isChild ?? false}
               parentUser={accounts.parentUser}
             />

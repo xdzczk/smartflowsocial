@@ -390,7 +390,7 @@ export function DraftsTable({
                               {isRepost ? (
                                 <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                                   <Repeat
-                                    className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                    className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                                     strokeWidth={2}
                                     aria-hidden
                                   />
@@ -405,7 +405,7 @@ export function DraftsTable({
                               {isRepost ? (
                                 <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                                   <Repeat
-                                    className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                                    className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                                     strokeWidth={2}
                                     aria-hidden
                                   />
@@ -428,7 +428,7 @@ export function DraftsTable({
                             ) : null}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-text group-hover:text-brand pr-2 leading-snug font-semibold">
+                            <p className="text-text group-hover:text-link-hover pr-2 leading-snug font-semibold">
                               {preview.title}
                             </p>
                             <p

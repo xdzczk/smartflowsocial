@@ -88,11 +88,7 @@ export function SessionCard({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="text-base">{connection.label}</CardTitle>
-              {isActive ? (
-                <Badge className="bg-brand text-brand-on text-xs">
-                  Active signer
-                </Badge>
-              ) : null}
+              {isActive ? <Badge variant="brand">Active signer</Badge> : null}
               {isPrimaryFallback ? (
                 <Badge variant="secondary" className="text-xs">
                   Primary fallback signer

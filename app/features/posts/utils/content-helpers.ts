@@ -27,6 +27,7 @@ import {
   QUEUE_PILL_OPACITY_CLASS,
   QUEUE_PILL_SHAPE_CLASS,
 } from "../queue-colors";
+import { normalizeQueueHoldStatus } from "../queue-status";
 import {
   deriveIsDraft,
   deriveIsScheduled,
@@ -94,7 +95,16 @@ const DRAFT_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-text $
 const PUBLISHED_COLOR = `${STATUS_OUTLINE_BASE} border-success text-success dark:bg-success/20 dark:text-success`;
 const SCHEDULED_COLOR = `${STATUS_OUTLINE_BASE} ${STATUS_BORDER_DEFAULT} text-text-secondary ${STATUS_DARK_BG_MUTED} dark:text-text-secondary`;
 
+function getQueueHoldStatus(item: CombinedContent) {
+  return normalizeQueueHoldStatus(item.originalData.queueHoldStatus);
+}
+
 export function getStatusColor(item: CombinedContent): string {
+  const queueHoldStatus = getQueueHoldStatus(item);
+  if (queueHoldStatus !== "none") {
+    return SCHEDULED_COLOR;
+  }
+
   // Use currentState as single source of truth
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Optional chaining needed for runtime safety (tests may create incomplete objects)
   const currentState = item.currentState ?? item.originalData?.currentState;
@@ -141,6 +151,11 @@ const STATUS_TONE_MUTED = "text-text-secondary";
 
 /** Text-only classes for lifecycle status (distinct from queue chips). */
 export function getStatusTextToneClass(item: CombinedContent): string {
+  const queueHoldStatus = getQueueHoldStatus(item);
+  if (queueHoldStatus !== "none") {
+    return STATUS_TONE_MUTED;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- originalData may be absent on partial test fixtures
   const currentState = item.currentState ?? item.originalData?.currentState;
 
@@ -165,6 +180,14 @@ export function getStatusTextToneClass(item: CombinedContent): string {
 }
 
 export function getStatusText(item: CombinedContent): string {
+  const queueHoldStatus = getQueueHoldStatus(item);
+  if (queueHoldStatus === "held_by_queue") {
+    return "Paused";
+  }
+  if (queueHoldStatus === "needs_resign_after_queue_resume") {
+    return "Needs re-sign";
+  }
+
   // Use currentState as single source of truth
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Optional chaining needed for runtime safety (tests may create incomplete objects)
   const currentState = item.currentState ?? item.originalData?.currentState;

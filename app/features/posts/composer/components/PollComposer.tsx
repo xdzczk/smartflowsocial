@@ -964,79 +964,74 @@ export function PollComposer({
                 lines to fill options
               </p>
             </div>
-            <div className="border-border-subtle bg-surface-hover/40 border-l-brand/30 overflow-hidden rounded-lg border border-l-2">
-              <ul className="divide-border-subtle divide-y">
-                {options.map((opt, i) => (
-                  <li
-                    key={optionRowIds[i] ?? `opt-fallback-${i}`}
-                    className="cluster py-2 pr-1 pl-2 sm:pl-2.5"
+            <div className="space-y-1.5">
+              {options.map((opt, i) => (
+                <div
+                  key={optionRowIds[i] ?? `opt-fallback-${i}`}
+                  className="cluster bg-section/45 dark:bg-section/25 motion-fast hover:bg-section/60 focus-within:bg-section/55 focus-within:ring-border-subtle/60 rounded-lg px-2 py-1.5 pr-1 focus-within:ring-1 sm:px-2.5"
+                >
+                  <span
+                    className="text-text-tertiary/65 w-5 shrink-0 text-center text-[11px] tabular-nums"
+                    aria-hidden
                   >
-                    <span
-                      className="text-text-tertiary/70 w-5 shrink-0 text-center text-[11px] tabular-nums"
-                      aria-hidden
-                    >
-                      {i + 1}
-                    </span>
-                    <Input
-                      value={opt}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setOptions((prev) =>
-                          prev.map((p, j) => (j === i ? v : p))
+                    {i + 1}
+                  </span>
+                  <Input
+                    value={opt}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setOptions((prev) =>
+                        prev.map((p, j) => (j === i ? v : p))
+                      );
+                    }}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData("text");
+                      if (!pasted.includes("\n")) return;
+                      e.preventDefault();
+                      const rows = pasted
+                        .split("\n")
+                        .map((r) => r.trim())
+                        .filter(Boolean)
+                        .slice(0, POLL_COMPOSER_MAX_OPTIONS);
+                      if (rows.length < 2) return;
+                      setOptions(rows);
+                      setOptionRowIds(rows.map(() => newPollOptionRowId()));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      if (options.length >= POLL_COMPOSER_MAX_OPTIONS) return;
+                      if (i !== options.length - 1) return;
+                      setOptions((prev) => [...prev, ""]);
+                      setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
+                    }}
+                    disabled={disabled}
+                    placeholder={`Option ${i + 1}`}
+                    className="text-text h-8 flex-1 border-0 bg-transparent text-sm shadow-none focus-visible:ring-0"
+                    aria-label={`Poll option ${i + 1}`}
+                  />
+                  {options.length > POLL_COMPOSER_MIN_OPTIONS ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={disabled}
+                      aria-label={`Remove option ${i + 1}`}
+                      className="text-text-secondary h-8 w-8 shrink-0 opacity-70 hover:opacity-100"
+                      onClick={() => {
+                        setOptions((prev) => prev.filter((_, j) => j !== i));
+                        setOptionRowIds((prev) =>
+                          prev.filter((_, j) => j !== i)
                         );
                       }}
-                      onPaste={(e) => {
-                        const pasted = e.clipboardData.getData("text");
-                        if (!pasted.includes("\n")) return;
-                        e.preventDefault();
-                        const rows = pasted
-                          .split("\n")
-                          .map((r) => r.trim())
-                          .filter(Boolean)
-                          .slice(0, POLL_COMPOSER_MAX_OPTIONS);
-                        if (rows.length < 2) return;
-                        setOptions(rows);
-                        setOptionRowIds(rows.map(() => newPollOptionRowId()));
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key !== "Enter") return;
-                        e.preventDefault();
-                        if (options.length >= POLL_COMPOSER_MAX_OPTIONS) return;
-                        if (i !== options.length - 1) return;
-                        setOptions((prev) => [...prev, ""]);
-                        setOptionRowIds((ids) => [
-                          ...ids,
-                          newPollOptionRowId(),
-                        ]);
-                      }}
-                      disabled={disabled}
-                      placeholder={`Option ${i + 1}`}
-                      className="border-border-subtle bg-canvas/70 h-8 flex-1 border text-sm shadow-none"
-                      aria-label={`Poll option ${i + 1}`}
-                    />
-                    {options.length > POLL_COMPOSER_MIN_OPTIONS ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={disabled}
-                        aria-label={`Remove option ${i + 1}`}
-                        className="text-text-secondary h-8 w-8 shrink-0 opacity-70 hover:opacity-100"
-                        onClick={() => {
-                          setOptions((prev) => prev.filter((_, j) => j !== i));
-                          setOptionRowIds((prev) =>
-                            prev.filter((_, j) => j !== i)
-                          );
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <span className="w-8 shrink-0" aria-hidden />
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <span className="w-8 shrink-0" aria-hidden />
+                  )}
+                </div>
+              ))}
               <Button
                 type="button"
                 variant="ghost"
@@ -1044,7 +1039,7 @@ export function PollComposer({
                 disabled={
                   disabled || options.length >= POLL_COMPOSER_MAX_OPTIONS
                 }
-                className="text-text-secondary hover:text-text border-border-subtle h-9 w-full rounded-none rounded-b-lg border-t border-dashed text-xs font-normal"
+                className="text-text-secondary hover:text-text hover:bg-section/40 border-border-subtle/50 mt-0.5 h-9 w-full rounded-lg border border-dashed text-xs font-normal"
                 onClick={() => {
                   setOptions((o) => [...o, ""]);
                   setOptionRowIds((ids) => [...ids, newPollOptionRowId()]);
@@ -1077,7 +1072,7 @@ export function PollComposer({
                   )
                 }
                 disabled={disabled}
-                className="border-border bg-surface-hover/40 text-text-secondary shadow-1 h-9 w-full rounded-md border px-2.5 text-xs"
+                className="border-border-subtle/70 bg-section/45 text-text-secondary dark:bg-section/30 h-9 w-full rounded-md border px-2.5 text-xs shadow-none"
               >
                 <option value="singlechoice">Single choice</option>
                 <option value="multiplechoice">Multiple choice</option>
@@ -1099,7 +1094,7 @@ export function PollComposer({
                   )
                 }
                 disabled={disabled}
-                className="border-border bg-surface-hover/40 text-text-secondary shadow-1 h-9 w-full rounded-md border px-2.5 text-xs"
+                className="border-border-subtle/70 bg-section/45 text-text-secondary dark:bg-section/30 h-9 w-full rounded-md border px-2.5 text-xs shadow-none"
               >
                 <option value="relative">Hours after publish</option>
                 <option value="absolute">Date and time</option>
@@ -1121,7 +1116,7 @@ export function PollComposer({
                 min={pollEndDatetimeLocalMin}
                 onChange={(e) => setEndsAtLocal(e.target.value)}
                 disabled={disabled}
-                className="border-border bg-surface-hover/40 shadow-1 h-9 text-xs"
+                className="border-border-subtle/70 bg-section/45 dark:bg-section/30 h-9 text-xs shadow-none"
               />
               <p className="text-text-tertiary text-[10px] leading-snug">
                 Must be after publish time from the rail (Now, Schedule, or
@@ -1152,7 +1147,7 @@ export function PollComposer({
                   setPollEndHoursAfterPublish(n);
                 }}
                 disabled={disabled}
-                className="border-border bg-surface-hover/40 shadow-1 h-9 text-xs"
+                className="border-border-subtle/70 bg-section/45 dark:bg-section/30 h-9 text-xs shadow-none"
               />
               {relativePollEndPreviewLabel ? (
                 <p className="text-text-secondary text-[10px] leading-snug">
@@ -1179,9 +1174,7 @@ export function PollComposer({
             </div>
           )}
 
-          <ComposerCanvasDivider />
-
-          <div className="stack sm:gap-5">
+          <div className="stack mt-10 sm:gap-6">
             <PollComposerPreviewBlock
               question={question}
               options={options}
@@ -1196,31 +1189,32 @@ export function PollComposer({
               scheduledFor={scheduledFor}
               userTimezone={userTimezone}
             />
-            <ComposerCanvasDivider />
-            <TagsChipRow
-              tags={selectedHashtags}
-              onTagsChange={(t) => {
-                setSelectedHashtags(t);
-                if (!t.trim()) {
-                  setHashTagPresetId(null);
+            <div className="mt-2">
+              <TagsChipRow
+                tags={selectedHashtags}
+                onTagsChange={(t) => {
+                  setSelectedHashtags(t);
+                  if (!t.trim()) {
+                    setHashTagPresetId(null);
+                  }
+                }}
+                presets={hashTagPresets}
+                selectedPresetId={
+                  hashTagPresetId ?? selectedHashTagPresetId ?? null
                 }
-              }}
-              presets={hashTagPresets}
-              selectedPresetId={
-                hashTagPresetId ?? selectedHashTagPresetId ?? null
-              }
-              onPresetSelect={(id, tags) => {
-                setHashTagPresetId(id);
-                setSelectedHashtags(tags);
-                onHashtagPresetChange?.(id, tags);
-              }}
-              disabled={disabled}
-              includeHashtagsInNoteBody={includeHashtagsInNoteBody}
-              onIncludeHashtagsInNoteBodyChange={(value) => {
-                setHasManualIncludeHashtagsPreference(true);
-                setIncludeHashtagsInNoteBody(value);
-              }}
-            />
+                onPresetSelect={(id, tags) => {
+                  setHashTagPresetId(id);
+                  setSelectedHashtags(tags);
+                  onHashtagPresetChange?.(id, tags);
+                }}
+                disabled={disabled}
+                includeHashtagsInNoteBody={includeHashtagsInNoteBody}
+                onIncludeHashtagsInNoteBodyChange={(value) => {
+                  setHasManualIncludeHashtagsPreference(true);
+                  setIncludeHashtagsInNoteBody(value);
+                }}
+              />
+            </div>
           </div>
         </ComposerLeftCanvas>
       </div>

@@ -10,6 +10,7 @@ import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
 import { combineContent } from "~/features/posts/combined.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/index.server";
+import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
   getScheduledLongFormPosts,
   deleteLongFormPost,
@@ -130,12 +131,8 @@ export async function getScheduledDashboardData({
     longformPosts,
     allContent,
     user,
-    queueTypes: queueTypes.filter(
-      (qt: unknown) =>
-        typeof qt === "object" &&
-        qt !== null &&
-        "isEnabled" in qt &&
-        qt.isEnabled !== false
+    queueTypes: queueTypes.filter((qt: unknown) =>
+      typeof qt === "object" && qt !== null ? shouldShowQueueInUi(qt) : false
     ),
     selectedQueueType: queueType,
     hashTagPresets,

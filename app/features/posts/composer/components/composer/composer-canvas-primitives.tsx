@@ -41,7 +41,7 @@ export function ComposerCanvasSectionLabel({
         "mb-1 text-xs",
         tone === "article"
           ? "text-text-tertiary font-medium tracking-normal"
-          : "text-text-secondary font-semibold tracking-wide uppercase",
+          : "text-text-tertiary font-medium tracking-[0.06em] uppercase",
         className
       )}
     >

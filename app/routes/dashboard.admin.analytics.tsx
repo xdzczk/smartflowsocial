@@ -3,7 +3,10 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
+import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
+  AdminAccessDenied,
+  AdminAnalyticsPageSkeleton,
   AdminChartCard,
   AdminLineChart,
   AdminPageHeader,
@@ -11,7 +14,6 @@ import {
   AdminSection,
   MetricCard,
   useAdminCurrency,
-  AdminAnalyticsPageSkeleton,
 } from "~/features/admin";
 import {
   defaultRangeForAdminPath,
@@ -83,7 +85,7 @@ type AdminAnalyticsLoaderResult =
 export default function AdminAnalyticsPage() {
   const raw = useLoaderData() as AdminAnalyticsLoaderResult;
   if ("error" in raw) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
 
   return (
@@ -137,14 +139,14 @@ function AdminAnalyticsPageLoaded({
         subtitle="Growth, publishing mix, adoption proxies, and shareable milestones."
         generatedAt={d.generatedAt}
       />
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-6">
+      <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-10`}>
         <AdminSection
           id="narrative"
           eyebrow="Narrative"
           title="Insight summary"
           description="Rule-based read on this range — low volume stays intentionally cautious."
         >
-          <ul className="border-border bg-surface/50 space-y-2 rounded-xl border p-4 text-sm">
+          <ul className="border-border bg-surface space-y-2 rounded-xl border p-4 text-sm">
             {d.takeaways.map((t) => (
               <li key={t} className="text-text/90 list-inside list-disc">
                 {t}
@@ -202,7 +204,7 @@ function AdminAnalyticsPageLoaded({
                 {
                   dataKey: "referred",
                   name: "Referred signups",
-                  stroke: "hsl(var(--chart-4))",
+                  stroke: "var(--color-chart-4)",
                 },
               ]}
             />

@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { UNDERLINE_FILTER_FOCUS_CLASS } from "~/features/posts/components/constants";
+import { cn } from "~/lib/utils";
 
 interface QueueType {
   name: string;
@@ -53,7 +55,10 @@ export function RecyclablesQueueFilter({
     <div className="border-border w-full max-w-[12rem] min-w-0 min-w-[8rem] flex-shrink-0 border-b-0 sm:max-w-[14rem]">
       <Select value={currentValue} onValueChange={handleChange}>
         <SelectTrigger
-          className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:ml-0"
+          className={cn(
+            "h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none [&>svg]:ml-0",
+            UNDERLINE_FILTER_FOCUS_CLASS
+          )}
           aria-label="Filter by queue"
         >
           <SelectValue placeholder="Queue" />

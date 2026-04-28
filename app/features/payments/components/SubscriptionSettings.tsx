@@ -79,7 +79,7 @@ function NoSubscriptionMessage() {
       </p>
       <Link
         to="/plans"
-        className="bg-brand text-brand-on hover:bg-brand/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
+        className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-cluster rounded-lg px-4 py-2 text-sm font-medium"
       >
         View plans
         <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -133,14 +133,14 @@ function UpgradePlanSection() {
       <div className="stack-tight sm:flex-row sm:flex-wrap sm:items-center">
         <Link
           to="/plans"
-          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
         >
           Choose a paid plan
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
         </Link>
         <Link
           to="/plans"
-          className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
+          className="text-link hover:text-link-hover inline-cluster text-sm font-medium"
         >
           View all plans and features
           <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -345,7 +345,7 @@ export function SubscriptionSettings({
                 <Link
                   to={primaryCta.to}
                   prefetch="intent"
-                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
                 >
                   {primaryCta.label}
                 </Link>
@@ -376,7 +376,7 @@ export function SubscriptionSettings({
               {(subscription.currentPeriodEnd ?? subscription.nextPaymentDue) &&
               !subscription.plan.enableLifetimeAccess ? (
                 <div className="cluster-loose rounded-lg border p-4">
-                  <CreditCard className="text-brand h-5 w-5" />
+                  <CreditCard className="text-link h-5 w-5" />
                   <div>
                     <p className="font-medium">Next renewal</p>
                     <p className="text-text-secondary text-sm">
@@ -448,7 +448,7 @@ export function SubscriptionSettings({
               </div>
               <Link
                 to="/plans"
-                className="text-brand mt-2 inline-block text-sm font-medium hover:underline"
+                className="text-link hover:text-link-hover mt-2 inline-block text-sm font-medium hover:underline"
               >
                 Resolve renewal
               </Link>
@@ -484,7 +484,7 @@ export function SubscriptionSettings({
               </div>
               <Link
                 to="/plans"
-                className="text-brand mt-2 inline-block text-sm font-medium hover:underline"
+                className="text-link hover:text-link-hover mt-2 inline-block text-sm font-medium hover:underline"
               >
                 View plans
               </Link>
@@ -674,7 +674,7 @@ export function SubscriptionSettings({
                 <button
                   type="submit"
                   disabled={topUpFetcher.state !== "idle"}
-                  className="bg-brand text-brand-on hover:bg-brand/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60"
                 >
                   {topUpFetcher.state === "idle"
                     ? "Continue to checkout"
@@ -735,7 +735,7 @@ export function SubscriptionSettings({
 
               <Link
                 to="/plans"
-                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
+                className="text-link hover:text-link-hover inline-cluster text-sm font-medium"
               >
                 Compare plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />
@@ -749,7 +749,7 @@ export function SubscriptionSettings({
             <div className="text-center">
               <Link
                 to="/plans"
-                className="text-brand hover:text-brand/90 inline-cluster text-sm font-medium"
+                className="text-link hover:text-link-hover inline-cluster text-sm font-medium"
               >
                 View plans and features
                 <ArrowUpRight className={INLINE_ICON_SIZE_CLASS} />

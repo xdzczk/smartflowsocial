@@ -490,10 +490,10 @@ export function NotificationItem({
         contentVariant === "mention" ? "px-2.5 py-2 sm:px-3" : "p-2.5 sm:p-3"
       } ${
         isInteractionActive
-          ? "border-brand bg-surface-hover/50 ring-brand/10 shadow-1 ring-1"
+          ? "border-selection-border bg-selection-wash/80 ring-selection-border/15 shadow-1 ring-1"
           : "hover:bg-surface-hover/25 border-transparent"
       } ${dimmed ? "opacity-[0.88]" : ""} ${
-        isKeyboardFocused ? "ring-brand/35 ring-2 ring-inset" : ""
+        isKeyboardFocused ? "ring-focus-border/50 ring-2 ring-inset" : ""
       }`}
     >
       <div className="flex gap-2">
@@ -512,7 +512,7 @@ export function NotificationItem({
         <div
           className={`min-w-0 flex-1 ${
             isInteractionActive
-              ? "border-border/60 bg-surface-hover/25 border-l-brand/35 -mr-px rounded-r-md border-l-2 pl-2.5"
+              ? "border-border/60 bg-surface-hover/25 border-l-selection-border/50 -mr-px rounded-r-md border-l-2 pl-2.5"
               : ""
           }`}
         >

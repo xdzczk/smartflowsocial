@@ -169,7 +169,7 @@ function DayViewPostDetailCard({
     <div className="border-border/40 bg-canvas flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--calendar-radius-md)] border">
       <div className="border-border/40 flex items-start justify-between border-b p-3">
         <div>
-          <p className="text-xs font-semibold tracking-wide text-[hsl(var(--calendar-accent-purple))] uppercase">
+          <p className="text-text-secondary text-xs font-semibold tracking-wide uppercase">
             Selected post
           </p>
           <p className="text-text mt-1 line-clamp-2 text-sm font-semibold">

@@ -175,7 +175,9 @@ export function DayView({
             <div className="w-16 flex-shrink-0" />
             <div
               className={`border-border/30 flex flex-1 items-center justify-center gap-1 border-r px-2 py-1 text-center ${
-                isToday ? "bg-surface-selected border-l-brand border-l-2" : ""
+                isToday
+                  ? "bg-surface-hover/90 border-l-border-strong border-l-2"
+                  : ""
               }`}
             >
               <span className="text-text-secondary text-xs font-normal">
@@ -186,7 +188,7 @@ export function DayView({
               </span>
               <span
                 className={`text-sm leading-tight font-semibold ${
-                  isToday ? "text-brand" : "text-text"
+                  isToday ? "text-link" : "text-text"
                 }`}
               >
                 {currentDate.getDate()}

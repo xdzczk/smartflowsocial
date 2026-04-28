@@ -50,7 +50,7 @@ const MediaModal: React.FC<MediaModalProps> = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/75"
+        className="bg-scrim/75 absolute inset-0"
         onClick={onClose}
         onKeyDown={handleBackdropKeyDown}
         role="button"
@@ -63,7 +63,7 @@ const MediaModal: React.FC<MediaModalProps> = ({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 z-20 text-white hover:text-white/80"
+          className="text-brand-on hover:text-brand-on/80 absolute -top-12 right-0 z-20"
           aria-label="Close modal"
         >
           <X className="h-8 w-8" />

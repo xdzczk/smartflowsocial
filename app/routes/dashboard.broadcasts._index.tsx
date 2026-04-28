@@ -15,6 +15,7 @@ import { BroadcastIndexPageSkeleton } from "~/components/broadcast/BroadcastInde
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Input } from "~/components/ui/input";
 import { requireUserId } from "~/features/auth";
 import {
   archiveBroadcastCampaign,
@@ -31,13 +32,20 @@ import {
   listBroadcastCampaignsForIndex,
   unarchiveBroadcastCampaign,
 } from "~/features/broadcast";
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
+import { PublishingPageHeader } from "~/features/posts/ui";
 import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
+
+const BROADCAST_FILTER_NARROW_FIELD_CLASS = "w-auto min-w-[9rem]";
 
 function parseIndexFilters(url: URL): BroadcastIndexFilters {
   const q = url.searchParams.get("q")?.trim();
@@ -186,8 +194,9 @@ function SummaryCard(props: {
     <Link
       to={props.href}
       className={cn(
-        "border-border bg-surface hover:bg-surface-hover/40 motion-fast rounded-lg border p-4",
-        props.active && "ring-brand ring-2"
+        "border-border bg-surface shadow-1 hover:bg-surface-hover/40 motion-fast rounded-xl border p-4",
+        props.active &&
+          "ring-selection-border/50 ring-offset-canvas ring-2 ring-offset-2"
       )}
     >
       <div className="text-text-secondary text-xs font-medium tracking-wide uppercase">
@@ -216,7 +225,7 @@ function statusBadgeClass(kind: string): string {
     case "info":
       return "bg-info/15 text-info-text";
     case "mixed":
-      return "bg-brand/12 text-brand-text";
+      return "bg-selection-wash text-selection-foreground";
     default:
       return "bg-surface-hover text-text-secondary";
   }
@@ -243,21 +252,15 @@ function BroadcastsIndexPage() {
 
   return (
     <div className="w-full min-w-0 space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Broadcasts</h1>
-          <p className="text-text-secondary mt-1 max-w-2xl text-sm">
-            Send signed Nostr direct messages to selected audiences with
-            compatibility-aware delivery.
-          </p>
-        </div>
-        <Link
-          to="/dashboard/broadcasts/new"
-          className="bg-brand text-brand-on inline-flex shrink-0 rounded-md px-4 py-2 text-sm font-medium"
-        >
-          New broadcast
-        </Link>
-      </div>
+      <PublishingPageHeader
+        title="Broadcasts"
+        subtitle="Send signed Nostr direct messages to selected audiences with compatibility-aware delivery."
+        actions={
+          <Button asChild>
+            <Link to="/dashboard/broadcasts/new">New broadcast</Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryCard
@@ -309,19 +312,19 @@ function BroadcastsIndexPage() {
           <input type="hidden" name="archived" value="1" />
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <input
+          <Input
             type="search"
             name="q"
             defaultValue={filters.search ?? ""}
             placeholder="Search name or message…"
-            className="border-border bg-canvas min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
+            className="bg-surface min-w-[200px] flex-1"
           />
           <select
             name="status"
             defaultValue={
               typeof filters.status === "string" ? filters.status : ""
             }
-            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+            className={cn(campaignSelectClassNames, "w-auto min-w-[10rem]")}
           >
             <option value="">All statuses</option>
             <option value="DRAFT">Draft</option>
@@ -343,7 +346,10 @@ function BroadcastsIndexPage() {
           <select
             name="audience"
             defaultValue={filters.audienceType ?? ""}
-            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+            className={cn(
+              campaignSelectClassNames,
+              BROADCAST_FILTER_NARROW_FIELD_CLASS
+            )}
           >
             <option value="">All audiences</option>
             <option value="CUSTOM">Custom list</option>
@@ -353,7 +359,7 @@ function BroadcastsIndexPage() {
           <select
             name="delivery"
             defaultValue={filters.deliveryMode ?? ""}
-            className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+            className={cn(campaignSelectClassNames, "w-auto min-w-[11rem]")}
           >
             <option value="">All delivery modes</option>
             <option value="BEST_COMPATIBILITY">Best compatibility</option>
@@ -374,7 +380,10 @@ function BroadcastsIndexPage() {
                   ? filters.dateFrom.toISOString().slice(0, 10)
                   : ""
               }
-              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
+              className={cn(
+                campaignFieldClassNames,
+                BROADCAST_FILTER_NARROW_FIELD_CLASS
+              )}
             />
           </label>
           <label className="text-text-secondary cluster text-sm">
@@ -385,15 +394,15 @@ function BroadcastsIndexPage() {
               defaultValue={
                 filters.dateTo ? filters.dateTo.toISOString().slice(0, 10) : ""
               }
-              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
+              className={cn(
+                campaignFieldClassNames,
+                BROADCAST_FILTER_NARROW_FIELD_CLASS
+              )}
             />
           </label>
-          <button
-            type="submit"
-            className="bg-brand text-brand-on rounded-md px-3 py-2 text-sm font-medium"
-          >
+          <Button type="submit" size="sm">
             Apply filters
-          </button>
+          </Button>
           <Link
             to={BROADCASTS_INDEX_HREF}
             className="text-text-secondary text-sm hover:underline"
@@ -406,7 +415,7 @@ function BroadcastsIndexPage() {
                 ? BROADCASTS_INDEX_HREF
                 : `${BROADCASTS_INDEX_HREF}?archived=1`
             }
-            className="text-brand text-sm font-medium hover:underline"
+            className="text-link hover:text-link-hover text-sm font-medium hover:underline"
           >
             {filters.includeArchived ? "Hide archived" : "Show archived"}
           </Link>
@@ -415,7 +424,7 @@ function BroadcastsIndexPage() {
 
       {campaigns.length === 0 ? (
         <EmptyState
-          className="border-border bg-surface-hover/30 rounded-lg border border-dashed"
+          className="border-border bg-surface shadow-1 rounded-xl border"
           icon={<Megaphone />}
           title="No broadcasts match these filters"
           description="Create a campaign to reach your audience with signed direct messages—use meaningful updates, not noise."
@@ -426,7 +435,7 @@ function BroadcastsIndexPage() {
           }
         />
       ) : (
-        <div className="border-border overflow-x-auto rounded-lg border">
+        <div className="border-border bg-surface shadow-1 overflow-x-auto rounded-xl border">
           <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="bg-surface-hover/50 border-b text-xs font-medium">
               <tr>

@@ -35,6 +35,7 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
     scheduleType?: string;
     scheduleConfig?: unknown;
     isEnabled?: boolean;
+    status?: string;
     hashTagPresetId?: string;
     isDefault?: boolean;
     colorToken?: string | null;
@@ -67,6 +68,14 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
       | "WEEKLY_SLOTS"
       | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+    status:
+      q.status === "paused"
+        ? "paused"
+        : q.status === "archived"
+          ? "archived"
+          : q.status === "active"
+            ? "active"
+            : undefined,
     isEnabled: q.isEnabled,
     isDefault: q.isDefault ?? false,
     hashTagPresetId: q.hashTagPresetId,

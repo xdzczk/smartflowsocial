@@ -426,7 +426,7 @@ export function ScheduledPostsTable({
                         {post.repost ? (
                           <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
                             <Repeat
-                              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                              className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                               strokeWidth={INLINE_ICON_STROKE}
                               aria-hidden
                             />
@@ -435,7 +435,7 @@ export function ScheduledPostsTable({
                         {post.isQuotedPost && post.fileUrl.length > 0 ? (
                           <div className="bg-success absolute -top-1 -right-1 rounded-full p-1">
                             <Quote
-                              className={`${SMALL_ICON_SIZE_CLASS} text-white`}
+                              className={`${SMALL_ICON_SIZE_CLASS} text-success-foreground`}
                               strokeWidth={INLINE_ICON_STROKE}
                               aria-hidden
                             />
@@ -467,7 +467,7 @@ export function ScheduledPostsTable({
                       {formatDate(post.scheduledAtUtc)}
                     </td>
                     <td className="p-3 text-center">
-                      <div className="text-brand text-sm font-medium">
+                      <div className="text-text text-sm font-medium">
                         {countdowns[post.id] ?? "—"}
                       </div>
                     </td>
@@ -482,7 +482,14 @@ export function ScheduledPostsTable({
                     </td>
                     <td className="p-3 text-center">
                       <span className="text-text-secondary text-xs font-medium">
-                        {post.signedEvent ? "Signed" : "Scheduled"}
+                        {post.queueHoldStatus === "HELD_BY_QUEUE"
+                          ? "Paused"
+                          : post.queueHoldStatus ===
+                              "NEEDS_RESIGN_AFTER_QUEUE_RESUME"
+                            ? "Needs re-sign"
+                            : post.signedEvent
+                              ? "Signed"
+                              : "Scheduled"}
                       </span>
                     </td>
                     <td className="p-3 text-center">

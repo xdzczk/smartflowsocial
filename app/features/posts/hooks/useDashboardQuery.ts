@@ -239,6 +239,14 @@ export function useDashboardData() {
               typeof q.isEnabled === "boolean"
                 ? q.isEnabled
                 : q.isEnabled !== false;
+            const statusRaw = (q as { status?: unknown }).status;
+            const status =
+              typeof statusRaw === "string" &&
+              (statusRaw === "active" ||
+                statusRaw === "paused" ||
+                statusRaw === "archived")
+                ? statusRaw
+                : undefined;
             const userId = typeof q.userId === "string" ? q.userId : "";
             const queueType: QueueType = {
               id,
@@ -248,6 +256,7 @@ export function useDashboardData() {
               description: undefined,
               scheduleType,
               scheduleConfig,
+              status,
               isEnabled,
               userId,
             };
@@ -420,6 +429,14 @@ export function useDashboardInfiniteData() {
               typeof q.isEnabled === "boolean"
                 ? q.isEnabled
                 : q.isEnabled !== false;
+            const statusRaw = (q as { status?: unknown }).status;
+            const status =
+              typeof statusRaw === "string" &&
+              (statusRaw === "active" ||
+                statusRaw === "paused" ||
+                statusRaw === "archived")
+                ? statusRaw
+                : undefined;
             const userId = typeof q.userId === "string" ? q.userId : "";
             const queueType: QueueType = {
               id,
@@ -429,6 +446,7 @@ export function useDashboardInfiniteData() {
               description: undefined,
               scheduleType,
               scheduleConfig,
+              status,
               isEnabled,
               userId,
             };

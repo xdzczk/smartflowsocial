@@ -195,7 +195,7 @@ function NavigationItem({
 
   // Inactive icons use slightly higher contrast than inactive text; match link hover so icon and text react together
   const iconSpanClass = isActive
-    ? "text-brand"
+    ? "text-surface-selected-foreground"
     : hasAccess
       ? "text-text/70 group-hover:text-text"
       : "text-text-secondary";
@@ -246,7 +246,7 @@ function OperatorAdminNavItem({
       : DASHBOARD_SIDEBAR_NAV_LINK_INACTIVE_ACCESSIBLE
   }`;
   const iconSpanClass = isActive
-    ? "text-brand"
+    ? "text-surface-selected-foreground"
     : "text-text/70 group-hover:text-text";
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -400,14 +400,14 @@ function SidebarHeader({
 }: SidebarHeaderProps) {
   return (
     <div
-      className={`flex h-[var(--header-h)] w-full flex-none items-center justify-between border-b border-transparent px-4 transition-[padding] duration-300 lg:justify-center ${
+      className={`flex min-h-[var(--header-h)] w-full flex-none items-center justify-between border-b border-transparent px-4 py-3.5 transition-[padding] duration-300 max-lg:py-3 lg:justify-center lg:py-4 ${
         isDesktopExpanded ? "lg:px-4" : "lg:px-0"
       }`}
     >
       <Link
         prefetch="intent"
         to={DASHBOARD_ROOT_PATH}
-        className={`focus-ring group text-text hover:text-brand motion-fast inline-flex items-center rounded-lg ${
+        className={`focus-ring group text-text hover:text-link-hover motion-fast inline-flex items-center rounded-lg ${
           isDesktopExpanded ? "gap-2" : "w-full justify-center"
         }`}
         title={BRAND_NAME}
@@ -426,8 +426,8 @@ function SidebarHeader({
           alt={BRAND_NAME}
           className={
             isDesktopExpanded
-              ? "h-9 w-auto lg:h-8"
-              : "h-9 w-auto lg:h-7 lg:w-7 lg:object-contain"
+              ? "h-9 w-auto lg:h-9"
+              : "h-9 w-auto lg:h-8 lg:w-8 lg:object-contain"
           }
         />
       </Link>
@@ -461,7 +461,7 @@ function PageHeaderBar({
       id="page-header"
       className={`dashboard-shell-chrome h-header pt-safe-top fixed top-0 right-0 left-0 z-30 flex flex-none items-center transition-[padding] duration-300 ${isDesktopExpanded ? "lg:pl-64" : "lg:pl-12"}`}
     >
-      <div className="max-w-10xl safe-x-4 mx-auto flex w-full min-w-0 items-center justify-between sm:px-5 lg:px-8">
+      <div className="safe-x-4 max-w-page mx-auto flex w-full min-w-0 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex shrink-0 items-center">
           <div className="hidden lg:block">
             <Button
@@ -608,12 +608,12 @@ export default function Header({
     ? () => setMobileSidebarOpen(false)
     : undefined;
 
-  const sidebarScrollPadding = isDesktopExpanded
-    ? "p-4"
-    : "p-2 lg:px-2 lg:pt-4";
-  const sidebarFooterPadding = isDesktopExpanded
-    ? "p-4"
-    : "p-2 lg:px-2 lg:py-3";
+  const sidebarNavPad = isDesktopExpanded
+    ? "px-4 pt-4 pb-2"
+    : "px-2 pt-2 pb-2 lg:px-2 lg:pt-4";
+  const sidebarBottomPad = isDesktopExpanded
+    ? "px-4 pb-4"
+    : "px-2 pb-4 lg:px-2";
 
   return (
     <>
@@ -628,70 +628,70 @@ export default function Header({
           isDesktopExpanded={isDesktopExpanded}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
-        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
           <div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain transition-[padding] duration-300 ${sidebarScrollPadding} pb-2`}
+            className={`min-h-0 shrink grow-0 overflow-y-auto overscroll-y-contain transition-[padding] duration-300 ${sidebarNavPad}`}
           >
-            <SidebarNavContent
-              pathname={location.pathname}
-              isDesktopExpanded={isDesktopExpanded}
-              onUpgradeClick={handleUpgradeClick}
-              onMobileNavActiveClick={onMobileNavActiveClick}
-              isFirstRunDashboard={isFirstRunDashboard}
-            />
-            {isOperatorAdmin ? (
-              <div className="mt-3 shrink-0 lg:mt-3.5">
+            <div className="flex flex-col gap-2">
+              <SidebarNavContent
+                pathname={location.pathname}
+                isDesktopExpanded={isDesktopExpanded}
+                onUpgradeClick={handleUpgradeClick}
+                onMobileNavActiveClick={onMobileNavActiveClick}
+                isFirstRunDashboard={isFirstRunDashboard}
+              />
+              {isOperatorAdmin ? (
                 <OperatorAdminNavItem
                   pathname={location.pathname}
                   collapsed={!isDesktopExpanded}
                   onMobileNavActiveClick={onMobileNavActiveClick}
                 />
+              ) : null}
+            </div>
+          </div>
+          <div className="min-h-0 shrink-0 grow basis-0" aria-hidden />
+          <div
+            className={`flex shrink-0 flex-col pt-8 transition-[padding] duration-300 ${sidebarBottomPad}`}
+          >
+            <PlanUsageSidebar
+              isDesktopExpanded={isDesktopExpanded}
+              onMobileNavActiveClick={onMobileNavActiveClick}
+            />
+            {install.shouldRender ? (
+              <div className="mt-5">
+                <InstallPromptSidebar
+                  isDesktopExpanded={isDesktopExpanded}
+                  canPrompt={install.canPrompt}
+                  isIosSafariInstallable={install.isIosSafariInstallable}
+                  onChromiumInstall={handlePwaChromiumInstall}
+                  dismiss={install.dismiss}
+                  iosInstructionsOpen={installIosInstructionsOpen}
+                  setIosInstructionsOpen={setInstallIosInstructionsOpen}
+                />
               </div>
             ) : null}
-            <div className="border-border-subtle/35 dark:border-border-subtle/25 mt-5 flex shrink-0 flex-col border-t pt-4 max-lg:pt-5 lg:mt-7 lg:pt-4">
-              <div className="flex flex-col gap-2 max-lg:gap-2.5 lg:gap-2.5">
-                <PlanUsageSidebar
-                  isDesktopExpanded={isDesktopExpanded}
-                  onMobileNavActiveClick={onMobileNavActiveClick}
-                />
-                {install.shouldRender ? (
-                  <InstallPromptSidebar
-                    isDesktopExpanded={isDesktopExpanded}
-                    canPrompt={install.canPrompt}
-                    isIosSafariInstallable={install.isIosSafariInstallable}
-                    onChromiumInstall={handlePwaChromiumInstall}
-                    dismiss={install.dismiss}
-                    iosInstructionsOpen={installIosInstructionsOpen}
-                    setIosInstructionsOpen={setInstallIosInstructionsOpen}
+            <div className="mt-3 flex flex-col gap-1">
+              <NavigationItem
+                to="/dashboard/settings"
+                feature="settings"
+                isActive={location.pathname === "/dashboard/settings"}
+                onUpgradeClick={handleUpgradeClick}
+                onActiveClick={onMobileNavActiveClick}
+                icon={
+                  <Settings
+                    className={NAV_ICON_SIZE_CLASS}
+                    strokeWidth={NAV_ICON_STROKE}
                   />
-                ) : null}
-              </div>
+                }
+                collapsed={!isDesktopExpanded}
+              >
+                Settings
+              </NavigationItem>
+              <ProductFeedbackSidebar
+                collapsed={!isDesktopExpanded}
+                onOpenMobileSidebarClose={onMobileNavActiveClick}
+              />
             </div>
-            <div className="min-h-0 min-w-0 flex-1 basis-0" aria-hidden />
-          </div>
-          <div
-            className={`border-border-subtle/35 dark:border-border-subtle/25 flex shrink-0 flex-col gap-1.5 border-t pt-3 pb-2 transition-[padding] duration-300 max-lg:gap-2 max-lg:pt-3.5 lg:gap-2 lg:pt-3.5 ${sidebarFooterPadding}`}
-          >
-            <NavigationItem
-              to="/dashboard/settings"
-              feature="settings"
-              isActive={location.pathname === "/dashboard/settings"}
-              onUpgradeClick={handleUpgradeClick}
-              onActiveClick={onMobileNavActiveClick}
-              icon={
-                <Settings
-                  className={NAV_ICON_SIZE_CLASS}
-                  strokeWidth={NAV_ICON_STROKE}
-                />
-              }
-              collapsed={!isDesktopExpanded}
-            >
-              Settings
-            </NavigationItem>
-            <ProductFeedbackSidebar
-              collapsed={!isDesktopExpanded}
-              onOpenMobileSidebarClose={onMobileNavActiveClick}
-            />
           </div>
         </div>
       </nav>

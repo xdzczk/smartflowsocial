@@ -2,6 +2,7 @@
  * Runway KPI computation from user settings (which queues count, last-post vs first-queue-empty).
  */
 
+import { isQueueSchedulable } from "~/features/posts/queue-status";
 import {
   getLatestScheduledLongFormAtUtc,
   getLatestScheduledAtUtc,
@@ -28,7 +29,7 @@ export async function getRunwayLastScheduledAtUtcMs(
 
   const queueTypes = await getQueueTypesCached(userId);
   const enabledNames = queueTypes
-    .filter((qt) => qt.isEnabled !== false)
+    .filter((qt) => isQueueSchedulable(qt))
     .map((qt) => qt.name);
 
   const queueNames =

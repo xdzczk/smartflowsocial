@@ -75,7 +75,10 @@ export function ContestProofStudio({
           page, then return here.
         </p>
         <p className="text-text-secondary text-sm">
-          <Link to="/dashboard/contests" className="text-brand hover:underline">
+          <Link
+            to="/dashboard/contests"
+            className="text-link hover:text-link-hover hover:underline"
+          >
             ← All contests
           </Link>
         </p>

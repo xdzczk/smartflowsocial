@@ -3,12 +3,18 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { z } from "zod";
 
+import { Button } from "~/components/ui/button";
 import { requireUserId } from "~/features/auth";
 import {
   findUserBroadcastSettings,
   updateUserBroadcastSettings,
 } from "~/features/broadcast/repositories/broadcast-settings-data.server";
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
+import { PublishingPageHeader } from "~/features/posts/ui";
 
 const settingsSchema = z.object({
   defaultDeliveryMode: z.string().optional(),
@@ -53,14 +59,10 @@ export default function BroadcastSettingsRoute() {
 
   return (
     <div className="w-full min-w-0 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Broadcast settings
-        </h1>
-        <p className="text-text-secondary mt-1 text-sm">
-          Defaults for new campaigns (plan limits still apply).
-        </p>
-      </div>
+      <PublishingPageHeader
+        title="Broadcast settings"
+        subtitle="Defaults for new campaigns (plan limits still apply)."
+      />
 
       <Form method="post" className="max-w-xl space-y-4">
         <div>
@@ -76,7 +78,7 @@ export default function BroadcastSettingsRoute() {
             defaultValue={String(
               settings["defaultDeliveryMode"] ?? "BEST_COMPATIBILITY"
             )}
-            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+            className={campaignSelectClassNames}
           >
             <option value="BEST_COMPATIBILITY">Best compatibility</option>
             <option value="NIP04_ONLY">NIP-04 only</option>
@@ -96,7 +98,7 @@ export default function BroadcastSettingsRoute() {
             id="broadcast-default-strategy"
             name="defaultSendStrategy"
             defaultValue={String(settings["defaultSendStrategy"] ?? "STANDARD")}
-            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+            className={campaignSelectClassNames}
           >
             <option value="STANDARD">Standard</option>
             <option value="STAGGERED">Staggered</option>
@@ -116,7 +118,7 @@ export default function BroadcastSettingsRoute() {
             min={0}
             max={100}
             defaultValue={String(settings["failurePausePercent"] ?? 50)}
-            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+            className={campaignFieldClassNames}
           />
         </div>
         <div>
@@ -133,15 +135,10 @@ export default function BroadcastSettingsRoute() {
             min={0}
             max={365}
             defaultValue={String(settings["minDaysBetweenRemessage"] ?? 7)}
-            className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+            className={campaignFieldClassNames}
           />
         </div>
-        <button
-          type="submit"
-          className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-        >
-          Save
-        </button>
+        <Button type="submit">Save</Button>
       </Form>
     </div>
   );

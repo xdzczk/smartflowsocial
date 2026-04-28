@@ -28,6 +28,18 @@ const paginationSchema = z.object({
 });
 
 /**
+ * Prisma serializes QueueStatus as ACTIVE | PAUSED | ARCHIVED; client types use lowercase.
+ */
+const queueTypeStatusSchema = z.preprocess(
+  (val) => {
+    if (val === undefined || val === null) return;
+    if (typeof val === "string") return val.toLowerCase();
+    return val;
+  },
+  z.enum(["active", "paused", "archived"]).optional()
+);
+
+/**
  * Schema for QueueType
  */
 const queueTypeSchema = z.object({
@@ -47,6 +59,7 @@ const queueTypeSchema = z.object({
         .optional(),
     })
     .optional(),
+  status: queueTypeStatusSchema,
   isEnabled: z.boolean().optional(),
   userId: z.string().optional(),
 });
@@ -636,7 +649,9 @@ const flowItemSchema = z.discriminatedUnion("type", [
 export const runwaySettingsSchema = z.object({
   queueNames: z.array(z.string()),
   mode: z.enum(["last-post", "first-queue-empty"]),
+  /** Orange KPI band max days (persisted key name). */
   redThresholdDays: z.number().int().min(0).max(365).optional(),
+  /** Yellow KPI band max days (persisted key name). */
   orangeThresholdDays: z.number().int().min(0).max(365).optional(),
   /** Target posts per day for schedule overview (0–10); 0 = off. */
   targetPostsPerDay: z.number().int().min(0).max(10).optional(),

@@ -15,6 +15,7 @@ import type {
   PrismaQueueType,
 } from "./data/posts-prisma-types.server";
 import { getQueueAccentHex } from "./queue-colors";
+import { normalizeQueueStatus } from "./queue-status";
 
 export type ScheduledDependencyMode = "standalone" | "attached";
 export type ScheduledTargetMode = "direct" | "scheduled_parent";
@@ -205,6 +206,7 @@ export function convertPrismaQueueTypeToQueueType(
         description?: string | null;
         scheduleType?: string | null;
         isEnabled?: boolean | null;
+        status?: string | null;
         userId: string;
       })
     | null
@@ -228,10 +230,17 @@ export function convertPrismaQueueTypeToQueueType(
       | "WEEKLY_SLOTS"
       | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(prisma.scheduleConfig),
+    status: normalizeQueueStatus(prisma.status, prisma.isEnabled),
     isEnabled: prisma.isEnabled ?? undefined,
     userId: prisma.userId,
   };
 }
+
+export type QueueStatus = "active" | "paused" | "archived";
+export type QueueHoldStatus =
+  | "none"
+  | "held_by_queue"
+  | "needs_resign_after_queue_resume";
 
 /**
  * Queue type with scheduling configuration
@@ -246,7 +255,7 @@ export interface QueueType {
   scheduleConfig?: ScheduleConfig;
   cadenceLabel?: string | null;
   waitingCount?: number | null;
-  status?: "active" | "paused" | "full" | "manual" | null;
+  status?: QueueStatus | "full" | "manual" | null;
   isEnabled?: boolean;
   userId?: string;
   /** Queue default for “include hashtags in note body”; unassigned uses true. */
@@ -337,9 +346,21 @@ export interface BulkPostsHandlerDeps {
 /**
  * Post data structure for editing/displaying
  */
-export interface PostData extends Omit<Post, "signedEvent" | "nostrEvent"> {
+export interface PostData extends Omit<
+  Post,
+  | "signedEvent"
+  | "nostrEvent"
+  | "queueHoldStatus"
+  | "queueHeldAtUtc"
+  | "queueHeldOriginalScheduledAtUtc"
+  | "queueHeldByQueueTypeId"
+> {
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
+  queueHoldStatus?: Post["queueHoldStatus"];
+  queueHeldAtUtc?: Post["queueHeldAtUtc"];
+  queueHeldOriginalScheduledAtUtc?: Post["queueHeldOriginalScheduledAtUtc"];
+  queueHeldByQueueTypeId?: Post["queueHeldByQueueTypeId"];
   queueType?: QueueType | null;
   hashTagPreset?: HashTagPreset | null;
   hashtags?: string; // Space-separated hashtags string
@@ -350,10 +371,19 @@ export interface PostData extends Omit<Post, "signedEvent" | "nostrEvent"> {
  */
 export interface LongFormPostData extends Omit<
   LongFormPost,
-  "signedEvent" | "nostrEvent"
+  | "signedEvent"
+  | "nostrEvent"
+  | "queueHoldStatus"
+  | "queueHeldAtUtc"
+  | "queueHeldOriginalScheduledAtUtc"
+  | "queueHeldByQueueTypeId"
 > {
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
+  queueHoldStatus?: LongFormPost["queueHoldStatus"];
+  queueHeldAtUtc?: LongFormPost["queueHeldAtUtc"];
+  queueHeldOriginalScheduledAtUtc?: LongFormPost["queueHeldOriginalScheduledAtUtc"];
+  queueHeldByQueueTypeId?: LongFormPost["queueHeldByQueueTypeId"];
   queueType?: QueueType | null;
 }
 

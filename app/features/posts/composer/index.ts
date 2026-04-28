@@ -31,6 +31,7 @@ export type { ComposerLocalSnapshot } from "./hooks/useComposerLocalDraft";
 export { useNewPostState } from "./hooks/useNewPostState";
 export {
   buildComposeEditUrl,
+  buildComposeCreateUrl,
   getComposeMode,
   parseComposerContext,
   normalizeComposeType,

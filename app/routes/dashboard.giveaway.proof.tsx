@@ -123,7 +123,7 @@ export default function GiveawayProofPage() {
             <p className="text-text-secondary text-sm">
               <Link
                 to="/dashboard/giveaway"
-                className="text-brand hover:underline"
+                className="text-link hover:text-link-hover hover:underline"
               >
                 ← All giveaways
               </Link>

@@ -50,7 +50,7 @@ export class CalendarErrorBoundary extends Component<
           <button
             type="button"
             onClick={this.handleTryAgain}
-            className="bg-brand text-brand-on hover:bg-brand/90 motion-fast rounded-[var(--calendar-radius-md)] px-4 py-2 text-sm font-medium"
+            className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast rounded-[var(--calendar-radius-md)] px-4 py-2 text-sm font-medium"
           >
             Try again
           </button>

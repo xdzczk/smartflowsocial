@@ -20,6 +20,10 @@ import {
 import { EmptyState } from "~/components/ui/empty-state";
 import { requireUserId } from "~/features/auth";
 import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
+import {
   contestCopy,
   deleteContest,
   duplicateContest,
@@ -30,7 +34,9 @@ import {
   listContestsFiltered,
 } from "~/features/contest";
 import { requireAnySubscription } from "~/features/payments";
+import { PublishingPageHeader } from "~/features/posts/ui";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
@@ -221,40 +227,36 @@ export default function ContestsIndexRoute() {
           {actionData.error}
         </div>
       ) : null}
-      <div className="stack sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-text text-2xl font-semibold tracking-tight">
-            Contests
-          </h2>
-          <p className="text-text-secondary mt-1 max-w-xl text-sm">
-            Run live competitions, rank entries fairly, and track payout status.
-          </p>
-        </div>
-        <Button asChild className="shrink-0">
-          <Link to="/dashboard/contests/new">New contest</Link>
-        </Button>
-      </div>
+      <PublishingPageHeader
+        title="Contests"
+        subtitle="Run live competitions, rank entries fairly, and track payout status."
+        actions={
+          <Button asChild>
+            <Link to="/dashboard/contests/new">New contest</Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Total contests</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{total}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Live now</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{live}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Awaiting review</CardDescription>
             <CardTitle className="text-2xl tabular-nums">{review}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Total sats planned</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -262,7 +264,7 @@ export default function ContestsIndexRoute() {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
             <CardDescription>Total entries</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
@@ -275,7 +277,7 @@ export default function ContestsIndexRoute() {
       <Form
         method="get"
         replace
-        className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
+        className="border-border bg-surface shadow-1 flex flex-col gap-3 rounded-xl border p-4"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="min-w-[200px] flex-1">
@@ -298,7 +300,7 @@ export default function ContestsIndexRoute() {
                 navigate(`/dashboard/contests?${next.toString()}`);
               }}
               placeholder="Search by title…"
-              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
           <div>
@@ -310,7 +312,7 @@ export default function ContestsIndexRoute() {
             </label>
             <select
               id="c-status"
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignSelectClassNames, "w-full min-w-[10rem]")}
               value={data.filters.status}
               onChange={(e) => {
                 setFilter("status", e.target.value);
@@ -335,7 +337,7 @@ export default function ContestsIndexRoute() {
             </label>
             <select
               id="c-metric"
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignSelectClassNames, "w-full min-w-[9rem]")}
               value={data.filters.metric}
               onChange={(e) => {
                 setFilter("metric", e.target.value);
@@ -358,7 +360,7 @@ export default function ContestsIndexRoute() {
             </label>
             <select
               id="c-sort"
-              className="border-border bg-canvas rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignSelectClassNames, "w-full min-w-[9rem]")}
               value={data.filters.sort}
               onChange={(e) => {
                 setFilter("sort", e.target.value);
@@ -382,7 +384,7 @@ export default function ContestsIndexRoute() {
 
       {!hasAnyContests ? (
         <EmptyState
-          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          className="border-border bg-surface shadow-1 rounded-xl border"
           icon={<Trophy />}
           title="No contests yet"
           description="Create your first contest to rank entries and reward winners."
@@ -394,7 +396,7 @@ export default function ContestsIndexRoute() {
         />
       ) : data.contests.length > 0 ? (
         <>
-          <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
+          <div className="border-border bg-surface shadow-1 hidden overflow-x-auto rounded-xl border md:block">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface-hover/40 border-border text-text-secondary border-b text-xs uppercase">
                 <tr>
@@ -422,7 +424,7 @@ export default function ContestsIndexRoute() {
                       }}
                     >
                       <td className="w-12 px-2 py-2 align-middle">
-                        <div className="border-border bg-surface-hover/50 size-9 overflow-hidden rounded-md border">
+                        <div className="border-border bg-surface-hover/50 size-9 overflow-hidden rounded-lg border">
                           {contest.sourceThumbUrl ? (
                             <img
                               src={contest.sourceThumbUrl}
@@ -553,7 +555,7 @@ export default function ContestsIndexRoute() {
             </table>
           </div>
 
-          <ul className="border-border bg-surface divide-border divide-y rounded-lg border md:hidden">
+          <ul className="border-border bg-surface shadow-1 divide-border divide-y rounded-xl border md:hidden">
             {data.contests.map((contest) => {
               const canDelete = contestCanDeleteFromList(contest.status);
               return (
@@ -666,7 +668,7 @@ export default function ContestsIndexRoute() {
         </>
       ) : (
         <EmptyState
-          className="border-border bg-surface-hover/20 rounded-lg border border-dashed"
+          className="border-border bg-surface shadow-1 rounded-xl border"
           icon={<Trophy />}
           title="No contests match filters"
           description="Try clearing filters or create a new contest to reward top replies."

@@ -84,7 +84,7 @@ export function BillingAlertBanner({
   const { label, to } = billingContextPrimaryCta(billingContext.primaryCta);
 
   return (
-    <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
+    <div className="max-w-page mx-auto w-full px-4 pt-4 sm:px-6 lg:px-8">
       <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
         <div>
           <p className="font-medium">{copy.title}</p>
@@ -93,7 +93,7 @@ export function BillingAlertBanner({
         <Link
           prefetch="intent"
           to={to}
-          className="focus-ring bg-brand text-brand-on hover:bg-brand/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
+          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
         >
           {label}
         </Link>
@@ -138,7 +138,7 @@ export function BillingStatusCard({
         <Link
           to={to}
           prefetch="intent"
-          className="bg-brand text-brand-on hover:bg-brand/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
+          className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex rounded-md px-3 py-1.5 text-xs font-medium"
         >
           {label}
         </Link>

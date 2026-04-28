@@ -20,8 +20,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import {
   PayoutMethodSelector,
+  campaignFieldClassNames,
+  campaignSelectClassNames,
   isPayoutItemSettled,
   mapGiveawayCampaignPhase,
   payoutCopy,
@@ -30,6 +33,7 @@ import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { BRAND_NAME, poweredByBrand } from "~/lib/brand";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { cn } from "~/lib/utils";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import {
@@ -418,7 +422,7 @@ export function GiveawayDetailPage({
       </div>
 
       <div
-        className={`rounded-lg border p-5 ${
+        className={`shadow-1 rounded-xl border p-5 ${
           giveaway.status === "PREVIEWED"
             ? "border-info/40 bg-info/5"
             : giveaway.status === "LOCKED"
@@ -515,7 +519,7 @@ export function GiveawayDetailPage({
         <div className="space-y-4">
           {giveaway.scopeSummaryLabel != null ||
           giveaway.engagementTypes != null ? (
-            <div className="border-border bg-surface-hover/20 rounded-lg border p-4">
+            <div className="border-border bg-surface shadow-1 rounded-xl border p-4">
               <h2 className="text-text mb-2 text-sm font-semibold">
                 Configuration
               </h2>
@@ -588,7 +592,7 @@ export function GiveawayDetailPage({
           ) : null}
 
           {previewMeta ? (
-            <div className="border-border border-info/20 bg-info/5 rounded-lg border p-4">
+            <div className="border-border border-info/20 bg-info/5 rounded-xl border p-4">
               <h2 className="text-text mb-2 text-sm font-semibold">
                 Fairness & audit
               </h2>
@@ -632,7 +636,7 @@ export function GiveawayDetailPage({
           ) : null}
 
           {giveaway.status === "PREVIEWED" && finalizationQuote ? (
-            <div className="border-border border-success/20 bg-success/5 rounded-lg border p-4">
+            <div className="border-border border-success/20 bg-success/5 rounded-xl border p-4">
               <h2 className="text-text mb-2 text-sm font-semibold">
                 Finalization
               </h2>
@@ -679,7 +683,7 @@ export function GiveawayDetailPage({
           ) : null}
 
           {excludedList.length > 0 && giveaway.status === "PREVIEWED" ? (
-            <details className="border-border bg-surface-hover/20 rounded-lg border p-4">
+            <details className="border-border bg-surface shadow-1 rounded-xl border p-4">
               <summary className="text-text cursor-pointer text-sm font-medium">
                 Manually excluded ({excludedList.length})
               </summary>
@@ -709,7 +713,7 @@ export function GiveawayDetailPage({
               {showEdit ? (
                 <updateFetcher.Form
                   method="post"
-                  className="border-border bg-surface-hover/20 flex flex-col gap-3 rounded-lg border p-4"
+                  className="border-border bg-surface shadow-1 flex flex-col gap-3 rounded-xl border p-4"
                 >
                   <input type="hidden" name="intent" value="update" />
                   <div>
@@ -725,7 +729,7 @@ export function GiveawayDetailPage({
                       type="text"
                       defaultValue={giveaway.name ?? ""}
                       placeholder="Optional name"
-                      className="border-border bg-canvas w-full max-w-sm rounded-xs border px-2 py-1 text-sm"
+                      className={cn(campaignFieldClassNames, "max-w-sm")}
                     />
                   </div>
                   <div>
@@ -742,7 +746,7 @@ export function GiveawayDetailPage({
                       min={1}
                       max={maxWinnerCount}
                       defaultValue={giveaway.winnerCount}
-                      className="border-border bg-canvas w-20 rounded-xs border px-2 py-1 text-sm"
+                      className={cn(campaignFieldClassNames, "w-20")}
                     />
                   </div>
                   <div>
@@ -758,8 +762,7 @@ export function GiveawayDetailPage({
                             key={opt}
                             className="text-text cluster-tight.5 text-sm"
                           >
-                            <input
-                              type="checkbox"
+                            <NativeCheckbox
                               name="engagementTypes"
                               value={opt}
                               defaultChecked={
@@ -767,6 +770,7 @@ export function GiveawayDetailPage({
                                   ? giveaway.engagementTypes.includes(opt)
                                   : undefined
                               }
+                              className="shrink-0"
                             />
                             {opt.charAt(0) + opt.slice(1).toLowerCase()}
                           </label>
@@ -811,7 +815,10 @@ export function GiveawayDetailPage({
                         <select
                           id="edit-selectionMode"
                           name="selectionMode"
-                          className="border-border bg-canvas rounded-xs border px-2 py-1 text-sm"
+                          className={cn(
+                            campaignSelectClassNames,
+                            "w-auto max-w-xs"
+                          )}
                           defaultValue={giveaway.selectionMode ?? "UNIQUE_USER"}
                         >
                           <option value="UNIQUE_USER">Unique user</option>
@@ -822,13 +829,15 @@ export function GiveawayDetailPage({
                       </>
                     )}
                   </div>
-                  <button
+                  <Button
                     type="submit"
-                    className="border-border w-fit rounded-md border px-3 py-1.5 text-sm"
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
                     disabled={updateFetcher.state !== "idle"}
                   >
                     {updateFetcher.state !== "idle" ? "Saving…" : "Save"}
-                  </button>
+                  </Button>
                   {updateFetcher.data?.error ? (
                     <p className="text-danger text-sm">
                       {updateFetcher.data.error}
@@ -842,15 +851,11 @@ export function GiveawayDetailPage({
           {giveaway.status === "DRAFT" ? (
             <previewFetcher.Form method="post">
               <input type="hidden" name="intent" value="preview" />
-              <button
-                type="submit"
-                className="bg-brand text-brand-on rounded-md px-4 py-2"
-                disabled={previewFetcher.state !== "idle"}
-              >
+              <Button type="submit" disabled={previewFetcher.state !== "idle"}>
                 {previewFetcher.state !== "idle"
                   ? "Loading…"
                   : "Preview winners"}
-              </button>
+              </Button>
             </previewFetcher.Form>
           ) : null}
 
@@ -1015,7 +1020,6 @@ export function GiveawayDetailPage({
                     ) : null}
                     <Button
                       type="button"
-                      className="bg-brand text-brand-on"
                       disabled={lockFetcher.state !== "idle"}
                       onClick={() => {
                         const fd = new FormData();
@@ -1071,7 +1075,7 @@ export function GiveawayDetailPage({
           ) : null}
 
           {winners.length > 0 ? (
-            <div className="border-border rounded-lg border p-4">
+            <div className="border-border rounded-xl border p-4">
               <h2 className="text-text mb-3 font-semibold">
                 {giveaway.status === "PREVIEWED"
                   ? "Selected winners"
@@ -1082,7 +1086,7 @@ export function GiveawayDetailPage({
                 {winners.map((w, i) => (
                   <li
                     key={w.pubkey}
-                    className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="border-border bg-surface flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3">
                       <span className="text-text-secondary mt-1 text-sm font-medium">
@@ -1128,7 +1132,7 @@ export function GiveawayDetailPage({
 
       {giveaway.status === "LOCKED" ? (
         <div className="space-y-4">
-          <div className="border-border border-warning/25 bg-warning/10 rounded-lg border p-4 text-sm">
+          <div className="border-border border-warning/25 bg-warning/10 rounded-xl border p-4 text-sm">
             <p className="text-text font-semibold">Finalization</p>
             {giveaway.finalizationFeeStatus === "PAID" &&
             giveaway.finalizationFeeSats != null ? (
@@ -1167,7 +1171,7 @@ export function GiveawayDetailPage({
           </div>
           <form
             method="post"
-            className="border-border bg-surface space-y-3 rounded-lg border p-4"
+            className="border-border bg-surface shadow-1 space-y-3 rounded-xl border p-4"
           >
             <input type="hidden" name="intent" value="updatePayoutSettings" />
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1178,12 +1182,9 @@ export function GiveawayDetailPage({
                   fallback.
                 </p>
               </div>
-              <button
-                type="submit"
-                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
-              >
+              <Button type="submit" variant="outline" size="sm">
                 Save
-              </button>
+              </Button>
             </div>
 
             <PayoutMethodSelector
@@ -1219,7 +1220,7 @@ export function GiveawayDetailPage({
 
       {giveaway.status === "PAID_OUT" ? (
         <div className="space-y-4">
-          <div className="border-border bg-surface rounded-lg border p-5">
+          <div className="border-border bg-surface rounded-xl border p-5">
             <h2 className="text-text text-lg font-semibold">Receipt</h2>
             {unresolvedCount > 0 ? (
               <p className="text-warning-text mt-1 text-sm">
@@ -1318,7 +1319,7 @@ export function GiveawayDetailPage({
               </Form>
             </div>
           </div>
-          <details className="border-border bg-surface-hover/10 rounded-lg border">
+          <details className="border-border bg-surface shadow-1 rounded-xl border">
             <summary className="text-text cursor-pointer p-4 text-sm font-medium">
               View winners ({winners.length})
             </summary>
@@ -1366,7 +1367,7 @@ export function GiveawayDetailPage({
       ) : null}
 
       {activityEntries.length > 0 ? (
-        <div className="border-border bg-surface-hover/10 rounded-lg border">
+        <div className="border-border bg-surface shadow-1 rounded-xl border">
           <button
             type="button"
             onClick={() => {

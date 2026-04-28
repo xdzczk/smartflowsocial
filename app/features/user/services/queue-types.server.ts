@@ -1,9 +1,15 @@
-import type { QueueType, ScheduleType } from "../data/user-prisma-types.server";
+import type {
+  QueueStatus,
+  QueueType,
+  ScheduleType,
+} from "../data/user-prisma-types.server";
 import {
   deleteQueueType as deleteQueueTypeRow,
   findQueueTypeByIdAndUserId,
   findQueueTypeIdByNameAndUserId,
   findQueueTypesByUserId,
+  setQueueTypeEnabledForUser as setQueueTypeEnabledForUserRow,
+  setQueueTypeStatusForUser as setQueueTypeStatusForUserRow,
   updateQueueType as updateQueueTypeRow,
 } from "../repositories/queue-types-data.server";
 
@@ -33,6 +39,7 @@ export function updateQueueType(
     colorToken?: string;
     description?: string;
     isEnabled?: boolean;
+    status?: QueueStatus;
     hashTagPresetId?: string | null;
     includeHashtagsInNoteBody?: boolean;
   }
@@ -69,6 +76,22 @@ export function getQueueTypeByIdForUser(
   queueTypeId: string
 ): Promise<QueueType | null> {
   return findQueueTypeByIdAndUserId(userId, queueTypeId);
+}
+
+export function setQueueTypeEnabledForUser(
+  userId: string,
+  queueTypeId: string,
+  isEnabled: boolean
+): Promise<QueueType> {
+  return setQueueTypeEnabledForUserRow(userId, queueTypeId, isEnabled);
+}
+
+export function setQueueTypeStatusForUser(
+  userId: string,
+  queueTypeId: string,
+  status: QueueStatus
+): Promise<QueueType> {
+  return setQueueTypeStatusForUserRow(userId, queueTypeId, status);
 }
 
 /**

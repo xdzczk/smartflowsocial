@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from "@remix-run/react";
 
+import { PageContent } from "~/components/layout/PageContent";
+
 const subNav = [
   { to: "/dashboard/broadcasts", end: true, label: "All broadcasts" },
   { to: "/dashboard/broadcasts/new", end: false, label: "New broadcast" },
@@ -10,7 +12,7 @@ const subNav = [
 
 export default function BroadcastsLayout() {
   return (
-    <div className="space-y-6">
+    <PageContent fluid className="space-y-6">
       <nav
         aria-label="Broadcast sections"
         className="border-border flex flex-wrap gap-1 border-b pb-2"
@@ -22,9 +24,9 @@ export default function BroadcastsLayout() {
             end={item.end}
             className={({ isActive }) =>
               [
-                "motion-fast rounded-md px-3 py-2 text-sm font-medium",
+                "focus-ring motion-fast rounded-md px-3 py-2 text-sm font-medium",
                 isActive
-                  ? "bg-brand/10 text-brand"
+                  ? "bg-selection-fill text-selection-foreground shadow-1 hover:bg-selection-fill/90"
                   : "text-text-secondary hover:bg-surface-hover hover:text-text",
               ].join(" ")
             }
@@ -34,6 +36,6 @@ export default function BroadcastsLayout() {
         ))}
       </nav>
       <Outlet />
-    </div>
+    </PageContent>
   );
 }

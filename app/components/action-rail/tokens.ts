@@ -4,13 +4,13 @@ import { cn } from "~/lib/utils";
 export const RAIL_PAD_X = "px-3";
 
 /** Vertical padding for each major scroll zone */
-export const RAIL_ZONE_PY = "py-3";
+export const RAIL_ZONE_PY = "py-4";
 
 /** Divider between major rail sections */
-export const RAIL_MAJOR_DIVIDE = "divide-y divide-border";
+export const RAIL_MAJOR_DIVIDE = "divide-y divide-border-subtle/55";
 
 /** Spacing between header and first row in a zone */
-export const RAIL_HEADER_TO_BODY = "mb-2";
+export const RAIL_HEADER_TO_BODY = "mb-2.5";
 
 /** Tight stack inside summary / metadata */
 export const RAIL_STACK_TIGHT = "space-y-1";
@@ -44,4 +44,4 @@ export const RAIL_SETTINGS_ROW =
 
 /** Sticky secondary action (Save draft) */
 export const RAIL_SECONDARY_ACTION =
-  "text-text-secondary hover:bg-surface-hover hover:text-text h-9 w-full rounded-none border-0 border-b border-border bg-transparent text-[11px] font-semibold shadow-none";
+  "text-text-secondary hover:bg-surface-hover hover:text-text border-border-subtle/45 h-9 w-full rounded-none border-0 border-b bg-transparent text-[11px] font-semibold shadow-none";

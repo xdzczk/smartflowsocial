@@ -6,6 +6,8 @@ import { useState } from "react";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
@@ -14,7 +16,12 @@ import {
   removeBroadcastSuppression,
 } from "~/features/broadcast";
 import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
+import { PublishingPageHeader } from "~/features/posts/ui";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 
 const REASON_LABELS: Record<BroadcastSuppressionReasonCode, string> = {
@@ -113,17 +120,12 @@ export default function BroadcastSuppressionRoute() {
           </Link>
         </div>
       ) : null}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Suppression list
-        </h1>
-        <p className="text-text-secondary mt-1 text-sm">
-          Suppressed recipients are excluded from every broadcast based on
-          opt-out, policy, or import rules.
-        </p>
-      </div>
+      <PublishingPageHeader
+        title="Suppression list"
+        subtitle="Suppressed recipients are excluded from every broadcast based on opt-out, policy, or import rules."
+      />
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="font-medium">Add suppressions</h2>
         <Form method="post" className="mt-3 space-y-3">
           <input type="hidden" name="intent" value="add" />
@@ -153,7 +155,7 @@ export default function BroadcastSuppressionRoute() {
             <select
               id="broadcast-suppression-reason-code"
               name="reasonCode"
-              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignSelectClassNames}
             >
               {(
                 Object.entries(REASON_LABELS) as Array<
@@ -176,12 +178,19 @@ export default function BroadcastSuppressionRoute() {
             <input
               id="broadcast-suppression-reason"
               name="reason"
-              className="border-border bg-canvas w-full rounded-md border px-3 py-2 text-sm"
+              className={campaignFieldClassNames}
             />
           </div>
           <div className="flex flex-wrap gap-4">
-            <label className="cluster text-sm">
-              <input type="checkbox" name="permanent" defaultChecked />
+            <label
+              htmlFor="broadcast-suppression-permanent"
+              className="cluster text-sm"
+            >
+              <NativeCheckbox
+                id="broadcast-suppression-permanent"
+                name="permanent"
+                defaultChecked
+              />
               Permanent
             </label>
             <label className="cluster text-sm">
@@ -189,24 +198,20 @@ export default function BroadcastSuppressionRoute() {
               <input
                 type="datetime-local"
                 name="expiresAt"
-                className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
+                className={campaignFieldClassNames}
               />
             </label>
           </div>
-          <button
-            type="submit"
-            disabled={selectedPubkeys.length === 0}
-            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-          >
+          <Button type="submit" disabled={selectedPubkeys.length === 0}>
             Add{" "}
             {selectedPubkeys.length > 0 ? `(${selectedPubkeys.length})` : ""}
-          </button>
+          </Button>
         </Form>
       </section>
 
       <section>
         <h2 className="mb-2 font-medium">Active suppressions</h2>
-        <div className="border-border overflow-x-auto rounded-lg border">
+        <div className="border-border bg-surface shadow-1 overflow-x-auto rounded-xl border">
           <table className="w-full text-left text-sm">
             <thead className="bg-surface-hover/50 border-b text-xs font-medium">
               <tr>

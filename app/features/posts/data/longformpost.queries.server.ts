@@ -176,6 +176,7 @@ export async function getScheduledLongFormPosts({
   queueType,
   scheduledFromUtc,
   scheduledToUtc,
+  excludePausedQueueContent = false,
 }: {
   userId: User["id"];
   page?: number;
@@ -187,6 +188,7 @@ export async function getScheduledLongFormPosts({
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
 }) {
   try {
     const skip = afterScheduledAtUtc ? 0 : (page - 1) * limit;
@@ -228,6 +230,23 @@ export async function getScheduledLongFormPosts({
       } else {
         where.queueType = { name: queueType };
       }
+    }
+
+    if (excludePausedQueueContent) {
+      const pausedQueueExclusion: Prisma.LongFormPostWhereInput = {
+        OR: [
+          { queueTypeId: null },
+          { queueType: { status: { not: "PAUSED" } } },
+        ],
+      };
+      where.AND = [
+        ...(Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+            ? [where.AND]
+            : []),
+        pausedQueueExclusion,
+      ];
     }
 
     const [posts, total] = await Promise.all([
@@ -272,7 +291,7 @@ export async function getScheduledLongFormPosts({
 /**
  * Returns longform posts (scheduled and published) with scheduledAtUtc in the given UTC range (inclusive).
  * Used for Next 7 days schedule overview: shows both upcoming and past posts per day.
- * Respects queueType filter.
+ * Respects queueType filter. Excludes posts on paused queues (same as runway / active calendar).
  */
 export async function getScheduledLongFormPostsInDateRange({
   userId,
@@ -291,6 +310,9 @@ export async function getScheduledLongFormPostsInDateRange({
   }>
 > {
   try {
+    const pausedQueueExclusion: Prisma.LongFormPostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
     const where: Prisma.LongFormPostWhereInput = {
       userId,
       currentState: { in: ["SCHEDULED", "PUBLISHED"] },
@@ -298,6 +320,7 @@ export async function getScheduledLongFormPostsInDateRange({
         gte: fromUtc,
         lte: toUtc,
       },
+      AND: [pausedQueueExclusion],
     };
     if (queueType && queueType !== "all") {
       if (queueType === "unassigned") {
@@ -330,10 +353,12 @@ export async function getLatestScheduledLongFormAtUtc({
   userId,
   queueType = "all",
   now,
+  excludePausedQueueContent = false,
 }: {
   userId: User["id"];
   queueType?: string;
   now: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<Date | null> {
   const where: Prisma.LongFormPostWhereInput = {
     userId,
@@ -346,6 +371,15 @@ export async function getLatestScheduledLongFormAtUtc({
     } else {
       where.queueType = { name: queueType };
     }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.LongFormPostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      pausedQueueExclusion,
+    ];
   }
   const post = await prisma.longFormPost.findFirst({
     where,
@@ -378,9 +412,11 @@ export function getCronDueScheduledLongFormPosts(): Promise<LongFormPost[]> {
     where: {
       // Use currentState as single source of truth
       currentState: "SCHEDULED",
+      queueHoldStatus: "NONE",
       scheduledAtUtc: {
         lte: now,
       },
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
     },
   });
 }
@@ -392,6 +428,7 @@ export function getPastLongFormPosts({
   queueType,
   beforeDate,
   limit: takeLimit,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   startDate: Date;
@@ -401,6 +438,7 @@ export function getPastLongFormPosts({
   beforeDate?: Date;
   /** Max number of posts to return (for Flow load more past). */
   limit?: number;
+  excludePausedQueueContent?: boolean;
 }): Promise<LongFormPost[]> {
   const whereClause: Prisma.LongFormPostWhereInput = {
     userId,
@@ -442,6 +480,20 @@ export function getPastLongFormPosts({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.LongFormPostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
   }
 
   return prisma.longFormPost.findMany({
@@ -500,6 +552,8 @@ export async function getLongFormStatistics({
         where: {
           userId,
           currentState: "SCHEDULED",
+          /** Dashboard KPI: exclude longform held while queue is paused */
+          queueHoldStatus: { not: "HELD_BY_QUEUE" },
         },
       }),
       prisma.longFormPost.count({

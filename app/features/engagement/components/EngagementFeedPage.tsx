@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { PageContent } from "~/components/layout/PageContent";
+import { StatusIcon } from "~/components/ui/status-icon";
+import { PublishingFilterRow } from "~/features/posts/components/publishing-suite/PublishingFilterRow";
 import type { PostData } from "~/features/posts/server";
 import { PostDetailsModal } from "~/features/posts/ui";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";
@@ -307,58 +310,69 @@ export default function EngagementFeedPage() {
       ? (safeUser["userRelays"] as string[])
       : undefined;
 
+  const engagementPanelId = "engagement-feed-panel";
+
   return (
-    <div>
+    <PageContent fluid>
       <EngagementHeader />
 
-      <div className="border-border mb-6 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-        <EngagementTabs
+      <PublishingFilterRow className="mb-6">
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-4">
+          <EngagementTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            repliesCount={getFlatItemCount(safeGroupedNotifications.replies)}
+            mentionsCount={
+              getFlatItemCount(safeGroupedNotifications.quotes) +
+              getFlatItemCount(safeGroupedNotifications.mentions)
+            }
+            needsResponseCount={needsResponseCount}
+            tabPanelId={engagementPanelId}
+          />
+          <EngagementFilterBar
+            filterHighReputation={filterHighReputation}
+            setFilterHighReputation={setFilterHighReputation}
+            filterFollowingOnly={filterFollowingOnly}
+            setFilterFollowingOnly={setFilterFollowingOnly}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            filterUnhandledOnly={filterUnhandledOnly}
+            setFilterUnhandledOnly={setFilterUnhandledOnly}
+            filterHasDraft={filterHasDraft}
+            setFilterHasDraft={setFilterHasDraft}
+            filterHasScheduledAction={filterHasScheduledAction}
+            setFilterHasScheduledAction={setFilterHasScheduledAction}
+            includeScheduledInNeedsResponse={includeScheduledInNeedsResponse}
+            setIncludeScheduledInNeedsResponse={
+              setIncludeScheduledInNeedsResponse
+            }
+          />
+        </div>
+      </PublishingFilterRow>
+
+      <div
+        id={engagementPanelId}
+        role="tabpanel"
+        aria-labelledby={`engagement-tab-${activeTab}`}
+      >
+        <EngagementContent
           activeTab={activeTab}
-          onTabChange={setActiveTab}
-          repliesCount={getFlatItemCount(safeGroupedNotifications.replies)}
-          mentionsCount={
-            getFlatItemCount(safeGroupedNotifications.quotes) +
-            getFlatItemCount(safeGroupedNotifications.mentions)
-          }
-          needsResponseCount={needsResponseCount}
-        />
-        <EngagementFilterBar
-          filterHighReputation={filterHighReputation}
-          setFilterHighReputation={setFilterHighReputation}
-          filterFollowingOnly={filterFollowingOnly}
-          setFilterFollowingOnly={setFilterFollowingOnly}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          filterUnhandledOnly={filterUnhandledOnly}
-          setFilterUnhandledOnly={setFilterUnhandledOnly}
-          filterHasDraft={filterHasDraft}
-          setFilterHasDraft={setFilterHasDraft}
-          filterHasScheduledAction={filterHasScheduledAction}
-          setFilterHasScheduledAction={setFilterHasScheduledAction}
-          includeScheduledInNeedsResponse={includeScheduledInNeedsResponse}
-          setIncludeScheduledInNeedsResponse={
-            setIncludeScheduledInNeedsResponse
-          }
+          groupedReplies={afterWorkflowReplies}
+          groupedMentionsTab={afterWorkflowMentions}
+          engagementItemStates={engagementStates}
+          onMarkDone={markDone}
+          userTimezone={userTimezone}
+          userRelays={userRelays}
+          trustScores={safeTrustScores}
+          postsCount={safePosts.length}
+          focusedIndex={focusedIndex}
+          registerKeyboardHandlers={registerKeyboardHandlers}
+          replyTemplates={replyTemplates}
+          engagementLinkedActions={engagementLinkedActions}
+          groupSummaries={safeGroupSummaries}
+          followedPubkeys={safeFollowedPubkeys}
         />
       </div>
-
-      <EngagementContent
-        activeTab={activeTab}
-        groupedReplies={afterWorkflowReplies}
-        groupedMentionsTab={afterWorkflowMentions}
-        engagementItemStates={engagementStates}
-        onMarkDone={markDone}
-        userTimezone={userTimezone}
-        userRelays={userRelays}
-        trustScores={safeTrustScores}
-        postsCount={safePosts.length}
-        focusedIndex={focusedIndex}
-        registerKeyboardHandlers={registerKeyboardHandlers}
-        replyTemplates={replyTemplates}
-        engagementLinkedActions={engagementLinkedActions}
-        groupSummaries={safeGroupSummaries}
-        followedPubkeys={safeFollowedPubkeys}
-      />
 
       {/* Scroll sentinel for infinite scroll */}
       {/* Prefetch sentinel - triggers at 70% to prefetch next page */}
@@ -368,8 +382,13 @@ export default function EngagementFeedPage() {
 
       {/* Loading indicator for next page */}
       {isFetchingNextPage ? (
-        <div className="text-text-secondary mt-4 text-center text-sm">
-          Loading more notifications...
+        <div
+          className="text-text-secondary mt-4 flex items-center justify-center gap-2 text-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <StatusIcon tone="pending" size="sm" />
+          <span>Loading more notifications…</span>
         </div>
       ) : null}
 
@@ -403,6 +422,6 @@ export default function EngagementFeedPage() {
           userTimezone={userTimezone}
         />
       ) : null}
-    </div>
+    </PageContent>
   );
 }

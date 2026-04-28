@@ -38,7 +38,9 @@ import {
   getConfirmedChildrenForParent,
   getGiveawayBlacklist,
   getPendingChildrenForParent,
+  getPendingParentRequestsForChild,
   getUserBasicInfo,
+  getUsersByNpubs,
   getUserBlastrRelayEnabled,
   getUserByNpubWithProfile,
   getUserEnableMirrorBlossom,
@@ -170,6 +172,8 @@ export interface SettingsLoaderData {
       | null;
     confirmedChildren: UserAccountInfo[];
     pendingChildren: UserAccountInfo[];
+    /** Parents who requested to link this account (when not yet linked or same shape as dashboard). */
+    pendingIncomingParents: UserAccountInfo[];
   };
   mutedList: MutedList | null;
   filterMuted: boolean;
@@ -254,6 +258,7 @@ export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
     parentUser: null,
     confirmedChildren: [],
     pendingChildren: [],
+    pendingIncomingParents: [],
   },
   mutedList: { npubs: [], lastSynced: new Date().toISOString() },
   filterMuted: false,
@@ -310,22 +315,36 @@ async function buildAccountsData(params: {
         : null,
       confirmedChildren: [],
       pendingChildren: [],
+      pendingIncomingParents: [],
     };
   }
 
   const parentNpub = params.myNpub;
-  const [confirmedChildren, pendingChildren] = await Promise.all([
-    parentNpub
-      ? getConfirmedChildrenForParent(parentNpub)
-      : Promise.resolve([]),
-    parentNpub ? getPendingChildrenForParent(parentNpub) : Promise.resolve([]),
-  ]);
+  const [confirmedChildren, pendingChildren, pendingParentHexes] =
+    await Promise.all([
+      parentNpub
+        ? getConfirmedChildrenForParent(parentNpub)
+        : Promise.resolve([]),
+      parentNpub
+        ? getPendingChildrenForParent(parentNpub)
+        : Promise.resolve([]),
+      parentNpub
+        ? getPendingParentRequestsForChild(parentNpub)
+        : Promise.resolve([]),
+    ]);
+  const pendingIncomingParentsRaw = await getUsersByNpubs(pendingParentHexes);
+  const pendingIncomingParents = pendingIncomingParentsRaw.map((u) => ({
+    id: u.npub,
+    npub: u.npub,
+    nostrProfile: u.nostrProfile ?? null,
+  })) as UserAccountInfo[];
   return {
     isChild: false,
     parentNpub,
     parentUser: null,
     confirmedChildren,
     pendingChildren,
+    pendingIncomingParents,
   };
 }
 
@@ -553,6 +572,7 @@ export async function loadSettingsData(
         scheduleType: string;
         scheduleConfig: unknown;
         isEnabled: boolean | null;
+        status: string | null;
         isDefault: boolean | null;
         userId: string;
         hashTagPresetId: string | null;
@@ -605,6 +625,12 @@ export async function loadSettingsData(
           !Array.isArray(row.scheduleConfig)
             ? (row.scheduleConfig as ScheduleConfig)
             : undefined,
+        status:
+          row.status === "PAUSED"
+            ? "paused"
+            : row.status === "ARCHIVED"
+              ? "archived"
+              : "active",
         isEnabled: row.isEnabled ?? undefined,
         isDefault: row.isDefault === true,
         userId: row.userId,

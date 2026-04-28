@@ -62,7 +62,7 @@ describe("Draft Edit Loader", () => {
 
     expect(result.post).toEqual(expect.objectContaining(mockPost));
     expect(result.user).toEqual(mockUser);
-    expect(result.queueTypes).toHaveLength(1); // Only enabled
+    expect(result.queueTypes).toHaveLength(2); // Paused queues stay visible
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
   });
 
@@ -98,7 +98,7 @@ describe("Draft Edit Loader", () => {
     ).rejects.toThrow();
   });
 
-  it("should filter out disabled queue types", async () => {
+  it("should filter out archived queue types", async () => {
     const mockPost = {
       id: TEST_POST_ID,
       userId: TEST_USER_ID,
@@ -106,8 +106,8 @@ describe("Draft Edit Loader", () => {
     };
     const mockQueueTypes = [
       { id: "queue-1", name: "Queue 1", isEnabled: true },
-      { id: "queue-2", name: "Queue 2", isEnabled: false },
-      { id: "queue-3", name: "Queue 3" }, // Missing isEnabled - treated as enabled
+      { id: "queue-2", name: "Queue 2", isEnabled: true, status: "archived" },
+      { id: "queue-3", name: "Queue 3" }, // Missing isEnabled - still shown if not archived
     ];
 
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);

@@ -14,6 +14,7 @@ import { Suspense, useEffect, useState } from "react";
 import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
@@ -27,6 +28,10 @@ import {
 } from "~/features/broadcast";
 import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
 import { broadcastStatusBadgeKind } from "~/features/broadcast/broadcast-status";
+import {
+  campaignFieldClassNames,
+  campaignSelectClassNames,
+} from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
@@ -240,7 +245,7 @@ function badgeClass(kind: string) {
     case "info":
       return "bg-info/15 text-info-text";
     case "mixed":
-      return "bg-brand/12 text-brand-text";
+      return "bg-selection-wash text-selection-foreground";
     default:
       return "bg-surface-hover text-text-secondary";
   }
@@ -371,24 +376,18 @@ function BroadcastDetailRouteLoaded({
         <div className="flex flex-wrap gap-2">
           <Form method="post">
             <input type="hidden" name="intent" value="duplicate" />
-            <button
-              type="submit"
-              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
-            >
+            <Button type="submit" variant="outline" size="sm">
               Duplicate
-            </button>
+            </Button>
           </Form>
           {campaign.failedCount > 0 &&
           (campaign.status === "COMPLETED" ||
             campaign.status === "COMPLETED_WITH_FAILURES") ? (
             <Form method="post">
               <input type="hidden" name="intent" value="retry_failed" />
-              <button
-                type="submit"
-                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
-              >
+              <Button type="submit" variant="outline" size="sm">
                 Retry failed
-              </button>
+              </Button>
             </Form>
           ) : null}
           {campaign.status === "SCHEDULED" ||
@@ -396,40 +395,36 @@ function BroadcastDetailRouteLoaded({
           campaign.status === "SENDING" ? (
             <Form method="post">
               <input type="hidden" name="intent" value="cancel" />
-              <button
+              <Button
                 type="submit"
-                className="border-warning/50 text-warning-text rounded-md border px-3 py-2 text-sm font-medium"
+                variant="outline"
+                size="sm"
+                className="border-warning/50 text-warning-text hover:bg-warning/10"
               >
                 Cancel
-              </button>
+              </Button>
             </Form>
           ) : null}
           <Form method="post">
             <input type="hidden" name="intent" value="export_csv" />
-            <button
-              type="submit"
-              className="bg-brand text-brand-on rounded-md px-3 py-2 text-sm font-medium"
-            >
+            <Button type="submit" size="sm">
               Export CSV
-            </button>
+            </Button>
           </Form>
           <Form method="post">
             <input type="hidden" name="intent" value="export_json" />
-            <button
-              type="submit"
-              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-2 text-sm font-medium"
-            >
+            <Button type="submit" variant="outline" size="sm">
               Export JSON
-            </button>
+            </Button>
           </Form>
         </div>
       </div>
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="font-medium">Progress</h2>
         <div className="bg-surface-hover mt-3 h-2 overflow-hidden rounded-full">
           <div
-            className="bg-brand h-full transition-all"
+            className="bg-selection-fill h-full transition-all"
             style={{ width: `${String(progressPct)}%` }}
           />
         </div>
@@ -443,7 +438,7 @@ function BroadcastDetailRouteLoaded({
         </p>
       </section>
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="font-medium">Performance</h2>
         <ul className="text-text-secondary mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <li>Success rate (of attempts): {successPct}%</li>
@@ -474,14 +469,14 @@ function BroadcastDetailRouteLoaded({
         </ul>
       </section>
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="font-medium">Message</h2>
         <p className="mt-2 text-sm whitespace-pre-wrap">
           {campaign.messageBody}
         </p>
       </section>
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <h2 className="mb-2 font-medium">Activity</h2>
         <ul className="divide-border max-h-72 divide-y overflow-y-auto text-sm">
           {campaign.eventLogs.map((log) => (
@@ -498,7 +493,7 @@ function BroadcastDetailRouteLoaded({
         </ul>
       </section>
 
-      <section className="border-border rounded-lg border p-4">
+      <section className="border-border bg-surface shadow-1 rounded-xl border p-4">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <h2 className="font-medium">Recipients</h2>
           <Form
@@ -512,7 +507,7 @@ function BroadcastDetailRouteLoaded({
             <select
               name="rstatus"
               defaultValue={data.statusFilter}
-              className="border-border bg-canvas rounded-md border px-2 py-1 text-sm"
+              className={cn(campaignSelectClassNames, "w-auto min-w-[7rem]")}
             >
               <option value="ALL">All</option>
               <option value="SENT">Sent</option>
@@ -527,14 +522,16 @@ function BroadcastDetailRouteLoaded({
               name="rq"
               placeholder="Search pubkey…"
               defaultValue={data.search}
-              className="border-border bg-canvas min-w-[160px] rounded-md border px-2 py-1 text-sm"
+              className={cn(campaignFieldClassNames, "min-w-[160px]")}
             />
-            <button
+            <Button
               type="submit"
-              className="text-brand text-sm font-medium hover:underline"
+              variant="link"
+              size="sm"
+              className="text-link hover:text-link-hover h-auto px-0"
             >
               Apply
-            </button>
+            </Button>
           </Form>
         </div>
         <div className="overflow-x-auto">
@@ -596,7 +593,7 @@ function BroadcastDetailRouteLoaded({
                     <div className="flex flex-wrap gap-1">
                       <button
                         type="button"
-                        className="text-brand hover:underline"
+                        className="text-link hover:text-link-hover hover:underline"
                         onClick={() => {
                           void navigator.clipboard.writeText(r.recipientPubkey);
                           setCopiedRecipientId(r.id);

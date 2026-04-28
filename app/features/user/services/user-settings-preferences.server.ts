@@ -474,28 +474,33 @@ export function applyLocaleDefaultsOnce(
 
 export type RunwayMode = "last-post" | "first-queue-empty";
 
-/** Days thresholds for KPI color: red when runway ≤ redThresholdDays, orange when ≤ orangeThresholdDays, amber otherwise. */
+/**
+ * Stored thresholds (legacy JSON keys): orange/warning band ≤ redThresholdDays;
+ * yellow band when > redThresholdDays and ≤ orangeThresholdDays; neutral above orangeThresholdDays.
+ */
 export interface RunwaySettings {
   queueNames: string[];
   mode: RunwayMode;
-  /** Red when runway ≤ this (default 3). */
+  /** Max days for orange/warning KPI accent (default 3). JSON key retained for compatibility. */
   redThresholdDays?: number;
-  /** Orange when runway ≤ this (default 7); must be ≥ redThresholdDays. */
+  /** Max days for yellow KPI accent (default 7); must be ≥ redThresholdDays. */
   orangeThresholdDays?: number;
   /** Target posts per day for schedule overview (Next 7 days); 0 = off, highlight only empty days. */
   targetPostsPerDay?: number;
 }
 
-const DEFAULT_RED_THRESHOLD_DAYS = 3;
-const DEFAULT_ORANGE_THRESHOLD_DAYS = 7;
+/** Default max days for orange/warning runway KPI band (stored as `redThresholdDays`). */
+const DEFAULT_RUNWAY_ORANGE_MAX_DAYS = 3;
+/** Default max days for yellow runway KPI band (stored as `orangeThresholdDays`). */
+const DEFAULT_RUNWAY_YELLOW_MAX_DAYS = 7;
 
 const DEFAULT_TARGET_POSTS_PER_DAY = 0;
 
 const DEFAULT_RUNWAY_SETTINGS: RunwaySettings = {
   queueNames: [],
   mode: "last-post",
-  redThresholdDays: DEFAULT_RED_THRESHOLD_DAYS,
-  orangeThresholdDays: DEFAULT_ORANGE_THRESHOLD_DAYS,
+  redThresholdDays: DEFAULT_RUNWAY_ORANGE_MAX_DAYS,
+  orangeThresholdDays: DEFAULT_RUNWAY_YELLOW_MAX_DAYS,
   targetPostsPerDay: DEFAULT_TARGET_POSTS_PER_DAY,
 };
 
@@ -524,13 +529,13 @@ export async function getRunwaySettings(
       Number.isInteger(obj["redThresholdDays"]) &&
       obj["redThresholdDays"] >= 0
         ? obj["redThresholdDays"]
-        : DEFAULT_RED_THRESHOLD_DAYS;
+        : DEFAULT_RUNWAY_ORANGE_MAX_DAYS;
     const orangeThresholdDays =
       typeof obj["orangeThresholdDays"] === "number" &&
       Number.isInteger(obj["orangeThresholdDays"]) &&
       obj["orangeThresholdDays"] >= 0
         ? obj["orangeThresholdDays"]
-        : DEFAULT_ORANGE_THRESHOLD_DAYS;
+        : DEFAULT_RUNWAY_YELLOW_MAX_DAYS;
     const targetPostsPerDay =
       typeof obj["targetPostsPerDay"] === "number" &&
       Number.isInteger(obj["targetPostsPerDay"]) &&
@@ -571,9 +576,10 @@ export async function updateRunwaySettings(
     return await updateRunwaySettingsRow(userId, {
       queueNames: settings.queueNames,
       mode: settings.mode,
-      redThresholdDays: settings.redThresholdDays ?? DEFAULT_RED_THRESHOLD_DAYS,
+      redThresholdDays:
+        settings.redThresholdDays ?? DEFAULT_RUNWAY_ORANGE_MAX_DAYS,
       orangeThresholdDays:
-        settings.orangeThresholdDays ?? DEFAULT_ORANGE_THRESHOLD_DAYS,
+        settings.orangeThresholdDays ?? DEFAULT_RUNWAY_YELLOW_MAX_DAYS,
       targetPostsPerDay:
         settings.targetPostsPerDay ?? DEFAULT_TARGET_POSTS_PER_DAY,
     });

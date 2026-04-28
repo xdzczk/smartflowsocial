@@ -21,6 +21,7 @@ import {
   RAIL_SECONDARY_ACTION,
 } from "~/components/action-rail";
 import { Button } from "~/components/ui/button";
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import {
   Tooltip,
   TooltipContent,
@@ -303,7 +304,7 @@ function ContestNewFormSetupSteps({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="text-brand text-xs font-medium underline-offset-2 hover:underline"
+                  className="text-link hover:text-link-hover text-xs font-medium underline-offset-2 hover:underline"
                 >
                   Details
                 </button>
@@ -453,47 +454,63 @@ function ContestNewFormSetupSteps({
         <div className="space-y-2">
           <p className="text-text-secondary text-xs font-medium">Exclusions</p>
           <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
+            <label
+              htmlFor="contest-exclude-muted"
+              className="flex cursor-pointer items-center gap-2.5"
+            >
+              <NativeCheckbox
+                id="contest-exclude-muted"
                 name="excludeMuted"
                 checked={excludeMuted}
                 onChange={(e) => {
                   setExcludeMuted(e.target.checked);
                 }}
+                className="shrink-0"
               />
               Exclude muted
             </label>
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
+            <label
+              htmlFor="contest-exclude-blocked"
+              className="flex cursor-pointer items-center gap-2.5"
+            >
+              <NativeCheckbox
+                id="contest-exclude-blocked"
                 name="excludeBlocked"
                 checked={excludeBlocked}
                 onChange={(e) => {
                   setExcludeBlocked(e.target.checked);
                 }}
+                className="shrink-0"
               />
               Exclude blocked
             </label>
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
+            <label
+              htmlFor="contest-exclude-low-trust"
+              className="flex cursor-pointer items-center gap-2.5"
+            >
+              <NativeCheckbox
+                id="contest-exclude-low-trust"
                 name="excludeLowTrust"
                 checked={excludeLowTrust}
                 onChange={(e) => {
                   setExcludeLowTrust(e.target.checked);
                 }}
+                className="shrink-0"
               />
               Exclude low trust
             </label>
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
+            <label
+              htmlFor="contest-exclude-non-followers"
+              className="flex cursor-pointer items-center gap-2.5"
+            >
+              <NativeCheckbox
+                id="contest-exclude-non-followers"
                 name="excludeNonFollowers"
                 checked={excludeNonFollowers}
                 onChange={(e) => {
                   setExcludeNonFollowers(e.target.checked);
                 }}
+                className="shrink-0"
               />
               Exclude non-followers
             </label>
@@ -1325,8 +1342,8 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
                     className={cn(
                       "h-12 w-full rounded-none rounded-b-xl border-0 text-xs font-semibold shadow-none",
                       primaryCtaDisabled || isSubmitting
-                        ? "bg-brand/80 text-brand-on hover:bg-brand/80 pointer-events-auto cursor-not-allowed opacity-95"
-                        : "bg-brand text-brand-on hover:bg-brand/90"
+                        ? "bg-action-primary/80 text-action-primary-foreground hover:bg-action-primary/80 pointer-events-auto cursor-not-allowed opacity-95"
+                        : "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90"
                     )}
                   >
                     {primaryLabel}

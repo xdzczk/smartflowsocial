@@ -162,7 +162,7 @@ export function BulkComposerPostCard({
               status.variant === "muted" &&
                 "border-border bg-surface-hover/40 text-text-secondary",
               status.variant === "default" &&
-                "border-brand/30 bg-brand/5 text-brand"
+                "border-brand/30 bg-brand/5 text-link"
             )}
           >
             {variant === "review" && reviewDisplay ? "Locked" : status.label}

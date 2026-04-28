@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useSearchParams } from "@remix-run/react";
 
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
 
 import { useAdminCurrency } from "../admin-currency";
@@ -19,6 +20,11 @@ const TABS = [
 ] as const;
 
 const RANGE_OPTIONS: RangePreset[] = ["24h", "7d", "30d", "90d", "all"];
+
+const RANGE_SEGMENT_OPTIONS = RANGE_OPTIONS.map((r) => ({
+  value: r,
+  label: r,
+}));
 
 export function AdminTabNav() {
   const location = useLocation();
@@ -42,8 +48,8 @@ export function AdminTabNav() {
   }
 
   return (
-    <div className="border-border from-canvas/95 to-canvas/75 sticky top-0 z-10 border-b bg-gradient-to-b backdrop-blur-md">
-      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-border bg-canvas sticky top-0 z-10 border-b">
+      <div className="flex w-full min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4">
         <nav className="flex flex-wrap gap-1" aria-label="Admin sections">
           {TABS.map((tab) => (
             <NavLink
@@ -52,10 +58,10 @@ export function AdminTabNav() {
               end={tab.end}
               className={({ isActive }) =>
                 cn(
-                  "motion-fast rounded-md px-3 py-1.5 text-sm font-medium",
+                  "focus-ring motion-fast rounded-md px-3 py-1.5 text-sm font-medium",
                   isActive
-                    ? "bg-surface-hover text-text shadow-1"
-                    : "text-text-secondary hover:text-text hover:bg-surface-hover/60"
+                    ? "bg-selection-fill text-selection-foreground shadow-1 hover:bg-selection-fill/90"
+                    : "text-text-secondary hover:bg-surface-hover/60 hover:text-text"
                 )
               }
             >
@@ -63,53 +69,33 @@ export function AdminTabNav() {
             </NavLink>
           ))}
         </nav>
-        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+        <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-text-secondary text-xs">Range</span>
-            <div className="flex flex-wrap gap-1">
-              {RANGE_OPTIONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRange(r)}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium",
-                    range === r
-                      ? "bg-brand text-brand-on"
-                      : "bg-surface-hover text-text-secondary hover:bg-surface-hover/80"
-                  )}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+            <span className="text-text-secondary shrink-0 text-xs">Range</span>
+            <SegmentedControl
+              aria-label="Date range"
+              value={range}
+              onChange={(next) => setRange(next as RangePreset)}
+              options={RANGE_SEGMENT_OPTIONS}
+              size="compact"
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-text-secondary text-xs">Display</span>
-            <div
-              className="flex flex-wrap gap-1"
-              role="group"
+            <span className="text-text-secondary shrink-0 text-xs">
+              Display
+            </span>
+            <SegmentedControl
               aria-label="Money display unit"
-            >
-              {ADMIN_DISPLAY_UNITS.map((u) => (
-                <button
-                  key={u}
-                  type="button"
-                  onClick={() => setUnit(u)}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium",
-                    unit === u
-                      ? "bg-brand text-brand-on"
-                      : "bg-surface-hover text-text-secondary hover:bg-surface-hover/80"
-                  )}
-                >
-                  {u}
-                </button>
-              ))}
-            </div>
+              value={unit}
+              onChange={(next) =>
+                setUnit(next as (typeof ADMIN_DISPLAY_UNITS)[number])
+              }
+              options={ADMIN_DISPLAY_UNITS.map((u) => ({ value: u, label: u }))}
+              size="compact"
+            />
           </div>
           {unit === "USD" || unit === "EUR" ? (
-            <p className="text-text-secondary max-w-md text-right text-[11px] leading-snug">
+            <p className="text-text-secondary max-w-md self-end text-right text-[11px] leading-snug">
               {fx.status === "loading" || fx.status === "idle"
                 ? "Loading spot…"
                 : spotFootnote}

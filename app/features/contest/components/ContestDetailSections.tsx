@@ -8,11 +8,13 @@ import {
   CampaignReceiptProofShell,
   PayoutMethodSelector,
   PayoutProgressCard,
+  campaignFieldClassNames,
   payoutCopy,
 } from "~/features/campaign-ui";
 import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { BRAND_NAME } from "~/lib/brand";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
+import { cn } from "~/lib/utils";
 
 import { contestCopy } from "../contest-copy";
 import type {
@@ -240,7 +242,7 @@ export function ContestDetailLiveSection({
         leadingScore={data.liveStats.leadingScore}
         aggregates={data.aggregates}
       />
-      <div className="border-border bg-surface-hover/15 rounded-lg border p-3">
+      <div className="border-border bg-surface shadow-1 rounded-xl border p-3">
         <p className="text-text-secondary mb-2 text-xs font-semibold tracking-wide uppercase">
           {contestCopy.shareActions}
         </p>
@@ -252,12 +254,7 @@ export function ContestDetailLiveSection({
       <div className="flex flex-wrap gap-2">
         <Form method="post">
           <input type="hidden" name="intent" value="freeze" />
-          <button
-            type="submit"
-            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-          >
-            {contestCopy.freezeLeaderboard}
-          </button>
+          <Button type="submit">{contestCopy.freezeLeaderboard}</Button>
         </Form>
       </div>
       <ContestLeaderboard
@@ -451,17 +448,12 @@ export function ContestDetailFormsSection({
       {isDraft ? (
         <Form method="post">
           <input type="hidden" name="intent" value="launch" />
-          <button
-            type="submit"
-            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-          >
-            {contestCopy.launchContest}
-          </button>
+          <Button type="submit">{contestCopy.launchContest}</Button>
         </Form>
       ) : null}
 
       {isDraft && canUsePresets ? (
-        <div className="border-border space-y-2 rounded-lg border p-4">
+        <div className="border-border bg-surface shadow-1 space-y-2 rounded-xl border p-4">
           <p className="text-text text-sm font-medium">
             {contestCopy.savePresetSectionTitle}
           </p>
@@ -474,14 +466,11 @@ export function ContestDetailFormsSection({
               name="presetName"
               required
               placeholder={contestCopy.presetNamePlaceholder}
-              className="border-border bg-canvas min-w-[200px] flex-1 rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignFieldClassNames, "min-w-[200px] flex-1")}
             />
-            <button
-              type="submit"
-              className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-4 py-2 text-sm font-medium"
-            >
+            <Button type="submit" variant="outline">
               Save
-            </button>
+            </Button>
           </Form>
         </div>
       ) : null}
@@ -502,24 +491,16 @@ export function ContestDetailFormsSection({
             {feeLabel} · Planned {data.quote.plannedPayoutSats.toLocaleString()}{" "}
             sats · Fee {data.quote.feeSats.toLocaleString()} sats
           </p>
-          <button
-            type="submit"
-            className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-          >
-            {contestCopy.lockWinners}
-          </button>
+          <Button type="submit">{contestCopy.lockWinners}</Button>
         </Form>
       ) : null}
 
       {isLocked || isCompleted ? (
         <Form method="post" className="flex flex-wrap gap-2">
           <input type="hidden" name="intent" value="exportCsv" />
-          <button
-            type="submit"
-            className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
-          >
+          <Button type="submit" variant="outline" size="sm">
             {contestCopy.proofExport}
-          </button>
+          </Button>
         </Form>
       ) : null}
 
@@ -527,7 +508,7 @@ export function ContestDetailFormsSection({
         <div className="space-y-4">
           <Form
             method="post"
-            className="border-border bg-surface space-y-3 rounded-lg border p-4"
+            className="border-border bg-surface shadow-1 space-y-3 rounded-xl border p-4"
           >
             <input type="hidden" name="intent" value="updatePayoutSettings" />
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -538,12 +519,9 @@ export function ContestDetailFormsSection({
                   fallback.
                 </p>
               </div>
-              <button
-                type="submit"
-                className="border-border bg-canvas hover:bg-surface-hover rounded-md border px-3 py-1.5 text-sm"
-              >
+              <Button type="submit" variant="outline" size="sm">
                 Save
-              </button>
+              </Button>
             </div>
 
             <PayoutMethodSelector
@@ -556,7 +534,7 @@ export function ContestDetailFormsSection({
           </Form>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={!data.nwc.enabled || isBatchPayoutPending}
                 onClick={() => {
@@ -565,7 +543,6 @@ export function ContestDetailFormsSection({
                   fd.set("stepIndex", "0");
                   batchPayoutFetcher.submit(fd, { method: "post" });
                 }}
-                className="bg-brand text-brand-on disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
                 title={
                   data.nwc.enabled
                     ? "Pay all winners using your connected wallet"
@@ -583,7 +560,7 @@ export function ContestDetailFormsSection({
                 ) : (
                   payoutCopy.payWinnersNow
                 )}
-              </button>
+              </Button>
               {!data.nwc.enabled ? (
                 <p className="text-text-secondary text-xs">
                   Auto payout requires NWC. Manual zaps still work.
@@ -606,7 +583,7 @@ export function ContestDetailFormsSection({
             summary={data.payoutSummary}
             feeLabel={feeLabel}
           />
-          <div className="border-border bg-surface space-y-2 rounded-lg border p-3 text-sm">
+          <div className="border-border bg-surface shadow-1 space-y-2 rounded-xl border p-3 text-sm">
             <p className="font-medium">
               {data.payoutSummary.paidOrSent} paid · {data.payoutSummary.failed}{" "}
               failed · {data.payoutSummary.needsReview} needs review ·{" "}
@@ -645,15 +622,10 @@ export function ContestDetailFormsSection({
             <input type="hidden" name="intent" value="complete" />
             <textarea
               name="completeOverrideReason"
-              className="border-border bg-canvas min-h-20 w-full rounded-md border px-3 py-2 text-sm"
+              className={cn(campaignFieldClassNames, "h-auto min-h-20 py-2")}
               placeholder="Override reason if completing with pending payouts"
             />
-            <button
-              type="submit"
-              className="bg-brand text-brand-on rounded-md px-4 py-2 text-sm font-medium"
-            >
-              Finish campaign
-            </button>
+            <Button type="submit">Finish campaign</Button>
           </Form>
         </div>
       ) : null}
@@ -731,9 +703,10 @@ export function ContestDetailFormsSection({
           actions={
             <>
               {data.winnerAnnouncementText ? (
-                <button
+                <Button
                   type="button"
-                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
+                  variant="outline"
+                  size="sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.winnerAnnouncementText ?? ""
@@ -741,12 +714,13 @@ export function ContestDetailFormsSection({
                   }
                 >
                   {contestCopy.copyWinnerAnnouncement}
-                </button>
+                </Button>
               ) : null}
               {data.publicSummaryText ? (
-                <button
+                <Button
                   type="button"
-                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
+                  variant="outline"
+                  size="sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.publicSummaryText ?? ""
@@ -754,12 +728,13 @@ export function ContestDetailFormsSection({
                   }
                 >
                   {contestCopy.copyPublicSummary}
-                </button>
+                </Button>
               ) : null}
               {data.fairnessProofText ? (
-                <button
+                <Button
                   type="button"
-                  className="border-border bg-canvas rounded-md border px-3 py-1.5 text-sm"
+                  variant="outline"
+                  size="sm"
                   onClick={() =>
                     void navigator.clipboard.writeText(
                       data.fairnessProofText ?? ""
@@ -767,7 +742,7 @@ export function ContestDetailFormsSection({
                   }
                 >
                   {contestCopy.copyFairnessProofJson}
-                </button>
+                </Button>
               ) : null}
             </>
           }

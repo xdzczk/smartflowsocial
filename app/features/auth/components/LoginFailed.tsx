@@ -169,7 +169,7 @@ export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
               <>
                 <Button
                   type="button"
-                  className="bg-brand text-brand-on hover:bg-brand/90 shadow-2"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2"
                   onClick={onTryAgain}
                 >
                   Try again

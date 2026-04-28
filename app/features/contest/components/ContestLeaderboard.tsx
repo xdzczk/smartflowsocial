@@ -176,7 +176,7 @@ export function ContestLeaderboard({
                         href={`https://njump.me/${row.entryEventId}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-brand text-xs hover:underline"
+                        className="text-link hover:text-link-hover text-xs hover:underline"
                       >
                         Open reply
                       </a>
@@ -188,7 +188,7 @@ export function ContestLeaderboard({
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="text-brand text-xs hover:underline"
+                        className="text-link hover:text-link-hover text-xs hover:underline"
                       >
                         Open profile
                       </a>

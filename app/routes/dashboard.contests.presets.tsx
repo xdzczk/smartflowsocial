@@ -94,7 +94,7 @@ export default function ContestPresetsPage() {
           <span className="text-text font-medium">Save as preset</span>.
         </p>
       ) : (
-        <div className="border-border overflow-x-auto rounded-lg border">
+        <div className="border-border bg-surface shadow-1 overflow-x-auto rounded-xl border">
           <table className="w-full text-left text-sm">
             <thead className="bg-surface-hover/40 text-text-secondary text-xs uppercase">
               <tr>
@@ -156,7 +156,10 @@ export default function ContestPresetsPage() {
       )}
 
       <p className="text-text-secondary text-sm">
-        <Link to="/dashboard/contests" className="text-brand hover:underline">
+        <Link
+          to="/dashboard/contests"
+          className="text-link hover:text-link-hover hover:underline"
+        >
           ← All contests
         </Link>
       </p>

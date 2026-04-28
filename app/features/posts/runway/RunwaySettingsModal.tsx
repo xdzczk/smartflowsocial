@@ -12,11 +12,14 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 interface RunwaySettings {
   queueNames: string[];
   mode: "last-post" | "first-queue-empty";
+  /** Persisted: max days for orange/warning KPI band. */
   redThresholdDays?: number;
+  /** Persisted: max days for yellow KPI band (≥ orange max). */
   orangeThresholdDays?: number;
 }
 interface QueueTypeItem {
@@ -182,35 +185,41 @@ export function RunwaySettingsModal({
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Runway shows</Label>
-            <div className="space-y-2">
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="radio"
-                  name="runwayMode"
+            <RadioGroup
+              value={mode}
+              onValueChange={(v) => {
+                setMode(v as RunwaySettings["mode"]);
+              }}
+              className="space-y-2"
+            >
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
                   value="last-post"
-                  checked={mode === "last-post"}
-                  onChange={() => setMode("last-post")}
-                  className="mt-1"
+                  id="runway-mode-last-post"
+                  className="mt-1 shrink-0"
                 />
-                <span className="text-sm">
+                <Label
+                  htmlFor="runway-mode-last-post"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
                   Days until <strong>last</strong> scheduled post (from selected
                   queues)
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="radio"
-                  name="runwayMode"
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
                   value="first-queue-empty"
-                  checked={mode === "first-queue-empty"}
-                  onChange={() => setMode("first-queue-empty")}
-                  className="mt-1"
+                  id="runway-mode-first-queue-empty"
+                  className="mt-1 shrink-0"
                 />
-                <span className="text-sm">
+                <Label
+                  htmlFor="runway-mode-first-queue-empty"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
                   Days until <strong>first</strong> selected queue runs out
-                </span>
-              </label>
-            </div>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div className="space-y-3">
@@ -218,19 +227,20 @@ export function RunwaySettingsModal({
               KPI color thresholds (days)
             </Label>
             <p className="text-text-secondary text-xs">
-              Runway card is red when ≤ first value, orange when ≤ second value,
-              amber otherwise.
+              Runway KPI uses warning orange when days remaining ≤ first value,
+              chart yellow when above that but still ≤ second value, and a
+              neutral style when runway is above the second value.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <div className="cluster">
                 <Label
-                  htmlFor="runway-red-threshold"
+                  htmlFor="runway-orange-max-days"
                   className="text-text-secondary shrink-0 text-sm"
                 >
-                  Red when ≤
+                  Orange when ≤
                 </Label>
                 <input
-                  id="runway-red-threshold"
+                  id="runway-orange-max-days"
                   type="number"
                   min={0}
                   max={365}
@@ -249,13 +259,13 @@ export function RunwaySettingsModal({
               </div>
               <div className="cluster">
                 <Label
-                  htmlFor="runway-orange-threshold"
+                  htmlFor="runway-yellow-max-days"
                   className="text-text-secondary shrink-0 text-sm"
                 >
-                  Orange when ≤
+                  Yellow when ≤
                 </Label>
                 <input
-                  id="runway-orange-threshold"
+                  id="runway-yellow-max-days"
                   type="number"
                   min={0}
                   max={365}
@@ -275,7 +285,7 @@ export function RunwaySettingsModal({
             </div>
             {orangeThresholdDays < redThresholdDays ? (
               <p className="text-danger text-xs" role="alert">
-                Orange threshold should be ≥ red threshold.
+                Yellow threshold should be ≥ orange threshold.
               </p>
             ) : null}
           </div>

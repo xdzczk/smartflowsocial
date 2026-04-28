@@ -4,14 +4,14 @@ import { getDashboardDesktopFlowCardContentHeightPx } from "../components/flow-v
 import { computeDashboardDesktopSplitHeights } from "../dashboard/dashboard-desktop-vertical-split";
 
 const LG_MIN_WIDTH = "(min-width: 1024px)";
-/** Tailwind `gap-4` between Flow zone and lower panels */
-const SPLIT_STACK_GAP_PX = 16;
+/** Must match Tailwind `gap-6` between Flow zone and lower row in `DashboardReturningUserSplit`. */
+const SPLIT_STACK_GAP_PX = 24;
 
 export interface DashboardDesktopLayoutHeights {
   splitRegionRef: RefObject<HTMLDivElement | null>;
   /** Outer Flow band (tinted zone); may exceed card+chrome for vertical breathing room */
   flowZoneHeightPx: number | undefined;
-  /** Next 7 Days + Queue Health row height (px) */
+  /** Next 7 Days + Queues row height (px) */
   lowerRowHeightPx: number | undefined;
   /** Aspect-limited Flow card content height (px) for the desktop FlowView prop */
   desktopFlowCardHeightPx: number | undefined;
@@ -61,6 +61,10 @@ export function useDashboardDesktopLayoutHeights(
     };
 
     read();
+    // Flex `flex-1` height often resolves one frame late; a second read picks up non-zero `clientHeight`.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(read);
+    });
     const el = splitRegionRef.current;
     const ro =
       typeof ResizeObserver !== "undefined"

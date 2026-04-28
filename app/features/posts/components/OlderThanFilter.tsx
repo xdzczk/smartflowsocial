@@ -7,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
+
+import { UNDERLINE_FILTER_FOCUS_CLASS } from "./constants";
 
 const OLDER_THAN_OPTIONS = [
   { value: "", label: "Any age" },
@@ -48,7 +51,10 @@ export function OlderThanFilter() {
         onValueChange={(v) => handleChange(v === "any" ? "" : v)}
       >
         <SelectTrigger
-          className="h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&>svg]:ml-0"
+          className={cn(
+            "h-9 border-0 border-b-2 border-transparent bg-transparent px-1 py-1.5 text-sm font-medium shadow-none [&>svg]:ml-0",
+            UNDERLINE_FILTER_FOCUS_CLASS
+          )}
           aria-label="Filter by age (older than)"
         >
           <SelectValue placeholder="Older than" />

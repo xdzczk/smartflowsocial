@@ -24,7 +24,7 @@ describe("Bulk Posts Service", () => {
   it("should return dashboard data with tags, queue types, and presets", async () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "queue-1", name: "Queue 1", isEnabled: true },
-      { id: "queue-2", name: "Queue 2", isEnabled: false },
+      { id: "queue-2", name: "Queue 2", isEnabled: true, status: "archived" },
       { id: "queue-3", name: "Queue 3", isEnabled: true },
     ]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -35,7 +35,7 @@ describe("Bulk Posts Service", () => {
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
     expect(result.tags).toEqual(["tag1", "tag2", "tag3"]);
-    expect(result.queueTypes).toHaveLength(2); // Only enabled ones
+    expect(result.queueTypes).toHaveLength(2); // Excludes archived only
     expect(result.queueTypes[0]?.id).toBe("queue-1");
     expect(result.queueTypes[1]?.id).toBe("queue-3");
     expect(result.hashTagPresets).toHaveLength(2); // All presets are returned
@@ -97,20 +97,21 @@ describe("Bulk Posts Service", () => {
     expect(result.tags).toEqual([]);
   });
 
-  it("should filter out disabled queue types", async () => {
+  it("should filter out archived queue types", async () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "queue-1", name: "Queue 1", isEnabled: true },
-      { id: "queue-2", name: "Queue 2", isEnabled: false },
+      { id: "queue-2", name: "Queue 2", isEnabled: true, status: "archived" },
       { id: "queue-3", name: "Queue 3", isEnabled: true },
-      { id: "queue-4", name: "Queue 4" }, // Missing isEnabled
+      { id: "queue-4", name: "Queue 4" }, // Missing isEnabled — still shown if not archived
     ]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
-    expect(result.queueTypes).toHaveLength(2);
+    expect(result.queueTypes).toHaveLength(3);
     expect(result.queueTypes[0]?.id).toBe("queue-1");
     expect(result.queueTypes[1]?.id).toBe("queue-3");
+    expect(result.queueTypes[2]?.id).toBe("queue-4");
   });
 
   it("should handle non-array queue types", async () => {

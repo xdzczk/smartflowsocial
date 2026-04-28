@@ -19,6 +19,7 @@ export function getPastPosts({
   beforeDate,
   limit: takeLimit,
   contentTab,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   startDate: Date;
@@ -30,6 +31,7 @@ export function getPastPosts({
   limit?: number;
   /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
   contentTab?: "all" | "posts" | "reposts" | "polls";
+  excludePausedQueueContent?: boolean;
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
@@ -59,6 +61,20 @@ export function getPastPosts({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
   }
 
   return prisma.post.findMany({

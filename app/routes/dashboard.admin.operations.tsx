@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import {
+  AdminAccessDenied,
   AdminOperationsPageInner,
   AdminOperationsPageSkeleton,
 } from "~/features/admin";
@@ -46,7 +47,7 @@ type AdminOperationsLoaderResult =
 export default function AdminOperationsPage() {
   const raw = useLoaderData() as AdminOperationsLoaderResult;
   if ("error" in raw) {
-    return <div className="p-4">Access denied.</div>;
+    return <AdminAccessDenied />;
   }
   const { operations } = raw;
 

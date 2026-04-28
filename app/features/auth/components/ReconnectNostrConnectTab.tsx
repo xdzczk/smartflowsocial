@@ -38,7 +38,7 @@ export function ReconnectNostrConnectTab({
             connection.
           </p>
           <textarea
-            className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+            className="focus-ring border-border bg-canvas shadow-1 min-h-[88px] w-full rounded-md border p-2 text-sm"
             value={relayList}
             onChange={(e) => onRelayListChange(e.target.value)}
             disabled={disabled}

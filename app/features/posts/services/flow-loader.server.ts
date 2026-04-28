@@ -34,6 +34,7 @@ import {
   type LongFormPostDTO,
 } from "../dtos";
 import { getFlowGoLiveAtMs } from "../flow-go-live-at";
+import { shouldShowQueueInUi } from "../queue-status";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 import type {
   CombinedContent,
@@ -72,8 +73,18 @@ async function getLastScheduledAtUtcMs(
   now: Date
 ): Promise<number | null> {
   const [postDate, longFormDate] = await Promise.all([
-    getLatestScheduledAtUtc({ userId, queueType, now }),
-    getLatestScheduledLongFormAtUtc({ userId, queueType, now }),
+    getLatestScheduledAtUtc({
+      userId,
+      queueType,
+      now,
+      excludePausedQueueContent: true,
+    }),
+    getLatestScheduledLongFormAtUtc({
+      userId,
+      queueType,
+      now,
+      excludePausedQueueContent: true,
+    }),
   ]);
   const postMs = postDate?.getTime() ?? 0;
   const longFormMs = longFormDate?.getTime() ?? 0;
@@ -214,7 +225,7 @@ export async function loadFlowData({
     getHashTagPresetsCached(userId),
   ]);
 
-  const enabledQueueTypes = queueTypes.filter((qt) => qt.isEnabled !== false);
+  const enabledQueueTypes = queueTypes.filter((qt) => shouldShowQueueInUi(qt));
   const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
   const fetchPosts =
@@ -321,6 +332,7 @@ export async function loadFlowData({
             limit: futureLimit + 1,
             afterScheduledAtUtc: afterDate,
             contentTab: postsContentTab,
+            excludePausedQueueContent: true,
           })
         : Promise.resolve({
             posts: [],
@@ -338,6 +350,7 @@ export async function loadFlowData({
             page: 1,
             limit: futureLimit + 1,
             afterScheduledAtUtc: afterDate,
+            excludePausedQueueContent: true,
           })
         : Promise.resolve({
             posts: [],
@@ -442,6 +455,7 @@ export async function loadFlowData({
           page: 1,
           limit: futureLimit + 1,
           contentTab: postsContentTab,
+          excludePausedQueueContent: true,
         })
       : Promise.resolve({
           posts: [] as Awaited<ReturnType<typeof getScheduledPosts>>["posts"],
@@ -458,6 +472,7 @@ export async function loadFlowData({
           queueType,
           page: 1,
           limit: futureLimit + 1,
+          excludePausedQueueContent: true,
         })
       : Promise.resolve({
           posts: [] as Awaited<

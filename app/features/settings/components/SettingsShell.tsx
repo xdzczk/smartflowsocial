@@ -5,6 +5,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 
+import { PageContent } from "~/components/layout/PageContent";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -59,10 +60,7 @@ export function SettingsShell({
 
   // No overflow-x-hidden on root — it breaks `position:sticky` on the rail (same as dashboard main / ActionRail).
   return (
-    <div
-      className="mx-auto w-full max-w-[1400px] px-4 pb-8 sm:px-6"
-      data-testid="settings-page"
-    >
+    <PageContent fluid className="pb-8" data-testid="settings-page">
       <div className="pt-2 pb-4">
         <PublishingPageHeader title={title} subtitle={subtitle} />
       </div>
@@ -173,6 +171,6 @@ export function SettingsShell({
           </nav>
         </aside>
       </div>
-    </div>
+    </PageContent>
   );
 }
