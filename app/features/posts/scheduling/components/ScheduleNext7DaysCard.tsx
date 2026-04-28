@@ -183,12 +183,7 @@ export function ScheduleNext7DaysCard({
                         {label}
                       </span>
                       <div className="min-w-0 flex-1" aria-hidden />
-                      <div
-                        className="flex min-w-0 shrink items-center justify-end gap-2 overflow-hidden"
-                        style={{
-                          maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + 1.5rem)`,
-                        }}
-                      >
+                      <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 overflow-hidden">
                         {hasBlocks ? (
                           <span
                             className="flex min-w-0 shrink-0 items-center gap-2"
@@ -250,9 +245,12 @@ export function ScheduleNext7DaysCard({
                                 }
                               }
                               const n = slots.length;
+                              /** Same visual density as legacy discrete blocks: 0.5rem per post (cap {@link MAX_BLOCKS}). */
+                              const barWidthRem = n * 0.5;
                               const bar = (
                                 <span
-                                  className="ring-border-subtle/25 inline-flex h-2 max-w-[7.5rem] min-w-[1.25rem] flex-[0_1_auto] overflow-hidden rounded-[3px] ring-1"
+                                  className="ring-border-subtle/25 inline-flex h-2 shrink-0 overflow-hidden rounded-[3px] ring-1"
+                                  style={{ width: `${barWidthRem}rem` }}
                                   aria-hidden
                                 >
                                   {slots.map((slot, idx) => {

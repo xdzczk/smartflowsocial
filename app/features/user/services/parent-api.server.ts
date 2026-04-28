@@ -5,10 +5,41 @@
 
 import { json } from "@remix-run/node";
 
+import {
+  getCompleteProfile,
+  LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+} from "~/features/auth/profile.server";
 import type { ProfileData } from "~/features/nostr/types";
-import { getUserBasicInfo, getUserByNpubWithProfile } from "~/features/user";
+import {
+  createUser,
+  getUserBasicInfo,
+  getUserByNpubWithProfile,
+} from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
+
+function isDisplayProfileEmpty(nostrProfile: unknown): boolean {
+  if (nostrProfile == null) return true;
+  let p: Record<string, unknown> | null = null;
+  if (typeof nostrProfile === "string") {
+    try {
+      p = JSON.parse(nostrProfile) as Record<string, unknown>;
+    } catch {
+      return true;
+    }
+  } else if (typeof nostrProfile === "object" && !Array.isArray(nostrProfile)) {
+    p = nostrProfile as Record<string, unknown>;
+  }
+  if (!p) return true;
+  const picture = p["picture"];
+  const name = p["name"];
+  const displayName = p["display_name"];
+  return (
+    (picture == null || String(picture).trim() === "") &&
+    (name == null || String(name).trim() === "") &&
+    (displayName == null || String(displayName).trim() === "")
+  );
+}
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
     return {
@@ -73,7 +104,28 @@ export async function loadParentData(userId: string) {
     return json({ parent: null });
   }
 
-  const bits = extractProfileBits(parent.nostrProfile);
+  let profileForDisplay: ProfileData | null | undefined =
+    parent.nostrProfile as ProfileData | null | undefined;
+
+  if (isDisplayProfileEmpty(profileForDisplay)) {
+    try {
+      const { nostrProfile: fresh } = await getCompleteProfile({
+        npub: parent.npub,
+        primalFetchBudgetMs: LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
+      });
+      if (!isDisplayProfileEmpty(fresh)) {
+        await createUser(parent.npub, JSON.stringify(fresh));
+        profileForDisplay = fresh as ProfileData | null | undefined;
+      }
+    } catch (e) {
+      logError(normalizeError(e), {
+        message: "Failed to refresh parent nostr profile",
+        npub: parent.npub,
+      });
+    }
+  }
+
+  const bits = extractProfileBits(profileForDisplay);
 
   return json({
     parent: {

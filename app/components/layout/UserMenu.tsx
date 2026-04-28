@@ -268,6 +268,7 @@ export default function UserMenu() {
   const user = useOptionalUser() as UserWithProfile | null | undefined;
   const subscription = useSubscription();
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
+  const parentFetcher = useFetcher<{ parent: ChildAccount | null }>();
   const logoutFetcher = useFetcher();
   const queryClient = useQueryClient();
   const hasReloadedRef = useRef(false);
@@ -305,6 +306,18 @@ export default function UserMenu() {
       fetcher.load("/api/children");
     }
   }, [open, hasAccountsAccess, fetcher.state, fetcher]);
+
+  useEffect(() => {
+    if (
+      open &&
+      isChild &&
+      parentNpub &&
+      parentFetcher.state === "idle" &&
+      !parentFetcher.data
+    ) {
+      parentFetcher.load("/api/parent");
+    }
+  }, [open, isChild, parentNpub, parentFetcher.state, parentFetcher]);
 
   useEffect(() => {
     if (fetcher.data?.children) {
@@ -380,6 +393,15 @@ export default function UserMenu() {
   const currentLabel = displayLabel(user);
   const displayName = getUserDisplayName(user);
   const avatarFallback = getUserAvatarFallback(user);
+
+  const parentFromApi = parentFetcher.data?.parent;
+  const parentLabel =
+    parentFromApi?.name ??
+    parentFromApi?.displayName ??
+    (parentNpub ? formatNpubShort(parentNpub) : "");
+  const parentPicture = parentFromApi?.picture;
+  const accountActionPending =
+    fetcher.state !== "idle" || parentFetcher.state !== "idle";
 
   const triggerProps = {
     displayName,
@@ -474,9 +496,9 @@ export default function UserMenu() {
                           onClick={() => {
                             void onSwitch(c.npub);
                           }}
-                          disabled={fetcher.state !== "idle"}
+                          disabled={accountActionPending}
                         >
-                          {fetcher.state !== "idle" ? "Switching..." : "Switch"}
+                          {accountActionPending ? "Switching..." : "Switch"}
                         </Button>
                       </div>
                     );
@@ -488,24 +510,40 @@ export default function UserMenu() {
 
           {/* Switch to Parent (if child account) */}
           {isChild && parentNpub ? (
-            <div className="rounded-md border p-3">
+            <div>
               <div className="mb-2 text-sm font-medium">Managed by account</div>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="truncate text-sm">
-                    {formatNpubShort(parentNpub)}
+              <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    {parentPicture ? (
+                      <AvatarImage
+                        src={parentPicture}
+                        alt={parentLabel || "Parent"}
+                      />
+                    ) : (
+                      <AvatarFallback>
+                        {(parentLabel || "P").slice(0, 1).toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">
+                      {parentLabel || formatNpubShort(parentNpub)}
+                    </div>
+                    <div className="text-text-secondary truncate text-xs">
+                      {formatNpubShort(parentNpub)}
+                    </div>
                   </div>
                 </div>
                 <Button
                   size="sm"
+                  className="shrink-0"
                   onClick={() => {
                     void onSwitchParent();
                   }}
-                  disabled={fetcher.state !== "idle"}
+                  disabled={accountActionPending}
                 >
-                  {fetcher.state !== "idle"
-                    ? "Switching..."
-                    : "Switch to parent"}
+                  {accountActionPending ? "Switching..." : "Switch to parent"}
                 </Button>
               </div>
             </div>
