@@ -27,6 +27,7 @@ export async function getScheduledPosts({
   queueType,
   since,
   afterScheduledAtUtc,
+  afterScheduledAtUtcInclusive = false,
   contentTab,
   scheduledFromUtc,
   scheduledToUtc,
@@ -39,6 +40,8 @@ export async function getScheduledPosts({
   since?: number; // Unix timestamp in milliseconds for delta sync
   /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
   afterScheduledAtUtc?: Date;
+  /** Use scheduledAtUtc >= cursor date. Flow pairs this with a composite cursor. */
+  afterScheduledAtUtcInclusive?: boolean;
   /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
   contentTab?: "all" | "posts" | "reposts" | "polls";
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
@@ -74,7 +77,7 @@ export async function getScheduledPosts({
     // Cursor-based: only posts after this date (for Flow load more future)
     if (afterScheduledAtUtc !== undefined) {
       whereClause.scheduledAtUtc = {
-        gt: afterScheduledAtUtc,
+        [afterScheduledAtUtcInclusive ? "gte" : "gt"]: afterScheduledAtUtc,
       };
     }
 
@@ -122,9 +125,7 @@ export async function getScheduledPosts({
           template: true,
           repostOf: { select: { fileUrl: true, postType: true } },
         },
-        orderBy: {
-          scheduledAtUtc: "asc",
-        },
+        orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
         skip,
         take: limit,
       }),

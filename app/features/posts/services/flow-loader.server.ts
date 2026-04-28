@@ -66,6 +66,63 @@ function getGoLiveAt(item: CombinedContent): number {
   return getFlowGoLiveAtMs(item);
 }
 
+const FUTURE_CURSOR_SEPARATOR = "|";
+const FUTURE_CURSOR_DUPLICATE_BUFFER = 120;
+
+interface FutureCursor {
+  goLiveAtMs: number;
+  type?: CombinedContent["type"];
+  id?: string;
+}
+
+function compareFlowItems(a: CombinedContent, b: CombinedContent): number {
+  const timeDiff = getGoLiveAt(a) - getGoLiveAt(b);
+  if (timeDiff !== 0) return timeDiff;
+  const typeDiff = a.type.localeCompare(b.type);
+  if (typeDiff !== 0) return typeDiff;
+  return a.id.localeCompare(b.id);
+}
+
+function makeFutureCursor(item: CombinedContent): string {
+  return [
+    String(getGoLiveAt(item)),
+    item.type,
+    encodeURIComponent(item.id),
+  ].join(FUTURE_CURSOR_SEPARATOR);
+}
+
+function parseFutureCursor(raw: string): FutureCursor {
+  const [timePart, typePart, idPart] = raw.split(FUTURE_CURSOR_SEPARATOR);
+  const goLiveAtMs = Number(timePart);
+  if (!Number.isFinite(goLiveAtMs)) {
+    return { goLiveAtMs: 0 };
+  }
+  if (
+    (typePart === "post" || typePart === "longform") &&
+    idPart !== undefined
+  ) {
+    return {
+      goLiveAtMs,
+      type: typePart,
+      id: decodeURIComponent(idPart),
+    };
+  }
+  return { goLiveAtMs };
+}
+
+function isAfterFutureCursor(
+  item: CombinedContent,
+  cursor: FutureCursor
+): boolean {
+  const goLiveAt = getGoLiveAt(item);
+  if (goLiveAt > cursor.goLiveAtMs) return true;
+  if (goLiveAt < cursor.goLiveAtMs) return false;
+  if (!cursor.type || !cursor.id) return false;
+  const typeDiff = item.type.localeCompare(cursor.type);
+  if (typeDiff !== 0) return typeDiff > 0;
+  return item.id.localeCompare(cursor.id) > 0;
+}
+
 /** Latest scheduled date (ms) across posts and longform for runway KPI. */
 async function getLastScheduledAtUtcMs(
   userId: string,
@@ -322,15 +379,18 @@ export async function loadFlowData({
 
   // Load more future only
   if (after !== undefined && after !== "") {
-    const afterDate = new Date(Number(after));
+    const futureCursor = parseFutureCursor(after);
+    const afterDate = new Date(futureCursor.goLiveAtMs);
+    const futureFetchLimit = futureLimit + FUTURE_CURSOR_DUPLICATE_BUFFER + 1;
     const [scheduledResult, scheduledLongFormResult] = await Promise.all([
       fetchPosts
         ? getScheduledPosts({
             userId,
             queueType,
             page: 1,
-            limit: futureLimit + 1,
+            limit: futureFetchLimit,
             afterScheduledAtUtc: afterDate,
+            afterScheduledAtUtcInclusive: true,
             contentTab: postsContentTab,
             excludePausedQueueContent: true,
           })
@@ -348,8 +408,9 @@ export async function loadFlowData({
             userId,
             queueType,
             page: 1,
-            limit: futureLimit + 1,
+            limit: futureFetchLimit,
             afterScheduledAtUtc: afterDate,
+            afterScheduledAtUtcInclusive: true,
             excludePausedQueueContent: true,
           })
         : Promise.resolve({
@@ -385,12 +446,14 @@ export async function loadFlowData({
     const combined = [
       ...scheduledPostsData.map((p) => postToCombinedContent(p)),
       ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
-    ].sort((a, b) => getGoLiveAt(a) - getGoLiveAt(b));
+    ]
+      .filter((item) => isAfterFutureCursor(item, futureCursor))
+      .sort(compareFlowItems);
 
     const hasMoreFuture = combined.length > futureLimit;
     const slice = combined.slice(0, futureLimit);
-    const futureCursor =
-      slice.length > 0 ? String(getGoLiveAt(slice[slice.length - 1]!)) : null;
+    const nextFutureCursor =
+      slice.length > 0 ? makeFutureCursor(slice[slice.length - 1]!) : null;
 
     const flowItems: FlowItemDTO[] = slice.map((item) => {
       if (item.type === "post") {
@@ -414,7 +477,7 @@ export async function loadFlowData({
       hasMorePast: false,
       hasMoreFuture,
       pastCursor: null,
-      futureCursor,
+      futureCursor: nextFutureCursor,
       lastScheduledAtUtc,
       user,
       queueTypes: queueTypesForClient,
@@ -514,7 +577,7 @@ export async function loadFlowData({
     ...pastLongFormData.map((p) => longFormPostToCombinedContent(p)),
     ...scheduledPostsData.map((p) => postToCombinedContent(p)),
     ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
-  ].sort((a, b) => getGoLiveAt(a) - getGoLiveAt(b));
+  ].sort(compareFlowItems);
 
   const pastItems = allCombined.filter((i) => getGoLiveAt(i) <= nowMs);
   const futureItems = allCombined.filter((i) => getGoLiveAt(i) > nowMs);
@@ -528,8 +591,8 @@ export async function loadFlowData({
   const pastCursor =
     flowCombined.length > 0 ? String(getGoLiveAt(flowCombined[0]!)) : null;
   const futureCursor =
-    flowCombined.length > 0
-      ? String(getGoLiveAt(flowCombined[flowCombined.length - 1]!))
+    futureSlice.length > 0
+      ? makeFutureCursor(futureSlice[futureSlice.length - 1]!)
       : null;
 
   const flowItems: FlowItemDTO[] = flowCombined.map((item) => {
