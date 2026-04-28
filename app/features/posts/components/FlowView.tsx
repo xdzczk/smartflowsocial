@@ -603,14 +603,14 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
 
     return (
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col justify-center lg:h-auto lg:flex-none"
+        className="flex min-h-0 w-full min-w-0 flex-1 flex-col justify-center lg:h-auto lg:flex-none"
         style={flowCardCssVarStyle}
       >
         <div
           ref={setScrollContainerRef}
           role="region"
           aria-label="Post timeline: past and scheduled"
-          className="scrollbar-hide min-w-0 overflow-x-auto overflow-y-clip overscroll-x-contain py-5 [overflow-clip-margin:20px]"
+          className="scrollbar-hide w-full min-w-0 overflow-x-auto overflow-y-clip overscroll-x-contain py-5 [overflow-clip-margin:20px]"
           style={{
             height: flowScrollOuterHeightPx,
             contain: "layout",
