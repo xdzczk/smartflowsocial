@@ -55,6 +55,12 @@ export interface PageHeaderProps {
  * compact tool pages, admin, dashboard sections). Marketing shells may adopt
  * `variant="marketing"` later without changing hierarchy.
  */
+const LIBRARY_LIKE_VARIANTS: ReadonlySet<PageHeaderVariant> = new Set([
+  "library",
+  "dashboard",
+  "marketing",
+]);
+
 export function PageHeader({
   title,
   subtitle,
@@ -64,8 +70,19 @@ export function PageHeader({
   className,
   titleClassName,
 }: PageHeaderProps) {
+  /** Keep title + actions on one row on narrow viewports (composer save status, archive links, etc.). */
+  const libraryLikeActionsRow =
+    actions != null && LIBRARY_LIKE_VARIANTS.has(variant);
+
   return (
-    <header className={cn(VARIANT_SHELL[variant], className)}>
+    <header
+      className={cn(
+        VARIANT_SHELL[variant],
+        libraryLikeActionsRow &&
+          "flex-row items-start justify-between gap-2 sm:gap-4",
+        className
+      )}
+    >
       <div className="min-w-0 flex-1 space-y-1">
         <h1 className={cn(VARIANT_TITLE[variant], titleClassName)}>{title}</h1>
         {subtitle ? (
