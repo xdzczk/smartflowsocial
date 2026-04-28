@@ -1,10 +1,7 @@
-import {
-  PAGE_MAX_WIDTH_CLASS,
-  PAGE_PAD_X_CLASS,
-} from "~/components/layout/page-layout-constants";
+import { PAGE_SHELL_FLUID_CLASS } from "~/components/layout/page-layout-constants";
 
-/** Matches `PageContent` constrained band when these skeletons render outside the shell. */
-const DEFERRED_LIST_PAGE_SHELL_CLASS = `mx-auto w-full ${PAGE_MAX_WIDTH_CLASS} ${PAGE_PAD_X_CLASS} py-6`;
+/** Matches dashboard main band padding when skeletons render outside deferred route content. */
+const DEFERRED_LIST_PAGE_SHELL_CLASS = `${PAGE_SHELL_FLUID_CLASS} py-6`;
 
 export type DeferredListPageSkeletonVariant =
   | "list"

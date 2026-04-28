@@ -135,9 +135,9 @@ body.has-btcpay-confirmation-bar {
   --spacing-128: 32rem;
 
   /**
-   * Phase C5 — canonical in-app product content width (1400px).
-   * Use via `max-w-page` with `PageContent` / `page-layout-constants` so dashboard,
-   * publishing library, settings, and admin chrome share one band.
+   * Optional max line width (1400px) for narrow / form layouts. The default
+   * in-app shell is fluid full width; use `max-w-page` or `PageContent` with
+   * `constrained` only where a readable column is intentional.
    */
   --max-width-page: 87.5rem;
 

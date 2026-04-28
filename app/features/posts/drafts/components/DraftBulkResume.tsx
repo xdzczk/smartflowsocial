@@ -54,7 +54,7 @@ export default function DraftBulkResume({
 
   return (
     <div className="bg-canvas min-h-screen p-6">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full min-w-0">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-text text-3xl font-bold">Resume Draft Posts</h1>
