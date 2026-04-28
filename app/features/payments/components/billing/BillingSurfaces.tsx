@@ -84,7 +84,7 @@ export function BillingAlertBanner({
   const { label, to } = billingContextPrimaryCta(billingContext.primaryCta);
 
   return (
-    <div className="max-w-page mx-auto w-full px-4 pt-4 sm:px-6 lg:px-8">
+    <div className="w-full min-w-0 px-4 pt-4 sm:px-6 lg:px-8">
       <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
         <div>
           <p className="font-medium">{copy.title}</p>

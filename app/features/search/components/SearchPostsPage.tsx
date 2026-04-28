@@ -149,7 +149,7 @@ function SearchPostsPageContent({
   );
 
   return (
-    <div className="mx-auto max-w-[1360px] px-4 py-6 sm:px-6">
+    <div className="w-full min-w-0 py-6">
       <header className="mb-6">
         <h1 className="text-text text-2xl font-bold tracking-tight">
           Lookup Result
@@ -253,7 +253,7 @@ function SearchPostsPageContent({
 
 function SearchPostSkeleton() {
   return (
-    <div className="mx-auto max-w-[1360px] px-4 py-6 sm:px-6">
+    <div className="w-full min-w-0 py-6">
       <div className="mb-6">
         <div className="bg-surface-hover mb-2 h-8 w-48 animate-pulse rounded-xs" />
         <div className="bg-surface-hover h-4 w-full max-w-md animate-pulse rounded-xs" />

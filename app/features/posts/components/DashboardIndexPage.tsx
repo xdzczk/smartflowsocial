@@ -442,7 +442,7 @@ function DashboardReturningUserSplit({
 
   return (
     <>
-      <div className="max-w-page mx-auto w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 sm:px-6 lg:px-8 lg:pt-0 lg:pb-5">
+      <div className="w-full flex-shrink-0 space-y-6 pt-1.5 pb-3 lg:pt-0 lg:pb-5">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
@@ -514,7 +514,7 @@ function DashboardReturningUserSplit({
           }
         >
           {flowError ? (
-            <Alert variant="destructive" className="stack-tight mx-4 lg:mx-8">
+            <Alert variant="destructive" className="stack-tight">
               <AlertDescription className="stack-tight">
                 <span className="font-medium">{flowError.message}</span>
                 <button
@@ -531,7 +531,7 @@ function DashboardReturningUserSplit({
           {flowError ? null : isNavigatingToDashboard &&
             flowItems.length === 0 ? (
             <div
-              className="border-border-subtle mx-4 flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8 lg:mx-8"
+              className="border-border-subtle flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8"
               role="status"
               aria-label="Loading timeline"
               aria-live="polite"
@@ -568,7 +568,7 @@ function DashboardReturningUserSplit({
         </div>
 
         <div
-          className="max-w-page mx-auto w-full shrink-0 px-4 max-lg:mt-0 sm:px-6 lg:min-h-0 lg:px-8"
+          className="w-full shrink-0 max-lg:mt-0 lg:min-h-0"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }
