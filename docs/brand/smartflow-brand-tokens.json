@@ -1,0 +1,86 @@
+{
+  "_description": "Compact SmartFlowSocial visual primitives for creative tooling — derived from app/tailwind.css. Hex values are approximate conversions from HSL tokens.",
+  "brand": {
+    "name": "SmartFlowSocial",
+    "shortName": "SmartFlow",
+    "tagline": "The Nostr-native publishing operating system",
+    "fontSans": "Kanit, system-ui, sans-serif",
+    "fontMono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+  },
+  "modes": {
+    "light": {
+      "canvas": "#f7f6f4",
+      "section": "#faf9f7",
+      "surface": "#ffffff",
+      "surfaceHover": "#f7f6f4",
+      "chromeShell": "#f2f0eb",
+      "textPrimary": "#1d1a16",
+      "textSecondary": "#585249",
+      "textTertiary": "#767069",
+      "border": "#dcd7cf",
+      "borderSubtle": "#eae6df",
+      "borderStrong": "#bdb5a8",
+      "accentPurple": "#7045d3",
+      "accentPurpleSoft": "#c4b8e8",
+      "brandSlateSelection": "#4f6087",
+      "linkBlue": "#5f6678",
+      "textOnAccent": "#ffffff",
+      "selectionWash": "rgba(112, 69, 211, 0.06)",
+      "selectionWashStrong": "rgba(112, 69, 211, 0.12)"
+    },
+    "dark": {
+      "canvas": "#151618",
+      "section": "#1a1b1f",
+      "surface": "#222327",
+      "surfaceHover": "#2a2c31",
+      "chromeShell": "#18191c",
+      "textPrimary": "#f4f4f6",
+      "textSecondary": "#9ea3ad",
+      "textTertiary": "#7d8088",
+      "border": "#363840",
+      "borderSubtle": "#24262b",
+      "borderStrong": "#495061",
+      "accentPurple": "#825cdb",
+      "accentPurpleSoft": "#5c4a78",
+      "brandSlateSelection": "#9ca8bc",
+      "linkBlue": "#aeb6c4",
+      "textOnAccent": "#ffffff",
+      "selectionWash": "rgba(130, 92, 219, 0.08)",
+      "selectionWashStrong": "rgba(130, 92, 219, 0.15)"
+    }
+  },
+  "radiiPx": {
+    "xs": 4,
+    "sm": 6,
+    "md": 10,
+    "lg": 14,
+    "xl": 16,
+    "pill": 9999
+  },
+  "elevation": {
+    "tier1_cards": "Soft multi-layer drop shadow + subtle inset top highlight (warm in light, cool charcoal in dark)",
+    "tier2_panels": "Deeper spread than tier 1 — featured dashboard cards, sticky rails",
+    "tier3_overlays": "Strongest — modals, popovers, dropdowns; brightest overlay surface"
+  },
+  "typographyScalePx": {
+    "display": 36,
+    "h1": 28,
+    "h2": 22,
+    "h3": 18,
+    "body": 14,
+    "bodySmall": 13,
+    "caption": 12,
+    "overline": 11
+  },
+  "accentUsage": {
+    "primaryCta": "accentPurple (brand-strong)",
+    "selectionChips": "brandSlateSelection + purple washes — purple signals 'active' not body text",
+    "bodyLinks": "linkBlue — lower chroma than accent purple",
+    "focusRing": "Matches accentPurple width ~2px"
+  },
+  "logoFiles": {
+    "fullLight": "public/logos/Logo-Full-LightMode.svg",
+    "fullDark": "public/logos/Logo-Full-DarkMode.svg",
+    "symbolOnly": "public/Logo-NoText.svg"
+  }
+}
