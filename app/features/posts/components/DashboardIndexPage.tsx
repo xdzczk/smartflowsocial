@@ -504,7 +504,7 @@ function DashboardReturningUserSplit({
         className="flex w-full min-w-0 flex-col gap-6 lg:min-h-0 lg:flex-1"
       >
         <div
-          className={`flow-zone border-border-subtle/75 mt-0 flex min-h-[264px] flex-1 flex-col justify-center overflow-y-auto border-y pt-1 pb-1 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
+          className={`flow-zone border-border-subtle/75 mt-0 flex min-h-[264px] w-full max-w-full min-w-0 flex-1 flex-col justify-center overflow-y-auto border-y pt-1 pb-1 md:min-h-[300px] lg:mt-0 lg:shrink-0 lg:justify-center ${
             flowZoneHeightPx != null
               ? "lg:min-h-0 lg:flex-none lg:overflow-visible lg:py-0"
               : "lg:min-h-[300px] lg:flex-none lg:overflow-y-auto lg:pt-1 lg:pb-1"
@@ -544,11 +544,7 @@ function DashboardReturningUserSplit({
               </div>
             </div>
           ) : (
-            <div
-              className={`flex min-h-0 min-w-0 flex-col ${
-                flowZoneHeightPx != null ? "w-full shrink-0 lg:min-h-0" : ""
-              }`}
-            >
+            <div className="flex min-h-0 w-full min-w-0 shrink-0 flex-col lg:min-h-0">
               <FlowView
                 ref={flowViewRef}
                 flowItems={flowItems}

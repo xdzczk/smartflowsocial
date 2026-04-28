@@ -74,12 +74,20 @@ export function PageHeader({
   const libraryLikeActionsRow =
     actions != null && LIBRARY_LIKE_VARIANTS.has(variant);
 
+  /** With a single-line title row, center the action slot to the heading; with a subtitle, keep top alignment. */
+  const libraryLikeActionsAlign = subtitle
+    ? "items-start sm:items-start"
+    : "items-center sm:items-center";
+
   return (
     <header
       className={cn(
         VARIANT_SHELL[variant],
         libraryLikeActionsRow &&
-          "flex-row items-start justify-between gap-2 sm:gap-4",
+          cn(
+            "flex-row justify-between gap-2 sm:gap-4",
+            libraryLikeActionsAlign
+          ),
         className
       )}
     >
