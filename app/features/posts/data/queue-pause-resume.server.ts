@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/use-cases/schedule-longform-post.use-case.server";
 import { toSignedEvent } from "~/features/posts/queue-payload.server";
-import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
+import {
+  convertPrismaQueueTypeToQueueType,
+  type QueueType,
+} from "~/features/posts/types";
 import { getUserTimezone } from "~/features/user";
 import { cancelLongFormPostJob, cancelPostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
@@ -49,6 +52,47 @@ function canReuseSignatureAtSameTime(
   return (
     currentScheduledAtUtc?.getTime() === nextScheduledAtUtc.getTime() &&
     toSignedEvent(signedEvent) != null
+  );
+}
+
+/** Milliseconds the scheduler may drift when probing just before a candidate instant. */
+const CADENCE_MATCH_TOLERANCE_MS = 2_000;
+
+/**
+ * Returns true when `candidate` is still the next cadence-aligned slot after a probe
+ * immediately before it (same logic as picking that slot first vs advancing from now).
+ */
+async function candidateMatchesQueueCadence(params: {
+  queueType: QueueType;
+  userId: string;
+  userTimezone: string;
+  candidate: Date;
+}): Promise<boolean> {
+  const probe = new Date(
+    params.candidate.getTime() - CADENCE_MATCH_TOLERANCE_MS
+  );
+  const next = await calculateNextScheduleTime({
+    queueType: params.queueType,
+    userId: params.userId,
+    userTimezone: params.userTimezone,
+    baseTime: probe,
+  });
+  return (
+    Math.abs(next.getTime() - params.candidate.getTime()) <=
+    CADENCE_MATCH_TOLERANCE_MS
+  );
+}
+
+function originalScheduledIntentUtc(row: {
+  scheduledAtUtc: Date | null;
+  nominalScheduledAtUtc: Date | null;
+  queueHeldOriginalScheduledAtUtc: Date | null;
+}): Date | null {
+  return (
+    row.scheduledAtUtc ??
+    row.queueHeldOriginalScheduledAtUtc ??
+    row.nominalScheduledAtUtc ??
+    null
   );
 }
 
@@ -260,7 +304,8 @@ export async function resumeQueueById(params: {
     return a.row.id.localeCompare(b.row.id);
   });
 
-  let cursorBase = new Date();
+  const resumeAnchor = new Date();
+  let cursorBase = resumeAnchor;
   const userTimezone = userTimezoneRaw ?? "UTC";
   const postScheduleUseCase = new SchedulePostUseCase();
   const longFormScheduleUseCase = new ScheduleLongFormPostUseCase();
@@ -322,12 +367,47 @@ export async function resumeQueueById(params: {
   }
 
   for (const item of orderedItems) {
-    const nextScheduledAtUtc = await calculateNextScheduleTime({
-      queueType: queueForScheduling,
-      userId,
-      userTimezone,
-      baseTime: cursorBase,
-    });
+    const row = item.row;
+    const earliestAllowed = new Date(
+      Math.max(resumeAnchor.getTime(), cursorBase.getTime())
+    );
+    const originalIntent = originalScheduledIntentUtc(row);
+
+    let nextScheduledAtUtc: Date;
+
+    const canReuseAtOriginalTime =
+      originalIntent != null &&
+      originalIntent.getTime() >= earliestAllowed.getTime() &&
+      canReuseSignatureAtSameTime(
+        row.scheduledAtUtc,
+        originalIntent,
+        row.signedEvent
+      );
+
+    if (canReuseAtOriginalTime) {
+      const stillOnCadence = await candidateMatchesQueueCadence({
+        queueType: queueForScheduling,
+        userId,
+        userTimezone,
+        candidate: originalIntent,
+      });
+      nextScheduledAtUtc = stillOnCadence
+        ? originalIntent
+        : await calculateNextScheduleTime({
+            queueType: queueForScheduling,
+            userId,
+            userTimezone,
+            baseTime: cursorBase,
+          });
+    } else {
+      nextScheduledAtUtc = await calculateNextScheduleTime({
+        queueType: queueForScheduling,
+        userId,
+        userTimezone,
+        baseTime: cursorBase,
+      });
+    }
+
     cursorBase = new Date(nextScheduledAtUtc.getTime() + 1000);
 
     const signedEvent = toSignedEvent(item.row.signedEvent);

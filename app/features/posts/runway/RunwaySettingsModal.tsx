@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 interface RunwaySettings {
   queueNames: string[];
@@ -182,35 +183,41 @@ export function RunwaySettingsModal({
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Runway shows</Label>
-            <div className="space-y-2">
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="radio"
-                  name="runwayMode"
+            <RadioGroup
+              value={mode}
+              onValueChange={(v) => {
+                setMode(v as RunwaySettings["mode"]);
+              }}
+              className="space-y-2"
+            >
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
                   value="last-post"
-                  checked={mode === "last-post"}
-                  onChange={() => setMode("last-post")}
-                  className="mt-1"
+                  id="runway-mode-last-post"
+                  className="mt-1 shrink-0"
                 />
-                <span className="text-sm">
+                <Label
+                  htmlFor="runway-mode-last-post"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
                   Days until <strong>last</strong> scheduled post (from selected
                   queues)
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="radio"
-                  name="runwayMode"
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
                   value="first-queue-empty"
-                  checked={mode === "first-queue-empty"}
-                  onChange={() => setMode("first-queue-empty")}
-                  className="mt-1"
+                  id="runway-mode-first-queue-empty"
+                  className="mt-1 shrink-0"
                 />
-                <span className="text-sm">
+                <Label
+                  htmlFor="runway-mode-first-queue-empty"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
                   Days until <strong>first</strong> selected queue runs out
-                </span>
-              </label>
-            </div>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div className="space-y-3">

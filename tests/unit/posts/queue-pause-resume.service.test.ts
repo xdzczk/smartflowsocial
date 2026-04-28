@@ -104,6 +104,9 @@ import {
   resumeQueueById,
 } from "~/features/posts/data/queue-pause-resume.server";
 
+/** Matches `CADENCE_MATCH_TOLERANCE_MS` probe in queue-pause-resume.server.ts */
+const CADENCE_PROBE_EPSILON_MS = 50;
+
 describe("queue pause/resume service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -288,6 +291,99 @@ describe("queue pause/resume service", () => {
       queue: { id: "queue-1", status: "ACTIVE" },
       resumedCount: 0,
       needsResignCount: 2,
+    });
+  });
+
+  it("keeps original scheduled time when still on cadence so signature reuse matches signed event", async () => {
+    const slot = new Date("2026-06-10T14:00:00.000Z");
+    mockQueueTypeFindFirst.mockResolvedValue({
+      id: "queue-1",
+      userId: "user-1",
+      name: "Main",
+      scheduleType: "INTERVAL",
+      scheduleConfig: { intervalHours: 6 },
+      isEnabled: true,
+      status: "PAUSED",
+    });
+    mockQueueTypeUpdate.mockResolvedValue({
+      id: "queue-1",
+      userId: "user-1",
+      name: "Main",
+      scheduleType: "INTERVAL",
+      scheduleConfig: { intervalHours: 6 },
+      isEnabled: true,
+      status: "ACTIVE",
+    });
+    mockPostFindMany.mockResolvedValue([
+      {
+        id: "root-preserve",
+        userId: "user-1",
+        scheduledAtUtc: slot,
+        nominalScheduledAtUtc: null,
+        queueHeldOriginalScheduledAtUtc: slot,
+        createdAt: new Date("2026-05-01T12:00:00Z"),
+        signedEvent: {
+          id: "evt",
+          pubkey: "pk",
+          created_at: 100,
+          kind: 1,
+          tags: [],
+          content: "",
+          sig: "sig",
+        },
+        dependencyMode: "standalone",
+        parentScheduledActionId: null,
+      },
+    ]);
+    mockLongFormFindMany.mockResolvedValue([]);
+    mockCalculateNextScheduleTime.mockImplementation(
+      async ({ baseTime }: { baseTime?: Date }) => {
+        const probeMs = slot.getTime() - 2000;
+        if (
+          baseTime &&
+          Math.abs(baseTime.getTime() - probeMs) <= CADENCE_PROBE_EPSILON_MS
+        ) {
+          return slot;
+        }
+        return new Date("2099-01-01T00:00:00Z");
+      }
+    );
+
+    const result = await resumeQueueById({
+      userId: "user-1",
+      queueTypeId: "queue-1",
+    });
+
+    expect(mockSchedulePostExecute).toHaveBeenCalledTimes(1);
+    expect(mockSchedulePostExecute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        postId: "root-preserve",
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest asymmetric matcher
+        signedEvent: expect.objectContaining({ id: "evt" }),
+      })
+    );
+    expect(mockPostUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "root-preserve", userId: "user-1" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest asymmetric matcher
+        data: expect.objectContaining({
+          queueHoldStatus: "NONE",
+          queueHeldOriginalScheduledAtUtc: null,
+        }),
+      })
+    );
+    expect(mockPostUpdate).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest asymmetric matcher
+        data: expect.objectContaining({
+          queueHoldStatus: "NEEDS_RESIGN_AFTER_QUEUE_RESUME",
+        }),
+      })
+    );
+    expect(result).toMatchObject({
+      queue: { id: "queue-1", status: "ACTIVE" },
+      resumedCount: 1,
+      needsResignCount: 0,
     });
   });
 });

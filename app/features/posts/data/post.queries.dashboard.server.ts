@@ -268,10 +268,12 @@ export async function getLatestScheduledAtUtc({
   userId,
   queueType = "all",
   now,
+  excludePausedQueueContent = false,
 }: {
   userId: string;
   queueType?: string;
   now: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<Date | null> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
@@ -284,6 +286,19 @@ export async function getLatestScheduledAtUtc({
     } else {
       whereClause.queueType = { name: queueType };
     }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
   }
   const post = await prisma.post.findFirst({
     where: whereClause,

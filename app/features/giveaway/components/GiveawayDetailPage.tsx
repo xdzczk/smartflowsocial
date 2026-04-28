@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import {
   PayoutMethodSelector,
   campaignFieldClassNames,
@@ -761,8 +762,7 @@ export function GiveawayDetailPage({
                             key={opt}
                             className="text-text cluster-tight.5 text-sm"
                           >
-                            <input
-                              type="checkbox"
+                            <NativeCheckbox
                               name="engagementTypes"
                               value={opt}
                               defaultChecked={
@@ -770,6 +770,7 @@ export function GiveawayDetailPage({
                                   ? giveaway.engagementTypes.includes(opt)
                                   : undefined
                               }
+                              className="shrink-0"
                             />
                             {opt.charAt(0) + opt.slice(1).toLowerCase()}
                           </label>

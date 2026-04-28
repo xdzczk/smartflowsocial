@@ -469,7 +469,7 @@ export function DashboardLayoutPage(): ReactNode {
                   <Link
                     prefetch="intent"
                     to="/plans"
-                    className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
+                    className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
                   >
                     Restore plan
                   </Link>
@@ -477,7 +477,7 @@ export function DashboardLayoutPage(): ReactNode {
                     type="button"
                     aria-label="Dismiss subscription expired banner"
                     onClick={handleDismissSubscriptionExpiredBanner}
-                    className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-focus-ring motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md focus-visible:ring-1 focus-visible:outline-none"
+                    className="focus-ring-offset text-text-secondary hover:text-text hover:bg-surface-hover motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
                   >
                     <X
                       className={INLINE_ICON_SIZE_CLASS}

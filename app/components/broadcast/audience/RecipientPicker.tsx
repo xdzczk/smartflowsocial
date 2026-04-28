@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { formatNpubShort } from "~/lib/nostr-conversion";
@@ -627,14 +628,13 @@ export function RecipientPicker({
                       inSel && "bg-surface-hover/20"
                     )}
                   >
-                    <input
-                      type="checkbox"
-                      className="border-border rounded-xs"
+                    <Checkbox
                       checked={checkedBrowser.has(pk)}
                       disabled={disabled}
-                      onChange={() => {
+                      onCheckedChange={() => {
                         toggleCheck(pk);
                       }}
+                      className="shrink-0"
                     />
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={pr.picture ?? undefined} alt="" />

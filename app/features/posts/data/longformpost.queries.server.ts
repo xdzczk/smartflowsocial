@@ -349,10 +349,12 @@ export async function getLatestScheduledLongFormAtUtc({
   userId,
   queueType = "all",
   now,
+  excludePausedQueueContent = false,
 }: {
   userId: User["id"];
   queueType?: string;
   now: Date;
+  excludePausedQueueContent?: boolean;
 }): Promise<Date | null> {
   const where: Prisma.LongFormPostWhereInput = {
     userId,
@@ -365,6 +367,15 @@ export async function getLatestScheduledLongFormAtUtc({
     } else {
       where.queueType = { name: queueType };
     }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.LongFormPostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      pausedQueueExclusion,
+    ];
   }
   const post = await prisma.longFormPost.findFirst({
     where,

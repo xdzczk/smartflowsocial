@@ -134,7 +134,7 @@ describe("Combined Content Utilities", () => {
 
       expect(result.queueType).toBeDefined();
       expect(result.queueType?.name).toBe("Queue 1");
-      expect(result.queueType?.color).toBe("#DC2626"); // red token accent (QUEUE_COLOR_ACCENTS.red)
+      expect(result.queueType?.color).toBe("#D62F2F"); // red token accent (QUEUE_COLOR_ACCENTS.red)
     });
   });
 

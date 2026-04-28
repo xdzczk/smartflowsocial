@@ -213,7 +213,7 @@ export function SubscriptionCheckoutModal({
                     onBlur={() => setNwcTouched(true)}
                     placeholder="nostr+walletconnect://…"
                     autoComplete="off"
-                    className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs focus-visible:ring-1 focus-visible:outline-none"
+                    className="focus-ring border-border bg-surface-hover text-text focus:border-brand min-h-[84px] w-full rounded-lg border px-3 py-2 text-xs"
                   />
                   {nwcEnabled && maskedNwcString ? (
                     <p className="text-text-secondary mt-1 text-xs">
@@ -267,7 +267,7 @@ export function SubscriptionCheckoutModal({
                         )
                       }
                       disabled={isSubmitting}
-                      className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring w-full max-w-md rounded-lg border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+                      className="focus-ring border-border bg-surface-hover text-text focus:border-brand w-full max-w-md rounded-lg border px-3 py-2 text-sm"
                     >
                       {manualDurations.map((months) => (
                         <option key={months} value={months}>

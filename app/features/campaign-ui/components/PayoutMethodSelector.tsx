@@ -1,3 +1,4 @@
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import { cn } from "~/lib/utils";
 
 import {
@@ -44,12 +45,11 @@ export function PayoutMethodSelector({
 
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm">
-          <input
-            type="checkbox"
+          <NativeCheckbox
             name="payoutAutoRunEnabled"
             defaultChecked={autoPayEnabled}
             disabled={walletMode !== "nwc_creator" || !nwcEnabled}
-            className="mr-2 align-middle"
+            className="mr-2 shrink-0 align-middle"
           />
           {autoPayLabel}
         </label>

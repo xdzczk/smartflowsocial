@@ -81,7 +81,6 @@ export function PostDetailHeader({
           type="button"
           className={cn(
             "focus-ring text-text-secondary hover:text-text motion-fast rounded-md border border-transparent p-1.5",
-            "focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none",
             "hover:bg-surface-hover/50 shrink-0"
           )}
           aria-label="Close"

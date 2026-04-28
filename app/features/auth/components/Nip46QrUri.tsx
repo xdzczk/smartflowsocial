@@ -101,7 +101,7 @@ export function Nip46QrUri({
               id={textareaId}
               readOnly
               value={uri}
-              className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs focus-visible:ring-1 focus-visible:outline-none"
+              className="focus-ring border-border bg-canvas shadow-1 w-full truncate rounded-md border px-3 py-2.5 font-mono text-xs"
             />
           ) : (
             <div
@@ -145,7 +145,7 @@ export function Nip46QrUri({
           <textarea
             id={textareaId}
             readOnly
-            className="border-border bg-canvas focus-visible:ring-focus-ring shadow-1 min-h-[88px] w-full rounded-md border p-3 text-sm focus-visible:ring-1 focus-visible:outline-none"
+            className="focus-ring border-border bg-canvas shadow-1 min-h-[88px] w-full rounded-md border p-3 text-sm"
             value={uri}
           />
           {helperText ? (

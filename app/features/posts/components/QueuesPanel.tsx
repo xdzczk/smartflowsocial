@@ -7,7 +7,7 @@ import {
   Play,
   Plus,
 } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { StatusIcon } from "~/components/ui/status-icon";
 import { queueCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
 import { buildComposeCreateUrl } from "~/features/posts/composer";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
@@ -35,6 +36,67 @@ import {
 
 const KPI_CARD_CLASS =
   "kpi-card border-border-subtle/80 flex min-w-0 flex-1 flex-col overflow-hidden shadow-1 lg:h-full lg:min-h-0";
+
+type QueueToggleFetcherData =
+  | {
+      success: true;
+      needsResignCount?: number;
+      resumedCount?: number;
+      pausedPostCount?: number;
+      pausedLongFormCount?: number;
+    }
+  | { error: string };
+
+type ToggleSuccessData = Extract<QueueToggleFetcherData, { success: true }>;
+
+function isQueueToggleSuccess(
+  data: QueueToggleFetcherData
+): data is ToggleSuccessData {
+  return "success" in data;
+}
+
+function buildResumeQueueSuccessFeedback(data: ToggleSuccessData): {
+  variant: "success";
+  message: string;
+  scheduledLink?: boolean;
+} {
+  const needsResign = data.needsResignCount ?? 0;
+  const resumed = data.resumedCount ?? 0;
+  let message: string;
+  let scheduledLink = false;
+  if (needsResign > 0 && resumed > 0) {
+    message = `Queue resumed. ${resumed} ${resumed === 1 ? "post" : "posts"} republished; ${needsResign} ${needsResign === 1 ? "still needs" : "still need"} re-signing before publish.`;
+    scheduledLink = true;
+  } else if (needsResign > 0) {
+    message = `Queue resumed. ${needsResign} scheduled ${needsResign === 1 ? "post" : "posts"} need re-signing before publish.`;
+    scheduledLink = true;
+  } else if (resumed > 0) {
+    message = `Queue resumed; ${resumed} scheduled ${resumed === 1 ? "post is" : "posts are"} back on the calendar.`;
+  } else {
+    message = "Queue resumed.";
+  }
+  return {
+    variant: "success",
+    message,
+    scheduledLink,
+  };
+}
+
+function buildPauseQueueSuccessFeedback(data: ToggleSuccessData): {
+  variant: "success";
+  message: string;
+} {
+  const posts = data.pausedPostCount ?? 0;
+  const lf = data.pausedLongFormCount ?? 0;
+  const total = posts + lf;
+  return {
+    variant: "success",
+    message:
+      total > 0
+        ? `Queue paused; ${total} scheduled ${total === 1 ? "item" : "items"} held.`
+        : "Queue paused.",
+  };
+}
 
 export interface QueuesPanelProps {
   /** Queue definitions in display order (same as settings). */
@@ -59,8 +121,28 @@ export function QueuesPanel({
   queuesLimit,
 }: QueuesPanelProps) {
   const revalidator = useRevalidator();
-  const toggleFetcher = useFetcher<{ success?: boolean; error?: string }>();
-  const lastToggleHandled = useRef<unknown>(null);
+  const toggleFetcher = useFetcher<QueueToggleFetcherData>();
+  const prevFetcherSubmitting = useRef(false);
+  const lastProcessedFetcherJson = useRef<string | null>(null);
+
+  const [pendingIntent, setPendingIntent] = useState<{
+    queueId: string;
+    action: "pause_queue" | "resume_queue";
+  } | null>(null);
+
+  const [feedback, setFeedback] = useState<
+    | {
+        variant: "success";
+        message: string;
+        scheduledLink?: boolean;
+      }
+    | { variant: "error"; message: string }
+    | null
+  >(null);
+
+  const lastActionMetaRef = useRef<{
+    action: "pause_queue" | "resume_queue";
+  } | null>(null);
 
   const countByName = useMemo(() => {
     const m = new Map<string, number>();
@@ -72,16 +154,47 @@ export function QueuesPanel({
   }, [queueCounts]);
 
   useEffect(() => {
+    if (feedback?.variant !== "success") return;
+    const t = window.setTimeout(() => setFeedback(null), 4500);
+    return () => window.clearTimeout(t);
+  }, [feedback]);
+
+  useEffect(() => {
     const data = toggleFetcher.data;
-    if (!data || toggleFetcher.state !== "idle") return;
-    if (data.error) {
-      toast.error(data.error);
-      return;
-    }
-    if (data.success && lastToggleHandled.current !== data) {
-      lastToggleHandled.current = data;
+    const isIdle = toggleFetcher.state === "idle";
+    const becameIdle = isIdle && prevFetcherSubmitting.current && data != null;
+    prevFetcherSubmitting.current = !isIdle;
+
+    if (!isIdle) return;
+
+    if (!becameIdle) return;
+
+    const dedupeKey = JSON.stringify(data);
+    if (lastProcessedFetcherJson.current === dedupeKey) return;
+    lastProcessedFetcherJson.current = dedupeKey;
+
+    queueMicrotask(() => {
+      if ("error" in data && data.error) {
+        setFeedback({ variant: "error", message: data.error });
+        return;
+      }
+
+      if (!isQueueToggleSuccess(data)) return;
+
       revalidator.revalidate();
-    }
+
+      const meta = lastActionMetaRef.current;
+      lastActionMetaRef.current = null;
+
+      if (meta?.action === "resume_queue") {
+        setFeedback(buildResumeQueueSuccessFeedback(data));
+        return;
+      }
+
+      if (meta?.action === "pause_queue") {
+        setFeedback(buildPauseQueueSuccessFeedback(data));
+      }
+    });
   }, [toggleFetcher.data, toggleFetcher.state, revalidator]);
 
   const createDisabled = !canCreateMoreQueues || !onCreateQueueClick;
@@ -106,7 +219,10 @@ export function QueuesPanel({
     const fd = new FormData();
     fd.set("_action", action);
     fd.set("id", queue.id);
-    lastToggleHandled.current = null;
+    lastProcessedFetcherJson.current = null;
+    lastActionMetaRef.current = { action };
+    setFeedback(null);
+    setPendingIntent({ queueId: queue.id, action });
     toggleFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
   };
 
@@ -138,6 +254,36 @@ export function QueuesPanel({
           )}
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
+          {feedback?.variant === "success" ? (
+            <p className="text-success mb-2 text-[11px] leading-snug">
+              {feedback.message}
+              {feedback.scheduledLink ? (
+                <>
+                  {" "}
+                  <Link
+                    to="/dashboard/scheduled"
+                    className="font-medium underline underline-offset-2"
+                  >
+                    Open Scheduled
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          {feedback?.variant === "error" ? (
+            <div className="border-danger/30 bg-danger/10 text-danger mb-2 rounded-md border px-2 py-1.5 text-xs">
+              <span className="flex flex-wrap items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">{feedback.message}</span>
+                <button
+                  type="button"
+                  className="text-danger shrink-0 underline underline-offset-2"
+                  onClick={() => setFeedback(null)}
+                >
+                  Dismiss
+                </button>
+              </span>
+            </div>
+          ) : null}
           {queueTypes.length === 0 ? (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-1 py-3">
               <div className="flex w-full max-w-[17.5rem] flex-col items-center text-center">
@@ -292,6 +438,11 @@ export function QueuesPanel({
                         size="icon"
                         className="text-text-secondary hover:text-text size-8"
                         disabled={toggleFetcher.state !== "idle"}
+                        aria-busy={
+                          pendingIntent?.queueId === qt.id
+                            ? toggleFetcher.state !== "idle"
+                            : undefined
+                        }
                         onClick={() =>
                           submitQueueAction(
                             qt,
@@ -302,7 +453,15 @@ export function QueuesPanel({
                           paused ? `Resume ${qt.name}` : `Pause ${qt.name}`
                         }
                       >
-                        {paused ? (
+                        {pendingIntent?.queueId === qt.id &&
+                        toggleFetcher.state !== "idle" ? (
+                          <span className="inline-flex items-center justify-center">
+                            <StatusIcon tone="pending" size="sm" />
+                            <span className="sr-only">
+                              {paused ? "Resuming queue" : "Pausing queue"}
+                            </span>
+                          </span>
+                        ) : paused ? (
                           <Play className={INLINE_ICON_SIZE_CLASS} />
                         ) : (
                           <Pause className={INLINE_ICON_SIZE_CLASS} />

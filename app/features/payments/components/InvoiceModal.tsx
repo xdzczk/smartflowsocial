@@ -156,7 +156,7 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="border-border bg-surface-hover text-text focus:border-brand focus-visible:ring-focus-ring min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+              className="focus-ring border-border bg-surface-hover text-text focus:border-brand min-w-0 flex-1 rounded-l-lg border px-3 py-2 text-sm"
             />
             <button
               type="button"
@@ -164,7 +164,7 @@ export function InvoiceModal({
                 onCopy(invoiceData.invoice);
                 setIsCopied(true);
               }}
-              className="border-border dark:border-border bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring rounded-r-lg border border-l-0 px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+              className="focus-ring-offset border-border bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 dark:border-border rounded-r-lg border border-l-0 px-3 py-2 text-sm"
             >
               {isCopied ? "Copied" : "Copy"}
             </button>
@@ -183,7 +183,7 @@ export function InvoiceModal({
                 void handlePayInWallet();
               }}
               disabled={isOpeningWallet}
-              className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring mt-2 w-full rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 mt-2 w-full rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isOpeningWallet ? "Opening wallet..." : "Pay in wallet"}
             </button>
@@ -205,7 +205,7 @@ export function InvoiceModal({
               href={invoiceData.invoice}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring block w-full rounded-lg px-4 py-3 text-center text-sm font-medium focus-visible:ring-1 focus-visible:outline-none"
+              className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 block w-full rounded-lg px-4 py-3 text-center text-sm font-medium"
             >
               Open BTCPay checkout
             </a>
@@ -231,7 +231,7 @@ export function InvoiceModal({
                   void handlePayInWallet();
                 }}
                 disabled={isOpeningWallet}
-                className="rounded-xs focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+                className="focus-ring-offset rounded-xs disabled:cursor-not-allowed disabled:opacity-70"
                 aria-label="Open wallet from Lightning QR"
                 title="Open wallet"
               >
@@ -289,7 +289,7 @@ export function InvoiceModal({
               <button
                 type="button"
                 onClick={() => onCheckPayment(invoiceData.paymentId!)}
-                className="border-border bg-surface-hover text-text hover:bg-surface-active focus-visible:ring-focus-ring rounded-lg border px-4 py-2 text-sm font-medium focus-visible:ring-1 focus-visible:outline-none"
+                className="focus-ring border-border bg-surface-hover text-text hover:bg-surface-active rounded-lg border px-4 py-2 text-sm font-medium"
               >
                 Check payment
               </button>
@@ -298,7 +298,7 @@ export function InvoiceModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 focus-visible:ring-focus-ring rounded-lg border px-4 py-2 text-sm font-medium focus-visible:ring-1 focus-visible:outline-none"
+                className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 rounded-lg border px-4 py-2 text-sm font-medium"
               >
                 Close
               </button>

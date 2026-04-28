@@ -50,7 +50,7 @@ export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
         <button
           type="submit"
           disabled={isSearching || !form.formState.isValid}
-          className="border-action-primary bg-action-primary text-action-primary-foreground hover:border-action-primary/90 hover:bg-action-primary/90 hover:text-action-primary-foreground focus-visible:ring-focus-ring/50 active:border-action-primary active:bg-action-primary inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 text-sm leading-5 font-semibold focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="focus-ring-offset border-action-primary bg-action-primary text-action-primary-foreground hover:border-action-primary/90 hover:bg-action-primary/90 hover:text-action-primary-foreground active:border-action-primary active:bg-action-primary inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 text-sm leading-5 font-semibold disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSearching ? (
             <>

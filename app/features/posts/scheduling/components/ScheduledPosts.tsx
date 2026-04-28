@@ -45,7 +45,7 @@ export default function ScheduledPosts() {
                 type="text"
                 id="search"
                 name="search"
-                className="border-border placeholder-muted-foreground dark:border-border dark:bg-surface dark:focus:border-brand focus:border-brand focus-visible:ring-focus-ring/50 block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6 focus-visible:ring-2"
+                className="focus-ring border-border placeholder-muted-foreground dark:border-border dark:bg-surface dark:focus:border-brand focus:border-brand block w-full rounded-lg border py-2 pr-3 pl-10 text-sm leading-6"
                 placeholder="Search posts.."
               />
             </div>
@@ -177,7 +177,7 @@ export default function ScheduledPosts() {
                           onClick={() =>
                             setSelectedPost(post as unknown as PostData)
                           }
-                          className="bg-surface border-border text-text hover:border-border hover:text-text focus-visible:ring-focus-ring/25 active:border-border hover:shadow-1 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1 text-sm leading-5 font-semibold focus-visible:ring-2 active:shadow-none"
+                          className="focus-ring bg-surface border-border text-text hover:border-border hover:text-text active:border-border hover:shadow-1 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1 text-sm leading-5 font-semibold active:shadow-none"
                         >
                           View
                         </button>

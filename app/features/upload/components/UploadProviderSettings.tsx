@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { NativeRadio } from "~/components/ui/native-radio";
 import { ProviderSelectionSection } from "~/features/settings/components/patterns";
 import { BRAND_BLOSSOM_LABEL, BRAND_NAME } from "~/lib/brand";
 import { clearUploadProviderCache } from "~/lib/query";
@@ -96,7 +98,6 @@ export function UploadProviderSettings({
     (isCustomSelected && !customUrlValid) ||
     (isSfsLocked && selectedProvider === "BLOSSOM_SFS");
 
-  const primaryAccentColor = "hsl(var(--brand))";
   const optionRowBase =
     "flex items-start space-x-3 rounded-lg border p-3 motion-fast";
   const optionRowSelected = "border-brand bg-surface-hover/30";
@@ -125,18 +126,16 @@ export function UploadProviderSettings({
                 optionRowSelected
             )}
           >
-            <input
+            <NativeRadio
               id="blossom-primal"
               name="uploadProvider"
-              type="radio"
               value="BLOSSOM_PRIMAL"
               checked={
                 selectedProvider === "BLOSSOM_PRIMAL" ||
                 selectedProvider === "BLOSSOM"
               }
               onChange={() => setSelectedProvider("BLOSSOM_PRIMAL")}
-              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
-              style={{ accentColor: primaryAccentColor }}
+              className="mt-1 shrink-0"
             />
             <div className="flex-1">
               <label
@@ -161,15 +160,13 @@ export function UploadProviderSettings({
               selectedProvider === "BLOSSOM_BLOSSTR" && optionRowSelected
             )}
           >
-            <input
+            <NativeRadio
               id="blossom-blosstr"
               name="uploadProvider"
-              type="radio"
               value="BLOSSOM_BLOSSTR"
               checked={selectedProvider === "BLOSSOM_BLOSSTR"}
               onChange={() => setSelectedProvider("BLOSSOM_BLOSSTR")}
-              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
-              style={{ accentColor: primaryAccentColor }}
+              className="mt-1 shrink-0"
             />
             <div className="flex-1">
               <label
@@ -230,15 +227,13 @@ export function UploadProviderSettings({
                 selectedProvider === "BLOSSOM_SFS" && optionRowSelected
               )}
             >
-              <input
+              <NativeRadio
                 id="blossom-sfs"
                 name="uploadProvider"
-                type="radio"
                 value="BLOSSOM_SFS"
                 checked={selectedProvider === "BLOSSOM_SFS"}
                 onChange={() => setSelectedProvider("BLOSSOM_SFS")}
-                className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
-                style={{ accentColor: primaryAccentColor }}
+                className="mt-1 shrink-0"
               />
               <div className="flex-1">
                 <label
@@ -264,15 +259,13 @@ export function UploadProviderSettings({
               selectedProvider === "BLOSSOM_CUSTOM" && optionRowSelected
             )}
           >
-            <input
+            <NativeRadio
               id="blossom-custom"
               name="uploadProvider"
-              type="radio"
               value="BLOSSOM_CUSTOM"
               checked={selectedProvider === "BLOSSOM_CUSTOM"}
               onChange={() => setSelectedProvider("BLOSSOM_CUSTOM")}
-              className="focus-ring border-border accent-checkbox mt-1 h-4 w-4"
-              style={{ accentColor: primaryAccentColor }}
+              className="mt-1 shrink-0"
             />
             <div className="flex-1">
               <label
@@ -289,7 +282,7 @@ export function UploadProviderSettings({
                 </span>
                 . Uploads use this endpoint as the primary media server.
               </p>
-              <input
+              <Input
                 type="url"
                 name="customBlossomUrl"
                 value={customBlossomUrlInput}
@@ -299,7 +292,7 @@ export function UploadProviderSettings({
                 disabled={!isCustomSelected}
                 placeholder="https://your-blossom.example.com"
                 className={cn(
-                  "border-border bg-canvas ring-offset-canvas mt-3 w-full rounded-md border px-3 py-2 text-sm",
+                  "bg-canvas mt-3 text-sm",
                   customUrlError && "border-danger"
                 )}
                 aria-invalid={customUrlError ? true : undefined}
@@ -326,13 +319,9 @@ export function UploadProviderSettings({
         ) : null}
 
         <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={submitDisabled}
-            className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitDisabled}>
             {isSubmitting ? "Saving…" : ctaLabel}
-          </button>
+          </Button>
         </div>
       </fetcher.Form>
     </ProviderSelectionSection>

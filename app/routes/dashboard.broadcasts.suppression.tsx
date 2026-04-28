@@ -7,6 +7,7 @@ import { useState } from "react";
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import { requireUserId } from "~/features/auth";
 import {
   addBroadcastSuppression,
@@ -181,8 +182,15 @@ export default function BroadcastSuppressionRoute() {
             />
           </div>
           <div className="flex flex-wrap gap-4">
-            <label className="cluster text-sm">
-              <input type="checkbox" name="permanent" defaultChecked />
+            <label
+              htmlFor="broadcast-suppression-permanent"
+              className="cluster text-sm"
+            >
+              <NativeCheckbox
+                id="broadcast-suppression-permanent"
+                name="permanent"
+                defaultChecked
+              />
               Permanent
             </label>
             <label className="cluster text-sm">

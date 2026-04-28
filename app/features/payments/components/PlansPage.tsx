@@ -365,7 +365,7 @@ export function PlansPage(): ReactNode {
                     )
                   );
                 }}
-                className={`focus-visible:ring-focus-ring/40 motion-fast rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none ${
+                className={`focus-ring motion-fast rounded-lg px-4 py-2 text-sm font-medium ${
                   billingCadence === "monthly"
                     ? "bg-surface text-text shadow-1"
                     : "text-text-secondary hover:bg-surface-hover/60 hover:text-text"
@@ -388,7 +388,7 @@ export function PlansPage(): ReactNode {
                     )
                   );
                 }}
-                className={`focus-visible:ring-focus-ring/40 motion-fast rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none ${
+                className={`focus-ring motion-fast rounded-lg px-4 py-2 text-sm font-medium ${
                   billingCadence === "yearly"
                     ? "bg-surface text-text shadow-1"
                     : "text-text-secondary hover:bg-surface-hover/60 hover:text-text"
@@ -479,7 +479,7 @@ export function PlansPage(): ReactNode {
                     {isFounderCurrent ? (
                       <Link
                         to="/dashboard"
-                        className="bg-surface-hover text-text hover:bg-surface-active focus-visible:ring-focus-ring/40 motion-fast flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                        className="focus-ring bg-surface-hover text-text hover:bg-surface-active motion-fast flex items-center justify-center rounded-lg px-4 py-3 text-center text-sm font-medium"
                       >
                         You have Founder access
                       </Link>
@@ -494,7 +494,7 @@ export function PlansPage(): ReactNode {
                           }
                           openCheckoutForPlan(founderOffering.id);
                         }}
-                        className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 focus-visible:ring-focus-ring/40 motion-fast rounded-lg px-4 py-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                        className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 motion-fast rounded-lg px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-55"
                       >
                         {isLoading && selectedPlan === founderOffering.id
                           ? "Processing…"

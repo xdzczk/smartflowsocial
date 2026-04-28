@@ -12,7 +12,7 @@ export interface ChoiceTileOption<T extends string = string> {
 const tileBase = cn(
   "border-border bg-surface shadow-1 cursor-pointer rounded-xl border motion-fast",
   "hover:border-selection-border/40 hover:bg-surface-hover/25",
-  "focus-within:ring-focus-ring focus-within:ring-1",
+  "focus-within:ring-2 focus-within:ring-focus-ring",
   "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
 );
 

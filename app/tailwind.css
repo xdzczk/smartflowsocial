@@ -703,6 +703,20 @@ body.has-btcpay-confirmation-bar {
     background-color: hsl(var(--shell-chrome-bg));
   }
 
+  /*
+   * Sidebar seam vs header strip, main canvas, and footer (one hairline; lg+).
+   * Same chrome bg — border is barely visible separation only.
+   */
+  @media (min-width: 1024px) {
+    #page-sidebar.dashboard-shell-chrome {
+      border-right: 1px solid hsl(var(--border-subtle) / 0.14);
+    }
+
+    .dark #page-sidebar.dashboard-shell-chrome {
+      border-right-color: hsl(var(--border-subtle) / 0.24);
+    }
+  }
+
   #page-header.dashboard-shell-chrome {
     box-shadow: var(--chrome-shell-shadow-header);
   }
@@ -1084,8 +1098,11 @@ body.has-btcpay-confirmation-bar {
     outline: none !important;
     box-shadow: none !important;
   }
-  /* Focus rings: brand only, no white/background offset band */
-  *:focus-visible {
+  /*
+   * Flush rings on :focus-visible (no donut gap) for focus-ring utility.
+   * Exclude `.focus-ring-offset` so Button / icon CTAs keep ring-offset-2 + canvas gap.
+   */
+  *:focus-visible:not(.focus-ring-offset) {
     --tw-ring-offset-width: 0px !important;
   }
 }
@@ -1481,6 +1498,11 @@ body.has-btcpay-confirmation-bar {
   /* Native checkbox accent color - controls checked state */
   .accent-checkbox {
     accent-color: hsl(var(--checkbox));
+  }
+
+  /* Native checkbox/radio accent — matches action-primary / Radix control fill */
+  .accent-action-primary {
+    accent-color: hsl(var(--brand-strong));
   }
 
   /* ============================================================================

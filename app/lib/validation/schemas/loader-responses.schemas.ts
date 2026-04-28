@@ -28,6 +28,18 @@ const paginationSchema = z.object({
 });
 
 /**
+ * Prisma serializes QueueStatus as ACTIVE | PAUSED | ARCHIVED; client types use lowercase.
+ */
+const queueTypeStatusSchema = z.preprocess(
+  (val) => {
+    if (val === undefined || val === null) return;
+    if (typeof val === "string") return val.toLowerCase();
+    return val;
+  },
+  z.enum(["active", "paused", "archived"]).optional()
+);
+
+/**
  * Schema for QueueType
  */
 const queueTypeSchema = z.object({
@@ -47,7 +59,7 @@ const queueTypeSchema = z.object({
         .optional(),
     })
     .optional(),
-  status: z.enum(["active", "paused", "archived"]).optional(),
+  status: queueTypeStatusSchema,
   isEnabled: z.boolean().optional(),
   userId: z.string().optional(),
 });
