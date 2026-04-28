@@ -436,16 +436,16 @@ export function QueuesPanel({
                   return (
                     <li
                       key={qt.id}
-                      className="flex min-w-0 items-start gap-2.5 py-3"
+                      className="flex min-w-0 items-start gap-2.5 py-3.5"
                     >
                       <div
-                        className="mt-1 size-2 shrink-0 rounded-full"
+                        className="mt-1.5 size-2 shrink-0 rounded-full"
                         style={{ backgroundColor: dotColor }}
                         aria-hidden
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1 space-y-1.5">
+                          <div className="min-w-0 flex-1 space-y-2">
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                               <span className="text-text truncate text-xs font-semibold tracking-tight">
                                 {qt.name}
@@ -468,7 +468,7 @@ export function QueuesPanel({
                                 }}
                               />
                             </div>
-                            <div className="text-text-secondary flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-snug">
+                            <div className="text-text-secondary flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-relaxed">
                               {cadenceRich ? (
                                 <span className="min-w-0">{cadenceRich}</span>
                               ) : null}
@@ -491,12 +491,12 @@ export function QueuesPanel({
                               )}
                             </div>
                             {nextLine ? (
-                              <p className="text-text-tertiary text-[11px] leading-snug">
+                              <p className="text-text-tertiary text-[11px] leading-relaxed">
                                 {nextLine}
                               </p>
                             ) : null}
                             {paused ? (
-                              <p className="text-text-tertiary text-[11px] leading-snug">
+                              <p className="text-text-tertiary text-[11px] leading-relaxed">
                                 Not sending
                               </p>
                             ) : null}

@@ -230,6 +230,7 @@ export function BulkComposerModalContent({
       <BulkComposerShell
         title=""
         headerActions={null}
+        railStickyShell={false}
         workspace={
           <>
             <Dialog
@@ -326,6 +327,7 @@ export function BulkComposerModalContent({
         }
         rail={
           <BulkSettingsRail
+            shellOwnsRailSticky={false}
             stage={bulkComposerStage}
             batchMode={bulkBatchMode}
             onBatchModeChange={setBulkBatchMode}

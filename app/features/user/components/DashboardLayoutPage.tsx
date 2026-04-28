@@ -96,6 +96,11 @@ function isCalendarPath(pathname: string): boolean {
   return pathname.startsWith("/dashboard/calendar");
 }
 
+/** Broadcasts section: keep the shell to the viewport and scroll `main` so the page footer does not sit in an extra document scroll / overscroll band. */
+function isBroadcastsSectionPath(pathname: string): boolean {
+  return pathname.startsWith("/dashboard/broadcasts");
+}
+
 function isComposePath(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard/compose") ||
@@ -291,6 +296,7 @@ export function DashboardLayoutPage(): ReactNode {
   const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
   const isCalendar = isCalendarPath(location.pathname);
+  const isBroadcastsSection = isBroadcastsSectionPath(location.pathname);
   const isSubscriptionExpired = isSubscriptionExpiredForUi(
     currentSubscription ?? null
   );
@@ -362,7 +368,11 @@ export function DashboardLayoutPage(): ReactNode {
       <div
         id="page-container"
         data-dashboard-shell
-        className={`bg-canvas mx-auto flex min-h-dvh w-full min-w-0 flex-col ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-12"}`}
+        className={`bg-canvas mx-auto flex w-full min-w-0 flex-col ${
+          isBroadcastsSection
+            ? "h-dvh max-h-dvh min-h-0 overflow-hidden"
+            : "min-h-dvh"
+        } ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-12"}`}
         {...(mobileSidebarOpen ? { "data-mobile-sidebar-open": "" } : {})}
       >
         <Header
@@ -379,7 +389,7 @@ export function DashboardLayoutPage(): ReactNode {
           id="page-content"
           className={`pt-header flex min-h-0 max-w-full min-w-0 flex-1 flex-col ${
             isCalendar ? "overflow-hidden" : ""
-          }`}
+          } ${isBroadcastsSection ? "overflow-y-auto overscroll-y-contain" : ""}`}
         >
           {referredBy != null ? (
             <ReferredByBanner
@@ -491,7 +501,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isCalendar || isDashboardIndex ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : `${isBroadcastsSection ? "min-h-0" : ""}pt-4.5 pb-24`} ${isCalendar || isDashboardIndex ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">
@@ -520,7 +530,7 @@ export function DashboardLayoutPage(): ReactNode {
             ) : (
               <div
                 className={`animate-in fade-in-0 duration-200 ${
-                  isCalendar || isDashboardIndex
+                  isCalendar || isDashboardIndex || isBroadcastsSection
                     ? "flex min-h-0 flex-1 flex-col"
                     : ""
                 }`}

@@ -7,6 +7,7 @@ import type {
 } from "~/features/posts/bulk-composer/types";
 import type { BulkPost, RepostConditions } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../BulkPostCard";
 
@@ -74,6 +75,12 @@ export interface BulkSettingsRailProps {
   signingError?: string | null;
   onCancelSigning?: () => void;
   bulkExecutionBlocked?: boolean;
+  /**
+   * When true (default), `BulkComposerShell` wraps the rail in a sticky column;
+   * this rail uses `position: static` and fills that column. When false (bulk
+   * composer modal), the rail is sticky inside the dialog scroll area.
+   */
+  shellOwnsRailSticky?: boolean;
 }
 
 export function BulkSettingsRail({
@@ -117,6 +124,7 @@ export function BulkSettingsRail({
   signingError = null,
   onCancelSigning,
   bulkExecutionBlocked = false,
+  shellOwnsRailSticky = true,
 }: BulkSettingsRailProps) {
   const { dateLocale } = useFormattedDate();
   const [repostAllOpen, setRepostAllOpen] = useState(false);
@@ -250,7 +258,15 @@ export function BulkSettingsRail({
   const footer = <BulkSettingsRailFooter {...footerProps} />;
 
   return (
-    <ActionRail ariaLabel="Bulk batch settings" footer={footer}>
+    <ActionRail
+      ariaLabel="Bulk batch settings"
+      footer={footer}
+      className={cn(
+        shellOwnsRailSticky
+          ? "min-h-0 lg:static lg:max-h-full"
+          : "lg:top-2 lg:z-10 lg:max-h-[calc(90dvh-11rem)]"
+      )}
+    >
       {body}
     </ActionRail>
   );

@@ -124,8 +124,8 @@ export function ScheduleNext7DaysCard({
         <CardContent
           className={cn(
             DASHBOARD_PAIR_CARD_CONTENT_CLASS,
-            /** Desktop lower row has a fixed budget; avoid inner scrollbar when 7 rows fit */
-            "lg:overflow-y-visible lg:pb-2.5"
+            /** Desktop lower row is height-capped; keep overflow hidden from clipping full week */
+            "lg:overflow-y-visible"
           )}
         >
           {isPostActivationEmpty ? (
@@ -152,7 +152,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="flex flex-col gap-1.5 lg:gap-1"
+              className="flex flex-col gap-1.5"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
@@ -176,7 +176,7 @@ export function ScheduleNext7DaysCard({
                       to={calendarDayUrl}
                       className={cn(
                         "focus-ring motion-fast flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs",
-                        "lg:min-h-0 lg:gap-1.5 lg:px-2.5 lg:py-1.5",
+                        "lg:min-h-[2.25rem] lg:gap-2 lg:px-3 lg:py-2",
                         gap
                           ? "border-warning/45 bg-warning/9 hover:border-warning/55 hover:bg-warning/12 dark:border-warning/35 dark:bg-warning/10 dark:hover:border-warning/42 dark:hover:bg-warning/13"
                           : "border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26"
