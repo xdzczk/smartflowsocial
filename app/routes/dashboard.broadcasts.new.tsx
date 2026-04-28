@@ -33,6 +33,7 @@ import {
 } from "~/features/payments";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
+import { dateLikeToIsoString } from "~/lib/date";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 interface BroadcastCampaignPreview {
@@ -517,7 +518,7 @@ function BroadcastNewRouteLoaded({
     () =>
       savedAudiences.map((audience) => ({
         ...audience,
-        updatedAt: audience.updatedAt.toISOString(),
+        updatedAt: dateLikeToIsoString(audience.updatedAt),
       })),
     [savedAudiences]
   );

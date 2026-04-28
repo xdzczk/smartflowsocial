@@ -30,6 +30,7 @@ import {
 } from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
 import { PublishingPageHeader } from "~/features/posts/ui";
+import { dateLikeToIsoString } from "~/lib/date";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
@@ -346,7 +347,7 @@ function BroadcastAudiencesRouteLoaded({
                   name: r.name,
                   audienceType: r.audienceType,
                   lastResolvedSize: r.lastResolvedSize,
-                  updatedAt: r.updatedAt.toISOString(),
+                  updatedAt: dateLikeToIsoString(r.updatedAt),
                 }))}
                 selectedPubkeys={editSelectedPubkeys}
                 onChangeSelected={setEditSelectedPubkeys}
@@ -421,7 +422,7 @@ function BroadcastAudiencesRouteLoaded({
                 name: r.name,
                 audienceType: r.audienceType,
                 lastResolvedSize: r.lastResolvedSize,
-                updatedAt: r.updatedAt.toISOString(),
+                updatedAt: dateLikeToIsoString(r.updatedAt),
               }))}
               selectedPubkeys={createSelectedPubkeys}
               onChangeSelected={setCreateSelectedPubkeys}

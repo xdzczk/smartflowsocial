@@ -121,7 +121,13 @@ export function ScheduleNext7DaysCard({
             <span>Target</span>
           </button>
         </CardHeader>
-        <CardContent className={DASHBOARD_PAIR_CARD_CONTENT_CLASS}>
+        <CardContent
+          className={cn(
+            DASHBOARD_PAIR_CARD_CONTENT_CLASS,
+            /** Desktop lower row has a fixed budget; avoid inner scrollbar when 7 rows fit */
+            "lg:overflow-y-visible lg:pb-2.5"
+          )}
+        >
           {isPostActivationEmpty ? (
             <div className="flex flex-col justify-start gap-3 py-3 lg:min-h-0 lg:flex-1">
               <p className="text-text-secondary text-sm">
@@ -146,7 +152,7 @@ export function ScheduleNext7DaysCard({
             </div>
           ) : (
             <ul
-              className="flex flex-col gap-1.5"
+              className="flex flex-col gap-1.5 lg:gap-1"
               aria-label="Scheduled posts per day for the next 7 days"
             >
               {days.map(({ dateKey, count, byQueue }) => {
@@ -165,14 +171,16 @@ export function ScheduleNext7DaysCard({
 
                 const calendarDayUrl = `/dashboard/calendar?date=${encodeURIComponent(dateKey)}&view=day`;
                 return (
-                  <li key={dateKey} className="flex min-h-[2rem] flex-col">
+                  <li key={dateKey} className="flex min-h-0 flex-col">
                     <Link
                       to={calendarDayUrl}
-                      className={`focus-ring motion-fast flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                      className={cn(
+                        "focus-ring motion-fast flex min-h-[2.25rem] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+                        "lg:min-h-0 lg:gap-1.5 lg:px-2.5 lg:py-1.5",
                         gap
                           ? "border-warning/45 bg-warning/9 hover:border-warning/55 hover:bg-warning/12 dark:border-warning/35 dark:bg-warning/10 dark:hover:border-warning/42 dark:hover:bg-warning/13"
                           : "border-border-subtle/80 bg-surface-hover/38 hover:border-border-subtle hover:bg-surface-hover/52 dark:bg-surface-hover/18 dark:hover:bg-surface-hover/26"
-                      }`}
+                      )}
                       title={`View ${label} in Calendar`}
                     >
                       <span
