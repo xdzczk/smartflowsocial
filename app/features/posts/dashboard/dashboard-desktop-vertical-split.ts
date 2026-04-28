@@ -21,7 +21,7 @@ export const DASHBOARD_DESKTOP_LOWER_ROW_MIN_PX = 280;
 const LOWER_ROW_SHRINK_FLOOR_PX = 240;
 
 /** Desktop lower row ceiling (normal and tall; avoids lowering this at the tall threshold) */
-export const DASHBOARD_DESKTOP_LOWER_ROW_MAX_PX = 348;
+export const DASHBOARD_DESKTOP_LOWER_ROW_MAX_PX = 372;
 
 const FLOW_ZONE_PREF_VH = 0.25;
 const LOWER_ROW_PREF_VH = 0.31;
