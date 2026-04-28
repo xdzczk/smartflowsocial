@@ -517,6 +517,8 @@ export async function loadFlowData({
           queueType,
           page: 1,
           limit: futureLimit + 1,
+          afterScheduledAtUtc: now,
+          afterScheduledAtUtcInclusive: true,
           contentTab: postsContentTab,
           excludePausedQueueContent: true,
         })
@@ -535,6 +537,8 @@ export async function loadFlowData({
           queueType,
           page: 1,
           limit: futureLimit + 1,
+          afterScheduledAtUtc: now,
+          afterScheduledAtUtcInclusive: true,
           excludePausedQueueContent: true,
         })
       : Promise.resolve({
