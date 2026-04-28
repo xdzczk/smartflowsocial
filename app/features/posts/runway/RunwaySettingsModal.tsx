@@ -17,7 +17,9 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 interface RunwaySettings {
   queueNames: string[];
   mode: "last-post" | "first-queue-empty";
+  /** Persisted: max days for orange/warning KPI band. */
   redThresholdDays?: number;
+  /** Persisted: max days for yellow KPI band (≥ orange max). */
   orangeThresholdDays?: number;
 }
 interface QueueTypeItem {
@@ -225,19 +227,20 @@ export function RunwaySettingsModal({
               KPI color thresholds (days)
             </Label>
             <p className="text-text-secondary text-xs">
-              Runway card is red when ≤ first value, orange when ≤ second value,
-              amber otherwise.
+              Runway KPI uses warning orange when days remaining ≤ first value,
+              chart yellow when above that but still ≤ second value, and a
+              neutral style when runway is above the second value.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <div className="cluster">
                 <Label
-                  htmlFor="runway-red-threshold"
+                  htmlFor="runway-orange-max-days"
                   className="text-text-secondary shrink-0 text-sm"
                 >
-                  Red when ≤
+                  Orange when ≤
                 </Label>
                 <input
-                  id="runway-red-threshold"
+                  id="runway-orange-max-days"
                   type="number"
                   min={0}
                   max={365}
@@ -256,13 +259,13 @@ export function RunwaySettingsModal({
               </div>
               <div className="cluster">
                 <Label
-                  htmlFor="runway-orange-threshold"
+                  htmlFor="runway-yellow-max-days"
                   className="text-text-secondary shrink-0 text-sm"
                 >
-                  Orange when ≤
+                  Yellow when ≤
                 </Label>
                 <input
-                  id="runway-orange-threshold"
+                  id="runway-yellow-max-days"
                   type="number"
                   min={0}
                   max={365}
@@ -282,7 +285,7 @@ export function RunwaySettingsModal({
             </div>
             {orangeThresholdDays < redThresholdDays ? (
               <p className="text-danger text-xs" role="alert">
-                Orange threshold should be ≥ red threshold.
+                Yellow threshold should be ≥ orange threshold.
               </p>
             ) : null}
           </div>

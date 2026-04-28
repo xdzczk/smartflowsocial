@@ -19,6 +19,16 @@ const SCHEDULED_ICON_WELL_CLASS =
 const PUBLISHED_ICON_WELL_CLASS =
   "bg-green-500/7 text-success/78 dark:bg-green-400/9 dark:text-success/75";
 
+/** Orange/warning runway band — matches semantic `warning` tokens (dashboard language). */
+const RUNWAY_ORANGE_ICON_WELL_CLASS =
+  "bg-warning/7 text-warning/78 dark:bg-warning/9 dark:text-warning/74";
+
+/**
+ * Yellow runway band — chart accent (golden), distinct from warning orange on the ladder.
+ */
+const RUNWAY_YELLOW_ICON_WELL_CLASS =
+  "bg-chart-5/8 text-chart-5/82 dark:bg-chart-5/10 dark:text-chart-5/84";
+
 const COMPOSE_ICON_STROKE = 2.25;
 
 export interface StatisticsProps {
@@ -26,23 +36,26 @@ export interface StatisticsProps {
   runwayDays?: number | null;
   /** Called when the Runway card is clicked (open settings modal) */
   onRunwayClick?: () => void;
-  /** Red when runway ≤ this (default 3). */
-  runwayRedThresholdDays?: number;
-  /** Orange when runway ≤ this (default 7). */
-  runwayOrangeThresholdDays?: number;
+  /**
+   * Max days for orange/warning KPI accent (persisted as `redThresholdDays`). Default 3.
+   */
+  runwayOrangeMaxDays?: number;
+  /**
+   * Max days for yellow KPI accent (persisted as `orangeThresholdDays`). Default 7. Should be ≥ orange max.
+   */
+  runwayYellowMaxDays?: number;
   /** True when onboarding is complete but no scheduled/published activity exists yet. */
   isPostActivationEmpty?: boolean;
 }
 
-const DEFAULT_RUNWAY_RED_DAYS = 3;
-const DEFAULT_RUNWAY_ORANGE_DAYS = 7;
+const DEFAULT_RUNWAY_ORANGE_MAX_DAYS = 3;
+const DEFAULT_RUNWAY_YELLOW_MAX_DAYS = 7;
 
 export default function Statistics({
   runwayDays,
   onRunwayClick,
-  runwayRedThresholdDays: _runwayRedThresholdDays = DEFAULT_RUNWAY_RED_DAYS,
-  runwayOrangeThresholdDays:
-    _runwayOrangeThresholdDays = DEFAULT_RUNWAY_ORANGE_DAYS,
+  runwayOrangeMaxDays = DEFAULT_RUNWAY_ORANGE_MAX_DAYS,
+  runwayYellowMaxDays = DEFAULT_RUNWAY_YELLOW_MAX_DAYS,
   isPostActivationEmpty = false,
 }: StatisticsProps) {
   const { postStatistics } = useLoaderData<{
@@ -59,15 +72,17 @@ export default function Statistics({
       ? `${runwayDays} day${runwayDays !== 1 ? "s" : ""}`
       : "0 days";
 
-  // Runway: same hue language as before, with lighter wells and softened icon contrast.
+  // Runway KPI: orange (warning) when ≤ orange max; yellow (chart-5) when ≤ yellow max but above orange; neutral otherwise.
   const runwayDaysNum = runwayDays ?? 0;
+  const orangeMax = runwayOrangeMaxDays;
+  const yellowMax = Math.max(runwayYellowMaxDays, orangeMax);
   const runwayIconClass =
     runwayDaysNum <= 0 && !hasScheduledPosts
       ? "bg-text-tertiary/10 text-text-secondary dark:bg-text-tertiary/15 dark:text-text-tertiary"
-      : runwayDaysNum < 2
-        ? "bg-danger/7 text-danger/76 dark:bg-danger/9 dark:text-danger/72"
-        : runwayDaysNum <= 7
-          ? "bg-warning/7 text-warning/78 dark:bg-warning/9 dark:text-warning/74"
+      : runwayDaysNum <= orangeMax
+        ? RUNWAY_ORANGE_ICON_WELL_CLASS
+        : runwayDaysNum <= yellowMax
+          ? RUNWAY_YELLOW_ICON_WELL_CLASS
           : "bg-text-tertiary/10 text-text-secondary dark:bg-text-tertiary/15 dark:text-text-tertiary";
 
   const cardBase =

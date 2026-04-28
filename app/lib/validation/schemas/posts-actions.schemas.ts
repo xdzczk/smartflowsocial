@@ -235,7 +235,7 @@ export const updateRunwaySettingsSchema = z.object({
   _action: z.literal("updateRunwaySettings"),
   queueNames: z.array(z.string()),
   mode: z.enum(["last-post", "first-queue-empty"]),
-  /** Red when runway ≤ this (0–365). */
+  /** Orange KPI band: runway ≤ this (0–365); stored key legacy name. */
   redThresholdDays: z.coerce
     .number()
     .int()
@@ -243,7 +243,7 @@ export const updateRunwaySettingsSchema = z.object({
     .max(365)
     .optional()
     .default(3),
-  /** Orange when runway ≤ this (0–365); should be ≥ redThresholdDays. */
+  /** Yellow KPI band: runway ≤ this (0–365); should be ≥ redThresholdDays. */
   orangeThresholdDays: z.coerce
     .number()
     .int()

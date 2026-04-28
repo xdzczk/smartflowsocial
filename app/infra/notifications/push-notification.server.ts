@@ -454,6 +454,7 @@ export async function sendRunwayLowNotification(
   }
 
   const runwaySettings = await getRunwaySettings(userId);
+  /** Align with KPI orange-tier max (`redThresholdDays` in settings JSON). */
   const threshold =
     user.runwayNotifyBelowDays ?? runwaySettings.redThresholdDays ?? 3;
 

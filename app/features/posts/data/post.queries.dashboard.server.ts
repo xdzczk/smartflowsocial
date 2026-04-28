@@ -207,7 +207,7 @@ export async function getScheduledRepostsCount({
 /**
  * Returns posts (scheduled and published) with scheduledAtUtc in the given UTC range (inclusive).
  * Used for Next 7 days schedule overview: shows both upcoming and past posts per day.
- * Respects queueType filter.
+ * Respects queueType filter. Excludes posts on paused queues (same as runway / active calendar).
  */
 export async function getScheduledPostsInDateRange({
   userId,
@@ -226,6 +226,9 @@ export async function getScheduledPostsInDateRange({
   }>
 > {
   try {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
     const whereClause: Prisma.PostWhereInput = {
       currentState: { in: ["SCHEDULED", "PUBLISHED"] },
       userId,
@@ -234,6 +237,7 @@ export async function getScheduledPostsInDateRange({
         gte: fromUtc,
         lte: toUtc,
       },
+      AND: [pausedQueueExclusion],
     };
     if (queueType && queueType !== "all") {
       if (queueType === "unassigned") {
@@ -582,6 +586,8 @@ export async function getPostStatistics({
           userId,
           currentState: "SCHEDULED",
           repost: false,
+          /** Dashboard KPI / activity: exclude posts held while their queue is paused */
+          queueHoldStatus: { not: "HELD_BY_QUEUE" },
         },
       }),
 

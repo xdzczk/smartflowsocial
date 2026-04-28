@@ -23,6 +23,7 @@ interface SearchResult {
 }
 
 const ACTION_REQUEST_CHILD = "request_child";
+const ACTION_RESPOND_CHILD_REQUEST = "respond_child_request";
 const DASHBOARD_SETTINGS_ACTION = "/dashboard/settings";
 
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
@@ -67,12 +68,15 @@ export function AccountsSettings({
   parentNpub,
   confirmedChildren,
   pendingChildren,
+  pendingIncomingParents = [],
   isChild = false,
   parentUser,
 }: {
   parentNpub?: string;
   confirmedChildren?: AccountInfo[];
   pendingChildren?: AccountInfo[];
+  /** Incoming parent→child link requests (shown before the account is linked). */
+  pendingIncomingParents?: AccountInfo[];
   isChild?: boolean;
   parentUser?: AccountInfo | null;
 }) {
@@ -126,7 +130,8 @@ export function AccountsSettings({
     if (
       (submittingAction === "unlink_parent" ||
         submittingAction === "unlink_child" ||
-        submittingAction === "cancel_child_request") &&
+        submittingAction === "cancel_child_request" ||
+        submittingAction === ACTION_RESPOND_CHILD_REQUEST) &&
       fetcher.state === "idle" &&
       (fetcher.data as { success?: boolean } | undefined)?.success
     ) {
@@ -229,6 +234,87 @@ export function AccountsSettings({
           accounts.
         </p>
       </div>
+
+      {pendingIncomingParents.length > 0 ? (
+        <div className="mb-6 space-y-3">
+          <h3 className="text-sm font-medium">Incoming link requests</h3>
+          {pendingIncomingParents.map((p) => {
+            const bits = extractProfileBits(p.nostrProfile);
+            const displayName =
+              bits.name ?? bits.display_name ?? p.npub.slice(0, 12);
+            const isRespondingIncoming =
+              submittingAction === ACTION_RESPOND_CHILD_REQUEST &&
+              (fetcher.formData?.get("parentNpub") as string) === p.npub &&
+              fetcher.state !== "idle";
+            const decisionEntry = fetcher.formData?.get("decision");
+            const incomingDecision =
+              typeof decisionEntry === "string" ? decisionEntry : "";
+            return (
+              <div
+                key={p.npub}
+                className="border-warning/40 bg-warning/12 text-warning-text dark:border-warning/40 dark:bg-warning/15 dark:text-warning flex flex-wrap items-start justify-between gap-3 rounded-lg border p-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    <span>{displayName}</span> wants to manage your account
+                  </p>
+                  <p className="text-sm opacity-90">
+                    Approve to link as a child account, or reject this request.
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={isRespondingIncoming}
+                    type="button"
+                    onClick={() =>
+                      fetcher.submit(
+                        {
+                          _action: ACTION_RESPOND_CHILD_REQUEST,
+                          parentNpub: p.npub,
+                          decision: "reject",
+                        },
+                        {
+                          method: "post",
+                          action: DASHBOARD_SETTINGS_ACTION,
+                        }
+                      )
+                    }
+                  >
+                    {isRespondingIncoming && incomingDecision === "reject"
+                      ? "Rejecting..."
+                      : "Reject"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    disabled={isRespondingIncoming}
+                    type="button"
+                    onClick={() =>
+                      fetcher.submit(
+                        {
+                          _action: ACTION_RESPOND_CHILD_REQUEST,
+                          parentNpub: p.npub,
+                          decision: "accept",
+                        },
+                        {
+                          method: "post",
+                          action: DASHBOARD_SETTINGS_ACTION,
+                        }
+                      )
+                    }
+                  >
+                    {isRespondingIncoming && incomingDecision === "accept"
+                      ? "Approving..."
+                      : "Approve"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="mb-6">
         <label

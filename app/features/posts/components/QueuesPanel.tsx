@@ -20,22 +20,34 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { StatusIcon } from "~/components/ui/status-icon";
 import { queueCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
+import {
+  DASHBOARD_PAIR_CARD_CLASS,
+  DASHBOARD_PAIR_CARD_CONTENT_CLASS,
+  DASHBOARD_PAIR_CARD_HEADER_CLASS,
+  DASHBOARD_PAIR_HEADER_ACTION_CLASS,
+} from "~/features/posts/components/dashboard-pair-card";
 import { buildComposeCreateUrl } from "~/features/posts/composer";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { isQueuePaused } from "~/features/posts/queue-status";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import { cn } from "~/lib/utils";
 
 import type { QueueType } from "../types";
 
 import { QueueLanesPreview } from "./queue-health-empty-preview";
 import {
   estimatePostsPerDayForQueue,
+  formatNextQueuePostLine,
+  formatQueueCadenceRichDisplay,
   formatQueueRunwayDaysLabel,
-  formatShortCadenceLabel,
 } from "./queue-runway";
 
-const KPI_CARD_CLASS =
-  "kpi-card border-border-subtle/80 flex min-w-0 flex-1 flex-col overflow-hidden shadow-1 lg:h-full lg:min-h-0";
+/** Default icon weight in row toolbars; resume/play is slightly stronger when queue is paused. */
+const QUEUE_ROW_ICON_CLASS =
+  "opacity-[0.42] text-text-secondary hover:opacity-100 focus-visible:opacity-100 motion-fast hover:text-text";
+
+const QUEUE_ROW_RESUME_PLAY_CLASS =
+  "opacity-[0.82] text-text-secondary hover:opacity-100 focus-visible:opacity-100 motion-fast hover:text-text";
 
 type QueueToggleFetcherData =
   | {
@@ -109,6 +121,20 @@ export interface QueuesPanelProps {
   /** When false, create is blocked (plan limit). */
   canCreateMoreQueues: boolean;
   queuesLimit: number | null;
+  /**
+   * Earliest future scheduled time per queue name from loaded flow items (dashboard only).
+   */
+  earliestNextScheduledUtcMsByQueueName?: Record<string, number>;
+  /** IANA TZ for formatting “Next: …”. */
+  userTimezone?: string;
+  /** Prefer 12-hour clock in next-time copy. */
+  hour12Preferred?: boolean;
+  /**
+   * Wall-clock ms for relative “Next: …” copy. The dashboard should pass the
+   * same value used to build earliest-next timestamps from flow; otherwise a
+   * stable mount-time value is used once.
+   */
+  referenceNowMs?: number;
 }
 
 export function QueuesPanel({
@@ -119,7 +145,13 @@ export function QueuesPanel({
   onEditQueue,
   canCreateMoreQueues,
   queuesLimit,
+  earliestNextScheduledUtcMsByQueueName = {},
+  referenceNowMs: referenceNowMsProp,
+  userTimezone = "Etc/UTC",
+  hour12Preferred = true,
 }: QueuesPanelProps) {
+  const [clientReferenceNowMs] = useState(() => Date.now());
+  const referenceNowMs = referenceNowMsProp ?? clientReferenceNowMs;
   const revalidator = useRevalidator();
   const toggleFetcher = useFetcher<QueueToggleFetcherData>();
   const prevFetcherSubmitting = useRef(false);
@@ -152,6 +184,15 @@ export function QueuesPanel({
     }
     return m;
   }, [queueCounts]);
+
+  const maxQueueCountForVolume = useMemo(() => {
+    let max = 1;
+    for (const qt of queueTypes) {
+      const c = countByName.get(qt.name) ?? 0;
+      if (c > max) max = c;
+    }
+    return max;
+  }, [queueTypes, countByName]);
 
   useEffect(() => {
     if (feedback?.variant !== "success") return;
@@ -231,31 +272,48 @@ export function QueuesPanel({
       className="flex w-full min-w-0 flex-col lg:min-h-0 lg:flex-1"
       aria-label="Queues"
     >
-      <Card className={KPI_CARD_CLASS}>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
-          <h3 className="text-overline text-text-secondary">Queues</h3>
-          {onCreateQueueClick ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 shrink-0 gap-1 px-2.5 text-xs font-medium"
-              disabled={createDisabled}
-              title={createTitle}
-              onClick={handleCreateClick}
-            >
-              <Plus className="size-3.5" strokeWidth={2.25} aria-hidden />
-              Create Queue
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" className="h-8" asChild>
-              <Link to="/dashboard/settings?tab=publishing">Create Queue</Link>
-            </Button>
-          )}
+      <Card className={DASHBOARD_PAIR_CARD_CLASS}>
+        <CardHeader className={DASHBOARD_PAIR_CARD_HEADER_CLASS}>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <h3 className="text-overline text-text-secondary">Queues</h3>
+          </div>
+          <div className="flex shrink-0 items-center">
+            {onCreateQueueClick ? (
+              <button
+                type="button"
+                disabled={createDisabled}
+                title={createTitle}
+                onClick={handleCreateClick}
+                className={cn(
+                  DASHBOARD_PAIR_HEADER_ACTION_CLASS,
+                  createDisabled && "pointer-events-none opacity-40"
+                )}
+              >
+                <Plus
+                  className="size-3.5 shrink-0"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <span>Create Queue</span>
+              </button>
+            ) : (
+              <Link
+                to="/dashboard/settings?tab=publishing"
+                className={DASHBOARD_PAIR_HEADER_ACTION_CLASS}
+              >
+                <Plus
+                  className="size-3.5 shrink-0"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <span>Create Queue</span>
+              </Link>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col px-4 pt-0 pb-3">
+        <CardContent className={DASHBOARD_PAIR_CARD_CONTENT_CLASS}>
           {feedback?.variant === "success" ? (
-            <p className="text-success mb-2 text-[11px] leading-snug">
+            <p className="text-success mb-1.5 text-[11px] leading-snug">
               {feedback.message}
               {feedback.scheduledLink ? (
                 <>
@@ -271,7 +329,7 @@ export function QueuesPanel({
             </p>
           ) : null}
           {feedback?.variant === "error" ? (
-            <div className="border-danger/30 bg-danger/10 text-danger mb-2 rounded-md border px-2 py-1.5 text-xs">
+            <div className="border-danger/30 bg-danger/10 text-danger mb-1.5 rounded-md border px-2 py-1.5 text-xs">
               <span className="flex flex-wrap items-start justify-between gap-2">
                 <span className="min-w-0 flex-1">{feedback.message}</span>
                 <button
@@ -332,171 +390,247 @@ export function QueuesPanel({
               </div>
             </div>
           ) : (
-            <ul className="divide-border-subtle/60 flex min-h-0 flex-1 flex-col divide-y overflow-y-auto">
-              {queueTypes.map((qt) => {
-                const inQueue = countByName.get(qt.name) ?? 0;
-                const postsPerDay = estimatePostsPerDayForQueue(
-                  qt,
-                  globalScheduleIntervalHours
-                );
-                const runwayLabel = formatQueueRunwayDaysLabel(
-                  inQueue,
-                  postsPerDay
-                );
-                const cadence = formatShortCadenceLabel(
-                  qt,
-                  globalScheduleIntervalHours
-                );
-                const token = qt.colorToken ?? null;
-                const dotColor =
-                  token != null && token !== ""
-                    ? getQueueAccentHex(token)
-                    : (qt.color ?? "#6B7280");
-                const paused = isQueuePaused(qt);
-                const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(qt.name)}`;
-                const composeUrl = buildComposeCreateUrl({ queue: qt.name });
+            <>
+              <ul className="divide-border-subtle/60 flex min-h-0 flex-1 flex-col divide-y overflow-y-auto">
+                {queueTypes.map((qt) => {
+                  const inQueue = countByName.get(qt.name) ?? 0;
+                  const postsPerDay = estimatePostsPerDayForQueue(
+                    qt,
+                    globalScheduleIntervalHours
+                  );
+                  const runwayLabel = formatQueueRunwayDaysLabel(
+                    inQueue,
+                    postsPerDay
+                  );
+                  const cadenceRich = formatQueueCadenceRichDisplay(
+                    qt,
+                    globalScheduleIntervalHours,
+                    postsPerDay
+                  );
+                  const token = qt.colorToken ?? null;
+                  const dotColor =
+                    token != null && token !== ""
+                      ? getQueueAccentHex(token)
+                      : (qt.color ?? "#6B7280");
+                  const paused = isQueuePaused(qt);
+                  const scheduledUrl = `/dashboard/scheduled?queueType=${encodeURIComponent(qt.name)}`;
+                  const composeUrl = buildComposeCreateUrl({ queue: qt.name });
+                  const nextMs =
+                    earliestNextScheduledUtcMsByQueueName[qt.name] ?? undefined;
+                  const nextLine =
+                    !paused &&
+                    typeof nextMs === "number" &&
+                    Number.isFinite(nextMs)
+                      ? formatNextQueuePostLine(
+                          nextMs,
+                          referenceNowMs,
+                          userTimezone,
+                          hour12Preferred
+                        )
+                      : null;
+                  const volumePct =
+                    maxQueueCountForVolume > 0
+                      ? Math.round((inQueue / maxQueueCountForVolume) * 100)
+                      : 0;
 
-                return (
-                  <li
-                    key={qt.id}
-                    className="flex min-w-0 items-center gap-2 py-2"
-                  >
-                    <div
-                      className="mt-0.5 size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: dotColor }}
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-baseline justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <span className="text-text truncate text-xs font-semibold tracking-tight">
-                            {qt.name}
-                          </span>
-                          {paused ? (
-                            <span className="border-border-subtle text-text-secondary inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-                              Paused
+                  return (
+                    <li
+                      key={qt.id}
+                      className="flex min-w-0 items-start gap-2.5 py-3"
+                    >
+                      <div
+                        className="mt-1 size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: dotColor }}
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                              <span className="text-text truncate text-xs font-semibold tracking-tight">
+                                {qt.name}
+                              </span>
+                              {paused ? (
+                                <span className="border-border-subtle text-text-secondary inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                                  Paused
+                                </span>
+                              ) : null}
+                            </div>
+                            <div
+                              className="bg-border-subtle/35 h-[3px] w-full max-w-[11rem] overflow-hidden rounded-full"
+                              aria-hidden
+                            >
+                              <div
+                                className="h-full rounded-full opacity-[0.65]"
+                                style={{
+                                  width: `${Math.max(inQueue > 0 ? 8 : 3, volumePct)}%`,
+                                  backgroundColor: dotColor,
+                                }}
+                              />
+                            </div>
+                            <div className="text-text-secondary flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-snug">
+                              {cadenceRich ? (
+                                <span className="min-w-0">{cadenceRich}</span>
+                              ) : null}
+                              {cadenceRich && runwayLabel !== "—" ? (
+                                <span
+                                  className="text-text-tertiary/55 shrink-0"
+                                  aria-hidden
+                                >
+                                  ·
+                                </span>
+                              ) : null}
+                              {!paused ? (
+                                <span className="tabular-nums">
+                                  Runway {runwayLabel}
+                                </span>
+                              ) : (
+                                <span className="text-text-tertiary tabular-nums">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                            {nextLine ? (
+                              <p className="text-text-tertiary text-[11px] leading-snug">
+                                {nextLine}
+                              </p>
+                            ) : null}
+                            {paused ? (
+                              <p className="text-text-tertiary text-[11px] leading-snug">
+                                Not sending
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end pt-0.5 text-right">
+                            <span className="text-text text-sm font-semibold tracking-tight tabular-nums">
+                              {inQueue}
                             </span>
-                          ) : null}
+                            <span className="text-text-secondary mt-0.5 text-[11px] font-medium tabular-nums">
+                              {paused ? "held" : "queued"}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-text-secondary shrink-0 text-[11px] tabular-nums">
-                          {inQueue} {paused ? "held" : "queued"}
-                        </span>
                       </div>
-                      <div className="text-text-secondary mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0 text-[11px] leading-tight">
-                        <span className="tabular-nums">
-                          {paused ? "Paused" : runwayLabel}
-                        </span>
-                        {!paused && cadence ? (
-                          <span className="text-text-tertiary">{cadence}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      {onEditQueue ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-text-secondary hover:text-text size-8"
-                          onClick={() => onEditQueue(qt)}
-                          aria-label={`Edit ${qt.name}`}
-                        >
-                          <Pencil className={INLINE_ICON_SIZE_CLASS} />
-                        </Button>
-                      ) : null}
-                      {paused ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-text-secondary hover:text-text size-8"
-                          disabled
-                          title={`${qt.name} is paused`}
-                          aria-label={`${qt.name} is paused`}
-                        >
-                          <ListPlus className={INLINE_ICON_SIZE_CLASS} />
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-text-secondary hover:text-text size-8"
-                          asChild
-                        >
-                          <Link
-                            to={composeUrl}
-                            aria-label={`Add post to ${qt.name}`}
-                          >
-                            <ListPlus className={INLINE_ICON_SIZE_CLASS} />
-                          </Link>
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-text-secondary hover:text-text size-8"
-                        disabled={toggleFetcher.state !== "idle"}
-                        aria-busy={
-                          pendingIntent?.queueId === qt.id
-                            ? toggleFetcher.state !== "idle"
-                            : undefined
-                        }
-                        onClick={() =>
-                          submitQueueAction(
-                            qt,
-                            paused ? "resume_queue" : "pause_queue"
-                          )
-                        }
-                        aria-label={
-                          paused ? `Resume ${qt.name}` : `Pause ${qt.name}`
-                        }
-                      >
-                        {pendingIntent?.queueId === qt.id &&
-                        toggleFetcher.state !== "idle" ? (
-                          <span className="inline-flex items-center justify-center">
-                            <StatusIcon tone="pending" size="sm" />
-                            <span className="sr-only">
-                              {paused ? "Resuming queue" : "Pausing queue"}
-                            </span>
-                          </span>
-                        ) : paused ? (
-                          <Play className={INLINE_ICON_SIZE_CLASS} />
-                        ) : (
-                          <Pause className={INLINE_ICON_SIZE_CLASS} />
-                        )}
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                      <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+                        {onEditQueue ? (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="text-text-secondary hover:text-text size-8"
-                            aria-label={`More actions for ${qt.name}`}
+                            className={cn("size-8", QUEUE_ROW_ICON_CLASS)}
+                            onClick={() => onEditQueue(qt)}
+                            aria-label={`Edit ${qt.name}`}
                           >
-                            <MoreHorizontal
-                              className={INLINE_ICON_SIZE_CLASS}
-                            />
+                            <Pencil className={INLINE_ICON_SIZE_CLASS} />
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem asChild>
-                            <Link to={scheduledUrl}>View scheduled</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/dashboard/settings?tab=publishing">
-                              Publishing settings
+                        ) : null}
+                        {paused ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={cn("size-8", QUEUE_ROW_ICON_CLASS)}
+                            disabled
+                            title={`${qt.name} is paused`}
+                            aria-label={`${qt.name} is paused`}
+                          >
+                            <ListPlus className={INLINE_ICON_SIZE_CLASS} />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={cn("size-8", QUEUE_ROW_ICON_CLASS)}
+                            asChild
+                          >
+                            <Link
+                              to={composeUrl}
+                              aria-label={`Add post to ${qt.name}`}
+                            >
+                              <ListPlus className={INLINE_ICON_SIZE_CLASS} />
                             </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "size-8",
+                            paused
+                              ? QUEUE_ROW_RESUME_PLAY_CLASS
+                              : QUEUE_ROW_ICON_CLASS
+                          )}
+                          disabled={toggleFetcher.state !== "idle"}
+                          aria-busy={
+                            pendingIntent?.queueId === qt.id
+                              ? toggleFetcher.state !== "idle"
+                              : undefined
+                          }
+                          onClick={() =>
+                            submitQueueAction(
+                              qt,
+                              paused ? "resume_queue" : "pause_queue"
+                            )
+                          }
+                          aria-label={
+                            paused ? `Resume ${qt.name}` : `Pause ${qt.name}`
+                          }
+                        >
+                          {pendingIntent?.queueId === qt.id &&
+                          toggleFetcher.state !== "idle" ? (
+                            <span className="inline-flex items-center justify-center">
+                              <StatusIcon tone="pending" size="sm" />
+                              <span className="sr-only">
+                                {paused ? "Resuming queue" : "Pausing queue"}
+                              </span>
+                            </span>
+                          ) : paused ? (
+                            <Play className={INLINE_ICON_SIZE_CLASS} />
+                          ) : (
+                            <Pause className={INLINE_ICON_SIZE_CLASS} />
+                          )}
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className={cn("size-8", QUEUE_ROW_ICON_CLASS)}
+                              aria-label={`More actions for ${qt.name}`}
+                            >
+                              <MoreHorizontal
+                                className={INLINE_ICON_SIZE_CLASS}
+                              />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem asChild>
+                              <Link to={scheduledUrl}>View scheduled</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/dashboard/settings?tab=publishing">
+                                Publishing settings
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {queueTypes.length > 0 && queueTypes.length <= 2 ? (
+                <div className="border-border-subtle/40 mt-1 border-t pt-2.5">
+                  <p className="text-text-secondary/85 text-[11px] leading-snug">
+                    Create queues for different content types to keep your flow
+                    consistent.
+                  </p>
+                </div>
+              ) : null}
+            </>
           )}
         </CardContent>
       </Card>

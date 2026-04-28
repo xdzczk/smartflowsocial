@@ -1,8 +1,13 @@
 import { Link } from "@remix-run/react";
 import { Check, Settings2 } from "lucide-react";
-import { useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import {
+  DASHBOARD_PAIR_CARD_CLASS,
+  DASHBOARD_PAIR_CARD_CONTENT_CLASS,
+  DASHBOARD_PAIR_CARD_HEADER_CLASS,
+  DASHBOARD_PAIR_HEADER_ACTION_CLASS,
+} from "~/features/posts/components/dashboard-pair-card";
 import {
   getQueueColorBundle,
   type QueueColorBundle,
@@ -10,6 +15,7 @@ import {
 import type { QueueType } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import type { DateDisplayLocale } from "~/lib/temporal";
+import { cn } from "~/lib/utils";
 
 export type ScheduleNext7DaysQueueTypes = Array<
   | QueueType
@@ -83,48 +89,15 @@ export function ScheduleNext7DaysCard({
   isPostActivationEmpty = false,
 }: ScheduleNext7DaysCardProps) {
   const { dateLocale } = useFormattedDate();
-  const [colorsRevealed, setColorsRevealed] = useState(false);
-  const wasRevealedAtPointerDownRef = useRef(false);
   const allSet =
     targetPerDay > 0 &&
     days.length > 0 &&
     days.every((d) => d.count >= targetPerDay);
 
   return (
-    <div
-      className={`focus-ring group flex w-full min-w-0 flex-col focus-visible:ring-inset lg:min-h-0 lg:flex-1 ${colorsRevealed ? "colors-revealed" : ""}`}
-      tabIndex={0}
-      role="button"
-      aria-label="Next 7 days schedule"
-      aria-pressed={colorsRevealed}
-      onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
-          return;
-        wasRevealedAtPointerDownRef.current = colorsRevealed;
-        if (e.pointerType !== "mouse") {
-          setColorsRevealed(true);
-        }
-      }}
-      onClick={(e) => {
-        if ((e.target as HTMLElement).closest("button, a, [role='button']"))
-          return;
-        if (e.detail === 0) return;
-        if (wasRevealedAtPointerDownRef.current) {
-          setColorsRevealed(false);
-        } else {
-          setColorsRevealed(true);
-        }
-      }}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setColorsRevealed((v) => !v);
-        }
-      }}
-    >
-      <Card className="border-border-subtle bg-surface flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-4 pt-2.5 pb-1.5">
+    <div className="flex w-full min-w-0 flex-col lg:min-h-0 lg:flex-1">
+      <Card className={DASHBOARD_PAIR_CARD_CLASS}>
+        <CardHeader className={DASHBOARD_PAIR_CARD_HEADER_CLASS}>
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <h3 className="text-overline text-text-secondary">Next 7 days</h3>
             {allSet ? (
@@ -140,7 +113,7 @@ export function ScheduleNext7DaysCard({
           <button
             type="button"
             onClick={onOpenTargetModal}
-            className="focus-ring text-text-secondary hover:text-text inline-flex flex-shrink-0 items-center gap-1 rounded-xs px-1 py-0.5 text-xs"
+            className={DASHBOARD_PAIR_HEADER_ACTION_CLASS}
             title="Set target per day"
             aria-label="Set target posts per day"
           >
@@ -148,7 +121,7 @@ export function ScheduleNext7DaysCard({
             <span>Target</span>
           </button>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-0 pb-3">
+        <CardContent className={DASHBOARD_PAIR_CARD_CONTENT_CLASS}>
           {isPostActivationEmpty ? (
             <div className="flex flex-col justify-start gap-3 py-3 lg:min-h-0 lg:flex-1">
               <p className="text-text-secondary text-sm">
@@ -211,14 +184,14 @@ export function ScheduleNext7DaysCard({
                       </span>
                       <div className="min-w-0 flex-1" aria-hidden />
                       <div
-                        className="flex min-w-0 shrink items-center justify-end gap-1.5 overflow-hidden"
+                        className="flex min-w-0 shrink items-center justify-end gap-2 overflow-hidden"
                         style={{
-                          maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + ${MAX_BLOCKS - 1} * 0.125rem + 1.5rem)`,
+                          maxWidth: `calc(${MAX_BLOCKS} * 0.5rem + 1.5rem)`,
                         }}
                       >
                         {hasBlocks ? (
                           <span
-                            className="flex shrink-0 items-center gap-0.5"
+                            className="flex min-w-0 shrink-0 items-center gap-2"
                             title={blockSummary}
                             aria-label={blockSummary}
                           >
@@ -228,7 +201,7 @@ export function ScheduleNext7DaysCard({
                                 0
                               );
                               const unassignedAccent =
-                                "hsl(var(--text-secondary) / 0.55)";
+                                "hsl(var(--text-secondary) / 0.45)";
                               const queuesWithCount = byQueue
                                 .filter((q) => q.count > 0)
                                 .map((q) => {
@@ -276,34 +249,51 @@ export function ScheduleNext7DaysCard({
                                   tried += 1;
                                 }
                               }
-                              const parts: React.ReactNode[] = slots.map(
-                                (slot) => {
-                                  const blockStyle: React.CSSProperties &
-                                    Record<string, string> = {
-                                    "--block-accent": slot.accent,
-                                  };
-                                  return (
-                                    <span
-                                      key={slot.id}
-                                      className="inline-block size-2 rounded-[1px] bg-[var(--block-accent)] opacity-65 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100 group-active:opacity-100 [.colors-revealed_&]:opacity-100"
-                                      style={blockStyle}
-                                      aria-hidden
-                                    />
-                                  );
-                                }
+                              const n = slots.length;
+                              const bar = (
+                                <span
+                                  className="ring-border-subtle/25 inline-flex h-2 max-w-[7.5rem] min-w-[1.25rem] flex-[0_1_auto] overflow-hidden rounded-[3px] ring-1"
+                                  aria-hidden
+                                >
+                                  {slots.map((slot, idx) => {
+                                    const blockStyle: React.CSSProperties &
+                                      Record<string, string> = {
+                                      "--block-accent": slot.accent,
+                                    };
+                                    return (
+                                      <span
+                                        key={slot.id}
+                                        className={cn(
+                                          "h-full min-w-0 flex-1 bg-[var(--block-accent)] opacity-[0.92]",
+                                          n === 1 && "rounded-[2px]",
+                                          n > 1 &&
+                                            idx === 0 &&
+                                            "rounded-l-[2px]",
+                                          n > 1 &&
+                                            idx === n - 1 &&
+                                            "rounded-r-[2px]"
+                                        )}
+                                        style={blockStyle}
+                                      />
+                                    );
+                                  })}
+                                </span>
                               );
-                              if (totalBlocks > MAX_BLOCKS) {
-                                parts.push(
+                              const more =
+                                totalBlocks > MAX_BLOCKS ? (
                                   <span
-                                    key="more"
-                                    className="text-text-secondary text-[10px]"
+                                    className="text-text-secondary shrink-0 text-[10px] tabular-nums"
                                     aria-hidden
                                   >
                                     +{totalBlocks - MAX_BLOCKS}
                                   </span>
-                                );
-                              }
-                              return parts;
+                                ) : null;
+                              return (
+                                <>
+                                  {bar}
+                                  {more}
+                                </>
+                              );
                             })()}
                           </span>
                         ) : null}

@@ -19,6 +19,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
+import { buildEarliestNextScheduledUtcMsByQueueFromFlow } from "~/features/posts/components/queue-runway";
 import { QueueTypeDialog } from "~/features/posts/components/QueueTypeDialog";
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { useDashboardDesktopLayoutHeights } from "~/features/posts/hooks/useDashboardDesktopLayoutHeights";
@@ -399,9 +400,22 @@ function DashboardReturningUserSplit({
   queuesLimit,
   globalScheduleIntervalHours,
 }: DashboardReturningUserSplitProps) {
+  const { userTimeFormat } = useFormattedDate();
   const ignoreFlowScrollInteractionUntilMsRef = useRef(0);
   const [flowAtRest, setFlowAtRest] = useState(true);
   const [suppressFlowNext, setSuppressFlowNext] = useState(false);
+
+  const queuesUserTz = getUserTimezone(user) ?? "Etc/UTC";
+  const [clientFlowReferenceNowMs] = useState(() => Date.now());
+  const flowReferenceNowMs = serverNowMs ?? clientFlowReferenceNowMs;
+  const earliestNextScheduledUtcMsByQueueName = useMemo(
+    () =>
+      buildEarliestNextScheduledUtcMsByQueueFromFlow(
+        flowItems,
+        flowReferenceNowMs
+      ),
+    [flowItems, flowReferenceNowMs]
+  );
 
   const onFlowRestingScrollChange = useCallback((resting: boolean) => {
     setFlowAtRest(resting);
@@ -432,8 +446,8 @@ function DashboardReturningUserSplit({
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
-          runwayRedThresholdDays={runwaySettings?.redThresholdDays}
-          runwayOrangeThresholdDays={runwaySettings?.orangeThresholdDays}
+          runwayOrangeMaxDays={runwaySettings?.redThresholdDays}
+          runwayYellowMaxDays={runwaySettings?.orangeThresholdDays}
           isPostActivationEmpty={isPostActivationEmpty}
         />
         <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-3">
@@ -576,6 +590,12 @@ function DashboardReturningUserSplit({
               onEditQueue={onEditQueue}
               canCreateMoreQueues={canCreateMoreQueues}
               queuesLimit={queuesLimit}
+              earliestNextScheduledUtcMsByQueueName={
+                earliestNextScheduledUtcMsByQueueName
+              }
+              referenceNowMs={flowReferenceNowMs}
+              userTimezone={queuesUserTz}
+              hour12Preferred={userTimeFormat === "12h"}
             />
           </div>
         </div>

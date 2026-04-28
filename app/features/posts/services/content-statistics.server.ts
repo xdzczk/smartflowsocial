@@ -14,6 +14,10 @@ import { getQueueTypesCached } from "~/features/user/services/user-cache.server"
 import { countDraftItemsForUser } from "../repositories/entitlement-counts.server";
 
 export interface ContentStatistics {
+  /**
+   * Count of scheduled short + longform that are not `HELD_BY_QUEUE` (active on the calendar).
+   * Paused-queue / held volume is shown per queue in the Queues panel only.
+   */
   scheduledCount: number;
   successCount: number;
 }

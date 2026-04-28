@@ -396,6 +396,7 @@ function renderSettingsPanel(
               parentNpub={accounts.parentNpub}
               confirmedChildren={accounts.confirmedChildren}
               pendingChildren={accounts.pendingChildren}
+              pendingIncomingParents={accounts.pendingIncomingParents ?? []}
               isChild={accounts.isChild ?? false}
               parentUser={accounts.parentUser}
             />

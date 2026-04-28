@@ -19,6 +19,7 @@ import {
   unlinkChildByParent,
   getUserIdByNpub,
 } from "~/features/user";
+import { handleDashboardAction } from "~/features/user/services/dashboard.server";
 import { logWarning } from "~/lib/error-logger.server";
 import {
   searchAccountsSchema,
@@ -204,6 +205,13 @@ export async function handleAccountsAction(
       },
       { status: 403 }
     );
+  }
+
+  if (action === "respond_child_request") {
+    if (!me?.npub) {
+      return json({ error: "User npub not found" }, { status: 400 });
+    }
+    return handleDashboardAction(formData, userId, me.npub);
   }
 
   if (action === "search_accounts") {

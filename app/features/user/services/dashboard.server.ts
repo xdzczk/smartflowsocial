@@ -6,7 +6,7 @@
 import { json } from "@remix-run/node";
 
 import { updateUserSubscription } from "~/features/payments/data";
-import { getUsersByNpubs } from "~/features/user";
+import { getUsersByNpubs } from "~/features/user/queries/user-queries.server";
 import { logWarning } from "~/lib/error-logger.server";
 
 import { respondToChildRequest } from "./parent-child.server";

@@ -96,6 +96,7 @@ export const accountsSchema = z
     parentNpub: z.string().optional(),
     confirmedChildren: z.array(accountChildSchema).optional(),
     pendingChildren: z.array(accountChildSchema).optional(),
+    pendingIncomingParents: z.array(accountChildSchema).optional(),
     isChild: z.boolean().optional(),
     parentUser: z
       .object({
