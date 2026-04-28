@@ -491,7 +491,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isCalendar ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : "pt-4.5 pb-24"} ${isCalendar || isDashboardIndex ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">

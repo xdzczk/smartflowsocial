@@ -39,9 +39,11 @@ export function BulkComposerShell({
           />
         </div>
       ) : null}
-      <div className="stack-loose min-w-0 lg:flex-row lg:items-start">
+      <div className="stack-loose min-w-0 lg:flex-row lg:items-stretch">
         <div className="min-w-0 flex-1 space-y-4">{workspace}</div>
-        <div className="w-full min-w-0 shrink-0 lg:w-auto">{rail}</div>
+        <div className="flex w-full min-w-0 shrink-0 flex-col lg:w-auto">
+          {rail}
+        </div>
       </div>
     </PublishingLibraryShell>
   );

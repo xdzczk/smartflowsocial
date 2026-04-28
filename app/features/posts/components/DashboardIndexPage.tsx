@@ -442,7 +442,7 @@ function DashboardReturningUserSplit({
 
   return (
     <>
-      <div className="w-full flex-shrink-0 space-y-6 pt-1.5 pb-3 lg:pt-0 lg:pb-5">
+      <div className="w-full flex-shrink-0 space-y-6 px-4 pt-1.5 pb-3 sm:px-6 lg:px-8 lg:pt-0 lg:pb-5">
         <Statistics
           runwayDays={runwayDays}
           onRunwayClick={onRunwayClick}
@@ -514,7 +514,10 @@ function DashboardReturningUserSplit({
           }
         >
           {flowError ? (
-            <Alert variant="destructive" className="stack-tight">
+            <Alert
+              variant="destructive"
+              className="stack-tight mx-4 sm:mx-6 lg:mx-8"
+            >
               <AlertDescription className="stack-tight">
                 <span className="font-medium">{flowError.message}</span>
                 <button
@@ -530,13 +533,15 @@ function DashboardReturningUserSplit({
 
           {flowError ? null : isNavigatingToDashboard &&
             flowItems.length === 0 ? (
-            <div
-              className="border-border-subtle flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8"
-              role="status"
-              aria-label="Loading timeline"
-              aria-live="polite"
-            >
-              <p className="text-text-secondary text-sm">Loading timeline…</p>
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div
+                className="border-border-subtle flex h-[160px] w-full items-center justify-center rounded-xl border border-dashed p-8"
+                role="status"
+                aria-label="Loading timeline"
+                aria-live="polite"
+              >
+                <p className="text-text-secondary text-sm">Loading timeline…</p>
+              </div>
             </div>
           ) : (
             <div
@@ -568,7 +573,7 @@ function DashboardReturningUserSplit({
         </div>
 
         <div
-          className="w-full shrink-0 max-lg:mt-0 lg:min-h-0"
+          className="w-full shrink-0 px-4 max-lg:mt-0 sm:px-6 lg:min-h-0 lg:px-8"
           style={
             lowerRowHeightPx != null ? { height: lowerRowHeightPx } : undefined
           }
@@ -807,13 +812,15 @@ export default function DashboardIndexPage() {
 
   return (
     <>
-      <DashboardPlanSuccessMessage
-        show={showSuccessMessage}
-        message={successMessage}
-        onDismiss={() => setShowSuccessMessage(false)}
-      />
+      <div className="px-4 sm:px-6 lg:px-8">
+        <DashboardPlanSuccessMessage
+          show={showSuccessMessage}
+          message={successMessage}
+          onDismiss={() => setShowSuccessMessage(false)}
+        />
+      </div>
 
-      {/* Dashboard: top block (Statistics + Your Flow row), scrollable Flow section, bottom block (Queues + Next 7 days) */}
+      {/* Dashboard: top block (Statistics + Your Flow row), full-bleed Flow section, bottom block (Queues + Next 7 days) */}
       <div className="dashboard-canvas flex min-h-0 flex-1 flex-col max-lg:min-h-[calc(100dvh-12rem)] lg:h-full lg:min-h-0">
         {isFirstRunDashboard ? (
           <div className="mt-2.5 lg:mt-0">
