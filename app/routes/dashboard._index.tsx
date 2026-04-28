@@ -81,9 +81,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const before = url.searchParams.get("before") ?? undefined;
     const after = url.searchParams.get("after") ?? undefined;
 
-    // Initial load: fetch only ~5–8 visible cards + buffer for fast TTI; load-more fills the rest
+    // Initial load: include a healthy future window so wide desktop Flow does not
+    // look exhausted before infinite-scroll has a chance to prefetch.
     const initialPastLimit = before !== undefined ? 20 : 6;
-    const initialFutureLimit = after !== undefined ? 30 : 10;
+    const initialFutureLimit = 30;
     const [data, postStatistics, queueCountsByQueue, draftCount] =
       await Promise.all([
         loadFlowData({

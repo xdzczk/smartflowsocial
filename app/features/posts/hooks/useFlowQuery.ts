@@ -290,14 +290,25 @@ export function useFlowData(): UseFlowDataResult {
         }
         if (data.flowItems.length === 0) {
           startTransition(() => setHasMoreFuture(false));
+          futureSentinelInFlightRef.current = null;
           return;
         }
         const newItems = flowItemsToCombinedContent(data.flowItems);
         startTransition(() => {
-          setFlowItems((prev) => [...prev, ...newItems]);
+          setFlowItems((prev) => {
+            const seen = new Set(prev.map((item) => `${item.type}:${item.id}`));
+            const deduped = newItems.filter((item) => {
+              const key = `${item.type}:${item.id}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            return [...prev, ...deduped];
+          });
           setHasMoreFuture(data.hasMoreFuture);
-          if (data.futureCursor != null) setFutureCursor(data.futureCursor);
+          setFutureCursor(data.futureCursor);
         });
+        futureSentinelInFlightRef.current = null;
       } catch {
         futureSentinelInFlightRef.current = null;
       } finally {

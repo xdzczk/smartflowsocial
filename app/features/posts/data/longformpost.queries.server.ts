@@ -173,6 +173,7 @@ export async function getScheduledLongFormPosts({
   limit = 20,
   since,
   afterScheduledAtUtc,
+  afterScheduledAtUtcInclusive = false,
   queueType,
   scheduledFromUtc,
   scheduledToUtc,
@@ -184,6 +185,8 @@ export async function getScheduledLongFormPosts({
   since?: number; // Unix timestamp in milliseconds for delta sync
   /** When set, return only posts with scheduledAtUtc > this date (for cursor-based load more). */
   afterScheduledAtUtc?: Date;
+  /** Use scheduledAtUtc >= cursor date. Flow pairs this with a composite cursor. */
+  afterScheduledAtUtcInclusive?: boolean;
   queueType?: string;
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
@@ -210,7 +213,7 @@ export async function getScheduledLongFormPosts({
     // Cursor-based: only posts after this date (for Flow load more future)
     if (afterScheduledAtUtc !== undefined) {
       where.scheduledAtUtc = {
-        gt: afterScheduledAtUtc,
+        [afterScheduledAtUtcInclusive ? "gte" : "gt"]: afterScheduledAtUtc,
       };
     }
 
@@ -255,7 +258,7 @@ export async function getScheduledLongFormPosts({
         include: {
           queueType: true,
         },
-        orderBy: { scheduledAtUtc: "asc" },
+        orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
         skip,
         take: limit,
       }),
