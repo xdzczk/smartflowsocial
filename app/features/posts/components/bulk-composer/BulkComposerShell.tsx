@@ -12,6 +12,13 @@ export function BulkComposerShell({
   workspace,
   rail,
   className,
+  /**
+   * When true (default), the shell wraps the rail in a sticky column under the
+   * dashboard header. Use with `BulkSettingsRail shellOwnsRailSticky` (default
+   * true). Set false in the bulk composer modal, and pass
+   * `shellOwnsRailSticky={false}` on the rail.
+   */
+  railStickyShell = true,
 }: {
   title: string;
   headerActions: ReactNode;
@@ -19,6 +26,7 @@ export function BulkComposerShell({
   rail: ReactNode;
   /** Optional class on the outer library shell (e.g. for nested route usage). */
   className?: string;
+  railStickyShell?: boolean;
 }) {
   const showHeader =
     title.trim().length > 0 ||
@@ -39,9 +47,15 @@ export function BulkComposerShell({
           />
         </div>
       ) : null}
-      <div className="stack-loose min-w-0 lg:flex-row lg:items-stretch">
+      <div className="stack-loose min-w-0 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1 space-y-4">{workspace}</div>
-        <div className="flex w-full min-w-0 shrink-0 flex-col lg:w-auto">
+        <div
+          className={cn(
+            "flex w-full min-w-0 shrink-0 flex-col lg:w-auto lg:self-start",
+            railStickyShell &&
+              "lg:sticky lg:top-[4.75rem] lg:z-10 lg:max-h-[calc(100dvh-5.75rem)]"
+          )}
+        >
           {rail}
         </div>
       </div>
