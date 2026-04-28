@@ -11,12 +11,15 @@ import {
 } from "~/features/posts/server";
 import { getQueueTypesCached } from "~/features/user/services/user-cache.server";
 
-import { countDraftItemsForUser } from "../repositories/entitlement-counts.server";
+import {
+  countDraftItemsForUser,
+  countFutureScheduledItemsForUser,
+} from "../repositories/entitlement-counts.server";
 
 export interface ContentStatistics {
   /**
-   * Count of scheduled short + longform that are not `HELD_BY_QUEUE` (active on the calendar).
-   * Paused-queue / held volume is shown per queue in the Queues panel only.
+   * Future scheduled short + longform, same total as plan usage / schedule cap
+   * (`countFutureScheduledItemsForUser`). Includes reposts and items held while a queue is paused.
    */
   scheduledCount: number;
   successCount: number;
@@ -39,12 +42,13 @@ export interface DashboardActivitySummary {
 export async function getContentStatistics(
   userId: string
 ): Promise<ContentStatistics> {
-  const [postStats, longformStats] = await Promise.all([
+  const [postStats, longformStats, scheduledCount] = await Promise.all([
     getPostStatistics({ userId }),
     getLongFormStatistics({ userId }),
+    countFutureScheduledItemsForUser(userId),
   ]);
   return {
-    scheduledCount: postStats.scheduledCount + longformStats.scheduledCount,
+    scheduledCount,
     successCount: postStats.successCount + longformStats.successCount,
   };
 }

@@ -548,8 +548,11 @@ export interface ScheduledCountByQueueRow {
 
 export async function getScheduledPostsCountByQueue({
   userId,
+  asOf = new Date(),
 }: {
   userId: string;
+  /** Use a fixed instant in tests; defaults to "now" for the same future window as plan usage. */
+  asOf?: Date;
 }): Promise<ScheduledCountByQueueRow[]> {
   try {
     const rows = await prisma.post.groupBy({
@@ -557,7 +560,7 @@ export async function getScheduledPostsCountByQueue({
       where: {
         userId,
         currentState: "SCHEDULED",
-        repost: false,
+        scheduledAtUtc: { gt: asOf },
       },
       _count: { id: true },
     });
