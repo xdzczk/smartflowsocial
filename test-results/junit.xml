@@ -1,132 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="27" failures="0" errors="0" time="0.017496249">
-    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-04-28T14:19:31.735Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.01247575">
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.0051035">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+<testsuites name="vitest tests" tests="8" failures="0" errors="0" time="0.003008042">
+    <testsuite name="tests/unit/posts/queue-runway.test.ts" timestamp="2026-05-02T17:22:52.328Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.003008042">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses 24h / interval for INTERVAL" time="0.000736916">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.000728041">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue returns 0 when queue disabled" time="0.000113375">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.000851625">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses slot count for FIXED_SLOTS" time="0.000091083">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000875708">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue averages weekly slots over 7 days" time="0.00019775">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000470792">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatQueueRunwayDaysLabel uses ceil of posts / rate" time="0.000398959">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000324792">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatShortCadenceLabel prefers cadenceLabel when set" time="0.000211">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000540208">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow ignores attached follow-ups" time="0.00044325">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000390542">
-            <system-err>
-⚠️  Warning: Dashboard flow loader validation failed {
-  message: &apos;Loader response validation failed&apos;,
-  context: { errors: [ [Object] ] }
-}
-
-            </system-err>
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000193625">
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000120917">
-        </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.002197958">
-            <system-err>
-
-❌ Error: {
-  message: &apos;Database error&apos;,
-  code: &apos;DATABASE_ERROR&apos;,
-  statusCode: 500,
-  path: undefined,
-  method: undefined,
-  userId: undefined,
-  correlationId: undefined
-}
-
-            </system-err>
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/integration/models/post-queries.test.ts" timestamp="2026-04-28T14:19:31.736Z" hostname="Ivans-MacBook-Pro.local" tests="15" failures="0" errors="0" skipped="0" time="0.003499791">
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getPostStatistics &gt; should return post statistics" time="0.000856167">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getPostStatistics &gt; should count scheduled posts correctly" time="0.000183125">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getPostStatistics &gt; should count posted posts correctly" time="0.000156833">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should return last post time for queue by ID" time="0.000556667">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should scope raw query to the requested queue type ID" time="0.000165583">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should return last post time for queue by name" time="0.000132">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should return null if queue type doesn&apos;t exist" time="0.000080084">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should filter by currentState for INTERVAL schedule type" time="0.000101958">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should include both SCHEDULED and PUBLISHED for FIXED_SLOTS schedule type" time="0.000088625">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getLastPostTimeForQueue &gt; should return null if no post found" time="0.000061875">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getPostsByIds &gt; should get posts by IDs" time="0.000132458">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getPostsByIds &gt; should handle empty IDs array" time="0.000079375">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getRecentPublishedPosts &gt; should get recent posted posts" time="0.000100542">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getRecentPublishedPosts &gt; should filter by queue type when provided" time="0.000037208">
-        </testcase>
-        <testcase classname="tests/integration/models/post-queries.test.ts" name="Post Queries &gt; getCronDueScheduledPosts &gt; should get posts that are due for posting" time="0.000157167">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/posts/queue-counts-visibility.test.ts" timestamp="2026-04-28T14:19:31.737Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.001520708">
-        <testcase classname="tests/unit/posts/queue-counts-visibility.test.ts" name="getQueueCountsForDashboard &gt; keeps paused queues visible in dashboard counts" time="0.000974375">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow reads dependencyMode from originalData when missing on item" time="0.000079375">
         </testcase>
     </testsuite>
 </testsuites>
