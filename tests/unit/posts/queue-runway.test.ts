@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildEarliestNextScheduledUtcMsByQueueFromFlow,
   estimatePostsPerDayForQueue,
   formatQueueRunwayDaysLabel,
   formatShortCadenceLabel,
 } from "~/features/posts/components/queue-runway";
-import type { QueueType } from "~/features/posts/types";
+import type { CombinedContent, QueueType } from "~/features/posts/types";
 
 describe("queue-runway", () => {
   it("estimatePostsPerDayForQueue uses 24h / interval for INTERVAL", () => {
@@ -71,5 +72,69 @@ describe("queue-runway", () => {
       scheduleConfig: { intervalHours: 6 },
     };
     expect(formatShortCadenceLabel(qt, [])).toBe("custom");
+  });
+
+  it("buildEarliestNextScheduledUtcMsByQueueFromFlow ignores attached follow-ups", () => {
+    const now = Date.UTC(2026, 3, 1, 12, 0, 0);
+    const parentMs = now + 60 * 60 * 1000;
+    const attachedMs = now + 2 * 60 * 60 * 1000;
+    const base = {
+      userId: "u",
+      createdAt: new Date(now),
+      updatedAt: new Date(now),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      queueType: { id: "q", name: "Main" },
+    } satisfies Partial<CombinedContent>;
+    const emptyOriginal = {};
+    const standaloneOriginal: CombinedContent["originalData"] =
+      emptyOriginal as CombinedContent["originalData"];
+    const attachedOriginal: CombinedContent["originalData"] =
+      emptyOriginal as CombinedContent["originalData"];
+    const standalone: CombinedContent = {
+      ...base,
+      id: "standalone",
+      type: "post",
+      dependencyMode: "standalone",
+      scheduledAtUtc: new Date(parentMs),
+      originalData: standaloneOriginal,
+    };
+    const attached: CombinedContent = {
+      ...base,
+      id: "attached",
+      type: "post",
+      dependencyMode: "attached",
+      scheduledAtUtc: new Date(attachedMs),
+      originalData: attachedOriginal,
+    };
+    expect(
+      buildEarliestNextScheduledUtcMsByQueueFromFlow(
+        [attached, standalone],
+        now
+      )
+    ).toEqual({ Main: parentMs });
+  });
+
+  it("buildEarliestNextScheduledUtcMsByQueueFromFlow reads dependencyMode from originalData when missing on item", () => {
+    const now = Date.UTC(2026, 3, 1, 12, 0, 0);
+    const earlyMs = now + 60 * 60 * 1000;
+    const attachedMeta = { dependencyMode: "attached" as const };
+    const originalFromMeta: CombinedContent["originalData"] =
+      attachedMeta as CombinedContent["originalData"];
+    const item: CombinedContent = {
+      id: "fu",
+      type: "post",
+      userId: "u",
+      createdAt: new Date(now),
+      updatedAt: new Date(now),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      scheduledAtUtc: new Date(earlyMs),
+      queueType: { id: "q", name: "Main" },
+      originalData: originalFromMeta,
+    };
+    expect(buildEarliestNextScheduledUtcMsByQueueFromFlow([item], now)).toEqual(
+      {}
+    );
   });
 });

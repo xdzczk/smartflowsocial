@@ -163,6 +163,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
   result.threadGroupId = post.threadGroupId ?? undefined;
   result.replyToEventId = post.replyToEventId ?? undefined;
   result.replyToPostId = post.replyToPostId ?? undefined;
+  result.dependencyMode = post.dependencyMode;
 
   return result;
 }

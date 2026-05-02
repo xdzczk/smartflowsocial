@@ -561,6 +561,8 @@ export async function getScheduledPostsCountByQueue({
         userId,
         currentState: "SCHEDULED",
         scheduledAtUtc: { gt: asOf },
+        /** Queues card / runway: count only standalone scheduled posts, not attached follow-ups */
+        dependencyMode: { not: "attached" },
       },
       _count: { id: true },
     });
