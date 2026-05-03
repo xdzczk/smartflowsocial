@@ -1,5 +1,3 @@
-import { CalendarDays } from "lucide-react";
-
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
@@ -38,27 +36,21 @@ export function FilterDateField({
       >
         {label}
       </Label>
-      <div className="relative">
-        <CalendarDays
-          className="text-text-secondary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-          aria-hidden="true"
-        />
-        <Input
-          id={id}
-          type="date"
-          value={value}
-          onChange={(e) => onValueChange(e.target.value)}
-          min={min}
-          max={max}
-          className={cn(
-            PUBLISHING_FILTER_CONTROL_H,
-            PUBLISHING_FILTER_CONTROL_RADIUS,
-            PUBLISHING_FILTER_CONTROL_BASE_CLASS,
-            widthClassName ?? PUBLISHING_FILTER_WIDTH_DATE,
-            "pl-9 text-sm font-medium"
-          )}
-        />
-      </div>
+      <Input
+        id={id}
+        type="date"
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        min={min}
+        max={max}
+        className={cn(
+          PUBLISHING_FILTER_CONTROL_H,
+          PUBLISHING_FILTER_CONTROL_RADIUS,
+          PUBLISHING_FILTER_CONTROL_BASE_CLASS,
+          widthClassName ?? PUBLISHING_FILTER_WIDTH_DATE,
+          "px-3 text-sm font-medium"
+        )}
+      />
     </div>
   );
 }
