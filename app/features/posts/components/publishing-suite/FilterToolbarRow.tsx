@@ -5,9 +5,10 @@ import { cn } from "~/lib/utils";
 /**
  * Unified filter toolbar layout for Scheduled / Published.
  *
- * Responsive strategy (wrap_b):
- * - Small screens: row1 = type + queue, row2 = dates + presets
- * - Large screens: single row with left cluster (type + dates + presets) and right cluster (queue)
+ * Responsive strategy:
+ * - Below sm: row1 = type + queue (side by side when queue is shown), row2 = dates + presets
+ * - sm to lg: two-column row for type + queue, dates span below
+ * - lg+: single row — type, dates + presets, queue (right)
  */
 export function FilterToolbarRow({
   typeControl,
@@ -22,6 +23,8 @@ export function FilterToolbarRow({
   presetControls?: ReactNode;
   className?: string;
 }) {
+  const hasQueue = queueControl != null;
+
   return (
     <div
       className={cn(
@@ -29,10 +32,20 @@ export function FilterToolbarRow({
         className
       )}
     >
-      <div className="min-w-0">{typeControl}</div>
-
-      <div className="min-w-0 sm:justify-self-end lg:order-3 lg:justify-self-end">
-        {queueControl ?? null}
+      <div
+        className={cn(
+          "min-w-0 sm:contents",
+          hasQueue && "flex gap-2 max-sm:gap-3"
+        )}
+      >
+        <div className={cn("min-w-0", hasQueue && "max-sm:flex-1")}>
+          {typeControl}
+        </div>
+        {hasQueue ? (
+          <div className="min-w-0 max-sm:flex-1 sm:justify-self-end lg:order-3 lg:justify-self-end">
+            {queueControl}
+          </div>
+        ) : null}
       </div>
 
       <div className="min-w-0 sm:col-span-2 lg:order-2 lg:col-span-1">
