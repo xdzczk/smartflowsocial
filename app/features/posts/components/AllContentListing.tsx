@@ -358,6 +358,13 @@ export default function AllContentListing({
     return 0;
   });
 
+  const attachedByParentId = useMemo(() => {
+    if (type !== "scheduled" && type !== "published") {
+      return new Map<string, CombinedContent[]>();
+    }
+    return attachedCombinedByParentId(content);
+  }, [content, type]);
+
   const displayRows: ThreadListRow[] =
     type === "draft"
       ? sortedContent.map((root) => ({
@@ -384,13 +391,6 @@ export default function AllContentListing({
       attachedByParentId.get(row.root.id) ?? []
     )
   );
-
-  const attachedByParentId = useMemo(() => {
-    if (type !== "scheduled" && type !== "published") {
-      return new Map<string, CombinedContent[]>();
-    }
-    return attachedCombinedByParentId(content);
-  }, [content, type]);
 
   /** Flat list for drafts table; scheduled/published use thread grouping */
   const filteredContent = filteredRows.map((row) => row.root);
