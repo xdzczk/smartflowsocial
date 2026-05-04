@@ -623,6 +623,32 @@ describe("Scheduling Algorithms", () => {
       expect(result.getUTCMinutes()).toBe(45);
     });
 
+    it("should return the following week's slot when last post already consumed this week's occurrence (single weekday)", async () => {
+      const lastPostTime = createDateAtTime(2024, 1, 17, 9, 0); // Wed Jan 17 09:00 UTC
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime
+      );
+
+      const queueType = createWeeklySlotsQueueType(
+        [{ dayOfWeek: 3, time: "09:00" }],
+        { id: "queue-1", name: "posts" }
+      );
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+        baseTime: BASE_TIME,
+      });
+
+      expect(result.getUTCFullYear()).toBe(2024);
+      expect(result.getUTCMonth()).toBe(0);
+      expect(result.getUTCDate()).toBe(24);
+      expect(result.getUTCDay()).toBe(3);
+      expect(result.getUTCHours()).toBe(9);
+      expect(result.getUTCMinutes()).toBe(0);
+    });
+
     it("should ignore duplicate weekly slot entries", async () => {
       const lastPostTime = createDateAtTime(2024, 1, 15, 12, 0); // Monday 12:00 UTC
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
